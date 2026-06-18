@@ -170,8 +170,6 @@ function Index() {
 
   useEffect(() => {
     try {
-    } catch {}
-    try {
       const v = localStorage.getItem(VIEW_KEY) as "list" | "grid" | null;
       if (v) setViewMode(v);
     } catch {}
