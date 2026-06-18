@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as TrustRouteImport } from './routes/trust'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ErrorRouteImport } from './routes/error'
@@ -19,6 +20,11 @@ import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
 import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_authenticated.gudang.pesanan.$id.edit'
 
+const TrustRoute = TrustRouteImport.update({
+  id: '/trust',
+  path: '/trust',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/error': typeof ErrorRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/trust': typeof TrustRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
@@ -81,6 +88,7 @@ export interface FileRoutesByTo {
   '/error': typeof ErrorRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/trust': typeof TrustRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -93,6 +101,7 @@ export interface FileRoutesById {
   '/error': typeof ErrorRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/trust': typeof TrustRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -106,6 +115,7 @@ export interface FileRouteTypes {
     | '/error'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/trust'
     | '/gudang'
     | '/gudang/pesanan/$id'
     | '/gudang/pesanan/$id/edit'
@@ -115,6 +125,7 @@ export interface FileRouteTypes {
     | '/error'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/trust'
     | '/gudang'
     | '/'
     | '/gudang/pesanan/$id'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/error'
     | '/reset-password'
     | '/sitemap.xml'
+    | '/trust'
     | '/_authenticated/gudang'
     | '/_authenticated/'
     | '/_authenticated/gudang/pesanan/$id'
@@ -138,10 +150,18 @@ export interface RootRouteChildren {
   ErrorRoute: typeof ErrorRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  TrustRoute: typeof TrustRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/trust': {
+      id: '/trust'
+      path: '/trust'
+      fullPath: '/trust'
+      preLoaderRoute: typeof TrustRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/sitemap.xml': {
       id: '/sitemap.xml'
       path: '/sitemap.xml'
@@ -255,17 +275,8 @@ const rootRouteChildren: RootRouteChildren = {
   ErrorRoute: ErrorRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  TrustRoute: TrustRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
