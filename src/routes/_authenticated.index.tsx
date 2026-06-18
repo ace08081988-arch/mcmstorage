@@ -144,6 +144,17 @@ function Index() {
     setAutoLockEnabled(uid, next);
     toast.success(next ? "Kunci otomatis aktif" : "Kunci otomatis dimatikan");
   };
+  const resetAllData = () => {
+    if (!confirm("Hapus SEMUA kategori dan produk milik akun ini? Tindakan ini tidak bisa dibatalkan.")) return;
+    if (!confirm("Konfirmasi sekali lagi: yakin reset ke nol?")) return;
+    setItems([]);
+    setCategories([]);
+    setActiveCat(null);
+    setSelected(new Set());
+    setSelectMode(false);
+    setOpenId(null);
+    toast.success("Semua data berhasil dihapus.");
+  };
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
