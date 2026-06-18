@@ -1197,6 +1197,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
           <div className="text-[11px] text-muted-foreground">
             Stok disimpan dalam <b>{baseUnit}</b>. Saat dijual per {baseUnit}, akan dikurangi otomatis.
           </div>
+          <PhotoPicker value={newImagePath} onChange={setNewImagePath} uid={uid} />
         </div>
       ) : (
         <label className="block">
