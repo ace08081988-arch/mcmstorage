@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 type Status = "Belum Dikirim" | "Sudah Dikirim";
-type Kategori = "1 gram" | "St" | "Spr";
+type Kategori = string;
 
 type Produk = {
   id: number;
@@ -34,36 +34,13 @@ type Produk = {
   galeri?: string[];
 };
 
-const HARGA: Record<Kategori, number> = { "1 gram": 50000, St: 75000, Spr: 100000 };
-const TAG: Record<Kategori, string> = { "1 gram": "1g", St: "St", Spr: "Spr" };
-
-function buildInitial(): Produk[] {
-  const items: Produk[] = [];
-  let id = 1;
-  const make = (kat: Kategori, count: number) => {
-    for (let i = 0; i < count; i++, id++) {
-      items.push({
-        id,
-        kategori: kat,
-        nama: `Produk ${id}`,
-        harga: HARGA[kat],
-        status: "Belum Dikirim",
-        keterangan: id === 1 ? "5g lakban hitam pepet tembok" : `Keterangan ${id}`,
-        lokasi:
-          id === 1
-            ? "https://goo.gl/maps/RKwBxEqwHeM8TAEB6"
-            : "https://goo.gl/maps/xxx",
-      });
-    }
-  };
-  make("1 gram", 10);
-  make("St", 10);
-  make("Spr", 10);
-  return items;
+function tagFor(kat: Kategori): string {
+  return kat.trim().slice(0, 3) || "—";
 }
 
 const THEME_KEY = "penjualan-theme";
 const VIEW_KEY = "penjualan-view";
+const ACTIVE_CAT_KEY = "penjualan-active-cat";
 
 function rupiah(n: number) {
   return new Intl.NumberFormat("id-ID", {
