@@ -304,6 +304,8 @@ function Index() {
       status: "Belum Dikirim",
       keterangan: "",
       lokasi: "",
+      satuan: "pcs",
+      jumlah: 1,
     };
     setItems((arr) => [...arr, fresh]);
     setOpenId(nextId);
@@ -344,11 +346,28 @@ function Index() {
 
   const bulkWaUrl = `https://wa.me/?text=${encodeURIComponent(bulkPesan())}`;
 
+  const markSent = (id: number) => {
+    const target = items.find((i) => i.id === id);
+    setItems((arr) =>
+      arr.map((i) => (i.id === id ? { ...i, status: "Sudah Dikirim" } : i)),
+    );
+    toast.success(`Terkirim · ${target?.nama ?? "Pesanan"} ditandai sudah dikirim`, {
+      action: {
+        label: "Urungkan",
+        onClick: () =>
+          setItems((arr) =>
+            arr.map((i) => (i.id === id ? { ...i, status: "Belum Dikirim" } : i)),
+          ),
+      },
+    });
+  };
+
   const removeItem = (id: number) => {
     const snapshot = items;
     const target = items.find((i) => i.id === id);
+    if (!confirm(`Hapus pesanan "${target?.nama ?? ""}" dari penyimpanan?`)) return;
     setItems((arr) => arr.filter((i) => i.id !== id));
-    toast.success(`Terkirim · ${target?.nama ?? "Pesanan"} dihapus`, {
+    toast.success(`Pesanan dihapus`, {
       action: {
         label: "Urungkan",
         onClick: () => setItems(snapshot),
@@ -358,14 +377,21 @@ function Index() {
 
   const bulkMarkSent = () => {
     if (selected.size === 0) return;
-    const snapshot = items;
-    const count = selected.size;
-    setItems((arr) => arr.filter((i) => !selected.has(i.id)));
+    const ids = new Set(selected);
+    const count = ids.size;
+    setItems((arr) =>
+      arr.map((i) => (ids.has(i.id) ? { ...i, status: "Sudah Dikirim" } : i)),
+    );
     setSelected(new Set());
-    toast.success(`${count} pesanan terkirim & dihapus`, {
+    toast.success(`${count} pesanan ditandai sudah dikirim`, {
       action: {
         label: "Urungkan",
-        onClick: () => setItems(snapshot),
+        onClick: () =>
+          setItems((arr) =>
+            arr.map((i) =>
+              ids.has(i.id) ? { ...i, status: "Belum Dikirim" } : i,
+            ),
+          ),
       },
     });
   };
