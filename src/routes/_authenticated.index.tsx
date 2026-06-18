@@ -650,7 +650,7 @@ function Index() {
                 {scopedItems.length} pesanan · {rupiah(total)}
               </p>
             </div>
-            <div className="flex items-center gap-1.5">
+            <div className="flex shrink-0 items-center gap-1">
               <button
                 onClick={() => {
                   setActiveCat(null);
@@ -658,16 +658,17 @@ function Index() {
                   setSelected(new Set());
                   setOpenId(null);
                 }}
-                className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-accent sm:w-auto sm:px-2 sm:text-[11px] sm:font-medium"
                 aria-label="Ganti kategori"
                 title="Ganti kategori"
               >
-                ↩ Kategori
+                <span className="sm:hidden">↩</span>
+                <span className="hidden sm:inline">↩ Kategori</span>
               </button>
-              <div className="inline-flex overflow-hidden rounded-md border">
+              <div className="inline-flex h-8 overflow-hidden rounded-md border">
                 <button
                   onClick={() => setViewMode("list")}
-                  className={`px-2 py-1 text-[11px] font-medium ${
+                  className={`inline-flex w-8 items-center justify-center text-sm ${
                     viewMode === "list"
                       ? "bg-primary text-primary-foreground"
                       : "bg-background hover:bg-accent"
@@ -679,7 +680,7 @@ function Index() {
                 </button>
                 <button
                   onClick={() => setViewMode("grid")}
-                  className={`border-l px-2 py-1 text-[11px] font-medium ${
+                  className={`inline-flex w-8 items-center justify-center border-l text-sm ${
                     viewMode === "grid"
                       ? "bg-primary text-primary-foreground"
                       : "bg-background hover:bg-accent"
@@ -690,27 +691,28 @@ function Index() {
                   ▦
                 </button>
               </div>
-              <AppearanceSettings compact triggerClassName="inline-flex h-8 w-8 items-center justify-center rounded-md border text-base leading-none hover:bg-accent" />
+              <AppearanceSettings compact triggerClassName="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm leading-none hover:bg-accent" />
               <button
                 onClick={signOut}
-                className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-accent sm:w-auto sm:px-2 sm:text-[11px] sm:font-medium"
                 aria-label="Keluar"
                 title="Keluar"
               >
-                Keluar
+                <span className="sm:hidden">⎋</span>
+                <span className="hidden sm:inline">Keluar</span>
               </button>
               {lockMenu(true)}
             </div>
           </div>
 
-          <div className="mt-2 flex items-center gap-1.5">
-            <div className="inline-flex min-w-0 shrink overflow-hidden rounded-md border">
+          <div className="mt-2 flex items-center gap-1">
+            <div className="inline-flex h-7 min-w-0 shrink overflow-hidden rounded-md border">
               {(["semua", "Belum Dikirim", "Sudah Dikirim"] as const).map((f, i) => (
                 <button
                   key={f}
                   onClick={() => setFilter(f)}
                   title={f === "semua" ? "Semua" : f === "Belum Dikirim" ? "Belum dikirim" : "Sudah dikirim"}
-                  className={`shrink-0 px-2 py-1 text-[11px] font-medium transition-colors ${i > 0 ? "border-l" : ""} ${
+                  className={`inline-flex shrink-0 items-center justify-center px-2 text-[11px] font-medium transition-colors ${i > 0 ? "border-l" : ""} ${
                     filter === f
                       ? "bg-primary text-primary-foreground"
                       : "bg-background hover:bg-accent"
@@ -725,7 +727,7 @@ function Index() {
                 onClick={addProduk}
                 title="Tambah produk"
                 aria-label="Tambah produk"
-                className="inline-flex h-7 items-center justify-center rounded-md border border-primary bg-primary px-2 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary bg-primary text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto sm:px-2 sm:text-[11px]"
               >
                 <span className="sm:hidden">+</span>
                 <span className="hidden sm:inline">+ Produk</span>
@@ -737,7 +739,7 @@ function Index() {
                 }}
                 title={selectMode ? "Selesai memilih" : "Pilih beberapa"}
                 aria-label={selectMode ? "Selesai memilih" : "Pilih beberapa"}
-                className={`inline-flex h-7 items-center justify-center rounded-md border px-2 text-[11px] font-medium ${
+                className={`inline-flex h-7 w-7 items-center justify-center rounded-md border text-sm sm:w-auto sm:px-2 sm:text-[11px] sm:font-medium ${
                   selectMode
                     ? "border-primary bg-primary text-primary-foreground"
                     : "hover:bg-accent"
@@ -750,7 +752,7 @@ function Index() {
                 onClick={resetStatus}
                 title="Reset status terkirim"
                 aria-label="Reset status terkirim"
-                className="inline-flex h-7 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border text-sm hover:bg-accent sm:w-auto sm:px-2 sm:text-[11px] sm:font-medium"
               >
                 <span className="sm:hidden">↺</span>
                 <span className="hidden sm:inline">Reset status</span>
@@ -759,7 +761,7 @@ function Index() {
                 onClick={reset}
                 title="Hapus semua"
                 aria-label="Hapus semua"
-                className="inline-flex h-7 items-center justify-center rounded-md border px-2 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                className="inline-flex h-7 w-7 items-center justify-center rounded-md border text-sm text-destructive hover:bg-destructive/10 sm:w-auto sm:px-2 sm:text-[11px] sm:font-medium"
               >
                 <span className="sm:hidden">🗑</span>
                 <span className="hidden sm:inline">Reset</span>
