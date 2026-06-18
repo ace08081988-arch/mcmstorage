@@ -4,8 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { autoLockKey, isAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
 import {
   getClientDeviceFingerprint,
-  isDeviceTrustedLocal,
 } from "@/lib/device-fingerprint";
+import { isDeviceTrusted } from "@/lib/device.functions";
 import {
   APP_LOCK_EVENT,
   APP_LOCK_REQUEST,
@@ -125,9 +125,15 @@ export const Route = createFileRoute("/_authenticated")({
     }
     // Lewati pengecekan device pada halaman verifikasi itu sendiri
     if (location.pathname.startsWith("/device-verify")) return;
-    const userId = data.session.user.id;
     const hash = await getClientDeviceFingerprint();
-    if (!isDeviceTrustedLocal(userId, hash)) {
+    let trusted = false;
+    try {
+      const res = await isDeviceTrusted({ data: { deviceHash: hash } });
+      trusted = !!res?.trusted;
+    } catch {
+      trusted = false;
+    }
+    if (!trusted) {
       throw redirect({
         to: "/device-verify",
         search: { redirect: location.href },
