@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { isAutoLockEnabled, setAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -118,6 +119,30 @@ function Index() {
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
+  };
+  const [uid, setUid] = useState<string | null>(null);
+  const [autoLock, setAutoLock] = useState(false);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const id = data.user?.id ?? null;
+      setUid(id);
+      if (id) setAutoLock(isAutoLockEnabled(id));
+    });
+    const sync = () => {
+      supabase.auth.getUser().then(({ data }) => {
+        const id = data.user?.id ?? null;
+        if (id) setAutoLock(isAutoLockEnabled(id));
+      });
+    };
+    window.addEventListener(AUTO_LOCK_EVENT, sync);
+    return () => window.removeEventListener(AUTO_LOCK_EVENT, sync);
+  }, []);
+  const toggleAutoLock = () => {
+    if (!uid) return;
+    const next = !autoLock;
+    setAutoLock(next);
+    setAutoLockEnabled(uid, next);
+    toast.success(next ? "Kunci otomatis aktif" : "Kunci otomatis dimatikan");
   };
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
@@ -423,6 +448,14 @@ function Index() {
               </p>
             </div>
             <button
+              onClick={toggleAutoLock}
+              className={`inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent ${autoLock ? "bg-accent" : ""}`}
+              title="Kunci otomatis saat keluar aplikasi"
+              aria-pressed={autoLock}
+            >
+              {autoLock ? "🔒 Kunci: ON" : "🔓 Kunci: OFF"}
+            </button>
+            <button
               onClick={signOut}
               className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
             >
@@ -572,6 +605,14 @@ function Index() {
                 title="Keluar"
               >
                 Keluar
+              </button>
+              <button
+                onClick={toggleAutoLock}
+                className={`inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent ${autoLock ? "bg-accent" : ""}`}
+                title="Kunci otomatis saat keluar aplikasi"
+                aria-pressed={autoLock}
+              >
+                {autoLock ? "🔒 ON" : "🔓 OFF"}
               </button>
             </div>
           </div>
