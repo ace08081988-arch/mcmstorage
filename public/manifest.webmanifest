@@ -1,0 +1,19 @@
+{
+  "name": "MCM Storage",
+  "short_name": "MCM Storage",
+  "description": "Kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0a1a12",
+  "theme_color": "#0a7a4a",
+  "icons": [
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}
