@@ -815,6 +815,57 @@ function Index() {
                         {rupiah(p.harga)}
                       </span>
                     </label>
+                    <div className="flex gap-2">
+                      <select
+                        value={p.satuan ?? "pcs"}
+                        onChange={(e) => {
+                          const next = e.target.value as Satuan;
+                          const b = satuanBounds(next);
+                          const cur = p.jumlah ?? 1;
+                          const clamped = Math.min(b.max, Math.max(b.min, cur));
+                          update(p.id, { satuan: next, jumlah: clamped });
+                        }}
+                        className="rounded-md border bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        aria-label="Satuan"
+                      >
+                        {SATUAN_LIST.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                      {(() => {
+                        const s = p.satuan ?? "pcs";
+                        const b = satuanBounds(s);
+                        return (
+                          <label className="flex w-full items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm">
+                            <span className="text-muted-foreground">Jumlah</span>
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              min={b.min}
+                              max={b.max}
+                              step={b.step}
+                              value={p.jumlah ?? b.min}
+                              onChange={(e) => {
+                                const raw = Number(e.target.value);
+                                if (!Number.isFinite(raw)) return;
+                                const clamped = Math.min(b.max, Math.max(b.min, raw));
+                                update(p.id, { jumlah: clamped });
+                              }}
+                              className="w-full bg-transparent tabular-nums outline-none"
+                              placeholder="Jumlah"
+                            />
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                              {formatJumlah(p.jumlah ?? b.min, s)}
+                            </span>
+                          </label>
+                        );
+                      })()}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Gram: 0.01 – 5000 · Kg: 0.001 – 5 · lainnya pakai bilangan bulat.
+                    </p>
                     <div
                       className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-[11px] transition-colors ${
                         flashId === p.id
