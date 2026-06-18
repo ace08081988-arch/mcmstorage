@@ -317,6 +317,10 @@ function Index() {
                         inputMode="numeric"
                         min={0}
                         value={p.harga}
+                        onFocus={() => setFlashId(p.id)}
+                        onBlur={() =>
+                          setFlashId((cur) => (cur === p.id ? null : cur))
+                        }
                         onChange={(e) =>
                           {
                             update(p.id, { harga: Math.max(0, Number(e.target.value) || 0) });
