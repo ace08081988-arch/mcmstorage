@@ -110,6 +110,7 @@ function Index() {
   const [filter, setFilter] = useState<"semua" | Status>("semua");
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [openId, setOpenId] = useState<number | null>(null);
+  const [flashId, setFlashId] = useState<number | null>(null);
 
   useEffect(() => {
     try {
@@ -317,7 +318,13 @@ function Index() {
                         min={0}
                         value={p.harga}
                         onChange={(e) =>
-                          update(p.id, { harga: Math.max(0, Number(e.target.value) || 0) })
+                          {
+                            update(p.id, { harga: Math.max(0, Number(e.target.value) || 0) });
+                            setFlashId(p.id);
+                            window.setTimeout(() => {
+                              setFlashId((cur) => (cur === p.id ? null : cur));
+                            }, 900);
+                          }
                         }
                         className="w-full bg-transparent tabular-nums outline-none"
                         placeholder="Harga"
@@ -326,6 +333,26 @@ function Index() {
                         {rupiah(p.harga)}
                       </span>
                     </label>
+                    <div
+                      className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-[11px] transition-colors ${
+                        flashId === p.id
+                          ? "border-[#25D366] bg-[#25D366]/10 text-[#128C7E]"
+                          : "bg-background text-muted-foreground"
+                      }`}
+                      aria-live="polite"
+                    >
+                      <span className="inline-flex items-center gap-1.5">
+                        <span
+                          className={`inline-block h-1.5 w-1.5 rounded-full ${
+                            flashId === p.id ? "bg-[#25D366] animate-pulse" : "bg-[#25D366]/60"
+                          }`}
+                        />
+                        {flashId === p.id
+                          ? `Tautan WA diperbarui · ${rupiah(p.harga)}`
+                          : `Tautan WA sinkron · ${rupiah(p.harga)}`}
+                      </span>
+                      <span className="tabular-nums">live</span>
+                    </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <input
                         value={p.keterangan}
