@@ -1086,8 +1086,38 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
             <li key={s.id} className="flex items-start justify-between gap-2 rounded-lg border bg-card p-3">
               <div className="min-w-0">
                 <div className="truncate text-sm font-semibold">{s.name}</div>
-                {s.contact && <div className="text-[11px] text-muted-foreground">📞 {s.contact}</div>}
-                {s.notes && <div className="text-[11px] text-muted-foreground">{s.notes}</div>}
+                {s.contact && (
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span className="text-[11px] text-muted-foreground">📞 {s.contact}</span>
+                    {(() => {
+                      const digits = s.contact.replace(/\D/g, "");
+                      const wa = digits.startsWith("0") ? "62" + digits.slice(1) : digits;
+                      return (
+                        <>
+                          <a
+                            href={`tel:${s.contact}`}
+                            className="rounded border border-sky-500 px-1.5 py-0.5 text-[10px] font-semibold text-sky-600 hover:bg-sky-500/10 dark:text-sky-400"
+                            aria-label={`Panggil ${s.name}`}
+                          >
+                            📞 Panggil
+                          </a>
+                          {wa && (
+                            <a
+                              href={`https://wa.me/${wa}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="rounded border border-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+                              aria-label={`Chat WhatsApp ${s.name}`}
+                            >
+                              💬 Chat
+                            </a>
+                          )}
+                        </>
+                      );
+                    })()}
+                  </div>
+                )}
+                {s.notes && <div className="mt-1 text-[11px] text-muted-foreground">{s.notes}</div>}
               </div>
               <div className="flex shrink-0 gap-1">
                 <button
