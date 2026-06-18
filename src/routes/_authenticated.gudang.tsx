@@ -1104,7 +1104,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
 }
 
 /* ----------------- BELI ----------------- */
-function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; items: WItem[]; uid: string | null; onChanged: () => void }) {
+function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: { suppliers: Supplier[]; items: WItem[]; uid: string | null; onChanged: () => void; defaultPayment?: "kas" | "hutang" }) {
   const [supplierId, setSupplierId] = useState("");
   const [mode, setMode] = useState<"existing" | "new">("new");
   const [itemId, setItemId] = useState("");
