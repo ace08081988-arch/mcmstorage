@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AppearanceSettings } from "@/components/appearance-settings";
 import { ProductEditDrawer } from "@/components/ProductEditDrawer";
+import { useConfirm } from "@/hooks/use-confirm";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -133,6 +134,7 @@ async function compressImage(file: File, maxSize = 1280, quality = 0.75): Promis
 
 function Index() {
   const navigate = useNavigate();
+  const { confirm, dialog: confirmDialog } = useConfirm();
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
@@ -227,9 +229,19 @@ function Index() {
       </DropdownMenu>
     );
   };
-  const resetAllData = () => {
-    if (!confirm("Hapus SEMUA kategori dan produk milik akun ini? Tindakan ini tidak bisa dibatalkan.")) return;
-    if (!confirm("Konfirmasi sekali lagi: yakin reset ke nol?")) return;
+  const resetAllData = async () => {
+    if (!(await confirm({
+      title: "Reset semua data?",
+      description: "Semua kategori dan produk milik akun ini akan dihapus permanen.",
+      confirmText: "Hapus semua",
+      destructive: true,
+    }))) return;
+    if (!(await confirm({
+      title: "Yakin reset ke nol?",
+      description: "Konfirmasi sekali lagi sebelum melanjutkan.",
+      confirmText: "Ya, reset",
+      destructive: true,
+    }))) return;
     setItems([]);
     setCategories([]);
     setActiveCat(null);
@@ -379,10 +391,15 @@ function Index() {
       ),
     );
 
-  const reset = () => {
+  const reset = async () => {
     if (!activeCat) return;
-    if (confirm(`Hapus semua pesanan di kategori "${activeCat}"?`))
-      setItems((arr) => arr.filter((i) => i.kategori !== activeCat));
+    const ok = await confirm({
+      title: "Hapus semua pesanan?",
+      description: `Semua pesanan di kategori "${activeCat}" akan dihapus.`,
+      confirmText: "Hapus",
+      destructive: true,
+    });
+    if (ok) setItems((arr) => arr.filter((i) => i.kategori !== activeCat));
   };
 
   const addCategory = (name: string) => {
@@ -398,12 +415,18 @@ function Index() {
     toast.success(`Kategori "${v}" dibuat`);
   };
 
-  const deleteCategory = (name: string) => {
+  const deleteCategory = async (name: string) => {
     if (categories.length <= 1) {
       toast.error("Tidak bisa menghapus kategori terakhir. Buat kategori lain dulu.");
       return;
     }
-    if (!confirm(`Hapus kategori "${name}" beserta semua pesanannya?`)) return;
+    const ok = await confirm({
+      title: `Hapus kategori "${name}"?`,
+      description: "Kategori beserta seluruh pesanannya akan dihapus.",
+      confirmText: "Hapus",
+      destructive: true,
+    });
+    if (!ok) return;
     setCategories((c) => c.filter((x) => x !== name));
     setItems((arr) => arr.filter((i) => i.kategori !== name));
     if (activeCat === name) setActiveCat(null);
@@ -427,9 +450,13 @@ function Index() {
     setOpenId(nextId);
   };
 
-  const resetStatus = () => {
-    if (confirm("Tandai semua pesanan sebagai Belum Dikirim?"))
-      setItems((arr) => arr.map((i) => ({ ...i, status: "Belum Dikirim" })));
+  const resetStatus = async () => {
+    const ok = await confirm({
+      title: "Reset status pengiriman?",
+      description: "Semua pesanan akan ditandai sebagai Belum Dikirim.",
+      confirmText: "Tandai ulang",
+    });
+    if (ok) setItems((arr) => arr.map((i) => ({ ...i, status: "Belum Dikirim" })));
   };
 
   const filtered = scopedItems.filter((i) => filter === "semua" || i.status === filter);
@@ -478,10 +505,16 @@ function Index() {
     });
   };
 
-  const removeItem = (id: number) => {
+  const removeItem = async (id: number) => {
     const snapshot = items;
     const target = items.find((i) => i.id === id);
-    if (!confirm(`Hapus pesanan "${target?.nama ?? ""}" dari penyimpanan?`)) return;
+    const ok = await confirm({
+      title: "Hapus pesanan?",
+      description: `Pesanan "${target?.nama ?? ""}" akan dihapus dari penyimpanan.`,
+      confirmText: "Hapus",
+      destructive: true,
+    });
+    if (!ok) return;
     setItems((arr) => arr.filter((i) => i.id !== id));
     toast.success(`Pesanan dihapus`, {
       action: {
@@ -635,6 +668,7 @@ function Index() {
           </a>
         </main>
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
+        {confirmDialog}
       </div>
     );
   }
@@ -1339,6 +1373,7 @@ function Index() {
         markSent={markSent}
         buildPesan={buildPesan}
       />
+      {confirmDialog}
     </div>
   );
 }
