@@ -76,25 +76,28 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           )
         }
 
-        // Verify the caller is authorized with the service role key.
-        // In the TanStack stack, the pg_cron job sends the service role key as a Bearer token.
+        // Verify the caller is authorized. The pg_cron job sends a dedicated
+        // cron_secret (stored in vault) as a Bearer token — never the Supabase
+        // service role key, which would otherwise be exposed in HTTP headers
+        // and server access logs.
         const authHeader = request.headers.get('Authorization')
         if (!authHeader?.startsWith('Bearer ')) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
-
         const token = authHeader.slice('Bearer '.length).trim()
-        if (token !== supabaseServiceKey) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 })
-        }
 
         const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
 
-        // 1. Check rate-limit cooldown and read queue config
+        // 1. Check rate-limit cooldown and read queue config (plus cron_secret for auth)
         const { data: state } = await supabase
           .from('email_send_state')
-          .select('retry_after_until, batch_size, send_delay_ms, auth_email_ttl_minutes, transactional_email_ttl_minutes')
+          .select('retry_after_until, batch_size, send_delay_ms, auth_email_ttl_minutes, transactional_email_ttl_minutes, cron_secret')
           .single()
+
+        const expected = state?.cron_secret
+        if (!expected || token.length !== expected.length || token !== expected) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 })
+        }
 
         if (state?.retry_after_until && new Date(state.retry_after_until) > new Date()) {
           return Response.json({ skipped: true, reason: 'rate_limited' })
