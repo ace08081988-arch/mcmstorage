@@ -257,7 +257,12 @@ function Index() {
   };
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
-  const [filter, setFilter] = useState<"semua" | Status>("semua");
+  const [filter, setFilter] = useState<"semua" | Status>(() => {
+    if (typeof window === "undefined") return "semua";
+    const v = window.localStorage.getItem("mcm_filter");
+    if (v === "Belum Dikirim" || v === "Sudah Dikirim" || v === "semua") return v;
+    return "semua";
+  });
   const [openId, setOpenId] = useState<number | null>(null);
   const [editId, setEditId] = useState<number | null>(null);
   const [flashId, setFlashId] = useState<number | null>(null);
@@ -265,7 +270,10 @@ function Index() {
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
   const [categories, setCategories] = useState<string[]>([]);
-  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [activeCat, setActiveCat] = useState<string | null>(() => {
+    if (typeof window === "undefined") return null;
+    return window.localStorage.getItem("mcm_active_cat");
+  });
   const [newCatName, setNewCatName] = useState("");
   const [railOpen, setRailOpen] = useState<boolean>(() => {
     if (typeof window === "undefined") return true;
@@ -281,6 +289,23 @@ function Index() {
       /* ignore quota errors */
     }
   }, [railOpen]);
+
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("mcm_filter", filter);
+    } catch {
+      /* ignore */
+    }
+  }, [filter]);
+
+  useEffect(() => {
+    try {
+      if (activeCat) window.localStorage.setItem("mcm_active_cat", activeCat);
+      else window.localStorage.removeItem("mcm_active_cat");
+    } catch {
+      /* ignore */
+    }
+  }, [activeCat]);
 
   useEffect(() => {
     try {
