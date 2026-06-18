@@ -187,7 +187,16 @@ function Index() {
         .eq("user_id", uid)
         .maybeSingle();
       if (error) {
-        toast.error("Gagal memuat data: " + friendlyError(error));
+        toast.error("Gagal memuat data: " + friendlyError(error), {
+          action: {
+            label: "Lihat detail",
+            onClick: () =>
+              navigate({
+                to: "/error",
+                search: { kind: "data", title: "Gagal memuat data", message: (error as any).message, code: (error as any).code, from: "/" },
+              }),
+          },
+        });
       } else {
         const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
         const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
