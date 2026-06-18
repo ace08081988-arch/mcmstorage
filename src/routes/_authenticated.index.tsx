@@ -5,6 +5,20 @@ import { friendlyError } from "@/lib/friendly-error";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { isAutoLockEnabled, setAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
+import {
+  getLockConfig,
+  requestLockNow,
+  APP_LOCK_EVENT,
+  type LockConfig,
+} from "@/lib/app-lock";
+import { AppLockSetup } from "@/components/AppLockSetup";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { AppearanceSettings } from "@/components/appearance-settings";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -124,20 +138,32 @@ function Index() {
   };
   const [uid, setUid] = useState<string | null>(null);
   const [autoLock, setAutoLock] = useState(false);
+  const [lockCfg, setLockCfg] = useState<LockConfig | null>(null);
+  const [setupOpen, setSetupOpen] = useState(false);
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => {
       const id = data.user?.id ?? null;
       setUid(id);
-      if (id) setAutoLock(isAutoLockEnabled(id));
+      if (id) {
+        setAutoLock(isAutoLockEnabled(id));
+        setLockCfg(getLockConfig(id));
+      }
     });
     const sync = () => {
       supabase.auth.getUser().then(({ data }) => {
         const id = data.user?.id ?? null;
-        if (id) setAutoLock(isAutoLockEnabled(id));
+        if (id) {
+          setAutoLock(isAutoLockEnabled(id));
+          setLockCfg(getLockConfig(id));
+        }
       });
     };
     window.addEventListener(AUTO_LOCK_EVENT, sync);
-    return () => window.removeEventListener(AUTO_LOCK_EVENT, sync);
+    window.addEventListener(APP_LOCK_EVENT, sync);
+    return () => {
+      window.removeEventListener(AUTO_LOCK_EVENT, sync);
+      window.removeEventListener(APP_LOCK_EVENT, sync);
+    };
   }, []);
   const toggleAutoLock = () => {
     if (!uid) return;
@@ -145,6 +171,54 @@ function Index() {
     setAutoLock(next);
     setAutoLockEnabled(uid, next);
     toast.success(next ? "Kunci otomatis aktif" : "Kunci otomatis dimatikan");
+  };
+  const lockMenu = (compact: boolean) => {
+    const label = lockCfg
+      ? compact
+        ? "🔒"
+        : `🔒 ${lockCfg.method === "pin" ? "PIN" : "Pola"}`
+      : compact
+      ? "🔓"
+      : "🔓 Atur Kunci";
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <button
+            className={`inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent ${lockCfg ? "bg-accent" : ""}`}
+            title="Kunci aplikasi"
+            aria-label="Kunci aplikasi"
+          >
+            {label}
+          </button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-56">
+          {lockCfg ? (
+            <>
+              <DropdownMenuItem onClick={() => requestLockNow()}>
+                🔒 Kunci Sekarang
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setSetupOpen(true)}>
+                ⚙️ Ubah Metode / Opsi
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={toggleAutoLock}>
+                {autoLock ? "✓ " : ""}Hapus sesi saat tutup tab
+              </DropdownMenuItem>
+            </>
+          ) : (
+            <>
+              <DropdownMenuItem onClick={() => setSetupOpen(true)}>
+                🔧 Atur Kunci (PIN/Pola/Sidik Jari)
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={toggleAutoLock}>
+                {autoLock ? "✓ " : ""}Hapus sesi saat tutup tab
+              </DropdownMenuItem>
+            </>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
   const resetAllData = () => {
     if (!confirm("Hapus SEMUA kategori dan produk milik akun ini? Tindakan ini tidak bisa dibatalkan.")) return;
@@ -456,14 +530,7 @@ function Index() {
                 Buat atau pilih kategori dulu sebelum masuk ke penyimpanan.
               </p>
             </div>
-            <button
-              onClick={toggleAutoLock}
-              className={`inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent ${autoLock ? "bg-accent" : ""}`}
-              title="Kunci otomatis saat keluar aplikasi"
-              aria-pressed={autoLock}
-            >
-              {autoLock ? "🔒 Kunci: ON" : "🔓 Kunci: OFF"}
-            </button>
+            {lockMenu(false)}
             <AppearanceSettings />
             <button
               onClick={signOut}
@@ -559,6 +626,7 @@ function Index() {
             📦 Buka Gudang & Supplier
           </a>
         </main>
+        {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
       </div>
     );
   }
@@ -625,14 +693,7 @@ function Index() {
               >
                 Keluar
               </button>
-              <button
-                onClick={toggleAutoLock}
-                className={`inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent ${autoLock ? "bg-accent" : ""}`}
-                title="Kunci otomatis saat keluar aplikasi"
-                aria-pressed={autoLock}
-              >
-                {autoLock ? "🔒 ON" : "🔓 OFF"}
-              </button>
+              {lockMenu(true)}
             </div>
           </div>
 
@@ -1209,6 +1270,7 @@ function Index() {
           </div>
         </div>
       )}
+      {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
     </div>
   );
 }
