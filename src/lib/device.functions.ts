@@ -122,9 +122,9 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
 
     let emailSent = false;
     let emailError: string | null = null;
+    const messageId = randomUUID();
+    const idempotencyKey = `device-otp-${challenge.id}`;
     try {
-      const messageId = randomUUID();
-      const idempotencyKey = `device-otp-${challenge.id}`;
       const { error: rpcErr } = await supabaseAdmin.rpc("enqueue_email" as never, {
         queue_name: "transactional_emails",
         payload: {
@@ -156,6 +156,7 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
       trusted: false as const,
       challengeId: challenge.id,
       emailSent,
+      messageId,
       maskedEmail: maskEmail(email),
     };
   });
@@ -233,6 +234,29 @@ function maskEmail(email: string) {
   const visible = name.slice(0, 2);
   return `${visible}${"*".repeat(Math.max(1, name.length - 2))}@${domain}`;
 }
+
+export const checkDeviceOtpEmailStatus = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { messageId: string }) => {
+    if (!data?.messageId || typeof data.messageId !== "string") {
+      throw new Error("messageId tidak valid");
+    }
+    return { messageId: data.messageId };
+  })
+  .handler(async ({ data }) => {
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: rows } = await supabaseAdmin
+      .from("email_send_log")
+      .select("status, error_message, created_at")
+      .eq("message_id", data.messageId)
+      .order("created_at", { ascending: false })
+      .limit(1);
+    const row = rows?.[0];
+    return {
+      status: (row?.status ?? "pending") as string,
+      error: row?.error_message ?? null,
+    };
+  });
 
 function renderOtpEmail(code: string, ip: string, ua: string) {
   return `<!doctype html>
