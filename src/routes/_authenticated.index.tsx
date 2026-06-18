@@ -448,6 +448,14 @@ function Index() {
               </p>
             </div>
             <button
+              onClick={toggleAutoLock}
+              className={`inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent ${autoLock ? "bg-accent" : ""}`}
+              title="Kunci otomatis saat keluar aplikasi"
+              aria-pressed={autoLock}
+            >
+              {autoLock ? "🔒 Kunci: ON" : "🔓 Kunci: OFF"}
+            </button>
+            <button
               onClick={signOut}
               className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
             >
