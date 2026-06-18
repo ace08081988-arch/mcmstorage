@@ -668,6 +668,7 @@ function Index() {
           </a>
         </main>
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
+        {confirmDialog}
       </div>
     );
   }
