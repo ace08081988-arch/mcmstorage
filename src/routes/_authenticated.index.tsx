@@ -1209,6 +1209,15 @@ function Index() {
                         </a>
                       )}
                       <button
+                        onClick={() => {
+                          setOpenId(null);
+                          toast.success("Tersimpan");
+                        }}
+                        className="inline-flex items-center rounded-md border border-primary bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
+                      >
+                        💾 Simpan
+                      </button>
+                      <button
                         onClick={() => removeItem(p.id)}
                         className="ml-auto inline-flex items-center rounded-md border border-destructive/40 px-2.5 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/10"
                       >
