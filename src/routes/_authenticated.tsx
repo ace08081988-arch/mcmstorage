@@ -10,6 +10,7 @@ import {
   APP_LOCK_EVENT,
   APP_LOCK_REQUEST,
   getLockConfig,
+  hydrateLockConfig,
   isLocked,
   setLocked,
 } from "@/lib/app-lock";
@@ -22,6 +23,12 @@ function AuthLock() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
   }, []);
+  // Hydrate persisted lock config from Capacitor Preferences into localStorage
+  // so settings survive app kill on native devices.
+  useEffect(() => {
+    if (!uid) return;
+    void hydrateLockConfig(uid);
+  }, [uid]);
   // Track lock config + locked state
   useEffect(() => {
     if (!uid) return;
