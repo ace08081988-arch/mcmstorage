@@ -162,6 +162,8 @@ function GudangPage() {
   >("stok");
   const [uid, setUid] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [beliDefaultPayment, setBeliDefaultPayment] = useState<"kas" | "hutang">("kas");
+  const [beliPresetKey, setBeliPresetKey] = useState(0);
   const [items, setItems] = useState<WItem[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -257,7 +259,7 @@ function GudangPage() {
           <SupplierTab suppliers={suppliers} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "beli" && (
-          <BeliTab suppliers={suppliers} items={items} uid={uid} onChanged={reloadAll} />
+          <BeliTab key={beliPresetKey} suppliers={suppliers} items={items} uid={uid} onChanged={reloadAll} defaultPayment={beliDefaultPayment} />
         )}
         {tab === "jual" && (
           <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
@@ -273,7 +275,11 @@ function GudangPage() {
             itemMap={itemMap}
             uid={uid}
             onChanged={reloadAll}
-            onAddDebt={() => setTab("beli")}
+            onAddDebt={() => {
+              setBeliDefaultPayment("hutang");
+              setBeliPresetKey((k) => k + 1);
+              setTab("beli");
+            }}
             onLocalPayment={(p) => setPayments((prev) => [p, ...prev])}
             onLocalRemovePayment={(id) => setPayments((prev) => prev.filter((x) => x.id !== id))}
           />
@@ -1098,7 +1104,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
 }
 
 /* ----------------- BELI ----------------- */
-function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; items: WItem[]; uid: string | null; onChanged: () => void }) {
+function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: { suppliers: Supplier[]; items: WItem[]; uid: string | null; onChanged: () => void; defaultPayment?: "kas" | "hutang" }) {
   const [supplierId, setSupplierId] = useState("");
   const [mode, setMode] = useState<"existing" | "new">("new");
   const [itemId, setItemId] = useState("");
@@ -1113,7 +1119,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
   const [pricePerPackage, setPricePerPackage] = useState("");
   const [priceMode, setPriceMode] = useState<"package" | "base">("package");
   const [pricePerBase, setPricePerBase] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"kas" | "hutang">("kas");
+  const [paymentMethod, setPaymentMethod] = useState<"kas" | "hutang">(defaultPayment);
 
   useEffect(() => {
     if (mode === "existing" && !itemId && items[0]) setItemId(items[0].id);
