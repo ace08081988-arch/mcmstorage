@@ -521,7 +521,49 @@ function Index() {
             Tidak ada pesanan untuk filter ini.
           </div>
         )}
+        {selectMode && <div className="h-20" />}
       </main>
+
+      {selectMode && (
+        <div className="sticky bottom-0 z-10 border-t bg-card/95 backdrop-blur">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-3 py-2 sm:px-6">
+            <button
+              onClick={selectAllVisible}
+              className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+            >
+              {filtered.every((i) => selected.has(i.id)) && filtered.length > 0
+                ? "Batal semua"
+                : "Pilih semua"}
+            </button>
+            <span className="text-[11px] text-muted-foreground">
+              {selected.size} dipilih · {rupiah(bulkTotal)}
+            </span>
+            <div className="ml-auto flex gap-1.5">
+              <button
+                onClick={bulkMarkSent}
+                disabled={selected.size === 0}
+                className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent disabled:opacity-40"
+              >
+                Tandai terkirim
+              </button>
+              <a
+                href={selected.size === 0 ? undefined : bulkWaUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-disabled={selected.size === 0}
+                onClick={(e) => {
+                  if (selected.size === 0) e.preventDefault();
+                }}
+                className={`inline-flex items-center rounded-md bg-[#25D366] px-3 py-1 text-[11px] font-semibold text-white ${
+                  selected.size === 0 ? "pointer-events-none opacity-40" : "hover:opacity-90"
+                }`}
+              >
+                KIRIM WA MASSAL ({selected.size})
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
