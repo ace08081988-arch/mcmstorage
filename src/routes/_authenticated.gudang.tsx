@@ -678,13 +678,15 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
 }
 
 /* ----------------- JUAL ----------------- */
-function JualTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null; onChanged: () => void }) {
+function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; customers: Customer[]; uid: string | null; onChanged: () => void }) {
   const [itemId, setItemId] = useState("");
   const [sellMode, setSellMode] = useState<"base" | "package">("base");
   const [qty, setQty] = useState("");
   const [pricePerBase, setPricePerBase] = useState("");
   const [pricePerPackage, setPricePerPackage] = useState("");
   const [note, setNote] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"kas" | "hutang">("kas");
 
   useEffect(() => {
     if (!itemId && items[0]) setItemId(items[0].id);
@@ -710,6 +712,10 @@ function JualTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
     if (!uid || !item) return;
     if (qtyBase <= 0) { toast.error("Jumlah harus > 0"); return; }
     if (qtyBase > item.stock_base) { toast.error(`Stok kurang. Tersedia ${fmtBase(item.stock_base, item.base_unit)}`); return; }
+    if (paymentMethod === "hutang" && !customerId) {
+      toast.error("Penjualan hutang wajib pilih pelanggan");
+      return;
+    }
     const { error } = await supabase.from("sales").insert({
       user_id: uid,
       item_id: item.id,
@@ -718,9 +724,11 @@ function JualTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
       total_revenue: total,
       cost_at_sale: 0, // recomputed in trigger
       note: note.trim() || null,
+      customer_id: customerId || null,
+      payment_method: paymentMethod,
     });
     if (error) { toast.error(error.message); return; }
-    toast.success("Penjualan dicatat, stok berkurang");
+    toast.success(`Penjualan dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok berkurang`);
     setQty(""); setPricePerBase(""); setPricePerPackage(""); setNote("");
     onChanged();
   }
@@ -779,9 +787,25 @@ function JualTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
 
           <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={note} onChange={(e) => setNote(e.target.value)} />
 
+          <label className="block">
+            <span className="text-[11px] text-muted-foreground">Pelanggan {paymentMethod === "hutang" && <span className="text-destructive">*</span>}</span>
+            <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+              <option value="">— Tanpa pelanggan —</option>
+              {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            </select>
+          </label>
+
+          <div>
+            <div className="text-[11px] text-muted-foreground mb-1">Cara bayar</div>
+            <div className="flex gap-1 text-xs">
+              <button type="button" onClick={() => setPaymentMethod("kas")} className={`flex-1 rounded border px-2 py-1.5 ${paymentMethod === "kas" ? "bg-primary text-primary-foreground border-primary" : ""}`}>💵 Kas (lunas)</button>
+              <button type="button" onClick={() => setPaymentMethod("hutang")} className={`flex-1 rounded border px-2 py-1.5 ${paymentMethod === "hutang" ? "bg-amber-500 text-white border-amber-500" : ""}`}>📝 Hutang pelanggan</button>
+            </div>
+          </div>
+
           <div className="rounded-md bg-muted/50 p-2 text-[11px] space-y-0.5">
             <div>Akan kurangi stok: <b>{fmtBase(qtyBase, item.base_unit)}</b> (sisa {fmtBase(Math.max(0, item.stock_base - qtyBase), item.base_unit)})</div>
-            <div>Total pendapatan: <b>{rupiah(total)}</b></div>
+            <div>Total pendapatan: <b>{rupiah(total)}</b> ({paymentMethod === "hutang" ? "piutang ke pelanggan" : "lunas tunai"})</div>
             <div className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}>
               Estimasi laba: <b>{rupiah(profit)}</b>
             </div>
