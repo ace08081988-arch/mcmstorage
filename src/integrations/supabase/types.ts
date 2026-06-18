@@ -347,6 +347,7 @@ export type Database = {
         Row: {
           contact: string | null
           created_at: string
+          email: string | null
           id: string
           name: string
           notes: string | null
@@ -356,6 +357,7 @@ export type Database = {
         Insert: {
           contact?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name: string
           notes?: string | null
@@ -365,6 +367,7 @@ export type Database = {
         Update: {
           contact?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           name?: string
           notes?: string | null
