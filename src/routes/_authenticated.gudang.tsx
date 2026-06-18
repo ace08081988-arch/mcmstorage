@@ -64,7 +64,7 @@ function defaultBase(pt: PackageType): "g" | "pcs" {
 }
 
 function GudangPage() {
-  const [tab, setTab] = useState<"stok" | "supplier" | "beli" | "jual" | "riwayat">("stok");
+  const [tab, setTab] = useState<"stok" | "supplier" | "beli" | "jual" | "hutang" | "riwayat">("stok");
   const [uid, setUid] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [items, setItems] = useState<WItem[]>([]);
