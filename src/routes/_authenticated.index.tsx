@@ -22,6 +22,7 @@ import {
 import { AppearanceSettings } from "@/components/appearance-settings";
 import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 import { confirm } from "@/lib/confirm";
+import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -806,6 +807,7 @@ function Index() {
       </header>
 
       <main className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
+        <SecurityScanReminder />
         {(() => {
           const total = scopedItems.length;
           const terkirim = scopedItems.filter((i) => i.status === "Sudah Dikirim");
