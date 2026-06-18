@@ -140,5 +140,17 @@
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
+    font-family: var(--app-font-family, "Inter", system-ui, sans-serif);
+    font-size: var(--app-font-size, 16px);
   }
 }
+
+body[data-font="sans"]    { --app-font-family: "Inter", system-ui, sans-serif; }
+body[data-font="serif"]   { --app-font-family: "Merriweather", Georgia, serif; }
+body[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, monospace; }
+body[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-serif; }
+
+body[data-font-size="sm"] { --app-font-size: 14px; }
+body[data-font-size="md"] { --app-font-size: 16px; }
+body[data-font-size="lg"] { --app-font-size: 18px; }
+body[data-font-size="xl"] { --app-font-size: 20px; }

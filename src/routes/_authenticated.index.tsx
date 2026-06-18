@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { isAutoLockEnabled, setAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
+import { AppearanceSettings } from "@/components/appearance-settings";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -158,7 +159,6 @@ function Index() {
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
-  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [openId, setOpenId] = useState<number | null>(null);
   const [flashId, setFlashId] = useState<number | null>(null);
   const [selectMode, setSelectMode] = useState(false);
@@ -169,12 +169,6 @@ function Index() {
   const [newCatName, setNewCatName] = useState("");
 
   useEffect(() => {
-    try {
-      const t = localStorage.getItem(THEME_KEY) as "light" | "dark" | null;
-      const initial = t ?? "dark";
-      setTheme(initial);
-      document.documentElement.classList.toggle("dark", initial === "dark");
-    } catch {}
     try {
       const v = localStorage.getItem(VIEW_KEY) as "list" | "grid" | null;
       if (v) setViewMode(v);
@@ -224,12 +218,6 @@ function Index() {
       clearTimeout(t);
     };
   }, [items, categories, hydrated]);
-
-  useEffect(() => {
-    if (!hydrated) return;
-    document.documentElement.classList.toggle("dark", theme === "dark");
-    localStorage.setItem(THEME_KEY, theme);
-  }, [theme, hydrated]);
 
   useEffect(() => {
     if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
@@ -466,14 +454,7 @@ function Index() {
             >
               {autoLock ? "🔒 Kunci: ON" : "🔓 Kunci: OFF"}
             </button>
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
-              title="Ganti tema terang / gelap"
-              aria-label="Ganti tema"
-            >
-              {theme === "dark" ? "🌙 Gelap" : "☀️ Terang"}
-            </button>
+            <AppearanceSettings />
             <button
               onClick={signOut}
               className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
@@ -625,14 +606,7 @@ function Index() {
                   ▦
                 </button>
               </div>
-              <button
-                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md border hover:bg-accent"
-                aria-label="Ganti tema"
-                title={theme === "dark" ? "Mode terang" : "Mode gelap"}
-              >
-                {theme === "dark" ? "☀️" : "🌙"}
-              </button>
+              <AppearanceSettings triggerClassName="inline-flex h-8 w-8 items-center justify-center rounded-md border hover:bg-accent" />
               <button
                 onClick={signOut}
                 className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
