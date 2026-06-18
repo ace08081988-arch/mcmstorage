@@ -16,6 +16,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
+import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_authenticated.gudang.pesanan.$id.edit'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -52,6 +53,12 @@ const AuthenticatedGudangPesananIdRoute =
     path: '/pesanan/$id',
     getParentRoute: () => AuthenticatedGudangRoute,
   } as any)
+const AuthenticatedGudangPesananIdEditRoute =
+  AuthenticatedGudangPesananIdEditRouteImport.update({
+    id: '/edit',
+    path: '/edit',
+    getParentRoute: () => AuthenticatedGudangPesananIdRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
@@ -59,7 +66,8 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
-  '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRoute
+  '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
+  '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
@@ -67,7 +75,8 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
-  '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRoute
+  '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
+  '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -77,7 +86,8 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRoute
+  '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
+  '/_authenticated/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -88,6 +98,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/gudang'
     | '/gudang/pesanan/$id'
+    | '/gudang/pesanan/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/auth'
@@ -96,6 +107,7 @@ export interface FileRouteTypes {
     | '/gudang'
     | '/'
     | '/gudang/pesanan/$id'
+    | '/gudang/pesanan/$id/edit'
   id:
     | '__root__'
     | '/_authenticated'
@@ -105,6 +117,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gudang'
     | '/_authenticated/'
     | '/_authenticated/gudang/pesanan/$id'
+    | '/_authenticated/gudang/pesanan/$id/edit'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -165,15 +178,38 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGudangPesananIdRouteImport
       parentRoute: typeof AuthenticatedGudangRoute
     }
+    '/_authenticated/gudang/pesanan/$id/edit': {
+      id: '/_authenticated/gudang/pesanan/$id/edit'
+      path: '/edit'
+      fullPath: '/gudang/pesanan/$id/edit'
+      preLoaderRoute: typeof AuthenticatedGudangPesananIdEditRouteImport
+      parentRoute: typeof AuthenticatedGudangPesananIdRoute
+    }
   }
 }
 
+interface AuthenticatedGudangPesananIdRouteChildren {
+  AuthenticatedGudangPesananIdEditRoute: typeof AuthenticatedGudangPesananIdEditRoute
+}
+
+const AuthenticatedGudangPesananIdRouteChildren: AuthenticatedGudangPesananIdRouteChildren =
+  {
+    AuthenticatedGudangPesananIdEditRoute:
+      AuthenticatedGudangPesananIdEditRoute,
+  }
+
+const AuthenticatedGudangPesananIdRouteWithChildren =
+  AuthenticatedGudangPesananIdRoute._addFileChildren(
+    AuthenticatedGudangPesananIdRouteChildren,
+  )
+
 interface AuthenticatedGudangRouteChildren {
-  AuthenticatedGudangPesananIdRoute: typeof AuthenticatedGudangPesananIdRoute
+  AuthenticatedGudangPesananIdRoute: typeof AuthenticatedGudangPesananIdRouteWithChildren
 }
 
 const AuthenticatedGudangRouteChildren: AuthenticatedGudangRouteChildren = {
-  AuthenticatedGudangPesananIdRoute: AuthenticatedGudangPesananIdRoute,
+  AuthenticatedGudangPesananIdRoute:
+    AuthenticatedGudangPesananIdRouteWithChildren,
 }
 
 const AuthenticatedGudangRouteWithChildren =

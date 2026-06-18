@@ -111,6 +111,7 @@ function PesananDetailPage() {
         <div className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-3">
           <button onClick={() => navigate({ to: "/gudang" })} className="rounded-md border px-2 py-1 text-xs hover:bg-accent">← Kembali</button>
           <h1 className="text-base font-bold">📝 Detail Pesanan</h1>
+          <Link to="/gudang/pesanan/$id/edit" params={{ id }} className="ml-auto rounded-md border px-2 py-1 text-xs hover:bg-accent">✏️ Edit</Link>
         </div>
       </header>
 
