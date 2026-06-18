@@ -191,6 +191,140 @@ function GudangPage() {
   );
 }
 
+/* ----------------- SHARE DEBT (WA/Viber/Telegram/SMS) ----------------- */
+function ShareDebt({
+  supplier, debts, paidByPurchase, itemMap, total, paid, remaining,
+}: {
+  supplier: Supplier;
+  debts: Purchase[];
+  paidByPurchase: Record<string, number>;
+  itemMap: Record<string, WItem>;
+  total: number; paid: number; remaining: number;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const message = useMemo(() => {
+    const lines: string[] = [];
+    lines.push(`Halo ${supplier.name}, berikut rincian hutang kami:`);
+    lines.push("");
+    debts.forEach((d, i) => {
+      const it = itemMap[d.item_id];
+      const p = paidByPurchase[d.id] || 0;
+      const sisa = Math.max(0, Number(d.total_cost) - p);
+      const tgl = new Date(d.created_at).toLocaleDateString("id-ID");
+      lines.push(`${i + 1}. ${it?.name || "(barang)"} — ${tgl}`);
+      lines.push(`   Total ${rupiah(Number(d.total_cost))} · Bayar ${rupiah(p)} · Sisa ${rupiah(sisa)}`);
+    });
+    lines.push("");
+    lines.push(`TOTAL: ${rupiah(total)}`);
+    lines.push(`SUDAH DIBAYAR: ${rupiah(paid)}`);
+    lines.push(`SISA HUTANG: ${rupiah(remaining)}`);
+    lines.push("");
+    lines.push("Mohon konfirmasi. Terima kasih 🙏");
+    return lines.join("\n");
+  }, [supplier, debts, paidByPurchase, itemMap, total, paid, remaining]);
+
+  // Sanitize phone: digits only, drop leading 0 → +62 if Indonesian-ish
+  const phoneDigits = (supplier.contact || "").replace(/\D+/g, "");
+  const waPhone = phoneDigits.startsWith("0") ? `62${phoneDigits.slice(1)}` : phoneDigits;
+  const encoded = encodeURIComponent(message);
+
+  function openLink(url: string) {
+    window.open(url, "_blank", "noopener,noreferrer");
+  }
+  async function copyText() {
+    try {
+      await navigator.clipboard.writeText(message);
+      toast.success("Pesan disalin");
+    } catch {
+      toast.error("Gagal menyalin");
+    }
+  }
+
+  const links: Array<{ label: string; emoji: string; href: string; cls: string }> = [
+    {
+      label: "WhatsApp",
+      emoji: "💬",
+      href: waPhone ? `https://wa.me/${waPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`,
+      cls: "border-emerald-500 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400",
+    },
+    {
+      label: "WA Business",
+      emoji: "🏪",
+      href: waPhone
+        ? `whatsapp://send?phone=${waPhone}&text=${encoded}`
+        : `whatsapp://send?text=${encoded}`,
+      cls: "border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 dark:text-emerald-400",
+    },
+    {
+      label: "Viber",
+      emoji: "📞",
+      href: waPhone
+        ? `viber://chat?number=%2B${waPhone}&text=${encoded}`
+        : `viber://forward?text=${encoded}`,
+      cls: "border-purple-500 text-purple-600 hover:bg-purple-500/10 dark:text-purple-400",
+    },
+    {
+      label: "Telegram",
+      emoji: "✈️",
+      href: `https://t.me/share/url?url=${encodeURIComponent(" ")}&text=${encoded}`,
+      cls: "border-sky-500 text-sky-600 hover:bg-sky-500/10 dark:text-sky-400",
+    },
+    {
+      label: "SMS",
+      emoji: "✉️",
+      href: waPhone ? `sms:+${waPhone}?body=${encoded}` : `sms:?body=${encoded}`,
+      cls: "border-amber-500 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400",
+    },
+  ];
+
+  return (
+    <div className="rounded-md border border-dashed bg-muted/30 p-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[11px] text-muted-foreground">
+          {supplier.contact ? <>📞 {supplier.contact}</> : <>Tidak ada nomor kontak — pesan tetap bisa dikirim</>}
+        </div>
+        <button
+          type="button"
+          onClick={() => setOpen((v) => !v)}
+          className="rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground"
+        >
+          {open ? "Tutup" : "📤 Kirim tagihan"}
+        </button>
+      </div>
+
+      {open && (
+        <div className="mt-2 space-y-2">
+          <textarea
+            readOnly
+            value={message}
+            className="h-28 w-full resize-none rounded border bg-background p-2 text-[11px]"
+          />
+          <div className="flex flex-wrap gap-1.5">
+            {links.map((l) => (
+              <button
+                key={l.label}
+                type="button"
+                onClick={() => openLink(l.href)}
+                className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${l.cls}`}
+              >
+                {l.emoji} {l.label}
+              </button>
+            ))}
+            <button
+              type="button"
+              onClick={copyText}
+              className="rounded-md border px-2 py-1 text-[11px] font-semibold hover:bg-accent"
+            >
+              📋 Salin
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ----------------- STOK ----------------- */
 function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }) {
   async function remove(id: string, name: string) {
@@ -833,6 +967,17 @@ function HutangTab({
               <span className="text-muted-foreground"> / {rupiah(g.total)}</span>
             </div>
           </div>
+          {g.supplier && (
+            <ShareDebt
+              supplier={g.supplier}
+              debts={g.debts}
+              paidByPurchase={paidByPurchase}
+              itemMap={itemMap}
+              total={g.total}
+              paid={g.paid}
+              remaining={g.remaining}
+            />
+          )}
           <ul className="space-y-2">
             {g.debts.map((d) => {
               const it = itemMap[d.item_id];
