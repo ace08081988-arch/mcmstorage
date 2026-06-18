@@ -1,0 +1,13 @@
+# MCM Storage
+
+> Aplikasi pengelola pesanan harian dengan pengiriman cepat via WhatsApp, foto produk, dan tautan lokasi.
+
+MCM Storage membantu penjual mencatat pesanan, menandai status pengiriman, melampirkan foto & lokasi, lalu mengirim detail pesanan ke pelanggan melalui WhatsApp.
+
+## Pages
+
+- [Beranda](/): Daftar pesanan, status pengiriman, foto produk, dan kirim WhatsApp.
+
+## Optional
+
+- [Masuk](/auth): Halaman login & pendaftaran akun.

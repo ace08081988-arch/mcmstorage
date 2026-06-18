@@ -7,9 +7,14 @@ export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Masuk \u2014 MCM Storage" },
-      { name: "description", content: "Masuk ke MCM Storage dengan kode OTP via email." },
+      { title: "Masuk atau Daftar — MCM Storage" },
+      { name: "description", content: "Masuk ke akun MCM Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda." },
+      { property: "og:title", content: "Masuk atau Daftar — MCM Storage" },
+      { property: "og:description", content: "Masuk ke akun MCM Storage atau daftar akun baru dengan kode OTP yang dikirim langsung ke email Anda." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://mcmstorage.lovable.app/auth" },
     ],
+    links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/auth" }],
   }),
   component: AuthPage,
 });
@@ -99,7 +104,7 @@ function AuthPage() {
             alt="MCM Storage"
             className="mx-auto h-16 w-16 rounded-2xl"
           />
-          <h1 className="mt-3 text-lg font-semibold tracking-tight">MCM Storage</h1>
+          <h1 className="mt-3 text-lg font-semibold tracking-tight">Masuk ke MCM Storage</h1>
           <p className="text-xs text-muted-foreground">
             {step === "email"
               ? mode === "signup"
