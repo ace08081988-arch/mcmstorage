@@ -24,6 +24,8 @@ type Produk = {
   status: Status;
   keterangan: string;
   lokasi: string;
+  foto?: string;
+  galeri?: string[];
 };
 
 const HARGA: Record<Kategori, number> = { "1 gram": 50000, St: 75000, Spr: 100000 };
@@ -68,6 +70,39 @@ function buildPesan(p: Produk) {
   return `📦 [${TAG[p.kategori]}] *${p.nama}*\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
 }
 
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result as string);
+    reader.onerror = reject;
+    reader.readAsDataURL(file);
+  });
+}
+
+async function compressImage(file: File, maxSize = 1280, quality = 0.75): Promise<string> {
+  const dataUrl = await fileToDataUrl(file);
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxSize || height > maxSize) {
+        const ratio = Math.min(maxSize / width, maxSize / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(dataUrl);
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
+}
+
 function Index() {
   const [items, setItems] = useState<Produk[]>(() => buildInitial());
   const [hydrated, setHydrated] = useState(false);
@@ -93,6 +128,33 @@ function Index() {
 
   const update = (id: number, patch: Partial<Produk>) =>
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, ...patch } : i)));
+
+  const setFoto = async (id: number, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const dataUrl = await compressImage(files[0]);
+    update(id, { foto: dataUrl });
+  };
+
+  const addGaleri = async (id: number, files: FileList | null) => {
+    if (!files || files.length === 0) return;
+    const arr: string[] = [];
+    for (const f of Array.from(files)) arr.push(await compressImage(f));
+    setItems((items) =>
+      items.map((i) =>
+        i.id === id ? { ...i, galeri: [...(i.galeri ?? []), ...arr] } : i,
+      ),
+    );
+  };
+
+  const removeFoto = (id: number) => update(id, { foto: undefined });
+  const removeGaleri = (id: number, idx: number) =>
+    setItems((items) =>
+      items.map((i) =>
+        i.id === id
+          ? { ...i, galeri: (i.galeri ?? []).filter((_, n) => n !== idx) }
+          : i,
+      ),
+    );
 
   const reset = () => {
     if (confirm("Reset semua data ke kondisi awal?")) setItems(buildInitial());
@@ -222,6 +284,74 @@ function Index() {
                       className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
                     />
                   </label>
+                </div>
+
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground">Foto Langsung</div>
+                    <div className="mt-1 flex items-start gap-2">
+                      {p.foto ? (
+                        <div className="relative">
+                          <img
+                            src={p.foto}
+                            alt={`Foto ${p.nama}`}
+                            className="h-24 w-24 rounded-md border object-cover"
+                          />
+                          <button
+                            onClick={() => removeFoto(p.id)}
+                            className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-background text-xs shadow hover:bg-destructive hover:text-destructive-foreground"
+                            aria-label="Hapus foto"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ) : null}
+                      <label className="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-xs font-medium hover:bg-accent">
+                        📷 {p.foto ? "Ganti" : "Ambil Foto"}
+                        <input
+                          type="file"
+                          accept="image/*"
+                          capture="environment"
+                          className="hidden"
+                          onChange={(e) => setFoto(p.id, e.target.files)}
+                        />
+                      </label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <div className="text-xs font-medium text-muted-foreground">
+                      Foto Galeri {p.galeri?.length ? `(${p.galeri.length})` : ""}
+                    </div>
+                    <div className="mt-1 flex flex-wrap items-start gap-2">
+                      {(p.galeri ?? []).map((src, idx) => (
+                        <div key={idx} className="relative">
+                          <img
+                            src={src}
+                            alt={`Galeri ${idx + 1}`}
+                            className="h-20 w-20 rounded-md border object-cover"
+                          />
+                          <button
+                            onClick={() => removeGaleri(p.id, idx)}
+                            className="absolute -right-2 -top-2 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[10px] shadow hover:bg-destructive hover:text-destructive-foreground"
+                            aria-label="Hapus"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      <label className="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-xs font-medium hover:bg-accent">
+                        🖼️ Tambah
+                        <input
+                          type="file"
+                          accept="image/*"
+                          multiple
+                          className="hidden"
+                          onChange={(e) => addGaleri(p.id, e.target.files)}
+                        />
+                      </label>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="mt-3 flex flex-wrap items-center gap-2">
