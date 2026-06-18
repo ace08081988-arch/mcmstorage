@@ -9,10 +9,11 @@ export const Route = createFileRoute('/api/public/hooks/email-queue-monitor')({
         const apiKey = process.env.LOVABLE_API_KEY
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-        const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY
+        const monitorSecret = process.env.EMAIL_MONITOR_HOOK_SECRET
 
-        const auth = request.headers.get('apikey') ?? request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
-        if (!anonKey || !auth || auth !== anonKey) {
+        const auth = request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') ?? request.headers.get('apikey')
+        const expected = monitorSecret || apiKey
+        if (!expected || !auth || auth !== expected) {
           return new Response('Unauthorized', { status: 401 })
         }
         if (!apiKey || !supabaseUrl || !serviceKey) {
