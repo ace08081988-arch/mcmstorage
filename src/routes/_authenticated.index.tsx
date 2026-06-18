@@ -175,7 +175,7 @@ function Index() {
     setAutoLockEnabled(uid, next);
     toast.success(next ? "Kunci otomatis aktif" : "Kunci otomatis dimatikan");
   };
-  const lockMenu = (compact: boolean) => {
+  const lockMenu = (compact: boolean, triggerClassName?: string) => {
     const label = lockCfg
       ? compact
         ? "🔒"
@@ -187,7 +187,12 @@ function Index() {
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <button
-            className={`inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent ${lockCfg ? "bg-accent" : ""}`}
+            className={
+              triggerClassName ??
+              `inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent ${
+                lockCfg ? "bg-accent" : ""
+              }`
+            }
             title="Kunci aplikasi"
             aria-label="Kunci aplikasi"
           >
