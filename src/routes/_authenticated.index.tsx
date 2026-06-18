@@ -51,7 +51,7 @@ function rupiah(n: number) {
 }
 
 function buildPesan(p: Produk) {
-  return `📦 [${TAG[p.kategori]}] *${p.nama}*\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
+  return `📦 [${tagFor(p.kategori)}] *${p.nama}*\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -93,7 +93,7 @@ function Index() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
-  const [items, setItems] = useState<Produk[]>(() => buildInitial());
+  const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -480,7 +480,7 @@ function Index() {
                       </div>
                     )}
                     <span className="absolute left-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium">
-                      {TAG[p.kategori]}
+                      {tagFor(p.kategori)}
                     </span>
                     {fotoCount > 0 && (
                       <span className="absolute right-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[10px]">
@@ -529,7 +529,7 @@ function Index() {
                   >
                     {viewMode === "list" && (
                       <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
-                        {TAG[p.kategori]}
+                        {tagFor(p.kategori)}
                       </span>
                     )}
                     <span className="truncate text-sm font-medium">{p.nama}</span>
@@ -579,7 +579,7 @@ function Index() {
                         className="rounded-md border bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                         aria-label="Kategori"
                       >
-                        {(Object.keys(HARGA) as Kategori[]).map((k) => (
+                        {categories.map((k) => (
                           <option key={k} value={k}>
                             {k}
                           </option>
