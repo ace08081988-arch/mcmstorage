@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/gudang")({
 
 type PackageType = "gram" | "pcs" | "botol" | "sachet";
 
-type Supplier = { id: string; name: string; contact: string | null; email: string | null; notes: string | null };
+type Supplier = { id: string; name: string; contact: string | null; email: string | null; email_cc: string | null; email_bcc: string | null; notes: string | null };
 type WItem = {
   id: string;
   name: string;
@@ -1019,17 +1019,21 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [email, setEmail] = useState("");
+  const [emailCc, setEmailCc] = useState("");
+  const [emailBcc, setEmailBcc] = useState("");
   const [notes, setNotes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
   function resetForm() {
-    setEditingId(null); setName(""); setContact(""); setEmail(""); setNotes("");
+    setEditingId(null); setName(""); setContact(""); setEmail(""); setEmailCc(""); setEmailBcc(""); setNotes("");
   }
   function startEdit(s: Supplier) {
     setEditingId(s.id);
     setName(s.name);
     setContact(s.contact ?? "");
     setEmail(s.email ?? "");
+    setEmailCc(s.email_cc ?? "");
+    setEmailBcc(s.email_bcc ?? "");
     setNotes(s.notes ?? "");
   }
   async function submit(e: React.FormEvent) {
@@ -1039,6 +1043,8 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
       name: name.trim(),
       contact: contact.trim() || null,
       email: email.trim() || null,
+      email_cc: emailCc.trim() || null,
+      email_bcc: emailBcc.trim() || null,
       notes: notes.trim() || null,
     };
     if (editingId) {
@@ -1070,6 +1076,8 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama supplier *" value={name} onChange={(e) => setName(e.target.value)} required />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} />
         <input type="email" className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Email (opsional)" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="CC (pisahkan dengan koma, opsional)" value={emailCc} onChange={(e) => setEmailCc(e.target.value)} />
+        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="BCC (pisahkan dengan koma, opsional)" value={emailBcc} onChange={(e) => setEmailBcc(e.target.value)} />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
         <div className="flex gap-2">
           <button className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
@@ -1124,13 +1132,28 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                 {s.email && (
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     <span className="truncate text-[11px] text-muted-foreground">📧 {s.email}</span>
-                    <a
-                      href={`mailto:${s.email}`}
-                      className="rounded border border-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
-                      aria-label={`Email ${s.name}`}
-                    >
-                      📧 Email
-                    </a>
+                    {(() => {
+                      const params: string[] = [];
+                      if (s.email_cc) params.push(`cc=${encodeURIComponent(s.email_cc)}`);
+                      if (s.email_bcc) params.push(`bcc=${encodeURIComponent(s.email_bcc)}`);
+                      const qs = params.length ? `?${params.join("&")}` : "";
+                      return (
+                        <a
+                          href={`mailto:${encodeURIComponent(s.email)}${qs}`}
+                          className="rounded border border-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
+                          aria-label={`Email ${s.name}`}
+                        >
+                          📧 Email
+                        </a>
+                      );
+                    })()}
+                  </div>
+                )}
+                {(s.email_cc || s.email_bcc) && (
+                  <div className="mt-0.5 text-[10px] text-muted-foreground">
+                    {s.email_cc && <span>CC: {s.email_cc}</span>}
+                    {s.email_cc && s.email_bcc && <span> · </span>}
+                    {s.email_bcc && <span>BCC: {s.email_bcc}</span>}
                   </div>
                 )}
                 {s.notes && <div className="mt-1 text-[11px] text-muted-foreground">{s.notes}</div>}
