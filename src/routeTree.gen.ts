@@ -16,6 +16,7 @@ import { Route as ErrorRouteImport } from './routes/error'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
+import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -57,6 +58,12 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPengaturanKunciRoute =
+  AuthenticatedPengaturanKunciRouteImport.update({
+    id: '/pengaturan-kunci',
+    path: '/pengaturan-kunci',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedGudangRoute = AuthenticatedGudangRouteImport.update({
   id: '/gudang',
   path: '/gudang',
@@ -102,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/trust': typeof TrustRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
+  '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -115,6 +123,7 @@ export interface FileRoutesByTo {
   '/trust': typeof TrustRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
+  '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/': typeof AuthenticatedIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -131,6 +140,7 @@ export interface FileRoutesById {
   '/trust': typeof TrustRoute
   '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
+  '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -148,6 +158,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/device-verify'
     | '/gudang'
+    | '/pengaturan-kunci'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
     | '/lovable/email/queue/process'
@@ -161,6 +172,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/device-verify'
     | '/gudang'
+    | '/pengaturan-kunci'
     | '/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -176,6 +188,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/_authenticated/device-verify'
     | '/_authenticated/gudang'
+    | '/_authenticated/pengaturan-kunci'
     | '/_authenticated/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof AuthenticatedIndexRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-kunci': {
+      id: '/_authenticated/pengaturan-kunci'
+      path: '/pengaturan-kunci'
+      fullPath: '/pengaturan-kunci'
+      preLoaderRoute: typeof AuthenticatedPengaturanKunciRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/gudang': {
@@ -320,12 +340,14 @@ const AuthenticatedGudangRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
+  AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
+  AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
