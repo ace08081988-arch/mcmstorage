@@ -277,7 +277,7 @@ function Index() {
         <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-semibold tracking-tight">Penjualan Harian</h1>
+              <h1 className="truncate text-base font-semibold tracking-tight">MCM Storage</h1>
               <p className="text-[11px] text-muted-foreground">
                 {items.length} pesanan · {rupiah(total)}
               </p>
