@@ -2,6 +2,10 @@ import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { autoLockKey, isAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
+import {
+  getClientDeviceFingerprint,
+  isDeviceTrustedLocal,
+} from "@/lib/device-fingerprint";
 
 function AuthLock() {
   const [uid, setUid] = useState<string | null>(null);
@@ -43,6 +47,16 @@ export const Route = createFileRoute("/_authenticated")({
     if (!data.session) {
       throw redirect({
         to: "/auth",
+        search: { redirect: location.href },
+      });
+    }
+    // Lewati pengecekan device pada halaman verifikasi itu sendiri
+    if (location.pathname.startsWith("/device-verify")) return;
+    const userId = data.session.user.id;
+    const hash = await getClientDeviceFingerprint();
+    if (!isDeviceTrustedLocal(userId, hash)) {
+      throw redirect({
+        to: "/device-verify",
         search: { redirect: location.href },
       });
     }

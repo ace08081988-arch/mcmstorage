@@ -17,6 +17,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
+import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
 import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_authenticated.gudang.pesanan.$id.edit'
 
@@ -59,6 +60,12 @@ const AuthenticatedGudangRoute = AuthenticatedGudangRouteImport.update({
   path: '/gudang',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDeviceVerifyRoute =
+  AuthenticatedDeviceVerifyRouteImport.update({
+    id: '/device-verify',
+    path: '/device-verify',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedGudangPesananIdRoute =
   AuthenticatedGudangPesananIdRouteImport.update({
     id: '/pesanan/$id',
@@ -79,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trust': typeof TrustRoute
+  '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
@@ -89,6 +97,7 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trust': typeof TrustRoute
+  '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -102,6 +111,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trust': typeof TrustRoute
+  '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/trust'
+    | '/device-verify'
     | '/gudang'
     | '/gudang/pesanan/$id'
     | '/gudang/pesanan/$id/edit'
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/trust'
+    | '/device-verify'
     | '/gudang'
     | '/'
     | '/gudang/pesanan/$id'
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/trust'
+    | '/_authenticated/device-verify'
     | '/_authenticated/gudang'
     | '/_authenticated/'
     | '/_authenticated/gudang/pesanan/$id'
@@ -211,6 +224,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGudangRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/device-verify': {
+      id: '/_authenticated/device-verify'
+      path: '/device-verify'
+      fullPath: '/device-verify'
+      preLoaderRoute: typeof AuthenticatedDeviceVerifyRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/gudang/pesanan/$id': {
       id: '/_authenticated/gudang/pesanan/$id'
       path: '/pesanan/$id'
@@ -256,11 +276,13 @@ const AuthenticatedGudangRouteWithChildren =
   AuthenticatedGudangRoute._addFileChildren(AuthenticatedGudangRouteChildren)
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
