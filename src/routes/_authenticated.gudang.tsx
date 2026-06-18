@@ -234,7 +234,7 @@ function GudangPage() {
         {loading && <div className="text-sm text-muted-foreground">Memuat…</div>}
 
         {tab === "stok" && (
-          <StokTab items={items} onChanged={reloadAll} />
+          <StokTab items={items} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "supplier" && (
           <SupplierTab suppliers={suppliers} uid={uid} onChanged={reloadAll} />
@@ -820,7 +820,7 @@ function ShareDebt({
 }
 
 /* ----------------- STOK ----------------- */
-function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }) {
+function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null; onChanged: () => void }) {
   const [editing, setEditing] = useState<WItem | null>(null);
   async function remove(id: string, name: string) {
     if (!confirm(`Hapus barang "${name}"? Semua pembelian/penjualan terkait juga dihapus.`)) return;
@@ -840,11 +840,18 @@ function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }
       {items.map((i) => (
         <li key={i.id} className="rounded-lg border bg-card p-3">
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold">{i.name}</div>
-              <div className="text-[11px] text-muted-foreground">
-                {i.category || "—"} · per {i.package_type}
-                {i.package_type !== "pcs" && ` (${i.package_size}${i.base_unit === "g" ? "g" : ""}/kemasan)`}
+            <div className="flex min-w-0 gap-2">
+              {i.image_path ? (
+                <SignedImg path={i.image_path} className="h-12 w-12 shrink-0 rounded-md border object-cover bg-muted" />
+              ) : (
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[10px] text-muted-foreground">📷</div>
+              )}
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">{i.name}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {i.category || "—"} · per {i.package_type}
+                  {i.package_type !== "pcs" && ` (${i.package_size}${i.base_unit === "g" ? "g" : ""}/kemasan)`}
+                </div>
               </div>
             </div>
             <div className="flex shrink-0 gap-1">
@@ -882,6 +889,7 @@ function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }
     {editing && (
       <EditItemDialog
         item={editing}
+        uid={uid}
         onClose={() => setEditing(null)}
         onSaved={() => { setEditing(null); onChanged(); }}
       />
@@ -890,13 +898,14 @@ function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }
   );
 }
 
-function EditItemDialog({ item, onClose, onSaved }: { item: WItem; onClose: () => void; onSaved: () => void }) {
+function EditItemDialog({ item, uid, onClose, onSaved }: { item: WItem; uid: string | null; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState(item.category ?? "");
   const [packageType, setPackageType] = useState<PackageType>(item.package_type as PackageType);
   const [packageSize, setPackageSize] = useState(String(item.package_size));
   const [stockBase, setStockBase] = useState(String(item.stock_base));
   const [avgCost, setAvgCost] = useState(String(item.avg_cost_per_base));
+  const [imagePath, setImagePath] = useState<string | null>(item.image_path);
   const [saving, setSaving] = useState(false);
   const baseUnit = defaultBase(packageType);
   const effectiveSize = packageType === "pcs" ? 1 : Number(packageSize) || 0;
@@ -913,6 +922,7 @@ function EditItemDialog({ item, onClose, onSaved }: { item: WItem; onClose: () =
       base_unit: baseUnit,
       stock_base: Number(stockBase) || 0,
       avg_cost_per_base: Number(avgCost) || 0,
+      image_path: imagePath,
     }).eq("id", item.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -928,6 +938,7 @@ function EditItemDialog({ item, onClose, onSaved }: { item: WItem; onClose: () =
           <span className="text-[11px] text-muted-foreground">Nama</span>
           <input className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={name} onChange={(e) => setName(e.target.value)} />
         </label>
+        <PhotoPicker value={imagePath} onChange={setImagePath} uid={uid} />
         <label className="block">
           <span className="text-[11px] text-muted-foreground">Kategori</span>
           <input className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={category} onChange={(e) => setCategory(e.target.value)} />
