@@ -2040,8 +2040,8 @@ function PesananTab({
                   {o.status !== "selesai" && (
                     <button onClick={() => konversiKePenjualan(o)} className="rounded border px-2 py-1 text-[11px] hover:bg-accent">💰 Jadikan Penjualan</button>
                   )}
-                  <button onClick={() => hapus(o.id)} className="ml-auto rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
-                  <Link to="/gudang/pesanan/$id" params={{ id: o.id }} className="rounded border px-2 py-1 text-[11px] hover:bg-accent">🔍 Detail</Link>
+                  <Link to="/gudang/pesanan/$id" params={{ id: o.id }} className="ml-auto rounded border px-2 py-1 text-[11px] hover:bg-accent">🔍 Detail</Link>
+                  <button onClick={() => hapus(o.id)} className="rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
                 </div>
               </li>
             );
