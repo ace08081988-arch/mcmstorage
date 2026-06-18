@@ -81,7 +81,6 @@ export function ProductEditDrawer(props: Props) {
       lokasi: draft.lokasi,
     });
     toast.success("Perubahan disimpan");
-    onOpenChange(false);
   };
 
   const ambilLokasi = () => {
