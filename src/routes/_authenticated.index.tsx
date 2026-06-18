@@ -666,6 +666,12 @@ function Index() {
           >
             📦 Buka Gudang & Supplier
           </a>
+          <a
+            href="/hutang-piutang"
+            className="block w-full rounded-md border bg-card px-3 py-2 text-center text-xs font-semibold hover:bg-accent"
+          >
+            💳 Hutang & Piutang
+          </a>
         </main>
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
       </div>
