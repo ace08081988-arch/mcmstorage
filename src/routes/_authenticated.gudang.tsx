@@ -1284,7 +1284,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         base_unit: baseUnit,
         image_path: newImagePath,
       }).select().single();
-      if (error || !data) { toast.error(error?.message || "Gagal buat barang"); return; }
+      if (error || !data) { toast.error(friendlyError(error) || "Gagal buat barang"); return; }
       useItemId = (data as WItem).id;
       useSize = (data as WItem).package_size;
     } else {
