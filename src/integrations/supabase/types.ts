@@ -348,6 +348,8 @@ export type Database = {
           contact: string | null
           created_at: string
           email: string | null
+          email_bcc: string | null
+          email_cc: string | null
           id: string
           name: string
           notes: string | null
@@ -358,6 +360,8 @@ export type Database = {
           contact?: string | null
           created_at?: string
           email?: string | null
+          email_bcc?: string | null
+          email_cc?: string | null
           id?: string
           name: string
           notes?: string | null
@@ -368,6 +372,8 @@ export type Database = {
           contact?: string | null
           created_at?: string
           email?: string | null
+          email_bcc?: string | null
+          email_cc?: string | null
           id?: string
           name?: string
           notes?: string | null
