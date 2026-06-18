@@ -1270,6 +1270,7 @@ function Index() {
           </div>
         </div>
       )}
+      {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
     </div>
   );
 }
