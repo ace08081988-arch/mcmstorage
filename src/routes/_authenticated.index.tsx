@@ -889,6 +889,21 @@ function Index() {
                   ),
                 )}
               </div>
+              <button
+                onClick={() => {
+                  setFilter("semua");
+                  setActiveCat(null);
+                  setSelectMode(false);
+                  setSelected(new Set());
+                  setOpenId(null);
+                  toast.success("Filter dikembalikan ke default");
+                }}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-card text-base transition-colors hover:bg-accent"
+                aria-label="Reset filter"
+                title="Reset filter"
+              >
+                ⟲
+              </button>
             </div>
           </div>
         </header>
