@@ -14,6 +14,134 @@ export type Database = {
   }
   public: {
     Tables: {
+      purchases: {
+        Row: {
+          base_added: number
+          created_at: string
+          id: string
+          item_id: string
+          package_qty: number
+          package_size_snapshot: number
+          price_per_package: number
+          supplier_id: string | null
+          total_cost: number
+          user_id: string
+        }
+        Insert: {
+          base_added: number
+          created_at?: string
+          id?: string
+          item_id: string
+          package_qty: number
+          package_size_snapshot: number
+          price_per_package: number
+          supplier_id?: string | null
+          total_cost: number
+          user_id: string
+        }
+        Update: {
+          base_added?: number
+          created_at?: string
+          id?: string
+          item_id?: string
+          package_qty?: number
+          package_size_snapshot?: number
+          price_per_package?: number
+          supplier_id?: string | null
+          total_cost?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          cost_at_sale: number
+          created_at: string
+          id: string
+          item_id: string
+          note: string | null
+          price_per_base: number
+          qty_base: number
+          total_revenue: number
+          user_id: string
+        }
+        Insert: {
+          cost_at_sale?: number
+          created_at?: string
+          id?: string
+          item_id: string
+          note?: string | null
+          price_per_base: number
+          qty_base: number
+          total_revenue: number
+          user_id: string
+        }
+        Update: {
+          cost_at_sale?: number
+          created_at?: string
+          id?: string
+          item_id?: string
+          note?: string | null
+          price_per_base?: number
+          qty_base?: number
+          total_revenue?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      suppliers: {
+        Row: {
+          contact: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_storage: {
         Row: {
           categories: Json
@@ -33,6 +161,48 @@ export type Database = {
           categories?: Json
           created_at?: string
           items?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      warehouse_items: {
+        Row: {
+          avg_cost_per_base: number
+          base_unit: string
+          category: string | null
+          created_at: string
+          id: string
+          name: string
+          package_size: number
+          package_type: string
+          stock_base: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          avg_cost_per_base?: number
+          base_unit: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          package_size?: number
+          package_type: string
+          stock_base?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          avg_cost_per_base?: number
+          base_unit?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          package_size?: number
+          package_type?: string
+          stock_base?: number
           updated_at?: string
           user_id?: string
         }
