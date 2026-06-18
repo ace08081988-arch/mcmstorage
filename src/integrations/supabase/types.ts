@@ -14,6 +14,81 @@ export type Database = {
   }
   public: {
     Tables: {
+      customer_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          customer_id: string
+          id: string
+          note: string | null
+          sale_id: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          customer_id: string
+          id?: string
+          note?: string | null
+          sale_id?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          customer_id?: string
+          id?: string
+          note?: string | null
+          sale_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customer_payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customer_payments_sale_id_fkey"
+            columns: ["sale_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          contact: string | null
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          contact?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          contact?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       purchases: {
         Row: {
           base_added: number
@@ -75,9 +150,11 @@ export type Database = {
         Row: {
           cost_at_sale: number
           created_at: string
+          customer_id: string | null
           id: string
           item_id: string
           note: string | null
+          payment_method: string
           price_per_base: number
           qty_base: number
           total_revenue: number
@@ -86,9 +163,11 @@ export type Database = {
         Insert: {
           cost_at_sale?: number
           created_at?: string
+          customer_id?: string | null
           id?: string
           item_id: string
           note?: string | null
+          payment_method?: string
           price_per_base: number
           qty_base: number
           total_revenue: number
@@ -97,15 +176,24 @@ export type Database = {
         Update: {
           cost_at_sale?: number
           created_at?: string
+          customer_id?: string | null
           id?: string
           item_id?: string
           note?: string | null
+          payment_method?: string
           price_per_base?: number
           qty_base?: number
           total_revenue?: number
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "sales_item_id_fkey"
             columns: ["item_id"]
