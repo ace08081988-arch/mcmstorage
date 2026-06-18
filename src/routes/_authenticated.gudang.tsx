@@ -99,9 +99,13 @@ function rupiah(n: number) {
 }
 function fmtBase(n: number, u: "g" | "pcs") {
   const v = Number(n) || 0;
-  return u === "g"
-    ? `${v.toLocaleString("id-ID", { maximumFractionDigits: 2 })} g`
-    : `${v.toLocaleString("id-ID")} pcs`;
+  if (u === "g") {
+    if (Math.abs(v) >= 1000) {
+      return `${(v / 1000).toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`;
+    }
+    return `${v.toLocaleString("id-ID", { maximumFractionDigits: 2 })} g`;
+  }
+  return `${v.toLocaleString("id-ID")} pcs`;
 }
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
