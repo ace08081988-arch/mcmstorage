@@ -78,6 +78,7 @@ function GudangPage() {
   const [items, setItems] = useState<WItem[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -85,16 +86,18 @@ function GudangPage() {
   }, []);
 
   async function reloadAll() {
-    const [s, w, p, sa] = await Promise.all([
+    const [s, w, p, sa, py] = await Promise.all([
       supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("*").order("name"),
       supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("sales").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500),
     ]);
     if (s.data) setSuppliers(s.data as Supplier[]);
     if (w.data) setItems(w.data as WItem[]);
     if (p.data) setPurchases(p.data as Purchase[]);
     if (sa.data) setSales(sa.data as Sale[]);
+    if (py.data) setPayments(py.data as Payment[]);
     setLoading(false);
   }
 
