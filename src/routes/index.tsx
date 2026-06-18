@@ -59,6 +59,7 @@ function buildInitial(): Produk[] {
 
 const STORAGE_KEY = "penjualan-harian-v1";
 const THEME_KEY = "penjualan-theme";
+const VIEW_KEY = "penjualan-view";
 
 function rupiah(n: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -114,6 +115,7 @@ function Index() {
   const [flashId, setFlashId] = useState<number | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   useEffect(() => {
     try {
@@ -125,6 +127,10 @@ function Index() {
       const initial =
         t ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
       setTheme(initial);
+    } catch {}
+    try {
+      const v = localStorage.getItem(VIEW_KEY) as "list" | "grid" | null;
+      if (v) setViewMode(v);
     } catch {}
     setHydrated(true);
   }, []);
@@ -138,6 +144,10 @@ function Index() {
     document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem(THEME_KEY, theme);
   }, [theme, hydrated]);
+
+  useEffect(() => {
+    if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
+  }, [viewMode, hydrated]);
 
   const total = useMemo(
     () => items.filter((i) => i.status === "Sudah Dikirim").reduce((s, i) => s + i.harga, 0),
