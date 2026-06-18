@@ -858,7 +858,7 @@ function HutangTab({
                     <div><span className="text-muted-foreground">Sisa </span><b className="text-amber-600 dark:text-amber-400">{rupiah(remaining)}</b></div>
                   </div>
                   {!isPaid && g.supplier && (
-                    <PayForm purchase={d} supplierId={g.supplier.id} remaining={remaining} uid={uid} onChanged={onChanged} />
+                    <PayForm purchase={d} supplierId={g.supplier.id} remaining={remaining} uid={uid} onChanged={onChanged} onLocalPayment={onLocalPayment} />
                   )}
                   {(paymentsByPurchase[d.id]?.length ?? 0) > 0 && (
                     <ul className="mt-2 space-y-1 border-t pt-1.5">
@@ -872,8 +872,9 @@ function HutangTab({
                           <button
                             onClick={async () => {
                               if (!confirm("Hapus pembayaran ini?")) return;
+                              onLocalRemovePayment(pay.id);
                               const { error } = await supabase.from("supplier_payments").delete().eq("id", pay.id);
-                              if (error) toast.error(error.message);
+                              if (error) { toast.error(error.message); onChanged(); }
                               else { toast.success("Pembayaran dihapus"); onChanged(); }
                             }}
                             className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] text-destructive hover:bg-destructive/10"
