@@ -1017,6 +1017,8 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
   // purchase
   const [packageQty, setPackageQty] = useState("1");
   const [pricePerPackage, setPricePerPackage] = useState("");
+  const [priceMode, setPriceMode] = useState<"package" | "base">("package");
+  const [pricePerBase, setPricePerBase] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"kas" | "hutang">("kas");
 
   useEffect(() => {
@@ -1026,7 +1028,9 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
   const baseUnit = defaultBase(packageType);
   const effectivePkgSize = packageType === "pcs" ? 1 : Number(packageSize) || 0;
   const pkgQ = Number(packageQty) || 0;
-  const price = Number(pricePerPackage) || 0;
+  const price = priceMode === "package"
+    ? Number(pricePerPackage) || 0
+    : (Number(pricePerBase) || 0) * effectivePkgSize;
   const baseAdded = pkgQ * effectivePkgSize;
   const totalCost = pkgQ * price;
 
@@ -1074,7 +1078,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
     });
     if (error) { toast.error(error.message); return; }
     toast.success(`Pembelian dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok bertambah`);
-    setName(""); setCategory(""); setPackageQty("1"); setPricePerPackage("");
+    setName(""); setCategory(""); setPackageQty("1"); setPricePerPackage(""); setPricePerBase("");
     onChanged();
   }
 
