@@ -20,7 +20,7 @@ export const Route = createFileRoute("/_authenticated/")({
 });
 
 type Status = "Belum Dikirim" | "Sudah Dikirim";
-type Kategori = "1 gram" | "St" | "Spr";
+type Kategori = string;
 
 type Produk = {
   id: number;
@@ -34,36 +34,13 @@ type Produk = {
   galeri?: string[];
 };
 
-const HARGA: Record<Kategori, number> = { "1 gram": 50000, St: 75000, Spr: 100000 };
-const TAG: Record<Kategori, string> = { "1 gram": "1g", St: "St", Spr: "Spr" };
-
-function buildInitial(): Produk[] {
-  const items: Produk[] = [];
-  let id = 1;
-  const make = (kat: Kategori, count: number) => {
-    for (let i = 0; i < count; i++, id++) {
-      items.push({
-        id,
-        kategori: kat,
-        nama: `Produk ${id}`,
-        harga: HARGA[kat],
-        status: "Belum Dikirim",
-        keterangan: id === 1 ? "5g lakban hitam pepet tembok" : `Keterangan ${id}`,
-        lokasi:
-          id === 1
-            ? "https://goo.gl/maps/RKwBxEqwHeM8TAEB6"
-            : "https://goo.gl/maps/xxx",
-      });
-    }
-  };
-  make("1 gram", 10);
-  make("St", 10);
-  make("Spr", 10);
-  return items;
+function tagFor(kat: Kategori): string {
+  return kat.trim().slice(0, 3) || "—";
 }
 
 const THEME_KEY = "penjualan-theme";
 const VIEW_KEY = "penjualan-view";
+const ACTIVE_CAT_KEY = "penjualan-active-cat";
 
 function rupiah(n: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -74,7 +51,7 @@ function rupiah(n: number) {
 }
 
 function buildPesan(p: Produk) {
-  return `📦 [${TAG[p.kategori]}] *${p.nama}*\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
+  return `📦 [${tagFor(p.kategori)}] *${p.nama}*\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -116,7 +93,7 @@ function Index() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
-  const [items, setItems] = useState<Produk[]>(() => buildInitial());
+  const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
   const [theme, setTheme] = useState<"light" | "dark">("light");
@@ -125,6 +102,9 @@ function Index() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [newCatName, setNewCatName] = useState("");
 
   useEffect(() => {
     try {
@@ -146,18 +126,20 @@ function Index() {
       }
       const { data, error } = await supabase
         .from("user_storage")
-        .select("items")
+        .select("items, categories")
         .eq("user_id", uid)
         .maybeSingle();
       if (error) {
         toast.error("Gagal memuat data: " + error.message);
-      } else if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
-        setItems(data.items as unknown as Produk[]);
       } else {
-        // First time for this account — seed with initial data
-        const seed = buildInitial();
-        setItems(seed);
-        await supabase.from("user_storage").upsert({ user_id: uid, items: seed as any });
+        const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
+        const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
+        setItems(loadedItems);
+        setCategories(loadedCats);
+        try {
+          const saved = localStorage.getItem(ACTIVE_CAT_KEY);
+          if (saved && loadedCats.includes(saved)) setActiveCat(saved);
+        } catch {}
       }
       setHydrated(true);
     })();
@@ -172,14 +154,14 @@ function Index() {
       if (!uid || cancelled) return;
       const { error } = await supabase
         .from("user_storage")
-        .upsert({ user_id: uid, items: items as any });
+        .upsert({ user_id: uid, items: items as any, categories: categories as any });
       if (error && !cancelled) toast.error("Gagal menyimpan: " + error.message);
     }, 600);
     return () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [items, hydrated]);
+  }, [items, categories, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -191,9 +173,21 @@ function Index() {
     if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
   }, [viewMode, hydrated]);
 
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      if (activeCat) localStorage.setItem(ACTIVE_CAT_KEY, activeCat);
+      else localStorage.removeItem(ACTIVE_CAT_KEY);
+    } catch {}
+  }, [activeCat, hydrated]);
+
+  const scopedItems = useMemo(
+    () => (activeCat ? items.filter((i) => i.kategori === activeCat) : items),
+    [items, activeCat],
+  );
   const total = useMemo(
-    () => items.reduce((s, i) => s + i.harga, 0),
-    [items],
+    () => scopedItems.reduce((s, i) => s + i.harga, 0),
+    [scopedItems],
   );
 
   const update = (id: number, patch: Partial<Produk>) =>
@@ -244,7 +238,45 @@ function Index() {
     );
 
   const reset = () => {
-    if (confirm("Reset semua data ke kondisi awal?")) setItems(buildInitial());
+    if (!activeCat) return;
+    if (confirm(`Hapus semua pesanan di kategori "${activeCat}"?`))
+      setItems((arr) => arr.filter((i) => i.kategori !== activeCat));
+  };
+
+  const addCategory = (name: string) => {
+    const v = name.trim();
+    if (!v) return;
+    if (categories.includes(v)) {
+      toast.error("Kategori sudah ada");
+      return;
+    }
+    setCategories((c) => [...c, v]);
+    setActiveCat(v);
+    setNewCatName("");
+    toast.success(`Kategori "${v}" dibuat`);
+  };
+
+  const deleteCategory = (name: string) => {
+    if (!confirm(`Hapus kategori "${name}" beserta semua pesanannya?`)) return;
+    setCategories((c) => c.filter((x) => x !== name));
+    setItems((arr) => arr.filter((i) => i.kategori !== name));
+    if (activeCat === name) setActiveCat(null);
+  };
+
+  const addProduk = () => {
+    if (!activeCat) return;
+    const nextId = items.reduce((m, i) => Math.max(m, i.id), 0) + 1;
+    const fresh: Produk = {
+      id: nextId,
+      kategori: activeCat,
+      nama: `Produk ${nextId}`,
+      harga: 0,
+      status: "Belum Dikirim",
+      keterangan: "",
+      lokasi: "",
+    };
+    setItems((arr) => [...arr, fresh]);
+    setOpenId(nextId);
   };
 
   const resetStatus = () => {
@@ -252,7 +284,7 @@ function Index() {
       setItems((arr) => arr.map((i) => ({ ...i, status: "Belum Dikirim" })));
   };
 
-  const filtered = items.filter((i) => filter === "semua" || i.status === filter);
+  const filtered = scopedItems.filter((i) => filter === "semua" || i.status === filter);
 
   const toggleSelect = (id: number) =>
     setSelected((s) => {
@@ -313,18 +345,134 @@ function Index() {
     setSelected(new Set());
   };
 
+  if (!hydrated) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
+        Memuat…
+      </div>
+    );
+  }
+
+  if (!activeCat) {
+    return (
+      <div className="min-h-screen bg-background">
+        <header className="border-b bg-card/95">
+          <div className="mx-auto flex max-w-6xl items-center gap-3 px-3 py-3 sm:px-6">
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-base font-semibold tracking-tight">
+                Pilih Kategori — MCM Storage
+              </h1>
+              <p className="text-[11px] text-muted-foreground">
+                Buat atau pilih kategori dulu sebelum masuk ke penyimpanan.
+              </p>
+            </div>
+            <button
+              onClick={signOut}
+              className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+            >
+              Keluar
+            </button>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-md space-y-4 px-3 py-6 sm:px-6">
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              addCategory(newCatName);
+            }}
+            className="space-y-2 rounded-lg border bg-card p-3"
+          >
+            <label className="block text-xs font-medium text-foreground">
+              {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori baru"}
+            </label>
+            <div className="flex gap-2">
+              <input
+                value={newCatName}
+                onChange={(e) => setNewCatName(e.target.value)}
+                placeholder="Contoh: Sembako, Pakaian, 1 gram"
+                className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                autoFocus
+              />
+              <button
+                type="submit"
+                className="shrink-0 rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+              >
+                Buat
+              </button>
+            </div>
+          </form>
+
+          {categories.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                Kategori kamu
+              </p>
+              <ul className="grid gap-1.5">
+                {categories.map((c) => {
+                  const count = items.filter((i) => i.kategori === c).length;
+                  return (
+                    <li
+                      key={c}
+                      className="flex items-center gap-2 rounded-lg border bg-card px-3 py-2"
+                    >
+                      <button
+                        onClick={() => setActiveCat(c)}
+                        className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                      >
+                        <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                          {tagFor(c)}
+                        </span>
+                        <span className="truncate text-sm font-medium">{c}</span>
+                        <span className="ml-auto shrink-0 text-[11px] text-muted-foreground">
+                          {count} pesanan
+                        </span>
+                      </button>
+                      <button
+                        onClick={() => deleteCategory(c)}
+                        className="shrink-0 rounded-md border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
+                        aria-label={`Hapus kategori ${c}`}
+                      >
+                        Hapus
+                      </button>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          )}
+        </main>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
         <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-semibold tracking-tight">MCM Storage — Kelola Pesanan & Kirim WhatsApp</h1>
+              <h1 className="truncate text-base font-semibold tracking-tight">
+                {activeCat} · MCM Storage
+              </h1>
               <p className="text-[11px] text-muted-foreground">
-                {items.length} pesanan · {rupiah(total)}
+                {scopedItems.length} pesanan · {rupiah(total)}
               </p>
             </div>
             <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  setActiveCat(null);
+                  setSelectMode(false);
+                  setSelected(new Set());
+                  setOpenId(null);
+                }}
+                className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+                aria-label="Ganti kategori"
+                title="Ganti kategori"
+              >
+                ↩ Kategori
+              </button>
               <div className="inline-flex overflow-hidden rounded-md border">
                 <button
                   onClick={() => setViewMode("list")}
@@ -385,6 +533,12 @@ function Index() {
               </button>
             ))}
             <div className="ml-auto flex gap-1.5">
+              <button
+                onClick={addProduk}
+                className="rounded-md border border-primary bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
+              >
+                + Produk
+              </button>
               <button
                 onClick={() => {
                   if (selectMode) exitSelect();
@@ -452,7 +606,7 @@ function Index() {
                       </div>
                     )}
                     <span className="absolute left-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium">
-                      {TAG[p.kategori]}
+                      {tagFor(p.kategori)}
                     </span>
                     {fotoCount > 0 && (
                       <span className="absolute right-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[10px]">
@@ -501,7 +655,7 @@ function Index() {
                   >
                     {viewMode === "list" && (
                       <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
-                        {TAG[p.kategori]}
+                        {tagFor(p.kategori)}
                       </span>
                     )}
                     <span className="truncate text-sm font-medium">{p.nama}</span>
@@ -551,7 +705,7 @@ function Index() {
                         className="rounded-md border bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                         aria-label="Kategori"
                       >
-                        {(Object.keys(HARGA) as Kategori[]).map((k) => (
+                        {categories.map((k) => (
                           <option key={k} value={k}>
                             {k}
                           </option>
