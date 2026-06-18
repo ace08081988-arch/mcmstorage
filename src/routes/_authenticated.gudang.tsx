@@ -342,6 +342,10 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
     e.preventDefault();
     if (!uid) return;
     if (pkgQ <= 0 || price < 0) { toast.error("Periksa jumlah & harga"); return; }
+    if (paymentMethod === "hutang" && !supplierId) {
+      toast.error("Pembelian hutang wajib memilih supplier");
+      return;
+    }
 
     let useItemId = itemId;
     let useSize = effectivePkgSize;
