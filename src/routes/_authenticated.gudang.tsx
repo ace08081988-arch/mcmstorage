@@ -1038,10 +1038,30 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
           <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageQty} onChange={(e) => setPackageQty(e.target.value)} required />
         </label>
         <label className="block">
-          <span className="text-[11px] text-muted-foreground">Harga / kemasan (Rp)</span>
+          <span className="text-[11px] text-muted-foreground">Harga beli / kemasan (Rp)</span>
           <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
         </label>
       </div>
+
+      {packageType !== "pcs" && effectivePkgSize > 0 && (
+        <label className="block">
+          <span className="text-[11px] text-muted-foreground">
+            Harga beli per {baseUnit} (Rp) — opsional, otomatis sinkron
+          </span>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+            value={effectivePkgSize > 0 && price > 0 ? (price / effectivePkgSize).toFixed(2) : ""}
+            onChange={(e) => {
+              const perBase = Number(e.target.value) || 0;
+              setPricePerPackage(String(Math.round(perBase * effectivePkgSize)));
+            }}
+            placeholder={`Harga beli per ${baseUnit}`}
+          />
+        </label>
+      )}
 
       <div>
         <div className="text-[11px] text-muted-foreground mb-1">Cara bayar</div>
