@@ -73,7 +73,7 @@ export function AppearanceInit() {
   return null;
 }
 
-export function AppearanceSettings({ triggerClassName }: { triggerClassName?: string }) {
+export function AppearanceSettings({ triggerClassName, compact = false }: { triggerClassName?: string; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [theme, setTheme] = useState<Theme>("dark");
   const [font, setFont] = useState<FontFamily>("sans");
@@ -105,7 +105,7 @@ export function AppearanceSettings({ triggerClassName }: { triggerClassName?: st
           title="Pengaturan tampilan"
           aria-label="Pengaturan tampilan"
         >
-          🎨 Tampilan
+          {compact ? "🎨" : "🎨 Tampilan"}
         </button>
       </DialogTrigger>
       <DialogContent className="max-w-md">

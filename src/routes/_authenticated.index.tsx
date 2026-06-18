@@ -690,7 +690,7 @@ function Index() {
                   ▦
                 </button>
               </div>
-              <AppearanceSettings triggerClassName="inline-flex h-8 w-8 items-center justify-center rounded-md border hover:bg-accent" />
+              <AppearanceSettings compact triggerClassName="inline-flex h-8 w-8 items-center justify-center rounded-md border text-base leading-none hover:bg-accent" />
               <button
                 onClick={signOut}
                 className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
@@ -703,12 +703,12 @@ function Index() {
             </div>
           </div>
 
-          <div className="mt-2 flex flex-wrap items-center gap-1.5">
+          <div className="mt-2 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
             {(["semua", "Belum Dikirim", "Sudah Dikirim"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                   filter === f
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-background text-foreground hover:bg-accent"
@@ -717,10 +717,10 @@ function Index() {
                 {f === "semua" ? "Semua" : f === "Belum Dikirim" ? "Belum" : "Terkirim"}
               </button>
             ))}
-            <div className="ml-auto flex gap-1.5">
+            <div className="ml-auto flex shrink-0 gap-1.5">
               <button
                 onClick={addProduk}
-                className="rounded-md border border-primary bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
+                className="shrink-0 rounded-md border border-primary bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
               >
                 + Produk
               </button>
@@ -729,7 +729,7 @@ function Index() {
                   if (selectMode) exitSelect();
                   else setSelectMode(true);
                 }}
-                className={`rounded-md border px-2.5 py-1 text-[11px] font-medium ${
+                className={`shrink-0 rounded-md border px-2.5 py-1 text-[11px] font-medium ${
                   selectMode
                     ? "border-primary bg-primary text-primary-foreground"
                     : "hover:bg-accent"
@@ -739,13 +739,13 @@ function Index() {
               </button>
               <button
                 onClick={resetStatus}
-                className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                className="shrink-0 rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
               >
                 Reset status
               </button>
               <button
                 onClick={reset}
-                className="rounded-md border px-2.5 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                className="shrink-0 rounded-md border px-2.5 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/10"
               >
                 Reset
               </button>
@@ -824,7 +824,7 @@ function Index() {
                     onClick={() =>
                       selectMode ? toggleSelect(p.id) : setOpenId(open ? null : p.id)
                     }
-                    className="relative block aspect-square w-full overflow-hidden bg-muted"
+                    className={`relative block w-full overflow-hidden bg-muted ${open ? "h-32 sm:h-40" : "aspect-square"}`}
                     aria-label="Buka detail"
                   >
                     {thumb ? (
