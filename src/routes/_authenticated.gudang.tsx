@@ -15,6 +15,7 @@ import {
 import { friendlyError } from "@/lib/friendly-error";
 import { buildMailto, isValidEmail } from "@/lib/mailto";
 import { supabase } from "@/integrations/supabase/client";
+import { confirm } from "@/lib/confirm";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
@@ -397,7 +398,11 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
     resetForm(); onChanged();
   }
   async function remove(id: string, n: string) {
-    if (!confirm(`Hapus pelanggan "${n}"? Pembayaran terkait juga dihapus.`)) return;
+    if (!(await confirm({
+      title: "Hapus pelanggan?",
+      description: `Pelanggan "${n}" beserta seluruh pembayaran yang terkait akan dihapus permanen.`,
+      confirmText: "Hapus",
+    }))) return;
     const { error } = await supabase.from("customers").delete().eq("id", id);
     if (error) toast.error(friendlyError(error));
     else { toast.success("Pelanggan dihapus"); if (editingId === id) resetForm(); onChanged(); }
@@ -578,7 +583,11 @@ function PiutangTab({
                     </span>
                     <button
                       onClick={async () => {
-                        if (!confirm("Hapus pembayaran ini?")) return;
+                        if (!(await confirm({
+                          title: "Hapus pembayaran?",
+                          description: "Catatan pembayaran ini akan dihapus permanen.",
+                          confirmText: "Hapus",
+                        }))) return;
                         onLocalRemovePayment(pay.id);
                         const { error } = await supabase.from("customer_payments").delete().eq("id", pay.id);
                         if (error) { toast.error(friendlyError(error)); onChanged(); }
@@ -905,7 +914,11 @@ function ShareDebt({
 function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null; onChanged: () => void }) {
   const [editing, setEditing] = useState<WItem | null>(null);
   async function remove(id: string, name: string) {
-    if (!confirm(`Hapus barang "${name}"? Semua pembelian/penjualan terkait juga dihapus.`)) return;
+    if (!(await confirm({
+      title: "Hapus barang?",
+      description: `Barang "${name}" beserta seluruh pembelian dan penjualan terkait akan dihapus permanen.`,
+      confirmText: "Hapus",
+    }))) return;
     const { error } = await supabase.from("warehouse_items").delete().eq("id", id);
     if (error) toast.error(friendlyError(error));
     else { toast.success("Barang dihapus"); onChanged(); }
@@ -1112,7 +1125,11 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
     onChanged();
   }
   async function remove(id: string, n: string) {
-    if (!confirm(`Hapus supplier "${n}"?`)) return;
+    if (!(await confirm({
+      title: "Hapus supplier?",
+      description: `Data supplier "${n}" akan dihapus permanen.`,
+      confirmText: "Hapus",
+    }))) return;
     const { error } = await supabase.from("suppliers").delete().eq("id", id);
     if (error) toast.error(friendlyError(error));
     else {
@@ -1628,12 +1645,20 @@ function RiwayatTab({
 }) {
   const [sub, setSub] = useState<"jual" | "beli">("jual");
   async function delPurchase(id: string) {
-    if (!confirm("Hapus pembelian ini? Stok akan dikurangi sesuai isi pembelian.")) return;
+    if (!(await confirm({
+      title: "Hapus pembelian?",
+      description: "Stok akan dikurangi sesuai isi pembelian ini.",
+      confirmText: "Hapus",
+    }))) return;
     const { error } = await supabase.from("purchases").delete().eq("id", id);
     if (error) toast.error(friendlyError(error)); else { toast.success("Pembelian dihapus"); onChanged(); }
   }
   async function delSale(id: string) {
-    if (!confirm("Hapus penjualan ini? Stok akan dikembalikan.")) return;
+    if (!(await confirm({
+      title: "Hapus penjualan?",
+      description: "Stok akan dikembalikan ke gudang.",
+      confirmText: "Hapus",
+    }))) return;
     const { error } = await supabase.from("sales").delete().eq("id", id);
     if (error) toast.error(friendlyError(error)); else { toast.success("Penjualan dihapus"); onChanged(); }
   }
@@ -1890,7 +1915,11 @@ function HutangTab({
                           </span>
                           <button
                             onClick={async () => {
-                              if (!confirm("Hapus pembayaran ini?")) return;
+                              if (!(await confirm({
+                                title: "Hapus pembayaran?",
+                                description: "Catatan pembayaran ini akan dihapus permanen.",
+                                confirmText: "Hapus",
+                              }))) return;
                               onLocalRemovePayment(pay.id);
                               const { error } = await supabase.from("supplier_payments").delete().eq("id", pay.id);
                               if (error) { toast.error(friendlyError(error)); onChanged(); }
