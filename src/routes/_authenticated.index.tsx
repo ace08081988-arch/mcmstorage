@@ -534,6 +534,12 @@ function Index() {
             ))}
             <div className="ml-auto flex gap-1.5">
               <button
+                onClick={addProduk}
+                className="rounded-md border border-primary bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
+              >
+                + Produk
+              </button>
+              <button
                 onClick={() => {
                   if (selectMode) exitSelect();
                   else setSelectMode(true);
