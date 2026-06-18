@@ -941,6 +941,16 @@ function Index() {
                       WA
                     </a>
                   )}
+                  {!selectMode && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditId(p.id); }}
+                      className="shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                      aria-label="Edit lengkap"
+                      title="Edit lengkap"
+                    >
+                      ✎
+                    </button>
+                  )}
                 </div>
                 {viewMode === "grid" && (
                   <div className="flex items-center gap-2 border-t px-2.5 py-1.5">
@@ -961,6 +971,12 @@ function Index() {
                       />
                       Tandai terkirim
                     </label>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditId(p.id); }}
+                      className="ml-auto rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                    >
+                      ✎ Edit
+                    </button>
                   </div>
                 )}
 
