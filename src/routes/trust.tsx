@@ -54,6 +54,17 @@ function TrustPage() {
       </header>
 
       <div className="space-y-4">
+        <Section title="Ringkasan kebijakan privasi">
+          <p>
+            MCM Storage memproses data operasional bisnis Anda (pesanan,
+            stok, pemasok, pelanggan) hanya untuk menjalankan fitur
+            aplikasi. Akses dibatasi ke akun pemilik melalui Row-Level
+            Security, data tidak dijual atau dipakai untuk profil iklan,
+            dan komunikasi keluar (WhatsApp/Email) dikirim dari akun
+            perangkat Anda sendiri, bukan dari server kami.
+          </p>
+        </Section>
+
         <Section title="Tentang aplikasi">
           <p>
             MCM Storage adalah aplikasi internal untuk mengelola pesanan
@@ -78,6 +89,66 @@ function TrustPage() {
             pemasok, catatan, foto pesanan, alamat email CC/BCC pemasok)
             disimpan di backend kami untuk menjalankan fitur aplikasi. Kami
             tidak menjual data pengguna.
+          </p>
+        </Section>
+
+        <Section title="Tujuan pemrosesan data">
+          <ul className="list-disc space-y-1 pl-5">
+            <li>
+              <strong>Autentikasi & keamanan akun</strong> — memverifikasi
+              login, menjaga sesi, dan membatasi akses ke data milik Anda.
+            </li>
+            <li>
+              <strong>Operasional pesanan & gudang</strong> — menyimpan
+              pesanan, item stok, pembelian, penjualan, dan riwayatnya.
+            </li>
+            <li>
+              <strong>Komunikasi ke pelanggan/pemasok</strong> — menyiapkan
+              pesan WhatsApp dan email (termasuk CC/BCC) yang Anda kirim
+              dari perangkat sendiri.
+            </li>
+            <li>
+              <strong>Keandalan layanan</strong> — log error teknis untuk
+              memperbaiki bug dan menjaga aplikasi tetap berjalan.
+            </li>
+          </ul>
+        </Section>
+
+        <Section title="Dasar hukum pemrosesan">
+          <p>
+            Untuk pengguna di wilayah yang menerapkan UU Perlindungan Data
+            Pribadi (UU PDP Indonesia) atau GDPR, dasar hukum pemrosesan
+            kami adalah:
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>
+              <strong>Pelaksanaan kontrak</strong> — memproses data yang
+              diperlukan agar Anda dapat menggunakan akun dan fitur
+              aplikasi.
+            </li>
+            <li>
+              <strong>Kepentingan sah (legitimate interest)</strong> —
+              menjaga keamanan akun, mencegah penyalahgunaan, dan menjaga
+              kualitas layanan.
+            </li>
+            <li>
+              <strong>Persetujuan</strong> — untuk data opsional yang Anda
+              berikan secara sukarela (mis. foto pesanan, alamat CC/BCC
+              tambahan); persetujuan dapat ditarik kapan saja.
+            </li>
+            <li>
+              <strong>Kewajiban hukum</strong> — bila diwajibkan menyimpan
+              atau mengungkap data oleh peraturan yang berlaku.
+            </li>
+          </ul>
+        </Section>
+
+        <Section title="Hak Anda atas data">
+          <p>
+            Anda berhak meminta akses, koreksi, pembaruan, pembatasan
+            pemrosesan, penghapusan, atau ekspor data pribadi Anda, serta
+            menarik persetujuan kapan saja. Permintaan akan kami tanggapi
+            dalam waktu wajar sesuai peraturan yang berlaku.
           </p>
         </Section>
 
@@ -115,11 +186,32 @@ function TrustPage() {
           </p>
         </Section>
 
-        <Section title="Permintaan data & kontak">
+        <Section title="Cara menghubungi kami untuk permintaan data">
           <p>
-            Untuk pertanyaan terkait data akun Anda, koreksi data, atau
-            permintaan penghapusan akun, silakan hubungi admin MCM Storage
-            melalui kanal internal yang biasa Anda gunakan.
+            Untuk mengajukan permintaan terkait data Anda (akses, koreksi,
+            penghapusan, ekspor, atau menarik persetujuan), gunakan salah
+            satu kanal berikut:
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>
+              <strong>Email:</strong>{" "}
+              <a
+                href="mailto:admin@mcmstorage.biz?subject=Permintaan%20Data%20Pribadi"
+                className="underline"
+              >
+                admin@mcmstorage.biz
+              </a>
+            </li>
+            <li>
+              <strong>WhatsApp / kanal internal:</strong> hubungi admin MCM
+              Storage yang biasa Anda gunakan untuk operasional harian.
+            </li>
+          </ul>
+          <p>
+            Mohon sertakan alamat email akun Anda dan jenis permintaan agar
+            kami dapat memverifikasi identitas sebelum memproses. Kami
+            berusaha menanggapi paling lama dalam <strong>30 hari</strong>{" "}
+            sejak permintaan diterima.
           </p>
         </Section>
       </div>
