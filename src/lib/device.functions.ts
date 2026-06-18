@@ -92,6 +92,30 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
     const email = userResp?.user?.email;
     if (!email) throw new Error("Email akun tidak ditemukan");
 
+    // Pastikan ada unsubscribe_token (wajib untuk purpose=transactional)
+    let unsubscribeToken: string | null = null;
+    {
+      const { data: existingTok } = await supabaseAdmin
+        .from("email_unsubscribe_tokens")
+        .select("token")
+        .eq("email", email)
+        .is("used_at", null)
+        .limit(1)
+        .maybeSingle();
+      if (existingTok?.token) {
+        unsubscribeToken = existingTok.token;
+      } else {
+        const newTok = randomUUID().replace(/-/g, "") + randomUUID().replace(/-/g, "");
+        const { data: inserted, error: tokErr } = await supabaseAdmin
+          .from("email_unsubscribe_tokens")
+          .insert({ email, token: newTok })
+          .select("token")
+          .single();
+        if (tokErr || !inserted) throw new Error("Gagal membuat unsubscribe token");
+        unsubscribeToken = inserted.token;
+      }
+    }
+
     const subject = "Kode verifikasi device — MCM Storage";
     const html = renderOtpEmail(code, ip, ua);
     const text = `Kode verifikasi device MCM Storage Anda: ${code}\nBerlaku 10 menit.\nIP: ${ip}\nDevice: ${ua}\nJika bukan Anda, segera ganti kata sandi.`;
@@ -115,6 +139,7 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
           idempotency_key: idempotencyKey,
           message_id: messageId,
           queued_at: new Date().toISOString(),
+          unsubscribe_token: unsubscribeToken,
         },
       } as never);
       if (rpcErr) emailError = rpcErr.message;
