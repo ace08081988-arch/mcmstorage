@@ -1612,14 +1612,28 @@ function HutangTab({
 
   if (debts.length === 0) {
     return (
-      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-        Tidak ada hutang ke supplier. Pembelian dengan cara bayar <b>Hutang</b> akan muncul di sini.
+      <div className="space-y-3">
+        <button
+          onClick={onAddDebt}
+          className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+        >
+          ➕ Tambah hutang (catat pembelian)
+        </button>
+        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+          Tidak ada hutang ke supplier. Pembelian dengan cara bayar <b>Hutang</b> akan muncul di sini.
+        </div>
       </div>
     );
   }
 
   return (
     <div className="space-y-3">
+      <button
+        onClick={onAddDebt}
+        className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+      >
+        ➕ Tambah hutang (catat pembelian)
+      </button>
       <div className="grid grid-cols-3 gap-2 text-[11px]">
         <div className="rounded-md border bg-card p-2">
           <div className="text-muted-foreground">Total hutang</div>
