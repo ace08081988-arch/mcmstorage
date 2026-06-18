@@ -804,6 +804,24 @@ function Index() {
           compact
           triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base leading-none transition-colors hover:bg-accent"
         />
+        <button
+          onClick={() => {
+            try {
+              window.localStorage.removeItem("mcm_rail_open");
+            } catch {
+              /* ignore */
+            }
+            setRailOpen(
+              typeof window !== "undefined" ? window.innerWidth >= 640 : true,
+            );
+            toast.success("Tampilan menu dikembalikan ke default");
+          }}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          aria-label="Reset tampilan menu"
+          title="Reset tampilan menu"
+        >
+          ⟲
+        </button>
         {lockMenu(
           true,
           `inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent ${
