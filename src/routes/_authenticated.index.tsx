@@ -543,6 +543,15 @@ function Index() {
               </ul>
             </div>
           )}
+
+          {(categories.length > 0 || items.length > 0) && (
+            <button
+              onClick={resetAllData}
+              className="w-full rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/20"
+            >
+              🗑 Reset semua data saya
+            </button>
+          )}
         </main>
       </div>
     );
