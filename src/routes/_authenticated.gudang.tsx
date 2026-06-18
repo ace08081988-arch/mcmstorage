@@ -1439,6 +1439,8 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
   const [pricePerPackage, setPricePerPackage] = useState("");
   const [note, setNote] = useState("");
   const [customerId, setCustomerId] = useState("");
+  const [newCustName, setNewCustName] = useState("");
+  const [newCustWa, setNewCustWa] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"kas" | "hutang">("kas");
 
   useEffect(() => {
@@ -1475,7 +1477,20 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
       return;
     }
     if (qtyBase > item.stock_base) { toast.error(`Stok kurang. Tersedia ${fmtBase(item.stock_base, item.base_unit)}`); return; }
-    if (paymentMethod === "hutang" && !customerId) {
+    let useCustomerId: string | null = customerId || null;
+    if (customerId === "__new__") {
+      const nm = newCustName.trim();
+      if (!nm) { toast.error("Isi nama pelanggan baru"); return; }
+      const wa = newCustWa.trim();
+      const { data: nc, error: ncErr } = await supabase
+        .from("customers")
+        .insert({ user_id: uid, name: nm, contact: wa || null })
+        .select("id")
+        .single();
+      if (ncErr || !nc) { toast.error(friendlyError(ncErr ?? new Error("Gagal simpan pelanggan"))); return; }
+      useCustomerId = nc.id;
+    }
+    if (paymentMethod === "hutang" && !useCustomerId) {
       toast.error("Penjualan hutang wajib pilih pelanggan");
       return;
     }
@@ -1487,12 +1502,14 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
       total_revenue: total,
       cost_at_sale: 0, // recomputed in trigger
       note: note.trim() || null,
-      customer_id: customerId || null,
+      customer_id: useCustomerId,
       payment_method: paymentMethod,
     });
     if (error) { toast.error(friendlyError(error)); return; }
     toast.success(`Penjualan dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok berkurang`);
     setQty(""); setPricePerBase(""); setPricePerPackage(""); setNote("");
+    setNewCustName(""); setNewCustWa("");
+    if (customerId === "__new__") setCustomerId("");
     onChanged();
   }
 
@@ -1555,8 +1572,17 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
               <option value="">— Tanpa pelanggan —</option>
               {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+              <option value="__new__">+ Pelanggan baru…</option>
             </select>
           </label>
+
+          {customerId === "__new__" && (
+            <div className="grid grid-cols-1 gap-2 rounded-md border border-dashed bg-muted/30 p-2">
+              <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama pelanggan baru *" value={newCustName} onChange={(e) => setNewCustName(e.target.value)} maxLength={100} required />
+              <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. WhatsApp (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
+              <div className="text-[11px] text-muted-foreground">Pelanggan & nomor WA akan otomatis tersimpan ke daftar pelanggan.</div>
+            </div>
+          )}
 
           <div>
             <div className="text-[11px] text-muted-foreground mb-1">Cara bayar</div>
@@ -1983,6 +2009,8 @@ function PesananTab({
 }) {
   const [itemId, setItemId] = useState("");
   const [customerId, setCustomerId] = useState("");
+  const [newCustName, setNewCustName] = useState("");
+  const [newCustWa, setNewCustWa] = useState("");
   const [qty, setQty] = useState("");
   const [qtyMode, setQtyMode] = useState<"base" | "package">("base");
   const [price, setPrice] = useState("");
@@ -2009,9 +2037,22 @@ function PesananTab({
     if (qtyMode === "package" && item.package_type === "pcs") {
       toast.error("Barang pcs tidak punya kemasan"); return;
     }
+    let useCustomerId: string | null = customerId || null;
+    if (customerId === "__new__") {
+      const nm = newCustName.trim();
+      if (!nm) { toast.error("Isi nama pelanggan baru"); return; }
+      const wa = newCustWa.trim();
+      const { data: nc, error: ncErr } = await supabase
+        .from("customers")
+        .insert({ user_id: uid, name: nm, contact: wa || null })
+        .select("id")
+        .single();
+      if (ncErr || !nc) { toast.error(friendlyError(ncErr ?? new Error("Gagal simpan pelanggan"))); return; }
+      useCustomerId = nc.id;
+    }
     const { error } = await supabase.from("order_requests").insert({
       user_id: uid,
-      customer_id: customerId || null,
+      customer_id: useCustomerId,
       item_id: item.id,
       qty: qtyN,
       qty_mode: qtyMode,
@@ -2021,6 +2062,8 @@ function PesananTab({
     if (error) { toast.error(friendlyError(error)); return; }
     toast.success("Pesanan ditambahkan");
     setQty(""); setPrice(""); setNote("");
+    setNewCustName(""); setNewCustWa("");
+    if (customerId === "__new__") setCustomerId("");
     onChanged();
   }
 
@@ -2113,8 +2156,17 @@ function PesananTab({
           <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
             <option value="">— Tanpa pelanggan —</option>
             {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+            <option value="__new__">+ Pelanggan baru…</option>
           </select>
         </label>
+
+        {customerId === "__new__" && (
+          <div className="grid grid-cols-1 gap-2 rounded-md border border-dashed bg-muted/30 p-2">
+            <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama pelanggan baru *" value={newCustName} onChange={(e) => setNewCustName(e.target.value)} maxLength={100} required />
+            <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. WhatsApp (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
+            <div className="text-[11px] text-muted-foreground">Pelanggan & nomor WA akan otomatis tersimpan ke daftar pelanggan.</div>
+          </div>
+        )}
 
         <label className="block">
           <span className="text-[11px] text-muted-foreground">Barang</span>
