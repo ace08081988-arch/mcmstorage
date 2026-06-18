@@ -265,14 +265,42 @@ function Index() {
                 {terkirim}/{items.length} terkirim · {rupiah(total)}
               </p>
             </div>
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border hover:bg-accent"
-              aria-label="Ganti tema"
-              title={theme === "dark" ? "Mode terang" : "Mode gelap"}
-            >
-              {theme === "dark" ? "☀️" : "🌙"}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <div className="inline-flex overflow-hidden rounded-md border">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`px-2 py-1 text-[11px] font-medium ${
+                    viewMode === "list"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background hover:bg-accent"
+                  }`}
+                  aria-label="Tampilan daftar"
+                  title="Daftar"
+                >
+                  ☰
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`border-l px-2 py-1 text-[11px] font-medium ${
+                    viewMode === "grid"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background hover:bg-accent"
+                  }`}
+                  aria-label="Tampilan kotak"
+                  title="Kotak"
+                >
+                  ▦
+                </button>
+              </div>
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border hover:bg-accent"
+                aria-label="Ganti tema"
+                title={theme === "dark" ? "Mode terang" : "Mode gelap"}
+              >
+                {theme === "dark" ? "☀️" : "🌙"}
+              </button>
+            </div>
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
