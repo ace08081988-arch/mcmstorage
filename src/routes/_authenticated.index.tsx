@@ -267,9 +267,20 @@ function Index() {
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [newCatName, setNewCatName] = useState("");
-  const [railOpen, setRailOpen] = useState<boolean>(() =>
-    typeof window !== "undefined" ? window.innerWidth >= 640 : true,
-  );
+  const [railOpen, setRailOpen] = useState<boolean>(() => {
+    if (typeof window === "undefined") return true;
+    const saved = window.localStorage.getItem("mcm_rail_open");
+    if (saved === "1") return true;
+    if (saved === "0") return false;
+    return window.innerWidth >= 640;
+  });
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("mcm_rail_open", railOpen ? "1" : "0");
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [railOpen]);
 
   useEffect(() => {
     try {
