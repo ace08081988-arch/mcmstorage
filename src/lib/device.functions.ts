@@ -235,6 +235,40 @@ function maskEmail(email: string) {
   return `${visible}${"*".repeat(Math.max(1, name.length - 2))}@${domain}`;
 }
 
+export const isDeviceTrusted = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { deviceHash: string }) => {
+    if (!data?.deviceHash || typeof data.deviceHash !== "string" || data.deviceHash.length < 16) {
+      throw new Error("deviceHash tidak valid");
+    }
+    return { deviceHash: data.deviceHash };
+  })
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
+    const ip = clientIp();
+    const ua = getRequestHeader("user-agent") || "unknown";
+    const fullHash = combinedHash(data.deviceHash, ip);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: row } = await supabaseAdmin
+      .from("user_devices")
+      .select("id, trusted_at")
+      .eq("user_id", userId)
+      .eq("device_hash", fullHash)
+      .maybeSingle();
+    const trusted = !!row?.trusted_at;
+    if (trusted && row) {
+      await supabaseAdmin
+        .from("user_devices")
+        .update({
+          last_ip: ip,
+          last_user_agent: ua,
+          last_seen_at: new Date().toISOString(),
+        })
+        .eq("id", row.id);
+    }
+    return { trusted };
+  });
+
 export const checkDeviceOtpEmailStatus = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: { messageId: string }) => {
