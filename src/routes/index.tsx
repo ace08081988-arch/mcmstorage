@@ -59,6 +59,7 @@ function buildInitial(): Produk[] {
 
 const STORAGE_KEY = "penjualan-harian-v1";
 const THEME_KEY = "penjualan-theme";
+const VIEW_KEY = "penjualan-view";
 
 function rupiah(n: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -114,6 +115,7 @@ function Index() {
   const [flashId, setFlashId] = useState<number | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
+  const [viewMode, setViewMode] = useState<"list" | "grid">("list");
 
   useEffect(() => {
     try {
@@ -125,6 +127,10 @@ function Index() {
       const initial =
         t ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
       setTheme(initial);
+    } catch {}
+    try {
+      const v = localStorage.getItem(VIEW_KEY) as "list" | "grid" | null;
+      if (v) setViewMode(v);
     } catch {}
     setHydrated(true);
   }, []);
@@ -138,6 +144,10 @@ function Index() {
     document.documentElement.classList.toggle("dark", theme === "dark");
     localStorage.setItem(THEME_KEY, theme);
   }, [theme, hydrated]);
+
+  useEffect(() => {
+    if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
+  }, [viewMode, hydrated]);
 
   const total = useMemo(
     () => items.filter((i) => i.status === "Sudah Dikirim").reduce((s, i) => s + i.harga, 0),
@@ -255,14 +265,42 @@ function Index() {
                 {terkirim}/{items.length} terkirim · {rupiah(total)}
               </p>
             </div>
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-md border hover:bg-accent"
-              aria-label="Ganti tema"
-              title={theme === "dark" ? "Mode terang" : "Mode gelap"}
-            >
-              {theme === "dark" ? "☀️" : "🌙"}
-            </button>
+            <div className="flex items-center gap-1.5">
+              <div className="inline-flex overflow-hidden rounded-md border">
+                <button
+                  onClick={() => setViewMode("list")}
+                  className={`px-2 py-1 text-[11px] font-medium ${
+                    viewMode === "list"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background hover:bg-accent"
+                  }`}
+                  aria-label="Tampilan daftar"
+                  title="Daftar"
+                >
+                  ☰
+                </button>
+                <button
+                  onClick={() => setViewMode("grid")}
+                  className={`border-l px-2 py-1 text-[11px] font-medium ${
+                    viewMode === "grid"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background hover:bg-accent"
+                  }`}
+                  aria-label="Tampilan kotak"
+                  title="Kotak"
+                >
+                  ▦
+                </button>
+              </div>
+              <button
+                onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-md border hover:bg-accent"
+                aria-label="Ganti tema"
+                title={theme === "dark" ? "Mode terang" : "Mode gelap"}
+              >
+                {theme === "dark" ? "☀️" : "🌙"}
+              </button>
+            </div>
           </div>
 
           <div className="mt-2 flex flex-wrap items-center gap-1.5">
@@ -311,19 +349,64 @@ function Index() {
       </header>
 
       <main className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
-        <ul className="grid gap-1.5">
+        <ul
+          className={
+            viewMode === "grid"
+              ? "grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4"
+              : "grid gap-1.5"
+          }
+        >
           {filtered.map((p) => {
             const sent = p.status === "Sudah Dikirim";
             const waUrl = `https://wa.me/?text=${encodeURIComponent(buildPesan(p))}`;
             const open = openId === p.id;
             const fotoCount = (p.foto ? 1 : 0) + (p.galeri?.length ?? 0);
+            const thumb = p.foto ?? p.galeri?.[0];
             return (
               <li
                 key={p.id}
-                className={`rounded-lg border bg-card transition-opacity ${sent ? "opacity-60" : ""}`}
+                className={`overflow-hidden rounded-lg border bg-card transition-opacity ${sent ? "opacity-60" : ""} ${
+                  viewMode === "grid" && open ? "col-span-full" : ""
+                }`}
               >
+                {viewMode === "grid" && (
+                  <button
+                    onClick={() =>
+                      selectMode ? toggleSelect(p.id) : setOpenId(open ? null : p.id)
+                    }
+                    className="relative block aspect-square w-full overflow-hidden bg-muted"
+                    aria-label="Buka detail"
+                  >
+                    {thumb ? (
+                      <img src={thumb} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-2xl text-muted-foreground">
+                        📦
+                      </div>
+                    )}
+                    <span className="absolute left-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[10px] font-medium">
+                      {TAG[p.kategori]}
+                    </span>
+                    {fotoCount > 0 && (
+                      <span className="absolute right-1.5 top-1.5 inline-flex items-center rounded bg-background/90 px-1.5 py-0.5 text-[10px]">
+                        📷{fotoCount}
+                      </span>
+                    )}
+                    {selectMode && (
+                      <span
+                        className={`absolute bottom-1.5 right-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border-2 text-[10px] ${
+                          selected.has(p.id)
+                            ? "border-primary bg-primary text-primary-foreground"
+                            : "border-background bg-background/80"
+                        }`}
+                      >
+                        {selected.has(p.id) ? "✓" : ""}
+                      </span>
+                    )}
+                  </button>
+                )}
                 <div className="flex items-center gap-2 px-2.5 py-2">
-                  {selectMode ? (
+                  {selectMode && viewMode === "list" ? (
                     <input
                       type="checkbox"
                       checked={selected.has(p.id)}
@@ -331,7 +414,7 @@ function Index() {
                       className="h-4 w-4 shrink-0 accent-primary"
                       aria-label="Pilih untuk kirim massal"
                     />
-                  ) : (
+                  ) : viewMode === "list" ? (
                     <input
                       type="checkbox"
                       checked={sent}
@@ -343,18 +426,20 @@ function Index() {
                       className="h-4 w-4 shrink-0"
                       aria-label="Tandai terkirim"
                     />
-                  )}
+                  ) : null}
                   <button
                     onClick={() =>
                       selectMode ? toggleSelect(p.id) : setOpenId(open ? null : p.id)
                     }
                     className="flex min-w-0 flex-1 items-center gap-2 text-left"
                   >
-                    <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
-                      {TAG[p.kategori]}
-                    </span>
+                    {viewMode === "list" && (
+                      <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                        {TAG[p.kategori]}
+                      </span>
+                    )}
                     <span className="truncate text-sm font-medium">{p.nama}</span>
-                    {fotoCount > 0 && (
+                    {viewMode === "list" && fotoCount > 0 && (
                       <span className="shrink-0 text-[10px] text-muted-foreground">📷{fotoCount}</span>
                     )}
                     <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
@@ -373,6 +458,23 @@ function Index() {
                     </a>
                   )}
                 </div>
+                {viewMode === "grid" && (
+                  <div className="flex items-center gap-2 border-t px-2.5 py-1.5">
+                    <label className="flex items-center gap-1.5 text-[11px]">
+                      <input
+                        type="checkbox"
+                        checked={sent}
+                        onChange={(e) =>
+                          update(p.id, {
+                            status: e.target.checked ? "Sudah Dikirim" : "Belum Dikirim",
+                          })
+                        }
+                        className="h-3.5 w-3.5"
+                      />
+                      {sent ? "Terkirim" : "Belum"}
+                    </label>
+                  </div>
+                )}
 
                 {open && (
                   <div className="space-y-2 border-t px-2.5 py-2.5">
