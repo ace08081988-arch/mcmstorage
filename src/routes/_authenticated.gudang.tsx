@@ -1086,6 +1086,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
   const [category, setCategory] = useState("");
   const [packageType, setPackageType] = useState<PackageType>("botol");
   const [packageSize, setPackageSize] = useState("500");
+  const [newImagePath, setNewImagePath] = useState<string | null>(null);
   // purchase
   const [packageQty, setPackageQty] = useState("1");
   const [pricePerPackage, setPricePerPackage] = useState("");
@@ -1127,6 +1128,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
         package_type: packageType,
         package_size: packageType === "pcs" ? 1 : effectivePkgSize,
         base_unit: baseUnit,
+        image_path: newImagePath,
       }).select().single();
       if (error || !data) { toast.error(error?.message || "Gagal buat barang"); return; }
       useItemId = (data as WItem).id;
@@ -1150,7 +1152,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
     });
     if (error) { toast.error(error.message); return; }
     toast.success(`Pembelian dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok bertambah`);
-    setName(""); setCategory(""); setPackageQty("1"); setPricePerPackage(""); setPricePerBase("");
+    setName(""); setCategory(""); setPackageQty("1"); setPricePerPackage(""); setPricePerBase(""); setNewImagePath(null);
     onChanged();
   }
 
