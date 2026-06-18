@@ -89,6 +89,45 @@ export type Database = {
         }
         Relationships: []
       }
+      device_otp_challenges: {
+        Row: {
+          attempts: number
+          code_hash: string
+          consumed_at: string | null
+          created_at: string
+          device_hash: string
+          expires_at: string
+          id: string
+          last_ip: string | null
+          last_user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          code_hash: string
+          consumed_at?: string | null
+          created_at?: string
+          device_hash: string
+          expires_at: string
+          id?: string
+          last_ip?: string | null
+          last_user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          code_hash?: string
+          consumed_at?: string | null
+          created_at?: string
+          device_hash?: string
+          expires_at?: string
+          id?: string
+          last_ip?: string | null
+          last_user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       order_request_events: {
         Row: {
           created_at: string
@@ -377,6 +416,45 @@ export type Database = {
           id?: string
           name?: string
           notes?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_devices: {
+        Row: {
+          created_at: string
+          device_hash: string
+          id: string
+          label: string | null
+          last_ip: string | null
+          last_seen_at: string
+          last_user_agent: string | null
+          trusted_at: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_hash: string
+          id?: string
+          label?: string | null
+          last_ip?: string | null
+          last_seen_at?: string
+          last_user_agent?: string | null
+          trusted_at?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_hash?: string
+          id?: string
+          label?: string | null
+          last_ip?: string | null
+          last_seen_at?: string
+          last_user_agent?: string | null
+          trusted_at?: string
           updated_at?: string
           user_id?: string
         }
