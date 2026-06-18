@@ -123,6 +123,7 @@ function GudangPage() {
             ["supplier", "Supplier"],
             ["beli", "Beli"],
             ["jual", "Jual"],
+            ["hutang", "Hutang"],
             ["riwayat", "Riwayat"],
           ] as const).map(([k, label]) => (
             <button
@@ -150,6 +151,16 @@ function GudangPage() {
         )}
         {tab === "jual" && (
           <JualTab items={items} uid={uid} onChanged={reloadAll} />
+        )}
+        {tab === "hutang" && (
+          <HutangTab
+            purchases={purchases}
+            payments={payments}
+            suppliers={suppliers}
+            itemMap={itemMap}
+            uid={uid}
+            onChanged={reloadAll}
+          />
         )}
         {tab === "riwayat" && (
           <RiwayatTab
