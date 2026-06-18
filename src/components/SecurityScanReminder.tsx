@@ -5,11 +5,7 @@ import { Button } from "@/components/ui/button";
 // Vite reads the migration directory at build time. The latest filename's
 // timestamp prefix becomes our "schema version" — any new migration shipped
 // in a deploy bumps it and re-triggers the reminder banner.
-const migrationModules = import.meta.glob("/supabase/migrations/*.sql", {
-  query: "?url",
-  import: "default",
-  eager: true,
-}) as Record<string, string>;
+const migrationModules = import.meta.glob("/supabase/migrations/*.sql");
 
 function computeLatestVersion(): string | null {
   const names = Object.keys(migrationModules)
