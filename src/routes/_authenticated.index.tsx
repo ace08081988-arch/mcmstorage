@@ -7,11 +7,14 @@ import { supabase } from "@/integrations/supabase/client";
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
-      { title: "MCM Storage" },
-      { name: "description", content: "MCM Storage \u2014 kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman." },
-      { property: "og:title", content: "MCM Storage" },
-      { property: "og:description", content: "MCM Storage \u2014 kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman." },
+      { title: "Beranda — Kelola Pesanan & Kirim WhatsApp · MCM Storage" },
+      { name: "description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke WhatsApp pelanggan dalam satu halaman." },
+      { property: "og:title", content: "Beranda — Kelola Pesanan & Kirim WhatsApp · MCM Storage" },
+      { property: "og:description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke WhatsApp pelanggan dalam satu halaman." },
+      { property: "og:type", content: "website" },
+      { property: "og:url", content: "https://mcmstorage.lovable.app/" },
     ],
+    links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/" }],
   }),
   component: Index,
 });
