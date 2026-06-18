@@ -267,6 +267,9 @@ function Index() {
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [newCatName, setNewCatName] = useState("");
+  const [railOpen, setRailOpen] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 640 : true,
+  );
 
   useEffect(() => {
     try {
