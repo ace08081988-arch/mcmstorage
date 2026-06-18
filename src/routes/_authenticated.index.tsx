@@ -154,7 +154,7 @@ function Index() {
         // First time for this account — seed with initial data
         const seed = buildInitial();
         setItems(seed);
-        await supabase.from("user_storage").upsert({ user_id: uid, items: seed as unknown as object });
+        await supabase.from("user_storage").upsert({ user_id: uid, items: seed as any });
       }
       setHydrated(true);
     })();
@@ -169,7 +169,7 @@ function Index() {
       if (!uid || cancelled) return;
       const { error } = await supabase
         .from("user_storage")
-        .upsert({ user_id: uid, items: items as unknown as object });
+        .upsert({ user_id: uid, items: items as any });
       if (error && !cancelled) toast.error("Gagal menyimpan: " + error.message);
     }, 600);
     return () => {
