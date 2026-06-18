@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -151,16 +152,19 @@ function Index() {
     if (!files || files.length === 0) return;
     const dataUrl = await compressImage(files[0]);
     update(id, { foto: dataUrl });
-    // Ambil lokasi otomatis saat foto diambil
+    setOpenId(id);
+    toast.success("Foto tersimpan");
     if (typeof navigator !== "undefined" && navigator.geolocation) {
+      const tId = toast.loading("Mengambil lokasi…");
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
           const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
           update(id, { lokasi: link });
+          toast.success("Lokasi otomatis terisi", { id: tId });
         },
         (err) => {
-          alert("Gagal ambil lokasi: " + err.message);
+          toast.error("Gagal ambil lokasi: " + err.message, { id: tId });
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
