@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { confirm } from "@/lib/confirm";
 import {
   Dialog,
   DialogContent,
@@ -92,8 +93,13 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
     onOpenChange(false);
   };
 
-  const disableLock = () => {
-    if (!confirm("Nonaktifkan kunci aplikasi?")) return;
+  const disableLock = async () => {
+    if (!(await confirm({
+      title: "Nonaktifkan kunci aplikasi?",
+      description: "Aplikasi tidak akan meminta PIN/pola/biometrik lagi sampai Anda mengaktifkannya kembali.",
+      confirmText: "Nonaktifkan",
+      destructive: true,
+    }))) return;
     setLockConfig(uid, null);
     toast.success("Kunci aplikasi dimatikan");
     onOpenChange(false);

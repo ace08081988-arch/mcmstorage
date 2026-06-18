@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { confirm } from "@/lib/confirm";
 
 export const Route = createFileRoute("/_authenticated/gudang/pesanan/$id")({
   component: PesananDetailPage,
@@ -86,7 +87,11 @@ function PesananDetailPage() {
     const perBase = order.price_per_unit
       ? (order.qty_mode === "base" ? Number(order.price_per_unit) : Number(order.price_per_unit) / item.package_size)
       : 0;
-    if (!confirm(`Catat penjualan: ${fmtBase(qtyBase, item.base_unit)} × ${rupiah(perBase)}/${item.base_unit}?`)) return;
+    if (!(await confirm({
+      title: "Catat penjualan?",
+      description: `${fmtBase(qtyBase, item.base_unit)} × ${rupiah(perBase)}/${item.base_unit}`,
+      confirmText: "Catat",
+    }))) return;
     setBusy(true);
     const { error } = await supabase.from("sales").insert({
       user_id: order.user_id, item_id: item.id, qty_base: qtyBase,

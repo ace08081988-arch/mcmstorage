@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/drawer";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
+import { confirm } from "@/lib/confirm";
 
 export type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
 
@@ -295,8 +296,14 @@ export function ProductEditDrawer(props: Props) {
           {/* Hapus */}
           <section className="pt-2">
             <button
-              onClick={() => {
-                if (confirm(`Hapus produk "${draft.nama || "tanpa nama"}"?`)) {
+              onClick={async () => {
+                if (
+                  await confirm({
+                    title: "Hapus produk?",
+                    description: `Produk "${draft.nama || "tanpa nama"}" akan dihapus permanen.`,
+                    confirmText: "Hapus",
+                  })
+                ) {
                   removeItem(draft.id);
                   onOpenChange(false);
                 }
