@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
 import { AppearanceInit } from "@/components/appearance-settings";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
+import { ConfirmHost } from "@/lib/confirm";
 
 function NotFoundComponent() {
   return (
@@ -150,6 +151,7 @@ function RootComponent() {
       {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
       <Outlet />
       <Toaster richColors position="top-center" />
+      <ConfirmHost />
     </QueryClientProvider>
   );
 }
