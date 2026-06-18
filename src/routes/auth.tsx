@@ -72,16 +72,23 @@ function AuthPage() {
         });
         return;
       }
-      toast.success("Pendaftaran berhasil");
-      navigate({ to: "/", replace: true });
+      toast.success(
+        "Pendaftaran berhasil. Cek email Anda untuk verifikasi sebelum masuk.",
+        { duration: 8000 },
+      );
+      setMode("login");
+      setPassword("");
+      setConfirmPassword("");
       return;
     }
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      const msg = /invalid login credentials/i.test(error.message)
-        ? "Email atau kata sandi salah"
+      const msg = /email not confirmed|not.*confirmed/i.test(error.message)
+        ? "Email belum diverifikasi. Cek inbox untuk link verifikasi."
+        : /invalid login credentials/i.test(error.message)
+        ? "Email atau kata sandi salah (atau belum daftar)"
         : friendlyError(error);
       toast.error(msg, {
         action: {
