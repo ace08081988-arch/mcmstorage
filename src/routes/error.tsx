@@ -1,4 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouter } from "@tanstack/react-router";
+import { useState } from "react";
 import { z } from "zod";
 import { friendlyError } from "@/lib/friendly-error";
 
@@ -19,6 +20,27 @@ export const Route = createFileRoute("/error")({
 function ErrorPage() {
   const { title, message, code, from, kind = "unknown" } = Route.useSearch();
   const navigate = useNavigate();
+  const router = useRouter();
+  const [retrying, setRetrying] = useState(false);
+
+  const retryTarget = from ?? (kind === "auth" ? "/auth" : "/");
+
+  async function handleRetry() {
+    if (retrying) return;
+    setRetrying(true);
+    try {
+      // Re-run all active loaders / queries so the failed fetch is retried.
+      await router.invalidate();
+      await navigate({ to: retryTarget as any, replace: true });
+    } catch {
+      // Last-resort fallback: hard reload the original page.
+      if (typeof window !== "undefined") {
+        window.location.href = retryTarget;
+      }
+    } finally {
+      setRetrying(false);
+    }
+  }
 
   const heading = title ?? (
     kind === "auth" ? "Gagal masuk / sesi berakhir"
@@ -75,13 +97,12 @@ function ErrorPage() {
 
         <div className="flex flex-wrap gap-2 pt-1">
           <button
-            onClick={() => {
-              if (from) navigate({ to: from as any });
-              else window.location.reload();
-            }}
-            className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90"
+            onClick={handleRetry}
+            disabled={retrying}
+            aria-busy={retrying}
+            className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-60"
           >
-            🔄 Coba lagi
+            {retrying ? "⏳ Mencoba ulang…" : "🔄 Coba lagi"}
           </button>
           <Link
             to="/"
