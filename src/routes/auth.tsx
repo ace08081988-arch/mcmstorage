@@ -60,7 +60,16 @@ function AuthPage() {
           : /pwned|breach|compromised/i.test(error.message)
             ? "Kata sandi ini pernah bocor. Pakai kata sandi lain."
             : friendlyError(error);
-        toast.error(msg);
+        toast.error(msg, {
+          action: {
+            label: "Bantuan",
+            onClick: () =>
+              navigate({
+                to: "/error",
+                search: { kind: "auth", title: "Pendaftaran gagal", message: error.message, from: "/auth" },
+              }),
+          },
+        });
         return;
       }
       toast.success("Pendaftaran berhasil");
@@ -74,7 +83,16 @@ function AuthPage() {
       const msg = /invalid login credentials/i.test(error.message)
         ? "Email atau kata sandi salah"
         : friendlyError(error);
-      toast.error(msg);
+      toast.error(msg, {
+        action: {
+          label: "Bantuan",
+          onClick: () =>
+            navigate({
+              to: "/error",
+              search: { kind: "auth", title: "Gagal masuk", message: error.message, from: "/auth" },
+            }),
+        },
+      });
       return;
     }
     toast.success("Berhasil masuk");
