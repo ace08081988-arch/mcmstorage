@@ -352,10 +352,12 @@ function Index() {
                           }`}
                         />
                         {flashId === p.id
-                          ? `Tautan WA diperbarui · ${rupiah(p.harga)}`
-                          : `Tautan WA sinkron · ${rupiah(p.harga)}`}
+                          ? `Sedang diperbarui · ${rupiah(p.harga)}`
+                          : `Sinkron ✓ · ${rupiah(p.harga)}`}
                       </span>
-                      <span className="tabular-nums">live</span>
+                      <span className="tabular-nums">
+                        {flashId === p.id ? "memperbarui…" : "live"}
+                      </span>
                     </div>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <input
