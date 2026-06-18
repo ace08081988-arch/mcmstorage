@@ -171,6 +171,8 @@ function GudangPage() {
             itemMap={itemMap}
             uid={uid}
             onChanged={reloadAll}
+            onLocalPayment={(p) => setPayments((prev) => [p, ...prev])}
+            onLocalRemovePayment={(id) => setPayments((prev) => prev.filter((x) => x.id !== id))}
           />
         )}
         {tab === "riwayat" && (
