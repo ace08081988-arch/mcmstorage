@@ -65,10 +65,11 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
     handlers: {
       POST: async ({ request }) => {
         const apiKey = process.env.LOVABLE_API_KEY
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
+        const supabaseUrl = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL
+        const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-        if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
+        if (!apiKey || !supabaseUrl || !supabasePublishableKey || !supabaseServiceKey) {
           console.error('Missing required environment variables')
           return Response.json(
             { error: 'Server configuration error' },
@@ -76,28 +77,23 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           )
         }
 
-        // Verify the caller is authorized. The pg_cron job sends a dedicated
-        // cron_secret (stored in vault) as a Bearer token — never the Supabase
-        // service role key, which would otherwise be exposed in HTTP headers
-        // and server access logs.
-        const authHeader = request.headers.get('Authorization')
-        if (!authHeader?.startsWith('Bearer ')) {
+        // Verify the caller is a backend cron request using the publishable API key.
+        const requestApiKey = request.headers.get('apikey')
+        if (!requestApiKey) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
-        const token = authHeader.slice('Bearer '.length).trim()
+
+        if (requestApiKey !== supabasePublishableKey) {
+          return Response.json({ error: 'Forbidden' }, { status: 403 })
+        }
 
         const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
 
-        // 1. Check rate-limit cooldown and read queue config (plus cron_secret for auth)
+        // 1. Check rate-limit cooldown and read queue config.
         const { data: state } = await supabase
           .from('email_send_state')
-          .select('retry_after_until, batch_size, send_delay_ms, auth_email_ttl_minutes, transactional_email_ttl_minutes, cron_secret')
+          .select('retry_after_until, batch_size, send_delay_ms, auth_email_ttl_minutes, transactional_email_ttl_minutes')
           .single()
-
-        const expected = state?.cron_secret
-        if (!expected || token.length !== expected.length || token !== expected) {
-          return Response.json({ error: 'Forbidden' }, { status: 403 })
-        }
 
         if (state?.retry_after_until && new Date(state.retry_after_until) > new Date()) {
           return Response.json({ skipped: true, reason: 'rate_limited' })
