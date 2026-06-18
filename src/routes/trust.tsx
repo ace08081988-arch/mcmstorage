@@ -20,6 +20,9 @@ export const Route = createFileRoute("/trust")({
   component: TrustPage,
 });
 
+const TRUST_DOC_VERSION = "1.1.0";
+const TRUST_DOC_UPDATED_AT = "2026-06-18";
+
 function Section({
   title,
   children,
@@ -44,6 +47,17 @@ function TrustPage() {
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Trust &amp; Privacy
         </h1>
+        <p className="mt-2 text-xs text-muted-foreground">
+          Versi dokumen <strong>v{TRUST_DOC_VERSION}</strong> · Terakhir
+          diperbarui{" "}
+          <time dateTime={TRUST_DOC_UPDATED_AT}>
+            {new Date(TRUST_DOC_UPDATED_AT).toLocaleDateString("id-ID", {
+              day: "numeric",
+              month: "long",
+              year: "numeric",
+            })}
+          </time>
+        </p>
         <p className="mt-2 text-sm text-muted-foreground">
           Halaman ini dikelola oleh tim MCM Storage untuk menjawab pertanyaan
           umum seputar keamanan dan privasi aplikasi MCM Storage. Konten di
