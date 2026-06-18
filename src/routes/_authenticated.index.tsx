@@ -267,6 +267,9 @@ function Index() {
   const [categories, setCategories] = useState<string[]>([]);
   const [activeCat, setActiveCat] = useState<string | null>(null);
   const [newCatName, setNewCatName] = useState("");
+  const [railOpen, setRailOpen] = useState<boolean>(() =>
+    typeof window !== "undefined" ? window.innerWidth >= 640 : true,
+  );
 
   useEffect(() => {
     try {
@@ -685,8 +688,22 @@ function Index() {
 
   return (
     <div className="flex min-h-screen bg-background">
+      {/* Mobile drawer backdrop */}
+      {railOpen && (
+        <button
+          aria-label="Tutup menu"
+          onClick={() => setRailOpen(false)}
+          className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm sm:hidden"
+        />
+      )}
       {/* Vertical action rail */}
-      <aside className="sticky top-0 z-20 flex h-screen w-12 flex-col items-center gap-1.5 border-r bg-card/95 px-1 py-3 backdrop-blur sm:w-14">
+      <aside
+        className={`fixed inset-y-0 left-0 z-40 flex h-screen w-14 flex-col items-center gap-1.5 border-r bg-card/95 px-1 py-3 backdrop-blur transition-transform duration-200 sm:sticky sm:top-0 sm:z-20 sm:transition-[width,transform] ${
+          railOpen
+            ? "translate-x-0 sm:w-14"
+            : "-translate-x-full sm:translate-x-0 sm:w-0 sm:overflow-hidden sm:border-r-0 sm:px-0"
+        }`}
+      >
         <button
           onClick={() => {
             setActiveCat(null);
@@ -797,6 +814,14 @@ function Index() {
         <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
           <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
             <div className="flex items-center gap-3">
+              <button
+                onClick={() => setRailOpen((v) => !v)}
+                className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border bg-card text-base transition-colors hover:bg-accent"
+                aria-label={railOpen ? "Sembunyikan menu" : "Tampilkan menu"}
+                title={railOpen ? "Sembunyikan menu" : "Tampilkan menu"}
+              >
+                ☰
+              </button>
               <div className="min-w-0 flex-1">
                 <h1 className="truncate text-base font-semibold tracking-tight">
                   {activeCat} · MCM Storage
