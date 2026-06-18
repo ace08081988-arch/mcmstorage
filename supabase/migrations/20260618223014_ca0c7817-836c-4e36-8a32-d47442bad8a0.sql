@@ -1,0 +1,1 @@
+CREATE POLICY "Service role can delete tokens" ON public.email_unsubscribe_tokens FOR DELETE TO service_role USING (auth.role() = 'service_role');
