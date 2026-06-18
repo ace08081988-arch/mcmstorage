@@ -434,7 +434,9 @@ function Index() {
                       </button>
                       <button
                         onClick={() => deleteCategory(c)}
-                        className="shrink-0 rounded-md border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
+                        disabled={categories.length <= 1}
+                        className="shrink-0 rounded-md border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent"
+                        title={categories.length <= 1 ? "Minimal harus ada 1 kategori" : `Hapus kategori ${c}`}
                         aria-label={`Hapus kategori ${c}`}
                       >
                         Hapus
