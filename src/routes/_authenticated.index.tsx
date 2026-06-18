@@ -22,6 +22,28 @@ export const Route = createFileRoute("/_authenticated/")({
 type Status = "Belum Dikirim" | "Sudah Dikirim";
 type Kategori = string;
 
+type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
+
+const SATUAN_LIST: Satuan[] = ["gram", "kg", "botol", "sachet", "pcs", "lusin", "pak", "dus"];
+
+function satuanBounds(s: Satuan): { min: number; max: number; step: number } {
+  switch (s) {
+    case "gram":
+      return { min: 0.01, max: 5000, step: 0.01 };
+    case "kg":
+      return { min: 0.001, max: 5, step: 0.001 };
+    default:
+      return { min: 1, max: 9999, step: 1 };
+  }
+}
+
+function formatJumlah(j: number, s: Satuan): string {
+  const n = Number.isFinite(j) ? j : 0;
+  if (s === "gram") return `${n.toLocaleString("id-ID", { maximumFractionDigits: 2 })} g`;
+  if (s === "kg") return `${n.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`;
+  return `${n.toLocaleString("id-ID")} ${s}`;
+}
+
 type Produk = {
   id: number;
   kategori: Kategori;
@@ -30,6 +52,8 @@ type Produk = {
   status: Status;
   keterangan: string;
   lokasi: string;
+  satuan?: Satuan;
+  jumlah?: number;
   foto?: string;
   galeri?: string[];
 };
@@ -51,7 +75,9 @@ function rupiah(n: number) {
 }
 
 function buildPesan(p: Produk) {
-  return `📦 [${tagFor(p.kategori)}] *${p.nama}*\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
+  const s = p.satuan ?? "pcs";
+  const j = p.jumlah ?? 1;
+  return `📦 [${tagFor(p.kategori)}] *${p.nama}*\n⚖️ ${formatJumlah(j, s)}\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
