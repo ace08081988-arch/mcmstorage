@@ -1548,7 +1548,7 @@ function RiwayatTab({
 
 /* ----------------- HUTANG ----------------- */
 function HutangTab({
-  purchases, payments, suppliers, itemMap, uid, onChanged, onLocalPayment, onLocalRemovePayment,
+  purchases, payments, suppliers, itemMap, uid, onChanged, onAddDebt, onLocalPayment, onLocalRemovePayment,
 }: {
   purchases: Purchase[];
   payments: Payment[];
@@ -1556,6 +1556,7 @@ function HutangTab({
   itemMap: Record<string, WItem>;
   uid: string | null;
   onChanged: () => void;
+  onAddDebt: () => void;
   onLocalPayment: (p: Payment) => void;
   onLocalRemovePayment: (id: string) => void;
 }) {
