@@ -1133,9 +1133,16 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     <span className="truncate text-[11px] text-muted-foreground">📧 {s.email}</span>
                     {(() => {
+                      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                      const pickValid = (raw: string | null) => {
+                        if (!raw) return [] as string[];
+                        return raw.split(",").map((x) => x.trim()).filter((x) => EMAIL_RE.test(x));
+                      };
+                      const ccs = pickValid(s.email_cc);
+                      const bccs = pickValid(s.email_bcc);
                       const params: string[] = [];
-                      if (s.email_cc) params.push(`cc=${encodeURIComponent(s.email_cc)}`);
-                      if (s.email_bcc) params.push(`bcc=${encodeURIComponent(s.email_bcc)}`);
+                      if (ccs.length) params.push(`cc=${encodeURIComponent(ccs.join(","))}`);
+                      if (bccs.length) params.push(`bcc=${encodeURIComponent(bccs.join(","))}`);
                       const qs = params.length ? `?${params.join("&")}` : "";
                       return (
                         <a
@@ -1149,13 +1156,29 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                     })()}
                   </div>
                 )}
-                {(s.email_cc || s.email_bcc) && (
-                  <div className="mt-0.5 text-[10px] text-muted-foreground">
-                    {s.email_cc && <span>CC: {s.email_cc}</span>}
-                    {s.email_cc && s.email_bcc && <span> · </span>}
-                    {s.email_bcc && <span>BCC: {s.email_bcc}</span>}
-                  </div>
-                )}
+                {(s.email_cc || s.email_bcc) && (() => {
+                  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+                  const split = (raw: string | null) =>
+                    (raw ?? "").split(",").map((x) => x.trim()).filter(Boolean);
+                  const ccAll = split(s.email_cc);
+                  const bccAll = split(s.email_bcc);
+                  const ccInvalid = ccAll.filter((x) => !EMAIL_RE.test(x));
+                  const bccInvalid = bccAll.filter((x) => !EMAIL_RE.test(x));
+                  return (
+                    <>
+                      <div className="mt-0.5 text-[10px] text-muted-foreground">
+                        {ccAll.length > 0 && <span>CC: {ccAll.join(", ")}</span>}
+                        {ccAll.length > 0 && bccAll.length > 0 && <span> · </span>}
+                        {bccAll.length > 0 && <span>BCC: {bccAll.join(", ")}</span>}
+                      </div>
+                      {(ccInvalid.length > 0 || bccInvalid.length > 0) && (
+                        <div className="mt-0.5 text-[10px] text-amber-500">
+                          ⚠️ Alamat tidak valid diabaikan: {[...ccInvalid, ...bccInvalid].join(", ")}
+                        </div>
+                      )}
+                    </>
+                  );
+                })()}
                 {s.notes && <div className="mt-1 text-[11px] text-muted-foreground">{s.notes}</div>}
               </div>
               <div className="flex shrink-0 gap-1">
