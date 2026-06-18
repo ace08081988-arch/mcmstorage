@@ -628,6 +628,50 @@ function Index() {
       </header>
 
       <main className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
+        {(() => {
+          const total = scopedItems.length;
+          const terkirim = scopedItems.filter((i) => i.status === "Sudah Dikirim");
+          const belum = total - terkirim.length;
+          const omzet = terkirim.reduce((s, i) => s + i.harga, 0);
+          const byUnit = new Map<Satuan, number>();
+          for (const it of terkirim) {
+            const s = it.satuan ?? "pcs";
+            byUnit.set(s, (byUnit.get(s) ?? 0) + (it.jumlah ?? 0));
+          }
+          return (
+            <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border bg-card p-2.5 text-[11px] sm:grid-cols-4">
+              <div>
+                <p className="text-muted-foreground">Total pesanan</p>
+                <p className="text-sm font-semibold tabular-nums">{total}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Belum dikirim</p>
+                <p className="text-sm font-semibold tabular-nums">{belum}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Terjual</p>
+                <p className="text-sm font-semibold tabular-nums text-[#128C7E]">
+                  {terkirim.length}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Omzet</p>
+                <p className="text-sm font-semibold tabular-nums">{rupiah(omzet)}</p>
+              </div>
+              {byUnit.size > 0 && (
+                <div className="col-span-2 sm:col-span-4">
+                  <p className="text-muted-foreground">Terjual per satuan</p>
+                  <p className="text-xs font-medium tabular-nums">
+                    {Array.from(byUnit.entries())
+                      .map(([s, j]) => formatJumlah(j, s))
+                      .join(" · ")}
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         <ul
           className={
             viewMode === "grid"
