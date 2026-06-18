@@ -824,7 +824,7 @@ function Index() {
                     onClick={() =>
                       selectMode ? toggleSelect(p.id) : setOpenId(open ? null : p.id)
                     }
-                    className="relative block aspect-square w-full overflow-hidden bg-muted"
+                    className={`relative block w-full overflow-hidden bg-muted ${open ? "h-32 sm:h-40" : "aspect-square"}`}
                     aria-label="Buka detail"
                   >
                     {thumb ? (
