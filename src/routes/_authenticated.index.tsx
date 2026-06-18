@@ -904,8 +904,31 @@ function Index() {
         </ul>
 
         {filtered.length === 0 && (
-          <div className="rounded-xl border border-dashed p-10 text-center text-sm text-muted-foreground">
-            Tidak ada pesanan untuk filter ini.
+          <div className="rounded-xl border border-dashed p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              {scopedItems.length === 0
+                ? `Belum ada pesanan di kategori "${activeCat}".`
+                : "Tidak ada pesanan untuk filter ini."}
+            </p>
+            <div className="mt-4 flex flex-wrap justify-center gap-2">
+              <button
+                onClick={addProduk}
+                className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+              >
+                + Tambah produk
+              </button>
+              <button
+                onClick={() => {
+                  setActiveCat(null);
+                  setSelectMode(false);
+                  setSelected(new Set());
+                  setOpenId(null);
+                }}
+                className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+              >
+                Kelola kategori
+              </button>
+            </div>
           </div>
         )}
         {selectMode && <div className="h-20" />}
