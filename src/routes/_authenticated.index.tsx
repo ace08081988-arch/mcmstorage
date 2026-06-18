@@ -1372,6 +1372,7 @@ function Index() {
         markSent={markSent}
         buildPesan={buildPesan}
       />
+      {confirmDialog}
     </div>
   );
 }
