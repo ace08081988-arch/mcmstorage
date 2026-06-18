@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { isAutoLockEnabled, setAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
+import { AppearanceSettings } from "@/components/appearance-settings";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -466,14 +467,7 @@ function Index() {
             >
               {autoLock ? "🔒 Kunci: ON" : "🔓 Kunci: OFF"}
             </button>
-            <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
-              title="Ganti tema terang / gelap"
-              aria-label="Ganti tema"
-            >
-              {theme === "dark" ? "🌙 Gelap" : "☀️ Terang"}
-            </button>
+            <AppearanceSettings />
             <button
               onClick={signOut}
               className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
