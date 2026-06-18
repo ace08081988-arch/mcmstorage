@@ -25,6 +25,7 @@ type WItem = {
   base_unit: "g" | "pcs";
   stock_base: number;
   avg_cost_per_base: number;
+  image_path: string | null;
 };
 type Purchase = {
   id: string;
@@ -80,6 +81,66 @@ function fmtBase(n: number, u: "g" | "pcs") {
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
+}
+
+/* ----------------- Photo helpers ----------------- */
+async function uploadItemPhoto(file: File, uid: string): Promise<string | null> {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from("item-photos").upload(path, file, {
+    cacheControl: "3600", upsert: false, contentType: file.type || "image/jpeg",
+  });
+  if (error) { toast.error("Gagal upload foto: " + error.message); return null; }
+  return path;
+}
+
+function PhotoPicker({ value, onChange, uid }: { value: string | null; onChange: (p: string | null) => void; uid: string | null }) {
+  const [busy, setBusy] = useState(false);
+  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (!f || !uid) return;
+    setBusy(true);
+    const p = await uploadItemPhoto(f, uid);
+    setBusy(false);
+    if (p) onChange(p);
+    e.target.value = "";
+  }
+  return (
+    <div className="space-y-1">
+      <div className="text-[11px] text-muted-foreground">Foto barang (opsional)</div>
+      <div className="flex items-center gap-2">
+        {value ? (
+          <SignedImg path={value} className="h-16 w-16 rounded-md border object-cover bg-muted" />
+        ) : (
+          <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed text-[10px] text-muted-foreground">Tidak ada</div>
+        )}
+        <label className="flex-1 cursor-pointer rounded-md border bg-background px-2 py-1.5 text-center text-xs hover:bg-accent">
+          {busy ? "Mengunggah…" : "📷 Ambil / Pilih foto"}
+          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={pick} disabled={busy} />
+        </label>
+        {value && (
+          <button type="button" onClick={() => onChange(null)} className="rounded-md border px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10">Hapus</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const signedUrlCache = new Map<string, { url: string; exp: number }>();
+function SignedImg({ path, className, alt }: { path: string; className?: string; alt?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const cached = signedUrlCache.get(path);
+    if (cached && cached.exp > Date.now()) { setUrl(cached.url); return; }
+    supabase.storage.from("item-photos").createSignedUrl(path, 3600).then(({ data }) => {
+      if (!alive || !data) return;
+      signedUrlCache.set(path, { url: data.signedUrl, exp: Date.now() + 50 * 60 * 1000 });
+      setUrl(data.signedUrl);
+    });
+    return () => { alive = false; };
+  }, [path]);
+  if (!url) return <div className={className} />;
+  return <img src={url} alt={alt || ""} className={className} loading="lazy" />;
 }
 
 function GudangPage() {
@@ -173,7 +234,7 @@ function GudangPage() {
         {loading && <div className="text-sm text-muted-foreground">Memuat…</div>}
 
         {tab === "stok" && (
-          <StokTab items={items} onChanged={reloadAll} />
+          <StokTab items={items} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "supplier" && (
           <SupplierTab suppliers={suppliers} uid={uid} onChanged={reloadAll} />
@@ -759,7 +820,7 @@ function ShareDebt({
 }
 
 /* ----------------- STOK ----------------- */
-function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }) {
+function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null; onChanged: () => void }) {
   const [editing, setEditing] = useState<WItem | null>(null);
   async function remove(id: string, name: string) {
     if (!confirm(`Hapus barang "${name}"? Semua pembelian/penjualan terkait juga dihapus.`)) return;
@@ -779,11 +840,18 @@ function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }
       {items.map((i) => (
         <li key={i.id} className="rounded-lg border bg-card p-3">
           <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <div className="truncate text-sm font-semibold">{i.name}</div>
-              <div className="text-[11px] text-muted-foreground">
-                {i.category || "—"} · per {i.package_type}
-                {i.package_type !== "pcs" && ` (${i.package_size}${i.base_unit === "g" ? "g" : ""}/kemasan)`}
+            <div className="flex min-w-0 gap-2">
+              {i.image_path ? (
+                <SignedImg path={i.image_path} className="h-12 w-12 shrink-0 rounded-md border object-cover bg-muted" />
+              ) : (
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[10px] text-muted-foreground">📷</div>
+              )}
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">{i.name}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  {i.category || "—"} · per {i.package_type}
+                  {i.package_type !== "pcs" && ` (${i.package_size}${i.base_unit === "g" ? "g" : ""}/kemasan)`}
+                </div>
               </div>
             </div>
             <div className="flex shrink-0 gap-1">
@@ -821,6 +889,7 @@ function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }
     {editing && (
       <EditItemDialog
         item={editing}
+        uid={uid}
         onClose={() => setEditing(null)}
         onSaved={() => { setEditing(null); onChanged(); }}
       />
@@ -829,13 +898,14 @@ function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }
   );
 }
 
-function EditItemDialog({ item, onClose, onSaved }: { item: WItem; onClose: () => void; onSaved: () => void }) {
+function EditItemDialog({ item, uid, onClose, onSaved }: { item: WItem; uid: string | null; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState(item.category ?? "");
   const [packageType, setPackageType] = useState<PackageType>(item.package_type as PackageType);
   const [packageSize, setPackageSize] = useState(String(item.package_size));
   const [stockBase, setStockBase] = useState(String(item.stock_base));
   const [avgCost, setAvgCost] = useState(String(item.avg_cost_per_base));
+  const [imagePath, setImagePath] = useState<string | null>(item.image_path);
   const [saving, setSaving] = useState(false);
   const baseUnit = defaultBase(packageType);
   const effectiveSize = packageType === "pcs" ? 1 : Number(packageSize) || 0;
@@ -852,6 +922,7 @@ function EditItemDialog({ item, onClose, onSaved }: { item: WItem; onClose: () =
       base_unit: baseUnit,
       stock_base: Number(stockBase) || 0,
       avg_cost_per_base: Number(avgCost) || 0,
+      image_path: imagePath,
     }).eq("id", item.id);
     setSaving(false);
     if (error) { toast.error(error.message); return; }
@@ -867,6 +938,7 @@ function EditItemDialog({ item, onClose, onSaved }: { item: WItem; onClose: () =
           <span className="text-[11px] text-muted-foreground">Nama</span>
           <input className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={name} onChange={(e) => setName(e.target.value)} />
         </label>
+        <PhotoPicker value={imagePath} onChange={setImagePath} uid={uid} />
         <label className="block">
           <span className="text-[11px] text-muted-foreground">Kategori</span>
           <input className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={category} onChange={(e) => setCategory(e.target.value)} />
@@ -1014,6 +1086,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
   const [category, setCategory] = useState("");
   const [packageType, setPackageType] = useState<PackageType>("botol");
   const [packageSize, setPackageSize] = useState("500");
+  const [newImagePath, setNewImagePath] = useState<string | null>(null);
   // purchase
   const [packageQty, setPackageQty] = useState("1");
   const [pricePerPackage, setPricePerPackage] = useState("");
@@ -1055,6 +1128,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
         package_type: packageType,
         package_size: packageType === "pcs" ? 1 : effectivePkgSize,
         base_unit: baseUnit,
+        image_path: newImagePath,
       }).select().single();
       if (error || !data) { toast.error(error?.message || "Gagal buat barang"); return; }
       useItemId = (data as WItem).id;
@@ -1078,7 +1152,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
     });
     if (error) { toast.error(error.message); return; }
     toast.success(`Pembelian dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok bertambah`);
-    setName(""); setCategory(""); setPackageQty("1"); setPricePerPackage(""); setPricePerBase("");
+    setName(""); setCategory(""); setPackageQty("1"); setPricePerPackage(""); setPricePerBase(""); setNewImagePath(null);
     onChanged();
   }
 
@@ -1123,6 +1197,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
           <div className="text-[11px] text-muted-foreground">
             Stok disimpan dalam <b>{baseUnit}</b>. Saat dijual per {baseUnit}, akan dikurangi otomatis.
           </div>
+          <PhotoPicker value={newImagePath} onChange={setNewImagePath} uid={uid} />
         </div>
       ) : (
         <label className="block">

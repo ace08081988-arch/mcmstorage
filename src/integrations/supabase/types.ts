@@ -309,6 +309,7 @@ export type Database = {
           category: string | null
           created_at: string
           id: string
+          image_path: string | null
           name: string
           package_size: number
           package_type: string
@@ -322,6 +323,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           id?: string
+          image_path?: string | null
           name: string
           package_size?: number
           package_type: string
@@ -335,6 +337,7 @@ export type Database = {
           category?: string | null
           created_at?: string
           id?: string
+          image_path?: string | null
           name?: string
           package_size?: number
           package_type?: string
