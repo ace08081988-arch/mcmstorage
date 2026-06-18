@@ -319,7 +319,7 @@ function Index() {
         <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-semibold tracking-tight">MCM Storage</h1>
+              <h1 className="truncate text-base font-semibold tracking-tight">MCM Storage — Kelola Pesanan & Kirim WhatsApp</h1>
               <p className="text-[11px] text-muted-foreground">
                 {items.length} pesanan · {rupiah(total)}
               </p>
@@ -671,6 +671,8 @@ function Index() {
                           <img src={p.foto} alt="" className="h-16 w-16 rounded-md border object-cover" />
                           <button
                             onClick={() => removeFoto(p.id)}
+                            aria-label="Hapus foto utama"
+                            title="Hapus foto utama"
                             className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[10px] shadow"
                           >
                             ×
@@ -682,6 +684,8 @@ function Index() {
                           <img src={src} alt="" className="h-16 w-16 rounded-md border object-cover" />
                           <button
                             onClick={() => removeGaleri(p.id, idx)}
+                            aria-label="Hapus foto galeri"
+                            title="Hapus foto galeri"
                             className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[10px] shadow"
                           >
                             ×
