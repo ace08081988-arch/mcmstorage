@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AppearanceSettings } from "@/components/appearance-settings";
+import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -241,6 +242,7 @@ function Index() {
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
   const [openId, setOpenId] = useState<number | null>(null);
+  const [editId, setEditId] = useState<number | null>(null);
   const [flashId, setFlashId] = useState<number | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
@@ -939,6 +941,16 @@ function Index() {
                       WA
                     </a>
                   )}
+                  {!selectMode && (
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditId(p.id); }}
+                      className="shrink-0 rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                      aria-label="Edit lengkap"
+                      title="Edit lengkap"
+                    >
+                      ✎
+                    </button>
+                  )}
                 </div>
                 {viewMode === "grid" && (
                   <div className="flex items-center gap-2 border-t px-2.5 py-1.5">
@@ -959,6 +971,12 @@ function Index() {
                       />
                       Tandai terkirim
                     </label>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setEditId(p.id); }}
+                      className="ml-auto rounded-md border px-2 py-1 text-[11px] font-medium hover:bg-accent"
+                    >
+                      ✎ Edit
+                    </button>
                   </div>
                 )}
 
@@ -1303,6 +1321,24 @@ function Index() {
         </div>
       )}
       {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
+      <ProductEditDrawer
+        open={editId !== null}
+        onOpenChange={(v) => { if (!v) setEditId(null); }}
+        produk={items.find((i) => i.id === editId) ?? null}
+        categories={categories}
+        satuanList={SATUAN_LIST}
+        satuanBounds={satuanBounds}
+        formatJumlah={formatJumlah}
+        rupiah={rupiah}
+        update={update}
+        setFoto={setFoto}
+        addGaleri={addGaleri}
+        removeFoto={removeFoto}
+        removeGaleri={removeGaleri}
+        removeItem={removeItem}
+        markSent={markSent}
+        buildPesan={buildPesan}
+      />
     </div>
   );
 }
