@@ -272,7 +272,7 @@ function renderOtpEmail(code: string, ip: string, ua: string) {
     <p style="font-size:12px;color:#64748b;margin:8px 0">Berlaku 10 menit. Maksimal 5 percobaan.</p>
     <hr style="border:none;border-top:1px solid #e2e8f0;margin:16px 0"/>
     <p style="font-size:11px;color:#64748b;margin:0">Konteks permintaan:</p>
-    <p style="font-size:11px;color:#64748b;margin:4px 0"><strong>IP:</strong> ${ip}</p>
+    <p style="font-size:11px;color:#64748b;margin:4px 0"><strong>IP:</strong> ${escapeHtml(ip)}</p>
     <p style="font-size:11px;color:#64748b;margin:4px 0"><strong>Device:</strong> ${escapeHtml(ua)}</p>
     <p style="font-size:12px;color:#b91c1c;margin:12px 0 0">Jika bukan Anda, segera ganti kata sandi.</p>
   </div>
