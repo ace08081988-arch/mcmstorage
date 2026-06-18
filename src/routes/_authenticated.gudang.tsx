@@ -69,6 +69,18 @@ type CustomerPayment = {
   created_at: string;
 };
 
+type OrderRequest = {
+  id: string;
+  customer_id: string | null;
+  item_id: string;
+  qty: number;
+  qty_mode: "base" | "package";
+  price_per_unit: number | null;
+  note: string | null;
+  status: "menunggu" | "siap" | "selesai";
+  created_at: string;
+};
+
 function rupiah(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 }
@@ -145,7 +157,7 @@ function SignedImg({ path, className, alt }: { path: string; className?: string;
 
 function GudangPage() {
   const [tab, setTab] = useState<
-    "stok" | "supplier" | "beli" | "jual" | "hutang" | "pelanggan" | "piutang" | "riwayat"
+    "stok" | "supplier" | "beli" | "jual" | "pesanan" | "hutang" | "pelanggan" | "piutang" | "riwayat"
   >("stok");
   const [uid, setUid] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -155,6 +167,7 @@ function GudangPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [custPayments, setCustPayments] = useState<CustomerPayment[]>([]);
+  const [orders, setOrders] = useState<OrderRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -162,7 +175,7 @@ function GudangPage() {
   }, []);
 
   async function reloadAll() {
-    const [s, w, p, sa, py, c, cp] = await Promise.all([
+    const [s, w, p, sa, py, c, cp, or] = await Promise.all([
       supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("*").order("name"),
       supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200),
@@ -170,6 +183,7 @@ function GudangPage() {
       supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("customers").select("*").order("created_at", { ascending: false }),
       supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200),
     ]);
     if (s.data) setSuppliers(s.data as Supplier[]);
     if (w.data) setItems(w.data as WItem[]);
@@ -178,6 +192,7 @@ function GudangPage() {
     if (py.data) setPayments(py.data as Payment[]);
     if (c.data) setCustomers(c.data as Customer[]);
     if (cp.data) setCustPayments(cp.data as CustomerPayment[]);
+    if (or.data) setOrders(or.data as OrderRequest[]);
     setLoading(false);
   }
 
@@ -214,6 +229,7 @@ function GudangPage() {
             ["supplier", "Supplier"],
             ["beli", "Beli"],
             ["jual", "Jual"],
+            ["pesanan", "Pesanan"],
             ["hutang", "Hutang"],
             ["pelanggan", "Pelanggan"],
             ["piutang", "Piutang"],
@@ -244,6 +260,9 @@ function GudangPage() {
         )}
         {tab === "jual" && (
           <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
+        )}
+        {tab === "pesanan" && (
+          <PesananTab orders={orders} items={items} customers={customers} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "hutang" && (
           <HutangTab
