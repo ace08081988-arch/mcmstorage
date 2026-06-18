@@ -833,6 +833,17 @@ function HutangTab({
               <span className="text-muted-foreground"> / {rupiah(g.total)}</span>
             </div>
           </div>
+          {g.supplier && (
+            <ShareDebt
+              supplier={g.supplier}
+              debts={g.debts}
+              paidByPurchase={paidByPurchase}
+              itemMap={itemMap}
+              total={g.total}
+              paid={g.paid}
+              remaining={g.remaining}
+            />
+          )}
           <ul className="space-y-2">
             {g.debts.map((d) => {
               const it = itemMap[d.item_id];
