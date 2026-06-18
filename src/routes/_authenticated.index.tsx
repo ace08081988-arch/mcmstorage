@@ -22,6 +22,28 @@ export const Route = createFileRoute("/_authenticated/")({
 type Status = "Belum Dikirim" | "Sudah Dikirim";
 type Kategori = string;
 
+type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
+
+const SATUAN_LIST: Satuan[] = ["gram", "kg", "botol", "sachet", "pcs", "lusin", "pak", "dus"];
+
+function satuanBounds(s: Satuan): { min: number; max: number; step: number } {
+  switch (s) {
+    case "gram":
+      return { min: 0.01, max: 5000, step: 0.01 };
+    case "kg":
+      return { min: 0.001, max: 5, step: 0.001 };
+    default:
+      return { min: 1, max: 9999, step: 1 };
+  }
+}
+
+function formatJumlah(j: number, s: Satuan): string {
+  const n = Number.isFinite(j) ? j : 0;
+  if (s === "gram") return `${n.toLocaleString("id-ID", { maximumFractionDigits: 2 })} g`;
+  if (s === "kg") return `${n.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`;
+  return `${n.toLocaleString("id-ID")} ${s}`;
+}
+
 type Produk = {
   id: number;
   kategori: Kategori;
@@ -30,6 +52,8 @@ type Produk = {
   status: Status;
   keterangan: string;
   lokasi: string;
+  satuan?: Satuan;
+  jumlah?: number;
   foto?: string;
   galeri?: string[];
 };
@@ -51,7 +75,9 @@ function rupiah(n: number) {
 }
 
 function buildPesan(p: Produk) {
-  return `📦 [${tagFor(p.kategori)}] *${p.nama}*\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
+  const s = p.satuan ?? "pcs";
+  const j = p.jumlah ?? 1;
+  return `📦 [${tagFor(p.kategori)}] *${p.nama}*\n⚖️ ${formatJumlah(j, s)}\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
@@ -278,6 +304,8 @@ function Index() {
       status: "Belum Dikirim",
       keterangan: "",
       lokasi: "",
+      satuan: "pcs",
+      jumlah: 1,
     };
     setItems((arr) => [...arr, fresh]);
     setOpenId(nextId);
@@ -318,11 +346,28 @@ function Index() {
 
   const bulkWaUrl = `https://wa.me/?text=${encodeURIComponent(bulkPesan())}`;
 
+  const markSent = (id: number) => {
+    const target = items.find((i) => i.id === id);
+    setItems((arr) =>
+      arr.map((i) => (i.id === id ? { ...i, status: "Sudah Dikirim" } : i)),
+    );
+    toast.success(`Terkirim · ${target?.nama ?? "Pesanan"} ditandai sudah dikirim`, {
+      action: {
+        label: "Urungkan",
+        onClick: () =>
+          setItems((arr) =>
+            arr.map((i) => (i.id === id ? { ...i, status: "Belum Dikirim" } : i)),
+          ),
+      },
+    });
+  };
+
   const removeItem = (id: number) => {
     const snapshot = items;
     const target = items.find((i) => i.id === id);
+    if (!confirm(`Hapus pesanan "${target?.nama ?? ""}" dari penyimpanan?`)) return;
     setItems((arr) => arr.filter((i) => i.id !== id));
-    toast.success(`Terkirim · ${target?.nama ?? "Pesanan"} dihapus`, {
+    toast.success(`Pesanan dihapus`, {
       action: {
         label: "Urungkan",
         onClick: () => setItems(snapshot),
@@ -332,14 +377,21 @@ function Index() {
 
   const bulkMarkSent = () => {
     if (selected.size === 0) return;
-    const snapshot = items;
-    const count = selected.size;
-    setItems((arr) => arr.filter((i) => !selected.has(i.id)));
+    const ids = new Set(selected);
+    const count = ids.size;
+    setItems((arr) =>
+      arr.map((i) => (ids.has(i.id) ? { ...i, status: "Sudah Dikirim" } : i)),
+    );
     setSelected(new Set());
-    toast.success(`${count} pesanan terkirim & dihapus`, {
+    toast.success(`${count} pesanan ditandai sudah dikirim`, {
       action: {
         label: "Urungkan",
-        onClick: () => setItems(snapshot),
+        onClick: () =>
+          setItems((arr) =>
+            arr.map((i) =>
+              ids.has(i.id) ? { ...i, status: "Belum Dikirim" } : i,
+            ),
+          ),
       },
     });
   };
@@ -576,6 +628,50 @@ function Index() {
       </header>
 
       <main className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
+        {(() => {
+          const total = scopedItems.length;
+          const terkirim = scopedItems.filter((i) => i.status === "Sudah Dikirim");
+          const belum = total - terkirim.length;
+          const omzet = terkirim.reduce((s, i) => s + i.harga, 0);
+          const byUnit = new Map<Satuan, number>();
+          for (const it of terkirim) {
+            const s = it.satuan ?? "pcs";
+            byUnit.set(s, (byUnit.get(s) ?? 0) + (it.jumlah ?? 0));
+          }
+          return (
+            <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border bg-card p-2.5 text-[11px] sm:grid-cols-4">
+              <div>
+                <p className="text-muted-foreground">Total pesanan</p>
+                <p className="text-sm font-semibold tabular-nums">{total}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Belum dikirim</p>
+                <p className="text-sm font-semibold tabular-nums">{belum}</p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Terjual</p>
+                <p className="text-sm font-semibold tabular-nums text-[#128C7E]">
+                  {terkirim.length}
+                </p>
+              </div>
+              <div>
+                <p className="text-muted-foreground">Omzet</p>
+                <p className="text-sm font-semibold tabular-nums">{rupiah(omzet)}</p>
+              </div>
+              {byUnit.size > 0 && (
+                <div className="col-span-2 sm:col-span-4">
+                  <p className="text-muted-foreground">Terjual per satuan</p>
+                  <p className="text-xs font-medium tabular-nums">
+                    {Array.from(byUnit.entries())
+                      .map(([s, j]) => formatJumlah(j, s))
+                      .join(" · ")}
+                  </p>
+                </div>
+              )}
+            </div>
+          );
+        })()}
+
         <ul
           className={
             viewMode === "grid"
@@ -644,13 +740,19 @@ function Index() {
                   ) : viewMode === "list" ? (
                     <input
                       type="checkbox"
-                      checked={false}
+                      checked={sent}
                       onChange={(e) => {
-                        if (e.target.checked) removeItem(p.id);
+                        if (e.target.checked) markSent(p.id);
+                        else
+                          setItems((arr) =>
+                            arr.map((i) =>
+                              i.id === p.id ? { ...i, status: "Belum Dikirim" } : i,
+                            ),
+                          );
                       }}
                       className="h-4 w-4 shrink-0"
-                      aria-label="Tandai terkirim & hapus"
-                      title="Tandai terkirim & hapus"
+                      aria-label="Tandai terkirim"
+                      title="Tandai terkirim"
                     />
                   ) : null}
                   <button
@@ -665,6 +767,16 @@ function Index() {
                       </span>
                     )}
                     <span className="truncate text-sm font-medium">{p.nama}</span>
+                    {viewMode === "list" && p.satuan && (
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        · {formatJumlah(p.jumlah ?? 0, p.satuan)}
+                      </span>
+                    )}
+                    {viewMode === "list" && sent && (
+                      <span className="shrink-0 rounded bg-[#25D366]/15 px-1.5 py-0.5 text-[10px] font-medium text-[#128C7E]">
+                        ✓
+                      </span>
+                    )}
                     {viewMode === "list" && fotoCount > 0 && (
                       <span className="shrink-0 text-[10px] text-muted-foreground">📷{fotoCount}</span>
                     )}
@@ -689,9 +801,15 @@ function Index() {
                     <label className="flex items-center gap-1.5 text-[11px]">
                       <input
                         type="checkbox"
-                        checked={false}
+                        checked={sent}
                         onChange={(e) => {
-                          if (e.target.checked) removeItem(p.id);
+                          if (e.target.checked) markSent(p.id);
+                          else
+                            setItems((arr) =>
+                              arr.map((i) =>
+                                i.id === p.id ? { ...i, status: "Belum Dikirim" } : i,
+                              ),
+                            );
                         }}
                         className="h-3.5 w-3.5"
                       />
@@ -751,6 +869,57 @@ function Index() {
                         {rupiah(p.harga)}
                       </span>
                     </label>
+                    <div className="flex gap-2">
+                      <select
+                        value={p.satuan ?? "pcs"}
+                        onChange={(e) => {
+                          const next = e.target.value as Satuan;
+                          const b = satuanBounds(next);
+                          const cur = p.jumlah ?? 1;
+                          const clamped = Math.min(b.max, Math.max(b.min, cur));
+                          update(p.id, { satuan: next, jumlah: clamped });
+                        }}
+                        className="rounded-md border bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        aria-label="Satuan"
+                      >
+                        {SATUAN_LIST.map((s) => (
+                          <option key={s} value={s}>
+                            {s}
+                          </option>
+                        ))}
+                      </select>
+                      {(() => {
+                        const s = p.satuan ?? "pcs";
+                        const b = satuanBounds(s);
+                        return (
+                          <label className="flex w-full items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm">
+                            <span className="text-muted-foreground">Jumlah</span>
+                            <input
+                              type="number"
+                              inputMode="decimal"
+                              min={b.min}
+                              max={b.max}
+                              step={b.step}
+                              value={p.jumlah ?? b.min}
+                              onChange={(e) => {
+                                const raw = Number(e.target.value);
+                                if (!Number.isFinite(raw)) return;
+                                const clamped = Math.min(b.max, Math.max(b.min, raw));
+                                update(p.id, { jumlah: clamped });
+                              }}
+                              className="w-full bg-transparent tabular-nums outline-none"
+                              placeholder="Jumlah"
+                            />
+                            <span className="shrink-0 text-xs text-muted-foreground">
+                              {formatJumlah(p.jumlah ?? b.min, s)}
+                            </span>
+                          </label>
+                        );
+                      })()}
+                    </div>
+                    <p className="text-[10px] text-muted-foreground">
+                      Gram: 0.01 – 5000 · Kg: 0.001 – 5 · lainnya pakai bilangan bulat.
+                    </p>
                     <div
                       className={`flex items-center justify-between gap-2 rounded-md border px-2.5 py-1.5 text-[11px] transition-colors ${
                         flashId === p.id
@@ -895,6 +1064,12 @@ function Index() {
                           KIRIM WA
                         </a>
                       )}
+                      <button
+                        onClick={() => removeItem(p.id)}
+                        className="ml-auto inline-flex items-center rounded-md border border-destructive/40 px-2.5 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                      >
+                        🗑 Hapus
+                      </button>
                     </div>
                   </div>
                 )}
