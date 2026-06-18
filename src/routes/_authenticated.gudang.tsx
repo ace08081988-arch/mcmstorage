@@ -48,6 +48,14 @@ type Sale = {
   note: string | null;
   created_at: string;
 };
+type Payment = {
+  id: string;
+  supplier_id: string;
+  purchase_id: string;
+  amount: number;
+  note: string | null;
+  created_at: string;
+};
 
 function rupiah(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
@@ -64,12 +72,13 @@ function defaultBase(pt: PackageType): "g" | "pcs" {
 }
 
 function GudangPage() {
-  const [tab, setTab] = useState<"stok" | "supplier" | "beli" | "jual" | "riwayat">("stok");
+  const [tab, setTab] = useState<"stok" | "supplier" | "beli" | "jual" | "hutang" | "riwayat">("stok");
   const [uid, setUid] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [items, setItems] = useState<WItem[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
+  const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -77,16 +86,18 @@ function GudangPage() {
   }, []);
 
   async function reloadAll() {
-    const [s, w, p, sa] = await Promise.all([
+    const [s, w, p, sa, py] = await Promise.all([
       supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("*").order("name"),
       supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("sales").select("*").order("created_at", { ascending: false }).limit(200),
+      supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500),
     ]);
     if (s.data) setSuppliers(s.data as Supplier[]);
     if (w.data) setItems(w.data as WItem[]);
     if (p.data) setPurchases(p.data as Purchase[]);
     if (sa.data) setSales(sa.data as Sale[]);
+    if (py.data) setPayments(py.data as Payment[]);
     setLoading(false);
   }
 
@@ -123,6 +134,7 @@ function GudangPage() {
             ["supplier", "Supplier"],
             ["beli", "Beli"],
             ["jual", "Jual"],
+            ["hutang", "Hutang"],
             ["riwayat", "Riwayat"],
           ] as const).map(([k, label]) => (
             <button
@@ -150,6 +162,16 @@ function GudangPage() {
         )}
         {tab === "jual" && (
           <JualTab items={items} uid={uid} onChanged={reloadAll} />
+        )}
+        {tab === "hutang" && (
+          <HutangTab
+            purchases={purchases}
+            payments={payments}
+            suppliers={suppliers}
+            itemMap={itemMap}
+            uid={uid}
+            onChanged={reloadAll}
+          />
         )}
         {tab === "riwayat" && (
           <RiwayatTab
@@ -708,6 +730,236 @@ function RiwayatTab({
           </ul>
         )
       )}
+    </div>
+  );
+}
+
+/* ----------------- HUTANG ----------------- */
+function HutangTab({
+  purchases, payments, suppliers, itemMap, uid, onChanged,
+}: {
+  purchases: Purchase[];
+  payments: Payment[];
+  suppliers: Supplier[];
+  itemMap: Record<string, WItem>;
+  uid: string | null;
+  onChanged: () => void;
+}) {
+  const debts = useMemo(() => purchases.filter((p) => p.payment_method === "hutang"), [purchases]);
+
+  const paidByPurchase = useMemo(() => {
+    const m: Record<string, number> = {};
+    for (const pay of payments) {
+      m[pay.purchase_id] = (m[pay.purchase_id] || 0) + Number(pay.amount);
+    }
+    return m;
+  }, [payments]);
+
+  const paymentsByPurchase = useMemo(() => {
+    const m: Record<string, Payment[]> = {};
+    for (const pay of payments) {
+      (m[pay.purchase_id] ||= []).push(pay);
+    }
+    return m;
+  }, [payments]);
+
+  // Group debts by supplier
+  const groups = useMemo(() => {
+    const m = new Map<string, { supplier: Supplier | null; debts: Purchase[]; total: number; paid: number; remaining: number }>();
+    const supMap = Object.fromEntries(suppliers.map((s) => [s.id, s]));
+    for (const d of debts) {
+      const key = d.supplier_id || "_none";
+      const g = m.get(key) || {
+        supplier: d.supplier_id ? supMap[d.supplier_id] || null : null,
+        debts: [],
+        total: 0, paid: 0, remaining: 0,
+      };
+      const paid = paidByPurchase[d.id] || 0;
+      g.debts.push(d);
+      g.total += Number(d.total_cost);
+      g.paid += paid;
+      g.remaining += Math.max(0, Number(d.total_cost) - paid);
+      m.set(key, g);
+    }
+    return Array.from(m.values()).sort((a, b) => b.remaining - a.remaining);
+  }, [debts, suppliers, paidByPurchase]);
+
+  const totals = useMemo(() => {
+    let total = 0, paid = 0, remaining = 0;
+    for (const d of debts) {
+      const p = paidByPurchase[d.id] || 0;
+      total += Number(d.total_cost);
+      paid += p;
+      remaining += Math.max(0, Number(d.total_cost) - p);
+    }
+    return { total, paid, remaining };
+  }, [debts, paidByPurchase]);
+
+  if (debts.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+        Tidak ada hutang ke supplier. Pembelian dengan cara bayar <b>Hutang</b> akan muncul di sini.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2 text-[11px]">
+        <div className="rounded-md border bg-card p-2">
+          <div className="text-muted-foreground">Total hutang</div>
+          <div className="text-sm font-semibold">{rupiah(totals.total)}</div>
+        </div>
+        <div className="rounded-md border bg-card p-2">
+          <div className="text-muted-foreground">Sudah dibayar</div>
+          <div className="text-sm font-semibold text-emerald-600 dark:text-emerald-400">{rupiah(totals.paid)}</div>
+        </div>
+        <div className="rounded-md border bg-card p-2">
+          <div className="text-muted-foreground">Sisa</div>
+          <div className="text-sm font-semibold text-amber-600 dark:text-amber-400">{rupiah(totals.remaining)}</div>
+        </div>
+      </div>
+
+      {groups.map((g, idx) => (
+        <div key={g.supplier?.id || `_none-${idx}`} className="space-y-2 rounded-lg border bg-card p-3">
+          <div className="flex items-center justify-between">
+            <div className="text-sm font-semibold">{g.supplier?.name || "(tanpa supplier)"}</div>
+            <div className="text-[11px]">
+              Sisa: <span className="font-semibold text-amber-600 dark:text-amber-400">{rupiah(g.remaining)}</span>
+              <span className="text-muted-foreground"> / {rupiah(g.total)}</span>
+            </div>
+          </div>
+          <ul className="space-y-2">
+            {g.debts.map((d) => {
+              const it = itemMap[d.item_id];
+              const paid = paidByPurchase[d.id] || 0;
+              const remaining = Math.max(0, Number(d.total_cost) - paid);
+              const isPaid = remaining <= 0;
+              return (
+                <li key={d.id} className="rounded-md border bg-background p-2 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="truncate font-semibold">{it?.name || "(barang dihapus)"}</div>
+                      <div className="text-[11px] text-muted-foreground">
+                        {new Date(d.created_at).toLocaleDateString("id-ID")} · {Number(d.package_qty)} × {rupiah(Number(d.price_per_package))}
+                      </div>
+                    </div>
+                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${isPaid ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"}`}>
+                      {isPaid ? "✓ Lunas" : "Hutang"}
+                    </span>
+                  </div>
+                  <div className="mt-1 grid grid-cols-3 gap-2 text-[11px]">
+                    <div><span className="text-muted-foreground">Total </span><b>{rupiah(Number(d.total_cost))}</b></div>
+                    <div><span className="text-muted-foreground">Bayar </span><b className="text-emerald-600 dark:text-emerald-400">{rupiah(paid)}</b></div>
+                    <div><span className="text-muted-foreground">Sisa </span><b className="text-amber-600 dark:text-amber-400">{rupiah(remaining)}</b></div>
+                  </div>
+                  {!isPaid && g.supplier && (
+                    <PayForm purchase={d} supplierId={g.supplier.id} remaining={remaining} uid={uid} onChanged={onChanged} />
+                  )}
+                  {(paymentsByPurchase[d.id]?.length ?? 0) > 0 && (
+                    <ul className="mt-2 space-y-1 border-t pt-1.5">
+                      {paymentsByPurchase[d.id]!.map((pay) => (
+                        <li key={pay.id} className="flex items-center justify-between gap-2 text-[11px]">
+                          <span className="truncate">
+                            {new Date(pay.created_at).toLocaleDateString("id-ID")} ·{" "}
+                            <b className="text-emerald-600 dark:text-emerald-400">{rupiah(Number(pay.amount))}</b>
+                            {pay.note && <span className="text-muted-foreground"> · {pay.note}</span>}
+                          </span>
+                          <button
+                            onClick={async () => {
+                              if (!confirm("Hapus pembayaran ini?")) return;
+                              const { error } = await supabase.from("supplier_payments").delete().eq("id", pay.id);
+                              if (error) toast.error(error.message);
+                              else { toast.success("Pembayaran dihapus"); onChanged(); }
+                            }}
+                            className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] text-destructive hover:bg-destructive/10"
+                          >
+                            Hapus
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function PayForm({
+  purchase, supplierId, remaining, uid, onChanged,
+}: {
+  purchase: Purchase;
+  supplierId: string;
+  remaining: number;
+  uid: string | null;
+  onChanged: () => void;
+}) {
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function pay(useAmount: number) {
+    if (!uid) return;
+    if (useAmount <= 0) { toast.error("Nominal harus > 0"); return; }
+    if (useAmount > remaining + 0.0001) {
+      toast.error(`Maksimal ${rupiah(remaining)}`); return;
+    }
+    setBusy(true);
+    const { error } = await supabase.from("supplier_payments").insert({
+      user_id: uid,
+      supplier_id: supplierId,
+      purchase_id: purchase.id,
+      amount: useAmount,
+      note: note.trim() || null,
+    });
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success(useAmount >= remaining ? "Hutang lunas" : "Pembayaran dicatat");
+    setAmount(""); setNote("");
+    onChanged();
+  }
+
+  return (
+    <div className="mt-2 space-y-1.5 rounded border border-dashed p-2">
+      <div className="flex gap-1.5">
+        <input
+          type="number"
+          step="1"
+          min="0"
+          placeholder="Nominal bayar (Rp)"
+          className="flex-1 rounded border bg-background px-2 py-1 text-xs"
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => pay(Number(amount) || 0)}
+          className="rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+        >
+          Bayar
+        </button>
+        <button
+          type="button"
+          disabled={busy}
+          onClick={() => pay(remaining)}
+          className="rounded border border-emerald-500 px-2 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400"
+        >
+          Lunas
+        </button>
+      </div>
+      <input
+        type="text"
+        placeholder="Catatan (opsional)"
+        className="w-full rounded border bg-background px-2 py-1 text-xs"
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+      />
     </div>
   );
 }
