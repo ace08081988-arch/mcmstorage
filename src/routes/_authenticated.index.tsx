@@ -1,6 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -107,6 +109,11 @@ async function compressImage(file: File, maxSize = 1280, quality = 0.75): Promis
 }
 
 function Index() {
+  const navigate = useNavigate();
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  };
   const [items, setItems] = useState<Produk[]>(() => buildInitial());
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
