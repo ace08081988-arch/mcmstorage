@@ -905,9 +905,13 @@ function PayForm({
 
   async function pay(useAmount: number) {
     if (!uid) return;
-    if (useAmount <= 0) { toast.error("Nominal harus > 0"); return; }
+    if (!Number.isFinite(useAmount) || useAmount <= 0) {
+      toast.error("Nominal pembayaran wajib diisi dan harus lebih dari 0");
+      return;
+    }
     if (useAmount > remaining + 0.0001) {
-      toast.error(`Maksimal ${rupiah(remaining)}`); return;
+      toast.error(`Pembayaran melebihi sisa hutang. Maksimal ${rupiah(remaining)}`);
+      return;
     }
     setBusy(true);
     const { error } = await supabase.from("supplier_payments").insert({
@@ -924,6 +928,20 @@ function PayForm({
     onChanged();
   }
 
+  const raw = amount.trim();
+  const parsed = raw === "" ? NaN : Number(raw);
+  const isEmpty = raw === "";
+  const isInvalid = !isEmpty && (!Number.isFinite(parsed) || parsed <= 0);
+  const isOver = Number.isFinite(parsed) && parsed > remaining + 0.0001;
+  const errorMsg = isEmpty
+    ? null
+    : isInvalid
+      ? "Nominal harus lebih dari 0"
+      : isOver
+        ? `Maksimal ${rupiah(remaining)}`
+        : null;
+  const payDisabled = busy || isEmpty || isInvalid || isOver;
+
   return (
     <div className="mt-2 space-y-1.5 rounded border border-dashed p-2">
       <div className="flex gap-1.5">
@@ -931,15 +949,16 @@ function PayForm({
           type="number"
           step="1"
           min="0"
+          max={remaining}
           placeholder="Nominal bayar (Rp)"
-          className="flex-1 rounded border bg-background px-2 py-1 text-xs"
+          className={`flex-1 rounded border bg-background px-2 py-1 text-xs ${errorMsg ? "border-destructive" : ""}`}
           value={amount}
           onChange={(e) => setAmount(e.target.value)}
         />
         <button
           type="button"
-          disabled={busy}
-          onClick={() => pay(Number(amount) || 0)}
+          disabled={payDisabled}
+          onClick={() => pay(parsed)}
           className="rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-50"
         >
           Bayar
@@ -953,12 +972,14 @@ function PayForm({
           Lunas
         </button>
       </div>
+      {errorMsg && <div className="text-[11px] text-destructive">{errorMsg}</div>}
       <input
         type="text"
         placeholder="Catatan (opsional)"
         className="w-full rounded border bg-background px-2 py-1 text-xs"
         value={note}
         onChange={(e) => setNote(e.target.value)}
+        maxLength={200}
       />
     </div>
   );
