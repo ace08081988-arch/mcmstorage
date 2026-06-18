@@ -224,29 +224,64 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
   const [notes, setNotes] = useState("");
-  async function add(e: React.FormEvent) {
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  function resetForm() {
+    setEditingId(null); setName(""); setContact(""); setNotes("");
+  }
+  function startEdit(s: Supplier) {
+    setEditingId(s.id);
+    setName(s.name);
+    setContact(s.contact ?? "");
+    setNotes(s.notes ?? "");
+  }
+  async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!uid || !name.trim()) return;
-    const { error } = await supabase.from("suppliers").insert({
-      user_id: uid, name: name.trim(), contact: contact.trim() || null, notes: notes.trim() || null,
-    });
-    if (error) toast.error(error.message);
-    else { toast.success("Supplier ditambahkan"); setName(""); setContact(""); setNotes(""); onChanged(); }
+    const payload = {
+      name: name.trim(),
+      contact: contact.trim() || null,
+      notes: notes.trim() || null,
+    };
+    if (editingId) {
+      const { error } = await supabase.from("suppliers").update(payload).eq("id", editingId);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Supplier diperbarui");
+    } else {
+      const { error } = await supabase.from("suppliers").insert({ user_id: uid, ...payload });
+      if (error) { toast.error(error.message); return; }
+      toast.success("Supplier ditambahkan");
+    }
+    resetForm();
+    onChanged();
   }
   async function remove(id: string, n: string) {
     if (!confirm(`Hapus supplier "${n}"?`)) return;
     const { error } = await supabase.from("suppliers").delete().eq("id", id);
     if (error) toast.error(error.message);
-    else { toast.success("Supplier dihapus"); onChanged(); }
+    else {
+      toast.success("Supplier dihapus");
+      if (editingId === id) resetForm();
+      onChanged();
+    }
   }
   return (
     <div className="space-y-3">
-      <form onSubmit={add} className="space-y-2 rounded-lg border bg-card p-3">
-        <div className="text-xs font-semibold">Tambah Supplier</div>
+      <form onSubmit={submit} className="space-y-2 rounded-lg border bg-card p-3">
+        <div className="text-xs font-semibold">{editingId ? "Edit Supplier" : "Tambah Supplier"}</div>
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama supplier *" value={name} onChange={(e) => setName(e.target.value)} required />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
-        <button className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Simpan</button>
+        <div className="flex gap-2">
+          <button className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
+            {editingId ? "Perbarui" : "Simpan"}
+          </button>
+          {editingId && (
+            <button type="button" onClick={resetForm} className="rounded-md border px-3 py-2 text-sm hover:bg-accent">
+              Batal
+            </button>
+          )}
+        </div>
       </form>
       {suppliers.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Belum ada supplier.</div>
@@ -259,7 +294,15 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                 {s.contact && <div className="text-[11px] text-muted-foreground">📞 {s.contact}</div>}
                 {s.notes && <div className="text-[11px] text-muted-foreground">{s.notes}</div>}
               </div>
-              <button onClick={() => remove(s.id, s.name)} className="shrink-0 rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
+              <div className="flex shrink-0 gap-1">
+                <button
+                  onClick={() => startEdit(s)}
+                  className={`rounded border px-2 py-1 text-[11px] hover:bg-accent ${editingId === s.id ? "border-primary text-primary" : ""}`}
+                >
+                  Edit
+                </button>
+                <button onClick={() => remove(s.id, s.name)} className="rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
+              </div>
             </li>
           ))}
         </ul>
