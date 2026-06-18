@@ -57,6 +57,7 @@ function buildInitial(): Produk[] {
 }
 
 const STORAGE_KEY = "penjualan-harian-v1";
+const THEME_KEY = "penjualan-theme";
 
 function rupiah(n: number) {
   return new Intl.NumberFormat("id-ID", {
@@ -107,11 +108,19 @@ function Index() {
   const [items, setItems] = useState<Produk[]>(() => buildInitial());
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
+  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [openId, setOpenId] = useState<number | null>(null);
 
   useEffect(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) setItems(JSON.parse(raw));
+    } catch {}
+    try {
+      const t = localStorage.getItem(THEME_KEY) as "light" | "dark" | null;
+      const initial =
+        t ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      setTheme(initial);
     } catch {}
     setHydrated(true);
   }, []);
@@ -119,6 +128,12 @@ function Index() {
   useEffect(() => {
     if (hydrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
   }, [items, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    document.documentElement.classList.toggle("dark", theme === "dark");
+    localStorage.setItem(THEME_KEY, theme);
+  }, [theme, hydrated]);
 
   const total = useMemo(
     () => items.filter((i) => i.status === "Sudah Dikirim").reduce((s, i) => s + i.harga, 0),
