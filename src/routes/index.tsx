@@ -461,6 +461,43 @@ function Index() {
                         className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                       />
                     </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        onClick={() => {
+                          if (!navigator.geolocation) {
+                            toast.error("Geolocation tidak tersedia");
+                            return;
+                          }
+                          const tId = toast.loading("Mengambil lokasi…");
+                          navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                              const { latitude, longitude } = pos.coords;
+                              update(p.id, {
+                                lokasi: `https://www.google.com/maps?q=${latitude},${longitude}`,
+                              });
+                              toast.success("Lokasi diperbarui", { id: tId });
+                            },
+                            (err) =>
+                              toast.error("Gagal: " + err.message, { id: tId }),
+                            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+                          );
+                        }}
+                        className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                      >
+                        📍 Ambil lokasi sekarang
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard
+                            ?.writeText(p.lokasi)
+                            .then(() => toast.success("Link lokasi disalin"))
+                            .catch(() => toast.error("Gagal menyalin"));
+                        }}
+                        className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                      >
+                        Salin link
+                      </button>
+                    </div>
 
                     <div className="flex flex-wrap items-start gap-1.5">
                       {p.foto && (
