@@ -102,6 +102,9 @@ function Index() {
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<number>>(() => new Set());
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");
+  const [categories, setCategories] = useState<string[]>([]);
+  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [newCatName, setNewCatName] = useState("");
 
   useEffect(() => {
     try {
@@ -123,18 +126,20 @@ function Index() {
       }
       const { data, error } = await supabase
         .from("user_storage")
-        .select("items")
+        .select("items, categories")
         .eq("user_id", uid)
         .maybeSingle();
       if (error) {
         toast.error("Gagal memuat data: " + error.message);
-      } else if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
-        setItems(data.items as unknown as Produk[]);
       } else {
-        // First time for this account — seed with initial data
-        const seed = buildInitial();
-        setItems(seed);
-        await supabase.from("user_storage").upsert({ user_id: uid, items: seed as any });
+        const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
+        const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
+        setItems(loadedItems);
+        setCategories(loadedCats);
+        try {
+          const saved = localStorage.getItem(ACTIVE_CAT_KEY);
+          if (saved && loadedCats.includes(saved)) setActiveCat(saved);
+        } catch {}
       }
       setHydrated(true);
     })();
@@ -149,14 +154,14 @@ function Index() {
       if (!uid || cancelled) return;
       const { error } = await supabase
         .from("user_storage")
-        .upsert({ user_id: uid, items: items as any });
+        .upsert({ user_id: uid, items: items as any, categories: categories as any });
       if (error && !cancelled) toast.error("Gagal menyimpan: " + error.message);
     }, 600);
     return () => {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [items, hydrated]);
+  }, [items, categories, hydrated]);
 
   useEffect(() => {
     if (!hydrated) return;
@@ -167,6 +172,14 @@ function Index() {
   useEffect(() => {
     if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
   }, [viewMode, hydrated]);
+
+  useEffect(() => {
+    if (!hydrated) return;
+    try {
+      if (activeCat) localStorage.setItem(ACTIVE_CAT_KEY, activeCat);
+      else localStorage.removeItem(ACTIVE_CAT_KEY);
+    } catch {}
+  }, [activeCat, hydrated]);
 
   const total = useMemo(
     () => items.reduce((s, i) => s + i.harga, 0),
@@ -221,7 +234,45 @@ function Index() {
     );
 
   const reset = () => {
-    if (confirm("Reset semua data ke kondisi awal?")) setItems(buildInitial());
+    if (!activeCat) return;
+    if (confirm(`Hapus semua pesanan di kategori "${activeCat}"?`))
+      setItems((arr) => arr.filter((i) => i.kategori !== activeCat));
+  };
+
+  const addCategory = (name: string) => {
+    const v = name.trim();
+    if (!v) return;
+    if (categories.includes(v)) {
+      toast.error("Kategori sudah ada");
+      return;
+    }
+    setCategories((c) => [...c, v]);
+    setActiveCat(v);
+    setNewCatName("");
+    toast.success(`Kategori "${v}" dibuat`);
+  };
+
+  const deleteCategory = (name: string) => {
+    if (!confirm(`Hapus kategori "${name}" beserta semua pesanannya?`)) return;
+    setCategories((c) => c.filter((x) => x !== name));
+    setItems((arr) => arr.filter((i) => i.kategori !== name));
+    if (activeCat === name) setActiveCat(null);
+  };
+
+  const addProduk = () => {
+    if (!activeCat) return;
+    const nextId = items.reduce((m, i) => Math.max(m, i.id), 0) + 1;
+    const fresh: Produk = {
+      id: nextId,
+      kategori: activeCat,
+      nama: `Produk ${nextId}`,
+      harga: 0,
+      status: "Belum Dikirim",
+      keterangan: "",
+      lokasi: "",
+    };
+    setItems((arr) => [...arr, fresh]);
+    setOpenId(nextId);
   };
 
   const resetStatus = () => {
