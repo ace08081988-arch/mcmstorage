@@ -467,6 +467,14 @@ function Index() {
               {autoLock ? "🔒 Kunci: ON" : "🔓 Kunci: OFF"}
             </button>
             <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+              title="Ganti tema terang / gelap"
+              aria-label="Ganti tema"
+            >
+              {theme === "dark" ? "🌙 Gelap" : "☀️ Terang"}
+            </button>
+            <button
               onClick={signOut}
               className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
             >
