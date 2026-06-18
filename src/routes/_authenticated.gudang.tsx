@@ -1860,9 +1860,33 @@ function PesananTab({
     onChanged();
   }
 
-  async function setStatus(id: string, status: OrderRequest["status"]) {
+  async function setStatus(id: string, status: OrderRequest["status"], opts: { silent?: boolean } = {}) {
     const { error } = await supabase.from("order_requests").update({ status }).eq("id", id);
-    if (error) toast.error(error.message); else { toast.success(`Status: ${status}`); onChanged(); }
+    if (error) { toast.error(error.message); return false; }
+    if (!opts.silent) toast.success(`Status: ${status}`);
+    onChanged();
+    return true;
+  }
+
+  async function konversiKePenjualan(o: OrderRequest, skipConfirm = false): Promise<boolean> {
+    if (!uid) return false;
+    const it = itemMap[o.item_id]; if (!it) return false;
+    const qBase = o.qty_mode === "base" ? Number(o.qty) : Number(o.qty) * it.package_size;
+    if (qBase > it.stock_base) { toast.error("Stok kurang untuk konversi"); return false; }
+    const perBase = o.price_per_unit
+      ? (o.qty_mode === "base" ? Number(o.price_per_unit) : Number(o.price_per_unit) / it.package_size)
+      : 0;
+    if (!skipConfirm && !confirm(`Catat penjualan: ${qBase}${it.base_unit} × ${rupiah(perBase)}?`)) return false;
+    const { error } = await supabase.from("sales").insert({
+      user_id: uid, item_id: it.id, qty_base: qBase,
+      price_per_base: perBase, total_revenue: qBase * perBase, cost_at_sale: 0,
+      note: `Pesanan: ${o.note ?? "-"}`, customer_id: o.customer_id, payment_method: "kas",
+    });
+    if (error) { toast.error(error.message); return false; }
+    await supabase.from("order_requests").update({ status: "selesai" }).eq("id", o.id);
+    if (!skipConfirm) toast.success("Pesanan dijadikan penjualan");
+    onChanged();
+    return true;
   }
 
   async function tandaiSiap(o: OrderRequest) {
@@ -1871,36 +1895,31 @@ function PesananTab({
     const ringkasan = it
       ? `${it.name} — ${fmtBase(qBase, it.base_unit)}${o.price_per_unit != null ? ` × ${rupiah(Number(o.price_per_unit))}/${o.qty_mode === "base" ? it.base_unit : it.package_type}` : ""}`
       : "pesanan ini";
+    const labelPelanggan = o.customer_id ? (custMap[o.customer_id]?.name ?? "pelanggan") : "tanpa pelanggan";
     const pilihan = confirm(
       `Tandai SIAP: ${ringkasan}\n\nOK → langsung proses jadi PENJUALAN (stok berkurang, status: selesai)\nBatal → hanya tandai siap, jangan proses dulu`,
     );
     if (pilihan) {
-      await konversiKePenjualan(o, true);
+      const ok = await konversiKePenjualan(o, true);
+      if (ok && it) {
+        toast.success("✅ Pesanan diproses jadi penjualan", {
+          description: `${ringkasan}\nPelanggan: ${labelPelanggan}\nStatus: menunggu → selesai · Stok dikurangi ${fmtBase(qBase, it.base_unit)}`,
+        });
+      }
     } else {
       if (confirm("Tetap tandai pesanan sebagai SIAP tanpa memproses penjualan?")) {
-        await setStatus(o.id, "siap");
+        const ok = await setStatus(o.id, "siap", { silent: true });
+        if (ok) {
+          toast.success("📦 Pesanan ditandai siap", {
+            description: `${ringkasan}\nPelanggan: ${labelPelanggan}\nStatus: menunggu → siap · Stok belum dikurangi`,
+          });
+        }
+      } else {
+        toast("ℹ️ Tidak ada perubahan status", {
+          description: `${ringkasan} tetap berstatus "menunggu".`,
+        });
       }
     }
-  }
-
-  async function konversiKePenjualan(o: OrderRequest, skipConfirm = false) {
-    if (!uid) return;
-    const it = itemMap[o.item_id]; if (!it) return;
-    const qBase = o.qty_mode === "base" ? Number(o.qty) : Number(o.qty) * it.package_size;
-    if (qBase > it.stock_base) { toast.error("Stok kurang untuk konversi"); return; }
-    const perBase = o.price_per_unit
-      ? (o.qty_mode === "base" ? Number(o.price_per_unit) : Number(o.price_per_unit) / it.package_size)
-      : 0;
-    if (!skipConfirm && !confirm(`Catat penjualan: ${qBase}${it.base_unit} × ${rupiah(perBase)}?`)) return;
-    const { error } = await supabase.from("sales").insert({
-      user_id: uid, item_id: it.id, qty_base: qBase,
-      price_per_base: perBase, total_revenue: qBase * perBase, cost_at_sale: 0,
-      note: `Pesanan: ${o.note ?? "-"}`, customer_id: o.customer_id, payment_method: "kas",
-    });
-    if (error) { toast.error(error.message); return; }
-    await supabase.from("order_requests").update({ status: "selesai" }).eq("id", o.id);
-    toast.success("Pesanan dijadikan penjualan");
-    onChanged();
   }
 
   async function hapus(id: string) {
