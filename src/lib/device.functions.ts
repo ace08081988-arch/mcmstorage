@@ -1,7 +1,10 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequestHeader } from "@tanstack/react-start/server";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { createHash, randomInt, timingSafeEqual } from "crypto";
+import { createHash, randomInt, randomUUID, timingSafeEqual } from "crypto";
+
+const SENDER_DOMAIN = "notify.mcmstorage.biz";
+const FROM_ADDRESS = `MCM Storage <noreply@${SENDER_DOMAIN}>`;
 
 const OTP_TTL_MS = 10 * 60 * 1000;
 const MAX_ATTEMPTS = 5;
@@ -96,14 +99,22 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
     let emailSent = false;
     let emailError: string | null = null;
     try {
+      const messageId = randomUUID();
+      const idempotencyKey = `device-otp-${challenge.id}`;
       const { error: rpcErr } = await supabaseAdmin.rpc("enqueue_email" as never, {
         queue_name: "transactional_emails",
         payload: {
           to: email,
+          from: FROM_ADDRESS,
+          sender_domain: SENDER_DOMAIN,
           subject,
           html,
           text,
-          template_name: "device_otp",
+          purpose: "transactional",
+          label: "device_otp",
+          idempotency_key: idempotencyKey,
+          message_id: messageId,
+          queued_at: new Date().toISOString(),
         },
       } as never);
       if (rpcErr) emailError = rpcErr.message;
