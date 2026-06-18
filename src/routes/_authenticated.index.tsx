@@ -120,6 +120,30 @@ function Index() {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
+  const [uid, setUid] = useState<string | null>(null);
+  const [autoLock, setAutoLock] = useState(false);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => {
+      const id = data.user?.id ?? null;
+      setUid(id);
+      if (id) setAutoLock(isAutoLockEnabled(id));
+    });
+    const sync = () => {
+      supabase.auth.getUser().then(({ data }) => {
+        const id = data.user?.id ?? null;
+        if (id) setAutoLock(isAutoLockEnabled(id));
+      });
+    };
+    window.addEventListener(AUTO_LOCK_EVENT, sync);
+    return () => window.removeEventListener(AUTO_LOCK_EVENT, sync);
+  }, []);
+  const toggleAutoLock = () => {
+    if (!uid) return;
+    const next = !autoLock;
+    setAutoLock(next);
+    setAutoLockEnabled(uid, next);
+    toast.success(next ? "Kunci otomatis aktif" : "Kunci otomatis dimatikan");
+  };
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
