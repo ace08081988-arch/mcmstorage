@@ -2122,7 +2122,15 @@ function PesananTab({
     const perBase = o.price_per_unit
       ? (o.qty_mode === "base" ? Number(o.price_per_unit) : Number(o.price_per_unit) / it.package_size)
       : 0;
-    if (!skipConfirm && !confirm(`Catat penjualan: ${qBase}${it.base_unit} × ${rupiah(perBase)}?`)) return false;
+    if (
+      !skipConfirm &&
+      !(await confirm({
+        title: "Catat penjualan?",
+        description: `${qBase}${it.base_unit} × ${rupiah(perBase)}`,
+        confirmText: "Catat",
+      }))
+    )
+      return false;
     const { error } = await supabase.from("sales").insert({
       user_id: uid, item_id: it.id, qty_base: qBase,
       price_per_base: perBase, total_revenue: qBase * perBase, cost_at_sale: 0,
@@ -2142,9 +2150,11 @@ function PesananTab({
       ? `${it.name} — ${fmtBase(qBase, it.base_unit)}${o.price_per_unit != null ? ` × ${rupiah(Number(o.price_per_unit))}/${o.qty_mode === "base" ? it.base_unit : it.package_type}` : ""}`
       : "pesanan ini";
     const labelPelanggan = o.customer_id ? (custMap[o.customer_id]?.name ?? "pelanggan") : "tanpa pelanggan";
-    const pilihan = confirm(
-      `Tandai SIAP: ${ringkasan}\n\nOK → langsung proses jadi PENJUALAN (stok berkurang, status: selesai)\nBatal → hanya tandai siap, jangan proses dulu`,
-    );
+    const pilihan = await confirm({
+      title: "Proses jadi penjualan sekarang?",
+      description: `${ringkasan}\n\nLanjut → proses jadi PENJUALAN (stok berkurang, status: selesai)\nBatal → hanya tandai siap, jangan proses dulu`,
+      confirmText: "Lanjut",
+    });
     if (pilihan) {
       const ok = await konversiKePenjualan(o, true);
       if (ok && it) {
@@ -2153,7 +2163,13 @@ function PesananTab({
         });
       }
     } else {
-      if (confirm("Tetap tandai pesanan sebagai SIAP tanpa memproses penjualan?")) {
+      if (
+        await confirm({
+          title: "Tandai pesanan sebagai SIAP?",
+          description: "Pesanan akan ditandai siap tanpa memproses penjualan dan stok belum dikurangi.",
+          confirmText: "Tandai SIAP",
+        })
+      ) {
         const ok = await setStatus(o.id, "siap", { silent: true });
         if (ok) {
           toast.success("📦 Pesanan ditandai siap", {
@@ -2169,7 +2185,11 @@ function PesananTab({
   }
 
   async function hapus(id: string) {
-    if (!confirm("Hapus pesanan ini?")) return;
+    if (!(await confirm({
+      title: "Hapus pesanan?",
+      description: "Pesanan ini akan dihapus permanen.",
+      confirmText: "Hapus",
+    }))) return;
     const { error } = await supabase.from("order_requests").delete().eq("id", id);
     if (error) toast.error(friendlyError(error)); else { toast.success("Dihapus"); onChanged(); }
   }

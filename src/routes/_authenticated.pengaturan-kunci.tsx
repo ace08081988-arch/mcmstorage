@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { confirm } from "@/lib/confirm";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -149,8 +150,13 @@ function PengaturanKunci() {
     setLockConfig(uid, { ...cfg, ...patch });
   };
 
-  const disableLock = () => {
-    if (!confirm("Nonaktifkan kunci aplikasi?")) return;
+  const disableLock = async () => {
+    if (!(await confirm({
+      title: "Nonaktifkan kunci aplikasi?",
+      description: "Aplikasi tidak akan meminta PIN/pola/biometrik lagi sampai Anda mengaktifkannya kembali.",
+      confirmText: "Nonaktifkan",
+      destructive: true,
+    }))) return;
     setLockConfig(uid, null);
     toast.success("Kunci aplikasi dimatikan");
   };
