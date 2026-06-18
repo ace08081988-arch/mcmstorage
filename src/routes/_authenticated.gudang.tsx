@@ -1119,7 +1119,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   const [pricePerPackage, setPricePerPackage] = useState("");
   const [priceMode, setPriceMode] = useState<"package" | "base">("package");
   const [pricePerBase, setPricePerBase] = useState("");
-  const [paymentMethod, setPaymentMethod] = useState<"kas" | "hutang">("kas");
+  const [paymentMethod, setPaymentMethod] = useState<"kas" | "hutang">(defaultPayment);
 
   useEffect(() => {
     if (mode === "existing" && !itemId && items[0]) setItemId(items[0].id);
