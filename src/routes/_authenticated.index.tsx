@@ -626,6 +626,7 @@ function Index() {
             📦 Buka Gudang & Supplier
           </a>
         </main>
+        {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
       </div>
     );
   }
