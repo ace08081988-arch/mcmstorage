@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
 import { AppearanceInit } from "@/components/appearance-settings";
+import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 
 function NotFoundComponent() {
   return (
@@ -136,6 +137,12 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+
+  useEffect(() => {
+    bootstrapNativePermissions().catch((e) =>
+      console.warn("[perm-bootstrap]", e),
+    );
+  }, []);
 
   return (
     <QueryClientProvider client={queryClient}>
