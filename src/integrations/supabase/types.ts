@@ -89,6 +89,63 @@ export type Database = {
         }
         Relationships: []
       }
+      order_requests: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          id: string
+          item_id: string
+          note: string | null
+          price_per_unit: number | null
+          qty: number
+          qty_mode: string
+          status: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          item_id: string
+          note?: string | null
+          price_per_unit?: number | null
+          qty: number
+          qty_mode: string
+          status?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          id?: string
+          item_id?: string
+          note?: string | null
+          price_per_unit?: number | null
+          qty?: number
+          qty_mode?: string
+          status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_requests_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_requests_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchases: {
         Row: {
           base_added: number

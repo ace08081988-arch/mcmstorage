@@ -69,6 +69,18 @@ type CustomerPayment = {
   created_at: string;
 };
 
+type OrderRequest = {
+  id: string;
+  customer_id: string | null;
+  item_id: string;
+  qty: number;
+  qty_mode: "base" | "package";
+  price_per_unit: number | null;
+  note: string | null;
+  status: "menunggu" | "siap" | "selesai";
+  created_at: string;
+};
+
 function rupiah(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 }
@@ -145,7 +157,7 @@ function SignedImg({ path, className, alt }: { path: string; className?: string;
 
 function GudangPage() {
   const [tab, setTab] = useState<
-    "stok" | "supplier" | "beli" | "jual" | "hutang" | "pelanggan" | "piutang" | "riwayat"
+    "stok" | "supplier" | "beli" | "jual" | "pesanan" | "hutang" | "pelanggan" | "piutang" | "riwayat"
   >("stok");
   const [uid, setUid] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
@@ -155,6 +167,7 @@ function GudangPage() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [custPayments, setCustPayments] = useState<CustomerPayment[]>([]);
+  const [orders, setOrders] = useState<OrderRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -162,7 +175,7 @@ function GudangPage() {
   }, []);
 
   async function reloadAll() {
-    const [s, w, p, sa, py, c, cp] = await Promise.all([
+    const [s, w, p, sa, py, c, cp, or] = await Promise.all([
       supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("*").order("name"),
       supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200),
@@ -170,6 +183,7 @@ function GudangPage() {
       supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500),
       supabase.from("customers").select("*").order("created_at", { ascending: false }),
       supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("order_requests").select("*").order("created_at", { ascending: false }).limit(200),
     ]);
     if (s.data) setSuppliers(s.data as Supplier[]);
     if (w.data) setItems(w.data as WItem[]);
@@ -178,6 +192,7 @@ function GudangPage() {
     if (py.data) setPayments(py.data as Payment[]);
     if (c.data) setCustomers(c.data as Customer[]);
     if (cp.data) setCustPayments(cp.data as CustomerPayment[]);
+    if (or.data) setOrders(or.data as OrderRequest[]);
     setLoading(false);
   }
 
@@ -214,6 +229,7 @@ function GudangPage() {
             ["supplier", "Supplier"],
             ["beli", "Beli"],
             ["jual", "Jual"],
+            ["pesanan", "Pesanan"],
             ["hutang", "Hutang"],
             ["pelanggan", "Pelanggan"],
             ["piutang", "Piutang"],
@@ -244,6 +260,9 @@ function GudangPage() {
         )}
         {tab === "jual" && (
           <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
+        )}
+        {tab === "pesanan" && (
+          <PesananTab orders={orders} items={items} customers={customers} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "hutang" && (
           <HutangTab
@@ -1788,6 +1807,209 @@ function PayForm({
         onChange={(e) => setNote(e.target.value)}
         maxLength={200}
       />
+    </div>
+  );
+}
+/* ----------------- PESANAN (request preparation) ----------------- */
+function PesananTab({
+  orders, items, customers, uid, onChanged,
+}: {
+  orders: OrderRequest[]; items: WItem[]; customers: Customer[];
+  uid: string | null; onChanged: () => void;
+}) {
+  const [itemId, setItemId] = useState("");
+  const [customerId, setCustomerId] = useState("");
+  const [qty, setQty] = useState("");
+  const [qtyMode, setQtyMode] = useState<"base" | "package">("base");
+  const [price, setPrice] = useState("");
+  const [note, setNote] = useState("");
+  const [filter, setFilter] = useState<"aktif" | "semua">("aktif");
+
+  useEffect(() => {
+    if (!itemId && items[0]) setItemId(items[0].id);
+  }, [items, itemId]);
+
+  const item = items.find((i) => i.id === itemId);
+  const qtyN = Number(qty) || 0;
+  const qtyBase = item ? (qtyMode === "base" ? qtyN : qtyN * item.package_size) : 0;
+  const enough = item ? qtyBase <= item.stock_base : false;
+
+  const itemMap = useMemo(() => Object.fromEntries(items.map((i) => [i.id, i])), [items]);
+  const custMap = useMemo(() => Object.fromEntries(customers.map((c) => [c.id, c])), [customers]);
+  const visible = orders.filter((o) => filter === "semua" || o.status !== "selesai");
+
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!uid || !item) return;
+    if (qtyN <= 0) { toast.error("Jumlah harus > 0"); return; }
+    if (qtyMode === "package" && item.package_type === "pcs") {
+      toast.error("Barang pcs tidak punya kemasan"); return;
+    }
+    const { error } = await supabase.from("order_requests").insert({
+      user_id: uid,
+      customer_id: customerId || null,
+      item_id: item.id,
+      qty: qtyN,
+      qty_mode: qtyMode,
+      price_per_unit: price ? Number(price) : null,
+      note: note.trim() || null,
+    });
+    if (error) { toast.error(error.message); return; }
+    toast.success("Pesanan ditambahkan");
+    setQty(""); setPrice(""); setNote("");
+    onChanged();
+  }
+
+  async function setStatus(id: string, status: OrderRequest["status"]) {
+    const { error } = await supabase.from("order_requests").update({ status }).eq("id", id);
+    if (error) toast.error(error.message); else { toast.success(`Status: ${status}`); onChanged(); }
+  }
+
+  async function konversiKePenjualan(o: OrderRequest) {
+    if (!uid) return;
+    const it = itemMap[o.item_id]; if (!it) return;
+    const qBase = o.qty_mode === "base" ? Number(o.qty) : Number(o.qty) * it.package_size;
+    if (qBase > it.stock_base) { toast.error("Stok kurang untuk konversi"); return; }
+    const perBase = o.price_per_unit
+      ? (o.qty_mode === "base" ? Number(o.price_per_unit) : Number(o.price_per_unit) / it.package_size)
+      : 0;
+    if (!confirm(`Catat penjualan: ${qBase}${it.base_unit} × ${rupiah(perBase)}?`)) return;
+    const { error } = await supabase.from("sales").insert({
+      user_id: uid, item_id: it.id, qty_base: qBase,
+      price_per_base: perBase, total_revenue: qBase * perBase, cost_at_sale: 0,
+      note: `Pesanan: ${o.note ?? "-"}`, customer_id: o.customer_id, payment_method: "kas",
+    });
+    if (error) { toast.error(error.message); return; }
+    await supabase.from("order_requests").update({ status: "selesai" }).eq("id", o.id);
+    toast.success("Pesanan dijadikan penjualan");
+    onChanged();
+  }
+
+  async function hapus(id: string) {
+    if (!confirm("Hapus pesanan ini?")) return;
+    const { error } = await supabase.from("order_requests").delete().eq("id", id);
+    if (error) toast.error(error.message); else { toast.success("Dihapus"); onChanged(); }
+  }
+
+  function fmtQty(o: OrderRequest) {
+    const it = itemMap[o.item_id];
+    if (!it) return `${o.qty}`;
+    if (o.qty_mode === "base") return `${o.qty} ${it.base_unit}`;
+    return `${o.qty} ${it.package_type}${it.package_type !== "pcs" ? ` (≈${Number(o.qty) * it.package_size} ${it.base_unit})` : ""}`;
+  }
+
+  if (items.length === 0) {
+    return <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Belum ada barang. Tambah di tab <b>Beli</b> dulu.</div>;
+  }
+
+  return (
+    <div className="space-y-3">
+      <form onSubmit={submit} className="space-y-3 rounded-lg border bg-card p-3">
+        <div className="text-xs font-semibold">📝 Tambah Pesanan</div>
+
+        <label className="block">
+          <span className="text-[11px] text-muted-foreground">Pelanggan (opsional)</span>
+          <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={customerId} onChange={(e) => setCustomerId(e.target.value)}>
+            <option value="">— Tanpa pelanggan —</option>
+            {customers.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </label>
+
+        <label className="block">
+          <span className="text-[11px] text-muted-foreground">Barang</span>
+          <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
+            {items.map((i) => (
+              <option key={i.id} value={i.id}>
+                {i.name} · stok {fmtBase(i.stock_base, i.base_unit)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {item && (
+          <>
+            <div className="flex gap-1 text-xs">
+              <button type="button" onClick={() => setQtyMode("base")} className={`flex-1 rounded border px-2 py-1 ${qtyMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+                Per {item.base_unit}
+              </button>
+              {item.package_type !== "pcs" && (
+                <button type="button" onClick={() => setQtyMode("package")} className={`flex-1 rounded border px-2 py-1 ${qtyMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+                  Per {item.package_type}
+                </button>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2">
+              <label className="block">
+                <span className="text-[11px] text-muted-foreground">Jumlah ({qtyMode === "base" ? item.base_unit : item.package_type})</span>
+                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+              </label>
+              <label className="block">
+                <span className="text-[11px] text-muted-foreground">Harga / {qtyMode === "base" ? item.base_unit : item.package_type} (opsional)</span>
+                <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={price} onChange={(e) => setPrice(e.target.value)} />
+              </label>
+            </div>
+
+            <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (mis. dijemput sore)" value={note} onChange={(e) => setNote(e.target.value)} />
+
+            <div className={`rounded-md p-2 text-[11px] ${enough ? "bg-muted/50" : "bg-destructive/10 text-destructive"}`}>
+              Butuh siapkan: <b>{fmtBase(qtyBase, item.base_unit)}</b> · Stok: {fmtBase(item.stock_base, item.base_unit)} {!enough && "(kurang!)"}
+            </div>
+          </>
+        )}
+
+        <button className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Simpan pesanan</button>
+      </form>
+
+      <div className="flex gap-1 text-xs">
+        <button onClick={() => setFilter("aktif")} className={`flex-1 rounded border px-2 py-1 ${filter === "aktif" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Aktif</button>
+        <button onClick={() => setFilter("semua")} className={`flex-1 rounded border px-2 py-1 ${filter === "semua" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Semua</button>
+      </div>
+
+      {visible.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Tidak ada pesanan.</div>
+      ) : (
+        <ul className="space-y-2">
+          {visible.map((o) => {
+            const it = itemMap[o.item_id];
+            const cust = o.customer_id ? custMap[o.customer_id] : null;
+            const badge =
+              o.status === "menunggu" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
+              : o.status === "siap" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
+              : "bg-muted text-muted-foreground";
+            return (
+              <li key={o.id} className="rounded-lg border bg-card p-3 space-y-2">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <div className="truncate text-sm font-semibold">{it?.name ?? "?"}</div>
+                    <div className="text-[11px] text-muted-foreground">
+                      {cust?.name ?? "Tanpa pelanggan"} · {new Date(o.created_at).toLocaleString("id-ID")}
+                    </div>
+                    <div className="mt-1 text-[12px]">
+                      Jumlah: <b>{fmtQty(o)}</b>
+                      {o.price_per_unit != null && <> · {rupiah(Number(o.price_per_unit))}/{o.qty_mode === "base" ? it?.base_unit : it?.package_type}</>}
+                    </div>
+                    {o.note && <div className="text-[11px] text-muted-foreground">📌 {o.note}</div>}
+                  </div>
+                  <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${badge}`}>{o.status}</span>
+                </div>
+                <div className="flex flex-wrap gap-1">
+                  {o.status === "menunggu" && (
+                    <button onClick={() => setStatus(o.id, "siap")} className="rounded border px-2 py-1 text-[11px] hover:bg-accent">✅ Tandai Siap</button>
+                  )}
+                  {o.status === "siap" && (
+                    <button onClick={() => setStatus(o.id, "menunggu")} className="rounded border px-2 py-1 text-[11px] hover:bg-accent">↩️ Batal Siap</button>
+                  )}
+                  {o.status !== "selesai" && (
+                    <button onClick={() => konversiKePenjualan(o)} className="rounded border px-2 py-1 text-[11px] hover:bg-accent">💰 Jadikan Penjualan</button>
+                  )}
+                  <button onClick={() => hapus(o.id)} className="ml-auto rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </div>
   );
 }
