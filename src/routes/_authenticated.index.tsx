@@ -1346,6 +1346,7 @@ function Index() {
         )}
         {selectMode && <div className="h-20" />}
       </main>
+      </div>
 
       {selectMode && (
         <div className="sticky bottom-0 z-10 border-t bg-card/95 backdrop-blur">
