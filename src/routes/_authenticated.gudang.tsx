@@ -1132,49 +1132,22 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                 {s.email && (
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     <span className="truncate text-[11px] text-muted-foreground">📧 {s.email}</span>
-                    {(() => {
-                      const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                      const seen = new Set<string>();
-                      const toKey = s.email.trim().toLowerCase();
-                      if (EMAIL_RE.test(toKey)) seen.add(toKey);
-                      const pickValidUnique = (raw: string | null) => {
-                        if (!raw) return [] as string[];
-                        const out: string[] = [];
-                        for (const part of raw.split(",")) {
-                          const v = part.trim();
-                          const k = v.toLowerCase();
-                          if (!v || !EMAIL_RE.test(v) || seen.has(k)) continue;
-                          seen.add(k);
-                          out.push(v);
-                        }
-                        return out;
-                      };
-                      const ccs = pickValidUnique(s.email_cc);
-                      const bccs = pickValidUnique(s.email_bcc);
-                      const params: string[] = [];
-                      if (ccs.length) params.push(`cc=${encodeURIComponent(ccs.join(","))}`);
-                      if (bccs.length) params.push(`bcc=${encodeURIComponent(bccs.join(","))}`);
-                      const qs = params.length ? `?${params.join("&")}` : "";
-                      return (
-                        <a
-                          href={`mailto:${encodeURIComponent(s.email)}${qs}`}
-                          className="rounded border border-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
-                          aria-label={`Email ${s.name}`}
-                        >
-                          📧 Email
-                        </a>
-                      );
-                    })()}
+                    <a
+                      href={buildMailto({ to: s.email, cc: s.email_cc, bcc: s.email_bcc }).href}
+                      className="rounded border border-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
+                      aria-label={`Email ${s.name}`}
+                    >
+                      📧 Email
+                    </a>
                   </div>
                 )}
                 {(s.email_cc || s.email_bcc) && (() => {
-                  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
                   const split = (raw: string | null) =>
                     (raw ?? "").split(",").map((x) => x.trim()).filter(Boolean);
                   const ccAll = split(s.email_cc);
                   const bccAll = split(s.email_bcc);
-                  const ccInvalid = ccAll.filter((x) => !EMAIL_RE.test(x));
-                  const bccInvalid = bccAll.filter((x) => !EMAIL_RE.test(x));
+                  const ccInvalid = ccAll.filter((x) => !isValidEmail(x));
+                  const bccInvalid = bccAll.filter((x) => !isValidEmail(x));
                   return (
                     <>
                       <div className="mt-0.5 text-[10px] text-muted-foreground">
