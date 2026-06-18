@@ -198,145 +198,158 @@ function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b bg-card">
-        <div className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold tracking-tight">Penjualan Harian</h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {terkirim} dari {items.length} pesanan terkirim
+      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
+        <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
+          <div className="flex items-center gap-3">
+            <div className="min-w-0 flex-1">
+              <h1 className="truncate text-base font-semibold tracking-tight">Penjualan Harian</h1>
+              <p className="text-[11px] text-muted-foreground">
+                {terkirim}/{items.length} terkirim · {rupiah(total)}
               </p>
             </div>
-            <div className="rounded-xl border bg-secondary px-5 py-4 text-right">
-              <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                Total penjualan hari ini
-              </div>
-              <div className="mt-1 text-2xl font-semibold tabular-nums text-foreground">
-                {rupiah(total)}
-              </div>
-            </div>
+            <button
+              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border hover:bg-accent"
+              aria-label="Ganti tema"
+              title={theme === "dark" ? "Mode terang" : "Mode gelap"}
+            >
+              {theme === "dark" ? "☀️" : "🌙"}
+            </button>
           </div>
 
-          <div className="mt-5 flex flex-wrap items-center gap-2">
+          <div className="mt-2 flex flex-wrap items-center gap-1.5">
             {(["semua", "Belum Dikirim", "Sudah Dikirim"] as const).map((f) => (
               <button
                 key={f}
                 onClick={() => setFilter(f)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors ${
+                className={`rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
                   filter === f
                     ? "border-primary bg-primary text-primary-foreground"
                     : "border-border bg-background text-foreground hover:bg-accent"
                 }`}
               >
-                {f === "semua" ? "Semua" : f}
+                {f === "semua" ? "Semua" : f === "Belum Dikirim" ? "Belum" : "Terkirim"}
               </button>
             ))}
-            <div className="ml-auto flex gap-2">
+            <div className="ml-auto flex gap-1.5">
               <button
                 onClick={resetStatus}
-                className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+                className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
               >
                 Reset status
               </button>
               <button
                 onClick={reset}
-                className="rounded-md border px-3 py-1.5 text-xs font-medium text-destructive hover:bg-destructive/10"
+                className="rounded-md border px-2.5 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/10"
               >
-                Reset data
+                Reset
               </button>
             </div>
           </div>
         </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-4 py-6 sm:px-6">
-        <ul className="grid gap-3">
+      <main className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
+        <ul className="grid gap-1.5">
           {filtered.map((p) => {
             const sent = p.status === "Sudah Dikirim";
             const waUrl = `https://wa.me/?text=${encodeURIComponent(buildPesan(p))}`;
+            const open = openId === p.id;
+            const fotoCount = (p.foto ? 1 : 0) + (p.galeri?.length ?? 0);
             return (
               <li
                 key={p.id}
-                className={`rounded-xl border bg-card p-4 shadow-sm transition-opacity ${
-                  sent ? "opacity-70" : ""
-                }`}
+                className={`rounded-lg border bg-card transition-opacity ${sent ? "opacity-60" : ""}`}
               >
-                <div className="flex flex-wrap items-start gap-3">
-                  <div className="flex-1 min-w-[200px]">
-                    <div className="flex items-center gap-2">
-                      <span className="inline-flex items-center rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
-                        {p.kategori}
-                      </span>
-                      <span className="text-xs text-muted-foreground">#{p.id}</span>
-                    </div>
+                <div className="flex items-center gap-2 px-2.5 py-2">
+                  <input
+                    type="checkbox"
+                    checked={sent}
+                    onChange={(e) =>
+                      update(p.id, {
+                        status: e.target.checked ? "Sudah Dikirim" : "Belum Dikirim",
+                      })
+                    }
+                    className="h-4 w-4 shrink-0"
+                    aria-label="Tandai terkirim"
+                  />
+                  <button
+                    onClick={() => setOpenId(open ? null : p.id)}
+                    className="flex min-w-0 flex-1 items-center gap-2 text-left"
+                  >
+                    <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
+                      {TAG[p.kategori]}
+                    </span>
+                    <span className="truncate text-sm font-medium">{p.nama}</span>
+                    {fotoCount > 0 && (
+                      <span className="shrink-0 text-[10px] text-muted-foreground">📷{fotoCount}</span>
+                    )}
+                    <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
+                      {rupiah(p.harga)}
+                    </span>
+                  </button>
+                  {!sent && (
+                    <a
+                      href={waUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="shrink-0 rounded-md bg-[#25D366] px-2 py-1 text-[11px] font-semibold text-white hover:opacity-90"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      WA
+                    </a>
+                  )}
+                </div>
+
+                {open && (
+                  <div className="space-y-2 border-t px-2.5 py-2.5">
                     <input
                       value={p.nama}
                       onChange={(e) => update(p.id, { nama: e.target.value })}
-                      className="mt-2 w-full bg-transparent text-base font-semibold outline-none focus:ring-2 focus:ring-ring rounded px-1 -mx-1"
+                      placeholder="Nama produk"
+                      className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                     />
-                    <div className="mt-1 text-sm font-medium tabular-nums text-foreground">
-                      {rupiah(p.harga)}
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    <label className="inline-flex cursor-pointer items-center gap-2 rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent">
+                    <div className="grid gap-2 sm:grid-cols-2">
                       <input
-                        type="checkbox"
-                        checked={sent}
-                        onChange={(e) =>
-                          update(p.id, {
-                            status: e.target.checked ? "Sudah Dikirim" : "Belum Dikirim",
-                          })
-                        }
-                        className="h-4 w-4"
+                        value={p.keterangan}
+                        onChange={(e) => update(p.id, { keterangan: e.target.value })}
+                        placeholder="Keterangan"
+                        className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                       />
-                      {sent ? "Sudah Dikirim" : "Tandai Terkirim"}
-                    </label>
-                  </div>
-                </div>
+                      <input
+                        value={p.lokasi}
+                        onChange={(e) => update(p.id, { lokasi: e.target.value })}
+                        placeholder="Link Lokasi"
+                        className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
 
-                <div className="mt-3 grid gap-2 sm:grid-cols-2">
-                  <label className="block">
-                    <span className="text-xs font-medium text-muted-foreground">Keterangan</span>
-                    <input
-                      value={p.keterangan}
-                      onChange={(e) => update(p.id, { keterangan: e.target.value })}
-                      className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  </label>
-                  <label className="block">
-                    <span className="text-xs font-medium text-muted-foreground">Link Lokasi</span>
-                    <input
-                      value={p.lokasi}
-                      onChange={(e) => update(p.id, { lokasi: e.target.value })}
-                      className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-                    />
-                  </label>
-                </div>
-
-                <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                  <div>
-                    <div className="text-xs font-medium text-muted-foreground">Foto Langsung</div>
-                    <div className="mt-1 flex items-start gap-2">
-                      {p.foto ? (
+                    <div className="flex flex-wrap items-start gap-1.5">
+                      {p.foto && (
                         <div className="relative">
-                          <img
-                            src={p.foto}
-                            alt={`Foto ${p.nama}`}
-                            className="h-24 w-24 rounded-md border object-cover"
-                          />
+                          <img src={p.foto} alt="" className="h-16 w-16 rounded-md border object-cover" />
                           <button
                             onClick={() => removeFoto(p.id)}
-                            className="absolute -right-2 -top-2 inline-flex h-6 w-6 items-center justify-center rounded-full border bg-background text-xs shadow hover:bg-destructive hover:text-destructive-foreground"
-                            aria-label="Hapus foto"
+                            className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[10px] shadow"
                           >
                             ×
                           </button>
                         </div>
-                      ) : null}
-                      <label className="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-xs font-medium hover:bg-accent">
-                        📷 {p.foto ? "Ganti" : "Ambil Foto"}
+                      )}
+                      {(p.galeri ?? []).map((src, idx) => (
+                        <div key={idx} className="relative">
+                          <img src={src} alt="" className="h-16 w-16 rounded-md border object-cover" />
+                          <button
+                            onClick={() => removeGaleri(p.id, idx)}
+                            className="absolute -right-1.5 -top-1.5 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[10px] shadow"
+                          >
+                            ×
+                          </button>
+                        </div>
+                      ))}
+                      <label className="inline-flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[10px] hover:bg-accent">
+                        📷
+                        <span>{p.foto ? "Ganti" : "Foto"}</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -345,32 +358,9 @@ function Index() {
                           onChange={(e) => setFoto(p.id, e.target.files)}
                         />
                       </label>
-                    </div>
-                  </div>
-
-                  <div>
-                    <div className="text-xs font-medium text-muted-foreground">
-                      Foto Galeri {p.galeri?.length ? `(${p.galeri.length})` : ""}
-                    </div>
-                    <div className="mt-1 flex flex-wrap items-start gap-2">
-                      {(p.galeri ?? []).map((src, idx) => (
-                        <div key={idx} className="relative">
-                          <img
-                            src={src}
-                            alt={`Galeri ${idx + 1}`}
-                            className="h-20 w-20 rounded-md border object-cover"
-                          />
-                          <button
-                            onClick={() => removeGaleri(p.id, idx)}
-                            className="absolute -right-2 -top-2 inline-flex h-5 w-5 items-center justify-center rounded-full border bg-background text-[10px] shadow hover:bg-destructive hover:text-destructive-foreground"
-                            aria-label="Hapus"
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                      <label className="inline-flex cursor-pointer items-center rounded-md border px-3 py-2 text-xs font-medium hover:bg-accent">
-                        🖼️ Tambah
+                      <label className="inline-flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-[10px] hover:bg-accent">
+                        🖼️
+                        <span>Galeri</span>
                         <input
                           type="file"
                           accept="image/*"
@@ -380,29 +370,29 @@ function Index() {
                         />
                       </label>
                     </div>
-                  </div>
-                </div>
 
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <a
-                    href={p.lokasi}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="inline-flex items-center rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent"
-                  >
-                    📍 Buka Lokasi
-                  </a>
-                  {!sent && (
-                    <a
-                      href={waUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="inline-flex items-center rounded-md bg-[#25D366] px-3 py-1.5 text-xs font-semibold text-white hover:opacity-90"
-                    >
-                      KIRIM WA
-                    </a>
-                  )}
-                </div>
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      <a
+                        href={p.lokasi}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                      >
+                        📍 Lokasi
+                      </a>
+                      {!sent && (
+                        <a
+                          href={waUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="inline-flex items-center rounded-md bg-[#25D366] px-2.5 py-1 text-[11px] font-semibold text-white hover:opacity-90"
+                        >
+                          KIRIM WA
+                        </a>
+                      )}
+                    </div>
+                  </div>
+                )}
               </li>
             );
           })}
