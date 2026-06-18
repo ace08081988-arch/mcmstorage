@@ -162,6 +162,8 @@ function GudangPage() {
   >("stok");
   const [uid, setUid] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
+  const [beliDefaultPayment, setBeliDefaultPayment] = useState<"kas" | "hutang">("kas");
+  const [beliPresetKey, setBeliPresetKey] = useState(0);
   const [items, setItems] = useState<WItem[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
