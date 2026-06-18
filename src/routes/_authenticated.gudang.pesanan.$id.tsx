@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/_authenticated/gudang/pesanan/")({
+export const Route = createFileRoute("/_authenticated/gudang/pesanan/$id")({
   component: PesananDetailPage,
 });
 
