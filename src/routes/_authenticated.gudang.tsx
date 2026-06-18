@@ -738,7 +738,7 @@ function RiwayatTab({
 
 /* ----------------- HUTANG ----------------- */
 function HutangTab({
-  purchases, payments, suppliers, itemMap, uid, onChanged,
+  purchases, payments, suppliers, itemMap, uid, onChanged, onLocalPayment, onLocalRemovePayment,
 }: {
   purchases: Purchase[];
   payments: Payment[];
@@ -746,6 +746,8 @@ function HutangTab({
   itemMap: Record<string, WItem>;
   uid: string | null;
   onChanged: () => void;
+  onLocalPayment: (p: Payment) => void;
+  onLocalRemovePayment: (id: string) => void;
 }) {
   const debts = useMemo(() => purchases.filter((p) => p.payment_method === "hutang"), [purchases]);
 
