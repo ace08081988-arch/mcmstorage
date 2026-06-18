@@ -1,0 +1,1 @@
+ALTER TABLE public.purchases ADD COLUMN payment_method text NOT NULL DEFAULT 'kas' CHECK (payment_method IN ('kas','hutang'));

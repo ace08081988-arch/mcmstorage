@@ -35,6 +35,7 @@ type Purchase = {
   base_added: number;
   price_per_package: number;
   total_cost: number;
+  payment_method: "kas" | "hutang";
   created_at: string;
 };
 type Sale = {
@@ -324,6 +325,7 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
   // purchase
   const [packageQty, setPackageQty] = useState("1");
   const [pricePerPackage, setPricePerPackage] = useState("");
+  const [paymentMethod, setPaymentMethod] = useState<"kas" | "hutang">("kas");
 
   useEffect(() => {
     if (mode === "existing" && !itemId && items[0]) setItemId(items[0].id);
@@ -340,6 +342,10 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
     e.preventDefault();
     if (!uid) return;
     if (pkgQ <= 0 || price < 0) { toast.error("Periksa jumlah & harga"); return; }
+    if (paymentMethod === "hutang" && !supplierId) {
+      toast.error("Pembelian hutang wajib memilih supplier");
+      return;
+    }
 
     let useItemId = itemId;
     let useSize = effectivePkgSize;
@@ -372,9 +378,10 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
       base_added: pkgQ * useSize,
       price_per_package: price,
       total_cost: pkgQ * price,
+      payment_method: paymentMethod,
     });
     if (error) { toast.error(error.message); return; }
-    toast.success("Pembelian dicatat, stok bertambah");
+    toast.success(`Pembelian dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok bertambah`);
     setName(""); setCategory(""); setPackageQty("1"); setPricePerPackage("");
     onChanged();
   }
@@ -445,9 +452,29 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
         </label>
       </div>
 
+      <div>
+        <div className="text-[11px] text-muted-foreground mb-1">Cara bayar</div>
+        <div className="flex gap-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("kas")}
+            className={`flex-1 rounded border px-2 py-1.5 ${paymentMethod === "kas" ? "bg-primary text-primary-foreground border-primary" : ""}`}
+          >
+            💵 Kas (lunas)
+          </button>
+          <button
+            type="button"
+            onClick={() => setPaymentMethod("hutang")}
+            className={`flex-1 rounded border px-2 py-1.5 ${paymentMethod === "hutang" ? "bg-amber-500 text-white border-amber-500" : ""}`}
+          >
+            📝 Hutang
+          </button>
+        </div>
+      </div>
+
       <div className="rounded-md bg-muted/50 p-2 text-[11px]">
         <div>Total tambahan stok: <b>{fmtBase(baseAdded, baseUnit)}</b></div>
-        <div>Total biaya: <b>{rupiah(totalCost)}</b></div>
+        <div>Total biaya: <b>{rupiah(totalCost)}</b> ({paymentMethod === "hutang" ? "hutang ke supplier" : "lunas tunai"})</div>
         {baseAdded > 0 && <div>Modal per {baseUnit}: <b>{rupiah(totalCost / baseAdded)}</b></div>}
       </div>
 
@@ -663,7 +690,12 @@ function RiwayatTab({
                         {new Date(p.created_at).toLocaleString("id-ID")} · dari {sup?.name || "—"}
                       </div>
                     </div>
-                    <button onClick={() => delPurchase(p.id)} className="shrink-0 rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
+                    <div className="flex shrink-0 flex-col items-end gap-1">
+                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${p.payment_method === "hutang" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400" : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"}`}>
+                        {p.payment_method === "hutang" ? "📝 Hutang" : "💵 Kas"}
+                      </span>
+                      <button onClick={() => delPurchase(p.id)} className="rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
+                    </div>
                   </div>
                   <div className="mt-1 grid grid-cols-3 gap-2">
                     <div><span className="text-muted-foreground">Kemasan </span><b>{Number(p.package_qty)} × {Number(p.package_size_snapshot)}{it?.base_unit || ""}</b></div>

@@ -22,6 +22,7 @@ export type Database = {
           item_id: string
           package_qty: number
           package_size_snapshot: number
+          payment_method: string
           price_per_package: number
           supplier_id: string | null
           total_cost: number
@@ -34,6 +35,7 @@ export type Database = {
           item_id: string
           package_qty: number
           package_size_snapshot: number
+          payment_method?: string
           price_per_package: number
           supplier_id?: string | null
           total_cost: number
@@ -46,6 +48,7 @@ export type Database = {
           item_id?: string
           package_qty?: number
           package_size_snapshot?: number
+          payment_method?: string
           price_per_package?: number
           supplier_id?: string | null
           total_cost?: number
