@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { AppearanceSettings } from "@/components/appearance-settings";
 import { ProductEditDrawer } from "@/components/ProductEditDrawer";
-import { useConfirm } from "@/hooks/use-confirm";
+import { confirm } from "@/lib/confirm";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -134,7 +134,6 @@ async function compressImage(file: File, maxSize = 1280, quality = 0.75): Promis
 
 function Index() {
   const navigate = useNavigate();
-  const { confirm, dialog: confirmDialog } = useConfirm();
   const signOut = async () => {
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
@@ -668,7 +667,6 @@ function Index() {
           </a>
         </main>
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
-        {confirmDialog}
       </div>
     );
   }
@@ -1373,7 +1371,6 @@ function Index() {
         markSent={markSent}
         buildPesan={buildPesan}
       />
-      {confirmDialog}
     </div>
   );
 }
