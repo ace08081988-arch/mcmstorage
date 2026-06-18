@@ -1463,7 +1463,17 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!uid || !item) return;
-    if (qtyBase <= 0) { toast.error("Jumlah harus > 0"); return; }
+    if (!Number.isFinite(qtyN) || qtyN <= 0) {
+      toast.error("Jumlah harus diisi dan lebih dari 0");
+      return;
+    }
+    const minBase = 0.01; // 0.01 g atau 0.01 pcs
+    if (qtyBase < minBase) {
+      toast.error(
+        `Jumlah minimal ${minBase} ${item.base_unit}. Tidak bisa menjual di bawah itu.`
+      );
+      return;
+    }
     if (qtyBase > item.stock_base) { toast.error(`Stok kurang. Tersedia ${fmtBase(item.stock_base, item.base_unit)}`); return; }
     if (paymentMethod === "hutang" && !customerId) {
       toast.error("Penjualan hutang wajib pilih pelanggan");
