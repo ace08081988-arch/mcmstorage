@@ -47,11 +47,22 @@ type Sale = {
   cost_at_sale: number;
   note: string | null;
   created_at: string;
+  customer_id: string | null;
+  payment_method: "kas" | "hutang";
 };
 type Payment = {
   id: string;
   supplier_id: string;
   purchase_id: string;
+  amount: number;
+  note: string | null;
+  created_at: string;
+};
+type Customer = { id: string; name: string; contact: string | null; notes: string | null };
+type CustomerPayment = {
+  id: string;
+  customer_id: string;
+  sale_id: string | null;
   amount: number;
   note: string | null;
   created_at: string;
@@ -72,13 +83,17 @@ function defaultBase(pt: PackageType): "g" | "pcs" {
 }
 
 function GudangPage() {
-  const [tab, setTab] = useState<"stok" | "supplier" | "beli" | "jual" | "hutang" | "riwayat">("stok");
+  const [tab, setTab] = useState<
+    "stok" | "supplier" | "beli" | "jual" | "hutang" | "pelanggan" | "piutang" | "riwayat"
+  >("stok");
   const [uid, setUid] = useState<string | null>(null);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [items, setItems] = useState<WItem[]>([]);
   const [purchases, setPurchases] = useState<Purchase[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [custPayments, setCustPayments] = useState<CustomerPayment[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -86,18 +101,22 @@ function GudangPage() {
   }, []);
 
   async function reloadAll() {
-    const [s, w, p, sa, py] = await Promise.all([
+    const [s, w, p, sa, py, c, cp] = await Promise.all([
       supabase.from("suppliers").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("*").order("name"),
       supabase.from("purchases").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("sales").select("*").order("created_at", { ascending: false }).limit(200),
       supabase.from("supplier_payments").select("*").order("created_at", { ascending: false }).limit(500),
+      supabase.from("customers").select("*").order("created_at", { ascending: false }),
+      supabase.from("customer_payments").select("*").order("created_at", { ascending: false }).limit(500),
     ]);
     if (s.data) setSuppliers(s.data as Supplier[]);
     if (w.data) setItems(w.data as WItem[]);
     if (p.data) setPurchases(p.data as Purchase[]);
     if (sa.data) setSales(sa.data as Sale[]);
     if (py.data) setPayments(py.data as Payment[]);
+    if (c.data) setCustomers(c.data as Customer[]);
+    if (cp.data) setCustPayments(cp.data as CustomerPayment[]);
     setLoading(false);
   }
 
