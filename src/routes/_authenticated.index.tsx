@@ -158,7 +158,7 @@ function Index() {
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
-  const [theme, setTheme] = useState<"light" | "dark">("light");
+  const [theme, setTheme] = useState<"light" | "dark">("dark");
   const [openId, setOpenId] = useState<number | null>(null);
   const [flashId, setFlashId] = useState<number | null>(null);
   const [selectMode, setSelectMode] = useState(false);
@@ -171,9 +171,9 @@ function Index() {
   useEffect(() => {
     try {
       const t = localStorage.getItem(THEME_KEY) as "light" | "dark" | null;
-      const initial =
-        t ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+      const initial = t ?? "dark";
       setTheme(initial);
+      document.documentElement.classList.toggle("dark", initial === "dark");
     } catch {}
     try {
       const v = localStorage.getItem(VIEW_KEY) as "list" | "grid" | null;
