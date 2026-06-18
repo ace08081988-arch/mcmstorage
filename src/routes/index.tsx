@@ -150,10 +150,9 @@ function Index() {
   }, [viewMode, hydrated]);
 
   const total = useMemo(
-    () => items.filter((i) => i.status === "Sudah Dikirim").reduce((s, i) => s + i.harga, 0),
+    () => items.reduce((s, i) => s + i.harga, 0),
     [items],
   );
-  const terkirim = items.filter((i) => i.status === "Sudah Dikirim").length;
 
   const update = (id: number, patch: Partial<Produk>) =>
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, ...patch } : i)));
@@ -241,12 +240,30 @@ function Index() {
 
   const bulkWaUrl = `https://wa.me/?text=${encodeURIComponent(bulkPesan())}`;
 
+  const removeItem = (id: number) => {
+    const snapshot = items;
+    const target = items.find((i) => i.id === id);
+    setItems((arr) => arr.filter((i) => i.id !== id));
+    toast.success(`Terkirim · ${target?.nama ?? "Pesanan"} dihapus`, {
+      action: {
+        label: "Urungkan",
+        onClick: () => setItems(snapshot),
+      },
+    });
+  };
+
   const bulkMarkSent = () => {
     if (selected.size === 0) return;
-    setItems((arr) =>
-      arr.map((i) => (selected.has(i.id) ? { ...i, status: "Sudah Dikirim" } : i)),
-    );
+    const snapshot = items;
+    const count = selected.size;
+    setItems((arr) => arr.filter((i) => !selected.has(i.id)));
     setSelected(new Set());
+    toast.success(`${count} pesanan terkirim & dihapus`, {
+      action: {
+        label: "Urungkan",
+        onClick: () => setItems(snapshot),
+      },
+    });
   };
 
   const exitSelect = () => {
@@ -262,7 +279,7 @@ function Index() {
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-base font-semibold tracking-tight">Penjualan Harian</h1>
               <p className="text-[11px] text-muted-foreground">
-                {terkirim}/{items.length} terkirim · {rupiah(total)}
+                {items.length} pesanan · {rupiah(total)}
               </p>
             </div>
             <div className="flex items-center gap-1.5">
@@ -417,14 +434,13 @@ function Index() {
                   ) : viewMode === "list" ? (
                     <input
                       type="checkbox"
-                      checked={sent}
-                      onChange={(e) =>
-                        update(p.id, {
-                          status: e.target.checked ? "Sudah Dikirim" : "Belum Dikirim",
-                        })
-                      }
+                      checked={false}
+                      onChange={(e) => {
+                        if (e.target.checked) removeItem(p.id);
+                      }}
                       className="h-4 w-4 shrink-0"
-                      aria-label="Tandai terkirim"
+                      aria-label="Tandai terkirim & hapus"
+                      title="Tandai terkirim & hapus"
                     />
                   ) : null}
                   <button
@@ -463,15 +479,13 @@ function Index() {
                     <label className="flex items-center gap-1.5 text-[11px]">
                       <input
                         type="checkbox"
-                        checked={sent}
-                        onChange={(e) =>
-                          update(p.id, {
-                            status: e.target.checked ? "Sudah Dikirim" : "Belum Dikirim",
-                          })
-                        }
+                        checked={false}
+                        onChange={(e) => {
+                          if (e.target.checked) removeItem(p.id);
+                        }}
                         className="h-3.5 w-3.5"
                       />
-                      {sent ? "Terkirim" : "Belum"}
+                      Tandai terkirim
                     </label>
                   </div>
                 )}
