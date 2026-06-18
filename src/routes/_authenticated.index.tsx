@@ -257,6 +257,10 @@ function Index() {
   };
 
   const deleteCategory = (name: string) => {
+    if (categories.length <= 1) {
+      toast.error("Tidak bisa menghapus kategori terakhir. Buat kategori lain dulu.");
+      return;
+    }
     if (!confirm(`Hapus kategori "${name}" beserta semua pesanannya?`)) return;
     setCategories((c) => c.filter((x) => x !== name));
     setItems((arr) => arr.filter((i) => i.kategori !== name));
