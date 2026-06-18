@@ -896,13 +896,14 @@ function HutangTab({
 }
 
 function PayForm({
-  purchase, supplierId, remaining, uid, onChanged,
+  purchase, supplierId, remaining, uid, onChanged, onLocalPayment,
 }: {
   purchase: Purchase;
   supplierId: string;
   remaining: number;
   uid: string | null;
   onChanged: () => void;
+  onLocalPayment: (p: Payment) => void;
 }) {
   const [amount, setAmount] = useState("");
   const [note, setNote] = useState("");
@@ -919,15 +920,16 @@ function PayForm({
       return;
     }
     setBusy(true);
-    const { error } = await supabase.from("supplier_payments").insert({
+    const { data, error } = await supabase.from("supplier_payments").insert({
       user_id: uid,
       supplier_id: supplierId,
       purchase_id: purchase.id,
       amount: useAmount,
       note: note.trim() || null,
-    });
+    }).select().single();
     setBusy(false);
     if (error) { toast.error(error.message); return; }
+    if (data) onLocalPayment(data as Payment);
     toast.success(useAmount >= remaining ? "Hutang lunas" : "Pembayaran dicatat");
     setAmount(""); setNote("");
     onChanged();
