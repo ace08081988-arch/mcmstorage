@@ -259,7 +259,7 @@ function GudangPage() {
           <SupplierTab suppliers={suppliers} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "beli" && (
-          <BeliTab suppliers={suppliers} items={items} uid={uid} onChanged={reloadAll} />
+          <BeliTab key={beliPresetKey} suppliers={suppliers} items={items} uid={uid} onChanged={reloadAll} defaultPayment={beliDefaultPayment} />
         )}
         {tab === "jual" && (
           <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
@@ -275,7 +275,11 @@ function GudangPage() {
             itemMap={itemMap}
             uid={uid}
             onChanged={reloadAll}
-            onAddDebt={() => setTab("beli")}
+            onAddDebt={() => {
+              setBeliDefaultPayment("hutang");
+              setBeliPresetKey((k) => k + 1);
+              setTab("beli");
+            }}
             onLocalPayment={(p) => setPayments((prev) => [p, ...prev])}
             onLocalRemovePayment={(id) => setPayments((prev) => prev.filter((x) => x.id !== id))}
           />
