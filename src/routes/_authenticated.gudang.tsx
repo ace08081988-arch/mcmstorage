@@ -35,6 +35,7 @@ type Purchase = {
   base_added: number;
   price_per_package: number;
   total_cost: number;
+  payment_method: "kas" | "hutang";
   created_at: string;
 };
 type Sale = {
