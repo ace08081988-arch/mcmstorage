@@ -1,6 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { friendlyError } from "@/lib/friendly-error";
 import { useNavigate } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { isAutoLockEnabled, setAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
@@ -186,7 +187,7 @@ function Index() {
         .eq("user_id", uid)
         .maybeSingle();
       if (error) {
-        toast.error("Gagal memuat data: " + error.message);
+        toast.error("Gagal memuat data: " + friendlyError(error));
       } else {
         const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
         const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
@@ -211,7 +212,7 @@ function Index() {
       const { error } = await supabase
         .from("user_storage")
         .upsert({ user_id: uid, items: items as any, categories: categories as any });
-      if (error && !cancelled) toast.error("Gagal menyimpan: " + error.message);
+      if (error && !cancelled) toast.error("Gagal menyimpan: " + friendlyError(error));
     }, 600);
     return () => {
       cancelled = true;
@@ -259,7 +260,7 @@ function Index() {
           toast.success("Lokasi otomatis terisi", { id: tId });
         },
         (err) => {
-          toast.error("Gagal ambil lokasi: " + err.message, { id: tId });
+          toast.error("Gagal ambil lokasi: " + friendlyError(err), { id: tId });
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
@@ -1023,7 +1024,7 @@ function Index() {
                               toast.success("Lokasi diperbarui", { id: tId });
                             },
                             (err) =>
-                              toast.error("Gagal: " + err.message, { id: tId }),
+                              toast.error("Gagal: " + friendlyError(err), { id: tId }),
                             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
                           );
                         }}

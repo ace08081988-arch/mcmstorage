@@ -59,7 +59,7 @@ function AuthPage() {
           ? "Email sudah terdaftar. Silakan Masuk."
           : /pwned|breach|compromised/i.test(error.message)
             ? "Kata sandi ini pernah bocor. Pakai kata sandi lain."
-            : error.message;
+            : friendlyError(error);
         toast.error(msg);
         return;
       }
@@ -73,7 +73,7 @@ function AuthPage() {
     if (error) {
       const msg = /invalid login credentials/i.test(error.message)
         ? "Email atau kata sandi salah"
-        : error.message;
+        : friendlyError(error);
       toast.error(msg);
       return;
     }
