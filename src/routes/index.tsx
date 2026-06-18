@@ -241,12 +241,30 @@ function Index() {
 
   const bulkWaUrl = `https://wa.me/?text=${encodeURIComponent(bulkPesan())}`;
 
+  const removeItem = (id: number) => {
+    const snapshot = items;
+    const target = items.find((i) => i.id === id);
+    setItems((arr) => arr.filter((i) => i.id !== id));
+    toast.success(`Terkirim · ${target?.nama ?? "Pesanan"} dihapus`, {
+      action: {
+        label: "Urungkan",
+        onClick: () => setItems(snapshot),
+      },
+    });
+  };
+
   const bulkMarkSent = () => {
     if (selected.size === 0) return;
-    setItems((arr) =>
-      arr.map((i) => (selected.has(i.id) ? { ...i, status: "Sudah Dikirim" } : i)),
-    );
+    const snapshot = items;
+    const count = selected.size;
+    setItems((arr) => arr.filter((i) => !selected.has(i.id)));
     setSelected(new Set());
+    toast.success(`${count} pesanan terkirim & dihapus`, {
+      action: {
+        label: "Urungkan",
+        onClick: () => setItems(snapshot),
+      },
+    });
   };
 
   const exitSelect = () => {
