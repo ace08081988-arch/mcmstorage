@@ -122,9 +122,9 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
 
     let emailSent = false;
     let emailError: string | null = null;
+    const messageId = randomUUID();
+    const idempotencyKey = `device-otp-${challenge.id}`;
     try {
-      const messageId = randomUUID();
-      const idempotencyKey = `device-otp-${challenge.id}`;
       const { error: rpcErr } = await supabaseAdmin.rpc("enqueue_email" as never, {
         queue_name: "transactional_emails",
         payload: {
@@ -156,6 +156,7 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
       trusted: false as const,
       challengeId: challenge.id,
       emailSent,
+      messageId,
       maskedEmail: maskEmail(email),
     };
   });
