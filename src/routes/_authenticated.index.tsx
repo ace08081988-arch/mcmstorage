@@ -1,14 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { useNavigate } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
 
-export const Route = createFileRoute("/")({
+export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
-      { title: "Penjualan Harian" },
-      { name: "description", content: "Kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman." },
-      { property: "og:title", content: "Penjualan Harian" },
-      { property: "og:description", content: "Kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman." },
+      { title: "MCM Storage" },
+      { name: "description", content: "MCM Storage \u2014 kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman." },
+      { property: "og:title", content: "MCM Storage" },
+      { property: "og:description", content: "MCM Storage \u2014 kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman." },
     ],
   }),
   component: Index,
@@ -107,6 +109,11 @@ async function compressImage(file: File, maxSize = 1280, quality = 0.75): Promis
 }
 
 function Index() {
+  const navigate = useNavigate();
+  const signOut = async () => {
+    await supabase.auth.signOut();
+    navigate({ to: "/auth", replace: true });
+  };
   const [items, setItems] = useState<Produk[]>(() => buildInitial());
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
@@ -277,7 +284,7 @@ function Index() {
         <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-semibold tracking-tight">Penjualan Harian</h1>
+              <h1 className="truncate text-base font-semibold tracking-tight">MCM Storage</h1>
               <p className="text-[11px] text-muted-foreground">
                 {items.length} pesanan · {rupiah(total)}
               </p>
@@ -316,6 +323,14 @@ function Index() {
                 title={theme === "dark" ? "Mode terang" : "Mode gelap"}
               >
                 {theme === "dark" ? "☀️" : "🌙"}
+              </button>
+              <button
+                onClick={signOut}
+                className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+                aria-label="Keluar"
+                title="Keluar"
+              >
+                Keluar
               </button>
             </div>
           </div>
