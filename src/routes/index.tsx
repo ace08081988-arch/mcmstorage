@@ -309,6 +309,23 @@ function Index() {
                       placeholder="Nama produk"
                       className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                     />
+                    <label className="flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm">
+                      <span className="text-muted-foreground">Rp</span>
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        min={0}
+                        value={p.harga}
+                        onChange={(e) =>
+                          update(p.id, { harga: Math.max(0, Number(e.target.value) || 0) })
+                        }
+                        className="w-full bg-transparent tabular-nums outline-none"
+                        placeholder="Harga"
+                      />
+                      <span className="text-xs text-muted-foreground tabular-nums">
+                        {rupiah(p.harga)}
+                      </span>
+                    </label>
                     <div className="grid gap-2 sm:grid-cols-2">
                       <input
                         value={p.keterangan}
