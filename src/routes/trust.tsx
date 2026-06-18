@@ -20,8 +20,20 @@ export const Route = createFileRoute("/trust")({
   component: TrustPage,
 });
 
-const TRUST_DOC_VERSION = "1.1.0";
+const TRUST_DOC_VERSION = "1.2.0";
+const TRUST_DOC_EFFECTIVE_FROM = "2026-06-18";
 const TRUST_DOC_UPDATED_AT = "2026-06-18";
+const TRUST_DOC_TIMEZONE = "Asia/Jakarta";
+const TRUST_DOC_TIMEZONE_LABEL = "WIB (UTC+7)";
+
+function formatTrustDate(isoDate: string) {
+  return new Date(`${isoDate}T00:00:00+07:00`).toLocaleDateString("id-ID", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: TRUST_DOC_TIMEZONE,
+  });
+}
 
 function Section({
   title,
@@ -47,17 +59,36 @@ function TrustPage() {
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
           Trust &amp; Privacy
         </h1>
-        <p className="mt-2 text-xs text-muted-foreground">
-          Versi dokumen <strong>v{TRUST_DOC_VERSION}</strong> · Terakhir
-          diperbarui{" "}
-          <time dateTime={TRUST_DOC_UPDATED_AT}>
-            {new Date(TRUST_DOC_UPDATED_AT).toLocaleDateString("id-ID", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </time>
-        </p>
+        <dl className="mt-3 grid gap-2 rounded-md border border-border bg-muted/40 p-3 text-xs text-muted-foreground sm:grid-cols-3">
+          <div>
+            <dt className="font-medium text-foreground">Versi dokumen</dt>
+            <dd>v{TRUST_DOC_VERSION}</dd>
+          </div>
+          <div>
+            <dt className="font-medium text-foreground">Berlaku sejak</dt>
+            <dd>
+              <time dateTime={TRUST_DOC_EFFECTIVE_FROM}>
+                {formatTrustDate(TRUST_DOC_EFFECTIVE_FROM)}
+              </time>
+            </dd>
+          </div>
+          <div>
+            <dt className="font-medium text-foreground">Terakhir diperbarui</dt>
+            <dd>
+              <time dateTime={TRUST_DOC_UPDATED_AT}>
+                {formatTrustDate(TRUST_DOC_UPDATED_AT)}
+              </time>
+            </dd>
+          </div>
+          <div className="sm:col-span-3">
+            <dt className="font-medium text-foreground">Zona waktu</dt>
+            <dd>
+              Semua tanggal di halaman ini mengikuti{" "}
+              <strong>{TRUST_DOC_TIMEZONE_LABEL}</strong> —{" "}
+              {TRUST_DOC_TIMEZONE}.
+            </dd>
+          </div>
+        </dl>
         <p className="mt-2 text-sm text-muted-foreground">
           Halaman ini dikelola oleh tim MCM Storage untuk menjawab pertanyaan
           umum seputar keamanan dan privasi aplikasi MCM Storage. Konten di
