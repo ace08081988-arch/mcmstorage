@@ -376,12 +376,28 @@ function Index() {
 
                 {open && (
                   <div className="space-y-2 border-t px-2.5 py-2.5">
-                    <input
-                      value={p.nama}
-                      onChange={(e) => update(p.id, { nama: e.target.value })}
-                      placeholder="Nama produk"
-                      className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-                    />
+                    <div className="flex gap-2">
+                      <select
+                        value={p.kategori}
+                        onChange={(e) =>
+                          update(p.id, { kategori: e.target.value as Kategori })
+                        }
+                        className="rounded-md border bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        aria-label="Kategori"
+                      >
+                        {(Object.keys(HARGA) as Kategori[]).map((k) => (
+                          <option key={k} value={k}>
+                            {k}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        value={p.nama}
+                        onChange={(e) => update(p.id, { nama: e.target.value })}
+                        placeholder="Nama produk"
+                        className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
                     <label className="flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm">
                       <span className="text-muted-foreground">Rp</span>
                       <input
