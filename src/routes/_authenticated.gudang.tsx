@@ -48,6 +48,14 @@ type Sale = {
   note: string | null;
   created_at: string;
 };
+type Payment = {
+  id: string;
+  supplier_id: string;
+  purchase_id: string;
+  amount: number;
+  note: string | null;
+  created_at: string;
+};
 
 function rupiah(n: number) {
   return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
