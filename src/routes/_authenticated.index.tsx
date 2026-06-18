@@ -703,51 +703,66 @@ function Index() {
             </div>
           </div>
 
-          <div className="mt-2 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-            {(["semua", "Belum Dikirim", "Sudah Dikirim"] as const).map((f) => (
-              <button
-                key={f}
-                onClick={() => setFilter(f)}
-                className={`shrink-0 rounded-full border px-2.5 py-1 text-[11px] font-medium transition-colors ${
-                  filter === f
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "border-border bg-background text-foreground hover:bg-accent"
-                }`}
-              >
-                {f === "semua" ? "Semua" : f === "Belum Dikirim" ? "Belum" : "Terkirim"}
-              </button>
-            ))}
-            <div className="ml-auto flex shrink-0 gap-1.5">
+          <div className="mt-2 flex items-center gap-1.5">
+            <div className="inline-flex min-w-0 shrink overflow-hidden rounded-md border">
+              {(["semua", "Belum Dikirim", "Sudah Dikirim"] as const).map((f, i) => (
+                <button
+                  key={f}
+                  onClick={() => setFilter(f)}
+                  title={f === "semua" ? "Semua" : f === "Belum Dikirim" ? "Belum dikirim" : "Sudah dikirim"}
+                  className={`shrink-0 px-2 py-1 text-[11px] font-medium transition-colors ${i > 0 ? "border-l" : ""} ${
+                    filter === f
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-background hover:bg-accent"
+                  }`}
+                >
+                  {f === "semua" ? "Semua" : f === "Belum Dikirim" ? "Belum" : "Terkirim"}
+                </button>
+              ))}
+            </div>
+            <div className="ml-auto flex shrink-0 items-center gap-1">
               <button
                 onClick={addProduk}
-                className="shrink-0 rounded-md border border-primary bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
+                title="Tambah produk"
+                aria-label="Tambah produk"
+                className="inline-flex h-7 items-center justify-center rounded-md border border-primary bg-primary px-2 text-[11px] font-semibold text-primary-foreground hover:opacity-90"
               >
-                + Produk
+                <span className="sm:hidden">+</span>
+                <span className="hidden sm:inline">+ Produk</span>
               </button>
               <button
                 onClick={() => {
                   if (selectMode) exitSelect();
                   else setSelectMode(true);
                 }}
-                className={`shrink-0 rounded-md border px-2.5 py-1 text-[11px] font-medium ${
+                title={selectMode ? "Selesai memilih" : "Pilih beberapa"}
+                aria-label={selectMode ? "Selesai memilih" : "Pilih beberapa"}
+                className={`inline-flex h-7 items-center justify-center rounded-md border px-2 text-[11px] font-medium ${
                   selectMode
                     ? "border-primary bg-primary text-primary-foreground"
                     : "hover:bg-accent"
                 }`}
               >
-                {selectMode ? "Selesai" : "Pilih"}
+                <span className="sm:hidden">{selectMode ? "✓" : "☑"}</span>
+                <span className="hidden sm:inline">{selectMode ? "Selesai" : "Pilih"}</span>
               </button>
               <button
                 onClick={resetStatus}
-                className="shrink-0 rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                title="Reset status terkirim"
+                aria-label="Reset status terkirim"
+                className="inline-flex h-7 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
               >
-                Reset status
+                <span className="sm:hidden">↺</span>
+                <span className="hidden sm:inline">Reset status</span>
               </button>
               <button
                 onClick={reset}
-                className="shrink-0 rounded-md border px-2.5 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                title="Hapus semua"
+                aria-label="Hapus semua"
+                className="inline-flex h-7 items-center justify-center rounded-md border px-2 text-[11px] font-medium text-destructive hover:bg-destructive/10"
               >
-                Reset
+                <span className="sm:hidden">🗑</span>
+                <span className="hidden sm:inline">Reset</span>
               </button>
             </div>
           </div>
