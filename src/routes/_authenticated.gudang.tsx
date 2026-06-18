@@ -279,6 +279,9 @@ function GudangPage() {
               setBeliDefaultPayment("hutang");
               setBeliPresetKey((k) => k + 1);
               setTab("beli");
+              toast.success("Tab Beli dibuka — metode bayar diset ke Hutang", {
+                description: "Lengkapi supplier, barang, dan jumlah pembelian.",
+              });
             }}
             onLocalPayment={(p) => setPayments((prev) => [p, ...prev])}
             onLocalRemovePayment={(id) => setPayments((prev) => prev.filter((x) => x.id !== id))}
