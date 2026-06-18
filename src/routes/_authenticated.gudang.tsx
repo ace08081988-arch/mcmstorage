@@ -1142,30 +1142,28 @@ function BeliTab({ suppliers, items, uid, onChanged }: { suppliers: Supplier[]; 
           <span className="text-[11px] text-muted-foreground">Jumlah kemasan</span>
           <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageQty} onChange={(e) => setPackageQty(e.target.value)} required />
         </label>
-        <label className="block">
-          <span className="text-[11px] text-muted-foreground">Harga beli / kemasan (Rp)</span>
-          <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
-        </label>
+        {priceMode === "package" ? (
+          <label className="block">
+            <span className="text-[11px] text-muted-foreground">Harga beli / {packageType} (Rp)</span>
+            <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
+          </label>
+        ) : (
+          <label className="block">
+            <span className="text-[11px] text-muted-foreground">Harga beli / {baseUnit} (Rp)</span>
+            <input type="number" step="0.01" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
+          </label>
+        )}
       </div>
 
-      {packageType !== "pcs" && effectivePkgSize > 0 && (
-        <label className="block">
-          <span className="text-[11px] text-muted-foreground">
-            Harga beli per {baseUnit} (Rp) — opsional, otomatis sinkron
-          </span>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
-            value={effectivePkgSize > 0 && price > 0 ? (price / effectivePkgSize).toFixed(2) : ""}
-            onChange={(e) => {
-              const perBase = Number(e.target.value) || 0;
-              setPricePerPackage(String(Math.round(perBase * effectivePkgSize)));
-            }}
-            placeholder={`Harga beli per ${baseUnit}`}
-          />
-        </label>
+      {packageType !== "pcs" && (
+        <div className="flex gap-1 text-xs">
+          <button type="button" onClick={() => setPriceMode("package")} className={`flex-1 rounded border px-2 py-1 ${priceMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+            Harga per {packageType}
+          </button>
+          <button type="button" onClick={() => setPriceMode("base")} className={`flex-1 rounded border px-2 py-1 ${priceMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+            Harga per {baseUnit}
+          </button>
+        </div>
       )}
 
       <div>
