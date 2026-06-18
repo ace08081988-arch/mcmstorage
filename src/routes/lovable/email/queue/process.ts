@@ -66,10 +66,9 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
       POST: async ({ request }) => {
         const apiKey = process.env.LOVABLE_API_KEY
         const supabaseUrl = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL
-        const supabasePublishableKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-        if (!apiKey || !supabaseUrl || !supabasePublishableKey || !supabaseServiceKey) {
+        if (!apiKey || !supabaseUrl || !supabaseServiceKey) {
           console.error('Missing required environment variables')
           return Response.json(
             { error: 'Server configuration error' },
@@ -77,17 +76,35 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           )
         }
 
-        // Verify the caller is a backend cron request using the publishable API key.
-        const requestApiKey = request.headers.get('apikey')
-        if (!requestApiKey) {
+        // Verify the caller is the backend cron job using a private bearer token
+        // stored in Supabase Vault and mirrored in email_send_state.cron_secret.
+        const authHeader = request.headers.get('authorization') ?? ''
+        const presented = authHeader.toLowerCase().startsWith('bearer ')
+          ? authHeader.slice(7).trim()
+          : ''
+        if (!presented) {
           return Response.json({ error: 'Unauthorized' }, { status: 401 })
         }
 
-        if (requestApiKey !== supabasePublishableKey) {
+        const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
+
+        const { data: secretRow, error: secretErr } = await supabase
+          .from('email_send_state')
+          .select('cron_secret')
+          .eq('id', 1)
+          .maybeSingle()
+        const expected = (secretRow as { cron_secret?: string } | null)?.cron_secret ?? ''
+        if (secretErr || !expected) {
+          console.error('Cron secret not configured', { error: secretErr })
+          return Response.json({ error: 'Server configuration error' }, { status: 500 })
+        }
+        // Timing-safe compare on equal-length strings.
+        const a = Buffer.from(presented)
+        const b = Buffer.from(expected)
+        const { timingSafeEqual } = await import('crypto')
+        if (a.length !== b.length || !timingSafeEqual(a, b)) {
           return Response.json({ error: 'Forbidden' }, { status: 403 })
         }
-
-        const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
 
         // 1. Check rate-limit cooldown and read queue config.
         const { data: state } = await supabase
