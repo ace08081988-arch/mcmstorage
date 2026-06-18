@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
+import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -154,6 +155,7 @@ function AuthPage() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-sm space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
+        <ApkDownloadBanner />
         <div className="text-center">
           <img
             src="/icon-512.png"
