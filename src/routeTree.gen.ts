@@ -19,6 +19,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
 import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_authenticated.gudang.pesanan.$id.edit'
 
@@ -73,6 +74,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksEmailQueueMonitorRoute =
+  ApiPublicHooksEmailQueueMonitorRouteImport.update({
+    id: '/api/public/hooks/email-queue-monitor',
+    path: '/api/public/hooks/email-queue-monitor',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedGudangPesananIdRoute =
   AuthenticatedGudangPesananIdRouteImport.update({
     id: '/pesanan/$id',
@@ -96,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
+  '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
@@ -109,6 +117,7 @@ export interface FileRoutesByTo {
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
+  '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
@@ -124,6 +133,7 @@ export interface FileRoutesById {
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
+  '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
@@ -139,6 +149,7 @@ export interface FileRouteTypes {
     | '/device-verify'
     | '/gudang'
     | '/gudang/pesanan/$id'
+    | '/api/public/hooks/email-queue-monitor'
     | '/lovable/email/queue/process'
     | '/gudang/pesanan/$id/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -152,6 +163,7 @@ export interface FileRouteTypes {
     | '/gudang'
     | '/'
     | '/gudang/pesanan/$id'
+    | '/api/public/hooks/email-queue-monitor'
     | '/lovable/email/queue/process'
     | '/gudang/pesanan/$id/edit'
   id:
@@ -166,6 +178,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gudang'
     | '/_authenticated/'
     | '/_authenticated/gudang/pesanan/$id'
+    | '/api/public/hooks/email-queue-monitor'
     | '/lovable/email/queue/process'
     | '/_authenticated/gudang/pesanan/$id/edit'
   fileRoutesById: FileRoutesById
@@ -177,6 +190,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrustRoute: typeof TrustRoute
+  ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -252,6 +266,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/email-queue-monitor': {
+      id: '/api/public/hooks/email-queue-monitor'
+      path: '/api/public/hooks/email-queue-monitor'
+      fullPath: '/api/public/hooks/email-queue-monitor'
+      preLoaderRoute: typeof ApiPublicHooksEmailQueueMonitorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/gudang/pesanan/$id': {
       id: '/_authenticated/gudang/pesanan/$id'
       path: '/pesanan/$id'
@@ -319,6 +340,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrustRoute: TrustRoute,
+  ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
