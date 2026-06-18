@@ -452,12 +452,27 @@ function Index() {
         <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
           <div className="flex items-center gap-3">
             <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-semibold tracking-tight">MCM Storage — Kelola Pesanan & Kirim WhatsApp</h1>
+              <h1 className="truncate text-base font-semibold tracking-tight">
+                {activeCat} · MCM Storage
+              </h1>
               <p className="text-[11px] text-muted-foreground">
-                {items.length} pesanan · {rupiah(total)}
+                {scopedItems.length} pesanan · {rupiah(total)}
               </p>
             </div>
             <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => {
+                  setActiveCat(null);
+                  setSelectMode(false);
+                  setSelected(new Set());
+                  setOpenId(null);
+                }}
+                className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+                aria-label="Ganti kategori"
+                title="Ganti kategori"
+              >
+                ↩ Kategori
+              </button>
               <div className="inline-flex overflow-hidden rounded-md border">
                 <button
                   onClick={() => setViewMode("list")}
