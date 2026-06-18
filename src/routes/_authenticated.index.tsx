@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
-import { useNavigate } from "@tanstack/react-router";
+import { useNavigate, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { isAutoLockEnabled, setAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
 import {
@@ -200,6 +200,9 @@ function Index() {
               <DropdownMenuItem onClick={() => setSetupOpen(true)}>
                 ⚙️ Ubah Metode / Opsi
               </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/pengaturan-kunci">📄 Halaman Pengaturan Kunci</Link>
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={toggleAutoLock}>
                 {autoLock ? "✓ " : ""}Hapus sesi saat tutup tab
@@ -209,6 +212,9 @@ function Index() {
             <>
               <DropdownMenuItem onClick={() => setSetupOpen(true)}>
                 🔧 Atur Kunci (PIN/Pola/Sidik Jari)
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/pengaturan-kunci">📄 Halaman Pengaturan Kunci</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={toggleAutoLock}>
