@@ -5,10 +5,10 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
     meta: [
-      { title: "Penjualan Harian" },
-      { name: "description", content: "Kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman." },
-      { property: "og:title", content: "Penjualan Harian" },
-      { property: "og:description", content: "Kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman." },
+      { title: "MCM Storage" },
+      { name: "description", content: "MCM Storage \u2014 kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman." },
+      { property: "og:title", content: "MCM Storage" },
+      { property: "og:description", content: "MCM Storage \u2014 kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman." },
     ],
   }),
   component: Index,
