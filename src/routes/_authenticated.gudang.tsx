@@ -760,6 +760,7 @@ function ShareDebt({
 
 /* ----------------- STOK ----------------- */
 function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }) {
+  const [editing, setEditing] = useState<WItem | null>(null);
   async function remove(id: string, name: string) {
     if (!confirm(`Hapus barang "${name}"? Semua pembelian/penjualan terkait juga dihapus.`)) return;
     const { error } = await supabase.from("warehouse_items").delete().eq("id", id);
@@ -773,6 +774,7 @@ function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }
       </div>
     );
   return (
+    <>
     <ul className="space-y-2">
       {items.map((i) => (
         <li key={i.id} className="rounded-lg border bg-card p-3">
@@ -784,12 +786,20 @@ function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }
                 {i.package_type !== "pcs" && ` (${i.package_size}${i.base_unit === "g" ? "g" : ""}/kemasan)`}
               </div>
             </div>
-            <button
-              onClick={() => remove(i.id, i.name)}
-              className="shrink-0 rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
-            >
-              Hapus
-            </button>
+            <div className="flex shrink-0 gap-1">
+              <button
+                onClick={() => setEditing(i)}
+                className="rounded border px-2 py-1 text-[11px] hover:bg-accent"
+              >
+                Edit
+              </button>
+              <button
+                onClick={() => remove(i.id, i.name)}
+                className="rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
+              >
+                Hapus
+              </button>
+            </div>
           </div>
           <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
             <div className="rounded bg-muted/50 p-2">
@@ -808,6 +818,97 @@ function StokTab({ items, onChanged }: { items: WItem[]; onChanged: () => void }
         </li>
       ))}
     </ul>
+    {editing && (
+      <EditItemDialog
+        item={editing}
+        onClose={() => setEditing(null)}
+        onSaved={() => { setEditing(null); onChanged(); }}
+      />
+    )}
+    </>
+  );
+}
+
+function EditItemDialog({ item, onClose, onSaved }: { item: WItem; onClose: () => void; onSaved: () => void }) {
+  const [name, setName] = useState(item.name);
+  const [category, setCategory] = useState(item.category ?? "");
+  const [packageType, setPackageType] = useState<PackageType>(item.package_type as PackageType);
+  const [packageSize, setPackageSize] = useState(String(item.package_size));
+  const [stockBase, setStockBase] = useState(String(item.stock_base));
+  const [avgCost, setAvgCost] = useState(String(item.avg_cost_per_base));
+  const [saving, setSaving] = useState(false);
+  const baseUnit = defaultBase(packageType);
+  const effectiveSize = packageType === "pcs" ? 1 : Number(packageSize) || 0;
+
+  async function save() {
+    if (!name.trim()) { toast.error("Nama wajib"); return; }
+    if (packageType !== "pcs" && effectiveSize <= 0) { toast.error("Ukuran kemasan > 0"); return; }
+    setSaving(true);
+    const { error } = await supabase.from("warehouse_items").update({
+      name: name.trim(),
+      category: category.trim() || null,
+      package_type: packageType,
+      package_size: effectiveSize,
+      base_unit: baseUnit,
+      stock_base: Number(stockBase) || 0,
+      avg_cost_per_base: Number(avgCost) || 0,
+    }).eq("id", item.id);
+    setSaving(false);
+    if (error) { toast.error(error.message); return; }
+    toast.success("Barang diperbarui");
+    onSaved();
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 p-3" onClick={onClose}>
+      <div className="w-full max-w-md rounded-lg border bg-card p-4 space-y-3" onClick={(e) => e.stopPropagation()}>
+        <div className="text-sm font-semibold">Edit Barang</div>
+        <label className="block">
+          <span className="text-[11px] text-muted-foreground">Nama</span>
+          <input className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={name} onChange={(e) => setName(e.target.value)} />
+        </label>
+        <label className="block">
+          <span className="text-[11px] text-muted-foreground">Kategori</span>
+          <input className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={category} onChange={(e) => setCategory(e.target.value)} />
+        </label>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="block">
+            <span className="text-[11px] text-muted-foreground">Jenis kemasan</span>
+            <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageType} onChange={(e) => setPackageType(e.target.value as PackageType)}>
+              <option value="gram">gram (curah)</option>
+              <option value="botol">botol</option>
+              <option value="sachet">sachet</option>
+              <option value="pcs">pcs</option>
+            </select>
+          </label>
+          {packageType !== "pcs" && (
+            <label className="block">
+              <span className="text-[11px] text-muted-foreground">Isi / kemasan ({baseUnit})</span>
+              <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
+            </label>
+          )}
+        </div>
+        <div className="grid grid-cols-2 gap-2">
+          <label className="block">
+            <span className="text-[11px] text-muted-foreground">Stok ({baseUnit})</span>
+            <input type="number" step="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={stockBase} onChange={(e) => setStockBase(e.target.value)} />
+          </label>
+          <label className="block">
+            <span className="text-[11px] text-muted-foreground">HPP / {baseUnit} (Rp)</span>
+            <input type="number" step="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={avgCost} onChange={(e) => setAvgCost(e.target.value)} />
+          </label>
+        </div>
+        <div className="text-[11px] text-amber-500">
+          ⚠️ Mengubah stok / HPP manual akan menimpa nilai dari riwayat pembelian.
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button disabled={saving} onClick={save} className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
+            {saving ? "Menyimpan..." : "Simpan"}
+          </button>
+          <button onClick={onClose} className="rounded-md border px-3 py-2 text-sm hover:bg-accent">Batal</button>
+        </div>
+      </div>
+    </div>
   );
 }
 
