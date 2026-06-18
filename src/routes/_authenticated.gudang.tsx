@@ -16,7 +16,7 @@ export const Route = createFileRoute("/_authenticated/gudang")({
 
 type PackageType = "gram" | "pcs" | "botol" | "sachet";
 
-type Supplier = { id: string; name: string; contact: string | null; notes: string | null };
+type Supplier = { id: string; name: string; contact: string | null; email: string | null; notes: string | null };
 type WItem = {
   id: string;
   name: string;
