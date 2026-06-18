@@ -435,14 +435,13 @@ function Index() {
                   ) : viewMode === "list" ? (
                     <input
                       type="checkbox"
-                      checked={sent}
-                      onChange={(e) =>
-                        update(p.id, {
-                          status: e.target.checked ? "Sudah Dikirim" : "Belum Dikirim",
-                        })
-                      }
+                      checked={false}
+                      onChange={(e) => {
+                        if (e.target.checked) removeItem(p.id);
+                      }}
                       className="h-4 w-4 shrink-0"
-                      aria-label="Tandai terkirim"
+                      aria-label="Tandai terkirim & hapus"
+                      title="Tandai terkirim & hapus"
                     />
                   ) : null}
                   <button
@@ -481,15 +480,13 @@ function Index() {
                     <label className="flex items-center gap-1.5 text-[11px]">
                       <input
                         type="checkbox"
-                        checked={sent}
-                        onChange={(e) =>
-                          update(p.id, {
-                            status: e.target.checked ? "Sudah Dikirim" : "Belum Dikirim",
-                          })
-                        }
+                        checked={false}
+                        onChange={(e) => {
+                          if (e.target.checked) removeItem(p.id);
+                        }}
                         className="h-3.5 w-3.5"
                       />
-                      {sent ? "Terkirim" : "Belum"}
+                      Tandai terkirim
                     </label>
                   </div>
                 )}
