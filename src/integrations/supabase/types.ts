@@ -128,6 +128,87 @@ export type Database = {
         }
         Relationships: []
       }
+      email_monitor_config: {
+        Row: {
+          admin_email: string
+          cooldown_minutes: number
+          created_at: string
+          enabled: boolean
+          error_min_sample: number
+          error_rate_threshold: number
+          id: number
+          last_check_at: string | null
+          last_error_alert_at: string | null
+          last_stale_alert_at: string | null
+          stale_threshold_minutes: number
+          updated_at: string
+        }
+        Insert: {
+          admin_email: string
+          cooldown_minutes?: number
+          created_at?: string
+          enabled?: boolean
+          error_min_sample?: number
+          error_rate_threshold?: number
+          id?: number
+          last_check_at?: string | null
+          last_error_alert_at?: string | null
+          last_stale_alert_at?: string | null
+          stale_threshold_minutes?: number
+          updated_at?: string
+        }
+        Update: {
+          admin_email?: string
+          cooldown_minutes?: number
+          created_at?: string
+          enabled?: boolean
+          error_min_sample?: number
+          error_rate_threshold?: number
+          id?: number
+          last_check_at?: string | null
+          last_error_alert_at?: string | null
+          last_stale_alert_at?: string | null
+          stale_threshold_minutes?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      email_queue_alerts: {
+        Row: {
+          alert_type: string
+          created_at: string
+          delivery_error: string | null
+          delivery_status: string | null
+          id: string
+          message: string
+          metadata: Json | null
+          notified_email: string | null
+          severity: string
+        }
+        Insert: {
+          alert_type: string
+          created_at?: string
+          delivery_error?: string | null
+          delivery_status?: string | null
+          id?: string
+          message: string
+          metadata?: Json | null
+          notified_email?: string | null
+          severity?: string
+        }
+        Update: {
+          alert_type?: string
+          created_at?: string
+          delivery_error?: string | null
+          delivery_status?: string | null
+          id?: string
+          message?: string
+          metadata?: Json | null
+          notified_email?: string | null
+          severity?: string
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
@@ -649,6 +730,7 @@ export type Database = {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
       }
+      email_queue_health: { Args: never; Returns: Json }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
         Returns: number
