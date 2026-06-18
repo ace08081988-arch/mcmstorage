@@ -18,6 +18,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
+import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
 import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_authenticated.gudang.pesanan.$id.edit'
 
@@ -66,6 +67,12 @@ const AuthenticatedDeviceVerifyRoute =
     path: '/device-verify',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const LovableEmailQueueProcessRoute =
+  LovableEmailQueueProcessRouteImport.update({
+    id: '/lovable/email/queue/process',
+    path: '/lovable/email/queue/process',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedGudangPesananIdRoute =
   AuthenticatedGudangPesananIdRouteImport.update({
     id: '/pesanan/$id',
@@ -89,6 +96,7 @@ export interface FileRoutesByFullPath {
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -101,6 +109,7 @@ export interface FileRoutesByTo {
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/': typeof AuthenticatedIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
 export interface FileRoutesById {
@@ -115,6 +124,7 @@ export interface FileRoutesById {
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
+  '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
 export interface FileRouteTypes {
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/device-verify'
     | '/gudang'
     | '/gudang/pesanan/$id'
+    | '/lovable/email/queue/process'
     | '/gudang/pesanan/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -141,6 +152,7 @@ export interface FileRouteTypes {
     | '/gudang'
     | '/'
     | '/gudang/pesanan/$id'
+    | '/lovable/email/queue/process'
     | '/gudang/pesanan/$id/edit'
   id:
     | '__root__'
@@ -154,6 +166,7 @@ export interface FileRouteTypes {
     | '/_authenticated/gudang'
     | '/_authenticated/'
     | '/_authenticated/gudang/pesanan/$id'
+    | '/lovable/email/queue/process'
     | '/_authenticated/gudang/pesanan/$id/edit'
   fileRoutesById: FileRoutesById
 }
@@ -164,6 +177,7 @@ export interface RootRouteChildren {
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TrustRoute: typeof TrustRoute
+  LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -230,6 +244,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/device-verify'
       preLoaderRoute: typeof AuthenticatedDeviceVerifyRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/lovable/email/queue/process': {
+      id: '/lovable/email/queue/process'
+      path: '/lovable/email/queue/process'
+      fullPath: '/lovable/email/queue/process'
+      preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/_authenticated/gudang/pesanan/$id': {
       id: '/_authenticated/gudang/pesanan/$id'
@@ -298,17 +319,8 @@ const rootRouteChildren: RootRouteChildren = {
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TrustRoute: TrustRoute,
+  LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
