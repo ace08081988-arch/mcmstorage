@@ -2178,6 +2178,16 @@ function PesananTab({
           </div>
         )}
 
+        {customerId && customerId !== "__new__" && (() => {
+          const c = customers.find((x) => x.id === customerId);
+          if (!c) return null;
+          return (
+            <div className="rounded-md border border-dashed bg-muted/30 px-2 py-1.5 text-[11px] text-muted-foreground">
+              No. WA pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
+            </div>
+          );
+        })()}
+
         <label className="block">
           <span className="text-[11px] text-muted-foreground">Barang</span>
           <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
