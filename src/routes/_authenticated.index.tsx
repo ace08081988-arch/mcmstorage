@@ -324,6 +324,14 @@ function Index() {
               >
                 {theme === "dark" ? "☀️" : "🌙"}
               </button>
+              <button
+                onClick={signOut}
+                className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
+                aria-label="Keluar"
+                title="Keluar"
+              >
+                Keluar
+              </button>
             </div>
           </div>
 
