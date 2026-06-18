@@ -696,13 +696,19 @@ function Index() {
                   ) : viewMode === "list" ? (
                     <input
                       type="checkbox"
-                      checked={false}
+                      checked={sent}
                       onChange={(e) => {
-                        if (e.target.checked) removeItem(p.id);
+                        if (e.target.checked) markSent(p.id);
+                        else
+                          setItems((arr) =>
+                            arr.map((i) =>
+                              i.id === p.id ? { ...i, status: "Belum Dikirim" } : i,
+                            ),
+                          );
                       }}
                       className="h-4 w-4 shrink-0"
-                      aria-label="Tandai terkirim & hapus"
-                      title="Tandai terkirim & hapus"
+                      aria-label="Tandai terkirim"
+                      title="Tandai terkirim"
                     />
                   ) : null}
                   <button
@@ -741,9 +747,15 @@ function Index() {
                     <label className="flex items-center gap-1.5 text-[11px]">
                       <input
                         type="checkbox"
-                        checked={false}
+                        checked={sent}
                         onChange={(e) => {
-                          if (e.target.checked) removeItem(p.id);
+                          if (e.target.checked) markSent(p.id);
+                          else
+                            setItems((arr) =>
+                              arr.map((i) =>
+                                i.id === p.id ? { ...i, status: "Belum Dikirim" } : i,
+                              ),
+                            );
                         }}
                         className="h-3.5 w-3.5"
                       />
