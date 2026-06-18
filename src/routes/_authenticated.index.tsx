@@ -552,6 +552,13 @@ function Index() {
               🗑 Reset semua data saya
             </button>
           )}
+
+          <a
+            href="/gudang"
+            className="block w-full rounded-md border bg-card px-3 py-2 text-center text-xs font-semibold hover:bg-accent"
+          >
+            📦 Buka Gudang & Supplier
+          </a>
         </main>
       </div>
     );
