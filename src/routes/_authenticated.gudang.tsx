@@ -1,6 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import {
+  Boxes,
+  Truck,
+  ShoppingCart,
+  Banknote,
+  ClipboardList,
+  CreditCard,
+  Users,
+  Wallet,
+  History,
+} from "lucide-react";
 import { friendlyError } from "@/lib/friendly-error";
 import { buildMailto, isValidEmail } from "@/lib/mailto";
 import { supabase } from "@/integrations/supabase/client";
@@ -215,42 +226,77 @@ function GudangPage() {
   const totalRevenue = useMemo(() => sales.reduce((a, s) => a + Number(s.total_revenue), 0), [sales]);
   const totalCost = useMemo(() => sales.reduce((a, s) => a + Number(s.cost_at_sale), 0), [sales]);
 
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-3 py-3">
-          <div className="flex items-center gap-2">
-            <Link to="/" className="rounded-md border px-2 py-1 text-xs hover:bg-accent">← Beranda</Link>
-            <h1 className="text-base font-bold">📦 Gudang</h1>
-          </div>
-          <div className="text-[11px] text-muted-foreground">
-            Nilai stok: <span className="font-semibold text-foreground">{rupiah(totalStokValue)}</span>
-          </div>
-        </div>
-        <nav className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-3 pb-2 text-xs">
-          {([
-            ["stok", "Stok"],
-            ["supplier", "Supplier"],
-            ["beli", "Beli"],
-            ["jual", "Jual"],
-            ["pesanan", "Pesanan"],
-            ["hutang", "Hutang"],
-            ["pelanggan", "Pelanggan"],
-            ["piutang", "Piutang"],
-            ["riwayat", "Riwayat"],
-          ] as const).map(([k, label]) => (
-            <button
-              key={k}
-              onClick={() => setTab(k)}
-              className={`shrink-0 rounded-md border px-3 py-1.5 font-medium ${tab === k ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"}`}
-            >
-              {label}
-            </button>
-          ))}
-        </nav>
-      </header>
+  const navItems = [
+    { k: "stok", label: "Stok", icon: Boxes },
+    { k: "supplier", label: "Supplier", icon: Truck },
+    { k: "beli", label: "Beli", icon: ShoppingCart },
+    { k: "jual", label: "Jual", icon: Banknote },
+    { k: "pesanan", label: "Pesanan", icon: ClipboardList },
+    { k: "hutang", label: "Hutang", icon: CreditCard },
+    { k: "pelanggan", label: "Pelanggan", icon: Users },
+    { k: "piutang", label: "Piutang", icon: Wallet },
+    { k: "riwayat", label: "Riwayat", icon: History },
+  ] as const;
 
-      <main className="mx-auto max-w-3xl space-y-4 p-3">
+  return (
+    <div className="min-h-screen bg-background text-foreground md:flex">
+      {/* Sidebar — md+ */}
+      <aside className="sticky top-0 hidden h-screen w-56 shrink-0 border-r bg-card md:flex md:flex-col">
+        <div className="border-b px-4 py-4">
+          <Link to="/" className="text-[11px] text-muted-foreground hover:underline">← Beranda</Link>
+          <h1 className="mt-1 text-lg font-bold">📦 Gudang</h1>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Nilai stok
+          </p>
+          <p className="text-sm font-semibold">{rupiah(totalStokValue)}</p>
+        </div>
+        <nav className="flex-1 space-y-1 overflow-y-auto p-2">
+          {navItems.map(({ k, label, icon: Icon }) => {
+            const active = tab === k;
+            return (
+              <button
+                key={k}
+                onClick={() => setTab(k)}
+                className={`flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-left text-sm font-medium transition-colors ${
+                  active
+                    ? "bg-primary text-primary-foreground shadow-sm"
+                    : "text-foreground/80 hover:bg-accent hover:text-foreground"
+                }`}
+              >
+                <Icon className="h-4 w-4 shrink-0" />
+                <span className="truncate">{label}</span>
+              </button>
+            );
+          })}
+        </nav>
+      </aside>
+
+      {/* Mobile header + horizontal nav */}
+      <div className="flex-1 min-w-0">
+        <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur md:hidden">
+          <div className="mx-auto flex max-w-3xl items-center justify-between gap-2 px-3 py-3">
+            <div className="flex items-center gap-2">
+              <Link to="/" className="rounded-md border px-2 py-1 text-xs hover:bg-accent">← Beranda</Link>
+              <h1 className="text-base font-bold">📦 Gudang</h1>
+            </div>
+            <div className="text-[11px] text-muted-foreground">
+              Nilai stok: <span className="font-semibold text-foreground">{rupiah(totalStokValue)}</span>
+            </div>
+          </div>
+          <nav className="mx-auto flex max-w-3xl gap-1 overflow-x-auto px-3 pb-2 text-xs">
+            {navItems.map(({ k, label }) => (
+              <button
+                key={k}
+                onClick={() => setTab(k)}
+                className={`shrink-0 rounded-md border px-3 py-1.5 font-medium ${tab === k ? "bg-primary text-primary-foreground border-primary" : "hover:bg-accent"}`}
+              >
+                {label}
+              </button>
+            ))}
+          </nav>
+        </header>
+
+        <main className="mx-auto max-w-3xl space-y-4 p-3 md:max-w-4xl md:p-6">
         {loading && <div className="text-sm text-muted-foreground">Memuat…</div>}
 
         {tab === "stok" && (
@@ -314,7 +360,8 @@ function GudangPage() {
             totalCost={totalCost}
           />
         )}
-      </main>
+        </main>
+      </div>
     </div>
   );
 }
