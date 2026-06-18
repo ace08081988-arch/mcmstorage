@@ -28,6 +28,13 @@ function AuthPage() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const t = setTimeout(() => setResendCooldown((s) => s - 1), 1000);
+    return () => clearTimeout(t);
+  }, [resendCooldown]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -121,6 +128,27 @@ function AuthPage() {
       return;
     }
     toast.success("Tautan reset dikirim ke email");
+  };
+
+  const resendVerification = async () => {
+    if (!email) {
+      toast.error("Isi email dulu untuk kirim ulang verifikasi");
+      return;
+    }
+    if (resendCooldown > 0) return;
+    setLoading(true);
+    const { error } = await supabase.auth.resend({
+      type: "signup",
+      email,
+      options: { emailRedirectTo: window.location.origin },
+    });
+    setLoading(false);
+    if (error) {
+      toast.error(friendlyError(error));
+      return;
+    }
+    toast.success("Email verifikasi dikirim ulang. Cek inbox Anda.");
+    setResendCooldown(60);
   };
 
   return (
@@ -217,6 +245,16 @@ function AuthPage() {
               Lupa kata sandi?
             </button>
           )}
+          <button
+            type="button"
+            onClick={resendVerification}
+            disabled={loading || resendCooldown > 0}
+            className="w-full text-center text-[11px] text-muted-foreground hover:underline disabled:opacity-50"
+          >
+            {resendCooldown > 0
+              ? `Kirim ulang email verifikasi (${resendCooldown}s)`
+              : "Kirim ulang email verifikasi"}
+          </button>
           <p className="text-center text-[11px] text-muted-foreground">
             {mode === "login"
               ? "Belum punya akun? Pilih tab Daftar di atas."
