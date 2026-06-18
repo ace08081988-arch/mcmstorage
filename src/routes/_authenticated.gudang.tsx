@@ -273,6 +273,7 @@ function GudangPage() {
             itemMap={itemMap}
             uid={uid}
             onChanged={reloadAll}
+            onAddDebt={() => setTab("beli")}
             onLocalPayment={(p) => setPayments((prev) => [p, ...prev])}
             onLocalRemovePayment={(id) => setPayments((prev) => prev.filter((x) => x.id !== id))}
           />
