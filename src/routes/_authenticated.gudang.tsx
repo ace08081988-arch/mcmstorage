@@ -25,6 +25,7 @@ type WItem = {
   base_unit: "g" | "pcs";
   stock_base: number;
   avg_cost_per_base: number;
+  image_path: string | null;
 };
 type Purchase = {
   id: string;
@@ -80,6 +81,66 @@ function fmtBase(n: number, u: "g" | "pcs") {
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
+}
+
+/* ----------------- Photo helpers ----------------- */
+async function uploadItemPhoto(file: File, uid: string): Promise<string | null> {
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
+  const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+  const { error } = await supabase.storage.from("item-photos").upload(path, file, {
+    cacheControl: "3600", upsert: false, contentType: file.type || "image/jpeg",
+  });
+  if (error) { toast.error("Gagal upload foto: " + error.message); return null; }
+  return path;
+}
+
+function PhotoPicker({ value, onChange, uid }: { value: string | null; onChange: (p: string | null) => void; uid: string | null }) {
+  const [busy, setBusy] = useState(false);
+  async function pick(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; if (!f || !uid) return;
+    setBusy(true);
+    const p = await uploadItemPhoto(f, uid);
+    setBusy(false);
+    if (p) onChange(p);
+    e.target.value = "";
+  }
+  return (
+    <div className="space-y-1">
+      <div className="text-[11px] text-muted-foreground">Foto barang (opsional)</div>
+      <div className="flex items-center gap-2">
+        {value ? (
+          <SignedImg path={value} className="h-16 w-16 rounded-md border object-cover bg-muted" />
+        ) : (
+          <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed text-[10px] text-muted-foreground">Tidak ada</div>
+        )}
+        <label className="flex-1 cursor-pointer rounded-md border bg-background px-2 py-1.5 text-center text-xs hover:bg-accent">
+          {busy ? "Mengunggah…" : "📷 Ambil / Pilih foto"}
+          <input type="file" accept="image/*" capture="environment" className="hidden" onChange={pick} disabled={busy} />
+        </label>
+        {value && (
+          <button type="button" onClick={() => onChange(null)} className="rounded-md border px-2 py-1.5 text-xs text-destructive hover:bg-destructive/10">Hapus</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const signedUrlCache = new Map<string, { url: string; exp: number }>();
+function SignedImg({ path, className, alt }: { path: string; className?: string; alt?: string }) {
+  const [url, setUrl] = useState<string | null>(null);
+  useEffect(() => {
+    let alive = true;
+    const cached = signedUrlCache.get(path);
+    if (cached && cached.exp > Date.now()) { setUrl(cached.url); return; }
+    supabase.storage.from("item-photos").createSignedUrl(path, 3600).then(({ data }) => {
+      if (!alive || !data) return;
+      signedUrlCache.set(path, { url: data.signedUrl, exp: Date.now() + 50 * 60 * 1000 });
+      setUrl(data.signedUrl);
+    });
+    return () => { alive = false; };
+  }, [path]);
+  if (!url) return <div className={className} />;
+  return <img src={url} alt={alt || ""} className={className} loading="lazy" />;
 }
 
 function GudangPage() {
