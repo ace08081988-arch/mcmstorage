@@ -20,6 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { AppearanceSettings } from "@/components/appearance-settings";
+import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
