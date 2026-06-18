@@ -23,7 +23,8 @@ function ErrorPage() {
   const router = useRouter();
   const [retrying, setRetrying] = useState(false);
 
-  const retryTarget = from ?? (kind === "auth" ? "/auth" : "/");
+  const isSafeRelative = (s: string) => s.startsWith("/") && !s.startsWith("//");
+  const retryTarget = from && isSafeRelative(from) ? from : kind === "auth" ? "/auth" : "/";
 
   async function handleRetry() {
     if (retrying) return;
@@ -35,7 +36,7 @@ function ErrorPage() {
     } catch {
       // Last-resort fallback: hard reload the original page.
       if (typeof window !== "undefined") {
-        window.location.href = retryTarget;
+        window.location.href = isSafeRelative(retryTarget) ? retryTarget : "/";
       }
     } finally {
       setRetrying(false);
