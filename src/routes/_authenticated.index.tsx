@@ -684,140 +684,162 @@ function Index() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
-        <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
-          <div className="flex items-center gap-3">
-            <div className="min-w-0 flex-1">
-              <h1 className="truncate text-base font-semibold tracking-tight">
-                {activeCat} · MCM Storage
-              </h1>
-              <p className="text-[11px] text-muted-foreground">
-                {scopedItems.length} pesanan · {rupiah(total)}
-              </p>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              <button
-                onClick={() => {
-                  setActiveCat(null);
-                  setSelectMode(false);
-                  setSelected(new Set());
-                  setOpenId(null);
-                }}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-accent sm:w-auto sm:px-2 sm:text-[11px] sm:font-medium"
-                aria-label="Ganti kategori"
-                title="Ganti kategori"
-              >
-                <span className="sm:hidden">↩</span>
-                <span className="hidden sm:inline">↩ Kategori</span>
-              </button>
-              <div className="inline-flex h-8 overflow-hidden rounded-md border">
-                <button
-                  onClick={() => setViewMode("list")}
-                  className={`inline-flex w-8 items-center justify-center text-sm ${
-                    viewMode === "list"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-background hover:bg-accent"
-                  }`}
-                  aria-label="Tampilan daftar"
-                  title="Daftar"
-                >
-                  ☰
-                </button>
-                <button
-                  onClick={() => setViewMode("grid")}
-                  className={`inline-flex w-8 items-center justify-center border-l text-sm ${
-                    viewMode === "grid"
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-background hover:bg-accent"
-                  }`}
-                  aria-label="Tampilan kotak"
-                  title="Kotak"
-                >
-                  ▦
-                </button>
+    <div className="flex min-h-screen bg-background">
+      {/* Vertical action rail */}
+      <aside className="sticky top-0 z-20 flex h-screen w-12 flex-col items-center gap-1.5 border-r bg-card/95 px-1 py-3 backdrop-blur sm:w-14">
+        <button
+          onClick={() => {
+            setActiveCat(null);
+            setSelectMode(false);
+            setSelected(new Set());
+            setOpenId(null);
+          }}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          aria-label="Ganti kategori"
+          title="Ganti kategori"
+        >
+          ↩
+        </button>
+
+        <div className="my-1 h-px w-6 bg-border" />
+
+        <button
+          onClick={addProduk}
+          title="Tambah produk"
+          aria-label="Tambah produk"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg bg-primary text-base font-semibold text-primary-foreground shadow-sm transition hover:opacity-90"
+        >
+          +
+        </button>
+        <button
+          onClick={() => {
+            if (selectMode) exitSelect();
+            else setSelectMode(true);
+          }}
+          title={selectMode ? "Selesai memilih" : "Pilih beberapa"}
+          aria-label={selectMode ? "Selesai memilih" : "Pilih beberapa"}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors ${
+            selectMode
+              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+              : "hover:bg-accent"
+          }`}
+        >
+          {selectMode ? "✓" : "☑"}
+        </button>
+        <button
+          onClick={resetStatus}
+          title="Reset status terkirim"
+          aria-label="Reset status terkirim"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+        >
+          ↺
+        </button>
+        <button
+          onClick={reset}
+          title="Hapus semua"
+          aria-label="Hapus semua"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base text-destructive transition-colors hover:bg-destructive/10"
+        >
+          🗑
+        </button>
+
+        <div className="my-1 h-px w-6 bg-border" />
+
+        <button
+          onClick={() => setViewMode("list")}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors ${
+            viewMode === "list"
+              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+              : "hover:bg-accent"
+          }`}
+          aria-label="Tampilan daftar"
+          title="Daftar"
+        >
+          ☰
+        </button>
+        <button
+          onClick={() => setViewMode("grid")}
+          className={`inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors ${
+            viewMode === "grid"
+              ? "bg-primary text-primary-foreground hover:bg-primary/90"
+              : "hover:bg-accent"
+          }`}
+          aria-label="Tampilan kotak"
+          title="Kotak"
+        >
+          ▦
+        </button>
+
+        <div className="flex-1" />
+
+        <AppearanceSettings
+          compact
+          triggerClassName="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base leading-none transition-colors hover:bg-accent"
+        />
+        {lockMenu(
+          true,
+          `inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent ${
+            lockCfg ? "bg-accent" : ""
+          }`,
+        )}
+        <button
+          onClick={signOut}
+          className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-base transition-colors hover:bg-accent"
+          aria-label="Keluar"
+          title="Keluar"
+        >
+          ⎋
+        </button>
+      </aside>
+
+      {/* Main column */}
+      <div className="flex min-w-0 flex-1 flex-col">
+        <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
+          <div className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
+            <div className="flex items-center gap-3">
+              <div className="min-w-0 flex-1">
+                <h1 className="truncate text-base font-semibold tracking-tight">
+                  {activeCat} · MCM Storage
+                </h1>
+                <p className="text-[11px] text-muted-foreground">
+                  {scopedItems.length} pesanan · {rupiah(total)}
+                </p>
               </div>
-              <AppearanceSettings compact triggerClassName="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm leading-none hover:bg-accent" />
-              <button
-                onClick={signOut}
-                className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-sm hover:bg-accent sm:w-auto sm:px-2 sm:text-[11px] sm:font-medium"
-                aria-label="Keluar"
-                title="Keluar"
-              >
-                <span className="sm:hidden">⎋</span>
-                <span className="hidden sm:inline">Keluar</span>
-              </button>
-              {lockMenu(true)}
+              <div className="inline-flex h-8 shrink-0 overflow-hidden rounded-full border bg-card">
+                {(["semua", "Belum Dikirim", "Sudah Dikirim"] as const).map(
+                  (f, i) => (
+                    <button
+                      key={f}
+                      onClick={() => setFilter(f)}
+                      title={
+                        f === "semua"
+                          ? "Semua"
+                          : f === "Belum Dikirim"
+                          ? "Belum dikirim"
+                          : "Sudah dikirim"
+                      }
+                      className={`inline-flex shrink-0 items-center justify-center px-3 text-[11px] font-medium transition-colors ${
+                        i > 0 ? "border-l" : ""
+                      } ${
+                        filter === f
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-card hover:bg-accent"
+                      }`}
+                    >
+                      {f === "semua"
+                        ? "Semua"
+                        : f === "Belum Dikirim"
+                        ? "Belum"
+                        : "Terkirim"}
+                    </button>
+                  ),
+                )}
+              </div>
             </div>
           </div>
+        </header>
 
-          <div className="mt-2 flex items-center gap-1">
-            <div className="inline-flex h-7 min-w-0 shrink overflow-hidden rounded-md border">
-              {(["semua", "Belum Dikirim", "Sudah Dikirim"] as const).map((f, i) => (
-                <button
-                  key={f}
-                  onClick={() => setFilter(f)}
-                  title={f === "semua" ? "Semua" : f === "Belum Dikirim" ? "Belum dikirim" : "Sudah dikirim"}
-                  className={`inline-flex shrink-0 items-center justify-center px-2 text-[11px] font-medium transition-colors ${i > 0 ? "border-l" : ""} ${
-                    filter === f
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-background hover:bg-accent"
-                  }`}
-                >
-                  {f === "semua" ? "Semua" : f === "Belum Dikirim" ? "Belum" : "Terkirim"}
-                </button>
-              ))}
-            </div>
-            <div className="ml-auto flex shrink-0 items-center gap-1">
-              <button
-                onClick={addProduk}
-                title="Tambah produk"
-                aria-label="Tambah produk"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border border-primary bg-primary text-sm font-semibold text-primary-foreground hover:opacity-90 sm:w-auto sm:px-2 sm:text-[11px]"
-              >
-                <span className="sm:hidden">+</span>
-                <span className="hidden sm:inline">+ Produk</span>
-              </button>
-              <button
-                onClick={() => {
-                  if (selectMode) exitSelect();
-                  else setSelectMode(true);
-                }}
-                title={selectMode ? "Selesai memilih" : "Pilih beberapa"}
-                aria-label={selectMode ? "Selesai memilih" : "Pilih beberapa"}
-                className={`inline-flex h-7 w-7 items-center justify-center rounded-md border text-sm sm:w-auto sm:px-2 sm:text-[11px] sm:font-medium ${
-                  selectMode
-                    ? "border-primary bg-primary text-primary-foreground"
-                    : "hover:bg-accent"
-                }`}
-              >
-                <span className="sm:hidden">{selectMode ? "✓" : "☑"}</span>
-                <span className="hidden sm:inline">{selectMode ? "Selesai" : "Pilih"}</span>
-              </button>
-              <button
-                onClick={resetStatus}
-                title="Reset status terkirim"
-                aria-label="Reset status terkirim"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border text-sm hover:bg-accent sm:w-auto sm:px-2 sm:text-[11px] sm:font-medium"
-              >
-                <span className="sm:hidden">↺</span>
-                <span className="hidden sm:inline">Reset status</span>
-              </button>
-              <button
-                onClick={reset}
-                title="Hapus semua"
-                aria-label="Hapus semua"
-                className="inline-flex h-7 w-7 items-center justify-center rounded-md border text-sm text-destructive hover:bg-destructive/10 sm:w-auto sm:px-2 sm:text-[11px] sm:font-medium"
-              >
-                <span className="sm:hidden">🗑</span>
-                <span className="hidden sm:inline">Reset</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-3 py-3 sm:px-6">
+        <main className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-6">
         <SecurityScanReminder />
         {(() => {
           const total = scopedItems.length;
