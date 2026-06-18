@@ -7,7 +7,11 @@ import {
   getClientDeviceFingerprint,
   markDeviceTrustedLocal,
 } from "@/lib/device-fingerprint";
-import { requestDeviceOtp, verifyDeviceOtp } from "@/lib/device.functions";
+import {
+  checkDeviceOtpEmailStatus,
+  requestDeviceOtp,
+  verifyDeviceOtp,
+} from "@/lib/device.functions";
 
 const searchSchema = z.object({
   redirect: z.string().optional(),
@@ -30,6 +34,38 @@ function DeviceVerifyPage() {
   const [emailWarning, setEmailWarning] = useState<string | null>(null);
   const deviceHashRef = useRef<string>("");
   const userIdRef = useRef<string>("");
+  const pollAbortRef = useRef<{ cancelled: boolean } | null>(null);
+
+  const pollEmailDelivery = (messageId: string) => {
+    if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
+    const flag = { cancelled: false };
+    pollAbortRef.current = flag;
+    const started = Date.now();
+    const tick = async () => {
+      if (flag.cancelled) return;
+      try {
+        const r = await checkDeviceOtpEmailStatus({ data: { messageId } });
+        if (flag.cancelled) return;
+        if (r.status === "sent") {
+          toast.success("Email OTP berhasil terkirim");
+          return;
+        }
+        if (r.status === "failed" || r.status === "dlq" || r.status === "suppressed") {
+          toast.error(`Email gagal: ${r.error ?? r.status}`);
+          setEmailWarning("Email gagal terkirim. Coba kirim ulang atau hubungi admin.");
+          return;
+        }
+      } catch {
+        /* ignore transient errors */
+      }
+      if (Date.now() - started >= 10_000) {
+        toast.warning("Email belum terkirim dalam 10 detik, sedang dicoba ulang…");
+        return;
+      }
+      setTimeout(tick, 1000);
+    };
+    setTimeout(tick, 1000);
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +92,8 @@ function DeviceVerifyPage() {
           setEmailWarning(
             "Kode dibuat tapi email tidak terkirim. Hubungi admin atau aktifkan Email di Cloud → Emails.",
           );
+        } else if (r.messageId) {
+          pollEmailDelivery(r.messageId);
         }
         setStage("otp");
         setCooldown(60);
@@ -66,6 +104,7 @@ function DeviceVerifyPage() {
     })();
     return () => {
       cancelled = true;
+      if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
     };
   }, [navigate, redirect]);
 
@@ -116,6 +155,8 @@ function DeviceVerifyPage() {
         setEmailWarning(
           "Kode dibuat tapi email tidak terkirim. Hubungi admin atau aktifkan Email di Cloud → Emails.",
         );
+      } else if (r.messageId) {
+        pollEmailDelivery(r.messageId);
       }
       setCooldown(60);
       toast.success("Kode baru dikirim");
