@@ -111,6 +111,8 @@ function Index() {
   const [theme, setTheme] = useState<"light" | "dark">("light");
   const [openId, setOpenId] = useState<number | null>(null);
   const [flashId, setFlashId] = useState<number | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<number>>(() => new Set());
 
   useEffect(() => {
     try {
@@ -197,6 +199,47 @@ function Index() {
 
   const filtered = items.filter((i) => filter === "semua" || i.status === filter);
 
+  const toggleSelect = (id: number) =>
+    setSelected((s) => {
+      const n = new Set(s);
+      if (n.has(id)) n.delete(id);
+      else n.add(id);
+      return n;
+    });
+
+  const selectAllVisible = () => {
+    const ids = filtered.map((i) => i.id);
+    const allIn = ids.every((id) => selected.has(id));
+    setSelected((s) => {
+      const n = new Set(s);
+      if (allIn) ids.forEach((id) => n.delete(id));
+      else ids.forEach((id) => n.add(id));
+      return n;
+    });
+  };
+
+  const selectedItems = items.filter((i) => selected.has(i.id));
+  const bulkTotal = selectedItems.reduce((s, i) => s + i.harga, 0);
+
+  const bulkPesan = () =>
+    selectedItems.map((p, idx) => `${idx + 1}. ${buildPesan(p)}`).join("\n\n") +
+    `\n\n💵 *Total: ${rupiah(bulkTotal)}*`;
+
+  const bulkWaUrl = `https://wa.me/?text=${encodeURIComponent(bulkPesan())}`;
+
+  const bulkMarkSent = () => {
+    if (selected.size === 0) return;
+    setItems((arr) =>
+      arr.map((i) => (selected.has(i.id) ? { ...i, status: "Sudah Dikirim" } : i)),
+    );
+    setSelected(new Set());
+  };
+
+  const exitSelect = () => {
+    setSelectMode(false);
+    setSelected(new Set());
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
@@ -234,6 +277,19 @@ function Index() {
             ))}
             <div className="ml-auto flex gap-1.5">
               <button
+                onClick={() => {
+                  if (selectMode) exitSelect();
+                  else setSelectMode(true);
+                }}
+                className={`rounded-md border px-2.5 py-1 text-[11px] font-medium ${
+                  selectMode
+                    ? "border-primary bg-primary text-primary-foreground"
+                    : "hover:bg-accent"
+                }`}
+              >
+                {selectMode ? "Selesai" : "Pilih"}
+              </button>
+              <button
                 onClick={resetStatus}
                 className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
               >
@@ -263,19 +319,31 @@ function Index() {
                 className={`rounded-lg border bg-card transition-opacity ${sent ? "opacity-60" : ""}`}
               >
                 <div className="flex items-center gap-2 px-2.5 py-2">
-                  <input
-                    type="checkbox"
-                    checked={sent}
-                    onChange={(e) =>
-                      update(p.id, {
-                        status: e.target.checked ? "Sudah Dikirim" : "Belum Dikirim",
-                      })
-                    }
-                    className="h-4 w-4 shrink-0"
-                    aria-label="Tandai terkirim"
-                  />
+                  {selectMode ? (
+                    <input
+                      type="checkbox"
+                      checked={selected.has(p.id)}
+                      onChange={() => toggleSelect(p.id)}
+                      className="h-4 w-4 shrink-0 accent-primary"
+                      aria-label="Pilih untuk kirim massal"
+                    />
+                  ) : (
+                    <input
+                      type="checkbox"
+                      checked={sent}
+                      onChange={(e) =>
+                        update(p.id, {
+                          status: e.target.checked ? "Sudah Dikirim" : "Belum Dikirim",
+                        })
+                      }
+                      className="h-4 w-4 shrink-0"
+                      aria-label="Tandai terkirim"
+                    />
+                  )}
                   <button
-                    onClick={() => setOpenId(open ? null : p.id)}
+                    onClick={() =>
+                      selectMode ? toggleSelect(p.id) : setOpenId(open ? null : p.id)
+                    }
                     className="flex min-w-0 flex-1 items-center gap-2 text-left"
                   >
                     <span className="inline-flex shrink-0 items-center rounded bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-secondary-foreground">
@@ -289,7 +357,7 @@ function Index() {
                       {rupiah(p.harga)}
                     </span>
                   </button>
-                  {!sent && (
+                  {!sent && !selectMode && (
                     <a
                       href={waUrl}
                       target="_blank"
@@ -453,7 +521,49 @@ function Index() {
             Tidak ada pesanan untuk filter ini.
           </div>
         )}
+        {selectMode && <div className="h-20" />}
       </main>
+
+      {selectMode && (
+        <div className="sticky bottom-0 z-10 border-t bg-card/95 backdrop-blur">
+          <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2 px-3 py-2 sm:px-6">
+            <button
+              onClick={selectAllVisible}
+              className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+            >
+              {filtered.every((i) => selected.has(i.id)) && filtered.length > 0
+                ? "Batal semua"
+                : "Pilih semua"}
+            </button>
+            <span className="text-[11px] text-muted-foreground">
+              {selected.size} dipilih · {rupiah(bulkTotal)}
+            </span>
+            <div className="ml-auto flex gap-1.5">
+              <button
+                onClick={bulkMarkSent}
+                disabled={selected.size === 0}
+                className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent disabled:opacity-40"
+              >
+                Tandai terkirim
+              </button>
+              <a
+                href={selected.size === 0 ? undefined : bulkWaUrl}
+                target="_blank"
+                rel="noreferrer"
+                aria-disabled={selected.size === 0}
+                onClick={(e) => {
+                  if (selected.size === 0) e.preventDefault();
+                }}
+                className={`inline-flex items-center rounded-md bg-[#25D366] px-3 py-1 text-[11px] font-semibold text-white ${
+                  selected.size === 0 ? "pointer-events-none opacity-40" : "hover:opacity-90"
+                }`}
+              >
+                KIRIM WA MASSAL ({selected.size})
+              </a>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
