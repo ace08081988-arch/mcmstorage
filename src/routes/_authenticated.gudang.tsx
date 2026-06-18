@@ -1865,7 +1865,25 @@ function PesananTab({
     if (error) toast.error(error.message); else { toast.success(`Status: ${status}`); onChanged(); }
   }
 
-  async function konversiKePenjualan(o: OrderRequest) {
+  async function tandaiSiap(o: OrderRequest) {
+    const it = itemMap[o.item_id];
+    const qBase = it ? (o.qty_mode === "base" ? Number(o.qty) : Number(o.qty) * it.package_size) : 0;
+    const ringkasan = it
+      ? `${it.name} — ${fmtBase(qBase, it.base_unit)}${o.price_per_unit != null ? ` × ${rupiah(Number(o.price_per_unit))}/${o.qty_mode === "base" ? it.base_unit : it.package_type}` : ""}`
+      : "pesanan ini";
+    const pilihan = confirm(
+      `Tandai SIAP: ${ringkasan}\n\nOK → langsung proses jadi PENJUALAN (stok berkurang, status: selesai)\nBatal → hanya tandai siap, jangan proses dulu`,
+    );
+    if (pilihan) {
+      await konversiKePenjualan(o, true);
+    } else {
+      if (confirm("Tetap tandai pesanan sebagai SIAP tanpa memproses penjualan?")) {
+        await setStatus(o.id, "siap");
+      }
+    }
+  }
+
+  async function konversiKePenjualan(o: OrderRequest, skipConfirm = false) {
     if (!uid) return;
     const it = itemMap[o.item_id]; if (!it) return;
     const qBase = o.qty_mode === "base" ? Number(o.qty) : Number(o.qty) * it.package_size;
@@ -1873,7 +1891,7 @@ function PesananTab({
     const perBase = o.price_per_unit
       ? (o.qty_mode === "base" ? Number(o.price_per_unit) : Number(o.price_per_unit) / it.package_size)
       : 0;
-    if (!confirm(`Catat penjualan: ${qBase}${it.base_unit} × ${rupiah(perBase)}?`)) return;
+    if (!skipConfirm && !confirm(`Catat penjualan: ${qBase}${it.base_unit} × ${rupiah(perBase)}?`)) return;
     const { error } = await supabase.from("sales").insert({
       user_id: uid, item_id: it.id, qty_base: qBase,
       price_per_base: perBase, total_revenue: qBase * perBase, cost_at_sale: 0,
@@ -1995,7 +2013,7 @@ function PesananTab({
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {o.status === "menunggu" && (
-                    <button onClick={() => setStatus(o.id, "siap")} className="rounded border px-2 py-1 text-[11px] hover:bg-accent">✅ Tandai Siap</button>
+                    <button onClick={() => tandaiSiap(o)} className="rounded border px-2 py-1 text-[11px] hover:bg-accent">✅ Tandai Siap</button>
                   )}
                   {o.status === "siap" && (
                     <button onClick={() => setStatus(o.id, "menunggu")} className="rounded border px-2 py-1 text-[11px] hover:bg-accent">↩️ Batal Siap</button>
