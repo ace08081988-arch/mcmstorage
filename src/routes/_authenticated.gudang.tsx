@@ -227,6 +227,403 @@ function GudangPage() {
   );
 }
 
+/* ----------------- CUSTOMER ----------------- */
+function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid: string | null; onChanged: () => void }) {
+  const [name, setName] = useState("");
+  const [contact, setContact] = useState("");
+  const [notes, setNotes] = useState("");
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  function resetForm() { setEditingId(null); setName(""); setContact(""); setNotes(""); }
+  function startEdit(c: Customer) {
+    setEditingId(c.id); setName(c.name); setContact(c.contact ?? ""); setNotes(c.notes ?? "");
+  }
+  async function submit(e: React.FormEvent) {
+    e.preventDefault();
+    if (!uid || !name.trim()) return;
+    const payload = { name: name.trim(), contact: contact.trim() || null, notes: notes.trim() || null };
+    if (editingId) {
+      const { error } = await supabase.from("customers").update(payload).eq("id", editingId);
+      if (error) { toast.error(error.message); return; }
+      toast.success("Pelanggan diperbarui");
+    } else {
+      const { error } = await supabase.from("customers").insert({ user_id: uid, ...payload });
+      if (error) { toast.error(error.message); return; }
+      toast.success("Pelanggan ditambahkan");
+    }
+    resetForm(); onChanged();
+  }
+  async function remove(id: string, n: string) {
+    if (!confirm(`Hapus pelanggan "${n}"? Pembayaran terkait juga dihapus.`)) return;
+    const { error } = await supabase.from("customers").delete().eq("id", id);
+    if (error) toast.error(error.message);
+    else { toast.success("Pelanggan dihapus"); if (editingId === id) resetForm(); onChanged(); }
+  }
+  return (
+    <div className="space-y-3">
+      <form onSubmit={submit} className="space-y-2 rounded-lg border bg-card p-3">
+        <div className="text-xs font-semibold">{editingId ? "Edit Pelanggan" : "Tambah Pelanggan"}</div>
+        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama pelanggan *" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
+        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. WA / kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={50} />
+        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={200} />
+        <div className="flex gap-2">
+          <button className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">{editingId ? "Perbarui" : "Simpan"}</button>
+          {editingId && <button type="button" onClick={resetForm} className="rounded-md border px-3 py-2 text-sm hover:bg-accent">Batal</button>}
+        </div>
+      </form>
+      {customers.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">Belum ada pelanggan.</div>
+      ) : (
+        <ul className="space-y-2">
+          {customers.map((c) => (
+            <li key={c.id} className="flex items-start justify-between gap-2 rounded-lg border bg-card p-3">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">{c.name}</div>
+                {c.contact && <div className="text-[11px] text-muted-foreground">📞 {c.contact}</div>}
+                {c.notes && <div className="text-[11px] text-muted-foreground">{c.notes}</div>}
+              </div>
+              <div className="flex shrink-0 gap-1">
+                <button onClick={() => startEdit(c)} className={`rounded border px-2 py-1 text-[11px] hover:bg-accent ${editingId === c.id ? "border-primary text-primary" : ""}`}>Edit</button>
+                <button onClick={() => remove(c.id, c.name)} className="rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* ----------------- PIUTANG ----------------- */
+function PiutangTab({
+  customers, sales, custPayments, itemMap, uid, onChanged, onLocalPayment, onLocalRemovePayment,
+}: {
+  customers: Customer[];
+  sales: Sale[];
+  custPayments: CustomerPayment[];
+  itemMap: Record<string, WItem>;
+  uid: string | null;
+  onChanged: () => void;
+  onLocalPayment: (p: CustomerPayment) => void;
+  onLocalRemovePayment: (id: string) => void;
+}) {
+  // Per-customer balance: piutang = sum(hutang sales) - sum(payments)
+  // > 0 → pelanggan masih hutang, < 0 → kelebihan/deposit
+  const groups = useMemo(() => {
+    const out: Array<{
+      customer: Customer;
+      hutangSales: Sale[];
+      payments: CustomerPayment[];
+      totalHutang: number;
+      totalBayar: number;
+      balance: number; // positive = customer owes us
+    }> = [];
+    for (const c of customers) {
+      const hutangSales = sales.filter((s) => s.customer_id === c.id && s.payment_method === "hutang");
+      const pays = custPayments.filter((p) => p.customer_id === c.id);
+      const totalHutang = hutangSales.reduce((a, s) => a + Number(s.total_revenue), 0);
+      const totalBayar = pays.reduce((a, p) => a + Number(p.amount), 0);
+      const balance = totalHutang - totalBayar;
+      if (hutangSales.length === 0 && pays.length === 0) continue;
+      out.push({ customer: c, hutangSales, payments: pays, totalHutang, totalBayar, balance });
+    }
+    return out.sort((a, b) => b.balance - a.balance);
+  }, [customers, sales, custPayments]);
+
+  const totals = useMemo(() => {
+    let owed = 0, credit = 0;
+    for (const g of groups) {
+      if (g.balance > 0) owed += g.balance;
+      else if (g.balance < 0) credit += -g.balance;
+    }
+    return { owed, credit };
+  }, [groups]);
+
+  if (groups.length === 0) {
+    return (
+      <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+        Belum ada catatan piutang/kelebihan pelanggan. Jual dengan cara bayar <b>Hutang</b> di tab Jual untuk mulai mencatat.
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="grid grid-cols-2 gap-2 text-[11px]">
+        <div className="rounded-md border bg-card p-2">
+          <div className="text-muted-foreground">Total piutang (pelanggan hutang)</div>
+          <div className="text-sm font-semibold text-amber-600 dark:text-amber-400">{rupiah(totals.owed)}</div>
+        </div>
+        <div className="rounded-md border bg-card p-2">
+          <div className="text-muted-foreground">Total kelebihan/deposit</div>
+          <div className="text-sm font-semibold text-sky-600 dark:text-sky-400">{rupiah(totals.credit)}</div>
+        </div>
+      </div>
+
+      {groups.map((g) => {
+        const status: "hutang" | "lunas" | "kelebihan" =
+          g.balance > 0.001 ? "hutang" : g.balance < -0.001 ? "kelebihan" : "lunas";
+        return (
+          <div key={g.customer.id} className="space-y-2 rounded-lg border bg-card p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <div className="truncate text-sm font-semibold">{g.customer.name}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Hutang {rupiah(g.totalHutang)} · Bayar {rupiah(g.totalBayar)}
+                </div>
+              </div>
+              <span className={`shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold ${
+                status === "hutang" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
+                : status === "kelebihan" ? "bg-sky-500/15 text-sky-700 dark:text-sky-400"
+                : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+              }`}>
+                {status === "hutang" ? `Sisa ${rupiah(g.balance)}`
+                  : status === "kelebihan" ? `Kelebihan ${rupiah(-g.balance)}`
+                  : "✓ Lunas"}
+              </span>
+            </div>
+
+            <ShareCustomer
+              customer={g.customer}
+              hutangSales={g.hutangSales}
+              payments={g.payments}
+              itemMap={itemMap}
+              totalHutang={g.totalHutang}
+              totalBayar={g.totalBayar}
+              balance={g.balance}
+            />
+
+            {g.hutangSales.length > 0 && (
+              <ul className="space-y-1.5">
+                {g.hutangSales.map((s) => {
+                  const it = itemMap[s.item_id];
+                  return (
+                    <li key={s.id} className="rounded border bg-background p-2 text-xs">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="min-w-0">
+                          <div className="truncate font-semibold">{it?.name || "(barang dihapus)"}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            {new Date(s.created_at).toLocaleDateString("id-ID")} · {fmtBase(Number(s.qty_base), it?.base_unit || "pcs")}
+                          </div>
+                        </div>
+                        <div className="shrink-0 text-right text-[11px]">
+                          <div className="font-semibold">{rupiah(Number(s.total_revenue))}</div>
+                        </div>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
+
+            <CustomerPayForm
+              customerId={g.customer.id}
+              balance={g.balance}
+              uid={uid}
+              onChanged={onChanged}
+              onLocalPayment={onLocalPayment}
+            />
+
+            {g.payments.length > 0 && (
+              <ul className="space-y-1 border-t pt-2">
+                {g.payments.map((pay) => (
+                  <li key={pay.id} className="flex items-center justify-between gap-2 text-[11px]">
+                    <span className="truncate">
+                      {new Date(pay.created_at).toLocaleDateString("id-ID")} ·{" "}
+                      <b className="text-emerald-600 dark:text-emerald-400">{rupiah(Number(pay.amount))}</b>
+                      {pay.note && <span className="text-muted-foreground"> · {pay.note}</span>}
+                    </span>
+                    <button
+                      onClick={async () => {
+                        if (!confirm("Hapus pembayaran ini?")) return;
+                        onLocalRemovePayment(pay.id);
+                        const { error } = await supabase.from("customer_payments").delete().eq("id", pay.id);
+                        if (error) { toast.error(error.message); onChanged(); }
+                        else { toast.success("Pembayaran dihapus"); onChanged(); }
+                      }}
+                      className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] text-destructive hover:bg-destructive/10"
+                    >
+                      Hapus
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function CustomerPayForm({
+  customerId, balance, uid, onChanged, onLocalPayment,
+}: {
+  customerId: string;
+  balance: number; // positive = customer still owes
+  uid: string | null;
+  onChanged: () => void;
+  onLocalPayment: (p: CustomerPayment) => void;
+}) {
+  const [amount, setAmount] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  async function pay(useAmount: number) {
+    if (!uid) return;
+    if (!Number.isFinite(useAmount) || useAmount <= 0) {
+      toast.error("Nominal wajib diisi dan harus lebih dari 0");
+      return;
+    }
+    setBusy(true);
+    const { data, error } = await supabase.from("customer_payments").insert({
+      user_id: uid,
+      customer_id: customerId,
+      amount: useAmount,
+      note: note.trim() || null,
+    }).select().single();
+    setBusy(false);
+    if (error) { toast.error(error.message); return; }
+    if (data) onLocalPayment(data as CustomerPayment);
+    toast.success("Pembayaran dicatat");
+    setAmount(""); setNote("");
+    onChanged();
+  }
+
+  const raw = amount.trim();
+  const parsed = raw === "" ? NaN : Number(raw);
+  const isEmpty = raw === "";
+  const isInvalid = !isEmpty && (!Number.isFinite(parsed) || parsed <= 0);
+  const errorMsg = isEmpty ? null : isInvalid ? "Nominal harus lebih dari 0" : null;
+  const payDisabled = busy || isEmpty || isInvalid;
+
+  return (
+    <div className="space-y-1.5 rounded border border-dashed p-2">
+      <div className="flex gap-1.5">
+        <input
+          type="number" step="1" min="0"
+          placeholder="Nominal terima (Rp)"
+          className={`flex-1 rounded border bg-background px-2 py-1 text-xs ${errorMsg ? "border-destructive" : ""}`}
+          value={amount}
+          onChange={(e) => setAmount(e.target.value)}
+        />
+        <button type="button" disabled={payDisabled} onClick={() => pay(parsed)}
+          className="rounded bg-primary px-2 py-1 text-xs font-semibold text-primary-foreground disabled:opacity-50">
+          Terima
+        </button>
+        {balance > 0.001 && (
+          <button type="button" disabled={busy} onClick={() => pay(balance)}
+            className="rounded border border-emerald-500 px-2 py-1 text-xs font-semibold text-emerald-600 hover:bg-emerald-500/10 disabled:opacity-50 dark:text-emerald-400">
+            Lunasi
+          </button>
+        )}
+      </div>
+      {errorMsg && <div className="text-[11px] text-destructive">{errorMsg}</div>}
+      <input type="text" placeholder="Catatan (opsional)" maxLength={200}
+        className="w-full rounded border bg-background px-2 py-1 text-xs"
+        value={note} onChange={(e) => setNote(e.target.value)} />
+    </div>
+  );
+}
+
+function ShareCustomer({
+  customer, hutangSales, payments, itemMap, totalHutang, totalBayar, balance,
+}: {
+  customer: Customer;
+  hutangSales: Sale[];
+  payments: CustomerPayment[];
+  itemMap: Record<string, WItem>;
+  totalHutang: number; totalBayar: number; balance: number;
+}) {
+  const [open, setOpen] = useState(false);
+
+  const message = useMemo(() => {
+    const lines: string[] = [];
+    if (balance > 0.001) {
+      lines.push(`Halo ${customer.name}, berikut catatan transaksi & sisa tagihan Anda:`);
+    } else if (balance < -0.001) {
+      lines.push(`Halo ${customer.name}, Anda memiliki kelebihan pembayaran/deposit pada kami:`);
+    } else {
+      lines.push(`Halo ${customer.name}, berikut catatan transaksi Anda (status: LUNAS):`);
+    }
+    lines.push("");
+    if (hutangSales.length > 0) {
+      lines.push("Pembelian (hutang):");
+      hutangSales.forEach((s, i) => {
+        const it = itemMap[s.item_id];
+        const tgl = new Date(s.created_at).toLocaleDateString("id-ID");
+        lines.push(`${i + 1}. ${it?.name || "(barang)"} — ${tgl} · ${rupiah(Number(s.total_revenue))}`);
+      });
+      lines.push("");
+    }
+    if (payments.length > 0) {
+      lines.push("Pembayaran diterima:");
+      payments.forEach((p, i) => {
+        const tgl = new Date(p.created_at).toLocaleDateString("id-ID");
+        lines.push(`${i + 1}. ${tgl} — ${rupiah(Number(p.amount))}${p.note ? ` (${p.note})` : ""}`);
+      });
+      lines.push("");
+    }
+    lines.push(`TOTAL HUTANG: ${rupiah(totalHutang)}`);
+    lines.push(`SUDAH DIBAYAR: ${rupiah(totalBayar)}`);
+    if (balance > 0.001) lines.push(`SISA TAGIHAN: ${rupiah(balance)}`);
+    else if (balance < -0.001) lines.push(`KELEBIHAN/DEPOSIT: ${rupiah(-balance)}`);
+    else lines.push(`STATUS: LUNAS ✓`);
+    lines.push("");
+    lines.push(balance > 0.001 ? "Mohon segera diselesaikan ya 🙏" : "Terima kasih 🙏");
+    return lines.join("\n");
+  }, [customer, hutangSales, payments, itemMap, totalHutang, totalBayar, balance]);
+
+  const phoneDigits = (customer.contact || "").replace(/\D+/g, "");
+  const waPhone = phoneDigits.startsWith("0") ? `62${phoneDigits.slice(1)}` : phoneDigits;
+  const encoded = encodeURIComponent(message);
+
+  function openLink(url: string) { window.open(url, "_blank", "noopener,noreferrer"); }
+  async function copyText() {
+    try { await navigator.clipboard.writeText(message); toast.success("Pesan disalin"); }
+    catch { toast.error("Gagal menyalin"); }
+  }
+
+  const links = [
+    { label: "WhatsApp", emoji: "💬", href: waPhone ? `https://wa.me/${waPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`, cls: "border-emerald-500 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400" },
+    { label: "WA Business", emoji: "🏪", href: waPhone ? `whatsapp://send?phone=${waPhone}&text=${encoded}` : `whatsapp://send?text=${encoded}`, cls: "border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 dark:text-emerald-400" },
+    { label: "Viber", emoji: "📞", href: waPhone ? `viber://chat?number=%2B${waPhone}&text=${encoded}` : `viber://forward?text=${encoded}`, cls: "border-purple-500 text-purple-600 hover:bg-purple-500/10 dark:text-purple-400" },
+    { label: "Telegram", emoji: "✈️", href: `https://t.me/share/url?url=${encodeURIComponent(" ")}&text=${encoded}`, cls: "border-sky-500 text-sky-600 hover:bg-sky-500/10 dark:text-sky-400" },
+    { label: "SMS", emoji: "✉️", href: waPhone ? `sms:+${waPhone}?body=${encoded}` : `sms:?body=${encoded}`, cls: "border-amber-500 text-amber-600 hover:bg-amber-500/10 dark:text-amber-400" },
+  ];
+
+  return (
+    <div className="rounded-md border border-dashed bg-muted/30 p-2">
+      <div className="flex items-center justify-between gap-2">
+        <div className="text-[11px] text-muted-foreground">
+          {customer.contact ? <>📞 {customer.contact}</> : <>Tidak ada nomor kontak — pesan tetap bisa dikirim</>}
+        </div>
+        <button type="button" onClick={() => setOpen((v) => !v)}
+          className="rounded-md bg-primary px-2.5 py-1 text-[11px] font-semibold text-primary-foreground">
+          {open ? "Tutup" : balance > 0.001 ? "📤 Ingatkan tagihan" : "📤 Kirim catatan"}
+        </button>
+      </div>
+      {open && (
+        <div className="mt-2 space-y-2">
+          <textarea readOnly value={message} className="h-32 w-full resize-none rounded border bg-background p-2 text-[11px]" />
+          <div className="flex flex-wrap gap-1.5">
+            {links.map((l) => (
+              <button key={l.label} type="button" onClick={() => openLink(l.href)}
+                className={`rounded-md border px-2 py-1 text-[11px] font-semibold ${l.cls}`}>
+                {l.emoji} {l.label}
+              </button>
+            ))}
+            <button type="button" onClick={copyText}
+              className="rounded-md border px-2 py-1 text-[11px] font-semibold hover:bg-accent">
+              📋 Salin
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ----------------- SHARE DEBT (WA/Viber/Telegram/SMS) ----------------- */
 function ShareDebt({
   supplier, debts, paidByPurchase, itemMap, total, paid, remaining,
