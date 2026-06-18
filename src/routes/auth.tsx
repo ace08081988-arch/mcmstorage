@@ -20,6 +20,13 @@ function AuthPage() {
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<"email" | "otp">("email");
   const [loading, setLoading] = useState(false);
+  const [resendIn, setResendIn] = useState(0);
+
+  useEffect(() => {
+    if (resendIn <= 0) return;
+    const t = setInterval(() => setResendIn((s) => (s > 0 ? s - 1 : 0)), 1000);
+    return () => clearInterval(t);
+  }, [resendIn]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -42,6 +49,23 @@ function AuthPage() {
     }
     toast.success("Kode OTP dikirim ke email");
     setStep("otp");
+    setResendIn(60);
+  };
+
+  const resendOtp = async () => {
+    if (resendIn > 0 || loading) return;
+    setLoading(true);
+    const { error } = await supabase.auth.signInWithOtp({
+      email,
+      options: { shouldCreateUser: true },
+    });
+    setLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Kode OTP dikirim ulang");
+    setResendIn(60);
   };
 
   const verifyOtp = async (e: React.FormEvent) => {
@@ -129,6 +153,14 @@ function AuthPage() {
               className="w-full text-center text-xs text-muted-foreground hover:underline"
             >
               Ganti email
+            </button>
+            <button
+              type="button"
+              onClick={resendOtp}
+              disabled={resendIn > 0 || loading}
+              className="w-full text-center text-xs text-muted-foreground hover:underline disabled:opacity-50 disabled:no-underline"
+            >
+              {resendIn > 0 ? `Kirim ulang kode (${resendIn}s)` : "Kirim ulang kode"}
             </button>
           </form>
         )}
