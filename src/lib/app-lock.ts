@@ -24,6 +24,47 @@ function lockedKey(uid: string) {
   return `app-lock:locked:${uid}`;
 }
 
+// Persist lock config to Capacitor Preferences (survives app kill on native)
+// in addition to localStorage (used for sync access in UI).
+async function prefsGet(key: string): Promise<string | null> {
+  try {
+    const { Preferences } = await import("@capacitor/preferences");
+    const { value } = await Preferences.get({ key });
+    return value ?? null;
+  } catch {
+    return null;
+  }
+}
+async function prefsSet(key: string, value: string) {
+  try {
+    const { Preferences } = await import("@capacitor/preferences");
+    await Preferences.set({ key, value });
+  } catch {}
+}
+async function prefsRemove(key: string) {
+  try {
+    const { Preferences } = await import("@capacitor/preferences");
+    await Preferences.remove({ key });
+  } catch {}
+}
+
+// Call once on app boot (per uid) to copy persisted config from Capacitor
+// Preferences into localStorage so the sync getters see it.
+export async function hydrateLockConfig(uid: string): Promise<void> {
+  try {
+    const key = cfgKey(uid);
+    const localRaw = localStorage.getItem(key);
+    const persisted = await prefsGet(key);
+    if (persisted && persisted !== localRaw) {
+      localStorage.setItem(key, persisted);
+      window.dispatchEvent(new Event(APP_LOCK_EVENT));
+    } else if (!persisted && localRaw) {
+      // First migration: mirror existing localStorage value into Preferences
+      await prefsSet(key, localRaw);
+    }
+  } catch {}
+}
+
 export function getLockConfig(uid: string): LockConfig | null {
   try {
     const raw = localStorage.getItem(cfgKey(uid));
@@ -36,8 +77,15 @@ export function getLockConfig(uid: string): LockConfig | null {
 
 export function setLockConfig(uid: string, cfg: LockConfig | null) {
   try {
-    if (cfg) localStorage.setItem(cfgKey(uid), JSON.stringify(cfg));
-    else localStorage.removeItem(cfgKey(uid));
+    const key = cfgKey(uid);
+    if (cfg) {
+      const serialized = JSON.stringify(cfg);
+      localStorage.setItem(key, serialized);
+      void prefsSet(key, serialized);
+    } else {
+      localStorage.removeItem(key);
+      void prefsRemove(key);
+    }
     window.dispatchEvent(new Event(APP_LOCK_EVENT));
   } catch {}
 }
