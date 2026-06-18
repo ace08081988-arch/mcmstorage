@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -151,16 +152,19 @@ function Index() {
     if (!files || files.length === 0) return;
     const dataUrl = await compressImage(files[0]);
     update(id, { foto: dataUrl });
-    // Ambil lokasi otomatis saat foto diambil
+    setOpenId(id);
+    toast.success("Foto tersimpan");
     if (typeof navigator !== "undefined" && navigator.geolocation) {
+      const tId = toast.loading("Mengambil lokasi…");
       navigator.geolocation.getCurrentPosition(
         (pos) => {
           const { latitude, longitude } = pos.coords;
           const link = `https://www.google.com/maps?q=${latitude},${longitude}`;
           update(id, { lokasi: link });
+          toast.success("Lokasi otomatis terisi", { id: tId });
         },
         (err) => {
-          alert("Gagal ambil lokasi: " + err.message);
+          toast.error("Gagal ambil lokasi: " + err.message, { id: tId });
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
@@ -372,12 +376,28 @@ function Index() {
 
                 {open && (
                   <div className="space-y-2 border-t px-2.5 py-2.5">
-                    <input
-                      value={p.nama}
-                      onChange={(e) => update(p.id, { nama: e.target.value })}
-                      placeholder="Nama produk"
-                      className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
-                    />
+                    <div className="flex gap-2">
+                      <select
+                        value={p.kategori}
+                        onChange={(e) =>
+                          update(p.id, { kategori: e.target.value as Kategori })
+                        }
+                        className="rounded-md border bg-background px-2 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                        aria-label="Kategori"
+                      >
+                        {(Object.keys(HARGA) as Kategori[]).map((k) => (
+                          <option key={k} value={k}>
+                            {k}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        value={p.nama}
+                        onChange={(e) => update(p.id, { nama: e.target.value })}
+                        placeholder="Nama produk"
+                        className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
+                      />
+                    </div>
                     <label className="flex items-center gap-2 rounded-md border bg-background px-2.5 py-1.5 text-sm">
                       <span className="text-muted-foreground">Rp</span>
                       <input
@@ -440,6 +460,43 @@ function Index() {
                         placeholder="Link Lokasi"
                         className="w-full rounded-md border bg-background px-2.5 py-1.5 text-sm outline-none focus:ring-2 focus:ring-ring"
                       />
+                    </div>
+                    <div className="flex flex-wrap gap-1.5">
+                      <button
+                        onClick={() => {
+                          if (!navigator.geolocation) {
+                            toast.error("Geolocation tidak tersedia");
+                            return;
+                          }
+                          const tId = toast.loading("Mengambil lokasi…");
+                          navigator.geolocation.getCurrentPosition(
+                            (pos) => {
+                              const { latitude, longitude } = pos.coords;
+                              update(p.id, {
+                                lokasi: `https://www.google.com/maps?q=${latitude},${longitude}`,
+                              });
+                              toast.success("Lokasi diperbarui", { id: tId });
+                            },
+                            (err) =>
+                              toast.error("Gagal: " + err.message, { id: tId }),
+                            { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
+                          );
+                        }}
+                        className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                      >
+                        📍 Ambil lokasi sekarang
+                      </button>
+                      <button
+                        onClick={() => {
+                          navigator.clipboard
+                            ?.writeText(p.lokasi)
+                            .then(() => toast.success("Link lokasi disalin"))
+                            .catch(() => toast.error("Gagal menyalin"));
+                        }}
+                        className="rounded-md border px-2.5 py-1 text-[11px] font-medium hover:bg-accent"
+                      >
+                        Salin link
+                      </button>
                     </div>
 
                     <div className="flex flex-wrap items-start gap-1.5">
