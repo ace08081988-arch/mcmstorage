@@ -150,10 +150,9 @@ function Index() {
   }, [viewMode, hydrated]);
 
   const total = useMemo(
-    () => items.filter((i) => i.status === "Sudah Dikirim").reduce((s, i) => s + i.harga, 0),
+    () => items.reduce((s, i) => s + i.harga, 0),
     [items],
   );
-  const terkirim = items.filter((i) => i.status === "Sudah Dikirim").length;
 
   const update = (id: number, patch: Partial<Produk>) =>
     setItems((arr) => arr.map((i) => (i.id === id ? { ...i, ...patch } : i)));
@@ -280,7 +279,7 @@ function Index() {
             <div className="min-w-0 flex-1">
               <h1 className="truncate text-base font-semibold tracking-tight">Penjualan Harian</h1>
               <p className="text-[11px] text-muted-foreground">
-                {terkirim}/{items.length} terkirim · {rupiah(total)}
+                {items.length} pesanan · {rupiah(total)}
               </p>
             </div>
             <div className="flex items-center gap-1.5">
