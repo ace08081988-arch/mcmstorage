@@ -246,6 +246,7 @@ export type Database = {
         Row: {
           auth_email_ttl_minutes: number
           batch_size: number
+          cron_secret: string | null
           id: number
           retry_after_until: string | null
           send_delay_ms: number
@@ -255,6 +256,7 @@ export type Database = {
         Insert: {
           auth_email_ttl_minutes?: number
           batch_size?: number
+          cron_secret?: string | null
           id?: number
           retry_after_until?: string | null
           send_delay_ms?: number
@@ -264,6 +266,7 @@ export type Database = {
         Update: {
           auth_email_ttl_minutes?: number
           batch_size?: number
+          cron_secret?: string | null
           id?: number
           retry_after_until?: string | null
           send_delay_ms?: number
