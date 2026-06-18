@@ -1121,6 +1121,18 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                     })()}
                   </div>
                 )}
+                {s.email && (
+                  <div className="mt-1 flex flex-wrap items-center gap-1.5">
+                    <span className="truncate text-[11px] text-muted-foreground">📧 {s.email}</span>
+                    <a
+                      href={`mailto:${s.email}`}
+                      className="rounded border border-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
+                      aria-label={`Email ${s.name}`}
+                    >
+                      📧 Email
+                    </a>
+                  </div>
+                )}
                 {s.notes && <div className="mt-1 text-[11px] text-muted-foreground">{s.notes}</div>}
               </div>
               <div className="flex shrink-0 gap-1">
