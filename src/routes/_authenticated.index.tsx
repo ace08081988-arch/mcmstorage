@@ -690,7 +690,7 @@ function Index() {
                   ▦
                 </button>
               </div>
-              <AppearanceSettings triggerClassName="inline-flex h-8 w-8 items-center justify-center rounded-md border hover:bg-accent text-base leading-none overflow-hidden" />
+              <AppearanceSettings compact triggerClassName="inline-flex h-8 w-8 items-center justify-center rounded-md border text-base leading-none hover:bg-accent" />
               <button
                 onClick={signOut}
                 className="inline-flex h-8 items-center justify-center rounded-md border px-2 text-[11px] font-medium hover:bg-accent"
