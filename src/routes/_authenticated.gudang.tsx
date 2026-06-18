@@ -1134,12 +1134,23 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                     <span className="truncate text-[11px] text-muted-foreground">📧 {s.email}</span>
                     {(() => {
                       const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-                      const pickValid = (raw: string | null) => {
+                      const seen = new Set<string>();
+                      const toKey = s.email.trim().toLowerCase();
+                      if (EMAIL_RE.test(toKey)) seen.add(toKey);
+                      const pickValidUnique = (raw: string | null) => {
                         if (!raw) return [] as string[];
-                        return raw.split(",").map((x) => x.trim()).filter((x) => EMAIL_RE.test(x));
+                        const out: string[] = [];
+                        for (const part of raw.split(",")) {
+                          const v = part.trim();
+                          const k = v.toLowerCase();
+                          if (!v || !EMAIL_RE.test(v) || seen.has(k)) continue;
+                          seen.add(k);
+                          out.push(v);
+                        }
+                        return out;
                       };
-                      const ccs = pickValid(s.email_cc);
-                      const bccs = pickValid(s.email_bcc);
+                      const ccs = pickValidUnique(s.email_cc);
+                      const bccs = pickValidUnique(s.email_bcc);
                       const params: string[] = [];
                       if (ccs.length) params.push(`cc=${encodeURIComponent(ccs.join(","))}`);
                       if (bccs.length) params.push(`bcc=${encodeURIComponent(bccs.join(","))}`);
