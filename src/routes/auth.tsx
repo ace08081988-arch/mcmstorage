@@ -23,16 +23,10 @@ function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
-  const [otp, setOtp] = useState("");
-  const [step, setStep] = useState<"email" | "otp">("email");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [resendIn, setResendIn] = useState(0);
-
-  useEffect(() => {
-    if (resendIn <= 0) return;
-    const t = setInterval(() => setResendIn((s) => (s > 0 ? s - 1 : 0)), 1000);
-    return () => clearInterval(t);
-  }, [resendIn]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
@@ -40,59 +34,67 @@ function AuthPage() {
     });
   }, [navigate]);
 
-  const sendOtp = async (e: React.FormEvent) => {
+  const submit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email) return;
+    if (!email || !password) return;
+    if (mode === "signup") {
+      if (password.length < 8) {
+        toast.error("Kata sandi minimal 8 karakter");
+        return;
+      }
+      if (password !== confirmPassword) {
+        toast.error("Konfirmasi kata sandi tidak cocok");
+        return;
+      }
+      setLoading(true);
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { emailRedirectTo: window.location.origin },
+      });
+      setLoading(false);
+      if (error) {
+        const msg = /already registered|already exists|user.*exists/i.test(error.message)
+          ? "Email sudah terdaftar. Silakan Masuk."
+          : /pwned|breach|compromised/i.test(error.message)
+            ? "Kata sandi ini pernah bocor. Pakai kata sandi lain."
+            : error.message;
+        toast.error(msg);
+        return;
+      }
+      toast.success("Pendaftaran berhasil");
+      navigate({ to: "/", replace: true });
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: mode === "signup" },
-    });
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
     if (error) {
-      const msg = /signups not allowed|not found|user not found/i.test(error.message)
-        ? "Akun belum terdaftar. Silakan Daftar dulu."
+      const msg = /invalid login credentials/i.test(error.message)
+        ? "Email atau kata sandi salah"
         : error.message;
       toast.error(msg);
       return;
     }
-    toast.success(mode === "signup" ? "Kode pendaftaran dikirim" : "Kode OTP dikirim ke email");
-    setStep("otp");
-    setResendIn(60);
+    toast.success("Berhasil masuk");
+    navigate({ to: "/", replace: true });
   };
 
-  const resendOtp = async () => {
-    if (resendIn > 0 || loading) return;
+  const sendReset = async () => {
+    if (!email) {
+      toast.error("Isi email dulu untuk reset kata sandi");
+      return;
+    }
     setLoading(true);
-    const { error } = await supabase.auth.signInWithOtp({
-      email,
-      options: { shouldCreateUser: mode === "signup" },
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     setLoading(false);
     if (error) {
       toast.error(error.message);
       return;
     }
-    toast.success("Kode OTP dikirim ulang");
-    setResendIn(60);
-  };
-
-  const verifyOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (otp.length < 6) return;
-    setLoading(true);
-    const { error } = await supabase.auth.verifyOtp({
-      email,
-      token: otp,
-      type: "email",
-    });
-    setLoading(false);
-    if (error) {
-      toast.error("Kode salah atau kedaluwarsa");
-      return;
-    }
-    toast.success("Berhasil masuk");
-    navigate({ to: "/", replace: true });
+    toast.success("Tautan reset dikirim ke email");
   };
 
   return (
@@ -106,99 +108,95 @@ function AuthPage() {
           />
           <h1 className="mt-3 text-lg font-semibold tracking-tight">Masuk ke MCM Storage</h1>
           <p className="text-xs text-muted-foreground">
-            {step === "email"
-              ? mode === "signup"
-                ? "Daftar akun baru — kami kirim kode ke email"
-                : "Masuk ke akun Anda dengan kode OTP"
-              : `Kode dikirim ke ${email}`}
+            {mode === "signup"
+              ? "Buat akun baru dengan email & kata sandi"
+              : "Masuk dengan email & kata sandi Anda"}
           </p>
         </div>
 
-        {step === "email" && (
-          <div className="grid grid-cols-2 gap-1 rounded-md border bg-muted/40 p-1 text-xs">
+        <div className="grid grid-cols-2 gap-1 rounded-md border bg-muted/40 p-1 text-xs">
+          <button
+            type="button"
+            onClick={() => setMode("login")}
+            className={`rounded px-2 py-1.5 font-medium ${mode === "login" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+          >
+            Masuk
+          </button>
+          <button
+            type="button"
+            onClick={() => setMode("signup")}
+            className={`rounded px-2 py-1.5 font-medium ${mode === "signup" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+          >
+            Daftar
+          </button>
+        </div>
+
+        <form onSubmit={submit} className="space-y-3">
+          <input
+            type="email"
+            required
+            autoFocus
+            autoComplete="email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="alamat@email.com"
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
+          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              required
+              minLength={mode === "signup" ? 8 : undefined}
+              autoComplete={mode === "signup" ? "new-password" : "current-password"}
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder={mode === "signup" ? "Kata sandi (min. 8 karakter)" : "Kata sandi"}
+              className="w-full rounded-md border bg-background px-3 py-2 pr-16 text-sm outline-none focus:ring-2 focus:ring-ring"
+            />
             <button
               type="button"
-              onClick={() => setMode("login")}
-              className={`rounded px-2 py-1.5 font-medium ${mode === "login" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+              onClick={() => setShowPassword((s) => !s)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded px-2 py-0.5 text-[11px] text-muted-foreground hover:bg-accent"
+              aria-label={showPassword ? "Sembunyikan kata sandi" : "Tampilkan kata sandi"}
             >
-              Masuk
-            </button>
-            <button
-              type="button"
-              onClick={() => setMode("signup")}
-              className={`rounded px-2 py-1.5 font-medium ${mode === "signup" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
-            >
-              Daftar
+              {showPassword ? "Sembunyi" : "Lihat"}
             </button>
           </div>
-        )}
-
-        {step === "email" ? (
-          <form onSubmit={sendOtp} className="space-y-3">
+          {mode === "signup" && (
             <input
-              type="email"
+              type={showPassword ? "text" : "password"}
               required
-              autoFocus
-              autoComplete="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="alamat@email.com"
+              minLength={8}
+              autoComplete="new-password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Konfirmasi kata sandi"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
+          )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+          >
+            {loading ? "Memproses…" : mode === "signup" ? "Daftar" : "Masuk"}
+          </button>
+          {mode === "login" && (
             <button
-              type="submit"
+              type="button"
+              onClick={sendReset}
               disabled={loading}
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
+              className="w-full text-center text-[11px] text-muted-foreground hover:underline disabled:opacity-50"
             >
-              {loading ? "Mengirim…" : mode === "signup" ? "Daftar & kirim kode" : "Kirim kode OTP"}
+              Lupa kata sandi?
             </button>
-            <p className="text-center text-[11px] text-muted-foreground">
-              {mode === "login"
-                ? "Belum punya akun? Pilih tab Daftar di atas."
-                : "Sudah punya akun? Pilih tab Masuk di atas."}
-            </p>
-          </form>
-        ) : (
-          <form onSubmit={verifyOtp} className="space-y-3">
-            <input
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              maxLength={6}
-              required
-              autoFocus
-              value={otp}
-              onChange={(e) => setOtp(e.target.value.replace(/\D/g, ""))}
-              placeholder="6 digit kode"
-              className="w-full rounded-md border bg-background px-3 py-2 text-center text-lg tracking-[0.5em] outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              type="submit"
-              disabled={loading || otp.length < 6}
-              className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
-            >
-              {loading ? "Memverifikasi…" : "Masuk"}
-            </button>
-            <button
-              type="button"
-              onClick={() => {
-                setOtp("");
-                setStep("email");
-              }}
-              className="w-full text-center text-xs text-muted-foreground hover:underline"
-            >
-              Ganti email
-            </button>
-            <button
-              type="button"
-              onClick={resendOtp}
-              disabled={resendIn > 0 || loading}
-              className="w-full text-center text-xs text-muted-foreground hover:underline disabled:opacity-50 disabled:no-underline"
-            >
-              {resendIn > 0 ? `Kirim ulang kode (${resendIn}s)` : "Kirim ulang kode"}
-            </button>
-          </form>
-        )}
+          )}
+          <p className="text-center text-[11px] text-muted-foreground">
+            {mode === "login"
+              ? "Belum punya akun? Pilih tab Daftar di atas."
+              : "Sudah punya akun? Pilih tab Masuk di atas."}
+          </p>
+        </form>
       </div>
     </div>
   );
