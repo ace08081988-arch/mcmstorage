@@ -154,6 +154,8 @@ function GudangPage() {
             ["beli", "Beli"],
             ["jual", "Jual"],
             ["hutang", "Hutang"],
+            ["pelanggan", "Pelanggan"],
+            ["piutang", "Piutang"],
             ["riwayat", "Riwayat"],
           ] as const).map(([k, label]) => (
             <button
@@ -180,7 +182,7 @@ function GudangPage() {
           <BeliTab suppliers={suppliers} items={items} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "jual" && (
-          <JualTab items={items} uid={uid} onChanged={reloadAll} />
+          <JualTab items={items} customers={customers} uid={uid} onChanged={reloadAll} />
         )}
         {tab === "hutang" && (
           <HutangTab
@@ -192,6 +194,21 @@ function GudangPage() {
             onChanged={reloadAll}
             onLocalPayment={(p) => setPayments((prev) => [p, ...prev])}
             onLocalRemovePayment={(id) => setPayments((prev) => prev.filter((x) => x.id !== id))}
+          />
+        )}
+        {tab === "pelanggan" && (
+          <CustomerTab customers={customers} uid={uid} onChanged={reloadAll} />
+        )}
+        {tab === "piutang" && (
+          <PiutangTab
+            customers={customers}
+            sales={sales}
+            custPayments={custPayments}
+            itemMap={itemMap}
+            uid={uid}
+            onChanged={reloadAll}
+            onLocalPayment={(p) => setCustPayments((prev) => [p, ...prev])}
+            onLocalRemovePayment={(id) => setCustPayments((prev) => prev.filter((x) => x.id !== id))}
           />
         )}
         {tab === "riwayat" && (
