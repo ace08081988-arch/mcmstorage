@@ -144,6 +144,17 @@ function Index() {
     setAutoLockEnabled(uid, next);
     toast.success(next ? "Kunci otomatis aktif" : "Kunci otomatis dimatikan");
   };
+  const resetAllData = () => {
+    if (!confirm("Hapus SEMUA kategori dan produk milik akun ini? Tindakan ini tidak bisa dibatalkan.")) return;
+    if (!confirm("Konfirmasi sekali lagi: yakin reset ke nol?")) return;
+    setItems([]);
+    setCategories([]);
+    setActiveCat(null);
+    setSelected(new Set());
+    setSelectMode(false);
+    setOpenId(null);
+    toast.success("Semua data berhasil dihapus.");
+  };
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
   const [filter, setFilter] = useState<"semua" | Status>("semua");
@@ -531,6 +542,15 @@ function Index() {
                 })}
               </ul>
             </div>
+          )}
+
+          {(categories.length > 0 || items.length > 0) && (
+            <button
+              onClick={resetAllData}
+              className="w-full rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-xs font-semibold text-destructive hover:bg-destructive/20"
+            >
+              🗑 Reset semua data saya
+            </button>
           )}
         </main>
       </div>
