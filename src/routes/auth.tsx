@@ -16,6 +16,7 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
+  const [mode, setMode] = useState<"login" | "signup">("login");
   const [email, setEmail] = useState("");
   const [otp, setOtp] = useState("");
   const [step, setStep] = useState<"email" | "otp">("email");
@@ -40,14 +41,17 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true },
+      options: { shouldCreateUser: mode === "signup" },
     });
     setLoading(false);
     if (error) {
-      toast.error(error.message);
+      const msg = /signups not allowed|not found|user not found/i.test(error.message)
+        ? "Akun belum terdaftar. Silakan Daftar dulu."
+        : error.message;
+      toast.error(msg);
       return;
     }
-    toast.success("Kode OTP dikirim ke email");
+    toast.success(mode === "signup" ? "Kode pendaftaran dikirim" : "Kode OTP dikirim ke email");
     setStep("otp");
     setResendIn(60);
   };
@@ -57,7 +61,7 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithOtp({
       email,
-      options: { shouldCreateUser: true },
+      options: { shouldCreateUser: mode === "signup" },
     });
     setLoading(false);
     if (error) {
@@ -98,10 +102,31 @@ function AuthPage() {
           <h1 className="mt-3 text-lg font-semibold tracking-tight">MCM Storage</h1>
           <p className="text-xs text-muted-foreground">
             {step === "email"
-              ? "Masuk dengan kode OTP via email"
+              ? mode === "signup"
+                ? "Daftar akun baru — kami kirim kode ke email"
+                : "Masuk ke akun Anda dengan kode OTP"
               : `Kode dikirim ke ${email}`}
           </p>
         </div>
+
+        {step === "email" && (
+          <div className="grid grid-cols-2 gap-1 rounded-md border bg-muted/40 p-1 text-xs">
+            <button
+              type="button"
+              onClick={() => setMode("login")}
+              className={`rounded px-2 py-1.5 font-medium ${mode === "login" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+            >
+              Masuk
+            </button>
+            <button
+              type="button"
+              onClick={() => setMode("signup")}
+              className={`rounded px-2 py-1.5 font-medium ${mode === "signup" ? "bg-background shadow-sm" : "text-muted-foreground"}`}
+            >
+              Daftar
+            </button>
+          </div>
+        )}
 
         {step === "email" ? (
           <form onSubmit={sendOtp} className="space-y-3">
@@ -120,8 +145,13 @@ function AuthPage() {
               disabled={loading}
               className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
             >
-              {loading ? "Mengirim…" : "Kirim kode OTP"}
+              {loading ? "Mengirim…" : mode === "signup" ? "Daftar & kirim kode" : "Kirim kode OTP"}
             </button>
+            <p className="text-center text-[11px] text-muted-foreground">
+              {mode === "login"
+                ? "Belum punya akun? Pilih tab Daftar di atas."
+                : "Sudah punya akun? Pilih tab Masuk di atas."}
+            </p>
           </form>
         ) : (
           <form onSubmit={verifyOtp} className="space-y-3">

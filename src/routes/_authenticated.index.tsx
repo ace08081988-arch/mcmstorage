@@ -59,7 +59,6 @@ function buildInitial(): Produk[] {
   return items;
 }
 
-const STORAGE_KEY = "penjualan-harian-v1";
 const THEME_KEY = "penjualan-theme";
 const VIEW_KEY = "penjualan-view";
 
@@ -126,10 +125,6 @@ function Index() {
 
   useEffect(() => {
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
-      if (raw) setItems(JSON.parse(raw));
-    } catch {}
-    try {
       const t = localStorage.getItem(THEME_KEY) as "light" | "dark" | null;
       const initial =
         t ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
@@ -139,11 +134,48 @@ function Index() {
       const v = localStorage.getItem(VIEW_KEY) as "list" | "grid" | null;
       if (v) setViewMode(v);
     } catch {}
-    setHydrated(true);
+    (async () => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      if (!uid) {
+        setHydrated(true);
+        return;
+      }
+      const { data, error } = await supabase
+        .from("user_storage")
+        .select("items")
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (error) {
+        toast.error("Gagal memuat data: " + error.message);
+      } else if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
+        setItems(data.items as unknown as Produk[]);
+      } else {
+        // First time for this account — seed with initial data
+        const seed = buildInitial();
+        setItems(seed);
+        await supabase.from("user_storage").upsert({ user_id: uid, items: seed as any });
+      }
+      setHydrated(true);
+    })();
   }, []);
 
   useEffect(() => {
-    if (hydrated) localStorage.setItem(STORAGE_KEY, JSON.stringify(items));
+    if (!hydrated) return;
+    let cancelled = false;
+    const t = setTimeout(async () => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      if (!uid || cancelled) return;
+      const { error } = await supabase
+        .from("user_storage")
+        .upsert({ user_id: uid, items: items as any });
+      if (error && !cancelled) toast.error("Gagal menyimpan: " + error.message);
+    }, 600);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
   }, [items, hydrated]);
 
   useEffect(() => {
