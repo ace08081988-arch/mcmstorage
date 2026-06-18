@@ -723,6 +723,16 @@ function Index() {
                       </span>
                     )}
                     <span className="truncate text-sm font-medium">{p.nama}</span>
+                    {viewMode === "list" && p.satuan && (
+                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                        · {formatJumlah(p.jumlah ?? 0, p.satuan)}
+                      </span>
+                    )}
+                    {viewMode === "list" && sent && (
+                      <span className="shrink-0 rounded bg-[#25D366]/15 px-1.5 py-0.5 text-[10px] font-medium text-[#128C7E]">
+                        ✓
+                      </span>
+                    )}
                     {viewMode === "list" && fotoCount > 0 && (
                       <span className="shrink-0 text-[10px] text-muted-foreground">📷{fotoCount}</span>
                     )}
@@ -1010,6 +1020,12 @@ function Index() {
                           KIRIM WA
                         </a>
                       )}
+                      <button
+                        onClick={() => removeItem(p.id)}
+                        className="ml-auto inline-flex items-center rounded-md border border-destructive/40 px-2.5 py-1 text-[11px] font-medium text-destructive hover:bg-destructive/10"
+                      >
+                        🗑 Hapus
+                      </button>
                     </div>
                   </div>
                 )}
