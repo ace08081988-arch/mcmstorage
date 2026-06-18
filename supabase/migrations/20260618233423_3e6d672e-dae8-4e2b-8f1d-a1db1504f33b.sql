@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.email_queue_health() FROM authenticated, anon, public;
