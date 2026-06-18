@@ -42,6 +42,7 @@ function resolveTheme(t: Theme): "light" | "dark" {
 export function applyAppearance() {
   if (typeof document === "undefined") return;
   const root = document.documentElement;
+  const body = document.body;
   const theme = (localStorage.getItem(LS.theme) as Theme | null) ?? "dark";
   const font = (localStorage.getItem(LS.font) as FontFamily | null) ?? "sans";
   const size = (localStorage.getItem(LS.size) as FontSize | null) ?? "md";
@@ -49,8 +50,10 @@ export function applyAppearance() {
   const radius = Number(localStorage.getItem(LS.radius) ?? "0.625");
 
   root.classList.toggle("dark", resolveTheme(theme) === "dark");
-  root.dataset.font = font;
-  root.dataset.fontSize = size;
+  if (body) {
+    body.dataset.font = font;
+    body.dataset.fontSize = size;
+  }
   const accent = ACCENTS.find((a) => a.id === accentId) ?? ACCENTS[0];
   root.style.setProperty("--primary", accent.value);
   root.style.setProperty("--ring", accent.value);
