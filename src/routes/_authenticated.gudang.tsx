@@ -1018,16 +1018,18 @@ function EditItemDialog({ item, uid, onClose, onSaved }: { item: WItem; uid: str
 function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid: string | null; onChanged: () => void }) {
   const [name, setName] = useState("");
   const [contact, setContact] = useState("");
+  const [email, setEmail] = useState("");
   const [notes, setNotes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
 
   function resetForm() {
-    setEditingId(null); setName(""); setContact(""); setNotes("");
+    setEditingId(null); setName(""); setContact(""); setEmail(""); setNotes("");
   }
   function startEdit(s: Supplier) {
     setEditingId(s.id);
     setName(s.name);
     setContact(s.contact ?? "");
+    setEmail(s.email ?? "");
     setNotes(s.notes ?? "");
   }
   async function submit(e: React.FormEvent) {
@@ -1036,6 +1038,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
     const payload = {
       name: name.trim(),
       contact: contact.trim() || null,
+      email: email.trim() || null,
       notes: notes.trim() || null,
     };
     if (editingId) {
@@ -1066,6 +1069,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
         <div className="text-xs font-semibold">{editingId ? "Edit Supplier" : "Tambah Supplier"}</div>
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama supplier *" value={name} onChange={(e) => setName(e.target.value)} required />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} />
+        <input type="email" className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Email (opsional)" value={email} onChange={(e) => setEmail(e.target.value)} />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
         <div className="flex gap-2">
           <button className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
