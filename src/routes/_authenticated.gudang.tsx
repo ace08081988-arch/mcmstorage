@@ -1098,6 +1098,68 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
       </div>
     </section>
 
+    {/* Ringkasan per kategori (berdasarkan seluruh stok, bukan hasil filter) */}
+    {(() => {
+      const catSummary = new Map<string, { count: number; value: number }>();
+      for (const it of items) {
+        const key = (it.category ?? "").trim() || "Tanpa Kategori";
+        const cur = catSummary.get(key) ?? { count: 0, value: 0 };
+        cur.count += 1;
+        cur.value += it.stock_base * it.avg_cost_per_base;
+        catSummary.set(key, cur);
+      }
+      const rows = Array.from(catSummary.entries()).sort((a, b) => {
+        if (a[0] === "Tanpa Kategori") return 1;
+        if (b[0] === "Tanpa Kategori") return -1;
+        return b[1].value - a[1].value;
+      });
+      if (rows.length === 0) return null;
+      return (
+        <section className="mt-3 overflow-hidden rounded-xl border bg-card shadow-sm">
+          <header className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
+            <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+              Total per Kategori
+            </h3>
+            <span className="text-[10px] text-muted-foreground">{rows.length} kategori</span>
+          </header>
+          <ul className="divide-y text-sm">
+            {rows.map(([cat, { count, value }]) => {
+              const pct = totalValue > 0 ? (value / totalValue) * 100 : 0;
+              return (
+                <li
+                  key={cat}
+                  className="grid grid-cols-[1fr_auto] items-center gap-x-3 gap-y-1 px-3 py-2 hover:bg-muted/30"
+                >
+                  <div className="flex min-w-0 items-center gap-2">
+                    <span
+                      aria-hidden
+                      className={`inline-block h-2 w-2 shrink-0 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
+                    />
+                    <span className="truncate font-medium">{cat}</span>
+                    <span className="shrink-0 rounded-full border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                      {count}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold tabular-nums">{rupiah(value)}</div>
+                    <div className="text-[10px] text-muted-foreground tabular-nums">
+                      {pct.toFixed(pct >= 10 ? 0 : 1)}%
+                    </div>
+                  </div>
+                  <div className="col-span-2 h-1 overflow-hidden rounded-full bg-muted">
+                    <div
+                      className="h-full bg-primary/70"
+                      style={{ width: `${Math.min(100, pct)}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      );
+    })()}
+
     {filtered.length === 0 && (
       <div className="mt-3 rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
         Tidak ada barang cocok dengan pencarian.
