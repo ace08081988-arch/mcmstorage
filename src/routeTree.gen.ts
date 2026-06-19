@@ -18,6 +18,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
+import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
@@ -71,6 +72,11 @@ const TTokenRoute = TTokenRouteImport.update({
   id: '/t/$token',
   path: '/t/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTugasRoute = AuthenticatedTugasRouteImport.update({
+  id: '/tugas',
+  path: '/tugas',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPengaturanKunciRoute =
   AuthenticatedPengaturanKunciRouteImport.update({
@@ -139,6 +145,7 @@ export interface FileRoutesByFullPath {
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -157,6 +164,7 @@ export interface FileRoutesByTo {
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -178,6 +186,7 @@ export interface FileRoutesById {
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -200,6 +209,7 @@ export interface FileRouteTypes {
     | '/hutang-piutang'
     | '/label-preview'
     | '/pengaturan-kunci'
+    | '/tugas'
     | '/t/$token'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -218,6 +228,7 @@ export interface FileRouteTypes {
     | '/hutang-piutang'
     | '/label-preview'
     | '/pengaturan-kunci'
+    | '/tugas'
     | '/t/$token'
     | '/'
     | '/gudang/pesanan/$id'
@@ -238,6 +249,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hutang-piutang'
     | '/_authenticated/label-preview'
     | '/_authenticated/pengaturan-kunci'
+    | '/_authenticated/tugas'
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/gudang/pesanan/$id'
@@ -323,6 +335,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/t/$token'
       preLoaderRoute: typeof TTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/tugas': {
+      id: '/_authenticated/tugas'
+      path: '/tugas'
+      fullPath: '/tugas'
+      preLoaderRoute: typeof AuthenticatedTugasRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-kunci': {
       id: '/_authenticated/pengaturan-kunci'
@@ -423,6 +442,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
+  AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
 
@@ -432,6 +452,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
+  AuthenticatedTugasRoute: AuthenticatedTugasRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
 
