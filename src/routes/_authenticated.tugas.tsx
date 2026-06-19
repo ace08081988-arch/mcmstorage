@@ -30,6 +30,8 @@ function TugasPage() {
   const [openCreate, setOpenCreate] = useState(false);
   const [openTask, setOpenTask] = useState<Task | null>(null);
   const [createdInfo, setCreatedInfo] = useState<{ token: string; pin: string; title: string } | null>(null);
+  const [openVariantsHub, setOpenVariantsHub] = useState(false);
+  const [manageVariantsFor, setManageVariantsFor] = useState<WItem | null>(null);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
@@ -58,9 +60,14 @@ function TugasPage() {
     <div className="mx-auto max-w-4xl px-3 py-4">
       <div className="mb-3 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Tugas Pegawai</h1>
-        <button onClick={() => setOpenCreate(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
-          <Plus className="h-4 w-4" /> Buat tugas
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setOpenVariantsHub(true)} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs font-semibold">
+            <Settings2 className="h-4 w-4" /> Kelola Varian
+          </button>
+          <button onClick={() => setOpenCreate(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
+            <Plus className="h-4 w-4" /> Buat tugas
+          </button>
+        </div>
       </div>
       <p className="mb-2 text-xs text-muted-foreground">Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via WhatsApp. Foto & lokasi yang dikirim pegawai muncul otomatis di sini.</p>
       <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400">
@@ -92,6 +99,22 @@ function TugasPage() {
       )}
       {createdInfo && <ShareDialog info={createdInfo} onClose={() => setCreatedInfo(null)} />}
       {openTask && <TaskDetail task={openTask} onClose={() => { setOpenTask(null); void load(); }} />}
+      {openVariantsHub && (
+        <VariantsHub
+          warehouse={warehouse}
+          variants={variants}
+          onPick={(it) => setManageVariantsFor(it)}
+          onClose={() => setOpenVariantsHub(false)}
+        />
+      )}
+      {manageVariantsFor && (
+        <VariantManager
+          item={manageVariantsFor}
+          variants={variants.filter((v) => v.warehouse_item_id === manageVariantsFor.id)}
+          onClose={() => setManageVariantsFor(null)}
+          onChanged={load}
+        />
+      )}
     </div>
   );
 }
@@ -499,6 +522,40 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
 }
 
 // ---------- Variant manager ----------
+function VariantsHub({ warehouse, variants, onPick, onClose }: { warehouse: WItem[]; variants: Variant[]; onPick: (it: WItem) => void; onClose: () => void }) {
+  const [q, setQ] = useState("");
+  const filtered = useMemo(() => {
+    const s = q.toLowerCase().trim();
+    return warehouse.filter((w) => !s || w.name.toLowerCase().includes(s) || (w.category ?? "").toLowerCase().includes(s));
+  }, [warehouse, q]);
+  return (
+    <Modal title="Kelola Varian Produk" onClose={onClose}>
+      <p className="mb-2 text-[11px] text-muted-foreground">
+        Atur preset varian penyiapan per produk (mis. <b>KRISTAL</b> → 1G=0.90 gr, ST=0.40 gr, SPR=0.20 gr).
+        Bisa diubah kapan saja. Stok tetap berkurang dari produk induk saat tugas dijalankan.
+      </p>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari produk / kategori…"
+        className="mb-2 h-9 w-full rounded-md border bg-background px-3 text-sm" />
+      <div className="max-h-[60vh] space-y-1.5 overflow-y-auto">
+        {filtered.map((it) => {
+          const n = variants.filter((v) => v.warehouse_item_id === it.id).length;
+          return (
+            <button key={it.id} onClick={() => onPick(it)}
+              className="flex w-full items-center justify-between gap-2 rounded-md border bg-background p-2 text-left text-sm hover:bg-muted">
+              <div className="min-w-0">
+                <div className="truncate font-medium">{it.name}</div>
+                <div className="text-[11px] text-muted-foreground">{it.category ?? "—"} · {n} varian</div>
+              </div>
+              <Settings2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </button>
+          );
+        })}
+        {filtered.length === 0 && <div className="rounded border border-dashed p-4 text-center text-xs text-muted-foreground">Tidak ada produk.</div>}
+      </div>
+    </Modal>
+  );
+}
+
 function VariantManager({ item, variants, onClose, onChanged }: { item: WItem; variants: Variant[]; onClose: () => void; onChanged: () => void | Promise<void> }) {
   const [rows, setRows] = useState<Variant[]>(variants);
   const [label, setLabel] = useState("");
