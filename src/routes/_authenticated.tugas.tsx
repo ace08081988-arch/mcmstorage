@@ -59,7 +59,7 @@ function TugasPage() {
       </div>
       <p className="mb-2 text-xs text-muted-foreground">Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via WhatsApp. Foto & lokasi yang dikirim pegawai muncul otomatis di sini.</p>
       <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400">
-        ⚖️ <b>Penting:</b> Pegawai wajib mengisi jumlah <b>BENAR</b> yang disiapkan (mis. 0.20 gram). Stok gudang induk akan otomatis berkurang sesuai angka tersebut, sehingga sisa stok selalu akurat (mis. 100 − 0.20 = 99.80).
+        ⚖️ <b>Anda</b> yang menentukan <b>berat / jumlah</b> yang harus disiapkan per item (boleh desimal, mis. <b>0.90</b> gram untuk eceran kristal). Pegawai cukup mengirim <b>foto + lokasi</b>. Stok gudang induk otomatis berkurang sesuai angka yang Anda isi (mis. 100 − 0.90 = 99.10).
       </div>
 
       <div className="space-y-2">
@@ -210,9 +210,11 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
                   </div>
                   {p && (
                     <div className="flex flex-col items-end gap-1">
-                      <input type="number" min={0} step={1} value={p.qty}
+                      <input type="number" inputMode="decimal" min={0} step="0.01" value={p.qty}
                         onChange={(e) => setPicked((s) => ({ ...s, [it.id]: { ...s[it.id], qty: Number(e.target.value) || 0 } }))}
-                        className="h-8 w-20 rounded border bg-background px-1 text-xs tabular-nums" />
+                        placeholder="mis. 0.90"
+                        title="Berat / jumlah yang harus disiapkan (boleh desimal)"
+                        className="h-8 w-24 rounded border bg-background px-1 text-xs tabular-nums" />
                       <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
                         <input type="checkbox" checked={p.split}
                           onChange={(e) => setPicked((s) => ({ ...s, [it.id]: { ...s[it.id], split: e.target.checked } }))} />
