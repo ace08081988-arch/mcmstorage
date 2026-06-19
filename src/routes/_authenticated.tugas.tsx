@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl } from "@/lib/share-wa";
-import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2 } from "lucide-react";
+import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 
@@ -36,6 +36,7 @@ function TugasPage() {
   const [createdInfo, setCreatedInfo] = useState<{ token: string; pin: string; title: string } | null>(null);
   const [openVariantsHub, setOpenVariantsHub] = useState(false);
   const [manageCategoryFor, setManageCategoryFor] = useState<string | null>(null);
+  const [openAudit, setOpenAudit] = useState(false);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
@@ -101,6 +102,9 @@ function TugasPage() {
           <button onClick={() => setOpenVariantsHub(true)} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs font-semibold">
             <Settings2 className="h-4 w-4" /> Kelola Varian
           </button>
+          <button onClick={() => setOpenAudit(true)} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs font-semibold">
+            <ShieldCheck className="h-4 w-4" /> Revalidasi
+          </button>
           <button onClick={() => setOpenCreate(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
             <Plus className="h-4 w-4" /> Buat tugas
           </button>
@@ -152,6 +156,7 @@ function TugasPage() {
           onChanged={load}
         />
       )}
+      {openAudit && <AuditDialog tasks={tasks} onClose={() => setOpenAudit(false)} />}
     </div>
   );
 }
@@ -435,6 +440,120 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
 }
 
 // ---------- Share dialog ----------
+// ---------- Audit dialog ----------
+type AuditRow = {
+  task: Task;
+  items: number;
+  totalRequested: number;
+  totalPrepared: number;
+  remaining: number;
+  issues: string[];
+  problemItems: { name: string; qty_requested: number; qty_prepared: number; reason: string }[];
+};
+function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
+  const [loading, setLoading] = useState(true);
+  const [rows, setRows] = useState<AuditRow[]>([]);
+
+  async function run() {
+    setLoading(true);
+    const ids = tasks.map((t) => t.id);
+    if (ids.length === 0) { setRows([]); setLoading(false); return; }
+    const { data, error } = await supabase
+      .from("prep_task_items")
+      .select("id,task_id,name_snapshot,qty_requested,qty_prepared,unit_label")
+      .in("task_id", ids);
+    if (error) { toast.error(error.message); setLoading(false); return; }
+    const byTask = new Map<string, TaskItem[]>();
+    for (const it of (data ?? []) as TaskItem[]) {
+      const arr = byTask.get(it.task_id) ?? [];
+      arr.push(it); byTask.set(it.task_id, arr);
+    }
+    const result: AuditRow[] = tasks.map((t) => {
+      const items = byTask.get(t.id) ?? [];
+      let totalRequested = 0, totalPrepared = 0;
+      const problemItems: AuditRow["problemItems"] = [];
+      const issues: string[] = [];
+      for (const it of items) {
+        const q = Number(it.qty_requested);
+        const p = Number(it.qty_prepared ?? 0);
+        if (!Number.isFinite(q) || q <= 0) {
+          problemItems.push({ name: it.name_snapshot, qty_requested: q, qty_prepared: p, reason: "qty diminta ≤ 0 / invalid" });
+        } else if (Number.isFinite(p) && p > q + 1e-9) {
+          problemItems.push({ name: it.name_snapshot, qty_requested: q, qty_prepared: p, reason: "qty disiapkan > diminta" });
+        }
+        if (Number.isFinite(q)) totalRequested += q;
+        if (Number.isFinite(p)) totalPrepared += p;
+      }
+      if (items.length === 0) issues.push("tidak ada item");
+      if (problemItems.length > 0) issues.push(`${problemItems.length} item bermasalah`);
+      return {
+        task: t,
+        items: items.length,
+        totalRequested,
+        totalPrepared,
+        remaining: Math.max(0, totalRequested - totalPrepared),
+        issues,
+        problemItems,
+      };
+    });
+    setRows(result);
+    setLoading(false);
+  }
+  useEffect(() => { void run(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const okCount = rows.filter((r) => r.issues.length === 0).length;
+  const badCount = rows.length - okCount;
+
+  return (
+    <Modal title="Revalidasi total berat & jumlah" onClose={onClose}>
+      <div className="mb-3 flex items-center justify-between text-xs">
+        <div className="text-muted-foreground">
+          {loading ? "Menghitung…" : `${rows.length} tugas diperiksa — ${okCount} OK, ${badCount} bermasalah`}
+        </div>
+        <button onClick={() => void run()} className="h-8 rounded-md border px-3 text-xs">Hitung ulang</button>
+      </div>
+      <div className="max-h-[60vh] space-y-2 overflow-y-auto">
+        {rows.map((r) => {
+          const ok = r.issues.length === 0;
+          return (
+            <div key={r.task.id} className={`rounded-md border p-2 text-xs ${ok ? "" : "border-destructive/40 bg-destructive/5"}`}>
+              <div className="flex items-start gap-2">
+                {ok
+                  ? <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
+                  : <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" />}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate font-semibold">{r.task.title}</div>
+                  <div className="text-[10px] text-muted-foreground">
+                    {r.items} item · diminta <b>{r.totalRequested.toFixed(2)}</b> · disiapkan <b>{r.totalPrepared.toFixed(2)}</b> · sisa <b>{r.remaining.toFixed(2)}</b>
+                  </div>
+                  {r.issues.length > 0 && (
+                    <div className="mt-1 text-[10px] text-destructive">{r.issues.join(" · ")}</div>
+                  )}
+                  {r.problemItems.length > 0 && (
+                    <ul className="mt-1 space-y-0.5 text-[10px]">
+                      {r.problemItems.map((p, i) => (
+                        <li key={i} className="text-destructive">
+                          • {p.name}: diminta {p.qty_requested}, disiapkan {p.qty_prepared} — {p.reason}
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          );
+        })}
+        {!loading && rows.length === 0 && (
+          <div className="rounded-md border p-4 text-center text-xs text-muted-foreground">Belum ada tugas.</div>
+        )}
+      </div>
+      <div className="mt-3 flex justify-end">
+        <button onClick={onClose} className="h-9 rounded-md border px-3 text-sm">Tutup</button>
+      </div>
+    </Modal>
+  );
+}
+
 function ShareDialog({ info, onClose }: { info: { token: string; pin: string; title: string }; onClose: () => void }) {
   const url = publicTaskUrl(info.token);
   const message = `Tolong siapkan barang berikut. Buka link, masukkan PIN, foto barangnya & kirim:\n\n${info.title}\n${url}\nPIN: ${info.pin}`;
