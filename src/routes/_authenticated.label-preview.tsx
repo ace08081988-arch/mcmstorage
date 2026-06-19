@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
+import { jsPDF } from "jspdf";
 
 export const Route = createFileRoute("/_authenticated/label-preview")({
   component: LabelPreviewPage,
@@ -92,6 +93,75 @@ function LabelPreviewPage() {
   const update = (idx: number, patch: Partial<Sample>) =>
     setSamples((arr) => arr.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
 
+  const buildPdfForSample = (s: Sample) => {
+    const hasPkg = s.package_type && s.package_type !== "pcs" && s.package_size > 0;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    const left = 15;
+    let y = 18;
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.text("Preview Label", left, y);
+    y += 7;
+
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(11);
+    doc.text(
+      `Item: ${s.name}${hasPkg ? ` (${s.package_type} ${s.package_size} ${s.base_unit})` : ""}`,
+      left,
+      y,
+    );
+    y += 6;
+    doc.text(
+      `Base unit: ${s.base_unit}  •  Kemasan: ${s.package_type || "-"}  •  Isi/kemasan: ${s.package_size}`,
+      left,
+      y,
+    );
+    y += 10;
+
+    const rows: [string, string][] = [
+      ["Nama + kemasan", `${s.name}${hasPkg ? ` (${s.package_type} ${s.package_size} ${s.base_unit})` : ""}`],
+      ["fmtItemQty(stok)", fmtItemQty(s.stock_base, s)],
+      ["fmtItemQty(qty trx)", fmtItemQty(s.qty_base, s)],
+      ["fmtItemPrice(harga/base)", fmtItemPrice(s.price_per_base, s)],
+      ["fmtQtyDual mode=base", fmtQtyDual(s.qty_base, s.base_unit, s.package_type, s.package_size, "base")],
+      ["fmtQtyDual mode=package", fmtQtyDual(s.qty_base, s.base_unit, s.package_type, s.package_size, "package")],
+      ["fmtBase(stok)", fmtBase(s.stock_base, s.base_unit)],
+      ["Total harga trx", `${rupiah(s.price_per_base * s.qty_base)} (${fmtItemQty(s.qty_base, s)} × ${fmtItemPrice(s.price_per_base, s)})`],
+    ];
+
+    doc.setFontSize(10);
+    const labelW = 55;
+    const valW = 180 - left - labelW;
+    rows.forEach(([label, val]) => {
+      doc.setFont("helvetica", "bold");
+      doc.text(label, left, y);
+      doc.setFont("helvetica", "normal");
+      const lines = doc.splitTextToSize(val, valW);
+      doc.text(lines, left + labelW, y);
+      y += Math.max(6, lines.length * 5);
+      if (y > 280) {
+        doc.addPage();
+        y = 18;
+      }
+    });
+
+    doc.setFontSize(8);
+    doc.setTextColor(120);
+    doc.text(
+      `Dibuat ${new Date().toLocaleString("id-ID")}`,
+      left,
+      290,
+    );
+
+    const safe = s.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
+    doc.save(`label-preview-${safe || "sample"}.pdf`);
+  };
+
+  const exportAll = () => {
+    samples.forEach((s) => buildPdfForSample(s));
+  };
+
   return (
     <div className="p-4 max-w-5xl mx-auto space-y-4">
       <div className="flex items-center justify-between gap-2">
@@ -101,12 +171,21 @@ function LabelPreviewPage() {
             Cek cepat format label di semua kombinasi unit (kemasan vs unit dasar) sebelum rilis.
           </p>
         </div>
-        <Link
-          to="/gudang"
-          className="text-sm px-3 py-1.5 rounded-md border hover:bg-muted"
-        >
-          ← Ke Gudang
-        </Link>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={exportAll}
+            className="text-sm px-3 py-1.5 rounded-md border hover:bg-muted"
+          >
+            ⬇︎ Ekspor semua PDF
+          </button>
+          <Link
+            to="/gudang"
+            className="text-sm px-3 py-1.5 rounded-md border hover:bg-muted"
+          >
+            ← Ke Gudang
+          </Link>
+        </div>
       </div>
 
       <div className="text-xs text-muted-foreground">
@@ -119,6 +198,24 @@ function LabelPreviewPage() {
           const hasPkg = s.package_type && s.package_type !== "pcs" && s.package_size > 0;
           return (
             <div key={idx} className="rounded-lg border p-3 space-y-3">
+              <div className="flex items-center justify-between gap-2">
+                <div className="text-sm font-medium">
+                  {s.name}
+                  {hasPkg ? (
+                    <span className="text-muted-foreground font-normal">
+                      {" "}
+                      · {s.package_type} {s.package_size} {s.base_unit}
+                    </span>
+                  ) : null}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => buildPdfForSample(s)}
+                  className="text-xs px-2 py-1 rounded-md border hover:bg-muted"
+                >
+                  ⬇︎ Ekspor PDF
+                </button>
+              </div>
               {/* Editor */}
               <div className="grid grid-cols-2 md:grid-cols-6 gap-2 text-sm">
                 <label className="col-span-2 flex flex-col">
