@@ -1,65 +1,66 @@
-## Tujuan
+## Ringkasan
 
-1. Aplikasi bisa di-install sebagai APK Android. Saat pertama dibuka, otomatis minta izin **Notifikasi, Kamera, Lokasi, dan Penyimpanan/Galeri** sekaligus.
-2. Setiap kali user login dari **device baru** (kombinasi sidik jari browser + IP + user agent), kirim **kode OTP 6 digit** ke email akun. Login baru aktif setelah OTP benar.
+Fitur baru "Tugas Pegawai": Anda buat tugas dari item Gudang, sistem hasilkan link + PIN, kirim ke pegawai via WA. Pegawai buka link, masukkan PIN, lalu unggah/ambil foto barang + lokasi. Foto bisa diedit (stiker, panah, teks, coret). Hasil otomatis sinkron ke aplikasi Anda secara realtime. Tombol "Bagikan ke WA" pakai Web Share API HP sehingga foto ikut terkirim.
 
----
+## Apa yang dibangun
 
-## Bagian 1 — APK Android + izin otomatis
+### 1. Backend (Lovable Cloud)
+- Tabel `prep_tasks` — 1 tugas berisi banyak item; menyimpan `share_token` (acak 32 char), `pin_hash` (4–6 digit, hashed), `status`, `expires_at`, `owner_user_id`.
+- Tabel `prep_task_items` — referensi ke item gudang, qty diminta, qty disiapkan, catatan.
+- Tabel `prep_submissions` — foto + lokasi + catatan yang dikirim pegawai per item. Kolom: `task_item_id`, `photo_path` (storage), `location_url`, `gps_lat/lng`, `note`, `submitted_at`.
+- Bucket storage `prep-photos` (publik-via-signed-url): pegawai upload via signed upload URL agar tidak butuh login.
+- RLS: pemilik tugas baca/tulis penuh; akses publik (anon) dibatasi ke RPC `submit_prep_photo(token, pin, …)` yang memverifikasi PIN sebelum insert.
+- Realtime channel di `prep_submissions` agar aplikasi Anda lihat foto masuk langsung.
 
-Saya akan menambahkan **Capacitor** sebagai pembungkus native (web app yang sama, dibungkus jadi APK). Tidak perlu menulis ulang fitur.
+### 2. Halaman publik pegawai `/t/$token`
+- Form PIN dulu. Setelah benar, tampilkan daftar item: nama, qty diminta, foto referensi.
+- Per item: tombol "Foto kamera", "Pilih dari galeri", "Ambil lokasi" (GPS), tempel link maps manual, catatan.
+- Editor foto lengkap (lihat bagian 3) sebelum kirim.
+- Tombol "Kirim" upload foto + lokasi ke server. Indikator progress per item.
+- Layout mobile-first, bisa offline-resume (draft di localStorage per token).
 
-- Tambah dependency: `@capacitor/core`, `@capacitor/android`, `@capacitor/camera`, `@capacitor/geolocation`, `@capacitor/push-notifications`, `@capacitor/filesystem`, `@capacitor/preferences`.
-- Konfigurasi `capacitor.config.ts` dengan `appId: biz.mcmstorage.app`, `webDir: dist`, dan plugin permissions di `AndroidManifest.xml`.
-- Komponen `PermissionBootstrap.tsx` (dipanggil dari root) yang **hanya jalan di native**:
-  - Cek flag `permissions_requested_v1` di Capacitor Preferences. Jika belum ada, minta keempat izin berurutan lalu set flag.
-  - Aman di web: kalau bukan Capacitor, komponen tidak melakukan apa-apa.
-- Tambah halaman `/onboarding-permissions` opsional yang menjelaskan kenapa tiap izin diminta sebelum dialog OS muncul (best practice supaya user tidak menolak).
-- Build APK: instruksi `npx cap add android`, `npm run build`, `npx cap sync`, `npx cap open android` → build APK di Android Studio. Lovable preview tidak bisa build APK; user perlu Android Studio di komputernya. Saya kasih README singkat.
+### 3. Editor foto (canvas, custom)
+Komponen `<PhotoEditor>` berbasis HTML Canvas + react state:
+- Layer system: foto dasar + N overlay (stiker, teks, panah, coretan).
+- Tools: crop, rotate 90°, brightness/contrast slider, free-draw (brush dengan warna+tebal), teks (font+warna+ukuran), stiker emoji, panah preset (lurus, lengkung, ↑↓←→↖↗↙↘) dengan warna+tebal+ukuran, lingkaran/kotak highlight.
+- Manipulasi layer: drag, resize handle, rotate handle, hapus, duplicate, urutan (atas/bawah).
+- Undo/redo (history stack maks 30).
+- Export ke JPEG (quality 0.85) sebelum upload.
 
-User akan tetap bisa pakai versi web seperti biasa; APK adalah tambahan.
+### 4. UI Gudang — pembuatan tugas
+- Di Tab Stok tambah tombol "Kirim ke pegawai" di tiap item dan toolbar "Buat tugas baru".
+- Halaman `/_authenticated/tugas` — daftar tugas (aktif/selesai), buat tugas: pilih item satu per satu, atur qty, klik "Buat & kirim".
+- Setelah dibuat: dialog tampilkan link + PIN, tombol "Bagikan via WA" (Web Share API jika tersedia, fallback `wa.me?text=...`).
+- Detail tugas: lihat foto yang masuk realtime, qty disiapkan vs diminta, tandai selesai, terima ke stok (opsional: tombol "Tambah ke stok" yang otomatis isi form pembelian).
 
----
+### 5. Perbaikan share WA dengan foto
+- Helper `shareToWhatsApp({ text, files })`:
+  - Jika `navigator.canShare({ files })` true → pakai Web Share API sistem (Android/iOS bisa pilih WA dan foto ikut terlampir).
+  - Fallback: download foto + buka `wa.me?text=...` dengan pesan yang menyertakan link halaman publik foto.
+- Pakai helper ini di drawer produk lama (yang sebelumnya hanya kirim teks lokasi) dan di halaman tugas.
 
-## Bagian 2 — OTP setiap device baru
+## Detail teknis
 
-### Definisi device
-Hash SHA-256 dari `userAgent + acceptLanguage + screen + timezone + IP` (IP didapat server). Disimpan sebagai `device_hash`.
+- Token: `crypto.getRandomValues` 24 byte base64url.
+- PIN: 6 digit, disimpan sebagai bcrypt/scrypt hash (pgcrypto `crypt()`). Verifikasi via RPC `verify_prep_pin(token, pin)` return ephemeral access token (JWT pendek di cookie httpOnly per submission).
+- Upload publik: RPC `request_prep_upload(access_token, item_id)` → return signed upload URL dari Storage (`createSignedUploadUrl`).
+- Realtime: subscribe `postgres_changes` pada `prep_submissions` filter `task_id`.
+- Editor: satu file `src/components/photo-editor/` dengan submodul tool. Tidak pakai library berat — Canvas 2D + pointer events.
+- Web Share API butuh HTTPS; aplikasi sudah HTTPS di preview/published.
 
-### Tabel baru (Lovable Cloud)
-- `user_devices` — `id`, `user_id`, `device_hash`, `label`, `last_ip`, `last_user_agent`, `trusted_at`, `last_seen_at`. Trusted = sudah pernah OTP-konfirm.
-- `device_otp_challenges` — `id`, `user_id`, `device_hash`, `code_hash` (bcrypt), `expires_at` (10 menit), `consumed_at`, `attempts`. Cap 5 percobaan.
+## Yang tidak termasuk (bisa ditambah nanti)
 
-Keduanya RLS ketat per `auth.uid()`, plus GRANT yang sesuai.
+- Login pegawai permanen (kita pakai link+PIN saja sesuai pilihan Anda).
+- Otomatisasi "stok ≤ ambang" — tugas dibuat manual sesuai pilihan Anda.
+- Notifikasi push ke aplikasi Anda saat foto masuk (cukup realtime sambil aplikasi terbuka).
 
-### Server function (Lovable Cloud)
-- `requestDeviceOtp({ deviceHash })` — `requireSupabaseAuth`. Kalau device sudah trusted → return `{ trusted: true }`. Kalau belum: generate 6 digit, simpan hash, kirim email lewat Lovable Email Infra ke `auth.users.email`, return `{ trusted: false, challengeId }`.
-- `verifyDeviceOtp({ challengeId, code })` — cek expiry, attempts, dan hash. Kalau cocok → insert/update `user_devices` (trusted_at = now), tandai challenge consumed, return `{ ok: true }`.
+## Urutan kerja
 
-### Alur UI
-- Setelah `supabase.auth.signInWithPassword` / Google sukses, tampilkan halaman `DeviceCheck`:
-  1. Hitung device hash di klien.
-  2. Panggil `requestDeviceOtp`. Kalau `trusted` → lanjut ke `/`.
-  3. Kalau tidak → tampilkan form 6 digit + tombol "Kirim ulang" (cooldown 60 detik). Verifikasi via `verifyDeviceOtp`.
-- Gate routing: pathless layout `_authenticated` ditambah cek context "device sudah trusted di sesi ini" (state in-memory + flag di Preferences/localStorage `device_trusted_<userId>_<hash>`). Kalau belum → redirect ke `/device-verify`.
+1. Migrasi DB + bucket + RLS + RPC.
+2. Halaman publik `/t/$token` minimal (tanpa editor) + upload alur.
+3. UI buat tugas + share WA dengan Web Share API.
+4. Realtime + halaman detail tugas.
+5. Editor foto lengkap (paling besar; iterasi sendiri).
+6. Polish: progress, draft lokal, error handling.
 
-### Email infra
-- Karena belum ada Email Domain di project, saya akan **minta kamu setup domain email Lovable** dulu (sekali). Setelah itu saya scaffold template "OTP Verifikasi Device".
-
----
-
-## Hal yang perlu kamu lakukan sendiri
-
-- Setup **Email Domain** di Cloud → Emails (sekali klik). Tanpa ini OTP tidak terkirim.
-- Untuk membuat APK final: install Android Studio di komputer kamu, ikuti README yang akan saya buat. Saya tidak bisa build APK dari sini.
-- Setelah APK ter-install dan login pertama: device pertama otomatis di-trust (atau tetap minta OTP — kamu pilih nanti).
-
----
-
-## Batasan jujur
-
-- "IP" tidak stabil di mobile (ganti dari Wi-Fi ke 4G bisa trigger OTP lagi). Kamu sudah pilih opsi ini sambil tahu trade-off-nya — bisa diperlonggar nanti dengan hanya pakai browser + UA tanpa IP.
-- Notifikasi Push baru aktif penuh kalau kamu juga setup Firebase Cloud Messaging nanti; izin notifikasi tetap diminta sekarang supaya siap.
-- Capacitor mempertahankan satu code base; tidak perlu maintain dua app.
-
-Setujui plan ini supaya saya mulai eksekusi (Bagian 1 + Bagian 2 sekaligus), atau bilang bagian mana yang mau dikerjakan dulu.
+Konfirmasi untuk saya mulai dari langkah 1?
