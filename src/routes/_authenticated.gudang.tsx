@@ -592,7 +592,7 @@ function PiutangTab({
                         <div className="min-w-0">
                           <div className="truncate font-semibold">{it?.name || "(barang dihapus)"}</div>
                           <div className="text-[11px] text-muted-foreground">
-                            {new Date(s.created_at).toLocaleDateString("id-ID")} · {fmtBase(Number(s.qty_base), it?.base_unit || "pcs")}
+                            {new Date(s.created_at).toLocaleDateString("id-ID")} · {fmtItemQty(Number(s.qty_base), it)}
                           </div>
                         </div>
                         <div className="shrink-0 text-right text-[11px]">
@@ -1052,7 +1052,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                 <div className="truncate text-sm font-semibold">{i.name}</div>
                 <div className="text-[11px] text-muted-foreground">
                   {i.category || "—"} · per {i.package_type}
-                  {i.package_type !== "pcs" && ` (${i.package_size}${i.base_unit === "g" ? "g" : ""}/kemasan)`}
+                  {i.package_type !== "pcs" && ` (${i.package_size} ${i.base_unit}/kemasan)`}
                 </div>
               </div>
             </div>
@@ -1074,7 +1074,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
           <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
             <div className="rounded bg-muted/50 p-2">
               <div className="text-muted-foreground">Stok</div>
-              <div className="font-semibold">{fmtBase(i.stock_base, i.base_unit)}</div>
+              <div className="font-semibold">{fmtItemQty(i.stock_base, i)}</div>
             </div>
             <div className="rounded bg-muted/50 p-2">
               <div className="text-muted-foreground">HPP / {i.base_unit}</div>
