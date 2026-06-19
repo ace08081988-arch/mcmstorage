@@ -6,6 +6,7 @@ import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl } from "@/lib/share-wa";
 import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2 } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
+import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
