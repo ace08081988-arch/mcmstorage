@@ -1200,6 +1200,17 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
   );
 }
 
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col justify-center px-3 py-2 sm:px-4">
+      <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="text-sm font-semibold tabular-nums">{value}</div>
+    </div>
+  );
+}
+
 function EditItemDialog({ item, uid, onClose, onSaved }: { item: WItem; uid: string | null; onClose: () => void; onSaved: () => void }) {
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState(item.category ?? "");
