@@ -495,6 +495,159 @@ export type Database = {
           },
         ]
       }
+      prep_submissions: {
+        Row: {
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string
+          location_url: string | null
+          note: string | null
+          photo_path: string | null
+          qty_reported: number | null
+          submitted_at: string
+          task_id: string
+          task_item_id: string
+        }
+        Insert: {
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          location_url?: string | null
+          note?: string | null
+          photo_path?: string | null
+          qty_reported?: number | null
+          submitted_at?: string
+          task_id: string
+          task_item_id: string
+        }
+        Update: {
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          location_url?: string | null
+          note?: string | null
+          photo_path?: string | null
+          qty_reported?: number | null
+          submitted_at?: string
+          task_id?: string
+          task_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prep_submissions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_submissions_task_item_id_fkey"
+            columns: ["task_item_id"]
+            isOneToOne: false
+            referencedRelation: "prep_task_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prep_task_items: {
+        Row: {
+          category_snapshot: string | null
+          created_at: string
+          id: string
+          name_snapshot: string
+          note: string | null
+          position: number
+          qty_prepared: number
+          qty_requested: number
+          ref_photo_path: string | null
+          task_id: string
+          unit_label: string | null
+          warehouse_item_id: string | null
+        }
+        Insert: {
+          category_snapshot?: string | null
+          created_at?: string
+          id?: string
+          name_snapshot: string
+          note?: string | null
+          position?: number
+          qty_prepared?: number
+          qty_requested?: number
+          ref_photo_path?: string | null
+          task_id: string
+          unit_label?: string | null
+          warehouse_item_id?: string | null
+        }
+        Update: {
+          category_snapshot?: string | null
+          created_at?: string
+          id?: string
+          name_snapshot?: string
+          note?: string | null
+          position?: number
+          qty_prepared?: number
+          qty_requested?: number
+          ref_photo_path?: string | null
+          task_id?: string
+          unit_label?: string | null
+          warehouse_item_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prep_task_items_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_task_items_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prep_tasks: {
+        Row: {
+          created_at: string
+          expires_at: string
+          id: string
+          note: string | null
+          owner_user_id: string
+          pin_hash: string
+          share_token: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          owner_user_id: string
+          pin_hash: string
+          share_token: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          id?: string
+          note?: string | null
+          owner_user_id?: string
+          pin_hash?: string
+          share_token?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       purchases: {
         Row: {
           base_added: number
@@ -875,6 +1028,31 @@ export type Database = {
           source_queue: string
         }
         Returns: number
+      }
+      prep_create_task: {
+        Args: {
+          _items: Json
+          _note: string
+          _pin: string
+          _share_token: string
+          _title: string
+        }
+        Returns: string
+      }
+      prep_get_task: { Args: { _pin: string; _token: string }; Returns: Json }
+      prep_submit: {
+        Args: {
+          _gps_lat: number
+          _gps_lng: number
+          _location_url: string
+          _note: string
+          _photo_path: string
+          _pin: string
+          _qty_reported: number
+          _task_item_id: string
+          _token: string
+        }
+        Returns: Json
       }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }

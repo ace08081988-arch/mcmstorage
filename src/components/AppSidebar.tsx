@@ -1,5 +1,5 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Home, Package, Wallet, Lock, Tags } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -15,6 +15,7 @@ import {
 const items = [
   { title: "Beranda", url: "/", icon: Home },
   { title: "Gudang", url: "/gudang", icon: Package },
+  { title: "Tugas Pegawai", url: "/tugas", icon: ClipboardList },
   { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
   { title: "Label Preview", url: "/label-preview", icon: Tags },
   { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },

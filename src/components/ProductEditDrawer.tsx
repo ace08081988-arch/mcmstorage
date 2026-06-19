@@ -10,6 +10,7 @@ import {
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
+import { shareToWhatsApp, urlToFile } from "@/lib/share-wa";
 
 export type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
 
@@ -63,7 +64,19 @@ export function ProductEditDrawer(props: Props) {
   const sent = draft.status === "Sudah Dikirim";
   const s = (draft.satuan ?? "pcs") as Satuan;
   const b = satuanBounds(s);
-  const waUrl = `https://wa.me/?text=${encodeURIComponent(buildPesan(draft))}`;
+
+  const d = draft;
+  async function kirimWA() {
+    const text = buildPesan(d);
+    const photoUrls = [d.foto, ...(d.galeri ?? [])].filter(Boolean) as string[];
+    const files: File[] = [];
+    for (let i = 0; i < photoUrls.length; i++) {
+      const f = await urlToFile(photoUrls[i], `produk-${i + 1}.jpg`);
+      if (f) files.push(f);
+    }
+    const res = await shareToWhatsApp({ text, title: d.nama, files, url: d.lokasi || undefined });
+    if (res === "fallback") toast.message("Foto tidak bisa dilampirkan otomatis di perangkat ini — pesan & lokasi tetap terkirim.");
+  }
 
   const patch = (p: Partial<Produk>) => setDraft((d) => (d ? { ...d, ...p } : d));
 
@@ -316,12 +329,13 @@ export function ProductEditDrawer(props: Props) {
         </div>
 
         <DrawerFooter className="sticky bottom-0 grid grid-cols-[auto_1fr] gap-2 border-t bg-card/95 pt-3 backdrop-blur">
-          <a
-            href={waUrl} target="_blank" rel="noreferrer"
+          <button
+            type="button"
+            onClick={kirimWA}
             className="inline-flex h-11 items-center justify-center rounded-md bg-[#25D366] px-3 text-[13px] font-semibold text-white hover:opacity-90"
           >
             💬 WA
-          </a>
+          </button>
           <button
             onClick={save}
             className="inline-flex h-11 items-center justify-center rounded-md bg-primary px-4 text-sm font-semibold text-primary-foreground hover:opacity-90"
