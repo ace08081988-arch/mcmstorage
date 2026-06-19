@@ -1487,7 +1487,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)} required>
             {items.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.name} ({i.package_type}{i.package_type !== "pcs" ? ` ${i.package_size}${i.base_unit}` : ""}) · stok {fmtBase(i.stock_base, i.base_unit)}
+                {i.name} ({i.package_type}{i.package_type !== "pcs" ? ` ${i.package_size} ${i.base_unit}` : ""}) · stok {fmtItemQty(i.stock_base, i)}
               </option>
             ))}
           </select>
