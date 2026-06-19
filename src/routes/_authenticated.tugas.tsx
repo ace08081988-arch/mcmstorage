@@ -168,6 +168,13 @@ function lineWeight(line: Line, variants: Variant[]): number {
   const v = variants.find((x) => x.id === line.variantId);
   return v ? Number(v.weight_per_unit) : 1;
 }
+// Parser angka yang menerima koma desimal (format Indonesia) maupun titik.
+function parseNum(input: string): number | null {
+  const s = (input ?? "").toString().trim().replace(",", ".");
+  if (s === "") return null;
+  const n = Number(s);
+  return Number.isFinite(n) ? n : null;
+}
 
 function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreated }: { warehouse: WItem[]; variants: Variant[]; onVariantsChanged: () => void | Promise<void>; onClose: () => void; onCreated: (info: { token: string; pin: string; title: string }) => void }) {
   const [title, setTitle] = useState("Tugas siapkan barang");
