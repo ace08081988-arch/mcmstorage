@@ -454,6 +454,28 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<AuditRow[]>([]);
   const [filter, setFilter] = useState<"all" | "ok" | "bad">("all");
+  const RESOLVED_KEY = "tugas.audit.resolved.v1";
+  const [resolved, setResolved] = useState<Record<string, string>>(() => {
+    if (typeof window === "undefined") return {};
+    try { return JSON.parse(localStorage.getItem(RESOLVED_KEY) ?? "{}") ?? {}; }
+    catch { return {}; }
+  });
+  function persistResolved(next: Record<string, string>) {
+    setResolved(next);
+    try { localStorage.setItem(RESOLVED_KEY, JSON.stringify(next)); } catch {}
+  }
+  function sigOf(r: AuditRow) {
+    return `${r.items}|${r.totalRequested.toFixed(4)}|${r.totalPrepared.toFixed(4)}|${r.problemItems.length}`;
+  }
+  function markFixed(r: AuditRow) {
+    persistResolved({ ...resolved, [r.task.id]: sigOf(r) });
+    toast.success("Ditandai sudah dibetulkan");
+  }
+  function unmarkFixed(id: string) {
+    const next = { ...resolved };
+    delete next[id];
+    persistResolved(next);
+  }
 
   async function run() {
     setLoading(true);
@@ -503,10 +525,18 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
   useEffect(() => { void run(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const okCount = rows.filter((r) => r.issues.length === 0).length;
-  const badCount = rows.length - okCount;
+  // A row is treated as "bad" only if it still has issues AND has not been
+  // marked resolved (with a matching signature — if data changed since being
+  // marked, the signature differs and it re-appears).
+  function isResolved(r: AuditRow) {
+    return resolved[r.task.id] === sigOf(r);
+  }
+  const badRows = rows.filter((r) => r.issues.length > 0 && !isResolved(r));
+  const badCount = badRows.length;
+  const resolvedCount = rows.filter((r) => r.issues.length > 0 && isResolved(r)).length;
   const visibleRows = rows.filter((r) => {
-    if (filter === "ok") return r.issues.length === 0;
-    if (filter === "bad") return r.issues.length > 0;
+    if (filter === "ok") return r.issues.length === 0 || isResolved(r);
+    if (filter === "bad") return r.issues.length > 0 && !isResolved(r);
     return true;
   });
 
@@ -514,7 +544,7 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
     <Modal title="Revalidasi total berat & jumlah" onClose={onClose}>
       <div className="mb-3 flex items-center justify-between text-xs">
         <div className="text-muted-foreground">
-          {loading ? "Menghitung…" : `${rows.length} tugas diperiksa — ${okCount} OK, ${badCount} bermasalah`}
+          {loading ? "Menghitung…" : `${rows.length} tugas diperiksa — ${okCount} OK, ${badCount} bermasalah${resolvedCount ? `, ${resolvedCount} ditandai dibetulkan` : ""}`}
         </div>
         <button onClick={() => void run()} className="h-8 rounded-md border px-3 text-xs">Hitung ulang</button>
       </div>
@@ -535,15 +565,22 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
       </div>
       <div className="max-h-[60vh] space-y-2 overflow-y-auto">
         {visibleRows.map((r) => {
-          const ok = r.issues.length === 0;
+          const hasIssues = r.issues.length > 0;
+          const isFixed = hasIssues && isResolved(r);
+          const ok = !hasIssues;
           return (
-            <div key={r.task.id} className={`rounded-md border p-2 text-xs ${ok ? "" : "border-destructive/40 bg-destructive/5"}`}>
+            <div key={r.task.id} className={`rounded-md border p-2 text-xs ${ok ? "" : isFixed ? "border-emerald-500/40 bg-emerald-500/5" : "border-destructive/40 bg-destructive/5"}`}>
               <div className="flex items-start gap-2">
-                {ok
+                {ok || isFixed
                   ? <CheckCircle2 className="mt-0.5 h-4 w-4 text-emerald-600" />
                   : <AlertTriangle className="mt-0.5 h-4 w-4 text-destructive" />}
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-semibold">{r.task.title}</div>
+                  <div className="flex items-center gap-2">
+                    <div className="truncate font-semibold">{r.task.title}</div>
+                    {isFixed && (
+                      <span className="rounded bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">Ditandai dibetulkan</span>
+                    )}
+                  </div>
                   <div className="text-[10px] text-muted-foreground">
                     {r.items} item · diminta <b>{r.totalRequested.toFixed(2)}</b> · disiapkan <b>{r.totalPrepared.toFixed(2)}</b> · sisa <b>{r.remaining.toFixed(2)}</b>
                   </div>
@@ -558,6 +595,25 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
                         </li>
                       ))}
                     </ul>
+                  )}
+                  {hasIssues && (
+                    <div className="mt-2 flex gap-2">
+                      {isFixed ? (
+                        <button
+                          onClick={() => unmarkFixed(r.task.id)}
+                          className="h-7 rounded-md border px-2 text-[11px]"
+                        >
+                          Urungkan tanda
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => markFixed(r)}
+                          className="h-7 rounded-md border border-emerald-600/40 bg-emerald-600/10 px-2 text-[11px] font-medium text-emerald-700 hover:bg-emerald-600/20"
+                        >
+                          Tandai sudah dibetulkan
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
               </div>
