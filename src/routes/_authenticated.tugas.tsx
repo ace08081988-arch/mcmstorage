@@ -442,6 +442,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
 // ---------- Share dialog ----------
 function ShareDialog({ info, onClose }: { info: { token: string; pin: string; title: string }; onClose: () => void }) {
   const url = publicTaskUrl(info.token);
+  // see AuditDialog above
   const message = `Tolong siapkan barang berikut. Buka link, masukkan PIN, foto barangnya & kirim:\n\n${info.title}\n${url}\nPIN: ${info.pin}`;
   function copy(t: string) { navigator.clipboard?.writeText(t).then(() => toast.success("Disalin")); }
   return (
