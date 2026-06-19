@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl } from "@/lib/share-wa";
 import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2 } from "lucide-react";
+import { confirm as confirmDialog } from "@/lib/confirm";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
