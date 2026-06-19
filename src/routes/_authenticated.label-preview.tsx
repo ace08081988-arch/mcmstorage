@@ -93,11 +93,10 @@ function LabelPreviewPage() {
   const update = (idx: number, patch: Partial<Sample>) =>
     setSamples((arr) => arr.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
 
-  const buildPdfForSample = (s: Sample) => {
+  const renderSampleOnDoc = (doc: jsPDF, s: Sample, startY: number) => {
     const hasPkg = s.package_type && s.package_type !== "pcs" && s.package_size > 0;
-    const doc = new jsPDF({ unit: "mm", format: "a4" });
     const left = 15;
-    let y = 18;
+    let y = startY;
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(16);
@@ -153,13 +152,24 @@ function LabelPreviewPage() {
       left,
       290,
     );
+    doc.setTextColor(0);
+  };
 
+  const buildPdfForSample = (s: Sample) => {
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    renderSampleOnDoc(doc, s, 18);
     const safe = s.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
     doc.save(`label-preview-${safe || "sample"}.pdf`);
   };
 
   const exportAll = () => {
-    samples.forEach((s) => buildPdfForSample(s));
+    if (samples.length === 0) return;
+    const doc = new jsPDF({ unit: "mm", format: "a4" });
+    samples.forEach((s, i) => {
+      if (i > 0) doc.addPage();
+      renderSampleOnDoc(doc, s, 18);
+    });
+    doc.save(`label-preview-semua-${samples.length}-sampel.pdf`);
   };
 
   return (
