@@ -355,35 +355,59 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                       {p.lines.map((l) => {
                         const w = lineWeight(l, variants);
                         const total = w * (l.count || 0);
+                        const isManual = !l.variantId;
                         return (
-                          <div key={l.key} className="flex flex-wrap items-center gap-1.5 rounded border bg-background/60 p-1.5">
-                            <select value={l.variantId ?? ""}
-                              onChange={(e) => updateLine(it.id, l.key, { variantId: e.target.value || null, weightOverride: null })}
-                              className="h-8 max-w-[160px] flex-1 rounded border bg-background px-1 text-[11px]">
-                              <option value="">Berat manual…</option>
-                              {itemVariants.map((v) => (
-                                <option key={v.id} value={v.id}>{v.label} · {Number(v.weight_per_unit)} {v.unit_label ?? ""}</option>
-                              ))}
-                            </select>
-                            <input type="number" inputMode="numeric" min={0} step="1" value={l.count}
-                              onChange={(e) => updateLine(it.id, l.key, { count: Number(e.target.value) || 0 })}
-                              title="Jumlah unit yang dipesan"
-                              className="h-8 w-14 rounded border bg-background px-1 text-center text-xs tabular-nums" />
-                            <span className="text-[10px] text-muted-foreground">×</span>
-                            <input type="number" inputMode="decimal" min={0} step="0.01"
-                              value={l.weightOverride ?? w}
-                              onChange={(e) => updateLine(it.id, l.key, { weightOverride: e.target.value === "" ? null : Number(e.target.value) })}
-                              title="Berat per unit (boleh desimal)"
-                              className="h-8 w-20 rounded border bg-background px-1 text-center text-xs tabular-nums" />
-                            <span className="text-[10px] font-semibold tabular-nums">= {total.toFixed(2)}</span>
-                            <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                              <input type="checkbox" checked={l.split}
-                                onChange={(e) => updateLine(it.id, l.key, { split: e.target.checked })} />
-                              Foto/unit
-                            </label>
-                            <button type="button" onClick={() => removeLine(it.id, l.key)}
-                              className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded border text-destructive"
-                              title="Hapus baris"><X className="h-3 w-3" /></button>
+                          <div key={l.key} className="space-y-1.5 rounded border bg-background/60 p-2">
+                            <div className="flex items-start gap-1.5">
+                              <label className="flex-1 min-w-[120px]">
+                                <div className="mb-0.5 text-[10px] text-muted-foreground">Varian / preset</div>
+                                <select value={l.variantId ?? ""}
+                                  onChange={(e) => updateLine(it.id, l.key, { variantId: e.target.value || null, weightOverride: null })}
+                                  className="h-8 w-full rounded border bg-background px-1 text-[11px]">
+                                  <option value="">Manual (isi berat sendiri)</option>
+                                  {itemVariants.map((v) => (
+                                    <option key={v.id} value={v.id}>{v.label} · {Number(v.weight_per_unit)} {v.unit_label ?? ""}</option>
+                                  ))}
+                                </select>
+                              </label>
+                              <button type="button" onClick={() => removeLine(it.id, l.key)}
+                                className="mt-4 inline-flex h-7 w-7 items-center justify-center rounded border text-destructive"
+                                title="Hapus baris"><X className="h-3 w-3" /></button>
+                            </div>
+                            <div className="flex flex-wrap items-end gap-1.5">
+                              <label className="w-20">
+                                <div className="mb-0.5 text-[10px] text-muted-foreground">Jumlah unit</div>
+                                <input type="text" inputMode="decimal" defaultValue={String(l.count)}
+                                  onChange={(e) => {
+                                    const n = parseNum(e.target.value);
+                                    updateLine(it.id, l.key, { count: n ?? 0 });
+                                  }}
+                                  className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums" />
+                              </label>
+                              <span className="pb-2 text-xs text-muted-foreground">×</span>
+                              <label className="w-24">
+                                <div className="mb-0.5 text-[10px] text-muted-foreground">
+                                  Berat / unit{isManual ? "" : " (preset)"}
+                                </div>
+                                <input type="text" inputMode="decimal"
+                                  defaultValue={String(l.weightOverride ?? w)}
+                                  disabled={!isManual}
+                                  key={`${l.key}-${l.variantId ?? "m"}-${w}`}
+                                  onChange={(e) => {
+                                    const n = parseNum(e.target.value);
+                                    updateLine(it.id, l.key, { weightOverride: n });
+                                  }}
+                                  className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums disabled:opacity-60" />
+                              </label>
+                              <div className="pb-1 text-[11px] font-semibold tabular-nums">
+                                = {total.toFixed(2)} {(itemVariants.find((v) => v.id === l.variantId)?.unit_label) ?? ""}
+                              </div>
+                              <label className="ml-auto flex items-center gap-1 pb-2 text-[10px] text-muted-foreground">
+                                <input type="checkbox" checked={l.split}
+                                  onChange={(e) => updateLine(it.id, l.key, { split: e.target.checked })} />
+                                Foto/unit
+                              </label>
+                            </div>
                           </div>
                         );
                       })}
