@@ -2341,7 +2341,7 @@ function PesananTab({
           <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
             {items.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.name} · stok {fmtBase(i.stock_base, i.base_unit)}
+                {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base")}
               </option>
             ))}
           </select>
@@ -2373,8 +2373,10 @@ function PesananTab({
 
             <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (mis. dijemput sore)" value={note} onChange={(e) => setNote(e.target.value)} />
 
-            <div className={`rounded-md p-2 text-[11px] ${enough ? "bg-muted/50" : "bg-destructive/10 text-destructive"}`}>
-              Butuh siapkan: <b>{fmtBase(qtyBase, item.base_unit)}</b> · Stok: {fmtBase(item.stock_base, item.base_unit)} {!enough && "(kurang!)"}
+            <div className={`rounded-md p-2 text-[11px] space-y-0.5 ${enough ? "bg-muted/50" : "bg-destructive/10 text-destructive"}`}>
+              <div>Butuh siapkan: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, qtyMode)}</b></div>
+              <div>Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, qtyMode)}</b></div>
+              {!enough && <div className="font-semibold">Kurang {fmtBase(qtyBase - item.stock_base, item.base_unit)}</div>}
             </div>
           </>
         )}
