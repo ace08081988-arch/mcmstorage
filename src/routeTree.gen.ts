@@ -18,6 +18,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
+import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
@@ -69,6 +70,12 @@ const AuthenticatedPengaturanKunciRoute =
   AuthenticatedPengaturanKunciRouteImport.update({
     id: '/pengaturan-kunci',
     path: '/pengaturan-kunci',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedLabelPreviewRoute =
+  AuthenticatedLabelPreviewRouteImport.update({
+    id: '/label-preview',
+    path: '/label-preview',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedHutangPiutangRoute =
@@ -124,6 +131,7 @@ export interface FileRoutesByFullPath {
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
+  '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -140,6 +148,7 @@ export interface FileRoutesByTo {
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
+  '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/': typeof AuthenticatedIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -159,6 +168,7 @@ export interface FileRoutesById {
   '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
+  '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/device-verify'
     | '/gudang'
     | '/hutang-piutang'
+    | '/label-preview'
     | '/pengaturan-kunci'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -195,6 +206,7 @@ export interface FileRouteTypes {
     | '/device-verify'
     | '/gudang'
     | '/hutang-piutang'
+    | '/label-preview'
     | '/pengaturan-kunci'
     | '/'
     | '/gudang/pesanan/$id'
@@ -213,6 +225,7 @@ export interface FileRouteTypes {
     | '/_authenticated/device-verify'
     | '/_authenticated/gudang'
     | '/_authenticated/hutang-piutang'
+    | '/_authenticated/label-preview'
     | '/_authenticated/pengaturan-kunci'
     | '/_authenticated/'
     | '/_authenticated/gudang/pesanan/$id'
@@ -298,6 +311,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedPengaturanKunciRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/label-preview': {
+      id: '/_authenticated/label-preview'
+      path: '/label-preview'
+      fullPath: '/label-preview'
+      preLoaderRoute: typeof AuthenticatedLabelPreviewRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/hutang-piutang': {
       id: '/_authenticated/hutang-piutang'
       path: '/hutang-piutang'
@@ -381,6 +401,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
+  AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -389,6 +410,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
+  AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
