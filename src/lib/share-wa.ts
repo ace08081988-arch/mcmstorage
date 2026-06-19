@@ -34,9 +34,30 @@ export async function shareToWhatsApp(input: ShareInput): Promise<"shared" | "fa
       if ((err as DOMException)?.name === "AbortError") return "shared";
     }
   }
+  // Fallback: simpan foto ke galeri/unduhan dulu agar pengguna bisa
+  // melampirkannya di WhatsApp dengan tombol 📎.
+  if (files && files.length > 0) {
+    for (const f of files) downloadFile(f, f.name);
+  }
   const fullText = url ? `${text}\n${url}` : text;
   window.open(buildWhatsAppUrl(fullText, phone), "_blank", "noopener,noreferrer");
   return "fallback";
+}
+
+export function downloadFile(blob: Blob, filename: string) {
+  try {
+    const href = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = href;
+    a.download = filename;
+    a.rel = "noopener";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(href), 10_000);
+  } catch {
+    /* ignore */
+  }
 }
 
 export async function urlToFile(url: string, filename: string, mime = "image/jpeg"): Promise<File | null> {

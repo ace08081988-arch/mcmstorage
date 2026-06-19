@@ -99,7 +99,7 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
     return localStorage.getItem("prep:last_phone") ?? "";
   });
   const [query, setQuery] = useState("");
-  const [picked, setPicked] = useState<Record<string, { qty: number; item: WItem }>>({});
+  const [picked, setPicked] = useState<Record<string, { qty: number; split: boolean; item: WItem }>>({});
   const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
@@ -110,7 +110,7 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
   function toggle(it: WItem) {
     setPicked((p) => {
       const n = { ...p };
-      if (n[it.id]) delete n[it.id]; else n[it.id] = { qty: 1, item: it };
+      if (n[it.id]) delete n[it.id]; else n[it.id] = { qty: 1, split: false, item: it };
       return n;
     });
   }
@@ -124,12 +124,26 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
     const waWindow = cleanedPhone ? window.open("about:blank", "_blank") : null;
     setBusy(true);
     const token = genShareToken();
-    const args = {
-      _title: title, _note: note || null, _pin: pin, _share_token: token,
-      _items: items.map((x) => ({
+    // Jika "Foto terpisah" aktif & qty > 1, pecah jadi N baris masing-masing qty 1
+    // supaya pegawai mengirim foto + lokasi terpisah per botol/unit.
+    const expanded = items.flatMap((x) => {
+      if (x.split && x.qty > 1) {
+        return Array.from({ length: Math.floor(x.qty) }, (_, i) => ({
+          warehouse_item_id: x.item.id,
+          name: `${x.item.name} (${i + 1}/${Math.floor(x.qty)})`,
+          category: x.item.category,
+          qty_requested: 1,
+          ref_photo_path: x.item.image_path,
+        }));
+      }
+      return [{
         warehouse_item_id: x.item.id, name: x.item.name, category: x.item.category,
         qty_requested: x.qty, ref_photo_path: x.item.image_path,
-      })),
+      }];
+    });
+    const args = {
+      _title: title, _note: note || null, _pin: pin, _share_token: token,
+      _items: expanded,
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.rpc as any)("prep_create_task", args);
@@ -195,9 +209,16 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
                     <div className="text-[10px] text-muted-foreground">{it.category ?? "—"} · stok {it.stock_base}</div>
                   </div>
                   {p && (
-                    <input type="number" min={0} step={1} value={p.qty}
-                      onChange={(e) => setPicked((s) => ({ ...s, [it.id]: { ...s[it.id], qty: Number(e.target.value) || 0 } }))}
-                      className="h-8 w-20 rounded border bg-background px-1 text-xs tabular-nums" />
+                    <div className="flex flex-col items-end gap-1">
+                      <input type="number" min={0} step={1} value={p.qty}
+                        onChange={(e) => setPicked((s) => ({ ...s, [it.id]: { ...s[it.id], qty: Number(e.target.value) || 0 } }))}
+                        className="h-8 w-20 rounded border bg-background px-1 text-xs tabular-nums" />
+                      <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                        <input type="checkbox" checked={p.split}
+                          onChange={(e) => setPicked((s) => ({ ...s, [it.id]: { ...s[it.id], split: e.target.checked } }))} />
+                        Foto terpisah ({p.qty || 0}×)
+                      </label>
+                    </div>
                   )}
                 </div>
               );
@@ -334,7 +355,10 @@ function SubmissionCard({ sub }: { sub: Submission }) {
       sub.note ? `Catatan: ${sub.note}` : "",
       sub.location_url ? `Lokasi: ${sub.location_url}` : "",
     ].filter(Boolean).join("\n");
-    await shareToWhatsApp({ text: text || "Foto barang", files, url: sub.location_url ?? undefined });
+    const result = await shareToWhatsApp({ text: text || "Foto barang", files, url: sub.location_url ?? undefined });
+    if (result === "fallback" && files.length > 0) {
+      toast.message("Foto sudah diunduh — di WA tap 📎 lalu pilih foto tadi untuk dikirim.");
+    }
   }
 
   return (
