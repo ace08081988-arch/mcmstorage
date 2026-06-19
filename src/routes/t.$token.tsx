@@ -89,7 +89,7 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
   const [locUrl, setLocUrl] = useState("");
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [note, setNote] = useState("");
-  const [qty, setQty] = useState<string>(String(item.qty_requested ?? ""));
+  const [qty, setQty] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [refSigned, setRefSigned] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
@@ -124,7 +124,14 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
   }
 
   async function submit() {
-    if (!photo && !locUrl && !note) { toast.error("Isi minimal foto, lokasi, atau catatan"); return; }
+    if (!qty || !(Number(qty) > 0)) {
+      toast.error("Wajib isi jumlah yang BENAR-BENAR disiapkan (mis. 0.20)");
+      return;
+    }
+    if (!photo) {
+      toast.error("Wajib lampirkan foto bukti timbangan/barang");
+      return;
+    }
     if (locUrl) {
       if (locUrl.length > 2048) { toast.error("URL lokasi terlalu panjang"); return; }
       if (!/^https:\/\//i.test(locUrl)) { toast.error("URL lokasi harus diawali https://"); return; }
@@ -145,9 +152,17 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase.rpc as any)("prep_submit", args);
       if (error) throw error;
-      const res = data as { ok: boolean; error?: string };
-      if (!res?.ok) throw new Error(res?.error || "submit_failed");
-      toast.success("Terkirim ke pemilik tugas");
+      const res = data as { ok: boolean; error?: string; available?: number; requested?: number };
+      if (!res?.ok) {
+        const msg = res?.error === "insufficient_stock"
+          ? `Stok gudang tidak cukup (tersedia ${res.available}, diminta ${res.requested})`
+          : res?.error === "item_not_found"
+          ? "Barang tidak ditemukan di gudang"
+          : res?.error === "bad_pin" ? "PIN salah"
+          : (res?.error || "submit_failed");
+        throw new Error(msg);
+      }
+      toast.success(`Terkirim. Stok gudang dikurangi ${Number(qty)} ${item.unit_label ?? ""}`);
       setPhoto(null); setLocUrl(""); setGps(null); setNote("");
       onSubmitted();
     } catch (e) {
@@ -166,7 +181,8 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
         <div className="min-w-0 flex-1">
           <div className="truncate font-semibold">{item.name}</div>
           <div className="text-[11px] text-muted-foreground">{item.category ?? "—"}</div>
-          <div className="mt-1 text-[11px]">Diminta: <b>{item.qty_requested}</b> {item.unit_label ?? ""}</div>
+          <div className="mt-1 text-[11px]">Target diminta: <b>{item.qty_requested}</b> {item.unit_label ?? ""}</div>
+          <div className="mt-0.5 text-[11px] text-muted-foreground">Sudah disiapkan: <b>{item.qty_prepared ?? 0}</b> {item.unit_label ?? ""}</div>
           {item.note && <div className="mt-1 text-[11px] text-muted-foreground">Catatan: {item.note}</div>}
         </div>
       </div>
@@ -188,15 +204,30 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
       <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
 
+      <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
+        <label className="block text-[11px] font-semibold text-amber-700 dark:text-amber-400">
+          Jumlah yang BENAR disiapkan (wajib, sesuai timbangan)
+        </label>
+        <div className="mt-1 flex items-center gap-2">
+          <input
+            type="number" inputMode="decimal" step="0.01" min="0"
+            value={qty} onChange={(e) => setQty(e.target.value)}
+            placeholder="mis. 0.20"
+            className="h-10 flex-1 rounded-md border bg-background px-2 text-base font-semibold tabular-nums"
+          />
+          <span className="text-xs text-muted-foreground">{item.unit_label ?? ""}</span>
+        </div>
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          Stok gudang induk akan otomatis berkurang sebanyak angka ini. Mis. stok 100 - 0.20 = 99.80.
+        </p>
+      </div>
+
       <div className="mt-3 grid grid-cols-1 gap-2">
         <div className="flex gap-2">
           <input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="Link Google Maps (opsional)" className="h-9 flex-1 rounded-md border bg-background px-2 text-xs" />
           <button onClick={takeLocation} className="inline-flex h-9 items-center gap-1 rounded-md border px-2 text-xs"><MapPin className="h-4 w-4" /> GPS</button>
         </div>
-        <div className="flex gap-2">
-          <input type="number" inputMode="decimal" value={qty} onChange={(e) => setQty(e.target.value)} placeholder="Qty disiapkan" className="h-9 w-32 rounded-md border bg-background px-2 text-xs tabular-nums" />
-          <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" className="h-9 flex-1 rounded-md border bg-background px-2 text-xs" />
-        </div>
+        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" className="h-9 w-full rounded-md border bg-background px-2 text-xs" />
       </div>
 
       <button disabled={busy} onClick={submit} className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1 rounded-md bg-primary text-sm font-semibold text-primary-foreground disabled:opacity-50">
