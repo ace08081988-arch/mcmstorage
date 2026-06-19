@@ -397,9 +397,17 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 <input type="text" inputMode="decimal"
                                   defaultValue={String(l.weightOverride ?? w)}
                                   disabled={!isManual}
-                                  key={`${l.key}-${l.variantId ?? "m"}-${w}`}
+                                  key={`${l.key}-${l.variantId ?? "m"}`}
                                   onChange={(e) => {
-                                    const n = parseNum(e.target.value);
+                                    const raw = e.target.value;
+                                    // Saat input kosong → reset ke null (pakai default/preset).
+                                    if (raw.trim() === "") {
+                                      updateLine(it.id, l.key, { weightOverride: null });
+                                      return;
+                                    }
+                                    const n = parseNum(raw);
+                                    // Abaikan input tak lengkap (mis. "0." atau ",") agar nilai sebelumnya tetap.
+                                    if (n == null) return;
                                     updateLine(it.id, l.key, { weightOverride: n });
                                   }}
                                   className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums disabled:opacity-60" />
