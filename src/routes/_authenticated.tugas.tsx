@@ -97,7 +97,19 @@ function TugasPage() {
 }
 
 // ---------- Create dialog ----------
-function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; onClose: () => void; onCreated: (info: { token: string; pin: string; title: string }) => void }) {
+type Line = { key: string; variantId: string | null; count: number; weightOverride: number | null; split: boolean };
+type PickedEntry = { item: WItem; lines: Line[] };
+
+function newLine(variantId: string | null = null): Line {
+  return { key: Math.random().toString(36).slice(2), variantId, count: 1, weightOverride: null, split: false };
+}
+function lineWeight(line: Line, variants: Variant[]): number {
+  if (line.weightOverride != null) return line.weightOverride;
+  const v = variants.find((x) => x.id === line.variantId);
+  return v ? Number(v.weight_per_unit) : 1;
+}
+
+function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreated }: { warehouse: WItem[]; variants: Variant[]; onVariantsChanged: () => void | Promise<void>; onClose: () => void; onCreated: (info: { token: string; pin: string; title: string }) => void }) {
   const [title, setTitle] = useState("Tugas siapkan barang");
   const [note, setNote] = useState("");
   const [pin, setPin] = useState(genPin());
@@ -106,7 +118,8 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
     return localStorage.getItem("prep:last_phone") ?? "";
   });
   const [query, setQuery] = useState("");
-  const [picked, setPicked] = useState<Record<string, { qty: number; split: boolean; item: WItem }>>({});
+  const [picked, setPicked] = useState<Record<string, PickedEntry>>({});
+  const [manageVariantsFor, setManageVariantsFor] = useState<WItem | null>(null);
   const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
@@ -117,37 +130,73 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
   function toggle(it: WItem) {
     setPicked((p) => {
       const n = { ...p };
-      if (n[it.id]) delete n[it.id]; else n[it.id] = { qty: 1, split: false, item: it };
+      if (n[it.id]) {
+        delete n[it.id];
+      } else {
+        const itemVariants = variants.filter((v) => v.warehouse_item_id === it.id);
+        n[it.id] = { item: it, lines: [newLine(itemVariants[0]?.id ?? null)] };
+      }
       return n;
     });
   }
 
+  function updateLine(itemId: string, key: string, patch: Partial<Line>) {
+    setPicked((s) => {
+      const e = s[itemId]; if (!e) return s;
+      return { ...s, [itemId]: { ...e, lines: e.lines.map((l) => l.key === key ? { ...l, ...patch } : l) } };
+    });
+  }
+  function addLine(itemId: string) {
+    setPicked((s) => {
+      const e = s[itemId]; if (!e) return s;
+      const itemVariants = variants.filter((v) => v.warehouse_item_id === itemId);
+      return { ...s, [itemId]: { ...e, lines: [...e.lines, newLine(itemVariants[0]?.id ?? null)] } };
+    });
+  }
+  function removeLine(itemId: string, key: string) {
+    setPicked((s) => {
+      const e = s[itemId]; if (!e) return s;
+      const lines = e.lines.filter((l) => l.key !== key);
+      if (lines.length === 0) { const n = { ...s }; delete n[itemId]; return n; }
+      return { ...s, [itemId]: { ...e, lines } };
+    });
+  }
+
   async function create() {
-    const items = Object.values(picked);
-    if (items.length === 0) { toast.error("Pilih minimal 1 barang"); return; }
+    const entries = Object.values(picked);
+    if (entries.length === 0) { toast.error("Pilih minimal 1 barang"); return; }
     if (pin.length < 4) { toast.error("PIN minimal 4 digit"); return; }
     const cleanedPhone = phone.replace(/\D/g, "");
     // Open a tab synchronously so popup blockers don't intercept after await
     const waWindow = cleanedPhone ? window.open("about:blank", "_blank") : null;
     setBusy(true);
     const token = genShareToken();
-    // Jika "Foto terpisah" aktif & qty > 1, pecah jadi N baris masing-masing qty 1
-    // supaya pegawai mengirim foto + lokasi terpisah per botol/unit.
-    const expanded = items.flatMap((x) => {
-      if (x.split && x.qty > 1) {
-        return Array.from({ length: Math.floor(x.qty) }, (_, i) => ({
-          warehouse_item_id: x.item.id,
-          name: `${x.item.name} (${i + 1}/${Math.floor(x.qty)})`,
-          category: x.item.category,
-          qty_requested: 1,
-          ref_photo_path: x.item.image_path,
-        }));
-      }
-      return [{
-        warehouse_item_id: x.item.id, name: x.item.name, category: x.item.category,
-        qty_requested: x.qty, ref_photo_path: x.item.image_path,
-      }];
-    });
+    // Setiap baris (varian + jumlah) → 1 item tugas. Berat per baris = weight × count.
+    // Stok dipotong dari produk induk (warehouse_item_id), bukan dari varian.
+    const expanded = entries.flatMap(({ item, lines }) =>
+      lines.flatMap((l) => {
+        const w = lineWeight(l, variants);
+        const v = variants.find((x) => x.id === l.variantId);
+        const baseName = v ? `${item.name} — ${v.label}` : item.name;
+        const total = w * (l.count || 0);
+        if (l.split && (l.count || 0) > 1) {
+          const n = Math.floor(l.count);
+          return Array.from({ length: n }, (_, i) => ({
+            warehouse_item_id: item.id,
+            name: `${baseName} (${i + 1}/${n})`,
+            category: item.category,
+            qty_requested: w,
+            unit_label: v?.unit_label ?? null,
+            ref_photo_path: item.image_path,
+          }));
+        }
+        return [{
+          warehouse_item_id: item.id, name: baseName, category: item.category,
+          qty_requested: total, unit_label: v?.unit_label ?? null,
+          ref_photo_path: item.image_path,
+        }];
+      })
+    );
     const args = {
       _title: title, _note: note || null, _pin: pin, _share_token: token,
       _items: expanded,
@@ -171,6 +220,14 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
 
   return (
     <Modal title="Buat tugas baru" onClose={onClose}>
+      {manageVariantsFor && (
+        <VariantManager
+          item={manageVariantsFor}
+          variants={variants.filter((v) => v.warehouse_item_id === manageVariantsFor.id)}
+          onClose={() => setManageVariantsFor(null)}
+          onChanged={onVariantsChanged}
+        />
+      )}
       <div className="space-y-3 text-sm">
         <label className="block">
           <div className="mb-1 text-[11px] text-muted-foreground">Judul</div>
@@ -205,28 +262,68 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari barang…" className="h-9 flex-1 rounded-md border bg-background px-2 text-sm" />
             <span className="text-[11px] text-muted-foreground">{Object.keys(picked).length} dipilih</span>
           </div>
-          <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border p-1">
+          <div className="max-h-96 space-y-1 overflow-y-auto rounded-md border p-1">
             {filtered.map((it) => {
               const p = picked[it.id];
+              const itemVariants = variants.filter((v) => v.warehouse_item_id === it.id);
               return (
-                <div key={it.id} className={`flex items-center gap-2 rounded p-1.5 ${p ? "bg-primary/5" : ""}`}>
-                  <input type="checkbox" checked={!!p} onChange={() => toggle(it)} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-medium">{it.name}</div>
-                    <div className="text-[10px] text-muted-foreground">{it.category ?? "—"} · stok {it.stock_base}</div>
+                <div key={it.id} className={`rounded p-1.5 ${p ? "bg-primary/5" : ""}`}>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!p} onChange={() => toggle(it)} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-medium">{it.name}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {it.category ?? "—"} · stok {it.stock_base}
+                        {itemVariants.length > 0 && <span className="ml-1">· {itemVariants.length} varian</span>}
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setManageVariantsFor(it)}
+                      className="inline-flex h-7 items-center gap-1 rounded border px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                      title="Kelola varian (preset berat)">
+                      <Settings2 className="h-3 w-3" /> Varian
+                    </button>
                   </div>
                   {p && (
-                    <div className="flex flex-col items-end gap-1">
-                      <input type="number" inputMode="decimal" min={0} step="0.01" value={p.qty}
-                        onChange={(e) => setPicked((s) => ({ ...s, [it.id]: { ...s[it.id], qty: Number(e.target.value) || 0 } }))}
-                        placeholder="mis. 0.90"
-                        title="Berat / jumlah yang harus disiapkan (boleh desimal)"
-                        className="h-8 w-24 rounded border bg-background px-1 text-xs tabular-nums" />
-                      <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <input type="checkbox" checked={p.split}
-                          onChange={(e) => setPicked((s) => ({ ...s, [it.id]: { ...s[it.id], split: e.target.checked } }))} />
-                        Foto terpisah ({p.qty || 0}×)
-                      </label>
+                    <div className="mt-2 space-y-1.5 pl-6">
+                      {p.lines.map((l) => {
+                        const w = lineWeight(l, variants);
+                        const total = w * (l.count || 0);
+                        return (
+                          <div key={l.key} className="flex flex-wrap items-center gap-1.5 rounded border bg-background/60 p-1.5">
+                            <select value={l.variantId ?? ""}
+                              onChange={(e) => updateLine(it.id, l.key, { variantId: e.target.value || null, weightOverride: null })}
+                              className="h-8 max-w-[160px] flex-1 rounded border bg-background px-1 text-[11px]">
+                              <option value="">Berat manual…</option>
+                              {itemVariants.map((v) => (
+                                <option key={v.id} value={v.id}>{v.label} · {Number(v.weight_per_unit)} {v.unit_label ?? ""}</option>
+                              ))}
+                            </select>
+                            <input type="number" inputMode="numeric" min={0} step="1" value={l.count}
+                              onChange={(e) => updateLine(it.id, l.key, { count: Number(e.target.value) || 0 })}
+                              title="Jumlah unit yang dipesan"
+                              className="h-8 w-14 rounded border bg-background px-1 text-center text-xs tabular-nums" />
+                            <span className="text-[10px] text-muted-foreground">×</span>
+                            <input type="number" inputMode="decimal" min={0} step="0.01"
+                              value={l.weightOverride ?? w}
+                              onChange={(e) => updateLine(it.id, l.key, { weightOverride: e.target.value === "" ? null : Number(e.target.value) })}
+                              title="Berat per unit (boleh desimal)"
+                              className="h-8 w-20 rounded border bg-background px-1 text-center text-xs tabular-nums" />
+                            <span className="text-[10px] font-semibold tabular-nums">= {total.toFixed(2)}</span>
+                            <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                              <input type="checkbox" checked={l.split}
+                                onChange={(e) => updateLine(it.id, l.key, { split: e.target.checked })} />
+                              Foto/unit
+                            </label>
+                            <button type="button" onClick={() => removeLine(it.id, l.key)}
+                              className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded border text-destructive"
+                              title="Hapus baris"><X className="h-3 w-3" /></button>
+                          </div>
+                        );
+                      })}
+                      <button type="button" onClick={() => addLine(it.id)}
+                        className="inline-flex h-7 items-center gap-1 rounded border border-dashed px-2 text-[10px] text-muted-foreground">
+                        <Plus className="h-3 w-3" /> Tambah varian/baris
+                      </button>
                     </div>
                   )}
                 </div>
