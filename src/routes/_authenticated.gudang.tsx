@@ -109,6 +109,23 @@ function fmtBase(n: number, u: "g" | "pcs") {
   return `${v.toLocaleString("id-ID")} pcs`;
 }
 
+// Format kuantitas dengan unit terpilih + setara dalam unit dasar.
+// Contoh: 56 botol → "56 botol (= 5.600 pcs)"
+function fmtQtyDual(
+  baseQty: number,
+  baseUnit: "g" | "pcs",
+  packageType: string,
+  packageSize: number,
+  mode: "base" | "package",
+) {
+  if (mode === "base" || !packageType || packageType === "pcs" || packageSize <= 0) {
+    return fmtBase(baseQty, baseUnit);
+  }
+  const pkgQty = baseQty / packageSize;
+  const pkgStr = `${pkgQty.toLocaleString("id-ID", { maximumFractionDigits: 2 })} ${packageType}`;
+  return `${pkgStr} (= ${fmtBase(baseQty, baseUnit)})`;
+}
+
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
 }
