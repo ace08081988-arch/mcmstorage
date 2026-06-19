@@ -522,6 +522,40 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
 }
 
 // ---------- Variant manager ----------
+function VariantsHub({ warehouse, variants, onPick, onClose }: { warehouse: WItem[]; variants: Variant[]; onPick: (it: WItem) => void; onClose: () => void }) {
+  const [q, setQ] = useState("");
+  const filtered = useMemo(() => {
+    const s = q.toLowerCase().trim();
+    return warehouse.filter((w) => !s || w.name.toLowerCase().includes(s) || (w.category ?? "").toLowerCase().includes(s));
+  }, [warehouse, q]);
+  return (
+    <Modal title="Kelola Varian Produk" onClose={onClose}>
+      <p className="mb-2 text-[11px] text-muted-foreground">
+        Atur preset varian penyiapan per produk (mis. <b>KRISTAL</b> → 1G=0.90 gr, ST=0.40 gr, SPR=0.20 gr).
+        Bisa diubah kapan saja. Stok tetap berkurang dari produk induk saat tugas dijalankan.
+      </p>
+      <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari produk / kategori…"
+        className="mb-2 h-9 w-full rounded-md border bg-background px-3 text-sm" />
+      <div className="max-h-[60vh] space-y-1.5 overflow-y-auto">
+        {filtered.map((it) => {
+          const n = variants.filter((v) => v.warehouse_item_id === it.id).length;
+          return (
+            <button key={it.id} onClick={() => onPick(it)}
+              className="flex w-full items-center justify-between gap-2 rounded-md border bg-background p-2 text-left text-sm hover:bg-muted">
+              <div className="min-w-0">
+                <div className="truncate font-medium">{it.name}</div>
+                <div className="text-[11px] text-muted-foreground">{it.category ?? "—"} · {n} varian</div>
+              </div>
+              <Settings2 className="h-4 w-4 shrink-0 text-muted-foreground" />
+            </button>
+          );
+        })}
+        {filtered.length === 0 && <div className="rounded border border-dashed p-4 text-center text-xs text-muted-foreground">Tidak ada produk.</div>}
+      </div>
+    </Modal>
+  );
+}
+
 function VariantManager({ item, variants, onClose, onChanged }: { item: WItem; variants: Variant[]; onClose: () => void; onChanged: () => void | Promise<void> }) {
   const [rows, setRows] = useState<Variant[]>(variants);
   const [label, setLabel] = useState("");
