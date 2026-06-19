@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl } from "@/lib/share-wa";
-import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2 } from "lucide-react";
+import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 
@@ -36,6 +36,7 @@ function TugasPage() {
   const [createdInfo, setCreatedInfo] = useState<{ token: string; pin: string; title: string } | null>(null);
   const [openVariantsHub, setOpenVariantsHub] = useState(false);
   const [manageCategoryFor, setManageCategoryFor] = useState<string | null>(null);
+  const [openAudit, setOpenAudit] = useState(false);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
@@ -101,6 +102,9 @@ function TugasPage() {
           <button onClick={() => setOpenVariantsHub(true)} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs font-semibold">
             <Settings2 className="h-4 w-4" /> Kelola Varian
           </button>
+          <button onClick={() => setOpenAudit(true)} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs font-semibold">
+            <ShieldCheck className="h-4 w-4" /> Revalidasi
+          </button>
           <button onClick={() => setOpenCreate(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
             <Plus className="h-4 w-4" /> Buat tugas
           </button>
@@ -152,6 +156,7 @@ function TugasPage() {
           onChanged={load}
         />
       )}
+      {openAudit && <AuditDialog tasks={tasks} onClose={() => setOpenAudit(false)} />}
     </div>
   );
 }
