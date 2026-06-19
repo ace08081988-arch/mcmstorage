@@ -497,3 +497,89 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
     </div>
   );
 }
+
+// ---------- Variant manager ----------
+function VariantManager({ item, variants, onClose, onChanged }: { item: WItem; variants: Variant[]; onClose: () => void; onChanged: () => void | Promise<void> }) {
+  const [rows, setRows] = useState<Variant[]>(variants);
+  const [label, setLabel] = useState("");
+  const [weight, setWeight] = useState("");
+  const [unit, setUnit] = useState("gr");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { setRows(variants); }, [variants]);
+
+  async function add() {
+    const w = Number(weight);
+    if (!label.trim()) return toast.error("Isi label varian (mis. 1G, ST, SPR)");
+    if (!isFinite(w) || w <= 0) return toast.error("Berat per unit harus > 0");
+    setBusy(true);
+    const { data: u } = await supabase.auth.getUser();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from as any)("warehouse_item_variants").insert({
+      user_id: u.user?.id, warehouse_item_id: item.id,
+      label: label.trim(), weight_per_unit: w, unit_label: unit.trim() || null,
+      position: rows.length,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setLabel(""); setWeight("");
+    await onChanged();
+    toast.success("Varian ditambahkan");
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Hapus varian ini?")) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from as any)("warehouse_item_variants").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    await onChanged();
+  }
+
+  async function updateRow(id: string, patch: Partial<Variant>) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from as any)("warehouse_item_variants").update(patch).eq("id", id);
+    if (error) return toast.error(error.message);
+    await onChanged();
+  }
+
+  return (
+    <Modal title={`Varian: ${item.name}`} onClose={onClose}>
+      <p className="mb-2 text-[11px] text-muted-foreground">
+        Buat preset varian penyiapan untuk produk ini (mis. <b>1G</b> = 0.90 gr, <b>ST</b> = 0.40 gr, <b>SPR</b> = 0.20 gr).
+        Saat membuat tugas, pilih varian + jumlah unit — sistem akan menghitung total berat dan mengurangi stok dari produk induk <b>{item.name}</b>.
+      </p>
+      <div className="space-y-1.5">
+        {rows.map((v) => (
+          <div key={v.id} className="flex items-center gap-1.5 rounded border bg-background p-1.5">
+            <input defaultValue={v.label} onBlur={(e) => e.target.value !== v.label && updateRow(v.id, { label: e.target.value })}
+              className="h-8 w-20 rounded border bg-background px-1 text-xs" placeholder="Label" />
+            <input type="number" step="0.01" defaultValue={Number(v.weight_per_unit)}
+              onBlur={(e) => Number(e.target.value) !== Number(v.weight_per_unit) && updateRow(v.id, { weight_per_unit: Number(e.target.value) })}
+              className="h-8 w-20 rounded border bg-background px-1 text-center text-xs tabular-nums" />
+            <input defaultValue={v.unit_label ?? ""} onBlur={(e) => (e.target.value || null) !== v.unit_label && updateRow(v.id, { unit_label: e.target.value || null })}
+              className="h-8 w-16 rounded border bg-background px-1 text-xs" placeholder="gr" />
+            <button onClick={() => remove(v.id)} className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded border text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+          </div>
+        ))}
+        {rows.length === 0 && <div className="rounded border border-dashed p-3 text-center text-[11px] text-muted-foreground">Belum ada varian. Tambah di bawah.</div>}
+      </div>
+      <div className="mt-3 flex items-end gap-1.5 border-t pt-3">
+        <label className="flex-1">
+          <div className="text-[10px] text-muted-foreground">Label</div>
+          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="1G" className="h-9 w-full rounded border bg-background px-2 text-sm" />
+        </label>
+        <label className="w-24">
+          <div className="text-[10px] text-muted-foreground">Berat/unit</div>
+          <input value={weight} onChange={(e) => setWeight(e.target.value)} type="number" step="0.01" placeholder="0.90" className="h-9 w-full rounded border bg-background px-2 text-center text-sm tabular-nums" />
+        </label>
+        <label className="w-16">
+          <div className="text-[10px] text-muted-foreground">Satuan</div>
+          <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="gr" className="h-9 w-full rounded border bg-background px-2 text-sm" />
+        </label>
+        <button disabled={busy} onClick={add} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50">
+          <Plus className="h-3.5 w-3.5" /> Tambah
+        </button>
+      </div>
+    </Modal>
+  );
+}
