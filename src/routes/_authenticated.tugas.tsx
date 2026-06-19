@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl } from "@/lib/share-wa";
-import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X } from "lucide-react";
+import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
@@ -17,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/tugas")({
 });
 
 type WItem = { id: string; name: string; category: string | null; image_path: string | null; stock_base: number };
+type Variant = { id: string; warehouse_item_id: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
 type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string };
 type TaskItem = { id: string; task_id: string; name_snapshot: string; category_snapshot: string | null; qty_requested: number; qty_prepared: number; unit_label: string | null; ref_photo_path: string | null; warehouse_item_id: string | null };
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
@@ -25,6 +26,7 @@ function TugasPage() {
   const [uid, setUid] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [warehouse, setWarehouse] = useState<WItem[]>([]);
+  const [variants, setVariants] = useState<Variant[]>([]);
   const [openCreate, setOpenCreate] = useState(false);
   const [openTask, setOpenTask] = useState<Task | null>(null);
   const [createdInfo, setCreatedInfo] = useState<{ token: string; pin: string; title: string } | null>(null);
@@ -33,12 +35,15 @@ function TugasPage() {
 
   async function load() {
     if (!uid) return;
-    const [{ data: t }, { data: w }] = await Promise.all([
+    const [{ data: t }, { data: w }, { data: v }] = await Promise.all([
       supabase.from("prep_tasks").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("id,name,category,image_path,stock_base").order("name"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase.from as any)("warehouse_item_variants").select("*").order("position"),
     ]);
     setTasks((t ?? []) as Task[]);
     setWarehouse((w ?? []) as WItem[]);
+    setVariants((v ?? []) as Variant[]);
   }
   useEffect(() => { void load(); }, [uid]);
 
@@ -79,6 +84,8 @@ function TugasPage() {
       {openCreate && (
         <CreateDialog
           warehouse={warehouse}
+          variants={variants}
+          onVariantsChanged={load}
           onClose={() => setOpenCreate(false)}
           onCreated={(info) => { setOpenCreate(false); setCreatedInfo(info); void load(); }}
         />
@@ -90,7 +97,19 @@ function TugasPage() {
 }
 
 // ---------- Create dialog ----------
-function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; onClose: () => void; onCreated: (info: { token: string; pin: string; title: string }) => void }) {
+type Line = { key: string; variantId: string | null; count: number; weightOverride: number | null; split: boolean };
+type PickedEntry = { item: WItem; lines: Line[] };
+
+function newLine(variantId: string | null = null): Line {
+  return { key: Math.random().toString(36).slice(2), variantId, count: 1, weightOverride: null, split: false };
+}
+function lineWeight(line: Line, variants: Variant[]): number {
+  if (line.weightOverride != null) return line.weightOverride;
+  const v = variants.find((x) => x.id === line.variantId);
+  return v ? Number(v.weight_per_unit) : 1;
+}
+
+function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreated }: { warehouse: WItem[]; variants: Variant[]; onVariantsChanged: () => void | Promise<void>; onClose: () => void; onCreated: (info: { token: string; pin: string; title: string }) => void }) {
   const [title, setTitle] = useState("Tugas siapkan barang");
   const [note, setNote] = useState("");
   const [pin, setPin] = useState(genPin());
@@ -99,7 +118,8 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
     return localStorage.getItem("prep:last_phone") ?? "";
   });
   const [query, setQuery] = useState("");
-  const [picked, setPicked] = useState<Record<string, { qty: number; split: boolean; item: WItem }>>({});
+  const [picked, setPicked] = useState<Record<string, PickedEntry>>({});
+  const [manageVariantsFor, setManageVariantsFor] = useState<WItem | null>(null);
   const [busy, setBusy] = useState(false);
 
   const filtered = useMemo(() => {
@@ -110,37 +130,73 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
   function toggle(it: WItem) {
     setPicked((p) => {
       const n = { ...p };
-      if (n[it.id]) delete n[it.id]; else n[it.id] = { qty: 1, split: false, item: it };
+      if (n[it.id]) {
+        delete n[it.id];
+      } else {
+        const itemVariants = variants.filter((v) => v.warehouse_item_id === it.id);
+        n[it.id] = { item: it, lines: [newLine(itemVariants[0]?.id ?? null)] };
+      }
       return n;
     });
   }
 
+  function updateLine(itemId: string, key: string, patch: Partial<Line>) {
+    setPicked((s) => {
+      const e = s[itemId]; if (!e) return s;
+      return { ...s, [itemId]: { ...e, lines: e.lines.map((l) => l.key === key ? { ...l, ...patch } : l) } };
+    });
+  }
+  function addLine(itemId: string) {
+    setPicked((s) => {
+      const e = s[itemId]; if (!e) return s;
+      const itemVariants = variants.filter((v) => v.warehouse_item_id === itemId);
+      return { ...s, [itemId]: { ...e, lines: [...e.lines, newLine(itemVariants[0]?.id ?? null)] } };
+    });
+  }
+  function removeLine(itemId: string, key: string) {
+    setPicked((s) => {
+      const e = s[itemId]; if (!e) return s;
+      const lines = e.lines.filter((l) => l.key !== key);
+      if (lines.length === 0) { const n = { ...s }; delete n[itemId]; return n; }
+      return { ...s, [itemId]: { ...e, lines } };
+    });
+  }
+
   async function create() {
-    const items = Object.values(picked);
-    if (items.length === 0) { toast.error("Pilih minimal 1 barang"); return; }
+    const entries = Object.values(picked);
+    if (entries.length === 0) { toast.error("Pilih minimal 1 barang"); return; }
     if (pin.length < 4) { toast.error("PIN minimal 4 digit"); return; }
     const cleanedPhone = phone.replace(/\D/g, "");
     // Open a tab synchronously so popup blockers don't intercept after await
     const waWindow = cleanedPhone ? window.open("about:blank", "_blank") : null;
     setBusy(true);
     const token = genShareToken();
-    // Jika "Foto terpisah" aktif & qty > 1, pecah jadi N baris masing-masing qty 1
-    // supaya pegawai mengirim foto + lokasi terpisah per botol/unit.
-    const expanded = items.flatMap((x) => {
-      if (x.split && x.qty > 1) {
-        return Array.from({ length: Math.floor(x.qty) }, (_, i) => ({
-          warehouse_item_id: x.item.id,
-          name: `${x.item.name} (${i + 1}/${Math.floor(x.qty)})`,
-          category: x.item.category,
-          qty_requested: 1,
-          ref_photo_path: x.item.image_path,
-        }));
-      }
-      return [{
-        warehouse_item_id: x.item.id, name: x.item.name, category: x.item.category,
-        qty_requested: x.qty, ref_photo_path: x.item.image_path,
-      }];
-    });
+    // Setiap baris (varian + jumlah) → 1 item tugas. Berat per baris = weight × count.
+    // Stok dipotong dari produk induk (warehouse_item_id), bukan dari varian.
+    const expanded = entries.flatMap(({ item, lines }) =>
+      lines.flatMap((l) => {
+        const w = lineWeight(l, variants);
+        const v = variants.find((x) => x.id === l.variantId);
+        const baseName = v ? `${item.name} — ${v.label}` : item.name;
+        const total = w * (l.count || 0);
+        if (l.split && (l.count || 0) > 1) {
+          const n = Math.floor(l.count);
+          return Array.from({ length: n }, (_, i) => ({
+            warehouse_item_id: item.id,
+            name: `${baseName} (${i + 1}/${n})`,
+            category: item.category,
+            qty_requested: w,
+            unit_label: v?.unit_label ?? null,
+            ref_photo_path: item.image_path,
+          }));
+        }
+        return [{
+          warehouse_item_id: item.id, name: baseName, category: item.category,
+          qty_requested: total, unit_label: v?.unit_label ?? null,
+          ref_photo_path: item.image_path,
+        }];
+      })
+    );
     const args = {
       _title: title, _note: note || null, _pin: pin, _share_token: token,
       _items: expanded,
@@ -164,6 +220,14 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
 
   return (
     <Modal title="Buat tugas baru" onClose={onClose}>
+      {manageVariantsFor && (
+        <VariantManager
+          item={manageVariantsFor}
+          variants={variants.filter((v) => v.warehouse_item_id === manageVariantsFor.id)}
+          onClose={() => setManageVariantsFor(null)}
+          onChanged={onVariantsChanged}
+        />
+      )}
       <div className="space-y-3 text-sm">
         <label className="block">
           <div className="mb-1 text-[11px] text-muted-foreground">Judul</div>
@@ -198,28 +262,68 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
             <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Cari barang…" className="h-9 flex-1 rounded-md border bg-background px-2 text-sm" />
             <span className="text-[11px] text-muted-foreground">{Object.keys(picked).length} dipilih</span>
           </div>
-          <div className="max-h-72 space-y-1 overflow-y-auto rounded-md border p-1">
+          <div className="max-h-96 space-y-1 overflow-y-auto rounded-md border p-1">
             {filtered.map((it) => {
               const p = picked[it.id];
+              const itemVariants = variants.filter((v) => v.warehouse_item_id === it.id);
               return (
-                <div key={it.id} className={`flex items-center gap-2 rounded p-1.5 ${p ? "bg-primary/5" : ""}`}>
-                  <input type="checkbox" checked={!!p} onChange={() => toggle(it)} />
-                  <div className="min-w-0 flex-1">
-                    <div className="truncate text-xs font-medium">{it.name}</div>
-                    <div className="text-[10px] text-muted-foreground">{it.category ?? "—"} · stok {it.stock_base}</div>
+                <div key={it.id} className={`rounded p-1.5 ${p ? "bg-primary/5" : ""}`}>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" checked={!!p} onChange={() => toggle(it)} />
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate text-xs font-medium">{it.name}</div>
+                      <div className="text-[10px] text-muted-foreground">
+                        {it.category ?? "—"} · stok {it.stock_base}
+                        {itemVariants.length > 0 && <span className="ml-1">· {itemVariants.length} varian</span>}
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setManageVariantsFor(it)}
+                      className="inline-flex h-7 items-center gap-1 rounded border px-2 text-[10px] text-muted-foreground hover:text-foreground"
+                      title="Kelola varian (preset berat)">
+                      <Settings2 className="h-3 w-3" /> Varian
+                    </button>
                   </div>
                   {p && (
-                    <div className="flex flex-col items-end gap-1">
-                      <input type="number" inputMode="decimal" min={0} step="0.01" value={p.qty}
-                        onChange={(e) => setPicked((s) => ({ ...s, [it.id]: { ...s[it.id], qty: Number(e.target.value) || 0 } }))}
-                        placeholder="mis. 0.90"
-                        title="Berat / jumlah yang harus disiapkan (boleh desimal)"
-                        className="h-8 w-24 rounded border bg-background px-1 text-xs tabular-nums" />
-                      <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
-                        <input type="checkbox" checked={p.split}
-                          onChange={(e) => setPicked((s) => ({ ...s, [it.id]: { ...s[it.id], split: e.target.checked } }))} />
-                        Foto terpisah ({p.qty || 0}×)
-                      </label>
+                    <div className="mt-2 space-y-1.5 pl-6">
+                      {p.lines.map((l) => {
+                        const w = lineWeight(l, variants);
+                        const total = w * (l.count || 0);
+                        return (
+                          <div key={l.key} className="flex flex-wrap items-center gap-1.5 rounded border bg-background/60 p-1.5">
+                            <select value={l.variantId ?? ""}
+                              onChange={(e) => updateLine(it.id, l.key, { variantId: e.target.value || null, weightOverride: null })}
+                              className="h-8 max-w-[160px] flex-1 rounded border bg-background px-1 text-[11px]">
+                              <option value="">Berat manual…</option>
+                              {itemVariants.map((v) => (
+                                <option key={v.id} value={v.id}>{v.label} · {Number(v.weight_per_unit)} {v.unit_label ?? ""}</option>
+                              ))}
+                            </select>
+                            <input type="number" inputMode="numeric" min={0} step="1" value={l.count}
+                              onChange={(e) => updateLine(it.id, l.key, { count: Number(e.target.value) || 0 })}
+                              title="Jumlah unit yang dipesan"
+                              className="h-8 w-14 rounded border bg-background px-1 text-center text-xs tabular-nums" />
+                            <span className="text-[10px] text-muted-foreground">×</span>
+                            <input type="number" inputMode="decimal" min={0} step="0.01"
+                              value={l.weightOverride ?? w}
+                              onChange={(e) => updateLine(it.id, l.key, { weightOverride: e.target.value === "" ? null : Number(e.target.value) })}
+                              title="Berat per unit (boleh desimal)"
+                              className="h-8 w-20 rounded border bg-background px-1 text-center text-xs tabular-nums" />
+                            <span className="text-[10px] font-semibold tabular-nums">= {total.toFixed(2)}</span>
+                            <label className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                              <input type="checkbox" checked={l.split}
+                                onChange={(e) => updateLine(it.id, l.key, { split: e.target.checked })} />
+                              Foto/unit
+                            </label>
+                            <button type="button" onClick={() => removeLine(it.id, l.key)}
+                              className="ml-auto inline-flex h-6 w-6 items-center justify-center rounded border text-destructive"
+                              title="Hapus baris"><X className="h-3 w-3" /></button>
+                          </div>
+                        );
+                      })}
+                      <button type="button" onClick={() => addLine(it.id)}
+                        className="inline-flex h-7 items-center gap-1 rounded border border-dashed px-2 text-[10px] text-muted-foreground">
+                        <Plus className="h-3 w-3" /> Tambah varian/baris
+                      </button>
                     </div>
                   )}
                 </div>
@@ -391,5 +495,91 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
         {children}
       </div>
     </div>
+  );
+}
+
+// ---------- Variant manager ----------
+function VariantManager({ item, variants, onClose, onChanged }: { item: WItem; variants: Variant[]; onClose: () => void; onChanged: () => void | Promise<void> }) {
+  const [rows, setRows] = useState<Variant[]>(variants);
+  const [label, setLabel] = useState("");
+  const [weight, setWeight] = useState("");
+  const [unit, setUnit] = useState("gr");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => { setRows(variants); }, [variants]);
+
+  async function add() {
+    const w = Number(weight);
+    if (!label.trim()) return toast.error("Isi label varian (mis. 1G, ST, SPR)");
+    if (!isFinite(w) || w <= 0) return toast.error("Berat per unit harus > 0");
+    setBusy(true);
+    const { data: u } = await supabase.auth.getUser();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from as any)("warehouse_item_variants").insert({
+      user_id: u.user?.id, warehouse_item_id: item.id,
+      label: label.trim(), weight_per_unit: w, unit_label: unit.trim() || null,
+      position: rows.length,
+    });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    setLabel(""); setWeight("");
+    await onChanged();
+    toast.success("Varian ditambahkan");
+  }
+
+  async function remove(id: string) {
+    if (!confirm("Hapus varian ini?")) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from as any)("warehouse_item_variants").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    await onChanged();
+  }
+
+  async function updateRow(id: string, patch: Partial<Variant>) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from as any)("warehouse_item_variants").update(patch).eq("id", id);
+    if (error) return toast.error(error.message);
+    await onChanged();
+  }
+
+  return (
+    <Modal title={`Varian: ${item.name}`} onClose={onClose}>
+      <p className="mb-2 text-[11px] text-muted-foreground">
+        Buat preset varian penyiapan untuk produk ini (mis. <b>1G</b> = 0.90 gr, <b>ST</b> = 0.40 gr, <b>SPR</b> = 0.20 gr).
+        Saat membuat tugas, pilih varian + jumlah unit — sistem akan menghitung total berat dan mengurangi stok dari produk induk <b>{item.name}</b>.
+      </p>
+      <div className="space-y-1.5">
+        {rows.map((v) => (
+          <div key={v.id} className="flex items-center gap-1.5 rounded border bg-background p-1.5">
+            <input defaultValue={v.label} onBlur={(e) => e.target.value !== v.label && updateRow(v.id, { label: e.target.value })}
+              className="h-8 w-20 rounded border bg-background px-1 text-xs" placeholder="Label" />
+            <input type="number" step="0.01" defaultValue={Number(v.weight_per_unit)}
+              onBlur={(e) => Number(e.target.value) !== Number(v.weight_per_unit) && updateRow(v.id, { weight_per_unit: Number(e.target.value) })}
+              className="h-8 w-20 rounded border bg-background px-1 text-center text-xs tabular-nums" />
+            <input defaultValue={v.unit_label ?? ""} onBlur={(e) => (e.target.value || null) !== v.unit_label && updateRow(v.id, { unit_label: e.target.value || null })}
+              className="h-8 w-16 rounded border bg-background px-1 text-xs" placeholder="gr" />
+            <button onClick={() => remove(v.id)} className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded border text-destructive"><Trash2 className="h-3.5 w-3.5" /></button>
+          </div>
+        ))}
+        {rows.length === 0 && <div className="rounded border border-dashed p-3 text-center text-[11px] text-muted-foreground">Belum ada varian. Tambah di bawah.</div>}
+      </div>
+      <div className="mt-3 flex items-end gap-1.5 border-t pt-3">
+        <label className="flex-1">
+          <div className="text-[10px] text-muted-foreground">Label</div>
+          <input value={label} onChange={(e) => setLabel(e.target.value)} placeholder="1G" className="h-9 w-full rounded border bg-background px-2 text-sm" />
+        </label>
+        <label className="w-24">
+          <div className="text-[10px] text-muted-foreground">Berat/unit</div>
+          <input value={weight} onChange={(e) => setWeight(e.target.value)} type="number" step="0.01" placeholder="0.90" className="h-9 w-full rounded border bg-background px-2 text-center text-sm tabular-nums" />
+        </label>
+        <label className="w-16">
+          <div className="text-[10px] text-muted-foreground">Satuan</div>
+          <input value={unit} onChange={(e) => setUnit(e.target.value)} placeholder="gr" className="h-9 w-full rounded border bg-background px-2 text-sm" />
+        </label>
+        <button disabled={busy} onClick={add} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50">
+          <Plus className="h-3.5 w-3.5" /> Tambah
+        </button>
+      </div>
+    </Modal>
   );
 }
