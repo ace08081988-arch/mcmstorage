@@ -1020,6 +1020,8 @@ function ShareDebt({
 /* ----------------- STOK ----------------- */
 function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null; onChanged: () => void }) {
   const [editing, setEditing] = useState<WItem | null>(null);
+  const [query, setQuery] = useState("");
+  const [collapsed, setCollapsed] = useState<Record<string, boolean>>({});
   async function remove(id: string, name: string) {
     if (!(await confirm({
       title: "Hapus barang?",
@@ -1036,58 +1038,160 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
         Belum ada barang. Tambahkan saat mencatat pembelian pertama di tab <b>Beli</b>.
       </div>
     );
+
+  const q = query.trim().toLowerCase();
+  const filtered = q
+    ? items.filter(
+        (i) =>
+          i.name.toLowerCase().includes(q) ||
+          (i.category ?? "").toLowerCase().includes(q),
+      )
+    : items;
+
+  const groups = new Map<string, WItem[]>();
+  for (const it of filtered) {
+    const key = (it.category ?? "").trim() || "Tanpa Kategori";
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(it);
+  }
+  const groupKeys = Array.from(groups.keys()).sort((a, b) => {
+    if (a === "Tanpa Kategori") return 1;
+    if (b === "Tanpa Kategori") return -1;
+    return a.localeCompare(b, "id");
+  });
+  for (const k of groupKeys) {
+    groups.get(k)!.sort((a, b) => a.name.localeCompare(b.name, "id"));
+  }
+
+  const totalItems = items.length;
+  const totalValue = items.reduce((s, i) => s + i.stock_base * i.avg_cost_per_base, 0);
+  const totalCategories = new Set(items.map((i) => (i.category ?? "").trim() || "Tanpa Kategori")).size;
+
   return (
     <>
-    <ul className="space-y-2">
-      {items.map((i) => (
-        <li key={i.id} className="rounded-lg border bg-card p-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="flex min-w-0 gap-2">
-              {i.image_path ? (
-                <SignedImg path={i.image_path} className="h-12 w-12 shrink-0 rounded-md border object-cover bg-muted" />
-              ) : (
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[10px] text-muted-foreground">📷</div>
-              )}
-              <div className="min-w-0">
-                <div className="truncate text-sm font-semibold">{i.name}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  {i.category || "—"} · per {i.package_type}
-                  {i.package_type !== "pcs" && ` (${i.package_size} ${i.base_unit}/kemasan)`}
-                </div>
+    {/* Ringkasan profesional */}
+    <section className="rounded-xl border bg-card p-4 shadow-sm">
+      <div className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Ringkasan Stok</div>
+          <div className="mt-0.5 text-base font-semibold">Inventaris Gudang</div>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-right text-xs sm:gap-4">
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Item</div>
+            <div className="text-sm font-semibold tabular-nums">{totalItems.toLocaleString("id-ID")}</div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Kategori</div>
+            <div className="text-sm font-semibold tabular-nums">{totalCategories.toLocaleString("id-ID")}</div>
+          </div>
+          <div>
+            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Nilai stok</div>
+            <div className="text-sm font-semibold tabular-nums">{rupiah(totalValue)}</div>
+          </div>
+        </div>
+      </div>
+      <div className="mt-3">
+        <input
+          type="search"
+          placeholder="Cari nama atau kategori…"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2"
+        />
+      </div>
+    </section>
+
+    {filtered.length === 0 && (
+      <div className="mt-3 rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+        Tidak ada barang cocok dengan pencarian.
+      </div>
+    )}
+
+    {/* Daftar dikelompokkan per kategori */}
+    <div className="mt-3 space-y-3">
+      {groupKeys.map((cat) => {
+        const list = groups.get(cat)!;
+        const catValue = list.reduce((s, i) => s + i.stock_base * i.avg_cost_per_base, 0);
+        const isCollapsed = !!collapsed[cat];
+        return (
+          <section key={cat} className="overflow-hidden rounded-xl border bg-card shadow-sm">
+            <header
+              className="flex cursor-pointer items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2"
+              onClick={() => setCollapsed((c) => ({ ...c, [cat]: !c[cat] }))}
+            >
+              <div className="flex min-w-0 items-center gap-2">
+                <span
+                  aria-hidden
+                  className={`inline-block h-2 w-2 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
+                />
+                <h3 className="truncate text-sm font-semibold">{cat}</h3>
+                <span className="rounded-full border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                  {list.length} item
+                </span>
               </div>
-            </div>
-            <div className="flex shrink-0 gap-1">
-              <button
-                onClick={() => setEditing(i)}
-                className="rounded border px-2 py-1 text-[11px] hover:bg-accent"
-              >
-                Edit
-              </button>
-              <button
-                onClick={() => remove(i.id, i.name)}
-                className="rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
-              >
-                Hapus
-              </button>
-            </div>
-          </div>
-          <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
-            <div className="rounded bg-muted/50 p-2">
-              <div className="text-muted-foreground">Stok</div>
-              <div className="font-semibold">{fmtItemQty(i.stock_base, i)}</div>
-            </div>
-            <div className="rounded bg-muted/50 p-2">
-              <div className="text-muted-foreground">HPP / {i.base_unit}</div>
-              <div className="font-semibold">{rupiah(i.avg_cost_per_base)}</div>
-            </div>
-            <div className="rounded bg-muted/50 p-2">
-              <div className="text-muted-foreground">Nilai</div>
-              <div className="font-semibold">{rupiah(i.stock_base * i.avg_cost_per_base)}</div>
-            </div>
-          </div>
-        </li>
-      ))}
-    </ul>
+              <div className="flex shrink-0 items-center gap-2 text-[11px]">
+                <span className="hidden text-muted-foreground sm:inline">Nilai</span>
+                <span className="font-semibold tabular-nums">{rupiah(catValue)}</span>
+                <span className="text-muted-foreground">{isCollapsed ? "▸" : "▾"}</span>
+              </div>
+            </header>
+            {!isCollapsed && (
+              <ul className="divide-y">
+                {list.map((i) => (
+                  <li key={i.id} className="p-3 transition-colors hover:bg-muted/30">
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex min-w-0 gap-2">
+                        {i.image_path ? (
+                          <SignedImg path={i.image_path} className="h-12 w-12 shrink-0 rounded-md border object-cover bg-muted" />
+                        ) : (
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[10px] text-muted-foreground">📷</div>
+                        )}
+                        <div className="min-w-0">
+                          <div className="truncate text-sm font-semibold">{i.name}</div>
+                          <div className="text-[11px] text-muted-foreground">
+                            per {i.package_type}
+                            {i.package_type !== "pcs" && ` (${i.package_size} ${i.base_unit}/kemasan)`}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex shrink-0 gap-1">
+                        <button
+                          onClick={() => setEditing(i)}
+                          className="rounded border px-2 py-1 text-[11px] hover:bg-accent"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          onClick={() => remove(i.id, i.name)}
+                          className="rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10"
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
+                      <div className="rounded bg-muted/50 p-2">
+                        <div className="text-muted-foreground">Stok</div>
+                        <div className="font-semibold tabular-nums">{fmtItemQty(i.stock_base, i)}</div>
+                      </div>
+                      <div className="rounded bg-muted/50 p-2">
+                        <div className="text-muted-foreground">HPP / {i.base_unit}</div>
+                        <div className="font-semibold tabular-nums">{rupiah(i.avg_cost_per_base)}</div>
+                      </div>
+                      <div className="rounded bg-muted/50 p-2">
+                        <div className="text-muted-foreground">Nilai</div>
+                        <div className="font-semibold tabular-nums">{rupiah(i.stock_base * i.avg_cost_per_base)}</div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </section>
+        );
+      })}
+    </div>
     {editing && (
       <EditItemDialog
         item={editing}
