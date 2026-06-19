@@ -384,8 +384,14 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 <div className="mb-0.5 text-[10px] text-muted-foreground">Jumlah unit</div>
                                 <input type="text" inputMode="decimal" defaultValue={String(l.count)}
                                   onChange={(e) => {
-                                    const n = parseNum(e.target.value);
-                                    updateLine(it.id, l.key, { count: n ?? 0 });
+                                    const raw = e.target.value;
+                                    if (raw.trim() === "") {
+                                      updateLine(it.id, l.key, { count: 0 });
+                                      return;
+                                    }
+                                    const n = parseNum(raw);
+                                    if (n == null) return;
+                                    updateLine(it.id, l.key, { count: n });
                                   }}
                                   className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums" />
                               </label>
