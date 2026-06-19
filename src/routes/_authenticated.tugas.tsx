@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl } from "@/lib/share-wa";
-import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X } from "lucide-react";
+import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
@@ -17,6 +17,7 @@ export const Route = createFileRoute("/_authenticated/tugas")({
 });
 
 type WItem = { id: string; name: string; category: string | null; image_path: string | null; stock_base: number };
+type Variant = { id: string; warehouse_item_id: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
 type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string };
 type TaskItem = { id: string; task_id: string; name_snapshot: string; category_snapshot: string | null; qty_requested: number; qty_prepared: number; unit_label: string | null; ref_photo_path: string | null; warehouse_item_id: string | null };
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
@@ -25,6 +26,7 @@ function TugasPage() {
   const [uid, setUid] = useState<string | null>(null);
   const [tasks, setTasks] = useState<Task[]>([]);
   const [warehouse, setWarehouse] = useState<WItem[]>([]);
+  const [variants, setVariants] = useState<Variant[]>([]);
   const [openCreate, setOpenCreate] = useState(false);
   const [openTask, setOpenTask] = useState<Task | null>(null);
   const [createdInfo, setCreatedInfo] = useState<{ token: string; pin: string; title: string } | null>(null);
@@ -33,12 +35,15 @@ function TugasPage() {
 
   async function load() {
     if (!uid) return;
-    const [{ data: t }, { data: w }] = await Promise.all([
+    const [{ data: t }, { data: w }, { data: v }] = await Promise.all([
       supabase.from("prep_tasks").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("id,name,category,image_path,stock_base").order("name"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase.from as any)("warehouse_item_variants").select("*").order("position"),
     ]);
     setTasks((t ?? []) as Task[]);
     setWarehouse((w ?? []) as WItem[]);
+    setVariants((v ?? []) as Variant[]);
   }
   useEffect(() => { void load(); }, [uid]);
 
@@ -79,6 +84,8 @@ function TugasPage() {
       {openCreate && (
         <CreateDialog
           warehouse={warehouse}
+          variants={variants}
+          onVariantsChanged={load}
           onClose={() => setOpenCreate(false)}
           onCreated={(info) => { setOpenCreate(false); setCreatedInfo(info); void load(); }}
         />
