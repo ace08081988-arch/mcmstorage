@@ -65,15 +65,16 @@ export function ProductEditDrawer(props: Props) {
   const s = (draft.satuan ?? "pcs") as Satuan;
   const b = satuanBounds(s);
 
+  const d = draft;
   async function kirimWA() {
-    const text = buildPesan(draft);
-    const photoUrls = [draft.foto, ...(draft.galeri ?? [])].filter(Boolean) as string[];
+    const text = buildPesan(d);
+    const photoUrls = [d.foto, ...(d.galeri ?? [])].filter(Boolean) as string[];
     const files: File[] = [];
     for (let i = 0; i < photoUrls.length; i++) {
       const f = await urlToFile(photoUrls[i], `produk-${i + 1}.jpg`);
       if (f) files.push(f);
     }
-    const res = await shareToWhatsApp({ text, title: draft.nama, files, url: draft.lokasi || undefined });
+    const res = await shareToWhatsApp({ text, title: d.nama, files, url: d.lokasi || undefined });
     if (res === "fallback") toast.message("Foto tidak bisa dilampirkan otomatis di perangkat ini — pesan & lokasi tetap terkirim.");
   }
 
