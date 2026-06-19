@@ -1600,7 +1600,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
       );
       return;
     }
-    if (qtyBase > item.stock_base) { toast.error(`Stok kurang. Tersedia ${fmtBase(item.stock_base, item.base_unit)}`); return; }
+    if (qtyBase > item.stock_base) { toast.error(`Stok kurang. Tersedia ${fmtItemQty(item.stock_base, item)}`); return; }
     let useCustomerId: string | null = customerId || null;
     if (customerId === "__new__") {
       const nm = newCustName.trim();
@@ -1829,8 +1829,8 @@ function RiwayatTab({
                     <button onClick={() => delSale(s.id)} className="shrink-0 rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
                   </div>
                   <div className="mt-1 grid grid-cols-3 gap-2">
-                    <div><span className="text-muted-foreground">Jumlah </span><b>{fmtBase(Number(s.qty_base), it?.base_unit || "pcs")}</b></div>
-                    <div><span className="text-muted-foreground">Harga </span><b>{rupiah(Number(s.price_per_base))}/{it?.base_unit || "pcs"}</b></div>
+                    <div><span className="text-muted-foreground">Jumlah </span><b>{fmtItemQty(Number(s.qty_base), it)}</b></div>
+                    <div><span className="text-muted-foreground">Harga </span><b>{fmtItemPrice(Number(s.price_per_base), it)}</b></div>
                     <div><span className="text-muted-foreground">Total </span><b>{rupiah(Number(s.total_revenue))}</b></div>
                   </div>
                 </li>
