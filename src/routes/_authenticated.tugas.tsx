@@ -334,7 +334,10 @@ function SubmissionCard({ sub }: { sub: Submission }) {
       sub.note ? `Catatan: ${sub.note}` : "",
       sub.location_url ? `Lokasi: ${sub.location_url}` : "",
     ].filter(Boolean).join("\n");
-    await shareToWhatsApp({ text: text || "Foto barang", files, url: sub.location_url ?? undefined });
+    const result = await shareToWhatsApp({ text: text || "Foto barang", files, url: sub.location_url ?? undefined });
+    if (result === "fallback" && files.length > 0) {
+      toast.message("Foto sudah diunduh — di WA tap 📎 lalu pilih foto tadi untuk dikirim.");
+    }
   }
 
   return (
