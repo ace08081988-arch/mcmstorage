@@ -126,6 +126,30 @@ function fmtQtyDual(
   return `${pkgStr} (= ${fmtBase(baseQty, baseUnit)})`;
 }
 
+// Format default untuk barang: pakai unit kemasan bila ada, fallback ke base.
+function fmtItemQty(
+  baseQty: number,
+  item: { base_unit: "g" | "pcs"; package_type: string; package_size: number } | null | undefined,
+) {
+  if (!item) return fmtBase(baseQty, "pcs");
+  const mode: "base" | "package" =
+    item.package_type && item.package_type !== "pcs" && item.package_size > 0 ? "package" : "base";
+  return fmtQtyDual(baseQty, item.base_unit, item.package_type, item.package_size, mode);
+}
+
+// Format harga per unit terpilih (jika package, kalikan package_size).
+function fmtItemPrice(
+  pricePerBase: number,
+  item: { base_unit: "g" | "pcs"; package_type: string; package_size: number } | null | undefined,
+) {
+  if (!item) return `${rupiah(pricePerBase)}/pcs`;
+  if (item.package_type && item.package_type !== "pcs" && item.package_size > 0) {
+    const perPkg = pricePerBase * item.package_size;
+    return `${rupiah(perPkg)}/${item.package_type} (= ${rupiah(pricePerBase)}/${item.base_unit})`;
+  }
+  return `${rupiah(pricePerBase)}/${item.base_unit}`;
+}
+
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
 }
