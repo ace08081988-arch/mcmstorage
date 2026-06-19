@@ -18,6 +18,7 @@ export const Route = createFileRoute("/_authenticated/tugas")({
 
 type WItem = { id: string; name: string; category: string | null; image_path: string | null; stock_base: number };
 type Variant = { id: string; warehouse_item_id: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
+type CatVariant = { id: string; category: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
 type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string };
 type TaskItem = { id: string; task_id: string; name_snapshot: string; category_snapshot: string | null; qty_requested: number; qty_prepared: number; unit_label: string | null; ref_photo_path: string | null; warehouse_item_id: string | null };
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
@@ -27,25 +28,29 @@ function TugasPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [warehouse, setWarehouse] = useState<WItem[]>([]);
   const [variants, setVariants] = useState<Variant[]>([]);
+  const [catVariants, setCatVariants] = useState<CatVariant[]>([]);
   const [openCreate, setOpenCreate] = useState(false);
   const [openTask, setOpenTask] = useState<Task | null>(null);
   const [createdInfo, setCreatedInfo] = useState<{ token: string; pin: string; title: string } | null>(null);
   const [openVariantsHub, setOpenVariantsHub] = useState(false);
-  const [manageVariantsFor, setManageVariantsFor] = useState<WItem | null>(null);
+  const [manageCategoryFor, setManageCategoryFor] = useState<string | null>(null);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
   async function load() {
     if (!uid) return;
-    const [{ data: t }, { data: w }, { data: v }] = await Promise.all([
+    const [{ data: t }, { data: w }, { data: v }, { data: cv }] = await Promise.all([
       supabase.from("prep_tasks").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("id,name,category,image_path,stock_base").order("name"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase.from as any)("warehouse_item_variants").select("*").order("position"),
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase.from as any)("warehouse_category_variants").select("*").order("position"),
     ]);
     setTasks((t ?? []) as Task[]);
     setWarehouse((w ?? []) as WItem[]);
     setVariants((v ?? []) as Variant[]);
+    setCatVariants((cv ?? []) as CatVariant[]);
   }
   useEffect(() => { void load(); }, [uid]);
 
@@ -55,6 +60,36 @@ function TugasPage() {
     if (error) return toast.error(error.message);
     toast.success("Tugas dihapus"); void load();
   }
+
+  // Gabungkan varian per-produk + preset per-kategori → entri varian per item.
+  const effectiveVariants = useMemo<Variant[]>(() => {
+    const itemLevel = variants;
+    const synthesized: Variant[] = [];
+    const byCat = new Map<string, CatVariant[]>();
+    for (const cv of catVariants) {
+      const arr = byCat.get(cv.category) ?? [];
+      arr.push(cv); byCat.set(cv.category, arr);
+    }
+    for (const it of warehouse) {
+      const cat = (it.category ?? "").trim();
+      if (!cat) continue;
+      const presets = byCat.get(cat); if (!presets) continue;
+      // skip presets yg labelnya sudah dioverride di item-level
+      const overridden = new Set(itemLevel.filter((v) => v.warehouse_item_id === it.id).map((v) => v.label.toLowerCase()));
+      for (const cv of presets) {
+        if (overridden.has(cv.label.toLowerCase())) continue;
+        synthesized.push({
+          id: `cat:${cv.id}:${it.id}`,
+          warehouse_item_id: it.id,
+          label: cv.label,
+          weight_per_unit: Number(cv.weight_per_unit),
+          unit_label: cv.unit_label,
+          position: 1000 + cv.position,
+        });
+      }
+    }
+    return [...itemLevel, ...synthesized].sort((a, b) => a.position - b.position);
+  }, [variants, catVariants, warehouse]);
 
   return (
     <div className="mx-auto max-w-4xl px-3 py-4">
@@ -91,7 +126,7 @@ function TugasPage() {
       {openCreate && (
         <CreateDialog
           warehouse={warehouse}
-          variants={variants}
+          variants={effectiveVariants}
           onVariantsChanged={load}
           onClose={() => setOpenCreate(false)}
           onCreated={(info) => { setOpenCreate(false); setCreatedInfo(info); void load(); }}
@@ -102,16 +137,16 @@ function TugasPage() {
       {openVariantsHub && (
         <VariantsHub
           warehouse={warehouse}
-          variants={variants}
-          onPick={(it) => setManageVariantsFor(it)}
+          catVariants={catVariants}
+          onPickCategory={(cat) => setManageCategoryFor(cat)}
           onClose={() => setOpenVariantsHub(false)}
         />
       )}
-      {manageVariantsFor && (
-        <VariantManager
-          item={manageVariantsFor}
-          variants={variants.filter((v) => v.warehouse_item_id === manageVariantsFor.id)}
-          onClose={() => setManageVariantsFor(null)}
+      {manageCategoryFor && (
+        <CategoryVariantManager
+          category={manageCategoryFor}
+          variants={catVariants.filter((v) => v.category === manageCategoryFor)}
+          onClose={() => setManageCategoryFor(null)}
           onChanged={load}
         />
       )}
