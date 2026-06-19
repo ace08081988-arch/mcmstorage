@@ -211,22 +211,8 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
       <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
 
-      <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
-        <label className="block text-[11px] font-semibold text-amber-700 dark:text-amber-400">
-          Jumlah yang BENAR disiapkan (wajib, sesuai timbangan)
-        </label>
-        <div className="mt-1 flex items-center gap-2">
-          <input
-            type="number" inputMode="decimal" step="0.01" min="0"
-            value={qty} onChange={(e) => setQty(e.target.value)}
-            placeholder="mis. 0.20"
-            className="h-10 flex-1 rounded-md border bg-background px-2 text-base font-semibold tabular-nums"
-          />
-          <span className="text-xs text-muted-foreground">{item.unit_label ?? ""}</span>
-        </div>
-        <p className="mt-1 text-[10px] text-muted-foreground">
-          Stok gudang induk akan otomatis berkurang sebanyak angka ini. Mis. stok 100 - 0.20 = 99.80.
-        </p>
+      <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400">
+        Siapkan <b>{item.qty_requested} {item.unit_label ?? ""}</b> sesuai instruksi pemilik. Setelah foto + lokasi terkirim, stok gudang otomatis berkurang sebanyak itu — Anda tidak perlu mengisi angka apa pun.
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2">
