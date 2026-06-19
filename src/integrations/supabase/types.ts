@@ -954,6 +954,42 @@ export type Database = {
         }
         Relationships: []
       }
+      warehouse_category_variants: {
+        Row: {
+          category: string
+          created_at: string
+          id: string
+          label: string
+          position: number
+          unit_label: string | null
+          updated_at: string
+          user_id: string
+          weight_per_unit: number
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          id?: string
+          label: string
+          position?: number
+          unit_label?: string | null
+          updated_at?: string
+          user_id: string
+          weight_per_unit?: number
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          id?: string
+          label?: string
+          position?: number
+          unit_label?: string | null
+          updated_at?: string
+          user_id?: string
+          weight_per_unit?: number
+        }
+        Relationships: []
+      }
       warehouse_item_variants: {
         Row: {
           created_at: string
