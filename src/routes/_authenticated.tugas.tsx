@@ -91,6 +91,10 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
   const [title, setTitle] = useState("Tugas siapkan barang");
   const [note, setNote] = useState("");
   const [pin, setPin] = useState(genPin());
+  const [phone, setPhone] = useState(() => {
+    if (typeof window === "undefined") return "";
+    return localStorage.getItem("prep:last_phone") ?? "";
+  });
   const [query, setQuery] = useState("");
   const [picked, setPicked] = useState<Record<string, { qty: number; item: WItem }>>({});
   const [busy, setBusy] = useState(false);
@@ -112,6 +116,9 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
     const items = Object.values(picked);
     if (items.length === 0) { toast.error("Pilih minimal 1 barang"); return; }
     if (pin.length < 4) { toast.error("PIN minimal 4 digit"); return; }
+    const cleanedPhone = phone.replace(/\D/g, "");
+    // Open a tab synchronously so popup blockers don't intercept after await
+    const waWindow = cleanedPhone ? window.open("about:blank", "_blank") : null;
     setBusy(true);
     const token = genShareToken();
     const args = {
@@ -124,8 +131,17 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.rpc as any)("prep_create_task", args);
     setBusy(false);
-    if (error) return toast.error(error.message);
-    toast.success("Tugas dibuat");
+    if (error) { if (waWindow) waWindow.close(); return toast.error(error.message); }
+    if (cleanedPhone) {
+      localStorage.setItem("prep:last_phone", cleanedPhone);
+      const url = publicTaskUrl(token);
+      const msg = `Tolong siapkan barang berikut. Buka link, masukkan PIN, foto barangnya & kirim:\n\n${title}\n${url}\nPIN: ${pin}`;
+      const waUrl = `https://wa.me/${cleanedPhone}?text=${encodeURIComponent(msg)}`;
+      if (waWindow) waWindow.location.href = waUrl;
+      toast.success("Tugas dibuat — WhatsApp dibuka");
+    } else {
+      toast.success("Tugas dibuat");
+    }
     onCreated({ token, pin, title });
   }
 
@@ -147,6 +163,18 @@ function CreateDialog({ warehouse, onClose, onCreated }: { warehouse: WItem[]; o
           </label>
           <button onClick={() => setPin(genPin())} className="h-10 rounded-md border px-3 text-xs">Acak</button>
         </div>
+
+        <label className="block">
+          <div className="mb-1 text-[11px] text-muted-foreground">Nomor WhatsApp pegawai (opsional, format: 628xxxx)</div>
+          <input
+            value={phone}
+            onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, "").slice(0, 16))}
+            placeholder="62812xxxxxxx"
+            inputMode="tel"
+            className="h-10 w-full rounded-md border bg-background px-3 text-sm tabular-nums"
+          />
+          <div className="mt-1 text-[10px] text-muted-foreground">Jika diisi, WhatsApp akan otomatis terbuka berisi link & PIN setelah tugas dibuat.</div>
+        </label>
 
         <div className="border-t pt-3">
           <div className="mb-2 flex items-center gap-2">
