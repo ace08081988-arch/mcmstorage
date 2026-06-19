@@ -453,6 +453,7 @@ type AuditRow = {
 function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<AuditRow[]>([]);
+  const [filter, setFilter] = useState<"all" | "ok" | "bad">("all");
 
   async function run() {
     setLoading(true);
@@ -503,6 +504,11 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
 
   const okCount = rows.filter((r) => r.issues.length === 0).length;
   const badCount = rows.length - okCount;
+  const visibleRows = rows.filter((r) => {
+    if (filter === "ok") return r.issues.length === 0;
+    if (filter === "bad") return r.issues.length > 0;
+    return true;
+  });
 
   return (
     <Modal title="Revalidasi total berat & jumlah" onClose={onClose}>
@@ -512,8 +518,23 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
         </div>
         <button onClick={() => void run()} className="h-8 rounded-md border px-3 text-xs">Hitung ulang</button>
       </div>
+      <div className="mb-2 flex items-center gap-1 text-xs">
+        {([
+          ["all", `Semua (${rows.length})`],
+          ["bad", `Bermasalah (${badCount})`],
+          ["ok", `Aman (${okCount})`],
+        ] as const).map(([key, label]) => (
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`h-7 rounded-md border px-2 ${filter === key ? "bg-accent font-semibold" : ""}`}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
       <div className="max-h-[60vh] space-y-2 overflow-y-auto">
-        {rows.map((r) => {
+        {visibleRows.map((r) => {
           const ok = r.issues.length === 0;
           return (
             <div key={r.task.id} className={`rounded-md border p-2 text-xs ${ok ? "" : "border-destructive/40 bg-destructive/5"}`}>
@@ -545,6 +566,9 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
         })}
         {!loading && rows.length === 0 && (
           <div className="rounded-md border p-4 text-center text-xs text-muted-foreground">Belum ada tugas.</div>
+        )}
+        {!loading && rows.length > 0 && visibleRows.length === 0 && (
+          <div className="rounded-md border p-4 text-center text-xs text-muted-foreground">Tidak ada tugas pada filter ini.</div>
         )}
       </div>
       <div className="mt-3 flex justify-end">
