@@ -89,7 +89,6 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
   const [locUrl, setLocUrl] = useState("");
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [note, setNote] = useState("");
-  const [qty, setQty] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [refSigned, setRefSigned] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
@@ -136,10 +135,6 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
   }
 
   async function submit() {
-    if (!qty || !(Number(qty) > 0)) {
-      toast.error("Wajib isi jumlah yang BENAR-BENAR disiapkan (mis. 0.20)");
-      return;
-    }
     if (!photo) {
       toast.error("Wajib lampirkan foto bukti timbangan/barang");
       return;
@@ -159,12 +154,12 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
         _token: token, _pin: pin, _task_item_id: item.id,
         _photo_path: photoPath, _location_url: locUrl || null,
         _gps_lat: gps?.lat ?? null, _gps_lng: gps?.lng ?? null,
-        _note: note || null, _qty_reported: qty ? Number(qty) : null,
+        _note: note || null, _qty_reported: null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase.rpc as any)("prep_submit", args);
       if (error) throw error;
-      const res = data as { ok: boolean; error?: string; available?: number; requested?: number };
+      const res = data as { ok: boolean; error?: string; available?: number; requested?: number; deducted?: number };
       if (!res?.ok) {
         const msg = res?.error === "insufficient_stock"
           ? `Stok gudang tidak cukup (tersedia ${res.available}, diminta ${res.requested})`
@@ -174,7 +169,7 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
           : (res?.error || "submit_failed");
         throw new Error(msg);
       }
-      toast.success(`Terkirim. Stok gudang dikurangi ${Number(qty)} ${item.unit_label ?? ""}`);
+      toast.success(`Terkirim. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${item.unit_label ?? ""}`);
       setPhoto(null); setLocUrl(""); setGps(null); setNote("");
       onSubmitted();
     } catch (e) {
