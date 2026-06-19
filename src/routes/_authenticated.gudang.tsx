@@ -688,6 +688,7 @@ function ShareCustomer({
   totalHutang: number; totalBayar: number; balance: number;
 }) {
   const [open, setOpen] = useState(false);
+  const [sharing, setSharing] = useState(false);
 
   const message = useMemo(() => {
     const lines: string[] = [];
@@ -736,6 +737,62 @@ function ShareCustomer({
     catch { toast.error("Gagal menyalin"); }
   }
 
+  // Kumpulkan foto unik untuk barang-barang yang ada di hutangSales
+  const uniqueImagePaths = useMemo(() => {
+    const seen = new Set<string>();
+    const paths: string[] = [];
+    for (const s of hutangSales) {
+      const it = itemMap[s.item_id];
+      if (it?.image_path && !seen.has(it.image_path)) {
+        seen.add(it.image_path);
+        paths.push(it.image_path);
+      }
+    }
+    return paths;
+  }, [hutangSales, itemMap]);
+
+  async function shareWithPhotos() {
+    if (uniqueImagePaths.length === 0) {
+      toast.error("Tidak ada foto barang untuk dibagikan");
+      return;
+    }
+    if (typeof navigator === "undefined" || !navigator.share) {
+      toast.error("Perangkat ini tidak mendukung bagikan dengan gambar. Salin pesan & kirim foto manual.");
+      return;
+    }
+    setSharing(true);
+    try {
+      const files: File[] = [];
+      for (const path of uniqueImagePaths.slice(0, 10)) {
+        const { data: signed } = await supabase.storage
+          .from("item-photos")
+          .createSignedUrl(path, 600);
+        if (!signed?.signedUrl) continue;
+        const resp = await fetch(signed.signedUrl);
+        if (!resp.ok) continue;
+        const blob = await resp.blob();
+        const ext = (blob.type.split("/")[1] || "jpg").split("+")[0];
+        const base = path.split("/").pop()?.replace(/\.[^.]+$/, "") || "foto";
+        files.push(new File([blob], `${base}.${ext}`, { type: blob.type || "image/jpeg" }));
+      }
+      if (files.length === 0) {
+        toast.error("Gagal memuat foto barang");
+        return;
+      }
+      const payload: ShareData = { text: message, title: `Catatan ${customer.name}`, files };
+      if (typeof navigator.canShare === "function" && !navigator.canShare(payload)) {
+        toast.error("Browser ini tidak mengizinkan berbagi file. Coba dari WhatsApp/Chrome di HP.");
+        return;
+      }
+      await navigator.share(payload);
+    } catch (e) {
+      const msg = (e as Error)?.message || "";
+      if (!/abort/i.test(msg)) toast.error("Gagal membagikan dengan foto");
+    } finally {
+      setSharing(false);
+    }
+  }
+
   const links = [
     { label: "WhatsApp", emoji: "💬", href: waPhone ? `https://wa.me/${waPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`, cls: "border-emerald-500 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400" },
     { label: "WA Business", emoji: "🏪", href: waPhone ? `whatsapp://send?phone=${waPhone}&text=${encoded}` : `whatsapp://send?text=${encoded}`, cls: "border-emerald-700 text-emerald-700 hover:bg-emerald-700/10 dark:text-emerald-400" },
@@ -769,7 +826,16 @@ function ShareCustomer({
               className="rounded-md border px-2 py-1 text-[11px] font-semibold hover:bg-accent">
               📋 Salin
             </button>
+            <button type="button" onClick={shareWithPhotos} disabled={sharing || uniqueImagePaths.length === 0}
+              className="rounded-md border border-fuchsia-500 px-2 py-1 text-[11px] font-semibold text-fuchsia-600 hover:bg-fuchsia-500/10 disabled:opacity-50 dark:text-fuchsia-400">
+              {sharing ? "Menyiapkan…" : `📷 Bagikan + Foto (${uniqueImagePaths.length})`}
+            </button>
           </div>
+          {uniqueImagePaths.length > 0 && (
+            <p className="text-[10px] text-muted-foreground">
+              Tombol "Bagikan + Foto" memakai berbagi bawaan HP (Android/iOS) sehingga foto barang ikut terkirim. Tombol WhatsApp/Telegram di atas hanya mengirim teks karena tidak mendukung lampiran via link.
+            </p>
+          )}
         </div>
       )}
     </div>
