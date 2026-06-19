@@ -344,7 +344,7 @@ function SubmissionCard({ sub }: { sub: Submission }) {
       <div className="mt-1 text-[10px] text-muted-foreground">{new Date(sub.submitted_at).toLocaleString("id-ID")}</div>
       {sub.note && <div className="mt-0.5 line-clamp-2 text-[11px]">{sub.note}</div>}
       <div className="mt-1 flex gap-1">
-        {sub.location_url && <a href={sub.location_url} target="_blank" rel="noreferrer" className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded border text-[10px]"><MapPin className="h-3 w-3" /> Lokasi</a>}
+        {sub.location_url && /^https:\/\//i.test(sub.location_url) && <a href={sub.location_url} target="_blank" rel="noreferrer" className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded border text-[10px]"><MapPin className="h-3 w-3" /> Lokasi</a>}
         <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded bg-[#25D366] text-[10px] font-semibold text-white"><MessageCircle className="h-3 w-3" /> WA</button>
       </div>
     </div>

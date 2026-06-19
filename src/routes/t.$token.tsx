@@ -125,6 +125,10 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
 
   async function submit() {
     if (!photo && !locUrl && !note) { toast.error("Isi minimal foto, lokasi, atau catatan"); return; }
+    if (locUrl) {
+      if (locUrl.length > 2048) { toast.error("URL lokasi terlalu panjang"); return; }
+      if (!/^https:\/\//i.test(locUrl)) { toast.error("URL lokasi harus diawali https://"); return; }
+    }
     setBusy(true);
     try {
       let photoPath: string | null = null;
