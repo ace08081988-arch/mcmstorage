@@ -1,4 +1,4 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { Home, Package, Wallet, Lock, Tags, ClipboardList } from "lucide-react";
 import {
   Sidebar,
@@ -25,6 +25,7 @@ const items = [
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { isMobile, setOpenMobile } = useSidebar();
+  const navigate = useNavigate();
   const isActive = (path: string) =>
     path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(path + "/");
 
@@ -41,8 +42,18 @@ export function AppSidebar() {
                   <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
                     <Link
                       to={item.url}
+                      preload="intent"
                       className="flex items-center gap-2"
-                      onClick={() => { if (isMobile) setOpenMobile(false); }}
+                      onPointerDown={(e) => {
+                        if (!isMobile) return;
+                        // Hanya tap utama (mouse kiri / sentuh) — biarkan ctrl/shift-click default
+                        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+                        e.preventDefault();
+                        setOpenMobile(false);
+                        if (pathname !== item.url) {
+                          void navigate({ to: item.url });
+                        }
+                      }}
                     >
                       <item.icon className="h-4 w-4 shrink-0" />
                       <span>{item.title}</span>
