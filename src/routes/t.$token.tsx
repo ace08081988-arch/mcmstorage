@@ -106,6 +106,18 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
     const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
     setEditorSrc(dataUrl);
     setEditorOpen(true);
+    // Auto-isi GPS begitu foto dipilih/diambil, supaya pegawai tidak perlu klik tombol manual.
+    if (!gps && !locUrl && navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const { latitude, longitude } = pos.coords;
+          setGps({ lat: latitude, lng: longitude });
+          setLocUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
+        },
+        () => { /* abaikan, pegawai bisa klik tombol GPS manual */ },
+        { enableHighAccuracy: true, timeout: 10000 }
+      );
+    }
   }
 
   function takeLocation() {
