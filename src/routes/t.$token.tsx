@@ -134,10 +134,11 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
       }
       const { data, error } = await supabase.rpc("prep_submit", {
         _token: token, _pin: pin, _task_item_id: item.id,
-        _photo_path: photoPath, _location_url: locUrl || null,
-        _gps_lat: gps?.lat ?? null, _gps_lng: gps?.lng ?? null,
-        _note: note || null, _qty_reported: qty ? Number(qty) : null,
-      });
+        _photo_path: photoPath ?? "",
+        _location_url: locUrl || "",
+        _gps_lat: gps?.lat ?? 0, _gps_lng: gps?.lng ?? 0,
+        _note: note || "", _qty_reported: qty ? Number(qty) : 0,
+      } as never);
       if (error) throw error;
       const res = data as { ok: boolean; error?: string };
       if (!res?.ok) throw new Error(res?.error || "submit_failed");
