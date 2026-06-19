@@ -23,7 +23,7 @@ describe("validateVariantWeight", () => {
     ["abc", "non-numeric"],
     [null, "null"],
     [undefined, "undefined"],
-  ])("rejects %s (%s)", (input) => {
+  ])("rejects %s (%s)", (input, _label) => {
     const r = validateVariantWeight(input);
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.error).toMatch(/Berat per unit/);
@@ -43,7 +43,7 @@ describe("validateVariantLabel", () => {
   });
   it.each([["", "empty"], ["   ", "whitespace"], [null, "null"], [undefined, "undefined"], [123, "number"]])(
     "rejects %j (%s)",
-    (input) => {
+    (input, _label) => {
       expect(validateVariantLabel(input).ok).toBe(false);
     },
   );
