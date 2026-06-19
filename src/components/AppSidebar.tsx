@@ -10,6 +10,7 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
 
 const items = [
@@ -23,6 +24,7 @@ const items = [
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const { isMobile, setOpenMobile } = useSidebar();
   const isActive = (path: string) =>
     path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(path + "/");
 
@@ -37,7 +39,11 @@ export function AppSidebar() {
               {items.map((item) => (
                 <SidebarMenuItem key={item.url}>
                   <SidebarMenuButton asChild isActive={isActive(item.url)} tooltip={item.title}>
-                    <Link to={item.url} className="flex items-center gap-2">
+                    <Link
+                      to={item.url}
+                      className="flex items-center gap-2"
+                      onClick={() => { if (isMobile) setOpenMobile(false); }}
+                    >
                       <item.icon className="h-4 w-4 shrink-0" />
                       <span>{item.title}</span>
                     </Link>
