@@ -126,6 +126,30 @@ function fmtQtyDual(
   return `${pkgStr} (= ${fmtBase(baseQty, baseUnit)})`;
 }
 
+// Format default untuk barang: pakai unit kemasan bila ada, fallback ke base.
+function fmtItemQty(
+  baseQty: number,
+  item: { base_unit: "g" | "pcs"; package_type: string; package_size: number } | null | undefined,
+) {
+  if (!item) return fmtBase(baseQty, "pcs");
+  const mode: "base" | "package" =
+    item.package_type && item.package_type !== "pcs" && item.package_size > 0 ? "package" : "base";
+  return fmtQtyDual(baseQty, item.base_unit, item.package_type, item.package_size, mode);
+}
+
+// Format harga per unit terpilih (jika package, kalikan package_size).
+function fmtItemPrice(
+  pricePerBase: number,
+  item: { base_unit: "g" | "pcs"; package_type: string; package_size: number } | null | undefined,
+) {
+  if (!item) return `${rupiah(pricePerBase)}/pcs`;
+  if (item.package_type && item.package_type !== "pcs" && item.package_size > 0) {
+    const perPkg = pricePerBase * item.package_size;
+    return `${rupiah(perPkg)}/${item.package_type} (= ${rupiah(pricePerBase)}/${item.base_unit})`;
+  }
+  return `${rupiah(pricePerBase)}/${item.base_unit}`;
+}
+
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
 }
@@ -568,7 +592,7 @@ function PiutangTab({
                         <div className="min-w-0">
                           <div className="truncate font-semibold">{it?.name || "(barang dihapus)"}</div>
                           <div className="text-[11px] text-muted-foreground">
-                            {new Date(s.created_at).toLocaleDateString("id-ID")} · {fmtBase(Number(s.qty_base), it?.base_unit || "pcs")}
+                            {new Date(s.created_at).toLocaleDateString("id-ID")} · {fmtItemQty(Number(s.qty_base), it)}
                           </div>
                         </div>
                         <div className="shrink-0 text-right text-[11px]">
@@ -1028,7 +1052,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                 <div className="truncate text-sm font-semibold">{i.name}</div>
                 <div className="text-[11px] text-muted-foreground">
                   {i.category || "—"} · per {i.package_type}
-                  {i.package_type !== "pcs" && ` (${i.package_size}${i.base_unit === "g" ? "g" : ""}/kemasan)`}
+                  {i.package_type !== "pcs" && ` (${i.package_size} ${i.base_unit}/kemasan)`}
                 </div>
               </div>
             </div>
@@ -1050,7 +1074,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
           <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
             <div className="rounded bg-muted/50 p-2">
               <div className="text-muted-foreground">Stok</div>
-              <div className="font-semibold">{fmtBase(i.stock_base, i.base_unit)}</div>
+              <div className="font-semibold">{fmtItemQty(i.stock_base, i)}</div>
             </div>
             <div className="rounded bg-muted/50 p-2">
               <div className="text-muted-foreground">HPP / {i.base_unit}</div>
@@ -1463,7 +1487,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)} required>
             {items.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.name} ({i.package_type}{i.package_type !== "pcs" ? ` ${i.package_size}${i.base_unit}` : ""}) · stok {fmtBase(i.stock_base, i.base_unit)}
+                {i.name} ({i.package_type}{i.package_type !== "pcs" ? ` ${i.package_size} ${i.base_unit}` : ""}) · stok {fmtItemQty(i.stock_base, i)}
               </option>
             ))}
           </select>
@@ -1576,7 +1600,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
       );
       return;
     }
-    if (qtyBase > item.stock_base) { toast.error(`Stok kurang. Tersedia ${fmtBase(item.stock_base, item.base_unit)}`); return; }
+    if (qtyBase > item.stock_base) { toast.error(`Stok kurang. Tersedia ${fmtItemQty(item.stock_base, item)}`); return; }
     let useCustomerId: string | null = customerId || null;
     if (customerId === "__new__") {
       const nm = newCustName.trim();
@@ -1805,8 +1829,8 @@ function RiwayatTab({
                     <button onClick={() => delSale(s.id)} className="shrink-0 rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
                   </div>
                   <div className="mt-1 grid grid-cols-3 gap-2">
-                    <div><span className="text-muted-foreground">Jumlah </span><b>{fmtBase(Number(s.qty_base), it?.base_unit || "pcs")}</b></div>
-                    <div><span className="text-muted-foreground">Harga </span><b>{rupiah(Number(s.price_per_base))}/{it?.base_unit || "pcs"}</b></div>
+                    <div><span className="text-muted-foreground">Jumlah </span><b>{fmtItemQty(Number(s.qty_base), it)}</b></div>
+                    <div><span className="text-muted-foreground">Harga </span><b>{fmtItemPrice(Number(s.price_per_base), it)}</b></div>
                     <div><span className="text-muted-foreground">Total </span><b>{rupiah(Number(s.total_revenue))}</b></div>
                   </div>
                 </li>
@@ -2225,7 +2249,7 @@ function PesananTab({
       !skipConfirm &&
       !(await confirm({
         title: "Catat penjualan?",
-        description: `${qBase}${it.base_unit} × ${rupiah(perBase)}`,
+        description: `${fmtItemQty(qBase, it)} × ${fmtItemPrice(perBase, it)}`,
         confirmText: "Catat",
       }))
     )
@@ -2246,7 +2270,7 @@ function PesananTab({
     const it = itemMap[o.item_id];
     const qBase = it ? (o.qty_mode === "base" ? Number(o.qty) : Number(o.qty) * it.package_size) : 0;
     const ringkasan = it
-      ? `${it.name} — ${fmtBase(qBase, it.base_unit)}${o.price_per_unit != null ? ` × ${rupiah(Number(o.price_per_unit))}/${o.qty_mode === "base" ? it.base_unit : it.package_type}` : ""}`
+      ? `${it.name} — ${fmtItemQty(qBase, it)}${o.price_per_unit != null ? ` × ${rupiah(Number(o.price_per_unit))}/${o.qty_mode === "base" ? it.base_unit : it.package_type}` : ""}`
       : "pesanan ini";
     const labelPelanggan = o.customer_id ? (custMap[o.customer_id]?.name ?? "pelanggan") : "tanpa pelanggan";
     const pilihan = await confirm({
@@ -2258,7 +2282,7 @@ function PesananTab({
       const ok = await konversiKePenjualan(o, true);
       if (ok && it) {
         toast.success("✅ Pesanan diproses jadi penjualan", {
-          description: `${ringkasan}\nPelanggan: ${labelPelanggan}\nStatus: menunggu → selesai · Stok dikurangi ${fmtBase(qBase, it.base_unit)}`,
+          description: `${ringkasan}\nPelanggan: ${labelPelanggan}\nStatus: menunggu → selesai · Stok dikurangi ${fmtItemQty(qBase, it)}`,
         });
       }
     } else {
