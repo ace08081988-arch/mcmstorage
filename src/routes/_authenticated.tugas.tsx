@@ -723,7 +723,13 @@ function VariantManager({ item, variants, onClose, onChanged }: { item: WItem; v
   async function add() {
     const w = Number(weight);
     if (!label.trim()) return toast.error("Isi label varian (mis. 1G, ST, SPR)");
-    if (!isFinite(w) || w <= 0) return toast.error("Berat per unit harus > 0");
+    if (!isFinite(w) || w <= 0) return toast.error("Berat per unit harus lebih dari 0 (tidak boleh nol atau negatif)");
+    const ok = await confirmDialog({
+      title: "Simpan varian produk?",
+      description: `${item.name} — ${label.trim()} = ${w} ${unit.trim() || "gr"} per unit.`,
+      confirmText: "Simpan",
+    });
+    if (!ok) return;
     setBusy(true);
     const { data: u } = await supabase.auth.getUser();
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -748,6 +754,19 @@ function VariantManager({ item, variants, onClose, onChanged }: { item: WItem; v
   }
 
   async function updateRow(id: string, patch: Partial<Variant>) {
+    if (patch.weight_per_unit !== undefined) {
+      const w = Number(patch.weight_per_unit);
+      if (!isFinite(w) || w <= 0) {
+        toast.error("Berat per unit harus lebih dari 0");
+        await onChanged();
+        return;
+      }
+    }
+    if (patch.label !== undefined && !String(patch.label).trim()) {
+      toast.error("Label tidak boleh kosong");
+      await onChanged();
+      return;
+    }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from as any)("warehouse_item_variants").update(patch).eq("id", id);
     if (error) return toast.error(error.message);
