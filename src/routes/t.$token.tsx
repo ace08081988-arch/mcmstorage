@@ -89,7 +89,6 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
   const [locUrl, setLocUrl] = useState("");
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [note, setNote] = useState("");
-  const [qty, setQty] = useState<string>("");
   const [busy, setBusy] = useState(false);
   const [refSigned, setRefSigned] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
@@ -136,10 +135,6 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
   }
 
   async function submit() {
-    if (!qty || !(Number(qty) > 0)) {
-      toast.error("Wajib isi jumlah yang BENAR-BENAR disiapkan (mis. 0.20)");
-      return;
-    }
     if (!photo) {
       toast.error("Wajib lampirkan foto bukti timbangan/barang");
       return;
@@ -159,12 +154,12 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
         _token: token, _pin: pin, _task_item_id: item.id,
         _photo_path: photoPath, _location_url: locUrl || null,
         _gps_lat: gps?.lat ?? null, _gps_lng: gps?.lng ?? null,
-        _note: note || null, _qty_reported: qty ? Number(qty) : null,
+        _note: note || null, _qty_reported: null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (supabase.rpc as any)("prep_submit", args);
       if (error) throw error;
-      const res = data as { ok: boolean; error?: string; available?: number; requested?: number };
+      const res = data as { ok: boolean; error?: string; available?: number; requested?: number; deducted?: number };
       if (!res?.ok) {
         const msg = res?.error === "insufficient_stock"
           ? `Stok gudang tidak cukup (tersedia ${res.available}, diminta ${res.requested})`
@@ -174,7 +169,7 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
           : (res?.error || "submit_failed");
         throw new Error(msg);
       }
-      toast.success(`Terkirim. Stok gudang dikurangi ${Number(qty)} ${item.unit_label ?? ""}`);
+      toast.success(`Terkirim. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${item.unit_label ?? ""}`);
       setPhoto(null); setLocUrl(""); setGps(null); setNote("");
       onSubmitted();
     } catch (e) {
@@ -216,22 +211,8 @@ function ItemCard({ item, token, pin, onSubmitted }: { item: PrepItemRow; token:
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
       <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
 
-      <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-2">
-        <label className="block text-[11px] font-semibold text-amber-700 dark:text-amber-400">
-          Jumlah yang BENAR disiapkan (wajib, sesuai timbangan)
-        </label>
-        <div className="mt-1 flex items-center gap-2">
-          <input
-            type="number" inputMode="decimal" step="0.01" min="0"
-            value={qty} onChange={(e) => setQty(e.target.value)}
-            placeholder="mis. 0.20"
-            className="h-10 flex-1 rounded-md border bg-background px-2 text-base font-semibold tabular-nums"
-          />
-          <span className="text-xs text-muted-foreground">{item.unit_label ?? ""}</span>
-        </div>
-        <p className="mt-1 text-[10px] text-muted-foreground">
-          Stok gudang induk akan otomatis berkurang sebanyak angka ini. Mis. stok 100 - 0.20 = 99.80.
-        </p>
+      <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400">
+        Siapkan <b>{item.qty_requested} {item.unit_label ?? ""}</b> sesuai instruksi pemilik. Setelah foto + lokasi terkirim, stok gudang otomatis berkurang sebanyak itu — Anda tidak perlu mengisi angka apa pun.
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2">
