@@ -1070,34 +1070,30 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
   return (
     <>
     {/* Ringkasan profesional */}
-    <section className="rounded-xl border bg-card p-4 shadow-sm">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <div className="text-[11px] uppercase tracking-wider text-muted-foreground">Ringkasan Stok</div>
-          <div className="mt-0.5 text-base font-semibold">Inventaris Gudang</div>
+    <section className="rounded-xl border bg-card shadow-sm">
+      <div className="flex items-stretch">
+        <div className="flex flex-1 items-center px-4 py-3">
+          <div className="min-w-0">
+            <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+              Inventaris Gudang
+            </div>
+            <div className="mt-0.5 truncate text-sm font-semibold tabular-nums">
+              {rupiah(totalValue)}
+            </div>
+          </div>
         </div>
-        <div className="grid grid-cols-3 gap-2 text-right text-xs sm:gap-4">
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Item</div>
-            <div className="text-sm font-semibold tabular-nums">{totalItems.toLocaleString("id-ID")}</div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Kategori</div>
-            <div className="text-sm font-semibold tabular-nums">{totalCategories.toLocaleString("id-ID")}</div>
-          </div>
-          <div>
-            <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Nilai stok</div>
-            <div className="text-sm font-semibold tabular-nums">{rupiah(totalValue)}</div>
-          </div>
+        <div className="flex shrink-0 divide-x border-l text-right">
+          <Stat label="Item" value={totalItems.toLocaleString("id-ID")} />
+          <Stat label="Kategori" value={totalCategories.toLocaleString("id-ID")} />
         </div>
       </div>
-      <div className="mt-3">
+      <div className="border-t p-2">
         <input
           type="search"
           placeholder="Cari nama atau kategori…"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none ring-primary/20 focus:ring-2"
+          className="w-full rounded-md border bg-background px-3 py-1.5 text-sm outline-none ring-primary/20 focus:ring-2"
         />
       </div>
     </section>
@@ -1201,6 +1197,17 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
       />
     )}
     </>
+  );
+}
+
+function Stat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex flex-col justify-center px-3 py-2 sm:px-4">
+      <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+        {label}
+      </div>
+      <div className="text-sm font-semibold tabular-nums">{value}</div>
+    </div>
   );
 }
 
