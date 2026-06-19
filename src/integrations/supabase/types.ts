@@ -954,6 +954,50 @@ export type Database = {
         }
         Relationships: []
       }
+      warehouse_item_variants: {
+        Row: {
+          created_at: string
+          id: string
+          label: string
+          position: number
+          unit_label: string | null
+          updated_at: string
+          user_id: string
+          warehouse_item_id: string
+          weight_per_unit: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          label: string
+          position?: number
+          unit_label?: string | null
+          updated_at?: string
+          user_id: string
+          warehouse_item_id: string
+          weight_per_unit?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          label?: string
+          position?: number
+          unit_label?: string | null
+          updated_at?: string
+          user_id?: string
+          warehouse_item_id?: string
+          weight_per_unit?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_item_variants_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       warehouse_items: {
         Row: {
           avg_cost_per_base: number
