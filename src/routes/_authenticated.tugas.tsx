@@ -620,7 +620,10 @@ function CategoryVariantManager({ category, variants, onClose, onChanged }: { ca
   async function add() {
     const w = Number(weight);
     if (!label.trim()) return toast.error("Isi label varian (mis. 1G, ST, SPR)");
-    if (!isFinite(w) || w <= 0) return toast.error("Berat per unit harus lebih dari 0 (tidak boleh nol atau negatif)");
+    {
+      const v = validateVariantWeight(w);
+      if (!v.ok) return toast.error(v.error);
+    }
     const ok = await confirmDialog({
       title: "Simpan preset varian?",
       description: `Kategori "${category}" — ${label.trim()} = ${w} ${unit.trim() || "gr"} per unit. Preset ini akan berlaku untuk semua produk berkategori ${category}.`,
@@ -652,17 +655,20 @@ function CategoryVariantManager({ category, variants, onClose, onChanged }: { ca
 
   async function updateRow(id: string, patch: Partial<CatVariant>) {
     if (patch.weight_per_unit !== undefined) {
-      const w = Number(patch.weight_per_unit);
-      if (!isFinite(w) || w <= 0) {
-        toast.error("Berat per unit harus lebih dari 0");
+      const v = validateVariantWeight(patch.weight_per_unit);
+      if (!v.ok) {
+        toast.error(v.error);
         await onChanged();
         return;
       }
     }
-    if (patch.label !== undefined && !String(patch.label).trim()) {
-      toast.error("Label tidak boleh kosong");
-      await onChanged();
-      return;
+    if (patch.label !== undefined) {
+      const v = validateVariantLabel(patch.label);
+      if (!v.ok) {
+        toast.error(v.error);
+        await onChanged();
+        return;
+      }
     }
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from as any)("warehouse_category_variants").update(patch).eq("id", id);
