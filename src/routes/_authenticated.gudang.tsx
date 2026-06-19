@@ -2249,7 +2249,7 @@ function PesananTab({
       !skipConfirm &&
       !(await confirm({
         title: "Catat penjualan?",
-        description: `${qBase}${it.base_unit} × ${rupiah(perBase)}`,
+        description: `${fmtItemQty(qBase, it)} × ${fmtItemPrice(perBase, it)}`,
         confirmText: "Catat",
       }))
     )
@@ -2270,7 +2270,7 @@ function PesananTab({
     const it = itemMap[o.item_id];
     const qBase = it ? (o.qty_mode === "base" ? Number(o.qty) : Number(o.qty) * it.package_size) : 0;
     const ringkasan = it
-      ? `${it.name} — ${fmtBase(qBase, it.base_unit)}${o.price_per_unit != null ? ` × ${rupiah(Number(o.price_per_unit))}/${o.qty_mode === "base" ? it.base_unit : it.package_type}` : ""}`
+      ? `${it.name} — ${fmtItemQty(qBase, it)}${o.price_per_unit != null ? ` × ${rupiah(Number(o.price_per_unit))}/${o.qty_mode === "base" ? it.base_unit : it.package_type}` : ""}`
       : "pesanan ini";
     const labelPelanggan = o.customer_id ? (custMap[o.customer_id]?.name ?? "pelanggan") : "tanpa pelanggan";
     const pilihan = await confirm({
@@ -2282,7 +2282,7 @@ function PesananTab({
       const ok = await konversiKePenjualan(o, true);
       if (ok && it) {
         toast.success("✅ Pesanan diproses jadi penjualan", {
-          description: `${ringkasan}\nPelanggan: ${labelPelanggan}\nStatus: menunggu → selesai · Stok dikurangi ${fmtBase(qBase, it.base_unit)}`,
+          description: `${ringkasan}\nPelanggan: ${labelPelanggan}\nStatus: menunggu → selesai · Stok dikurangi ${fmtItemQty(qBase, it)}`,
         });
       }
     } else {
