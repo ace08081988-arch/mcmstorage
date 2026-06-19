@@ -109,6 +109,23 @@ function fmtBase(n: number, u: "g" | "pcs") {
   return `${v.toLocaleString("id-ID")} pcs`;
 }
 
+// Format kuantitas dengan unit terpilih + setara dalam unit dasar.
+// Contoh: 56 botol → "56 botol (= 5.600 pcs)"
+function fmtQtyDual(
+  baseQty: number,
+  baseUnit: "g" | "pcs",
+  packageType: string,
+  packageSize: number,
+  mode: "base" | "package",
+) {
+  if (mode === "base" || !packageType || packageType === "pcs" || packageSize <= 0) {
+    return fmtBase(baseQty, baseUnit);
+  }
+  const pkgQty = baseQty / packageSize;
+  const pkgStr = `${pkgQty.toLocaleString("id-ID", { maximumFractionDigits: 2 })} ${packageType}`;
+  return `${pkgStr} (= ${fmtBase(baseQty, baseUnit)})`;
+}
+
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
 }
@@ -1609,7 +1626,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
         <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
           {items.map((i) => (
             <option key={i.id} value={i.id}>
-              {i.name} · stok {fmtBase(i.stock_base, i.base_unit)} · HPP {rupiah(i.avg_cost_per_base)}/{i.base_unit}
+              {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base")} · HPP {rupiah(i.avg_cost_per_base)}/{i.base_unit}
             </option>
           ))}
         </select>
@@ -1685,13 +1702,29 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             </div>
           </div>
 
-          <div className="rounded-md bg-muted/50 p-2 text-[11px] space-y-0.5">
-            <div>Akan kurangi stok: <b>{fmtBase(qtyBase, item.base_unit)}</b> (sisa {fmtBase(Math.max(0, item.stock_base - qtyBase), item.base_unit)})</div>
-            <div>Total pendapatan: <b>{rupiah(total)}</b> ({paymentMethod === "hutang" ? "piutang ke pelanggan" : "lunas tunai"})</div>
-            <div className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}>
-              Estimasi laba: <b>{rupiah(profit)}</b>
-            </div>
-          </div>
+          {(() => {
+            const kurang = qtyBase > item.stock_base;
+            const sisa = item.stock_base - qtyBase;
+            return (
+              <div className="rounded-md bg-muted/50 p-2 text-[11px] space-y-0.5">
+                <div>
+                  Akan kurangi stok: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, sellMode)}</b>
+                </div>
+                <div>
+                  Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, sellMode)}</b>
+                </div>
+                <div className={kurang ? "text-destructive font-semibold" : ""}>
+                  {kurang
+                    ? <>Stok kurang {fmtBase(qtyBase - item.stock_base, item.base_unit)} — tidak bisa disimpan</>
+                    : <>Sisa setelah jual: <b>{fmtQtyDual(sisa, item.base_unit, item.package_type, item.package_size, sellMode)}</b></>}
+                </div>
+                <div>Total pendapatan: <b>{rupiah(total)}</b> ({paymentMethod === "hutang" ? "piutang ke pelanggan" : "lunas tunai"})</div>
+                <div className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}>
+                  Estimasi laba: <b>{rupiah(profit)}</b>
+                </div>
+              </div>
+            );
+          })()}
 
           <button className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Simpan penjualan</button>
         </>
@@ -2308,7 +2341,7 @@ function PesananTab({
           <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
             {items.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.name} · stok {fmtBase(i.stock_base, i.base_unit)}
+                {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base")}
               </option>
             ))}
           </select>
@@ -2340,8 +2373,10 @@ function PesananTab({
 
             <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (mis. dijemput sore)" value={note} onChange={(e) => setNote(e.target.value)} />
 
-            <div className={`rounded-md p-2 text-[11px] ${enough ? "bg-muted/50" : "bg-destructive/10 text-destructive"}`}>
-              Butuh siapkan: <b>{fmtBase(qtyBase, item.base_unit)}</b> · Stok: {fmtBase(item.stock_base, item.base_unit)} {!enough && "(kurang!)"}
+            <div className={`rounded-md p-2 text-[11px] space-y-0.5 ${enough ? "bg-muted/50" : "bg-destructive/10 text-destructive"}`}>
+              <div>Butuh siapkan: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, qtyMode)}</b></div>
+              <div>Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, qtyMode)}</b></div>
+              {!enough && <div className="font-semibold">Kurang {fmtBase(qtyBase - item.stock_base, item.base_unit)}</div>}
             </div>
           </>
         )}
