@@ -57,7 +57,10 @@ function TugasPage() {
           <Plus className="h-4 w-4" /> Buat tugas
         </button>
       </div>
-      <p className="mb-4 text-xs text-muted-foreground">Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via WhatsApp. Foto & lokasi yang dikirim pegawai muncul otomatis di sini.</p>
+      <p className="mb-2 text-xs text-muted-foreground">Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via WhatsApp. Foto & lokasi yang dikirim pegawai muncul otomatis di sini.</p>
+      <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400">
+        ⚖️ <b>Penting:</b> Pegawai wajib mengisi jumlah <b>BENAR</b> yang disiapkan (mis. 0.20 gram). Stok gudang induk akan otomatis berkurang sesuai angka tersebut, sehingga sisa stok selalu akurat (mis. 100 − 0.20 = 99.80).
+      </div>
 
       <div className="space-y-2">
         {tasks.map((t) => (
