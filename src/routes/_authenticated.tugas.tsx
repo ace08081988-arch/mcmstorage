@@ -30,6 +30,8 @@ function TugasPage() {
   const [openCreate, setOpenCreate] = useState(false);
   const [openTask, setOpenTask] = useState<Task | null>(null);
   const [createdInfo, setCreatedInfo] = useState<{ token: string; pin: string; title: string } | null>(null);
+  const [openVariantsHub, setOpenVariantsHub] = useState(false);
+  const [manageVariantsFor, setManageVariantsFor] = useState<WItem | null>(null);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
@@ -58,9 +60,14 @@ function TugasPage() {
     <div className="mx-auto max-w-4xl px-3 py-4">
       <div className="mb-3 flex items-center justify-between">
         <h1 className="text-lg font-semibold">Tugas Pegawai</h1>
-        <button onClick={() => setOpenCreate(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
-          <Plus className="h-4 w-4" /> Buat tugas
-        </button>
+        <div className="flex items-center gap-2">
+          <button onClick={() => setOpenVariantsHub(true)} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs font-semibold">
+            <Settings2 className="h-4 w-4" /> Kelola Varian
+          </button>
+          <button onClick={() => setOpenCreate(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
+            <Plus className="h-4 w-4" /> Buat tugas
+          </button>
+        </div>
       </div>
       <p className="mb-2 text-xs text-muted-foreground">Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via WhatsApp. Foto & lokasi yang dikirim pegawai muncul otomatis di sini.</p>
       <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400">
@@ -92,6 +99,22 @@ function TugasPage() {
       )}
       {createdInfo && <ShareDialog info={createdInfo} onClose={() => setCreatedInfo(null)} />}
       {openTask && <TaskDetail task={openTask} onClose={() => { setOpenTask(null); void load(); }} />}
+      {openVariantsHub && (
+        <VariantsHub
+          warehouse={warehouse}
+          variants={variants}
+          onPick={(it) => setManageVariantsFor(it)}
+          onClose={() => setOpenVariantsHub(false)}
+        />
+      )}
+      {manageVariantsFor && (
+        <VariantManager
+          item={manageVariantsFor}
+          variants={variants.filter((v) => v.warehouse_item_id === manageVariantsFor.id)}
+          onClose={() => setManageVariantsFor(null)}
+          onChanged={load}
+        />
+      )}
     </div>
   );
 }
