@@ -229,6 +229,123 @@ export type Database = {
         }
         Relationships: []
       }
+      ecer_preparations: {
+        Row: {
+          actual_grams: number
+          created_at: string
+          created_by: string
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string
+          location_url: string | null
+          note: string | null
+          photo_path: string | null
+          prep_task_item_id: string | null
+          title_id: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Insert: {
+          actual_grams: number
+          created_at?: string
+          created_by?: string
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          location_url?: string | null
+          note?: string | null
+          photo_path?: string | null
+          prep_task_item_id?: string | null
+          title_id: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Update: {
+          actual_grams?: number
+          created_at?: string
+          created_by?: string
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          location_url?: string | null
+          note?: string | null
+          photo_path?: string | null
+          prep_task_item_id?: string | null
+          title_id?: string
+          user_id?: string
+          warehouse_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecer_preparations_prep_task_item_id_fkey"
+            columns: ["prep_task_item_id"]
+            isOneToOne: false
+            referencedRelation: "prep_task_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecer_preparations_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "ecer_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecer_preparations_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ecer_titles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          note: string | null
+          position: number
+          target_grams: number
+          unit_label: string
+          updated_at: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          note?: string | null
+          position?: number
+          target_grams?: number
+          unit_label?: string
+          updated_at?: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          note?: string | null
+          position?: number
+          target_grams?: number
+          unit_label?: string
+          updated_at?: string
+          user_id?: string
+          warehouse_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ecer_titles_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       email_monitor_config: {
         Row: {
           admin_email: string
@@ -1245,6 +1362,25 @@ export type Database = {
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
+      }
+      ecer_list_titles_via_task: {
+        Args: { _pin: string; _token: string; _warehouse_item_id: string }
+        Returns: Json
+      }
+      ecer_submit_via_task: {
+        Args: {
+          _actual_grams: number
+          _gps_lat: number
+          _gps_lng: number
+          _location_url: string
+          _note: string
+          _photo_path: string
+          _pin: string
+          _prep_task_item_id: string
+          _title_id: string
+          _token: string
+        }
+        Returns: Json
       }
       email_queue_health: { Args: never; Returns: Json }
       enqueue_email: {
