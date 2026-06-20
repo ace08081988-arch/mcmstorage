@@ -329,9 +329,14 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   const summary = useMemo(() => {
     let totalLines = 0, validLines = 0, partialLines = 0, invalidLines = 0;
     let totalWeight = 0;
+    let linesWithoutPhoto = 0;
+    const itemsWithoutPhoto: string[] = [];
     for (const entry of Object.values(picked)) {
+      const hasPhoto = !!entry.item.image_path;
+      if (!hasPhoto) itemsWithoutPhoto.push(entry.item.name);
       for (const l of entry.lines) {
         totalLines++;
+        if (!hasPhoto) linesWithoutPhoto++;
         const rs = rowStatus(l.key);
         if (rs === "valid") {
           validLines++;
@@ -344,6 +349,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       items: Object.keys(picked).length,
       totalLines, validLines, partialLines, invalidLines,
       totalWeight: roundTo(totalWeight, 2),
+      linesWithoutPhoto,
+      itemsWithoutPhoto,
     };
   }, [picked, lineStatus, variants]);
 
@@ -491,6 +498,14 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             {summary.invalidLines > 0 && (
               <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-destructive">
                 <AlertTriangle className="h-3 w-3" /> {summary.invalidLines} tidak valid
+              </span>
+            )}
+            {summary.linesWithoutPhoto > 0 && (
+              <span
+                className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-destructive"
+                title={`Belum ada foto: ${summary.itemsWithoutPhoto.join(", ")}`}
+              >
+                <ImageIcon className="h-3 w-3" /> {summary.linesWithoutPhoto} tanpa foto
               </span>
             )}
             <span className="ml-auto tabular-nums">
@@ -661,7 +676,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
           const canSend =
             summary.validLines > 0 &&
             summary.partialLines === 0 &&
-            summary.invalidLines === 0;
+            summary.invalidLines === 0 &&
+            summary.linesWithoutPhoto === 0;
           const reason =
             summary.validLines === 0
               ? "Pilih minimal satu barang dengan baris valid"
@@ -669,6 +685,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
               ? `${summary.invalidLines} baris tidak valid`
               : summary.partialLines > 0
               ? `${summary.partialLines} baris belum lengkap`
+              : summary.linesWithoutPhoto > 0
+              ? `Tidak ada foto untuk: ${summary.itemsWithoutPhoto.join(", ")}`
               : "";
           return (
             <button
