@@ -23,6 +23,7 @@ import { AppearanceSettings } from "@/components/appearance-settings";
 import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
+import { ReadyEcerSection } from "@/components/ReadyEcerSection";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
