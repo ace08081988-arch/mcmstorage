@@ -355,23 +355,23 @@ function SummaryMatrix({ samples }: { samples: Sample[] }) {
     [samples],
   );
   return (
-    <div className="rounded-lg border overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="rounded-xl border overflow-x-auto bg-card shadow-sm">
+      <table className="w-full text-sm min-w-[520px]">
         <thead className="bg-muted/60 text-left">
           <tr>
-            <th className="p-2">Item</th>
-            <th className="p-2">Stok</th>
-            <th className="p-2">Qty trx</th>
-            <th className="p-2">Harga</th>
+            <th className="p-3 font-medium">Item</th>
+            <th className="p-3 font-medium">Stok</th>
+            <th className="p-3 font-medium">Qty trx</th>
+            <th className="p-3 font-medium">Harga</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={i} className="border-t">
-              <td className="p-2 font-medium">{r.name}</td>
-              <td className="p-2">{r.stok}</td>
-              <td className="p-2">{r.qty}</td>
-              <td className="p-2">{r.harga}</td>
+              <td className="p-3 font-medium whitespace-nowrap">{r.name}</td>
+              <td className="p-3 whitespace-nowrap">{r.stok}</td>
+              <td className="p-3 whitespace-nowrap">{r.qty}</td>
+              <td className="p-3 whitespace-nowrap">{r.harga}</td>
             </tr>
           ))}
         </tbody>
