@@ -190,6 +190,27 @@ function parseNum(input: string): number | null {
   return Number.isFinite(n) ? n : null;
 }
 
+// Pembulatan setengah-menjauh-dari-nol agar hasil hitung konsisten
+// (Number.prototype.toFixed kadang membulatkan ke bawah karena floating point,
+// mis. (1.005).toFixed(2) === "1.00").
+function roundTo(n: number, maxFrac = 2): number {
+  if (!Number.isFinite(n)) return 0;
+  const p = Math.pow(10, maxFrac);
+  return Math.sign(n) * Math.round(Math.abs(n) * p + 1e-9) / p;
+}
+
+// Formatter angka konsisten untuk UI: gaya Indonesia (koma desimal, titik ribuan),
+// dibulatkan ke `maxFrac` digit dan trailing zero dihilangkan supaya bilangan
+// bulat tampil rapi (mis. 1, bukan 1,00). Cocok dipakai bersama parseNum.
+function fmtNum(n: number | null | undefined, maxFrac = 2): string {
+  if (n == null || !Number.isFinite(Number(n))) return "0";
+  const rounded = roundTo(Number(n), maxFrac);
+  return new Intl.NumberFormat("id-ID", {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: maxFrac,
+  }).format(rounded);
+}
+
 function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreated }: { warehouse: WItem[]; variants: Variant[]; onVariantsChanged: () => void | Promise<void>; onClose: () => void; onCreated: (info: { token: string; pin: string; title: string }) => void }) {
   const [title, setTitle] = useState("Tugas siapkan barang");
   const [note, setNote] = useState("");
