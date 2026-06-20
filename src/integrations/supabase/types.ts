@@ -1035,6 +1035,7 @@ export type Database = {
           prep_task_item_id: string | null
           title_id: string
           user_id: string
+          via_task_id: string | null
         }
         Insert: {
           created_at?: string
@@ -1048,6 +1049,7 @@ export type Database = {
           prep_task_item_id?: string | null
           title_id: string
           user_id: string
+          via_task_id?: string | null
         }
         Update: {
           created_at?: string
@@ -1061,6 +1063,7 @@ export type Database = {
           prep_task_item_id?: string | null
           title_id?: string
           user_id?: string
+          via_task_id?: string | null
         }
         Relationships: [
           {

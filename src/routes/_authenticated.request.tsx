@@ -743,6 +743,36 @@ function WorkerTestDialog({
     toast.success("Disalin");
   }
 
+  async function cancelSession() {
+    if (!session) return;
+    if (!confirm("Batalkan sesi uji coba? Semua paket Request yang dibuat lewat sesi ini akan dihapus dan stok dikembalikan.")) return;
+    setBusy(true);
+    try {
+      // Ambil semua preparation yang dibuat via sesi uji ini, lalu hapus fotonya.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: preps } = await (supabase.from as any)("request_preparations")
+        .select("id,photo_path").eq("via_task_id", session.token);
+      const list = (preps ?? []) as Array<{ id: string; photo_path: string | null }>;
+      for (const p of list) {
+        if (p.photo_path) await deleteRequestPhoto(p.photo_path);
+      }
+      // Hapus preparations — trigger akan kembalikan stok via request_preparation_items ON DELETE.
+      if (list.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from as any)("request_preparations")
+          .delete().in("id", list.map((p) => p.id));
+        if (error) throw error;
+      }
+      // Tutup tugas pegawai sementara (set status non-active dengan update share_token agar tidak bisa dipakai lagi).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from as any)("prep_tasks").update({ status: "cancelled" }).eq("id", session.token);
+      toast.success(`Sesi dibatalkan. ${list.length} paket dihapus, stok dikembalikan.`);
+      setSession(null);
+    } catch (e) {
+      toast.error("Gagal batalkan: " + (e as Error).message);
+    } finally { setBusy(false); }
+  }
+
   const qrUrl = session ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(session.url)}` : "";
 
   return (
@@ -800,7 +830,7 @@ function WorkerTestDialog({
             <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
               <b>Tips uji:</b> Buka link di tab baru / HP, masukkan PIN, scroll ke <b>"Paket Request"</b>,
               pilih satu judul, isi gram tiap produk, ambil foto + lokasi, lalu Kirim.
-              Stok produk akan benar-benar berkurang — hapus paket di halaman ini jika ingin balik.
+              Stok produk akan benar-benar berkurang. Tekan <b>"Batalkan sesi uji coba"</b> untuk mengembalikan stok &amp; menghapus paket uji.
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" size="sm" onClick={copyAll}>
@@ -812,7 +842,17 @@ function WorkerTestDialog({
                 </a>
               </Button>
             </div>
-            <Button variant="ghost" size="sm" className="w-full" onClick={() => setSession(null)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-destructive/40 text-destructive hover:bg-destructive/10"
+              onClick={cancelSession}
+              disabled={busy}
+            >
+              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1 h-3.5 w-3.5" />}
+              Batalkan sesi uji coba (kembalikan stok)
+            </Button>
+            <Button variant="ghost" size="sm" className="w-full" onClick={() => setSession(null)} disabled={busy}>
               Buat sesi baru
             </Button>
           </div>
