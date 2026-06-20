@@ -454,6 +454,28 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         />
       )}
       <div className="space-y-3 text-sm">
+        <div className="rounded-md border bg-muted/40 p-2 text-[11px]">
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+            <span className="font-semibold">Ringkasan</span>
+            <span><b>{summary.items}</b> barang · <b>{summary.totalLines}</b> baris</span>
+            <span className="inline-flex items-center gap-1 rounded bg-emerald-500/10 px-1.5 py-0.5 text-emerald-600">
+              <CheckCircle2 className="h-3 w-3" /> {summary.validLines} valid
+            </span>
+            {summary.partialLines > 0 && (
+              <span className="inline-flex items-center gap-1 rounded bg-amber-500/10 px-1.5 py-0.5 text-amber-600">
+                <AlertTriangle className="h-3 w-3" /> {summary.partialLines} belum lengkap
+              </span>
+            )}
+            {summary.invalidLines > 0 && (
+              <span className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-destructive">
+                <AlertTriangle className="h-3 w-3" /> {summary.invalidLines} tidak valid
+              </span>
+            )}
+            <span className="ml-auto tabular-nums">
+              Siap dikirim: <b>{fmtNum(summary.totalWeight, 2)}</b>
+            </span>
+          </div>
+        </div>
         <label className="block">
           <div className="mb-1 text-[11px] text-muted-foreground">Judul</div>
           <input value={title} onChange={(e) => setTitle(e.target.value)} className="h-10 w-full rounded-md border bg-background px-3 text-sm" />
