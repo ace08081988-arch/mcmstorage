@@ -77,6 +77,8 @@ export function ReadyPackagesPanel({
   const [showForm, setShowForm] = useState(false);
   const [histQuery, setHistQuery] = useState("");
   const [histStatus, setHistStatus] = useState<"all" | "sent" | "archived" | "cancelled" | "failed">("all");
+  const [histFrom, setHistFrom] = useState("");
+  const [histTo, setHistTo] = useState("");
 
   async function reload() {
     setLoading(true);
@@ -100,8 +102,15 @@ export function ReadyPackagesPanel({
 
   const historyAll = pkgs.filter((p) => p.status !== "ready");
   const histQ = histQuery.trim().toLowerCase();
+  const fromTs = histFrom ? new Date(histFrom + "T00:00:00").getTime() : null;
+  const toTs = histTo ? new Date(histTo + "T23:59:59.999").getTime() : null;
   const historyFiltered = historyAll.filter((p) => {
     if (histStatus !== "all" && p.status !== histStatus) return false;
+    if (fromTs !== null || toTs !== null) {
+      const ts = new Date(p.sent_at ?? p.created_at).getTime();
+      if (fromTs !== null && ts < fromTs) return false;
+      if (toTs !== null && ts > toTs) return false;
+    }
     if (!histQ) return true;
     const hay = `${p.sent_to_phone ?? ""} ${p.sent_to_name ?? ""}`.toLowerCase();
     return hay.includes(histQ);
@@ -137,32 +146,52 @@ export function ReadyPackagesPanel({
         </div>
 
         {tab === "history" && historyAll.length > 0 && (
-          <div className="flex flex-col gap-2 border-b bg-muted/30 px-3 py-2 sm:flex-row">
-            <input
-              value={histQuery}
-              onChange={(e) => setHistQuery(e.target.value)}
-              placeholder="Cari nomor WA / nama pelanggan…"
-              className="h-9 flex-1 rounded-md border bg-background px-3 text-xs"
-            />
-            <select
-              value={histStatus}
-              onChange={(e) => setHistStatus(e.target.value as typeof histStatus)}
-              className="h-9 rounded-md border bg-background px-2 text-xs"
-            >
-              <option value="all">Semua status</option>
-              <option value="sent">Berhasil dikirim</option>
-              <option value="archived">Diarsipkan</option>
-              <option value="cancelled">Batal</option>
-              <option value="failed">Gagal dikirim</option>
-            </select>
-            {(histQuery || histStatus !== "all") && (
-              <button
-                onClick={() => { setHistQuery(""); setHistStatus("all"); }}
-                className="h-9 rounded-md border px-3 text-xs hover:bg-accent"
+          <div className="flex flex-col gap-2 border-b bg-muted/30 px-3 py-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
+              <input
+                value={histQuery}
+                onChange={(e) => setHistQuery(e.target.value)}
+                placeholder="Cari nomor WA / nama pelanggan…"
+                className="h-9 flex-1 rounded-md border bg-background px-3 text-xs"
+              />
+              <select
+                value={histStatus}
+                onChange={(e) => setHistStatus(e.target.value as typeof histStatus)}
+                className="h-9 rounded-md border bg-background px-2 text-xs"
               >
-                Reset
-              </button>
-            )}
+                <option value="all">Semua status</option>
+                <option value="sent">Berhasil dikirim</option>
+                <option value="archived">Diarsipkan</option>
+                <option value="cancelled">Batal</option>
+                <option value="failed">Gagal dikirim</option>
+              </select>
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <label className="text-[11px] text-muted-foreground">Dari</label>
+              <input
+                type="date"
+                value={histFrom}
+                max={histTo || undefined}
+                onChange={(e) => setHistFrom(e.target.value)}
+                className="h-9 flex-1 min-w-[8rem] rounded-md border bg-background px-2 text-xs"
+              />
+              <label className="text-[11px] text-muted-foreground">s/d</label>
+              <input
+                type="date"
+                value={histTo}
+                min={histFrom || undefined}
+                onChange={(e) => setHistTo(e.target.value)}
+                className="h-9 flex-1 min-w-[8rem] rounded-md border bg-background px-2 text-xs"
+              />
+              {(histQuery || histStatus !== "all" || histFrom || histTo) && (
+                <button
+                  onClick={() => { setHistQuery(""); setHistStatus("all"); setHistFrom(""); setHistTo(""); }}
+                  className="h-9 rounded-md border px-3 text-xs hover:bg-accent"
+                >
+                  Reset
+                </button>
+              )}
+            </div>
           </div>
         )}
 
