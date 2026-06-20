@@ -600,6 +600,7 @@ function PackageForm({
   type Preset = { label: string; grams: number };
   const ecerKey = `ecer:presets:${item.id}`;
   const [ecerTitle, setEcerTitle] = useState("");
+  const [ecerUnit, setEcerUnit] = useState<"g" | "gram">("g");
   const [presets, setPresets] = useState<Preset[]>([]);
   const [showEcer, setShowEcer] = useState(false);
   const [newLabel, setNewLabel] = useState("");
@@ -609,15 +610,16 @@ function PackageForm({
     try {
       const raw = localStorage.getItem(ecerKey);
       if (!raw) return;
-      const parsed = JSON.parse(raw) as { title?: string; presets?: Preset[] };
+      const parsed = JSON.parse(raw) as { title?: string; presets?: Preset[]; unit?: "g" | "gram" };
       setEcerTitle(parsed.title ?? "");
+      setEcerUnit(parsed.unit === "gram" ? "gram" : "g");
       setPresets(Array.isArray(parsed.presets) ? parsed.presets : []);
     } catch { /* ignore */ }
   }, [ecerKey]);
 
-  function persistEcer(title: string, list: Preset[]) {
+  function persistEcer(title: string, list: Preset[], unit: "g" | "gram" = ecerUnit) {
     try {
-      localStorage.setItem(ecerKey, JSON.stringify({ title, presets: list }));
+      localStorage.setItem(ecerKey, JSON.stringify({ title, presets: list, unit }));
     } catch { /* ignore */ }
   }
 
@@ -641,7 +643,8 @@ function PackageForm({
 
   function pickPreset(p: Preset) {
     setQty(String(p.grams));
-    if (!note.trim()) setNote(`${ecerTitle ? ecerTitle + " · " : ""}${p.label} (${p.grams} ${item.base_unit})`);
+    const unitText = item.base_unit === "g" ? ecerUnit : item.base_unit;
+    if (!note.trim()) setNote(`${ecerTitle ? ecerTitle + " · " : ""}${p.label} (${p.grams} ${unitText})`);
     toast.success(`Preset ${p.label} dipilih`);
   }
 
