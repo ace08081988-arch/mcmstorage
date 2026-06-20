@@ -23,6 +23,7 @@ import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_auth
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
+import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.ecer'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
@@ -101,6 +102,11 @@ const AuthenticatedGudangRoute = AuthenticatedGudangRouteImport.update({
   path: '/gudang',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedEcerRoute = AuthenticatedEcerRouteImport.update({
+  id: '/ecer',
+  path: '/ecer',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedDeviceVerifyRoute =
   AuthenticatedDeviceVerifyRouteImport.update({
     id: '/device-verify',
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trust': typeof TrustRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
+  '/ecer': typeof AuthenticatedEcerRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
@@ -160,6 +167,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trust': typeof TrustRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
+  '/ecer': typeof AuthenticatedEcerRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
@@ -182,6 +190,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trust': typeof TrustRoute
   '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
+  '/_authenticated/ecer': typeof AuthenticatedEcerRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
@@ -205,6 +214,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/trust'
     | '/device-verify'
+    | '/ecer'
     | '/gudang'
     | '/hutang-piutang'
     | '/label-preview'
@@ -224,6 +234,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/trust'
     | '/device-verify'
+    | '/ecer'
     | '/gudang'
     | '/hutang-piutang'
     | '/label-preview'
@@ -245,6 +256,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/trust'
     | '/_authenticated/device-verify'
+    | '/_authenticated/ecer'
     | '/_authenticated/gudang'
     | '/_authenticated/hutang-piutang'
     | '/_authenticated/label-preview'
@@ -371,6 +383,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGudangRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/ecer': {
+      id: '/_authenticated/ecer'
+      path: '/ecer'
+      fullPath: '/ecer'
+      preLoaderRoute: typeof AuthenticatedEcerRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/device-verify': {
       id: '/_authenticated/device-verify'
       path: '/device-verify'
@@ -438,6 +457,7 @@ const AuthenticatedGudangRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
+  AuthenticatedEcerRoute: typeof AuthenticatedEcerRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
@@ -448,6 +468,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
+  AuthenticatedEcerRoute: AuthenticatedEcerRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
