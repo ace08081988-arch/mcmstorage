@@ -209,7 +209,7 @@ function Index() {
                 ⚙️ Ubah Metode / Opsi
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/pengaturan-kunci">📄 Halaman Pengaturan Kunci</Link>
+                <Link to="/pengaturan-kunci">📄 Pengaturan Kunci</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={toggleAutoLock}>
@@ -222,7 +222,7 @@ function Index() {
                 🔧 Atur Kunci (PIN/Pola/Sidik Jari)
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/pengaturan-kunci">📄 Halaman Pengaturan Kunci</Link>
+                <Link to="/pengaturan-kunci">📄 Pengaturan Kunci</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={toggleAutoLock}>
