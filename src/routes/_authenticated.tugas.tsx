@@ -308,6 +308,22 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   const [picked, setPicked] = useState<Record<string, PickedEntry>>({});
   const [manageVariantsFor, setManageVariantsFor] = useState<WItem | null>(null);
   const [busy, setBusy] = useState(false);
+  // Status validasi per baris (count / weight) — dipakai untuk badge indikator.
+  type LineStatus = "valid" | "partial" | "invalid";
+  const [lineStatus, setLineStatus] = useState<Record<string, { count: LineStatus; weight: LineStatus }>>({});
+  function setFieldStatus(key: string, field: "count" | "weight", s: LineStatus) {
+    setLineStatus((m) => {
+      const cur = m[key] ?? { count: "valid", weight: "valid" };
+      if (cur[field] === s) return m;
+      return { ...m, [key]: { ...cur, [field]: s } };
+    });
+  }
+  function rowStatus(key: string): LineStatus {
+    const s = lineStatus[key]; if (!s) return "valid";
+    if (s.count === "invalid" || s.weight === "invalid") return "invalid";
+    if (s.count === "partial" || s.weight === "partial") return "partial";
+    return "valid";
+  }
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
