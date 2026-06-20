@@ -347,14 +347,18 @@ type RequestTitleDTO = {
 
 function RequestSection({ token, pin }: { token: string; pin: string }) {
   const [titles, setTitles] = useState<RequestTitleDTO[] | null>(null);
+  const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
 
   async function load() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.rpc as any)("request_list_titles_via_task", { _token: token, _pin: pin });
     if (error) { toast.error("Gagal muat request: " + error.message); return; }
-    const res = data as { ok: boolean; titles?: RequestTitleDTO[] };
-    if (res?.ok) setTitles(res.titles ?? []); else setTitles([]);
+    const res = data as { ok: boolean; titles?: RequestTitleDTO[]; owner_user_id?: string };
+    if (res?.ok) {
+      setTitles(res.titles ?? []);
+      setOwnerUserId(res.owner_user_id ?? null);
+    } else setTitles([]);
   }
   useEffect(() => { void load(); }, [token, pin]);
 
@@ -387,7 +391,7 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
             </button>
             {openId === t.id && (
               <div className="border-t bg-muted/20 p-3">
-                <RequestForm title={t} token={token} pin={pin} onDone={() => { setOpenId(null); void load(); }} />
+                <RequestForm title={t} token={token} pin={pin} ownerUserId={ownerUserId} onDone={() => { setOpenId(null); void load(); }} />
               </div>
             )}
           </div>
@@ -398,8 +402,8 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
 }
 
 function RequestForm({
-  title, token, pin, onDone,
-}: { title: RequestTitleDTO; token: string; pin: string; onDone: () => void }) {
+  title, token, pin, ownerUserId, onDone,
+}: { title: RequestTitleDTO; token: string; pin: string; ownerUserId: string | null; onDone: () => void }) {
   const [rows, setRows] = useState(
     title.items.map((i) => ({
       warehouse_item_id: i.warehouse_item_id,
@@ -455,28 +459,7 @@ function RequestForm({
     if (validRows.length === 0) { toast.error("Minimal 1 item dengan jumlah > 0"); return; }
     setBusy(true);
     try {
-      // Need ownerUserId for storage path — get from RPC response indirectly:
-      // Use task get to derive owner. Cheaper: request a fresh task fetch — but we already have token+pin.
-      // Instead we rely on a special path that the worker insert policy allows:
-      //   {ownerUserId}/{shareToken}/...
-      // ownerUserId is not directly known here, but the policy joins via prep_tasks.
-      // So we need to fetch the owner. Use prep_get_task lite call:
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ownerRes = await (supabase.rpc as any)("prep_get_task", { _token: token, _pin: pin });
-      const ownerOk = ownerRes?.data as { ok: boolean; task?: { id: string } } | undefined;
-      if (!ownerOk?.ok) throw new Error("Sesi pegawai berakhir, login ulang");
-      // We still need ownerUserId — derive via storage path that uses share_token as folder[2],
-      // and owner_user_id as folder[1]. The RPC doesn't return owner_user_id. As a workaround,
-      // we ask the server to upload-grant the path. Since storage policy requires folder[1] = owner_user_id,
-      // we must include it. Fetch via dedicated helper:
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const ownerInfo = await (supabase.rpc as any)("prep_task_owner_id", { _token: token, _pin: pin })
-        .catch(() => ({ data: null }));
-      const ownerUserId: string | null = ownerInfo?.data?.owner_user_id ?? null;
-      if (!ownerUserId) {
-        toast.error("Fitur ini perlu pembaruan database. Hubungi admin.");
-        setBusy(false); return;
-      }
+      if (!ownerUserId) { toast.error("Sesi belum siap, coba muat ulang"); setBusy(false); return; }
       const photoPath = await uploadRequestPhotoViaToken(ownerUserId, token, photo.blob);
       if (!photoPath) throw new Error("Upload foto gagal");
       const itemsPayload = validRows.map((r) => ({
