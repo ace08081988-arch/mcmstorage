@@ -468,44 +468,31 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                             <div className="flex flex-wrap items-end gap-1.5">
                               <label className="w-20">
                                 <div className="mb-0.5 text-[10px] text-muted-foreground">Jumlah unit</div>
-                                 <input type="text" inputMode="decimal" defaultValue={fmtNum(l.count, 3)}
-                                  onChange={(e) => {
-                                    const raw = e.target.value;
-                                    if (raw.trim() === "") {
-                                      updateLine(it.id, l.key, { count: 0 });
-                                      return;
-                                    }
-                                    const n = parseNum(raw);
-                                    if (n == null) return;
-                                    updateLine(it.id, l.key, { count: n });
-                                  }}
-                                  className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums" />
+                                <NumberInput
+                                  value={l.count}
+                                  maxFrac={3}
+                                  emptyAs={0}
+                                  onChange={(n) => updateLine(it.id, l.key, { count: n })}
+                                  className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums"
+                                />
                               </label>
                               <span className="pb-2 text-xs text-muted-foreground">×</span>
                               <label className="w-24">
                                 <div className="mb-0.5 text-[10px] text-muted-foreground">
                                   Berat / unit{isManual ? "" : " (preset)"}
                                 </div>
-                                 <input type="text" inputMode="decimal"
-                                   defaultValue={fmtNum(l.weightOverride ?? w, 3)}
-                                  disabled={!isManual}
+                                <NumberInput
                                   key={`${l.key}-${l.variantId ?? "m"}`}
-                                  onChange={(e) => {
-                                    const raw = e.target.value;
-                                    // Saat input kosong → reset ke null (pakai default/preset).
-                                    if (raw.trim() === "") {
-                                      updateLine(it.id, l.key, { weightOverride: null });
-                                      return;
-                                    }
-                                    const n = parseNum(raw);
-                                    // Abaikan input tak lengkap (mis. "0." atau ",") agar nilai sebelumnya tetap.
-                                    if (n == null) return;
-                                    updateLine(it.id, l.key, { weightOverride: n });
-                                  }}
-                                  className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums disabled:opacity-60" />
+                                  value={l.weightOverride ?? w}
+                                  maxFrac={3}
+                                  disabled={!isManual}
+                                  emptyAs={isManual ? 0 : null}
+                                  onChange={(n) => updateLine(it.id, l.key, { weightOverride: n })}
+                                  className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums disabled:opacity-60"
+                                />
                               </label>
                               <div className="pb-1 text-[11px] font-semibold tabular-nums">
-                                 = {fmtNum(total, 2)} {(itemVariants.find((v) => v.id === l.variantId)?.unit_label) ?? ""}
+                                 = {fmtNum(roundTo(total, 2), 2)} {(itemVariants.find((v) => v.id === l.variantId)?.unit_label) ?? ""}
                               </div>
                               <label className="ml-auto flex items-center gap-1 pb-2 text-[10px] text-muted-foreground">
                                 <input type="checkbox" checked={l.split}
