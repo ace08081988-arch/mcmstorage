@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl } from "@/lib/share-wa";
-import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 
@@ -24,6 +24,7 @@ type CatVariant = { id: string; category: string; label: string; weight_per_unit
 type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string };
 type TaskItem = { id: string; task_id: string; name_snapshot: string; category_snapshot: string | null; qty_requested: number; qty_prepared: number; unit_label: string | null; ref_photo_path: string | null; warehouse_item_id: string | null };
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
+type PinAlert = { id: string; task_id: string; share_token: string; failure_count: number; window_start: string; window_end: string; created_at: string };
 
 function TugasPage() {
   const [uid, setUid] = useState<string | null>(null);
@@ -37,6 +38,7 @@ function TugasPage() {
   const [openVariantsHub, setOpenVariantsHub] = useState(false);
   const [manageCategoryFor, setManageCategoryFor] = useState<string | null>(null);
   const [openAudit, setOpenAudit] = useState(false);
+  const [pinAlerts, setPinAlerts] = useState<PinAlert[]>([]);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
@@ -56,6 +58,31 @@ function TugasPage() {
     setCatVariants((cv ?? []) as CatVariant[]);
   }
   useEffect(() => { void load(); }, [uid]);
+
+  async function loadPinAlerts() {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data } = await (supabase.from as any)("prep_pin_alerts")
+      .select("id,task_id,share_token,failure_count,window_start,window_end,created_at")
+      .is("acknowledged_at", null)
+      .order("created_at", { ascending: false });
+    setPinAlerts((data ?? []) as PinAlert[]);
+  }
+  useEffect(() => {
+    if (!uid) return;
+    void loadPinAlerts();
+    const id = setInterval(() => { void loadPinAlerts(); }, 30_000);
+    return () => clearInterval(id);
+  }, [uid]);
+
+  async function ackPinAlert(alertId: string) {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from as any)("prep_pin_alerts")
+      .update({ acknowledged_at: new Date().toISOString() })
+      .eq("id", alertId);
+    if (error) return toast.error(error.message);
+    setPinAlerts((prev) => prev.filter((a) => a.id !== alertId));
+    toast.success("Peringatan ditandai sudah ditangani");
+  }
 
   async function removeTask(id: string) {
     if (!confirm("Hapus tugas ini? Semua foto kiriman juga ikut terhapus.")) return;
@@ -111,6 +138,35 @@ function TugasPage() {
         </div>
       </div>
       <p className="mb-2 text-xs text-muted-foreground">Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via WhatsApp. Foto & lokasi yang dikirim pegawai muncul otomatis di sini.</p>
+      {pinAlerts.length > 0 && (
+        <div className="mb-3 space-y-2">
+          {pinAlerts.map((a) => {
+            const task = tasks.find((t) => t.id === a.task_id);
+            const minutes = Math.max(
+              1,
+              Math.round((new Date(a.window_end).getTime() - new Date(a.window_start).getTime()) / 60000),
+            );
+            return (
+              <div key={a.id} className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-xs">
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold text-destructive">Lonjakan PIN gagal terdeteksi</div>
+                  <div className="mt-0.5 text-foreground">
+                    <b>{a.failure_count}× percobaan salah</b> dalam ~{minutes} menit pada tugas <b>“{task?.title ?? a.share_token}”</b>.
+                  </div>
+                  <div className="mt-0.5 text-[10px] text-muted-foreground">Terakhir: {new Date(a.window_end).toLocaleString("id-ID")}</div>
+                  <div className="mt-2 flex flex-wrap gap-2">
+                    {task && (
+                      <button onClick={() => setOpenTask(task)} className="inline-flex h-7 items-center gap-1 rounded-md border bg-background px-2 text-[11px] font-medium">Buka tugas</button>
+                    )}
+                    <button onClick={() => ackPinAlert(a.id)} className="inline-flex h-7 items-center gap-1 rounded-md bg-destructive px-2 text-[11px] font-medium text-destructive-foreground">Sudah ditangani</button>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
       <div className="mb-4 rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px] text-amber-700 dark:text-amber-400">
         ⚖️ <b>Anda</b> yang menentukan <b>berat / jumlah</b> yang harus disiapkan per item (boleh desimal, mis. <b>0.90</b> gram untuk eceran kristal). Pegawai cukup mengirim <b>foto + lokasi</b>. Stok gudang induk otomatis berkurang sesuai angka yang Anda isi (mis. 100 − 0.90 = 99.10).
       </div>
