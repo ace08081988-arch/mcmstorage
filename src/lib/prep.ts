@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logStorageError } from "@/lib/storage-log";
 
 export const PREP_BUCKET = "prep-photos";
 
@@ -18,7 +19,10 @@ export function genPin(): string {
 export async function signedUrl(path: string | null | undefined, expiresIn = 60 * 60 * 24 * 7): Promise<string | null> {
   if (!path) return null;
   const { data, error } = await supabase.storage.from(PREP_BUCKET).createSignedUrl(path, expiresIn);
-  if (error) return null;
+  if (error) {
+    logStorageError({ bucket: PREP_BUCKET, op: "createSignedUrl", path, source: "signedUrl" }, error);
+    return null;
+  }
   return data?.signedUrl ?? null;
 }
 
@@ -28,7 +32,10 @@ export async function uploadPrepPhoto(taskToken: string, itemId: string, blob: B
     contentType: blob.type || "image/jpeg",
     upsert: false,
   });
-  if (error) return null;
+  if (error) {
+    logStorageError({ bucket: PREP_BUCKET, op: "upload", path, source: "uploadPrepPhoto" }, error);
+    return null;
+  }
   return path;
 }
 
