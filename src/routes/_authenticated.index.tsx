@@ -209,7 +209,7 @@ function Index() {
                 ⚙️ Ubah Metode / Opsi
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/pengaturan-kunci">📄 Halaman Pengaturan Kunci</Link>
+                <Link to="/pengaturan-kunci">📄 Pengaturan Kunci</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={toggleAutoLock}>
@@ -222,7 +222,7 @@ function Index() {
                 🔧 Atur Kunci (PIN/Pola/Sidik Jari)
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
-                <Link to="/pengaturan-kunci">📄 Halaman Pengaturan Kunci</Link>
+                <Link to="/pengaturan-kunci">📄 Pengaturan Kunci</Link>
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={toggleAutoLock}>
@@ -713,7 +713,7 @@ function Index() {
                 { to: "/gudang", label: "Gudang & Supplier", emoji: "📦", desc: "Stok, pembelian, penjualan" },
                 { to: "/tugas", label: "Tugas Pegawai", emoji: "📋", desc: "Buat & pantau penyiapan" },
                 { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
-                { to: "/label-preview", label: "Label Preview", emoji: "🏷️", desc: "Cetak label produk" },
+                { to: "/label-preview", label: "Pratinjau Label", emoji: "🏷️", desc: "Cetak label produk" },
                 { to: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
               ].map((s) => (
                 <Link
