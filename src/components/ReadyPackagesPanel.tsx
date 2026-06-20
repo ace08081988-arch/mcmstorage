@@ -252,30 +252,53 @@ function PackageCard({
   const [sharing, setSharing] = useState(false);
   const [pickWA, setPickWA] = useState(false);
 
+  function buildCaption(targetName: string, targetPhone: string): string {
+    const shopName = (localStorage.getItem("shop:name") || "").trim();
+    const greetingTarget = targetName?.trim() || targetPhone?.trim() || "";
+    const qtyLabel = `${fmtBase(pkg.qty_base, item.base_unit)} ${item.name}`;
+    const lines: string[] = [];
+    lines.push(`✅ PEMBAYARAN DIKONFIRMASI${shopName ? ` - ${shopName.toUpperCase()}` : ""}`);
+    lines.push(``);
+    lines.push(`Halo${greetingTarget ? ` ${greetingTarget}` : ""}! 👋`);
+    lines.push(``);
+    lines.push(`Terima kasih! Pembayaran Anda sudah kami terima. ✅`);
+    lines.push(``);
+    lines.push(`📍 Lokasi pengambilan ${qtyLabel}:`);
+    lines.push(qtyLabel);
+    if (pkg.note) lines.push(`📝 ${pkg.note}`);
+    if (pkg.location_url) {
+      lines.push(``);
+      lines.push(`🗺️ Buka Maps:`);
+      lines.push(pkg.location_url);
+    }
+    lines.push(``);
+    lines.push(`Silakan ambil produk di lokasi tersebut ya kak. Jika ada pertanyaan, balas pesan ini. Terima kasih! 🙏`);
+    return lines.join("\n");
+  }
+
+  async function copyCaption() {
+    const text = buildCaption("", "");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Caption disalin — tinggal tempel di WhatsApp.");
+    } catch {
+      // Fallback for browsers without Clipboard API
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand("copy"); toast.success("Caption disalin."); }
+      catch { toast.error("Gagal menyalin — salin manual dari pratinjau."); }
+      ta.remove();
+    }
+  }
+
   async function doShare(targetName: string, targetPhone: string) {
     setSharing(true);
     try {
-      const shopName = (localStorage.getItem("shop:name") || "").trim();
-      const greetingTarget = targetName?.trim() || targetPhone?.trim() || "";
-      const qtyLabel = `${fmtBase(pkg.qty_base, item.base_unit)} ${item.name}`;
-      const lines: string[] = [];
-      lines.push(`✅ PEMBAYARAN DIKONFIRMASI${shopName ? ` - ${shopName.toUpperCase()}` : ""}`);
-      lines.push(``);
-      lines.push(`Halo${greetingTarget ? ` ${greetingTarget}` : ""}! 👋`);
-      lines.push(``);
-      lines.push(`Terima kasih! Pembayaran Anda sudah kami terima. ✅`);
-      lines.push(``);
-      lines.push(`📍 Lokasi pengambilan ${qtyLabel}:`);
-      lines.push(qtyLabel);
-      if (pkg.note) lines.push(`📝 ${pkg.note}`);
-      if (pkg.location_url) {
-        lines.push(``);
-        lines.push(`🗺️ Buka Maps:`);
-        lines.push(pkg.location_url);
-      }
-      lines.push(``);
-      lines.push(`Silakan ambil produk di lokasi tersebut ya kak. Jika ada pertanyaan, balas pesan ini. Terima kasih! 🙏`);
-      const text = lines.join("\n");
+      const text = buildCaption(targetName, targetPhone);
 
       const files: File[] = [];
       if (pkg.photo_path) {
