@@ -20,7 +20,6 @@ import {
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
 import { shareToWhatsApp } from "@/lib/share-wa";
-import { useConfirm } from "@/hooks/use-confirm";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -185,7 +184,6 @@ function EcerPage() {
 function TitleCard({ title, onOpen, onEdit, onDeleted }: {
   title: EcerTitle; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
 }) {
-  const confirm = useConfirm();
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
     void (async () => {
@@ -198,12 +196,9 @@ function TitleCard({ title, onOpen, onEdit, onDeleted }: {
   }, [title.id]);
 
   async function onDelete() {
-    const ok = await confirm({
-      title: "Hapus judul ecer?",
-      description: "Semua kotak penyiapan di judul ini juga akan dihapus. Stok yang sudah dikurangi sebelumnya akan dikembalikan.",
-      confirmText: "Hapus",
-      variant: "destructive",
-    });
+    const ok = typeof window !== "undefined" && window.confirm(
+      "Hapus judul ecer? Semua kotak penyiapan di judul ini juga akan dihapus dan stok yang sudah dikurangi sebelumnya akan dikembalikan."
+    );
     if (!ok) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.from as any)("ecer_titles").delete().eq("id", title.id);
@@ -382,7 +377,6 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
   prep: EcerPreparation; index: number; title: EcerTitle; onChanged: () => void; onTitleUpdated: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
-  const confirm = useConfirm();
   useEffect(() => { void ecerSignedUrl(prep.photo_path).then(setUrl); }, [prep.photo_path]);
 
   async function onShare() {
@@ -406,12 +400,9 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
   }
 
   async function onDelete() {
-    const ok = await confirm({
-      title: "Hapus penyiapan ini?",
-      description: `Stok produk akan dikembalikan sebanyak ${prep.actual_grams} ${title.unit_label}.`,
-      confirmText: "Hapus",
-      variant: "destructive",
-    });
+    const ok = typeof window !== "undefined" && window.confirm(
+      `Hapus penyiapan ini? Stok produk akan dikembalikan sebanyak ${prep.actual_grams} ${title.unit_label}.`
+    );
     if (!ok) return;
     if (prep.photo_path) await deleteEcerPhoto(prep.photo_path);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
