@@ -571,12 +571,33 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             {filtered.map((it) => {
               const p = picked[it.id];
               const itemVariants = variants.filter((v) => v.warehouse_item_id === it.id);
+              const missingPhoto = !it.image_path;
+              const warnPhoto = !!p && missingPhoto;
               return (
-                <div key={it.id} className={`rounded p-1.5 ${p ? "bg-primary/5" : ""}`}>
+                <div
+                  key={it.id}
+                  className={`rounded p-1.5 ${
+                    warnPhoto
+                      ? "border border-destructive/40 bg-destructive/5"
+                      : p
+                      ? "bg-primary/5"
+                      : ""
+                  }`}
+                >
                   <div className="flex items-center gap-2">
                     <input type="checkbox" checked={!!p} onChange={() => toggle(it)} />
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-xs font-medium">{it.name}</div>
+                      <div className="flex items-center gap-1.5">
+                        <span className="truncate text-xs font-medium">{it.name}</span>
+                        {missingPhoto && (
+                          <span
+                            className="inline-flex shrink-0 items-center gap-0.5 rounded bg-destructive/10 px-1 py-0.5 text-[9px] font-medium text-destructive"
+                            title="Barang ini belum punya foto — tidak bisa dikirim ke WA"
+                          >
+                            <ImageIcon className="h-2.5 w-2.5" /> Tanpa foto
+                          </span>
+                        )}
+                      </div>
                       <div className="text-[10px] text-muted-foreground">
                         {it.category ?? "—"} · stok {it.stock_base}
                         {itemVariants.length > 0 && <span className="ml-1">· {itemVariants.length} varian</span>}
