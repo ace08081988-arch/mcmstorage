@@ -16,6 +16,7 @@ type Row = {
 export function ReadyEcerSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [query, setQuery] = useState("");
+  const [productFilter, setProductFilter] = useState<string>("all");
 
   useEffect(() => {
     void (async () => {
@@ -48,9 +49,17 @@ export function ReadyEcerSection() {
   }, []);
 
   const q = query.trim().toLowerCase();
-  const filtered = rows === null ? null : (q === "" ? rows : rows.filter((r) =>
-    r.name.toLowerCase().includes(q) || r.product_name.toLowerCase().includes(q)
-  ));
+  const products = rows === null
+    ? []
+    : Array.from(
+        new Map(rows.map((r) => [r.warehouse_item_id, r.product_name])).entries()
+      ).sort((a, b) => a[1].localeCompare(b[1]));
+  const filtered = rows === null ? null : rows.filter((r) => {
+    if (productFilter !== "all" && r.warehouse_item_id !== productFilter) return false;
+    if (q === "") return true;
+    return r.name.toLowerCase().includes(q) || r.product_name.toLowerCase().includes(q);
+  });
+  const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
 
   return (
     <div className="space-y-1.5">
@@ -64,25 +73,38 @@ export function ReadyEcerSection() {
       </div>
 
       {rows && rows.length > 0 && (
-        <div className="relative">
-          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-          <input
-            type="search"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Cari judul ecer atau nama produk…"
-            className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-xs outline-none placeholder:text-muted-foreground focus:border-primary/40"
-          />
-          {query && (
-            <button
-              type="button"
-              onClick={() => setQuery("")}
-              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-accent"
-              aria-label="Hapus pencarian"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
-          )}
+        <div className="flex gap-1.5">
+          <div className="relative flex-1">
+            <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="search"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Cari judul ecer…"
+              className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-xs outline-none placeholder:text-muted-foreground focus:border-primary/40"
+            />
+            {query && (
+              <button
+                type="button"
+                onClick={() => setQuery("")}
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-accent"
+                aria-label="Hapus pencarian"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            )}
+          </div>
+          <select
+            value={productFilter}
+            onChange={(e) => setProductFilter(e.target.value)}
+            className="h-8 max-w-[40%] rounded-md border bg-card px-2 text-xs outline-none focus:border-primary/40"
+            aria-label="Filter produk"
+          >
+            <option value="all">Semua produk</option>
+            {products.map(([id, name]) => (
+              <option key={id} value={id}>{name}</option>
+            ))}
+          </select>
         </div>
       )}
 
@@ -98,8 +120,17 @@ export function ReadyEcerSection() {
           <Plus className="h-4 w-4" />
         </Link>
       ) : filtered && filtered.length === 0 ? (
-        <div className="rounded-md border border-dashed bg-card/50 p-4 text-center text-[11px] text-muted-foreground">
-          Tidak ada hasil untuk “{query}”.
+        <div className="flex flex-col items-center gap-2 rounded-md border border-dashed bg-card/50 p-4 text-center text-[11px] text-muted-foreground">
+          <span>Tidak ada hasil yang cocok.</span>
+          {activeFilters > 0 && (
+            <button
+              type="button"
+              onClick={() => { setQuery(""); setProductFilter("all"); }}
+              className="text-primary hover:underline"
+            >
+              Bersihkan filter
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
