@@ -690,7 +690,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 <select value={l.variantId ?? ""}
                                   onChange={(e) => updateLine(it.id, l.key, { variantId: e.target.value || null, weightOverride: null })}
                                   className="h-8 w-full rounded border bg-background px-1 text-[11px]">
-                                  <option value="">Manual (isi berat sendiri)</option>
+                                  <option value="">Manual — isi berat di kolom kanan</option>
                                    {itemVariants.map((v) => (
                                      <option key={v.id} value={v.id}>{v.label} · {fmtNum(Number(v.weight_per_unit), 3)} {v.unit_label ?? ""}</option>
                                    ))}
@@ -723,6 +723,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                   maxFrac={3}
                                   disabled={!isManual}
                                   emptyAs={isManual ? 0 : null}
+                                  placeholder={isManual ? "isi manual" : undefined}
                                   onChange={(n) => updateLine(it.id, l.key, { weightOverride: n })}
                                   onStatusChange={(s) => setFieldStatus(l.key, "weight", s)}
                                   className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums disabled:opacity-60"
