@@ -329,6 +329,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   const summary = useMemo(() => {
     let totalLines = 0, validLines = 0, partialLines = 0, invalidLines = 0;
     let totalWeight = 0;
+    let readyLines = 0, readyWeight = 0;
     let linesWithoutPhoto = 0;
     const itemsWithoutPhoto: string[] = [];
     for (const entry of Object.values(picked)) {
@@ -340,7 +341,12 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         const rs = rowStatus(l.key);
         if (rs === "valid") {
           validLines++;
-          totalWeight += lineWeight(l, variants) * (l.count || 0);
+          const w = lineWeight(l, variants) * (l.count || 0);
+          totalWeight += w;
+          if (hasPhoto) {
+            readyLines++;
+            readyWeight += w;
+          }
         } else if (rs === "partial") partialLines++;
         else invalidLines++;
       }
@@ -349,6 +355,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       items: Object.keys(picked).length,
       totalLines, validLines, partialLines, invalidLines,
       totalWeight: roundTo(totalWeight, 2),
+      readyLines,
+      readyWeight: roundTo(readyWeight, 2),
       linesWithoutPhoto,
       itemsWithoutPhoto,
     };
