@@ -308,6 +308,22 @@ function PackageCard({
     else { toast.success("Riwayat dihapus"); onChanged(); }
   }
 
+  async function setStatus(next: Pkg["status"]) {
+    const label = STATUS_LABEL[next].toLowerCase();
+    if (!(await confirm({
+      title: `Tandai paket sebagai "${STATUS_LABEL[next]}"?`,
+      description: next === "cancelled"
+        ? "Stok akan dikembalikan ke gudang."
+        : `Paket akan dipindahkan ke riwayat dengan status ${label}.`,
+      confirmText: "Tandai",
+    }))) return;
+    const patch: Record<string, unknown> = { status: next };
+    if (next !== "ready" && !pkg.sent_at) patch.sent_at = new Date().toISOString();
+    const { error } = await supabase.from("ready_packages").update(patch).eq("id", pkg.id);
+    if (error) toast.error(friendlyError(error));
+    else { toast.success(`Status diubah: ${STATUS_LABEL[next]}`); onChanged(); }
+  }
+
   const isReady = pkg.status === "ready";
 
   return (
@@ -321,7 +337,12 @@ function PackageCard({
           </div>
         )}
         <div className="min-w-0 flex-1 space-y-1 text-xs">
-          <div className="font-semibold tabular-nums text-sm">{fmtBase(pkg.qty_base, item.base_unit)}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="font-semibold tabular-nums text-sm">{fmtBase(pkg.qty_base, item.base_unit)}</div>
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${STATUS_BADGE[pkg.status]}`}>
+              {STATUS_LABEL[pkg.status]}
+            </span>
+          </div>
           {pkg.location_url && (
             <a href={pkg.location_url} target="_blank" rel="noreferrer" className="block truncate text-primary hover:underline">
               📍 {pkg.location_url}
