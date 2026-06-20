@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, PackagePlus, Trash2,
-  Loader2, ChevronLeft, Package,
+  Loader2, ChevronLeft, Package, FlaskConical, Copy, ExternalLink,
 } from "lucide-react";
 import {
   requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
@@ -46,6 +46,7 @@ function RequestPage() {
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
+  const [testOpen, setTestOpen] = useState(false);
 
   async function loadAll() {
     const [wi, t, ti] = await Promise.all([
@@ -105,7 +106,10 @@ function RequestPage() {
         Tiap kotak penyiapan = 1 paket dengan satu foto + lokasi. Stok semua produk otomatis berkurang.
       </p>
 
-      <div className="flex justify-end">
+      <div className="flex flex-wrap justify-end gap-2">
+        <Button size="sm" variant="outline" onClick={() => setTestOpen(true)}>
+          <FlaskConical className="mr-1 h-4 w-4" /> Uji Coba Alur Pegawai
+        </Button>
         <Button size="sm" onClick={() => setCreatingTitle(true)}>
           <Plus className="mr-1 h-4 w-4" /> Judul Request Baru
         </Button>
@@ -163,6 +167,13 @@ function RequestPage() {
         existingItems={editingTitle ? titleItems.filter((i) => i.title_id === editingTitle.id) : []}
         onClose={() => { setCreatingTitle(false); setEditingTitle(null); }}
         onSaved={loadAll}
+      />
+
+      <WorkerTestDialog
+        open={testOpen}
+        titles={titles}
+        titleItemsCount={titleItems.length}
+        onClose={() => setTestOpen(false)}
       />
     </div>
   );
