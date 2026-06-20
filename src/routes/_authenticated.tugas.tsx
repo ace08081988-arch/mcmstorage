@@ -280,6 +280,7 @@ function NumberInput({
   className,
   emptyAs = 0,
   onStatusChange,
+  placeholder,
 }: {
   value: number;
   onChange: (n: number) => void;
@@ -290,6 +291,7 @@ function NumberInput({
   emptyAs?: number | null;
   // Dipanggil tiap kali status validasi input berubah.
   onStatusChange?: (status: "valid" | "partial" | "invalid") => void;
+  placeholder?: string;
 }) {
   const [text, setText] = useState(() => fmtNum(value, maxFrac));
   const focused = useRef(false);
@@ -330,6 +332,7 @@ function NumberInput({
       inputMode="decimal"
       disabled={disabled}
       value={text}
+      placeholder={placeholder}
       aria-invalid={status === "invalid"}
       onFocus={() => { focused.current = true; }}
       onBlur={() => {
