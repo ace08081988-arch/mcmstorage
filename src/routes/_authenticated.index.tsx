@@ -24,6 +24,7 @@ import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { ReadyEcerSection } from "@/components/ReadyEcerSection";
+import { ReadyRequestSection } from "@/components/ReadyRequestSection";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -713,6 +714,7 @@ function Index() {
               {[
                 { to: "/gudang", label: "Gudang & Supplier", emoji: "📦", desc: "Stok, pembelian, penjualan" },
                 { to: "/ecer", label: "Penyiapan Ecer", emoji: "⚖️", desc: "Judul & kotak penyiapan" },
+                { to: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
                 { to: "/tugas", label: "Tugas Pegawai", emoji: "📋", desc: "Buat & pantau penyiapan" },
                 { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
                 { to: "/label-preview", label: "Pratinjau Label", emoji: "🏷️", desc: "Cetak label produk" },
@@ -733,6 +735,7 @@ function Index() {
           </div>
 
           <ReadyEcerSection />
+          <ReadyRequestSection />
         </main>
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
       </div>

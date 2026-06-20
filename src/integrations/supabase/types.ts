@@ -980,6 +980,179 @@ export type Database = {
           },
         ]
       }
+      request_preparation_items: {
+        Row: {
+          actual_grams: number
+          created_at: string
+          id: string
+          preparation_id: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Insert: {
+          actual_grams?: number
+          created_at?: string
+          id?: string
+          preparation_id: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Update: {
+          actual_grams?: number
+          created_at?: string
+          id?: string
+          preparation_id?: string
+          user_id?: string
+          warehouse_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_preparation_items_preparation_id_fkey"
+            columns: ["preparation_id"]
+            isOneToOne: false
+            referencedRelation: "request_preparations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "request_preparation_items_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      request_preparations: {
+        Row: {
+          created_at: string
+          created_by: string
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string
+          location_url: string | null
+          note: string | null
+          photo_path: string | null
+          prep_task_item_id: string | null
+          title_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          location_url?: string | null
+          note?: string | null
+          photo_path?: string | null
+          prep_task_item_id?: string | null
+          title_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          location_url?: string | null
+          note?: string | null
+          photo_path?: string | null
+          prep_task_item_id?: string | null
+          title_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_preparations_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "request_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      request_title_items: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          position: number
+          target_grams: number
+          title_id: string
+          unit_label: string
+          updated_at: string
+          warehouse_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          position?: number
+          target_grams?: number
+          title_id: string
+          unit_label?: string
+          updated_at?: string
+          warehouse_item_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          position?: number
+          target_grams?: number
+          title_id?: string
+          unit_label?: string
+          updated_at?: string
+          warehouse_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "request_title_items_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "request_titles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "request_title_items_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      request_titles: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          note: string | null
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          note?: string | null
+          position?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          note?: string | null
+          position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       sales: {
         Row: {
           cost_at_sale: number
@@ -1438,6 +1611,25 @@ export type Database = {
         }[]
       }
       record_prep_pin_failure: { Args: { _token: string }; Returns: undefined }
+      request_list_titles_via_task: {
+        Args: { _pin: string; _token: string }
+        Returns: Json
+      }
+      request_submit_via_task: {
+        Args: {
+          _gps_lat: number
+          _gps_lng: number
+          _items: Json
+          _location_url: string
+          _note: string
+          _photo_path: string
+          _pin: string
+          _prep_task_item_id: string
+          _title_id: string
+          _token: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"

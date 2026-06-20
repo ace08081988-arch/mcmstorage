@@ -19,6 +19,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
+import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
@@ -77,6 +78,11 @@ const TTokenRoute = TTokenRouteImport.update({
 const AuthenticatedTugasRoute = AuthenticatedTugasRouteImport.update({
   id: '/tugas',
   path: '/tugas',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRequestRoute = AuthenticatedRequestRouteImport.update({
+  id: '/request',
+  path: '/request',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPengaturanKunciRoute =
@@ -152,6 +158,7 @@ export interface FileRoutesByFullPath {
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -172,6 +179,7 @@ export interface FileRoutesByTo {
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
@@ -195,6 +203,7 @@ export interface FileRoutesById {
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -219,6 +228,7 @@ export interface FileRouteTypes {
     | '/hutang-piutang'
     | '/label-preview'
     | '/pengaturan-kunci'
+    | '/request'
     | '/tugas'
     | '/t/$token'
     | '/gudang/pesanan/$id'
@@ -239,6 +249,7 @@ export interface FileRouteTypes {
     | '/hutang-piutang'
     | '/label-preview'
     | '/pengaturan-kunci'
+    | '/request'
     | '/tugas'
     | '/t/$token'
     | '/'
@@ -261,6 +272,7 @@ export interface FileRouteTypes {
     | '/_authenticated/hutang-piutang'
     | '/_authenticated/label-preview'
     | '/_authenticated/pengaturan-kunci'
+    | '/_authenticated/request'
     | '/_authenticated/tugas'
     | '/t/$token'
     | '/_authenticated/'
@@ -353,6 +365,13 @@ declare module '@tanstack/react-router' {
       path: '/tugas'
       fullPath: '/tugas'
       preLoaderRoute: typeof AuthenticatedTugasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/request': {
+      id: '/_authenticated/request'
+      path: '/request'
+      fullPath: '/request'
+      preLoaderRoute: typeof AuthenticatedRequestRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-kunci': {
@@ -462,6 +481,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
+  AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
 }
@@ -473,6 +493,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
+  AuthenticatedRequestRoute: AuthenticatedRequestRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
 }
@@ -496,13 +517,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
