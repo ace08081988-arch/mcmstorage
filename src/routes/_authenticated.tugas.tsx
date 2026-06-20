@@ -392,8 +392,6 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     if (entries.length === 0) { toast.error("Pilih minimal 1 barang"); return; }
     if (pin.length < 4) { toast.error("PIN minimal 4 digit"); return; }
     const cleanedPhone = phone.replace(/\D/g, "");
-    // Open a tab synchronously so popup blockers don't intercept after await
-    const waWindow = cleanedPhone ? window.open("about:blank", "_blank") : null;
     setBusy(true);
     const token = genShareToken();
     // Setiap baris (varian + jumlah) → 1 item tugas. Berat per baris = weight × count.
@@ -428,15 +426,39 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.rpc as any)("prep_create_task", args);
+    if (error) { setBusy(false); return toast.error(error.message); }
+    // Kumpulkan foto referensi tiap barang yang dipilih untuk dilampirkan ke WA.
+    const photoFiles: File[] = [];
+    const seen = new Set<string>();
+    for (const { item } of entries) {
+      if (!item.image_path || seen.has(item.image_path)) continue;
+      seen.add(item.image_path);
+      try {
+        const url = await signedUrl(item.image_path);
+        if (!url) continue;
+        const safeName = item.name.replace(/[^\w.-]+/g, "_").slice(0, 40) || "foto";
+        const ext = (item.image_path.match(/\.(\w{3,4})($|\?)/)?.[1] ?? "jpg").toLowerCase();
+        const f = await urlToFile(url, `${safeName}.${ext}`);
+        if (f) photoFiles.push(f);
+      } catch { /* abaikan foto yang gagal diambil */ }
+    }
     setBusy(false);
-    if (error) { if (waWindow) waWindow.close(); return toast.error(error.message); }
-    if (cleanedPhone) {
-      localStorage.setItem("prep:last_phone", cleanedPhone);
+    if (cleanedPhone || photoFiles.length > 0) {
+      if (cleanedPhone) localStorage.setItem("prep:last_phone", cleanedPhone);
       const url = publicTaskUrl(token);
-      const msg = `Tolong siapkan barang berikut. Buka link, masukkan PIN, foto barangnya & kirim:\n\n${title}\n${url}\nPIN: ${pin}`;
-      const waUrl = `https://wa.me/${cleanedPhone}?text=${encodeURIComponent(msg)}`;
-      if (waWindow) waWindow.location.href = waUrl;
-      toast.success("Tugas dibuat — WhatsApp dibuka");
+      const text = `Tolong siapkan barang berikut. Buka link, masukkan PIN, foto barangnya & kirim:\n\n${title}\nPIN: ${pin}`;
+      const result = await shareToWhatsApp({
+        title,
+        text,
+        url,
+        files: photoFiles,
+        phone: cleanedPhone || undefined,
+      });
+      toast.success(
+        result === "shared"
+          ? `Tugas dibuat — dibagikan ke WhatsApp${photoFiles.length ? ` dengan ${photoFiles.length} foto` : ""}`
+          : `Tugas dibuat — WhatsApp dibuka${photoFiles.length ? `, ${photoFiles.length} foto diunduh untuk dilampirkan` : ""}`,
+      );
     } else {
       toast.success("Tugas dibuat");
     }
