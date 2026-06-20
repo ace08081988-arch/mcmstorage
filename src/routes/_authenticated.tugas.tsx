@@ -175,8 +175,17 @@ function lineWeight(line: Line, variants: Variant[]): number {
 }
 // Parser angka yang menerima koma desimal (format Indonesia) maupun titik.
 function parseNum(input: string): number | null {
-  const s = (input ?? "").toString().trim().replace(",", ".");
+  // Terima input parsial saat user masih mengetik (mis. "0.", ".", "-", "1,"),
+  // supaya state tidak ter-reset ke null dan menghapus nilai sebelumnya.
+  let s = (input ?? "").toString().trim().replace(",", ".");
   if (s === "") return null;
+  // Hanya tanda minus / plus → anggap 0 sementara.
+  if (s === "-" || s === "+") return 0;
+  // Diakhiri titik desimal (mis. "0.", "12.") → buang titiknya.
+  if (s.endsWith(".")) s = s.slice(0, -1);
+  // Diawali titik (mis. ".5") → tambahkan 0 di depan.
+  if (s.startsWith(".")) s = "0" + s;
+  if (s === "-" || s === "+" || s === "") return 0;
   const n = Number(s);
   return Number.isFinite(n) ? n : null;
 }
