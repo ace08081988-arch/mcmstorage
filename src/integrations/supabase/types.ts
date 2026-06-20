@@ -648,6 +648,24 @@ export type Database = {
         }
         Relationships: []
       }
+      prep_upload_grants: {
+        Row: {
+          expires_at: string
+          issued_at: string
+          share_token: string
+        }
+        Insert: {
+          expires_at: string
+          issued_at?: string
+          share_token: string
+        }
+        Update: {
+          expires_at?: string
+          issued_at?: string
+          share_token?: string
+        }
+        Relationships: []
+      }
       purchases: {
         Row: {
           base_added: number
