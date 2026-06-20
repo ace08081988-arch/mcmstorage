@@ -1,5 +1,3 @@
-import type { PostgrestError } from "@supabase/supabase-js";
-
 export type StorageOp =
   | "list"
   | "upload"
@@ -19,12 +17,13 @@ export interface StorageErrorContext {
 }
 
 type AnyStorageError =
-  | (Partial<PostgrestError> & {
+  | {
       message?: string;
       statusCode?: string | number;
       error?: string;
       hint?: string | null;
-    })
+      name?: string;
+    }
   | null
   | undefined;
 
