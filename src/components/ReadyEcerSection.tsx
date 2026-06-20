@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X } from "lucide-react";
 
 type Row = {
   id: string;
@@ -15,6 +15,7 @@ type Row = {
 
 export function ReadyEcerSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [query, setQuery] = useState("");
 
   useEffect(() => {
     void (async () => {
@@ -46,6 +47,11 @@ export function ReadyEcerSection() {
     })();
   }, []);
 
+  const q = query.trim().toLowerCase();
+  const filtered = rows === null ? null : (q === "" ? rows : rows.filter((r) =>
+    r.name.toLowerCase().includes(q) || r.product_name.toLowerCase().includes(q)
+  ));
+
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
@@ -56,6 +62,29 @@ export function ReadyEcerSection() {
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
+
+      {rows && rows.length > 0 && (
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            type="search"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari judul ecer atau nama produk…"
+            className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-xs outline-none placeholder:text-muted-foreground focus:border-primary/40"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:bg-accent"
+              aria-label="Hapus pencarian"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
 
       {rows === null ? (
         <div className="rounded-md border bg-card p-4 text-center text-[11px] text-muted-foreground">Memuat…</div>
@@ -68,9 +97,13 @@ export function ReadyEcerSection() {
           <span className="flex-1">Belum ada Judul Ecer. Tap untuk membuat yang pertama.</span>
           <Plus className="h-4 w-4" />
         </Link>
+      ) : filtered && filtered.length === 0 ? (
+        <div className="rounded-md border border-dashed bg-card/50 p-4 text-center text-[11px] text-muted-foreground">
+          Tidak ada hasil untuk “{query}”.
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {rows.map((r) => (
+          {(filtered ?? []).map((r) => (
             <Link
               key={r.id}
               to="/ecer"
