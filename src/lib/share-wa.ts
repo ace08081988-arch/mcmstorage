@@ -12,6 +12,8 @@ export type ShareInput = {
   phone?: string;
 };
 
+import { toast } from "sonner";
+
 export function buildWhatsAppUrl(text: string, phone?: string) {
   const base = phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : "https://wa.me/";
   return `${base}?text=${encodeURIComponent(text)}`;
@@ -70,6 +72,40 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
     reason: shareFailed ? "share-failed" : "no-web-share",
     ...(shareFailed ? { _error: shareError } as never : {}),
   };
+}
+
+/**
+ * Tampilkan toast yang sesuai untuk hasil share — sukses, dibatalkan,
+ * fallback (foto perlu dilampirkan manual), atau gagal.
+ */
+export function notifyShareResult(result: ShareResult) {
+  switch (result.status) {
+    case "shared":
+      if (result.withFiles) {
+        toast.success("Dibagikan — pilih WhatsApp di share sheet agar foto + teks terkirim bersamaan.");
+      } else {
+        toast.success("Dibagikan ke WhatsApp.");
+      }
+      return;
+    case "cancelled":
+      toast.message("Dibatalkan — tidak jadi mengirim.");
+      return;
+    case "fallback":
+      if (result.withFiles) {
+        toast.message(
+          result.reason === "share-failed"
+            ? "Share sheet gagal. Foto sudah diunduh & teks disalin — di WhatsApp, tempel teks lalu lampirkan foto."
+            : "Perangkat ini tak mendukung lampiran otomatis. Foto sudah diunduh & teks disalin — di WhatsApp, tempel teks lalu lampirkan foto.",
+          { duration: 8000 },
+        );
+      } else {
+        toast.success("WhatsApp dibuka.");
+      }
+      return;
+    case "failed":
+      toast.error(`Gagal mengirim: ${result.error}`);
+      return;
+  }
 }
 
 export function downloadFile(blob: Blob, filename: string) {
