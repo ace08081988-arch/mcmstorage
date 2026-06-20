@@ -21,25 +21,34 @@ export async function shareToWhatsApp(input: ShareInput): Promise<"shared" | "fa
   const { text, title, url, files, phone } = input;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
+  const hasFiles = !!(files && files.length > 0);
+
+  // Prefer Web Share API when files are present — wa.me CANNOT attach photos,
+  // so the only reliable way to send foto + teks bersamaan is via system share sheet
+  // (user picks WhatsApp di sheet, foto otomatis terlampir sebagai gambar dengan caption).
   if (nav && typeof nav.share === "function") {
     try {
-      const payload: ShareData = { text, title, url };
-      if (files && files.length > 0 && typeof nav.canShare === "function" && nav.canShare({ files })) {
-        payload.files = files;
-      }
+      const filesPayload = hasFiles && typeof nav.canShare === "function" && nav.canShare({ files })
+        ? files
+        : undefined;
+      const payload: ShareData = filesPayload
+        ? { files: filesPayload, text, title }
+        : { text, title, url };
       await nav.share(payload);
       return "shared";
     } catch (err) {
-      // User cancelled or share failed — fall through to wa.me
       if ((err as DOMException)?.name === "AbortError") return "shared";
+      // fall through to fallback
     }
   }
-  // Fallback: simpan foto ke galeri/unduhan dulu agar pengguna bisa
-  // melampirkannya di WhatsApp dengan tombol 📎.
-  if (files && files.length > 0) {
-    for (const f of files) downloadFile(f, f.name);
-  }
+
+  // Fallback (desktop / browser tanpa Web Share files): simpan foto + salin teks,
+  // lalu buka WhatsApp agar pengguna tinggal tempel teks & lampirkan foto.
   const fullText = url ? `${text}\n${url}` : text;
+  if (hasFiles) {
+    for (const f of files!) downloadFile(f, f.name);
+    try { await navigator.clipboard?.writeText(fullText); } catch { /* ignore */ }
+  }
   window.open(buildWhatsAppUrl(fullText, phone), "_blank", "noopener,noreferrer");
   return "fallback";
 }
