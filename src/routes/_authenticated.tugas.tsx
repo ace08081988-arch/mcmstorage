@@ -492,6 +492,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         const w = lineWeight(l, variants);
                         const total = w * (l.count || 0);
                         const isManual = !l.variantId;
+                        const rs = rowStatus(l.key);
                         return (
                           <div key={l.key} className="space-y-1.5 rounded border bg-background/60 p-2">
                             <div className="flex items-start gap-1.5">
@@ -518,6 +519,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                   maxFrac={3}
                                   emptyAs={0}
                                   onChange={(n) => updateLine(it.id, l.key, { count: n })}
+                                  onStatusChange={(s) => setFieldStatus(l.key, "count", s)}
                                   className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums"
                                 />
                               </label>
@@ -533,12 +535,38 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                   disabled={!isManual}
                                   emptyAs={isManual ? 0 : null}
                                   onChange={(n) => updateLine(it.id, l.key, { weightOverride: n })}
+                                  onStatusChange={(s) => setFieldStatus(l.key, "weight", s)}
                                   className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums disabled:opacity-60"
                                 />
                               </label>
                               <div className="pb-1 text-[11px] font-semibold tabular-nums">
                                  = {fmtNum(roundTo(total, 2), 2)} {(itemVariants.find((v) => v.id === l.variantId)?.unit_label) ?? ""}
                               </div>
+                              <span
+                                className={
+                                  "ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium " +
+                                  (rs === "invalid"
+                                    ? "bg-destructive/10 text-destructive"
+                                    : rs === "partial"
+                                    ? "bg-amber-500/10 text-amber-600"
+                                    : "bg-emerald-500/10 text-emerald-600")
+                                }
+                                title={
+                                  rs === "invalid"
+                                    ? "Input tidak valid"
+                                    : rs === "partial"
+                                    ? "Input belum lengkap"
+                                    : "Input valid"
+                                }
+                              >
+                                {rs === "invalid" ? (
+                                  <><AlertTriangle className="h-3 w-3" /> Tidak valid</>
+                                ) : rs === "partial" ? (
+                                  <><AlertTriangle className="h-3 w-3" /> Belum lengkap</>
+                                ) : (
+                                  <><CheckCircle2 className="h-3 w-3" /> Valid</>
+                                )}
+                              </span>
                               <label className="ml-auto flex items-center gap-1 pb-2 text-[10px] text-muted-foreground">
                                 <input type="checkbox" checked={l.split}
                                   onChange={(e) => updateLine(it.id, l.key, { split: e.target.checked })} />
