@@ -15,10 +15,10 @@ import {
 
 const items = [
   { title: "Beranda", url: "/", icon: Home },
-  { title: "Gudang", url: "/gudang", icon: Package },
+  { title: "Gudang & Supplier", url: "/gudang", icon: Package },
   { title: "Tugas Pegawai", url: "/tugas", icon: ClipboardList },
   { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
-  { title: "Label Preview", url: "/label-preview", icon: Tags },
+  { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
   { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },
 ] as const;
 
