@@ -16,6 +16,7 @@ import { friendlyError } from "@/lib/friendly-error";
 import { buildMailto, isValidEmail } from "@/lib/mailto";
 import { supabase } from "@/integrations/supabase/client";
 import { confirm } from "@/lib/confirm";
+import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
@@ -1306,6 +1307,8 @@ function EditItemDialog({ item, uid, onClose, onSaved }: { item: WItem; uid: str
   const [avgCost, setAvgCost] = useState(String(item.avg_cost_per_base));
   const [imagePath, setImagePath] = useState<string | null>(item.image_path);
   const [saving, setSaving] = useState(false);
+  const [showPackages, setShowPackages] = useState(false);
+  const [currentStock, setCurrentStock] = useState(item.stock_base);
   const baseUnit = defaultBase(packageType);
   const effectiveSize = packageType === "pcs" ? 1 : Number(packageSize) || 0;
 
@@ -1378,7 +1381,29 @@ function EditItemDialog({ item, uid, onClose, onSaved }: { item: WItem; uid: str
           </button>
           <button onClick={onClose} className="rounded-md border px-3 py-2 text-sm hover:bg-accent">Batal</button>
         </div>
+        <button
+          type="button"
+          onClick={() => setShowPackages(true)}
+          className="mt-1 w-full rounded-md border bg-background px-3 py-2 text-xs font-semibold hover:bg-accent"
+        >
+          📦 Paket Siap Kirim
+        </button>
       </div>
+      {showPackages && uid && (
+        <ReadyPackagesPanel
+          item={{ id: item.id, name: item.name, base_unit: baseUnit, stock_base: currentStock }}
+          uid={uid}
+          onClose={() => setShowPackages(false)}
+          onStockChanged={async () => {
+            const { data } = await supabase.from("warehouse_items").select("stock_base").eq("id", item.id).single();
+            if (data) {
+              setCurrentStock(Number(data.stock_base) || 0);
+              setStockBase(String(Number(data.stock_base) || 0));
+            }
+            onSaved();
+          }}
+        />
+      )}
     </div>
   );
 }
