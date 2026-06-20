@@ -1,0 +1,98 @@
+import { useEffect, useState } from "react";
+import { Link } from "@tanstack/react-router";
+import { supabase } from "@/integrations/supabase/client";
+import { Scale, Plus, ChevronRight } from "lucide-react";
+
+type Row = {
+  id: string;
+  name: string;
+  target_grams: number;
+  unit_label: string;
+  warehouse_item_id: string;
+  prep_count: number;
+  product_name: string;
+};
+
+export function ReadyEcerSection() {
+  const [rows, setRows] = useState<Row[] | null>(null);
+
+  useEffect(() => {
+    void (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const sb = supabase as any;
+      const { data: titles } = await sb
+        .from("ecer_titles")
+        .select("id,name,target_grams,unit_label,warehouse_item_id")
+        .order("created_at", { ascending: false })
+        .limit(20);
+      const list = (titles ?? []) as Array<{ id: string; name: string; target_grams: number; unit_label: string; warehouse_item_id: string }>;
+      if (list.length === 0) { setRows([]); return; }
+      const itemIds = Array.from(new Set(list.map((t) => t.warehouse_item_id)));
+      const titleIds = list.map((t) => t.id);
+      const [{ data: items }, { data: preps }] = await Promise.all([
+        sb.from("warehouse_items").select("id,name").in("id", itemIds),
+        sb.from("ecer_preparations").select("title_id").in("title_id", titleIds),
+      ]);
+      const itemMap = new Map<string, string>(((items ?? []) as Array<{ id: string; name: string }>).map((i) => [i.id, i.name]));
+      const countMap = new Map<string, number>();
+      for (const p of ((preps ?? []) as Array<{ title_id: string }>)) {
+        countMap.set(p.title_id, (countMap.get(p.title_id) ?? 0) + 1);
+      }
+      setRows(list.map((t) => ({
+        ...t,
+        prep_count: countMap.get(t.id) ?? 0,
+        product_name: itemMap.get(t.warehouse_item_id) ?? "—",
+      })));
+    })();
+  }, []);
+
+  return (
+    <div className="space-y-1.5">
+      <div className="flex items-center justify-between">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+          Produk Eceran Siap Kirim
+        </p>
+        <Link to="/ecer" className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary hover:underline">
+          Buka semua <ChevronRight className="h-3 w-3" />
+        </Link>
+      </div>
+
+      {rows === null ? (
+        <div className="rounded-md border bg-card p-4 text-center text-[11px] text-muted-foreground">Memuat…</div>
+      ) : rows.length === 0 ? (
+        <Link
+          to="/ecer"
+          className="flex items-center gap-2 rounded-md border border-dashed bg-card/50 p-4 text-[11px] text-muted-foreground hover:border-primary/40 hover:bg-accent"
+        >
+          <Scale className="h-4 w-4 text-primary" />
+          <span className="flex-1">Belum ada Judul Ecer. Tap untuk membuat yang pertama.</span>
+          <Plus className="h-4 w-4" />
+        </Link>
+      ) : (
+        <div className="grid grid-cols-2 gap-2">
+          {rows.map((r) => (
+            <Link
+              key={r.id}
+              to="/ecer"
+              search={{ item: r.warehouse_item_id, title: r.id }}
+              className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
+            >
+              <div className="flex items-center gap-1.5">
+                <Scale className="h-3.5 w-3.5 text-primary" />
+                <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
+              </div>
+              <span className="truncate text-[10px] leading-tight text-muted-foreground">
+                {r.product_name} · {r.target_grams} {r.unit_label}
+              </span>
+              <span className="text-[10px] leading-tight">
+                <span className={r.prep_count > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+                  {r.prep_count} kotak siap
+                </span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
