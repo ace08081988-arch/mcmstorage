@@ -495,6 +495,68 @@ export type Database = {
           },
         ]
       }
+      prep_pin_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          created_at: string
+          failure_count: number
+          id: string
+          owner_user_id: string
+          share_token: string
+          task_id: string
+          window_end: string
+          window_start: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          created_at?: string
+          failure_count: number
+          id?: string
+          owner_user_id: string
+          share_token: string
+          task_id: string
+          window_end?: string
+          window_start: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          created_at?: string
+          failure_count?: number
+          id?: string
+          owner_user_id?: string
+          share_token?: string
+          task_id?: string
+          window_end?: string
+          window_start?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prep_pin_alerts_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      prep_pin_failures: {
+        Row: {
+          attempted_at: string
+          id: string
+          share_token: string
+        }
+        Insert: {
+          attempted_at?: string
+          id?: string
+          share_token: string
+        }
+        Update: {
+          attempted_at?: string
+          id?: string
+          share_token?: string
+        }
+        Relationships: []
+      }
       prep_submissions: {
         Row: {
           gps_lat: number | null
@@ -1160,6 +1222,7 @@ export type Database = {
           read_ct: number
         }[]
       }
+      record_prep_pin_failure: { Args: { _token: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
