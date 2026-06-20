@@ -111,30 +111,52 @@ function fmtBase(n: number, u: "g" | "pcs") {
 
 // Format kuantitas dengan unit terpilih + setara dalam unit dasar.
 // Contoh: 56 botol → "56 botol (= 5.600 pcs)"
+// Aturan khusus: produk "GS" → 100 botol = 1 karton.
+// Jika berlaku, tambahan info karton akan disisipkan ke hasil format.
+const KARTON_RULES: { match: (name: string, pkgType: string) => boolean; botolPerKarton: number }[] = [
+  { match: (n, pt) => n.trim().toLowerCase() === "gs" && pt === "botol", botolPerKarton: 100 },
+];
+
+function getBotolPerKarton(name: string | undefined, packageType: string): number | null {
+  if (!name) return null;
+  for (const r of KARTON_RULES) if (r.match(name, packageType)) return r.botolPerKarton;
+  return null;
+}
+
+function fmtKartonHint(pkgQty: number, name: string | undefined, packageType: string): string {
+  const per = getBotolPerKarton(name, packageType);
+  if (!per || per <= 0) return "";
+  const k = pkgQty / per;
+  if (!Number.isFinite(k) || k === 0) return "";
+  const kStr = k.toLocaleString("id-ID", { maximumFractionDigits: 2 });
+  return ` · ≈ ${kStr} karton`;
+}
+
 function fmtQtyDual(
   baseQty: number,
   baseUnit: "g" | "pcs",
   packageType: string,
   packageSize: number,
   mode: "base" | "package",
+  itemName?: string,
 ) {
   if (mode === "base" || !packageType || packageType === "pcs" || packageSize <= 0) {
     return fmtBase(baseQty, baseUnit);
   }
   const pkgQty = baseQty / packageSize;
   const pkgStr = `${pkgQty.toLocaleString("id-ID", { maximumFractionDigits: 2 })} ${packageType}`;
-  return `${pkgStr} (= ${fmtBase(baseQty, baseUnit)})`;
+  return `${pkgStr} (= ${fmtBase(baseQty, baseUnit)})${fmtKartonHint(pkgQty, itemName, packageType)}`;
 }
 
 // Format default untuk barang: pakai unit kemasan bila ada, fallback ke base.
 function fmtItemQty(
   baseQty: number,
-  item: { base_unit: "g" | "pcs"; package_type: string; package_size: number } | null | undefined,
+  item: { name?: string; base_unit: "g" | "pcs"; package_type: string; package_size: number } | null | undefined,
 ) {
   if (!item) return fmtBase(baseQty, "pcs");
   const mode: "base" | "package" =
     item.package_type && item.package_type !== "pcs" && item.package_size > 0 ? "package" : "base";
-  return fmtQtyDual(baseQty, item.base_unit, item.package_type, item.package_size, mode);
+  return fmtQtyDual(baseQty, item.base_unit, item.package_type, item.package_size, mode, item.name);
 }
 
 // Format harga per unit terpilih (jika package, kalikan package_size).
