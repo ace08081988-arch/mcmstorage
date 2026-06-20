@@ -317,7 +317,7 @@ function PackageCard({
         : `Paket akan dipindahkan ke riwayat dengan status ${label}.`,
       confirmText: "Tandai",
     }))) return;
-    const patch: Record<string, unknown> = { status: next };
+    const patch: { status: Pkg["status"]; sent_at?: string } = { status: next };
     if (next !== "ready" && !pkg.sent_at) patch.sent_at = new Date().toISOString();
     const { error } = await supabase.from("ready_packages").update(patch).eq("id", pkg.id);
     if (error) toast.error(friendlyError(error));
