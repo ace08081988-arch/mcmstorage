@@ -400,9 +400,9 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                   onChange={(e) => updateLine(it.id, l.key, { variantId: e.target.value || null, weightOverride: null })}
                                   className="h-8 w-full rounded border bg-background px-1 text-[11px]">
                                   <option value="">Manual (isi berat sendiri)</option>
-                                  {itemVariants.map((v) => (
-                                    <option key={v.id} value={v.id}>{v.label} · {Number(v.weight_per_unit)} {v.unit_label ?? ""}</option>
-                                  ))}
+                                   {itemVariants.map((v) => (
+                                     <option key={v.id} value={v.id}>{v.label} · {fmtNum(Number(v.weight_per_unit), 3)} {v.unit_label ?? ""}</option>
+                                   ))}
                                 </select>
                               </label>
                               <button type="button" onClick={() => removeLine(it.id, l.key)}
@@ -412,7 +412,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                             <div className="flex flex-wrap items-end gap-1.5">
                               <label className="w-20">
                                 <div className="mb-0.5 text-[10px] text-muted-foreground">Jumlah unit</div>
-                                <input type="text" inputMode="decimal" defaultValue={String(l.count)}
+                                 <input type="text" inputMode="decimal" defaultValue={fmtNum(l.count, 3)}
                                   onChange={(e) => {
                                     const raw = e.target.value;
                                     if (raw.trim() === "") {
@@ -430,8 +430,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 <div className="mb-0.5 text-[10px] text-muted-foreground">
                                   Berat / unit{isManual ? "" : " (preset)"}
                                 </div>
-                                <input type="text" inputMode="decimal"
-                                  defaultValue={String(l.weightOverride ?? w)}
+                                 <input type="text" inputMode="decimal"
+                                   defaultValue={fmtNum(l.weightOverride ?? w, 3)}
                                   disabled={!isManual}
                                   key={`${l.key}-${l.variantId ?? "m"}`}
                                   onChange={(e) => {
@@ -449,7 +449,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                   className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums disabled:opacity-60" />
                               </label>
                               <div className="pb-1 text-[11px] font-semibold tabular-nums">
-                                = {total.toFixed(2)} {(itemVariants.find((v) => v.id === l.variantId)?.unit_label) ?? ""}
+                                 = {fmtNum(total, 2)} {(itemVariants.find((v) => v.id === l.variantId)?.unit_label) ?? ""}
                               </div>
                               <label className="ml-auto flex items-center gap-1 pb-2 text-[10px] text-muted-foreground">
                                 <input type="checkbox" checked={l.split}
@@ -626,7 +626,7 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
                     )}
                   </div>
                   <div className="text-[10px] text-muted-foreground">
-                    {r.items} item · diminta <b>{r.totalRequested.toFixed(2)}</b> · disiapkan <b>{r.totalPrepared.toFixed(2)}</b> · sisa <b>{r.remaining.toFixed(2)}</b>
+                     {r.items} item · diminta <b>{fmtNum(r.totalRequested, 2)}</b> · disiapkan <b>{fmtNum(r.totalPrepared, 2)}</b> · sisa <b>{fmtNum(r.remaining, 2)}</b>
                   </div>
                   {r.issues.length > 0 && (
                     <div className="mt-1 text-[10px] text-destructive">{r.issues.join(" · ")}</div>
@@ -635,7 +635,7 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
                     <ul className="mt-1 space-y-0.5 text-[10px]">
                       {r.problemItems.map((p, i) => (
                         <li key={i} className="text-destructive">
-                          • {p.name}: diminta {p.qty_requested}, disiapkan {p.qty_prepared} — {p.reason}
+                          • {p.name}: diminta {fmtNum(p.qty_requested, 2)}, disiapkan {fmtNum(p.qty_prepared, 2)} — {p.reason}
                         </li>
                       ))}
                     </ul>
