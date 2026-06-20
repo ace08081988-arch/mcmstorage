@@ -60,6 +60,8 @@ export function ReadyPackagesPanel({
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [histQuery, setHistQuery] = useState("");
+  const [histStatus, setHistStatus] = useState<"all" | "sent" | "archived">("all");
 
   async function reload() {
     setLoading(true);
@@ -81,7 +83,15 @@ export function ReadyPackagesPanel({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [item.id]);
 
-  const list = pkgs.filter((p) => (tab === "ready" ? p.status === "ready" : p.status !== "ready"));
+  const historyAll = pkgs.filter((p) => p.status !== "ready");
+  const histQ = histQuery.trim().toLowerCase();
+  const historyFiltered = historyAll.filter((p) => {
+    if (histStatus !== "all" && p.status !== histStatus) return false;
+    if (!histQ) return true;
+    const hay = `${p.sent_to_phone ?? ""} ${p.sent_to_name ?? ""}`.toLowerCase();
+    return hay.includes(histQ);
+  });
+  const list = tab === "ready" ? pkgs.filter((p) => p.status === "ready") : historyFiltered;
 
   return (
     <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/70 p-0 sm:p-3" onClick={onClose}>
@@ -107,16 +117,48 @@ export function ReadyPackagesPanel({
             onClick={() => setTab("history")}
             className={`flex-1 px-3 py-2 font-medium ${tab === "history" ? "border-b-2 border-primary text-foreground" : "text-muted-foreground"}`}
           >
-            Riwayat ({pkgs.filter((p) => p.status !== "ready").length})
+            Riwayat ({historyAll.length})
           </button>
         </div>
+
+        {tab === "history" && historyAll.length > 0 && (
+          <div className="flex flex-col gap-2 border-b bg-muted/30 px-3 py-2 sm:flex-row">
+            <input
+              value={histQuery}
+              onChange={(e) => setHistQuery(e.target.value)}
+              placeholder="Cari nomor WA / nama pelanggan…"
+              className="h-9 flex-1 rounded-md border bg-background px-3 text-xs"
+            />
+            <select
+              value={histStatus}
+              onChange={(e) => setHistStatus(e.target.value as "all" | "sent" | "archived")}
+              className="h-9 rounded-md border bg-background px-2 text-xs"
+            >
+              <option value="all">Semua status</option>
+              <option value="sent">Berhasil dikirim</option>
+              <option value="archived">Diarsipkan</option>
+            </select>
+            {(histQuery || histStatus !== "all") && (
+              <button
+                onClick={() => { setHistQuery(""); setHistStatus("all"); }}
+                className="h-9 rounded-md border px-3 text-xs hover:bg-accent"
+              >
+                Reset
+              </button>
+            )}
+          </div>
+        )}
 
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-2">
           {loading ? (
             <div className="py-8 text-center text-xs text-muted-foreground">Memuat…</div>
           ) : list.length === 0 ? (
             <div className="py-8 text-center text-xs text-muted-foreground">
-              {tab === "ready" ? "Belum ada paket. Ketuk + untuk buat paket baru." : "Belum ada riwayat."}
+              {tab === "ready"
+                ? "Belum ada paket. Ketuk + untuk buat paket baru."
+                : historyAll.length === 0
+                  ? "Belum ada riwayat."
+                  : "Tidak ada riwayat yang cocok dengan filter."}
             </div>
           ) : list.map((p) => (
             <PackageCard
