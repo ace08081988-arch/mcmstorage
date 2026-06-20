@@ -1,87 +1,45 @@
-## Ringkasan
+## Tujuan
+Fitur baru "Judul Penyiapan REQUEST" — sama prinsip kerja seperti Ecer, tapi 1 judul berisi beberapa produk sekaligus, dan tiap penyiapan = 1 paket multi-produk dengan foto+lokasi. Stok semua item otomatis berkurang. Bisa diakses admin (halaman /request) maupun pegawai (link tugas + PIN).
 
-Setiap produk di Gudang dapat memiliki **Judul Ecer** (misal: "KRISTAL 1 gram") berisi banyak **Penyiapan Ecer** (kotak-kotak yang berisi foto + lokasi + berat aktual + keterangan). Saat penyiapan disimpan, stok produk otomatis berkurang sebesar berat yang diisi. Bisa diakses dari Gudang, halaman khusus `/ecer`, dan oleh pegawai lewat link tugas (PIN).
+## Database (migrasi baru)
 
-## Apa yang dibangun
+Tabel baru di `public`:
 
-### 1. Database (Lovable Cloud)
+1. **`request_titles`** — judul template paket
+   - kolom domain: `name`, `note`, `position`
+   - GRANT authenticated, RLS scoped `auth.uid()`
 
-Dua tabel baru, plus reuse bucket `prep-photos` yang sudah ada.
+2. **`request_title_items`** — daftar produk dalam judul (template)
+   - kolom domain: `title_id`, `warehouse_item_id`, `target_grams`, `unit_label`, `note`, `position`
+   - GRANT authenticated, RLS via parent owner (security definer helper)
 
-**`ecer_titles`** — judul ecer per produk
-- `warehouse_item_id` (fk), `user_id`, `name` (mis. "KRISTAL 1 gram"), `target_grams` (numeric, mis. 1.00), `unit_label` (`g`/`gram`), `note`, `position`
+3. **`request_preparations`** — realisasi 1 paket (1 baris per penyiapan)
+   - kolom domain: `title_id`, `photo_path`, `location_url`, `gps_lat`, `gps_lng`, `note`, `created_by`, `prep_task_item_id`
+   - RLS scoped `auth.uid()`
 
-**`ecer_preparations`** — kotak penyiapan
-- `title_id` (fk), `user_id`, `warehouse_item_id` (denormal untuk RLS cepat), `actual_grams` (mis. 0.90), `photo_path`, `location_url`, `gps_lat/lng`, `note`, `created_by` (`admin`/`worker`), `prep_task_item_id` (nullable — jika dibuat via link pegawai), `created_at`
+4. **`request_preparation_items`** — rincian item yg dipotong stoknya per penyiapan
+   - kolom domain: `preparation_id`, `warehouse_item_id`, `actual_grams`
+   - Trigger `apply_request_preparation_item` (security definer) potong stok saat INSERT, balikin saat DELETE
 
-**Trigger `apply_ecer_prep`** — INSERT: kurangi `warehouse_items.stock_base` sebesar `actual_grams` (cek cukup). DELETE: kembalikan stok.
+5. **RPC pegawai** (security definer, sama pola Ecer):
+   - `request_list_titles_via_task(token, pin)` — list judul + items
+   - `request_submit_via_task(token, pin, title_id, items[], photo_path, location_url, gps, note, prep_task_item_id)` — bikin preparation + items dalam 1 transaksi
 
-RLS standar `user_id = auth.uid()` + GRANT authenticated/service_role.
+Bucket reuse `ecer-photos` (atau bucket baru `request-photos`? — reuse `ecer-photos` lebih simpel, policy storage sudah ada).
 
-### 2. RPC publik untuk pegawai
+## Kode
 
-Reuse alur `prep_get_task` + `prep_submit`. Tambah RPC `ecer_submit_via_task(_token, _pin, _title_id, _actual_grams, _photo_path, _location_url, _gps_lat, _gps_lng, _note)`:
-- Verifikasi PIN tugas (sama seperti `prep_submit`).
-- Cek `title_id` milik `owner_user_id` tugas.
-- Insert `ecer_preparations` dengan `created_by='worker'`, `prep_task_item_id` opsional.
-- Stok auto-kurang via trigger.
+1. `src/lib/request.ts` — types + helper signed URL + upload (reuse bucket ecer-photos dengan prefix folder `request/`)
+2. `src/routes/_authenticated.request.tsx` — halaman admin: CRUD judul (tambah item per judul), daftar penyiapan, form penyiapan baru (pilih semua produk → isi qty + 1 foto+lokasi)
+3. `src/components/ReadyRequestSection.tsx` — mirip ReadyEcerSection di beranda, daftar judul siap kirim
+4. `src/routes/_authenticated.index.tsx` — tambah shortcut "Penyiapan Request" + render `<ReadyRequestSection />`
+5. `src/components/AppSidebar.tsx` — tambah link "Penyiapan Request"
+6. **Halaman pegawai** — tambah tab/section "REQUEST" pada halaman tugas pegawai yang sudah ada (cari route prep worker), pakai RPC `request_list_titles_via_task` / `request_submit_via_task`
 
-### 3. UI Admin
+## Catatan teknis
+- Tabel parent (`request_titles`) RLS pakai `auth.uid() = user_id`. Tabel child pakai EXISTS lookup ke parent untuk hindari recursion.
+- Trigger pengurangan stok pakai `FOR UPDATE` + cek `stock_base >= actual_grams` per item (sama pola `apply_ecer_preparation`).
+- Form admin: tombol "Tambah Produk" untuk append baris produk ke judul; saat penyiapan, item bawaan judul muncul auto, qty bisa di-override.
+- Worker flow: pegawai pilih judul → form menampilkan semua item dengan input gram → 1 foto+lokasi → submit RPC.
 
-**Di Gudang (`ProductEditDrawer`)** — tab baru "⚖️ Ecer":
-- Daftar Judul Ecer (CRUD). Tiap judul tampil sebagai card: nama, target berat, jumlah penyiapan.
-- Klik judul → buka panel daftar **kotak penyiapan** (grid foto thumbnail), tombol "+ Penyiapan baru".
-- Form penyiapan: pilih foto (kamera/galeri) → editor foto opsional → ambil lokasi (GPS) / tempel link → berat aktual → keterangan → Simpan.
-
-**Halaman baru `/ecer`** (`src/routes/_authenticated.ecer.tsx`):
-- Daftar semua judul ecer lintas produk, filter per kategori/produk.
-- Klik judul → halaman detail dengan grid kotak penyiapan + tombol tambah.
-- Tombol "Bagikan ke WA" per penyiapan (pakai `shareToWhatsApp` yang sudah ada).
-
-**Di `ReadyPackagesPanel`** — ganti panel ecer LocalStorage lama:
-- Saat membuat paket, dropdown "Pilih dari Penyiapan Ecer tersedia" → otomatis isi qty + lampirkan foto + lokasi ke caption WA.
-
-### 4. UI Pegawai (link tugas)
-
-Di `src/routes/t.$token.tsx`, untuk tiap item yang punya `warehouse_item_id`:
-- Tampilkan daftar Judul Ecer milik item itu.
-- Pegawai pilih judul → form penyiapan (foto + lokasi + berat aktual + keterangan).
-- Kirim → call `ecer_submit_via_task`. Realtime muncul di dashboard admin.
-
-### 5. Komponen yang dipakai ulang
-
-- `PhotoEditor` (sudah ada) untuk anotasi foto sebelum upload.
-- `shareToWhatsApp` (sudah ada) untuk share kotak penyiapan.
-- `signedUrl`, `uploadPrepPhoto` dari `src/lib/prep.ts` (bucket `prep-photos`).
-
-### 6. Migrasi data lama
-
-Panel ecer LocalStorage di `ReadyPackagesPanel` (`ecer:presets:*`) di-deprecate. Tampilkan info sekali "Pindah ke Ecer baru" + tombol buka halaman ecer produk.
-
-## Detail teknis
-
-```text
-ecer_titles (1) ──< ecer_preparations (N)
-       │
-       └── warehouse_items (target produk)
-```
-
-- Path foto: `ecer/<user_id>/<title_id>/<timestamp>-<rand>.jpg` di bucket `prep-photos`.
-- Stok berkurang via trigger SECURITY DEFINER, transaksi tunggal (insert + update stok atomik).
-- Realtime: subscribe `postgres_changes` pada `ecer_preparations` filter `user_id`.
-
-## Yang TIDAK termasuk (bisa nanti)
-
-- Edit foto setelah disimpan (hapus + buat ulang saja).
-- Laporan/agregasi ecer (total gram terjual per judul).
-- Auto-buat paket siap kirim dari kotak penyiapan (sekarang manual: pilih di form paket).
-
-## Urutan kerja
-
-1. Migrasi DB (tabel + RLS + trigger + RPC).
-2. Komponen admin: tab Ecer di Gudang + halaman `/ecer`.
-3. UI pegawai di `/t/$token`.
-4. Integrasi dengan Paket Siap Kirim (pilih penyiapan tersedia).
-5. Polish: realtime, share WA, deprecate LocalStorage lama.
-
-Setuju saya mulai dari langkah 1 (migrasi DB)?
+Setelah migrasi disetujui, saya lanjut kode TypeScript-nya.
