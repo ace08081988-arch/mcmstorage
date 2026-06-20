@@ -2,6 +2,12 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { jsPDF } from "jspdf";
 
+export const Route = createFileRoute("/_authenticated/label-preview")({
+  head: () => ({
+    meta: [
+      { title: "Pratinjau Label · MCM Storage" },
+    ],
+  }),
   component: LabelPreviewPage,
 });
 
