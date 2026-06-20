@@ -1,9 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { publicTaskUrl } from "@/lib/prep";
-import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft } from "lucide-react";
+import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2 } from "lucide-react";
+
+const PAGE_SIZE = 30;
 
 export const Route = createFileRoute("/_authenticated/link-pegawai")({
   head: () => ({
@@ -44,25 +46,70 @@ const BADGE: Record<Availability, { label: string; cls: string }> = {
 function LinkPegawaiPage() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [hasMore, setHasMore] = useState(true);
+  const [total, setTotal] = useState<number | null>(null);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | Availability>("all");
   const [now, setNow] = useState(Date.now());
+  const sentinelRef = useRef<HTMLDivElement | null>(null);
 
-  async function load() {
+  const reload = useCallback(async () => {
     setBusy(true);
+    const { data, error, count } = await supabase
+      .from("prep_tasks")
+      .select("id,title,note,share_token,status,expires_at,created_at", { count: "exact" })
+      .order("created_at", { ascending: false })
+      .range(0, PAGE_SIZE - 1);
+    setBusy(false);
+    if (error) { toast.error("Gagal memuat: " + error.message); return; }
+    const rows = (data ?? []) as Task[];
+    setTasks(rows);
+    setTotal(count ?? rows.length);
+    setHasMore(rows.length === PAGE_SIZE && (count == null || rows.length < count));
+  }, []);
+
+  const loadMore = useCallback(async () => {
+    if (loadingMore || !hasMore || tasks === null) return;
+    setLoadingMore(true);
+    const from = tasks.length;
+    const to = from + PAGE_SIZE - 1;
     const { data, error } = await supabase
       .from("prep_tasks")
       .select("id,title,note,share_token,status,expires_at,created_at")
-      .order("created_at", { ascending: false });
-    setBusy(false);
-    if (error) { toast.error("Gagal memuat: " + error.message); return; }
-    setTasks((data ?? []) as Task[]);
-  }
-  useEffect(() => { void load(); }, []);
+      .order("created_at", { ascending: false })
+      .range(from, to);
+    setLoadingMore(false);
+    if (error) { toast.error("Gagal memuat lanjutan: " + error.message); return; }
+    const more = (data ?? []) as Task[];
+    setTasks((prev) => {
+      const base = prev ?? [];
+      const seen = new Set(base.map((t) => t.id));
+      const merged = [...base, ...more.filter((t) => !seen.has(t.id))];
+      return merged;
+    });
+    if (more.length < PAGE_SIZE) setHasMore(false);
+    if (total != null && tasks.length + more.length >= total) setHasMore(false);
+  }, [loadingMore, hasMore, tasks, total]);
+
+  useEffect(() => { void reload(); }, [reload]);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
   }, []);
+
+  // Infinite scroll sentinel.
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver((entries) => {
+      for (const e of entries) {
+        if (e.isIntersecting) void loadMore();
+      }
+    }, { rootMargin: "240px 0px" });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [loadMore]);
 
   const rows = useMemo(() => {
     const list = (tasks ?? []).map((t) => ({ t, avail: computeAvailability(t, now) }));
@@ -107,7 +154,7 @@ function LinkPegawaiPage() {
           <h1 className="text-base font-semibold">Link Pegawai</h1>
         </div>
         <button
-          onClick={() => void load()}
+          onClick={() => void reload()}
           disabled={busy}
           className="ml-auto inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs hover:bg-muted disabled:opacity-50"
         >
@@ -117,6 +164,9 @@ function LinkPegawaiPage() {
 
       <p className="mb-3 text-xs text-muted-foreground">
         Semua tugas pegawai yang sudah pernah dibuat — link, status ketersediaan, dan akses langsung untuk pratinjau.
+        {total != null && (
+          <> · Memuat <b className="tabular-nums">{tasks?.length ?? 0}</b> dari <b className="tabular-nums">{total}</b></>
+        )}
       </p>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -153,10 +203,25 @@ function LinkPegawaiPage() {
       {tasks === null ? (
         <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">Memuat…</div>
       ) : rows.length === 0 ? (
-        <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">
-          Tidak ada tugas{filter !== "all" ? ` dengan status “${BADGE[filter as Availability].label}”` : ""}.
-        </div>
+        <>
+          <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">
+            Tidak ada tugas{filter !== "all" ? ` dengan status “${BADGE[filter as Availability].label}”` : ""} pada {tasks.length} entri yang dimuat.
+          </div>
+          {hasMore && (
+            <div className="mt-3 flex justify-center">
+              <button
+                onClick={() => void loadMore()}
+                disabled={loadingMore}
+                className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-xs hover:bg-muted disabled:opacity-50"
+              >
+                {loadingMore ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : null}
+                Muat lebih banyak untuk mencari
+              </button>
+            </div>
+          )}
+        </>
       ) : (
+        <>
         <div className="space-y-2">
           {rows.map(({ t, avail }) => {
             const url = publicTaskUrl(t.share_token);
@@ -215,6 +280,24 @@ function LinkPegawaiPage() {
             );
           })}
         </div>
+        <div ref={sentinelRef} className="h-1" aria-hidden />
+        <div className="mt-3 flex items-center justify-center">
+          {loadingMore ? (
+            <div className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memuat lebih banyak…
+            </div>
+          ) : hasMore ? (
+            <button
+              onClick={() => void loadMore()}
+              className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-3 text-[11px] hover:bg-muted"
+            >
+              Muat lebih banyak
+            </button>
+          ) : (
+            <div className="text-[11px] text-muted-foreground">Semua tugas sudah ditampilkan.</div>
+          )}
+        </div>
+        </>
       )}
     </div>
   );
