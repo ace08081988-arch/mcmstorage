@@ -1,66 +1,87 @@
 ## Ringkasan
 
-Fitur baru "Tugas Pegawai": Anda buat tugas dari item Gudang, sistem hasilkan link + PIN, kirim ke pegawai via WA. Pegawai buka link, masukkan PIN, lalu unggah/ambil foto barang + lokasi. Foto bisa diedit (stiker, panah, teks, coret). Hasil otomatis sinkron ke aplikasi Anda secara realtime. Tombol "Bagikan ke WA" pakai Web Share API HP sehingga foto ikut terkirim.
+Setiap produk di Gudang dapat memiliki **Judul Ecer** (misal: "KRISTAL 1 gram") berisi banyak **Penyiapan Ecer** (kotak-kotak yang berisi foto + lokasi + berat aktual + keterangan). Saat penyiapan disimpan, stok produk otomatis berkurang sebesar berat yang diisi. Bisa diakses dari Gudang, halaman khusus `/ecer`, dan oleh pegawai lewat link tugas (PIN).
 
 ## Apa yang dibangun
 
-### 1. Backend (Lovable Cloud)
-- Tabel `prep_tasks` — 1 tugas berisi banyak item; menyimpan `share_token` (acak 32 char), `pin_hash` (4–6 digit, hashed), `status`, `expires_at`, `owner_user_id`.
-- Tabel `prep_task_items` — referensi ke item gudang, qty diminta, qty disiapkan, catatan.
-- Tabel `prep_submissions` — foto + lokasi + catatan yang dikirim pegawai per item. Kolom: `task_item_id`, `photo_path` (storage), `location_url`, `gps_lat/lng`, `note`, `submitted_at`.
-- Bucket storage `prep-photos` (publik-via-signed-url): pegawai upload via signed upload URL agar tidak butuh login.
-- RLS: pemilik tugas baca/tulis penuh; akses publik (anon) dibatasi ke RPC `submit_prep_photo(token, pin, …)` yang memverifikasi PIN sebelum insert.
-- Realtime channel di `prep_submissions` agar aplikasi Anda lihat foto masuk langsung.
+### 1. Database (Lovable Cloud)
 
-### 2. Halaman publik pegawai `/t/$token`
-- Form PIN dulu. Setelah benar, tampilkan daftar item: nama, qty diminta, foto referensi.
-- Per item: tombol "Foto kamera", "Pilih dari galeri", "Ambil lokasi" (GPS), tempel link maps manual, catatan.
-- Editor foto lengkap (lihat bagian 3) sebelum kirim.
-- Tombol "Kirim" upload foto + lokasi ke server. Indikator progress per item.
-- Layout mobile-first, bisa offline-resume (draft di localStorage per token).
+Dua tabel baru, plus reuse bucket `prep-photos` yang sudah ada.
 
-### 3. Editor foto (canvas, custom)
-Komponen `<PhotoEditor>` berbasis HTML Canvas + react state:
-- Layer system: foto dasar + N overlay (stiker, teks, panah, coretan).
-- Tools: crop, rotate 90°, brightness/contrast slider, free-draw (brush dengan warna+tebal), teks (font+warna+ukuran), stiker emoji, panah preset (lurus, lengkung, ↑↓←→↖↗↙↘) dengan warna+tebal+ukuran, lingkaran/kotak highlight.
-- Manipulasi layer: drag, resize handle, rotate handle, hapus, duplicate, urutan (atas/bawah).
-- Undo/redo (history stack maks 30).
-- Export ke JPEG (quality 0.85) sebelum upload.
+**`ecer_titles`** — judul ecer per produk
+- `warehouse_item_id` (fk), `user_id`, `name` (mis. "KRISTAL 1 gram"), `target_grams` (numeric, mis. 1.00), `unit_label` (`g`/`gram`), `note`, `position`
 
-### 4. UI Gudang — pembuatan tugas
-- Di Tab Stok tambah tombol "Kirim ke pegawai" di tiap item dan toolbar "Buat tugas baru".
-- Halaman `/_authenticated/tugas` — daftar tugas (aktif/selesai), buat tugas: pilih item satu per satu, atur qty, klik "Buat & kirim".
-- Setelah dibuat: dialog tampilkan link + PIN, tombol "Bagikan via WA" (Web Share API jika tersedia, fallback `wa.me?text=...`).
-- Detail tugas: lihat foto yang masuk realtime, qty disiapkan vs diminta, tandai selesai, terima ke stok (opsional: tombol "Tambah ke stok" yang otomatis isi form pembelian).
+**`ecer_preparations`** — kotak penyiapan
+- `title_id` (fk), `user_id`, `warehouse_item_id` (denormal untuk RLS cepat), `actual_grams` (mis. 0.90), `photo_path`, `location_url`, `gps_lat/lng`, `note`, `created_by` (`admin`/`worker`), `prep_task_item_id` (nullable — jika dibuat via link pegawai), `created_at`
 
-### 5. Perbaikan share WA dengan foto
-- Helper `shareToWhatsApp({ text, files })`:
-  - Jika `navigator.canShare({ files })` true → pakai Web Share API sistem (Android/iOS bisa pilih WA dan foto ikut terlampir).
-  - Fallback: download foto + buka `wa.me?text=...` dengan pesan yang menyertakan link halaman publik foto.
-- Pakai helper ini di drawer produk lama (yang sebelumnya hanya kirim teks lokasi) dan di halaman tugas.
+**Trigger `apply_ecer_prep`** — INSERT: kurangi `warehouse_items.stock_base` sebesar `actual_grams` (cek cukup). DELETE: kembalikan stok.
+
+RLS standar `user_id = auth.uid()` + GRANT authenticated/service_role.
+
+### 2. RPC publik untuk pegawai
+
+Reuse alur `prep_get_task` + `prep_submit`. Tambah RPC `ecer_submit_via_task(_token, _pin, _title_id, _actual_grams, _photo_path, _location_url, _gps_lat, _gps_lng, _note)`:
+- Verifikasi PIN tugas (sama seperti `prep_submit`).
+- Cek `title_id` milik `owner_user_id` tugas.
+- Insert `ecer_preparations` dengan `created_by='worker'`, `prep_task_item_id` opsional.
+- Stok auto-kurang via trigger.
+
+### 3. UI Admin
+
+**Di Gudang (`ProductEditDrawer`)** — tab baru "⚖️ Ecer":
+- Daftar Judul Ecer (CRUD). Tiap judul tampil sebagai card: nama, target berat, jumlah penyiapan.
+- Klik judul → buka panel daftar **kotak penyiapan** (grid foto thumbnail), tombol "+ Penyiapan baru".
+- Form penyiapan: pilih foto (kamera/galeri) → editor foto opsional → ambil lokasi (GPS) / tempel link → berat aktual → keterangan → Simpan.
+
+**Halaman baru `/ecer`** (`src/routes/_authenticated.ecer.tsx`):
+- Daftar semua judul ecer lintas produk, filter per kategori/produk.
+- Klik judul → halaman detail dengan grid kotak penyiapan + tombol tambah.
+- Tombol "Bagikan ke WA" per penyiapan (pakai `shareToWhatsApp` yang sudah ada).
+
+**Di `ReadyPackagesPanel`** — ganti panel ecer LocalStorage lama:
+- Saat membuat paket, dropdown "Pilih dari Penyiapan Ecer tersedia" → otomatis isi qty + lampirkan foto + lokasi ke caption WA.
+
+### 4. UI Pegawai (link tugas)
+
+Di `src/routes/t.$token.tsx`, untuk tiap item yang punya `warehouse_item_id`:
+- Tampilkan daftar Judul Ecer milik item itu.
+- Pegawai pilih judul → form penyiapan (foto + lokasi + berat aktual + keterangan).
+- Kirim → call `ecer_submit_via_task`. Realtime muncul di dashboard admin.
+
+### 5. Komponen yang dipakai ulang
+
+- `PhotoEditor` (sudah ada) untuk anotasi foto sebelum upload.
+- `shareToWhatsApp` (sudah ada) untuk share kotak penyiapan.
+- `signedUrl`, `uploadPrepPhoto` dari `src/lib/prep.ts` (bucket `prep-photos`).
+
+### 6. Migrasi data lama
+
+Panel ecer LocalStorage di `ReadyPackagesPanel` (`ecer:presets:*`) di-deprecate. Tampilkan info sekali "Pindah ke Ecer baru" + tombol buka halaman ecer produk.
 
 ## Detail teknis
 
-- Token: `crypto.getRandomValues` 24 byte base64url.
-- PIN: 6 digit, disimpan sebagai bcrypt/scrypt hash (pgcrypto `crypt()`). Verifikasi via RPC `verify_prep_pin(token, pin)` return ephemeral access token (JWT pendek di cookie httpOnly per submission).
-- Upload publik: RPC `request_prep_upload(access_token, item_id)` → return signed upload URL dari Storage (`createSignedUploadUrl`).
-- Realtime: subscribe `postgres_changes` pada `prep_submissions` filter `task_id`.
-- Editor: satu file `src/components/photo-editor/` dengan submodul tool. Tidak pakai library berat — Canvas 2D + pointer events.
-- Web Share API butuh HTTPS; aplikasi sudah HTTPS di preview/published.
+```text
+ecer_titles (1) ──< ecer_preparations (N)
+       │
+       └── warehouse_items (target produk)
+```
 
-## Yang tidak termasuk (bisa ditambah nanti)
+- Path foto: `ecer/<user_id>/<title_id>/<timestamp>-<rand>.jpg` di bucket `prep-photos`.
+- Stok berkurang via trigger SECURITY DEFINER, transaksi tunggal (insert + update stok atomik).
+- Realtime: subscribe `postgres_changes` pada `ecer_preparations` filter `user_id`.
 
-- Login pegawai permanen (kita pakai link+PIN saja sesuai pilihan Anda).
-- Otomatisasi "stok ≤ ambang" — tugas dibuat manual sesuai pilihan Anda.
-- Notifikasi push ke aplikasi Anda saat foto masuk (cukup realtime sambil aplikasi terbuka).
+## Yang TIDAK termasuk (bisa nanti)
+
+- Edit foto setelah disimpan (hapus + buat ulang saja).
+- Laporan/agregasi ecer (total gram terjual per judul).
+- Auto-buat paket siap kirim dari kotak penyiapan (sekarang manual: pilih di form paket).
 
 ## Urutan kerja
 
-1. Migrasi DB + bucket + RLS + RPC.
-2. Halaman publik `/t/$token` minimal (tanpa editor) + upload alur.
-3. UI buat tugas + share WA dengan Web Share API.
-4. Realtime + halaman detail tugas.
-5. Editor foto lengkap (paling besar; iterasi sendiri).
-6. Polish: progress, draft lokal, error handling.
+1. Migrasi DB (tabel + RLS + trigger + RPC).
+2. Komponen admin: tab Ecer di Gudang + halaman `/ecer`.
+3. UI pegawai di `/t/$token`.
+4. Integrasi dengan Paket Siap Kirim (pilih penyiapan tersedia).
+5. Polish: realtime, share WA, deprecate LocalStorage lama.
 
-Konfirmasi untuk saya mulai dari langkah 1?
+Setuju saya mulai dari langkah 1 (migrasi DB)?
