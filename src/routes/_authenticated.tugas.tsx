@@ -635,9 +635,30 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       </div>
       <div className="mt-4 flex justify-end gap-2">
         <button onClick={onClose} className="h-9 rounded-md border px-3 text-sm">Batal</button>
-        <button disabled={busy} onClick={create} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:opacity-50">
-          <Send className="h-4 w-4" /> Buat & kirim
-        </button>
+        {(() => {
+          const canSend =
+            summary.validLines > 0 &&
+            summary.partialLines === 0 &&
+            summary.invalidLines === 0;
+          const reason =
+            summary.validLines === 0
+              ? "Pilih minimal satu barang dengan baris valid"
+              : summary.invalidLines > 0
+              ? `${summary.invalidLines} baris tidak valid`
+              : summary.partialLines > 0
+              ? `${summary.partialLines} baris belum lengkap`
+              : "";
+          return (
+            <button
+              disabled={busy || !canSend}
+              onClick={create}
+              title={canSend ? undefined : reason}
+              className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Send className="h-4 w-4" /> Buat & kirim
+            </button>
+          );
+        })()}
       </div>
     </Modal>
   );
