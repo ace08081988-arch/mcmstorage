@@ -584,6 +584,55 @@ function PackageForm({
   const [note, setNote] = useState("");
   const [saving, setSaving] = useState(false);
 
+  // ── Judul Ecer + preset berat (localStorage per item) ──
+  type Preset = { label: string; grams: number };
+  const ecerKey = `ecer:presets:${item.id}`;
+  const [ecerTitle, setEcerTitle] = useState("");
+  const [presets, setPresets] = useState<Preset[]>([]);
+  const [showEcer, setShowEcer] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [newGrams, setNewGrams] = useState("");
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(ecerKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as { title?: string; presets?: Preset[] };
+      setEcerTitle(parsed.title ?? "");
+      setPresets(Array.isArray(parsed.presets) ? parsed.presets : []);
+    } catch { /* ignore */ }
+  }, [ecerKey]);
+
+  function persistEcer(title: string, list: Preset[]) {
+    try {
+      localStorage.setItem(ecerKey, JSON.stringify({ title, presets: list }));
+    } catch { /* ignore */ }
+  }
+
+  function addPreset() {
+    const label = newLabel.trim();
+    const grams = Number(newGrams);
+    if (!label) { toast.error("Label preset wajib diisi (mis. 1G)"); return; }
+    if (!Number.isFinite(grams) || grams <= 0) { toast.error("Berat harus > 0"); return; }
+    const next = [...presets, { label, grams }];
+    setPresets(next);
+    persistEcer(ecerTitle, next);
+    setNewLabel("");
+    setNewGrams("");
+  }
+
+  function removePreset(idx: number) {
+    const next = presets.filter((_, i) => i !== idx);
+    setPresets(next);
+    persistEcer(ecerTitle, next);
+  }
+
+  function pickPreset(p: Preset) {
+    setQty(String(p.grams));
+    if (!note.trim()) setNote(`${ecerTitle ? ecerTitle + " · " : ""}${p.label} (${p.grams} ${item.base_unit})`);
+    toast.success(`Preset ${p.label} dipilih`);
+  }
+
   async function uploadPhoto(file: File) {
     const ext = (file.name.split(".").pop() || "jpg").toLowerCase();
     const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
@@ -665,6 +714,89 @@ function PackageForm({
       <div className="flex max-h-[92vh] w-full max-w-md flex-col rounded-lg border bg-card" onClick={(e) => e.stopPropagation()}>
         <header className="border-b px-4 py-3 text-sm font-semibold">Paket baru — {item.name}</header>
         <div className="flex-1 overflow-y-auto px-4 py-3 space-y-3 text-sm">
+          {/* Judul Ecer + preset */}
+          <div className="rounded-md border bg-background/60 p-2">
+            <button
+              type="button"
+              onClick={() => setShowEcer((v) => !v)}
+              className="flex w-full items-center justify-between text-left text-[12px] font-semibold"
+            >
+              <span>⚖️ Ecer{ecerTitle ? ` — ${ecerTitle}` : ""} {presets.length > 0 && <span className="ml-1 text-[10px] font-normal text-muted-foreground">({presets.length} preset)</span>}</span>
+              <span className="text-muted-foreground">{showEcer ? "▲" : "▼"}</span>
+            </button>
+
+            {/* Pintasan preset selalu tampil bila ada */}
+            {presets.length > 0 && (
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                {presets.map((p, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => pickPreset(p)}
+                    className="rounded-full border bg-card px-2.5 py-1 text-[11px] hover:bg-accent"
+                    title={`${p.grams} ${item.base_unit}`}
+                  >
+                    {p.label} <span className="text-muted-foreground">· {p.grams}{item.base_unit}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {showEcer && (
+              <div className="mt-2 space-y-2">
+                <label className="block">
+                  <span className="text-[11px] text-muted-foreground">Judul ecer (untuk produk ini)</span>
+                  <input
+                    value={ecerTitle}
+                    onChange={(e) => { setEcerTitle(e.target.value); persistEcer(e.target.value, presets); }}
+                    placeholder="mis. KRISTAL Ecer"
+                    className="mt-1 h-10 w-full rounded-md border bg-background px-3 text-sm"
+                  />
+                </label>
+
+                {presets.length > 0 && (
+                  <ul className="space-y-1">
+                    {presets.map((p, i) => (
+                      <li key={i} className="flex items-center gap-2 rounded-md border bg-card px-2 py-1 text-[12px]">
+                        <span className="min-w-12 font-semibold">{p.label}</span>
+                        <span className="text-muted-foreground">{p.grams} {item.base_unit}</span>
+                        <button
+                          type="button"
+                          onClick={() => removePreset(i)}
+                          className="ml-auto text-[11px] text-destructive hover:underline"
+                        >Hapus</button>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                <div className="grid grid-cols-[1fr_1fr_auto] gap-1.5">
+                  <input
+                    value={newLabel}
+                    onChange={(e) => setNewLabel(e.target.value)}
+                    placeholder="Label (1G)"
+                    className="h-9 rounded-md border bg-background px-2 text-xs"
+                  />
+                  <input
+                    type="number" step="0.01" min="0"
+                    value={newGrams}
+                    onChange={(e) => setNewGrams(e.target.value)}
+                    placeholder={`Berat (${item.base_unit})`}
+                    className="h-9 rounded-md border bg-background px-2 text-xs tabular-nums"
+                  />
+                  <button
+                    type="button"
+                    onClick={addPreset}
+                    className="h-9 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground hover:opacity-90"
+                  >+ Tambah</button>
+                </div>
+                <p className="text-[10px] text-muted-foreground">
+                  Contoh: label <b>1G</b> berat <b>0.90</b>. Klik chip preset untuk auto-isi jumlah.
+                </p>
+              </div>
+            )}
+          </div>
+
           <label className="block">
             <span className="text-[11px] text-muted-foreground">
               Jumlah ({item.base_unit}) · stok: {fmtBase(item.stock_base, item.base_unit)}
