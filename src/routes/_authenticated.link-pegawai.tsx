@@ -235,25 +235,31 @@ function LinkPegawaiPage() {
           const loaded = tasks?.length ?? 0;
           const shown = rows.length;
           const isFiltered = filter !== "all" || q.trim().length > 0;
-          const remaining = Math.max(0, total - loaded);
+          // Use server-side filtered count when a filter/search is active; fall back to unfiltered total.
+          const effectiveTotal = isFiltered ? (filteredTotal ?? total) : total;
+          const remaining = Math.max(0, effectiveTotal - shown);
           return (
             <>
               {" · "}
               {isFiltered ? (
                 <>
-                  Menampilkan <b className="tabular-nums">{shown}</b> hasil dari{" "}
-                  <b className="tabular-nums">{loaded}</b> dimuat
+                  Menampilkan <b className="tabular-nums">{shown}</b> dari{" "}
+                  <b className="tabular-nums">{effectiveTotal}</b> sesuai filter
+                  {filteredTotalBusy && <span className="ml-1 opacity-60">(memperbarui…)</span>}
+                  {" · "}
+                  <span className="tabular-nums">{loaded}</span> dimuat dari <span className="tabular-nums">{total}</span> total
                 </>
               ) : (
                 <>
                   Menampilkan <b className="tabular-nums">{shown}</b> dari{" "}
-                  <b className="tabular-nums">{loaded}</b> dimuat
+                  <b className="tabular-nums">{total}</b> total
+                  {loaded < total && (
+                    <> · <span className="tabular-nums">{loaded}</span> dimuat</>
+                  )}
                 </>
               )}
-              {" · Total "}
-              <b className="tabular-nums">{total}</b>
               {remaining > 0 && (
-                <> · <span className="tabular-nums">{remaining}</span> belum dimuat</>
+                <> · <span className="tabular-nums">{remaining}</span> belum tampil</>
               )}
               {sort === "status" && hasMore && (
                 <> · <span className="text-amber-600 dark:text-amber-400">urutan status berdasarkan data yang dimuat</span></>
