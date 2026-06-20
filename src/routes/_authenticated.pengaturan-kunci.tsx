@@ -45,6 +45,21 @@ function PengaturanKunci() {
   const [bioAvailable, setBioAvailable] = useState(false);
   const [autoLock, setAutoLock] = useState(false);
 
+  // Nama toko untuk caption WhatsApp
+  const [shopName, setShopName] = useState("");
+  const [shopSaved, setShopSaved] = useState("");
+  useEffect(() => {
+    const v = (typeof localStorage !== "undefined" && localStorage.getItem("shop:name")) || "";
+    setShopName(v);
+    setShopSaved(v);
+  }, []);
+  const saveShopName = () => {
+    const v = shopName.trim().slice(0, 60);
+    localStorage.setItem("shop:name", v);
+    setShopSaved(v);
+    toast.success(v ? `Nama toko disimpan: ${v}` : "Nama toko dikosongkan");
+  };
+
   // PIN form
   const [pin1, setPin1] = useState("");
   const [pin2, setPin2] = useState("");
@@ -178,6 +193,32 @@ function PengaturanKunci() {
           aplikasi keluar fokus.
         </p>
       </header>
+
+      <section className="rounded-lg border p-4 space-y-2">
+        <div>
+          <div className="text-sm font-medium">Nama Toko</div>
+          <div className="text-xs text-muted-foreground">
+            Dipakai otomatis di caption WhatsApp saat mengirim paket
+            (mis. <em>“PEMBAYARAN DIKONFIRMASI - {shopSaved || "NAMA TOKO"}”</em>).
+          </div>
+        </div>
+        <div className="flex gap-2">
+          <Input
+            value={shopName}
+            onChange={(e) => setShopName(e.target.value)}
+            placeholder="Mis. Ace Store"
+            maxLength={60}
+            className="flex-1"
+          />
+          <Button
+            size="sm"
+            onClick={saveShopName}
+            disabled={shopName.trim() === shopSaved}
+          >
+            Simpan
+          </Button>
+        </div>
+      </section>
 
       <section className="rounded-lg border p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
