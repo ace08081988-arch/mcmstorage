@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoEditor } from "@/components/PhotoEditor";
 import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
+import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package } from "lucide-react";
 
 export const Route = createFileRoute("/t/$token")({
@@ -129,6 +130,8 @@ function PublicPrepPage() {
           ))}
           {items.length === 0 && <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Belum ada item.</div>}
         </div>
+
+        <RequestSection token={token} pin={pinRef.current} />
 
         <div className="mt-6 text-center text-[10px] text-muted-foreground">Tetap aman · Jangan bagikan PIN ke siapa pun</div>
       </div>
