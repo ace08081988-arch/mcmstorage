@@ -500,6 +500,14 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                 <AlertTriangle className="h-3 w-3" /> {summary.invalidLines} tidak valid
               </span>
             )}
+            {summary.linesWithoutPhoto > 0 && (
+              <span
+                className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-destructive"
+                title={`Belum ada foto: ${summary.itemsWithoutPhoto.join(", ")}`}
+              >
+                <ImageIcon className="h-3 w-3" /> {summary.linesWithoutPhoto} tanpa foto
+              </span>
+            )}
             <span className="ml-auto tabular-nums">
               Siap dikirim: <b>{fmtNum(summary.totalWeight, 2)}</b>
             </span>
