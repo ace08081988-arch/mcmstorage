@@ -516,10 +516,23 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                 <ImageIcon className="h-3 w-3" /> {summary.linesWithoutPhoto} tanpa foto
               </span>
             )}
-            <span className="ml-auto tabular-nums">
-              Siap dikirim: <b>{fmtNum(summary.totalWeight, 2)}</b>
+            <span
+              className="ml-auto tabular-nums"
+              title={`Hanya baris valid yang sudah punya foto (${summary.readyLines} dari ${summary.validLines} baris valid).`}
+            >
+              Siap dikirim: <b>{fmtNum(summary.readyWeight, 2)}</b>{" "}
+              <span className="text-muted-foreground">({summary.readyLines} baris)</span>
             </span>
           </div>
+          {summary.linesWithoutPhoto > 0 && (
+            <div className="mt-1 flex items-start gap-1 text-[10px] text-destructive">
+              <ImageIcon className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>
+                <b>{summary.linesWithoutPhoto}</b> baris belum punya foto dan tidak akan ikut dikirim:{" "}
+                <span className="text-muted-foreground">{summary.itemsWithoutPhoto.join(", ")}</span>
+              </span>
+            </div>
+          )}
         </div>
         <label className="block">
           <div className="mb-1 text-[11px] text-muted-foreground">Judul</div>
