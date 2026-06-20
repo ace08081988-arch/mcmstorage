@@ -109,6 +109,8 @@ function fmtBase(n: number, u: "g" | "pcs") {
   return `${v.toLocaleString("id-ID")} pcs`;
 }
 
+export { fmtBase, rupiah };
+
 // Format kuantitas dengan unit terpilih + setara dalam unit dasar.
 // Contoh: 56 botol → "56 botol (= 5.600 pcs)"
 // Aturan khusus: produk "GS" → 100 botol = 1 karton.
