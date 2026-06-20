@@ -22,11 +22,26 @@ type Pkg = {
   gps_lat: number | null;
   gps_lng: number | null;
   note: string | null;
-  status: "ready" | "sent" | "archived";
+  status: "ready" | "sent" | "archived" | "cancelled" | "failed";
   sent_at: string | null;
   sent_to_name: string | null;
   sent_to_phone: string | null;
   created_at: string;
+};
+
+const STATUS_LABEL: Record<Pkg["status"], string> = {
+  ready: "Siap dikirim",
+  sent: "Berhasil dikirim",
+  archived: "Diarsipkan",
+  cancelled: "Batal",
+  failed: "Gagal dikirim",
+};
+const STATUS_BADGE: Record<Pkg["status"], string> = {
+  ready: "bg-muted text-foreground",
+  sent: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  archived: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  cancelled: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  failed: "bg-destructive/15 text-destructive",
 };
 
 const signedCache = new Map<string, { url: string; exp: number }>();
@@ -61,7 +76,7 @@ export function ReadyPackagesPanel({
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [histQuery, setHistQuery] = useState("");
-  const [histStatus, setHistStatus] = useState<"all" | "sent" | "archived">("all");
+  const [histStatus, setHistStatus] = useState<"all" | "sent" | "archived" | "cancelled" | "failed">("all");
 
   async function reload() {
     setLoading(true);
@@ -131,12 +146,14 @@ export function ReadyPackagesPanel({
             />
             <select
               value={histStatus}
-              onChange={(e) => setHistStatus(e.target.value as "all" | "sent" | "archived")}
+              onChange={(e) => setHistStatus(e.target.value as typeof histStatus)}
               className="h-9 rounded-md border bg-background px-2 text-xs"
             >
               <option value="all">Semua status</option>
               <option value="sent">Berhasil dikirim</option>
               <option value="archived">Diarsipkan</option>
+              <option value="cancelled">Batal</option>
+              <option value="failed">Gagal dikirim</option>
             </select>
             {(histQuery || histStatus !== "all") && (
               <button
