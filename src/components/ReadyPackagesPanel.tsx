@@ -377,12 +377,25 @@ function PackageCard({
             </button>
           </>
         ) : (
-          <button
-            onClick={deleteHistory}
-            className="inline-flex h-9 w-full items-center justify-center rounded-md border border-destructive/40 px-3 text-xs font-semibold text-destructive hover:bg-destructive/10"
-          >
-            🗑 Hapus riwayat
-          </button>
+          <>
+            <select
+              value={pkg.status}
+              onChange={(e) => setStatus(e.target.value as Pkg["status"])}
+              className="h-9 flex-1 rounded-md border bg-background px-2 text-xs"
+              aria-label="Ubah status"
+            >
+              <option value="sent">Berhasil dikirim</option>
+              <option value="archived">Diarsipkan</option>
+              <option value="cancelled">Batal</option>
+              <option value="failed">Gagal dikirim</option>
+            </select>
+            <button
+              onClick={deleteHistory}
+              className="inline-flex h-9 items-center justify-center rounded-md border border-destructive/40 px-3 text-xs font-semibold text-destructive hover:bg-destructive/10"
+            >
+              🗑
+            </button>
+          </>
         )}
       </div>
 
