@@ -270,12 +270,26 @@ function PackageCard({
         if (data?.signedUrl) {
           const f = await urlToFile(data.signedUrl, `${item.name.replace(/\W+/g, "-")}.jpg`);
           if (f) files.push(f);
+          else toast.warning("Foto tidak bisa diambil — coba lagi atau periksa koneksi.");
         }
       }
 
-      const res = await shareToWhatsApp({ text, title: item.name, files, phone: targetPhone || undefined });
-      if (res === "fallback") {
-        toast.message("Foto tidak bisa dilampirkan otomatis di perangkat ini — terbuka di WhatsApp, lampirkan foto manual.");
+      // Jika ada foto: jangan kirim phone agar share sheet sistem muncul
+      // (di Android tap "WhatsApp" → foto otomatis terlampir + teks jadi caption).
+      // Tanpa foto: pakai wa.me ke nomor langsung.
+      const res = await shareToWhatsApp({
+        text,
+        title: item.name,
+        files,
+        phone: files.length === 0 ? (targetPhone || undefined) : undefined,
+      });
+      if (res === "fallback" && files.length > 0) {
+        toast.message(
+          "Perangkat ini tak mendukung lampiran otomatis. Foto sudah diunduh & teks disalin — di WhatsApp, tempel teks lalu lampirkan foto dari galeri/unduhan.",
+          { duration: 8000 },
+        );
+      } else if (res === "shared" && files.length > 0) {
+        toast.success("Share sheet dibuka — pilih WhatsApp agar foto + teks terkirim bersamaan.");
       }
       setPickWA(false);
       // After share — ask what to do
