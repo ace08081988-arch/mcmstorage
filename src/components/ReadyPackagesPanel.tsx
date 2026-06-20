@@ -255,7 +255,19 @@ function PackageCard({
   function buildCaption(targetName: string, targetPhone: string): string {
     const shopName = (localStorage.getItem("shop:name") || "").trim();
     const greetingTarget = targetName?.trim() || targetPhone?.trim() || "";
-    const qtyLabel = `${fmtBase(pkg.qty_base, item.base_unit)} ${item.name}`;
+    // Pakai label satuan dari konfigurasi ecer bila ada (mis. "gram" vs "g")
+    let unitLabel: string = item.base_unit;
+    try {
+      const raw = localStorage.getItem(`ecer:presets:${item.id}`);
+      if (raw) {
+        const parsed = JSON.parse(raw) as { unit?: "g" | "gram" };
+        if (item.base_unit === "g" && (parsed.unit === "g" || parsed.unit === "gram")) {
+          unitLabel = parsed.unit;
+        }
+      }
+    } catch { /* ignore */ }
+    const qtyText = fmtBase(pkg.qty_base, item.base_unit).replace(/\s*g$/i, ` ${unitLabel}`);
+    const qtyLabel = `${qtyText} ${item.name}`;
     const lines: string[] = [];
     lines.push(`✅ PEMBAYARAN DIKONFIRMASI${shopName ? ` - ${shopName.toUpperCase()}` : ""}`);
     lines.push(``);
