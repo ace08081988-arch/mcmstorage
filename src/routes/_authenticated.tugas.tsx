@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
@@ -211,6 +211,62 @@ function fmtNum(n: number | null | undefined, maxFrac = 2): string {
   }).format(rounded);
 }
 
+// Input angka terkontrol yang menyimpan teks mentah saat user mengetik
+// (mis. "0,", "1.") tetapi selalu meneruskan hasil parse numerik ke parent
+// lewat onChange supaya total per baris & ringkasan selalu konsisten dengan
+// nilai internal. Saat blur / nilai eksternal berubah, teks dinormalisasi
+// memakai fmtNum agar tampilan konsisten dengan hasil hitung.
+function NumberInput({
+  value,
+  onChange,
+  maxFrac = 3,
+  disabled,
+  className,
+  emptyAs = 0,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  maxFrac?: number;
+  disabled?: boolean;
+  className?: string;
+  // Nilai yang dipakai saat input dikosongkan. null = jangan ubah state.
+  emptyAs?: number | null;
+}) {
+  const [text, setText] = useState(() => fmtNum(value, maxFrac));
+  const focused = useRef(false);
+  // Sinkronisasi saat nilai numerik berubah dari luar dan input tidak sedang difokuskan.
+  useEffect(() => {
+    if (focused.current) return;
+    const next = fmtNum(value, maxFrac);
+    setText((t) => (t === next ? t : next));
+  }, [value, maxFrac]);
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      disabled={disabled}
+      value={text}
+      onFocus={() => { focused.current = true; }}
+      onBlur={() => {
+        focused.current = false;
+        setText(fmtNum(value, maxFrac));
+      }}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        if (raw.trim() === "") {
+          if (emptyAs != null) onChange(emptyAs);
+          return;
+        }
+        const n = parseNum(raw);
+        if (n == null) return;
+        onChange(roundTo(n, maxFrac));
+      }}
+      className={className}
+    />
+  );
+}
+
 function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreated }: { warehouse: WItem[]; variants: Variant[]; onVariantsChanged: () => void | Promise<void>; onClose: () => void; onCreated: (info: { token: string; pin: string; title: string }) => void }) {
   const [title, setTitle] = useState("Tugas siapkan barang");
   const [note, setNote] = useState("");
@@ -412,44 +468,31 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                             <div className="flex flex-wrap items-end gap-1.5">
                               <label className="w-20">
                                 <div className="mb-0.5 text-[10px] text-muted-foreground">Jumlah unit</div>
-                                 <input type="text" inputMode="decimal" defaultValue={fmtNum(l.count, 3)}
-                                  onChange={(e) => {
-                                    const raw = e.target.value;
-                                    if (raw.trim() === "") {
-                                      updateLine(it.id, l.key, { count: 0 });
-                                      return;
-                                    }
-                                    const n = parseNum(raw);
-                                    if (n == null) return;
-                                    updateLine(it.id, l.key, { count: n });
-                                  }}
-                                  className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums" />
+                                <NumberInput
+                                  value={l.count}
+                                  maxFrac={3}
+                                  emptyAs={0}
+                                  onChange={(n) => updateLine(it.id, l.key, { count: n })}
+                                  className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums"
+                                />
                               </label>
                               <span className="pb-2 text-xs text-muted-foreground">×</span>
                               <label className="w-24">
                                 <div className="mb-0.5 text-[10px] text-muted-foreground">
                                   Berat / unit{isManual ? "" : " (preset)"}
                                 </div>
-                                 <input type="text" inputMode="decimal"
-                                   defaultValue={fmtNum(l.weightOverride ?? w, 3)}
-                                  disabled={!isManual}
+                                <NumberInput
                                   key={`${l.key}-${l.variantId ?? "m"}`}
-                                  onChange={(e) => {
-                                    const raw = e.target.value;
-                                    // Saat input kosong → reset ke null (pakai default/preset).
-                                    if (raw.trim() === "") {
-                                      updateLine(it.id, l.key, { weightOverride: null });
-                                      return;
-                                    }
-                                    const n = parseNum(raw);
-                                    // Abaikan input tak lengkap (mis. "0." atau ",") agar nilai sebelumnya tetap.
-                                    if (n == null) return;
-                                    updateLine(it.id, l.key, { weightOverride: n });
-                                  }}
-                                  className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums disabled:opacity-60" />
+                                  value={l.weightOverride ?? w}
+                                  maxFrac={3}
+                                  disabled={!isManual}
+                                  emptyAs={isManual ? 0 : null}
+                                  onChange={(n) => updateLine(it.id, l.key, { weightOverride: n })}
+                                  className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums disabled:opacity-60"
+                                />
                               </label>
                               <div className="pb-1 text-[11px] font-semibold tabular-nums">
-                                 = {fmtNum(total, 2)} {(itemVariants.find((v) => v.id === l.variantId)?.unit_label) ?? ""}
+                                 = {fmtNum(roundTo(total, 2), 2)} {(itemVariants.find((v) => v.id === l.variantId)?.unit_label) ?? ""}
                               </div>
                               <label className="ml-auto flex items-center gap-1 pb-2 text-[10px] text-muted-foreground">
                                 <input type="checkbox" checked={l.split}
