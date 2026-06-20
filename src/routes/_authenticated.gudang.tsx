@@ -111,30 +111,52 @@ function fmtBase(n: number, u: "g" | "pcs") {
 
 // Format kuantitas dengan unit terpilih + setara dalam unit dasar.
 // Contoh: 56 botol → "56 botol (= 5.600 pcs)"
+// Aturan khusus: produk "GS" → 100 botol = 1 karton.
+// Jika berlaku, tambahan info karton akan disisipkan ke hasil format.
+const KARTON_RULES: { match: (name: string, pkgType: string) => boolean; botolPerKarton: number }[] = [
+  { match: (n, pt) => n.trim().toLowerCase() === "gs" && pt === "botol", botolPerKarton: 100 },
+];
+
+function getBotolPerKarton(name: string | undefined, packageType: string): number | null {
+  if (!name) return null;
+  for (const r of KARTON_RULES) if (r.match(name, packageType)) return r.botolPerKarton;
+  return null;
+}
+
+function fmtKartonHint(pkgQty: number, name: string | undefined, packageType: string): string {
+  const per = getBotolPerKarton(name, packageType);
+  if (!per || per <= 0) return "";
+  const k = pkgQty / per;
+  if (!Number.isFinite(k) || k === 0) return "";
+  const kStr = k.toLocaleString("id-ID", { maximumFractionDigits: 2 });
+  return ` · ≈ ${kStr} karton`;
+}
+
 function fmtQtyDual(
   baseQty: number,
   baseUnit: "g" | "pcs",
   packageType: string,
   packageSize: number,
   mode: "base" | "package",
+  itemName?: string,
 ) {
   if (mode === "base" || !packageType || packageType === "pcs" || packageSize <= 0) {
     return fmtBase(baseQty, baseUnit);
   }
   const pkgQty = baseQty / packageSize;
   const pkgStr = `${pkgQty.toLocaleString("id-ID", { maximumFractionDigits: 2 })} ${packageType}`;
-  return `${pkgStr} (= ${fmtBase(baseQty, baseUnit)})`;
+  return `${pkgStr} (= ${fmtBase(baseQty, baseUnit)})${fmtKartonHint(pkgQty, itemName, packageType)}`;
 }
 
 // Format default untuk barang: pakai unit kemasan bila ada, fallback ke base.
 function fmtItemQty(
   baseQty: number,
-  item: { base_unit: "g" | "pcs"; package_type: string; package_size: number } | null | undefined,
+  item: { name?: string; base_unit: "g" | "pcs"; package_type: string; package_size: number } | null | undefined,
 ) {
   if (!item) return fmtBase(baseQty, "pcs");
   const mode: "base" | "package" =
     item.package_type && item.package_type !== "pcs" && item.package_size > 0 ? "package" : "base";
-  return fmtQtyDual(baseQty, item.base_unit, item.package_type, item.package_size, mode);
+  return fmtQtyDual(baseQty, item.base_unit, item.package_type, item.package_size, mode, item.name);
 }
 
 // Format harga per unit terpilih (jika package, kalikan package_size).
@@ -1823,7 +1845,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
         <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
           {items.map((i) => (
             <option key={i.id} value={i.id}>
-              {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base")} · HPP {rupiah(i.avg_cost_per_base)}/{i.base_unit}
+              {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base", i.name)} · HPP {rupiah(i.avg_cost_per_base)}/{i.base_unit}
             </option>
           ))}
         </select>
@@ -1905,15 +1927,15 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             return (
               <div className="rounded-md bg-muted/50 p-2 text-[11px] space-y-0.5">
                 <div>
-                  Akan kurangi stok: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, sellMode)}</b>
+                  Akan kurangi stok: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, sellMode, item.name)}</b>
                 </div>
                 <div>
-                  Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, sellMode)}</b>
+                  Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, sellMode, item.name)}</b>
                 </div>
                 <div className={kurang ? "text-destructive font-semibold" : ""}>
                   {kurang
                     ? <>Stok kurang {fmtBase(qtyBase - item.stock_base, item.base_unit)} — tidak bisa disimpan</>
-                    : <>Sisa setelah jual: <b>{fmtQtyDual(sisa, item.base_unit, item.package_type, item.package_size, sellMode)}</b></>}
+                    : <>Sisa setelah jual: <b>{fmtQtyDual(sisa, item.base_unit, item.package_type, item.package_size, sellMode, item.name)}</b></>}
                 </div>
                 <div>Total pendapatan: <b>{rupiah(total)}</b> ({paymentMethod === "hutang" ? "piutang ke pelanggan" : "lunas tunai"})</div>
                 <div className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}>
@@ -2538,7 +2560,7 @@ function PesananTab({
           <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
             {items.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base")}
+                {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base", i.name)}
               </option>
             ))}
           </select>
@@ -2571,8 +2593,8 @@ function PesananTab({
             <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (mis. dijemput sore)" value={note} onChange={(e) => setNote(e.target.value)} />
 
             <div className={`rounded-md p-2 text-[11px] space-y-0.5 ${enough ? "bg-muted/50" : "bg-destructive/10 text-destructive"}`}>
-              <div>Butuh siapkan: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, qtyMode)}</b></div>
-              <div>Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, qtyMode)}</b></div>
+              <div>Butuh siapkan: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, qtyMode, item.name)}</b></div>
+              <div>Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, qtyMode, item.name)}</b></div>
               {!enough && <div className="font-semibold">Kurang {fmtBase(qtyBase - item.stock_base, item.base_unit)}</div>}
             </div>
           </>
