@@ -66,6 +66,8 @@ function LinkPegawaiPage() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState<number | null>(null);
+  const [filteredTotal, setFilteredTotal] = useState<number | null>(null);
+  const [filteredTotalBusy, setFilteredTotalBusy] = useState(false);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | Availability>("all");
   const [sort, setSort] = useState<SortKey>("newest");
@@ -89,6 +91,35 @@ function LinkPegawaiPage() {
     setTotal(count ?? rows.length);
     setHasMore(rows.length === PAGE_SIZE && (count == null || rows.length < count));
   }, [serverAscending]);
+
+  // Server-side count for the active filter + search combination.
+  // Sort does not affect the count, so it's intentionally excluded from deps.
+  const fetchFilteredTotal = useCallback(async () => {
+    setFilteredTotalBusy(true);
+    let query = supabase
+      .from("prep_tasks")
+      .select("id", { count: "exact", head: true });
+
+    const nowIso = new Date(now).toISOString();
+    if (filter === "cancelled") query = query.eq("status", "cancelled");
+    else if (filter === "done") query = query.eq("status", "done");
+    else if (filter === "active") {
+      query = query.not("status", "in", "(cancelled,done)").gt("expires_at", nowIso);
+    } else if (filter === "expired") {
+      query = query.not("status", "in", "(cancelled,done)").lte("expires_at", nowIso);
+    }
+
+    const needle = q.trim();
+    if (needle) {
+      const esc = needle.replace(/[%,()]/g, " ");
+      query = query.or(`title.ilike.%${esc}%,share_token.ilike.%${esc}%`);
+    }
+
+    const { count, error } = await query;
+    setFilteredTotalBusy(false);
+    if (error) { setFilteredTotal(null); return; }
+    setFilteredTotal(count ?? 0);
+  }, [filter, q, now]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || tasks === null) return;
@@ -114,6 +145,12 @@ function LinkPegawaiPage() {
   }, [loadingMore, hasMore, tasks, total, serverAscending]);
 
   useEffect(() => { void reload(); }, [reload]);
+  // Refetch the filtered server total whenever filter/search changes or data is reloaded.
+  // Debounce search input slightly to avoid spamming the server while typing.
+  useEffect(() => {
+    const id = setTimeout(() => { void fetchFilteredTotal(); }, q ? 250 : 0);
+    return () => clearTimeout(id);
+  }, [fetchFilteredTotal, tasks]);
   useEffect(() => {
     const id = setInterval(() => setNow(Date.now()), 30_000);
     return () => clearInterval(id);
@@ -198,25 +235,31 @@ function LinkPegawaiPage() {
           const loaded = tasks?.length ?? 0;
           const shown = rows.length;
           const isFiltered = filter !== "all" || q.trim().length > 0;
-          const remaining = Math.max(0, total - loaded);
+          // Use server-side filtered count when a filter/search is active; fall back to unfiltered total.
+          const effectiveTotal = isFiltered ? (filteredTotal ?? total) : total;
+          const remaining = Math.max(0, effectiveTotal - shown);
           return (
             <>
               {" · "}
               {isFiltered ? (
                 <>
-                  Menampilkan <b className="tabular-nums">{shown}</b> hasil dari{" "}
-                  <b className="tabular-nums">{loaded}</b> dimuat
+                  Menampilkan <b className="tabular-nums">{shown}</b> dari{" "}
+                  <b className="tabular-nums">{effectiveTotal}</b> sesuai filter
+                  {filteredTotalBusy && <span className="ml-1 opacity-60">(memperbarui…)</span>}
+                  {" · "}
+                  <span className="tabular-nums">{loaded}</span> dimuat dari <span className="tabular-nums">{total}</span> total
                 </>
               ) : (
                 <>
                   Menampilkan <b className="tabular-nums">{shown}</b> dari{" "}
-                  <b className="tabular-nums">{loaded}</b> dimuat
+                  <b className="tabular-nums">{total}</b> total
+                  {loaded < total && (
+                    <> · <span className="tabular-nums">{loaded}</span> dimuat</>
+                  )}
                 </>
               )}
-              {" · Total "}
-              <b className="tabular-nums">{total}</b>
               {remaining > 0 && (
-                <> · <span className="tabular-nums">{remaining}</span> belum dimuat</>
+                <> · <span className="tabular-nums">{remaining}</span> belum tampil</>
               )}
               {sort === "status" && hasMore && (
                 <> · <span className="text-amber-600 dark:text-amber-400">urutan status berdasarkan data yang dimuat</span></>
