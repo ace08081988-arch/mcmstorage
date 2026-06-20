@@ -1281,6 +1281,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
         uid={uid}
         onClose={() => setEditing(null)}
         onSaved={() => { setEditing(null); onChanged(); }}
+        onSilentRefresh={onChanged}
       />
     )}
     </>
@@ -1298,7 +1299,7 @@ function Stat({ label, value }: { label: string; value: string }) {
   );
 }
 
-function EditItemDialog({ item, uid, onClose, onSaved }: { item: WItem; uid: string | null; onClose: () => void; onSaved: () => void }) {
+function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item: WItem; uid: string | null; onClose: () => void; onSaved: () => void; onSilentRefresh?: () => void }) {
   const [name, setName] = useState(item.name);
   const [category, setCategory] = useState(item.category ?? "");
   const [packageType, setPackageType] = useState<PackageType>(item.package_type as PackageType);
@@ -1400,7 +1401,7 @@ function EditItemDialog({ item, uid, onClose, onSaved }: { item: WItem; uid: str
               setCurrentStock(Number(data.stock_base) || 0);
               setStockBase(String(Number(data.stock_base) || 0));
             }
-            onSaved();
+            onSilentRefresh?.();
           }}
         />
       )}
