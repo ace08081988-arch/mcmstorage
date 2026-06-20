@@ -736,7 +736,7 @@ function PackageForm({
               onClick={() => setShowEcer((v) => !v)}
               className="flex w-full items-center justify-between text-left text-[12px] font-semibold"
             >
-              <span>⚖️ Ecer{ecerTitle ? ` — ${ecerTitle}` : ""} {presets.length > 0 && <span className="ml-1 text-[10px] font-normal text-muted-foreground">({presets.length} preset)</span>}</span>
+              <span>⚖️ Ecer{ecerTitle ? ` — ${ecerTitle}` : ""} {presets.length > 0 && <span className="ml-1 text-[10px] font-normal text-muted-foreground">({presets.length} preset · {item.base_unit === "g" ? ecerUnit : item.base_unit})</span>}</span>
               <span className="text-muted-foreground">{showEcer ? "▲" : "▼"}</span>
             </button>
 
@@ -749,9 +749,9 @@ function PackageForm({
                     type="button"
                     onClick={() => pickPreset(p)}
                     className="rounded-full border bg-card px-2.5 py-1 text-[11px] hover:bg-accent"
-                    title={`${p.grams} ${item.base_unit}`}
+                    title={`${p.grams} ${item.base_unit === "g" ? ecerUnit : item.base_unit}`}
                   >
-                    {p.label} <span className="text-muted-foreground">· {p.grams}{item.base_unit}</span>
+                    {p.label} <span className="text-muted-foreground">· {p.grams} {item.base_unit === "g" ? ecerUnit : item.base_unit}</span>
                   </button>
                 ))}
               </div>
@@ -769,12 +769,33 @@ function PackageForm({
                   />
                 </label>
 
+                {item.base_unit === "g" && (
+                  <div>
+                    <div className="text-[11px] text-muted-foreground">Satuan tampilan berat</div>
+                    <div className="mt-1 inline-flex rounded-md border bg-background p-0.5">
+                      {(["g", "gram"] as const).map((u) => (
+                        <button
+                          key={u}
+                          type="button"
+                          onClick={() => { setEcerUnit(u); persistEcer(ecerTitle, presets, u); }}
+                          className={`h-8 px-3 text-xs rounded-[5px] ${ecerUnit === u ? "bg-primary text-primary-foreground font-semibold" : "hover:bg-accent"}`}
+                        >
+                          {u}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="mt-1 text-[10px] text-muted-foreground">
+                      Dipakai di chip preset, judul, catatan, dan caption WA.
+                    </p>
+                  </div>
+                )}
+
                 {presets.length > 0 && (
                   <ul className="space-y-1">
                     {presets.map((p, i) => (
                       <li key={i} className="flex items-center gap-2 rounded-md border bg-card px-2 py-1 text-[12px]">
                         <span className="min-w-12 font-semibold">{p.label}</span>
-                        <span className="text-muted-foreground">{p.grams} {item.base_unit}</span>
+                        <span className="text-muted-foreground">{p.grams} {item.base_unit === "g" ? ecerUnit : item.base_unit}</span>
                         <button
                           type="button"
                           onClick={() => removePreset(i)}
@@ -796,7 +817,7 @@ function PackageForm({
                     type="number" step="0.01" min="0"
                     value={newGrams}
                     onChange={(e) => setNewGrams(e.target.value)}
-                    placeholder={`Berat (${item.base_unit})`}
+                    placeholder={`Berat (${item.base_unit === "g" ? ecerUnit : item.base_unit})`}
                     className="h-9 rounded-md border bg-background px-2 text-xs tabular-nums"
                   />
                   <button
