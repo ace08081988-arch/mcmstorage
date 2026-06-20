@@ -22,11 +22,26 @@ type Pkg = {
   gps_lat: number | null;
   gps_lng: number | null;
   note: string | null;
-  status: "ready" | "sent" | "archived";
+  status: "ready" | "sent" | "archived" | "cancelled" | "failed";
   sent_at: string | null;
   sent_to_name: string | null;
   sent_to_phone: string | null;
   created_at: string;
+};
+
+const STATUS_LABEL: Record<Pkg["status"], string> = {
+  ready: "Siap dikirim",
+  sent: "Berhasil dikirim",
+  archived: "Diarsipkan",
+  cancelled: "Batal",
+  failed: "Gagal dikirim",
+};
+const STATUS_BADGE: Record<Pkg["status"], string> = {
+  ready: "bg-muted text-foreground",
+  sent: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  archived: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
+  cancelled: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
+  failed: "bg-destructive/15 text-destructive",
 };
 
 const signedCache = new Map<string, { url: string; exp: number }>();
@@ -61,7 +76,7 @@ export function ReadyPackagesPanel({
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [histQuery, setHistQuery] = useState("");
-  const [histStatus, setHistStatus] = useState<"all" | "sent" | "archived">("all");
+  const [histStatus, setHistStatus] = useState<"all" | "sent" | "archived" | "cancelled" | "failed">("all");
 
   async function reload() {
     setLoading(true);
@@ -131,12 +146,14 @@ export function ReadyPackagesPanel({
             />
             <select
               value={histStatus}
-              onChange={(e) => setHistStatus(e.target.value as "all" | "sent" | "archived")}
+              onChange={(e) => setHistStatus(e.target.value as typeof histStatus)}
               className="h-9 rounded-md border bg-background px-2 text-xs"
             >
               <option value="all">Semua status</option>
               <option value="sent">Berhasil dikirim</option>
               <option value="archived">Diarsipkan</option>
+              <option value="cancelled">Batal</option>
+              <option value="failed">Gagal dikirim</option>
             </select>
             {(histQuery || histStatus !== "all") && (
               <button
@@ -291,6 +308,22 @@ function PackageCard({
     else { toast.success("Riwayat dihapus"); onChanged(); }
   }
 
+  async function setStatus(next: Pkg["status"]) {
+    const label = STATUS_LABEL[next].toLowerCase();
+    if (!(await confirm({
+      title: `Tandai paket sebagai "${STATUS_LABEL[next]}"?`,
+      description: next === "cancelled"
+        ? "Stok akan dikembalikan ke gudang."
+        : `Paket akan dipindahkan ke riwayat dengan status ${label}.`,
+      confirmText: "Tandai",
+    }))) return;
+    const patch: { status: Pkg["status"]; sent_at?: string } = { status: next };
+    if (next !== "ready" && !pkg.sent_at) patch.sent_at = new Date().toISOString();
+    const { error } = await supabase.from("ready_packages").update(patch).eq("id", pkg.id);
+    if (error) toast.error(friendlyError(error));
+    else { toast.success(`Status diubah: ${STATUS_LABEL[next]}`); onChanged(); }
+  }
+
   const isReady = pkg.status === "ready";
 
   return (
@@ -304,7 +337,12 @@ function PackageCard({
           </div>
         )}
         <div className="min-w-0 flex-1 space-y-1 text-xs">
-          <div className="font-semibold tabular-nums text-sm">{fmtBase(pkg.qty_base, item.base_unit)}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="font-semibold tabular-nums text-sm">{fmtBase(pkg.qty_base, item.base_unit)}</div>
+            <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${STATUS_BADGE[pkg.status]}`}>
+              {STATUS_LABEL[pkg.status]}
+            </span>
+          </div>
           {pkg.location_url && (
             <a href={pkg.location_url} target="_blank" rel="noreferrer" className="block truncate text-primary hover:underline">
               📍 {pkg.location_url}
@@ -332,6 +370,13 @@ function PackageCard({
               💬 Kirim WA
             </button>
             <button
+              onClick={() => setStatus("cancelled")}
+              className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-semibold hover:bg-accent"
+              title="Batalkan & kembalikan stok"
+            >
+              Batal
+            </button>
+            <button
               onClick={deleteReady}
               className="inline-flex h-9 items-center justify-center rounded-md border border-destructive/40 px-3 text-xs font-semibold text-destructive hover:bg-destructive/10"
             >
@@ -339,12 +384,25 @@ function PackageCard({
             </button>
           </>
         ) : (
-          <button
-            onClick={deleteHistory}
-            className="inline-flex h-9 w-full items-center justify-center rounded-md border border-destructive/40 px-3 text-xs font-semibold text-destructive hover:bg-destructive/10"
-          >
-            🗑 Hapus riwayat
-          </button>
+          <>
+            <select
+              value={pkg.status}
+              onChange={(e) => setStatus(e.target.value as Pkg["status"])}
+              className="h-9 flex-1 rounded-md border bg-background px-2 text-xs"
+              aria-label="Ubah status"
+            >
+              <option value="sent">Berhasil dikirim</option>
+              <option value="archived">Diarsipkan</option>
+              <option value="cancelled">Batal</option>
+              <option value="failed">Gagal dikirim</option>
+            </select>
+            <button
+              onClick={deleteHistory}
+              className="inline-flex h-9 items-center justify-center rounded-md border border-destructive/40 px-3 text-xs font-semibold text-destructive hover:bg-destructive/10"
+            >
+              🗑
+            </button>
+          </>
         )}
       </div>
 
