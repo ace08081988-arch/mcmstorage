@@ -693,3 +693,131 @@ function PrepEditorDialog({
     </Dialog>
   );
 }
+// ------------------------------------------------------------------
+// Mode Uji Coba Alur Pegawai
+// ------------------------------------------------------------------
+function WorkerTestDialog({
+  open, titles, titleItemsCount, onClose,
+}: {
+  open: boolean;
+  titles: RequestTitle[];
+  titleItemsCount: number;
+  onClose: () => void;
+}) {
+  const [busy, setBusy] = useState(false);
+  const [session, setSession] = useState<{ url: string; pin: string; token: string } | null>(null);
+  const [pin, setPin] = useState("");
+
+  useEffect(() => {
+    if (!open) { setSession(null); setPin(""); }
+  }, [open]);
+
+  async function createSession() {
+    if (titles.length === 0) { toast.error("Buat minimal 1 judul Request dulu"); return; }
+    if (titleItemsCount === 0) { toast.error("Judul Request belum punya produk"); return; }
+    const usePin = pin.trim().length >= 4 ? pin.trim() : String(Math.floor(1000 + Math.random() * 9000));
+    setBusy(true);
+    try {
+      const token = Array.from(crypto.getRandomValues(new Uint8Array(16)))
+        .map((b) => b.toString(16).padStart(2, "0")).join("");
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.rpc as any)("prep_create_task", {
+        _title: "UJI COBA Alur Pegawai (Request)",
+        _note: "Sesi uji coba — boleh dihapus kapan saja.",
+        _pin: usePin,
+        _share_token: token,
+        _items: [],
+      });
+      if (error) throw error;
+      const url = `${window.location.origin}/t/${token}`;
+      setSession({ url, pin: usePin, token: String(data) });
+      toast.success("Sesi uji coba siap. PIN: " + usePin);
+    } catch (e) {
+      toast.error("Gagal buat sesi: " + (e as Error).message);
+    } finally { setBusy(false); }
+  }
+
+  function copyAll() {
+    if (!session) return;
+    void navigator.clipboard.writeText(`Link: ${session.url}\nPIN: ${session.pin}`);
+    toast.success("Disalin");
+  }
+
+  const qrUrl = session ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(session.url)}` : "";
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FlaskConical className="h-4 w-4 text-primary" /> Uji Coba Alur Pegawai
+          </DialogTitle>
+          <DialogDescription>
+            Buat tugas pegawai sementara untuk menguji: QR/PIN, pilih judul Request, input gram, foto + lokasi, dan kirim.
+            Sesi aktif beberapa jam — tidak akan mengganggu data nyata.
+          </DialogDescription>
+        </DialogHeader>
+
+        {!session ? (
+          <div className="space-y-3">
+            <div>
+              <Label className="text-xs">PIN uji coba (opsional, min 4 digit)</Label>
+              <Input
+                inputMode="numeric" maxLength={8}
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+                placeholder="Kosongkan untuk acak"
+              />
+            </div>
+            <div className="rounded-md border bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
+              Pastikan sudah ada minimal 1 Judul Request dengan beberapa produk. Saat ini: <b>{titles.length} judul</b>.
+            </div>
+            <Button className="w-full" onClick={createSession} disabled={busy}>
+              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <FlaskConical className="mr-1 h-4 w-4" />}
+              Mulai Uji Coba
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            <div className="flex justify-center rounded-lg border bg-white p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrUrl} alt="QR uji coba" width={200} height={200} />
+            </div>
+            <div className="space-y-1.5">
+              <div>
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link</Label>
+                <div className="break-all rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono">
+                  {session.url}
+                </div>
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">PIN</Label>
+                <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-center text-lg font-bold tracking-[0.4em] tabular-nums">
+                  {session.pin}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+              <b>Tips uji:</b> Buka link di tab baru / HP, masukkan PIN, scroll ke <b>"Paket Request"</b>,
+              pilih satu judul, isi gram tiap produk, ambil foto + lokasi, lalu Kirim.
+              Stok produk akan benar-benar berkurang — hapus paket di halaman ini jika ingin balik.
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={copyAll}>
+                <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link+PIN
+              </Button>
+              <Button size="sm" asChild>
+                <a href={session.url} target="_blank" rel="noreferrer">
+                  <ExternalLink className="mr-1 h-3.5 w-3.5" /> Buka di Tab Baru
+                </a>
+              </Button>
+            </div>
+            <Button variant="ghost" size="sm" className="w-full" onClick={() => setSession(null)}>
+              Buat sesi baru
+            </Button>
+          </div>
+        )}
+      </DialogContent>
+    </Dialog>
+  );
+}
