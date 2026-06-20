@@ -743,6 +743,36 @@ function WorkerTestDialog({
     toast.success("Disalin");
   }
 
+  async function cancelSession() {
+    if (!session) return;
+    if (!confirm("Batalkan sesi uji coba? Semua paket Request yang dibuat lewat sesi ini akan dihapus dan stok dikembalikan.")) return;
+    setBusy(true);
+    try {
+      // Ambil semua preparation yang dibuat via sesi uji ini, lalu hapus fotonya.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: preps } = await (supabase.from as any)("request_preparations")
+        .select("id,photo_path").eq("via_task_id", session.token);
+      const list = (preps ?? []) as Array<{ id: string; photo_path: string | null }>;
+      for (const p of list) {
+        if (p.photo_path) await deleteRequestPhoto(p.photo_path);
+      }
+      // Hapus preparations — trigger akan kembalikan stok via request_preparation_items ON DELETE.
+      if (list.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error } = await (supabase.from as any)("request_preparations")
+          .delete().in("id", list.map((p) => p.id));
+        if (error) throw error;
+      }
+      // Tutup tugas pegawai sementara (set status non-active dengan update share_token agar tidak bisa dipakai lagi).
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from as any)("prep_tasks").update({ status: "cancelled" }).eq("id", session.token);
+      toast.success(`Sesi dibatalkan. ${list.length} paket dihapus, stok dikembalikan.`);
+      setSession(null);
+    } catch (e) {
+      toast.error("Gagal batalkan: " + (e as Error).message);
+    } finally { setBusy(false); }
+  }
+
   const qrUrl = session ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(session.url)}` : "";
 
   return (
