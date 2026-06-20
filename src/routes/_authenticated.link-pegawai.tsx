@@ -194,9 +194,36 @@ function LinkPegawaiPage() {
 
       <p className="mb-3 text-xs text-muted-foreground">
         Semua tugas pegawai yang sudah pernah dibuat — link, status ketersediaan, dan akses langsung untuk pratinjau.
-        {total != null && (
-          <> · Memuat <b className="tabular-nums">{tasks?.length ?? 0}</b> dari <b className="tabular-nums">{total}</b></>
-        )}
+        {total != null && (() => {
+          const loaded = tasks?.length ?? 0;
+          const shown = rows.length;
+          const isFiltered = filter !== "all" || q.trim().length > 0;
+          const remaining = Math.max(0, total - loaded);
+          return (
+            <>
+              {" · "}
+              {isFiltered ? (
+                <>
+                  Menampilkan <b className="tabular-nums">{shown}</b> hasil dari{" "}
+                  <b className="tabular-nums">{loaded}</b> dimuat
+                </>
+              ) : (
+                <>
+                  Menampilkan <b className="tabular-nums">{shown}</b> dari{" "}
+                  <b className="tabular-nums">{loaded}</b> dimuat
+                </>
+              )}
+              {" · Total "}
+              <b className="tabular-nums">{total}</b>
+              {remaining > 0 && (
+                <> · <span className="tabular-nums">{remaining}</span> belum dimuat</>
+              )}
+              {sort === "status" && hasMore && (
+                <> · <span className="text-amber-600 dark:text-amber-400">urutan status berdasarkan data yang dimuat</span></>
+              )}
+            </>
+          );
+        })()}
       </p>
 
       <div className="mb-3 flex flex-wrap items-center gap-2">
