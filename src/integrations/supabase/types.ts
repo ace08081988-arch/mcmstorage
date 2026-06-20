@@ -785,6 +785,84 @@ export type Database = {
           },
         ]
       }
+      ready_packages: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string
+          location_url: string | null
+          note: string | null
+          photo_path: string | null
+          price_per_base: number | null
+          qty_base: number
+          sent_at: string | null
+          sent_to_name: string | null
+          sent_to_phone: string | null
+          status: string
+          total_price: number | null
+          updated_at: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          location_url?: string | null
+          note?: string | null
+          photo_path?: string | null
+          price_per_base?: number | null
+          qty_base: number
+          sent_at?: string | null
+          sent_to_name?: string | null
+          sent_to_phone?: string | null
+          status?: string
+          total_price?: number | null
+          updated_at?: string
+          user_id: string
+          warehouse_item_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          gps_lat?: number | null
+          gps_lng?: number | null
+          id?: string
+          location_url?: string | null
+          note?: string | null
+          photo_path?: string | null
+          price_per_base?: number | null
+          qty_base?: number
+          sent_at?: string | null
+          sent_to_name?: string | null
+          sent_to_phone?: string | null
+          status?: string
+          total_price?: number | null
+          updated_at?: string
+          user_id?: string
+          warehouse_item_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ready_packages_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ready_packages_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       sales: {
         Row: {
           cost_at_sale: number
