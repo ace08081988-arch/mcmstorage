@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { publicTaskUrl } from "@/lib/prep";
-import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2 } from "lucide-react";
+import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown } from "lucide-react";
 
 const PAGE_SIZE = 30;
 
@@ -43,6 +43,23 @@ const BADGE: Record<Availability, { label: string; cls: string }> = {
   cancelled: { label: "Dibatalkan", cls: "bg-muted text-muted-foreground ring-border" },
 };
 
+type SortKey = "newest" | "oldest" | "status";
+
+const SORT_OPTIONS: { key: SortKey; label: string }[] = [
+  { key: "newest", label: "Terbaru" },
+  { key: "oldest", label: "Terlama" },
+  { key: "status", label: "Status (Aktif dulu)" },
+];
+
+// Server orders by created_at; for "status" we still fetch newest-first
+// from the server and re-sort the loaded set client-side.
+const STATUS_ORDER: Record<Availability, number> = {
+  active: 0,
+  expired: 1,
+  done: 2,
+  cancelled: 3,
+};
+
 function LinkPegawaiPage() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [busy, setBusy] = useState(false);
@@ -51,15 +68,19 @@ function LinkPegawaiPage() {
   const [total, setTotal] = useState<number | null>(null);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | Availability>("all");
+  const [sort, setSort] = useState<SortKey>("newest");
   const [now, setNow] = useState(Date.now());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+
+  // Server-side order direction: only "oldest" flips it; "status" keeps newest-first fetch.
+  const serverAscending = sort === "oldest";
 
   const reload = useCallback(async () => {
     setBusy(true);
     const { data, error, count } = await supabase
       .from("prep_tasks")
       .select("id,title,note,share_token,status,expires_at,created_at", { count: "exact" })
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: serverAscending })
       .range(0, PAGE_SIZE - 1);
     setBusy(false);
     if (error) { toast.error("Gagal memuat: " + error.message); return; }
@@ -67,7 +88,7 @@ function LinkPegawaiPage() {
     setTasks(rows);
     setTotal(count ?? rows.length);
     setHasMore(rows.length === PAGE_SIZE && (count == null || rows.length < count));
-  }, []);
+  }, [serverAscending]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || tasks === null) return;
@@ -77,7 +98,7 @@ function LinkPegawaiPage() {
     const { data, error } = await supabase
       .from("prep_tasks")
       .select("id,title,note,share_token,status,expires_at,created_at")
-      .order("created_at", { ascending: false })
+      .order("created_at", { ascending: serverAscending })
       .range(from, to);
     setLoadingMore(false);
     if (error) { toast.error("Gagal memuat lanjutan: " + error.message); return; }
@@ -90,7 +111,7 @@ function LinkPegawaiPage() {
     });
     if (more.length < PAGE_SIZE) setHasMore(false);
     if (total != null && tasks.length + more.length >= total) setHasMore(false);
-  }, [loadingMore, hasMore, tasks, total]);
+  }, [loadingMore, hasMore, tasks, total, serverAscending]);
 
   useEffect(() => { void reload(); }, [reload]);
   useEffect(() => {
@@ -121,8 +142,17 @@ function LinkPegawaiPage() {
       }
       return true;
     });
+    if (sort === "status") {
+      filtered.sort((a, b) => {
+        const d = STATUS_ORDER[a.avail] - STATUS_ORDER[b.avail];
+        if (d !== 0) return d;
+        // Tie-breaker: newest first.
+        return new Date(b.t.created_at).getTime() - new Date(a.t.created_at).getTime();
+      });
+    }
+    // "newest" / "oldest" come pre-sorted from the server.
     return filtered;
-  }, [tasks, q, filter, now]);
+  }, [tasks, q, filter, now, sort]);
 
   const counts = useMemo(() => {
     const c = { all: 0, active: 0, expired: 0, done: 0, cancelled: 0 } as Record<string, number>;
@@ -179,6 +209,19 @@ function LinkPegawaiPage() {
             className="h-9 w-full rounded-md border bg-background pl-7 pr-2 text-sm focus:border-primary focus:outline-none"
           />
         </div>
+        <label className="inline-flex h-9 items-center gap-1.5 rounded-md border bg-background px-2 text-xs">
+          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-muted-foreground">Urutkan:</span>
+          <select
+            value={sort}
+            onChange={(e) => setSort(e.target.value as SortKey)}
+            className="bg-transparent text-xs font-medium focus:outline-none"
+          >
+            {SORT_OPTIONS.map((o) => (
+              <option key={o.key} value={o.key}>{o.label}</option>
+            ))}
+          </select>
+        </label>
         <div className="flex flex-wrap gap-1">
           {([
             ["all", "Semua"],
