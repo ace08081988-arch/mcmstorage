@@ -329,6 +329,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   const summary = useMemo(() => {
     let totalLines = 0, validLines = 0, partialLines = 0, invalidLines = 0;
     let totalWeight = 0;
+    let readyLines = 0, readyWeight = 0;
     let linesWithoutPhoto = 0;
     const itemsWithoutPhoto: string[] = [];
     for (const entry of Object.values(picked)) {
@@ -340,7 +341,12 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         const rs = rowStatus(l.key);
         if (rs === "valid") {
           validLines++;
-          totalWeight += lineWeight(l, variants) * (l.count || 0);
+          const w = lineWeight(l, variants) * (l.count || 0);
+          totalWeight += w;
+          if (hasPhoto) {
+            readyLines++;
+            readyWeight += w;
+          }
         } else if (rs === "partial") partialLines++;
         else invalidLines++;
       }
@@ -349,6 +355,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       items: Object.keys(picked).length,
       totalLines, validLines, partialLines, invalidLines,
       totalWeight: roundTo(totalWeight, 2),
+      readyLines,
+      readyWeight: roundTo(readyWeight, 2),
       linesWithoutPhoto,
       itemsWithoutPhoto,
     };
@@ -508,10 +516,23 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                 <ImageIcon className="h-3 w-3" /> {summary.linesWithoutPhoto} tanpa foto
               </span>
             )}
-            <span className="ml-auto tabular-nums">
-              Siap dikirim: <b>{fmtNum(summary.totalWeight, 2)}</b>
+            <span
+              className="ml-auto tabular-nums"
+              title={`Hanya baris valid yang sudah punya foto (${summary.readyLines} dari ${summary.validLines} baris valid).`}
+            >
+              Siap dikirim: <b>{fmtNum(summary.readyWeight, 2)}</b>{" "}
+              <span className="text-muted-foreground">({summary.readyLines} baris)</span>
             </span>
           </div>
+          {summary.linesWithoutPhoto > 0 && (
+            <div className="mt-1 flex items-start gap-1 text-[10px] text-destructive">
+              <ImageIcon className="mt-0.5 h-3 w-3 shrink-0" />
+              <span>
+                <b>{summary.linesWithoutPhoto}</b> baris belum punya foto dan tidak akan ikut dikirim:{" "}
+                <span className="text-muted-foreground">{summary.itemsWithoutPhoto.join(", ")}</span>
+              </span>
+            </div>
+          )}
         </div>
         <label className="block">
           <div className="mb-1 text-[11px] text-muted-foreground">Judul</div>
