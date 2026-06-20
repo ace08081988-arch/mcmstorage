@@ -800,7 +800,7 @@ function WorkerTestDialog({
             <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
               <b>Tips uji:</b> Buka link di tab baru / HP, masukkan PIN, scroll ke <b>"Paket Request"</b>,
               pilih satu judul, isi gram tiap produk, ambil foto + lokasi, lalu Kirim.
-              Stok produk akan benar-benar berkurang — hapus paket di halaman ini jika ingin balik.
+              Stok produk akan benar-benar berkurang. Tekan <b>"Batalkan sesi uji coba"</b> untuk mengembalikan stok &amp; menghapus paket uji.
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" size="sm" onClick={copyAll}>
@@ -812,7 +812,17 @@ function WorkerTestDialog({
                 </a>
               </Button>
             </div>
-            <Button variant="ghost" size="sm" className="w-full" onClick={() => setSession(null)}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="w-full border-destructive/40 text-destructive hover:bg-destructive/10"
+              onClick={cancelSession}
+              disabled={busy}
+            >
+              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Trash2 className="mr-1 h-3.5 w-3.5" />}
+              Batalkan sesi uji coba (kembalikan stok)
+            </Button>
+            <Button variant="ghost" size="sm" className="w-full" onClick={() => setSession(null)} disabled={busy}>
               Buat sesi baru
             </Button>
           </div>
