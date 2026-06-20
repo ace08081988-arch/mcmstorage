@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logStorageError } from "@/lib/storage-log";
 
 export const ECER_BUCKET = "ecer-photos";
 
@@ -36,7 +37,8 @@ export async function ecerSignedUrl(
   expiresIn = 60 * 60 * 24,
 ): Promise<string | null> {
   if (!path) return null;
-  const { data } = await supabase.storage.from(ECER_BUCKET).createSignedUrl(path, expiresIn);
+  const { data, error } = await supabase.storage.from(ECER_BUCKET).createSignedUrl(path, expiresIn);
+  logStorageError({ bucket: ECER_BUCKET, op: "createSignedUrl", path, source: "ecerSignedUrl" }, error);
   return data?.signedUrl ?? null;
 }
 
@@ -51,11 +53,15 @@ export async function uploadEcerPhoto(
     contentType: blob.type || "image/jpeg",
     upsert: false,
   });
-  if (error) return null;
+  if (error) {
+    logStorageError({ bucket: ECER_BUCKET, op: "upload", path, source: "uploadEcerPhoto" }, error);
+    return null;
+  }
   return path;
 }
 
 export async function deleteEcerPhoto(path: string | null | undefined): Promise<void> {
   if (!path) return;
-  await supabase.storage.from(ECER_BUCKET).remove([path]);
+  const { error } = await supabase.storage.from(ECER_BUCKET).remove([path]);
+  logStorageError({ bucket: ECER_BUCKET, op: "remove", path, source: "deleteEcerPhoto" }, error);
 }
