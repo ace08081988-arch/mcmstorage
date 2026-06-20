@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
@@ -209,6 +209,62 @@ function fmtNum(n: number | null | undefined, maxFrac = 2): string {
     minimumFractionDigits: 0,
     maximumFractionDigits: maxFrac,
   }).format(rounded);
+}
+
+// Input angka terkontrol yang menyimpan teks mentah saat user mengetik
+// (mis. "0,", "1.") tetapi selalu meneruskan hasil parse numerik ke parent
+// lewat onChange supaya total per baris & ringkasan selalu konsisten dengan
+// nilai internal. Saat blur / nilai eksternal berubah, teks dinormalisasi
+// memakai fmtNum agar tampilan konsisten dengan hasil hitung.
+function NumberInput({
+  value,
+  onChange,
+  maxFrac = 3,
+  disabled,
+  className,
+  emptyAs = 0,
+}: {
+  value: number;
+  onChange: (n: number) => void;
+  maxFrac?: number;
+  disabled?: boolean;
+  className?: string;
+  // Nilai yang dipakai saat input dikosongkan. null = jangan ubah state.
+  emptyAs?: number | null;
+}) {
+  const [text, setText] = useState(() => fmtNum(value, maxFrac));
+  const focused = useRef(false);
+  // Sinkronisasi saat nilai numerik berubah dari luar dan input tidak sedang difokuskan.
+  useEffect(() => {
+    if (focused.current) return;
+    const next = fmtNum(value, maxFrac);
+    setText((t) => (t === next ? t : next));
+  }, [value, maxFrac]);
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      disabled={disabled}
+      value={text}
+      onFocus={() => { focused.current = true; }}
+      onBlur={() => {
+        focused.current = false;
+        setText(fmtNum(value, maxFrac));
+      }}
+      onChange={(e) => {
+        const raw = e.target.value;
+        setText(raw);
+        if (raw.trim() === "") {
+          if (emptyAs != null) onChange(emptyAs);
+          return;
+        }
+        const n = parseNum(raw);
+        if (n == null) return;
+        onChange(roundTo(n, maxFrac));
+      }}
+      className={className}
+    />
+  );
 }
 
 function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreated }: { warehouse: WItem[]; variants: Variant[]; onVariantsChanged: () => void | Promise<void>; onClose: () => void; onCreated: (info: { token: string; pin: string; title: string }) => void }) {
