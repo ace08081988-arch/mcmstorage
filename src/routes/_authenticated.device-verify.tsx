@@ -13,9 +13,26 @@ import {
   verifyDeviceOtp,
 } from "@/lib/device.functions";
 
+// Hanya izinkan path internal yang aman: harus diawali "/" tunggal,
+// bukan "//host" (protocol-relative), bukan URL absolut, bukan skema seperti
+// "javascript:" atau "data:", dan tidak boleh mengandung CR/LF.
+const SAFE_PATH = /^\/(?!\/)[^\s\\]*$/;
+const safeRedirect = z
+  .string()
+  .max(512)
+  .refine((v) => SAFE_PATH.test(v) && !/[\r\n]/.test(v), {
+    message: "invalid redirect",
+  });
 const searchSchema = z.object({
-  redirect: z.string().optional(),
+  redirect: safeRedirect.optional().catch(undefined),
 });
+
+function sanitizeRedirect(value: string | undefined): string {
+  if (!value) return "/";
+  return SAFE_PATH.test(value) && !/[\r\n]/.test(value) && value.length <= 512
+    ? value
+    : "/";
+}
 
 export const Route = createFileRoute("/_authenticated/device-verify")({
   validateSearch: searchSchema,
@@ -25,6 +42,7 @@ export const Route = createFileRoute("/_authenticated/device-verify")({
 function DeviceVerifyPage() {
   const navigate = useNavigate();
   const { redirect } = useSearch({ from: "/_authenticated/device-verify" });
+  const safeTarget = sanitizeRedirect(redirect);
   const [stage, setStage] = useState<"loading" | "otp" | "error">("loading");
   const [challengeId, setChallengeId] = useState<string | null>(null);
   const [maskedEmail, setMaskedEmail] = useState<string>("");
@@ -83,7 +101,7 @@ function DeviceVerifyPage() {
         if (cancelled) return;
         if (r.trusted) {
           markDeviceTrustedLocal(userIdRef.current, hash);
-          navigate({ to: redirect || "/", replace: true });
+          navigate({ to: safeTarget, replace: true });
           return;
         }
         setChallengeId(r.challengeId);
@@ -106,7 +124,7 @@ function DeviceVerifyPage() {
       cancelled = true;
       if (pollAbortRef.current) pollAbortRef.current.cancelled = true;
     };
-  }, [navigate, redirect]);
+  }, [navigate, safeTarget]);
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -128,7 +146,7 @@ function DeviceVerifyPage() {
       });
       markDeviceTrustedLocal(userIdRef.current, deviceHashRef.current);
       toast.success("Device terverifikasi");
-      navigate({ to: redirect || "/", replace: true });
+      navigate({ to: safeTarget, replace: true });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Verifikasi gagal");
     } finally {
@@ -146,7 +164,7 @@ function DeviceVerifyPage() {
       });
       if (r.trusted) {
         markDeviceTrustedLocal(userIdRef.current, deviceHashRef.current);
-        navigate({ to: redirect || "/", replace: true });
+        navigate({ to: safeTarget, replace: true });
         return;
       }
       setChallengeId(r.challengeId);
