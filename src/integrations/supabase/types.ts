@@ -1605,6 +1605,10 @@ export type Database = {
         Returns: Json
       }
       prep_upload_allowed: { Args: { _share_token: string }; Returns: boolean }
+      prep_worker_upload_allowed: {
+        Args: { _owner_user_id: string; _share_token: string }
+        Returns: boolean
+      }
       read_email_batch: {
         Args: { batch_size: number; queue_name: string; vt: number }
         Returns: {
