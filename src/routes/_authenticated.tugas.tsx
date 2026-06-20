@@ -223,6 +223,7 @@ function NumberInput({
   disabled,
   className,
   emptyAs = 0,
+  onStatusChange,
 }: {
   value: number;
   onChange: (n: number) => void;
@@ -231,21 +232,49 @@ function NumberInput({
   className?: string;
   // Nilai yang dipakai saat input dikosongkan. null = jangan ubah state.
   emptyAs?: number | null;
+  // Dipanggil tiap kali status validasi input berubah.
+  onStatusChange?: (status: "valid" | "partial" | "invalid") => void;
 }) {
   const [text, setText] = useState(() => fmtNum(value, maxFrac));
   const focused = useRef(false);
+  // Hitung status validasi dari teks mentah supaya konsisten dengan parseNum.
+  const status: "valid" | "partial" | "invalid" = (() => {
+    const raw = text.trim();
+    if (raw === "") return emptyAs == null ? "invalid" : "valid";
+    // Karakter yang diizinkan: digit, separator desimal, dan tanda.
+    if (!/^[-+]?[\d.,]*$/.test(raw)) return "invalid";
+    // Pola parsial: hanya tanda, hanya separator, atau diakhiri separator.
+    if (/^[-+]?$/.test(raw)) return "partial";
+    if (/^[-+]?[.,]$/.test(raw)) return "partial";
+    if (/[.,]$/.test(raw)) return "partial";
+    const n = parseNum(raw);
+    return n != null && Number.isFinite(n) ? "valid" : "invalid";
+  })();
+  const lastStatus = useRef(status);
+  useEffect(() => {
+    if (lastStatus.current !== status) {
+      lastStatus.current = status;
+      onStatusChange?.(status);
+    }
+  }, [status, onStatusChange]);
   // Sinkronisasi saat nilai numerik berubah dari luar dan input tidak sedang difokuskan.
   useEffect(() => {
     if (focused.current) return;
     const next = fmtNum(value, maxFrac);
     setText((t) => (t === next ? t : next));
   }, [value, maxFrac]);
+  const statusRing =
+    disabled ? "" :
+    status === "invalid" ? "ring-1 ring-destructive border-destructive" :
+    status === "partial" ? "ring-1 ring-amber-400 border-amber-400" :
+    "";
   return (
     <input
       type="text"
       inputMode="decimal"
       disabled={disabled}
       value={text}
+      aria-invalid={status === "invalid"}
       onFocus={() => { focused.current = true; }}
       onBlur={() => {
         focused.current = false;
@@ -262,7 +291,7 @@ function NumberInput({
         if (n == null) return;
         onChange(roundTo(n, maxFrac));
       }}
-      className={className}
+      className={`${className ?? ""} ${statusRing}`.trim()}
     />
   );
 }
