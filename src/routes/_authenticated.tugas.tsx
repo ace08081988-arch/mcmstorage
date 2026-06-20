@@ -325,6 +325,28 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     return "valid";
   }
 
+  // Ringkasan: jumlah baris valid / partial / invalid + total berat siap kirim.
+  const summary = useMemo(() => {
+    let totalLines = 0, validLines = 0, partialLines = 0, invalidLines = 0;
+    let totalWeight = 0;
+    for (const entry of Object.values(picked)) {
+      for (const l of entry.lines) {
+        totalLines++;
+        const rs = rowStatus(l.key);
+        if (rs === "valid") {
+          validLines++;
+          totalWeight += lineWeight(l, variants) * (l.count || 0);
+        } else if (rs === "partial") partialLines++;
+        else invalidLines++;
+      }
+    }
+    return {
+      items: Object.keys(picked).length,
+      totalLines, validLines, partialLines, invalidLines,
+      totalWeight: roundTo(totalWeight, 2),
+    };
+  }, [picked, lineStatus, variants]);
+
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
     return warehouse.filter((w) => !q || w.name.toLowerCase().includes(q) || (w.category ?? "").toLowerCase().includes(q));
