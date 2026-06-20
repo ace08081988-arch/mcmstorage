@@ -329,9 +329,14 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   const summary = useMemo(() => {
     let totalLines = 0, validLines = 0, partialLines = 0, invalidLines = 0;
     let totalWeight = 0;
+    let linesWithoutPhoto = 0;
+    const itemsWithoutPhoto: string[] = [];
     for (const entry of Object.values(picked)) {
+      const hasPhoto = !!entry.item.image_path;
+      if (!hasPhoto) itemsWithoutPhoto.push(entry.item.name);
       for (const l of entry.lines) {
         totalLines++;
+        if (!hasPhoto) linesWithoutPhoto++;
         const rs = rowStatus(l.key);
         if (rs === "valid") {
           validLines++;
@@ -344,6 +349,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       items: Object.keys(picked).length,
       totalLines, validLines, partialLines, invalidLines,
       totalWeight: roundTo(totalWeight, 2),
+      linesWithoutPhoto,
+      itemsWithoutPhoto,
     };
   }, [picked, lineStatus, variants]);
 
