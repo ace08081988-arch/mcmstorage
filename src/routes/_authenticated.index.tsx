@@ -704,18 +704,31 @@ function Index() {
             </button>
           )}
 
-          <a
-            href="/gudang"
-            className="block w-full rounded-md border bg-card px-3 py-2 text-center text-xs font-semibold hover:bg-accent"
-          >
-            📦 Buka Gudang & Supplier
-          </a>
-          <a
-            href="/hutang-piutang"
-            className="block w-full rounded-md border bg-card px-3 py-2 text-center text-xs font-semibold hover:bg-accent"
-          >
-            💳 Hutang & Piutang
-          </a>
+          <div className="space-y-1.5">
+            <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+              Pintasan
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { to: "/gudang", label: "Gudang & Supplier", emoji: "📦", desc: "Stok, pembelian, penjualan" },
+                { to: "/tugas", label: "Tugas Pegawai", emoji: "📋", desc: "Buat & pantau penyiapan" },
+                { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
+                { to: "/label-preview", label: "Label Preview", emoji: "🏷️", desc: "Cetak label produk" },
+                { to: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
+              ].map((s) => (
+                <Link
+                  key={s.to}
+                  to={s.to}
+                  preload="intent"
+                  className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
+                >
+                  <span className="text-base leading-none">{s.emoji}</span>
+                  <span className="mt-1 text-xs font-semibold leading-tight">{s.label}</span>
+                  <span className="text-[10px] leading-tight text-muted-foreground">{s.desc}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
         </main>
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
       </div>
