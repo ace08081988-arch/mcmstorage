@@ -73,6 +73,8 @@ function LinkPegawaiPage() {
   const [sort, setSort] = useState<SortKey>("newest");
   const [now, setNow] = useState(Date.now());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
+  const filteredFetchedOnceRef = useRef(false);
+  const refetchToastIdRef = useRef<string | number | null>(null);
 
   // Server-side order direction: only "oldest" flips it; "status" keeps newest-first fetch.
   const serverAscending = sort === "oldest";
@@ -94,7 +96,8 @@ function LinkPegawaiPage() {
 
   // Server-side count for the active filter + search combination.
   // Sort does not affect the count, so it's intentionally excluded from deps.
-  const fetchFilteredTotal = useCallback(async () => {
+  const fetchFilteredTotal = useCallback(async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent ?? false;
     setFilteredTotalBusy(true);
     let query = supabase
       .from("prep_tasks")
@@ -117,8 +120,23 @@ function LinkPegawaiPage() {
 
     const { count, error } = await query;
     setFilteredTotalBusy(false);
-    if (error) { setFilteredTotal(null); return; }
-    setFilteredTotal(count ?? 0);
+    if (error) {
+      setFilteredTotal(null);
+      if (!silent) toast.error("Gagal menghitung total");
+      return;
+    }
+    const next = count ?? 0;
+    setFilteredTotal(next);
+    // Only toast for user-triggered refetches (not the initial mount fetch),
+    // and only when there is an active filter/search so the message is meaningful.
+    const isFiltered = filter !== "all" || q.trim().length > 0;
+    if (!silent && filteredFetchedOnceRef.current && isFiltered) {
+      if (refetchToastIdRef.current != null) toast.dismiss(refetchToastIdRef.current);
+      refetchToastIdRef.current = toast.success(`Total diperbarui: ${next} sesuai filter`, {
+        duration: 1800,
+      });
+    }
+    filteredFetchedOnceRef.current = true;
   }, [filter, q, now]);
 
   const loadMore = useCallback(async () => {
