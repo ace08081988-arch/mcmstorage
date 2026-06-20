@@ -238,14 +238,31 @@ function LinkPegawaiPage() {
           // Use server-side filtered count when a filter/search is active; fall back to unfiltered total.
           const effectiveTotal = isFiltered ? (filteredTotal ?? total) : total;
           const remaining = Math.max(0, effectiveTotal - shown);
+          // Show skeleton on the filtered total whenever the server count is being recomputed
+          // (initial fetch after filter/search change, or while data is reloading).
+          const totalLoading = isFiltered && (filteredTotalBusy || filteredTotal == null);
+          const TotalNum = ({ value }: { value: number }) =>
+            totalLoading ? (
+              <span
+                className="inline-block h-3 w-8 -mb-0.5 animate-pulse rounded bg-muted align-middle"
+                aria-label="Menghitung total…"
+                aria-busy="true"
+              />
+            ) : (
+              <b className="tabular-nums">{value}</b>
+            );
           return (
             <>
               {" · "}
               {isFiltered ? (
                 <>
                   Menampilkan <b className="tabular-nums">{shown}</b> dari{" "}
-                  <b className="tabular-nums">{effectiveTotal}</b> sesuai filter
-                  {filteredTotalBusy && <span className="ml-1 opacity-60">(memperbarui…)</span>}
+                  <TotalNum value={effectiveTotal} /> sesuai filter
+                  {totalLoading && (
+                    <span className="ml-1 inline-flex items-center gap-1 text-[10px] opacity-70">
+                      <Loader2 className="h-3 w-3 animate-spin" /> menghitung…
+                    </span>
+                  )}
                   {" · "}
                   <span className="tabular-nums">{loaded}</span> dimuat dari <span className="tabular-nums">{total}</span> total
                 </>
@@ -258,7 +275,7 @@ function LinkPegawaiPage() {
                   )}
                 </>
               )}
-              {remaining > 0 && (
+              {!totalLoading && remaining > 0 && (
                 <> · <span className="tabular-nums">{remaining}</span> belum tampil</>
               )}
               {sort === "status" && hasMore && (
