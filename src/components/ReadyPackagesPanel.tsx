@@ -446,6 +446,13 @@ function PackageCard({
               💬 Kirim WA
             </button>
             <button
+              onClick={copyCaption}
+              className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-semibold hover:bg-accent"
+              title="Salin caption ke clipboard tanpa membuka WA"
+            >
+              📋 Salin
+            </button>
+            <button
               onClick={() => setStatus("cancelled")}
               className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-semibold hover:bg-accent"
               title="Batalkan & kembalikan stok"
