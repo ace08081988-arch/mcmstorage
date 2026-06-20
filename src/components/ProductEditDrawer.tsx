@@ -10,7 +10,7 @@ import {
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
-import { shareToWhatsApp, urlToFile } from "@/lib/share-wa";
+import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 
 export type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
 
@@ -75,7 +75,7 @@ export function ProductEditDrawer(props: Props) {
       if (f) files.push(f);
     }
     const res = await shareToWhatsApp({ text, title: d.nama, files, url: d.lokasi || undefined });
-    if (res === "fallback") toast.message("Foto tidak bisa dilampirkan otomatis di perangkat ini — pesan & lokasi tetap terkirim.");
+    notifyShareResult(res);
   }
 
   const patch = (p: Partial<Produk>) => setDraft((d) => (d ? { ...d, ...p } : d));

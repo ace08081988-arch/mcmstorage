@@ -3,7 +3,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
-import { shareToWhatsApp, urlToFile } from "@/lib/share-wa";
+import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { fmtBase } from "@/routes/_authenticated.gudang";
 
 type Item = {
@@ -283,15 +283,12 @@ function PackageCard({
         files,
         phone: files.length === 0 ? (targetPhone || undefined) : undefined,
       });
-      if (res === "fallback" && files.length > 0) {
-        toast.message(
-          "Perangkat ini tak mendukung lampiran otomatis. Foto sudah diunduh & teks disalin — di WhatsApp, tempel teks lalu lampirkan foto dari galeri/unduhan.",
-          { duration: 8000 },
-        );
-      } else if (res === "shared" && files.length > 0) {
-        toast.success("Share sheet dibuka — pilih WhatsApp agar foto + teks terkirim bersamaan.");
-      }
+      notifyShareResult(res);
       setPickWA(false);
+      if (res.status === "cancelled" || res.status === "failed") {
+        // Tidak jadi kirim — paket tetap "ready", tak perlu tanya lanjut.
+        return;
+      }
       // After share — ask what to do
       const choice = await confirmThreeWay({
         title: "Pengiriman berhasil?",

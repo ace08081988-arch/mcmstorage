@@ -12,20 +12,27 @@ export type ShareInput = {
   phone?: string;
 };
 
+import { toast } from "sonner";
+
 export function buildWhatsAppUrl(text: string, phone?: string) {
   const base = phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : "https://wa.me/";
   return `${base}?text=${encodeURIComponent(text)}`;
 }
 
-export async function shareToWhatsApp(input: ShareInput): Promise<"shared" | "fallback"> {
+export type ShareResult =
+  | { status: "shared"; withFiles: boolean }
+  | { status: "cancelled" }
+  | { status: "failed"; error: string; withFiles: boolean }
+  | { status: "fallback"; withFiles: boolean; reason: "no-web-share" | "share-failed" };
+
+export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   const { text, title, url, files, phone } = input;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
   const hasFiles = !!(files && files.length > 0);
 
-  // Prefer Web Share API when files are present — wa.me CANNOT attach photos,
-  // so the only reliable way to send foto + teks bersamaan is via system share sheet
-  // (user picks WhatsApp di sheet, foto otomatis terlampir sebagai gambar dengan caption).
+  let shareFailed = false;
+  let shareError = "";
   if (nav && typeof nav.share === "function") {
     try {
       const filesPayload = hasFiles && typeof nav.canShare === "function" && nav.canShare({ files })
@@ -35,22 +42,70 @@ export async function shareToWhatsApp(input: ShareInput): Promise<"shared" | "fa
         ? { files: filesPayload, text, title }
         : { text, title, url };
       await nav.share(payload);
-      return "shared";
+      return { status: "shared", withFiles: !!filesPayload };
     } catch (err) {
-      if ((err as DOMException)?.name === "AbortError") return "shared";
-      // fall through to fallback
+      const name = (err as DOMException)?.name;
+      if (name === "AbortError" || name === "NotAllowedError") {
+        return { status: "cancelled" };
+      }
+      shareFailed = true;
+      shareError = (err as Error)?.message || String(err);
     }
   }
 
-  // Fallback (desktop / browser tanpa Web Share files): simpan foto + salin teks,
-  // lalu buka WhatsApp agar pengguna tinggal tempel teks & lampirkan foto.
   const fullText = url ? `${text}\n${url}` : text;
   if (hasFiles) {
     for (const f of files!) downloadFile(f, f.name);
     try { await navigator.clipboard?.writeText(fullText); } catch { /* ignore */ }
   }
-  window.open(buildWhatsAppUrl(fullText, phone), "_blank", "noopener,noreferrer");
-  return "fallback";
+  const win = window.open(buildWhatsAppUrl(fullText, phone), "_blank", "noopener,noreferrer");
+  if (!win) {
+    return {
+      status: "failed",
+      error: "Popup diblokir browser. Izinkan popup untuk situs ini lalu coba lagi.",
+      withFiles: hasFiles,
+    };
+  }
+  return {
+    status: "fallback",
+    withFiles: hasFiles,
+    reason: shareFailed ? "share-failed" : "no-web-share",
+    ...(shareFailed ? { _error: shareError } as never : {}),
+  };
+}
+
+/**
+ * Tampilkan toast yang sesuai untuk hasil share — sukses, dibatalkan,
+ * fallback (foto perlu dilampirkan manual), atau gagal.
+ */
+export function notifyShareResult(result: ShareResult) {
+  switch (result.status) {
+    case "shared":
+      if (result.withFiles) {
+        toast.success("Dibagikan — pilih WhatsApp di share sheet agar foto + teks terkirim bersamaan.");
+      } else {
+        toast.success("Dibagikan ke WhatsApp.");
+      }
+      return;
+    case "cancelled":
+      toast.message("Dibatalkan — tidak jadi mengirim.");
+      return;
+    case "fallback":
+      if (result.withFiles) {
+        toast.message(
+          result.reason === "share-failed"
+            ? "Share sheet gagal. Foto sudah diunduh & teks disalin — di WhatsApp, tempel teks lalu lampirkan foto."
+            : "Perangkat ini tak mendukung lampiran otomatis. Foto sudah diunduh & teks disalin — di WhatsApp, tempel teks lalu lampirkan foto.",
+          { duration: 8000 },
+        );
+      } else {
+        toast.success("WhatsApp dibuka.");
+      }
+      return;
+    case "failed":
+      toast.error(`Gagal mengirim: ${result.error}`);
+      return;
+  }
 }
 
 export function downloadFile(blob: Blob, filename: string) {

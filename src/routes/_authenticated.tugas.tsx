@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
-import { shareToWhatsApp, urlToFile, buildWhatsAppUrl } from "@/lib/share-wa";
+import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
 import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
@@ -535,11 +535,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         files: photoFiles,
         phone: cleanedPhone || undefined,
       });
-      toast.success(
-        result === "shared"
-          ? `Tugas dibuat — dibagikan ke WhatsApp${photoFiles.length ? ` dengan ${photoFiles.length} foto` : ""}`
-          : `Tugas dibuat — WhatsApp dibuka${photoFiles.length ? `, ${photoFiles.length} foto diunduh untuk dilampirkan` : ""}`,
-      );
+      toast.success("Tugas dibuat");
+      notifyShareResult(result);
     } else {
       toast.success("Tugas dibuat");
     }
@@ -1126,9 +1123,7 @@ function SubmissionCard({ sub }: { sub: Submission }) {
       sub.location_url ? `Lokasi: ${sub.location_url}` : "",
     ].filter(Boolean).join("\n");
     const result = await shareToWhatsApp({ text: text || "Foto barang", files, url: sub.location_url ?? undefined });
-    if (result === "fallback" && files.length > 0) {
-      toast.message("Foto sudah diunduh — di WA tap 📎 lalu pilih foto tadi untuk dikirim.");
-    }
+    notifyShareResult(result);
   }
 
   return (
