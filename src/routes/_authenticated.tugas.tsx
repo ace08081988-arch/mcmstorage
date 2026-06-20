@@ -668,7 +668,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
           const canSend =
             summary.validLines > 0 &&
             summary.partialLines === 0 &&
-            summary.invalidLines === 0;
+            summary.invalidLines === 0 &&
+            summary.linesWithoutPhoto === 0;
           const reason =
             summary.validLines === 0
               ? "Pilih minimal satu barang dengan baris valid"
@@ -676,6 +677,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
               ? `${summary.invalidLines} baris tidak valid`
               : summary.partialLines > 0
               ? `${summary.partialLines} baris belum lengkap`
+              : summary.linesWithoutPhoto > 0
+              ? `Tidak ada foto untuk: ${summary.itemsWithoutPhoto.join(", ")}`
               : "";
           return (
             <button
