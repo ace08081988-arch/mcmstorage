@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { logStorageError } from "@/lib/storage-log";
 
 // Reuse ecer-photos bucket — same path scoping rules apply.
 export const REQUEST_BUCKET = "ecer-photos";
@@ -49,7 +50,8 @@ export async function requestSignedUrl(
   expiresIn = 60 * 60 * 24,
 ): Promise<string | null> {
   if (!path) return null;
-  const { data } = await supabase.storage.from(REQUEST_BUCKET).createSignedUrl(path, expiresIn);
+  const { data, error } = await supabase.storage.from(REQUEST_BUCKET).createSignedUrl(path, expiresIn);
+  logStorageError({ bucket: REQUEST_BUCKET, op: "createSignedUrl", path, source: "requestSignedUrl" }, error);
   return data?.signedUrl ?? null;
 }
 
@@ -64,7 +66,10 @@ export async function uploadRequestPhoto(
     contentType: blob.type || "image/jpeg",
     upsert: false,
   });
-  if (error) return null;
+  if (error) {
+    logStorageError({ bucket: REQUEST_BUCKET, op: "upload", path, source: "uploadRequestPhoto" }, error);
+    return null;
+  }
   return path;
 }
 
@@ -79,11 +84,15 @@ export async function uploadRequestPhotoViaToken(
     contentType: blob.type || "image/jpeg",
     upsert: false,
   });
-  if (error) return null;
+  if (error) {
+    logStorageError({ bucket: REQUEST_BUCKET, op: "upload", path, source: "uploadRequestPhotoViaToken" }, error);
+    return null;
+  }
   return path;
 }
 
 export async function deleteRequestPhoto(path: string | null | undefined): Promise<void> {
   if (!path) return;
-  await supabase.storage.from(REQUEST_BUCKET).remove([path]);
+  const { error } = await supabase.storage.from(REQUEST_BUCKET).remove([path]);
+  logStorageError({ bucket: REQUEST_BUCKET, op: "remove", path, source: "deleteRequestPhoto" }, error);
 }
