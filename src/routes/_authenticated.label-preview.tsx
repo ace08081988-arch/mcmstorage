@@ -178,38 +178,46 @@ function LabelPreviewPage() {
   };
 
   return (
-    <div className="p-4 max-w-5xl mx-auto space-y-4">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-        <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">Pratinjau Label</h1>
-          <p className="text-sm text-muted-foreground mt-1">
-            Cek tampilan label stok, harga, dan kuantitas pada berbagai kombinasi kemasan sebelum dicetak.
-          </p>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
+    <div className="p-3 sm:p-6 max-w-5xl mx-auto space-y-5">
+      <header className="rounded-xl border bg-card p-4 sm:p-6 shadow-sm">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <h1 className="text-xl sm:text-2xl font-semibold tracking-tight truncate">
+              Pratinjau Label
+            </h1>
+            <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+              Cek tampilan label stok, harga, dan kuantitas pada berbagai
+              kombinasi kemasan sebelum dicetak.
+            </p>
+          </div>
           <Link
             to="/gudang"
-            className="text-sm px-3 py-2 rounded-md border hover:bg-muted whitespace-nowrap"
+            className="shrink-0 text-xs sm:text-sm px-3 py-2 rounded-md border hover:bg-muted whitespace-nowrap"
           >
             ← Gudang
           </Link>
+        </div>
+        <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={exportAll}
-            className="text-sm px-3 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 whitespace-nowrap"
+            className="text-xs sm:text-sm px-3 py-2 rounded-md bg-primary text-primary-foreground hover:opacity-90 whitespace-nowrap"
           >
             ⬇ Ekspor semua PDF
           </button>
+          <span className="text-xs text-muted-foreground self-center">
+            {samples.length} sampel siap dicetak
+          </span>
         </div>
-      </div>
+      </header>
 
-      <div className="grid gap-3">
+      <div className="grid gap-4">
         {samples.map((s, idx) => {
           const hasPkg = s.package_type && s.package_type !== "pcs" && s.package_size > 0;
           return (
-            <div key={idx} className="rounded-lg border p-4 space-y-4 bg-card">
-              <div className="flex items-center justify-between gap-2">
-                <div className="text-sm font-medium">
+            <div key={idx} className="rounded-xl border p-3 sm:p-5 space-y-4 bg-card shadow-sm">
+              <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-2">
+                <div className="text-sm font-medium min-w-0 truncate">
                   {s.name}
                   {hasPkg ? (
                     <span className="text-muted-foreground font-normal">
@@ -221,9 +229,9 @@ function LabelPreviewPage() {
                 <button
                   type="button"
                   onClick={() => buildPdfForSample(s)}
-                  className="text-xs px-2.5 py-1.5 rounded-md border hover:bg-muted whitespace-nowrap"
+                  className="shrink-0 text-xs px-2.5 py-1.5 rounded-md border hover:bg-muted whitespace-nowrap"
                 >
-                  ⬇ Ekspor PDF
+                  ⬇ PDF
                 </button>
               </div>
               {/* Editor */}
@@ -347,23 +355,23 @@ function SummaryMatrix({ samples }: { samples: Sample[] }) {
     [samples],
   );
   return (
-    <div className="rounded-lg border overflow-x-auto">
-      <table className="w-full text-sm">
+    <div className="rounded-xl border overflow-x-auto bg-card shadow-sm">
+      <table className="w-full text-sm min-w-[520px]">
         <thead className="bg-muted/60 text-left">
           <tr>
-            <th className="p-2">Item</th>
-            <th className="p-2">Stok</th>
-            <th className="p-2">Qty trx</th>
-            <th className="p-2">Harga</th>
+            <th className="p-3 font-medium">Item</th>
+            <th className="p-3 font-medium">Stok</th>
+            <th className="p-3 font-medium">Qty trx</th>
+            <th className="p-3 font-medium">Harga</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => (
             <tr key={i} className="border-t">
-              <td className="p-2 font-medium">{r.name}</td>
-              <td className="p-2">{r.stok}</td>
-              <td className="p-2">{r.qty}</td>
-              <td className="p-2">{r.harga}</td>
+              <td className="p-3 font-medium whitespace-nowrap">{r.name}</td>
+              <td className="p-3 whitespace-nowrap">{r.stok}</td>
+              <td className="p-3 whitespace-nowrap">{r.qty}</td>
+              <td className="p-3 whitespace-nowrap">{r.harga}</td>
             </tr>
           ))}
         </tbody>
