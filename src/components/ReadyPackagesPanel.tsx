@@ -370,6 +370,13 @@ function PackageCard({
               💬 Kirim WA
             </button>
             <button
+              onClick={() => setStatus("cancelled")}
+              className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-semibold hover:bg-accent"
+              title="Batalkan & kembalikan stok"
+            >
+              Batal
+            </button>
+            <button
               onClick={deleteReady}
               className="inline-flex h-9 items-center justify-center rounded-md border border-destructive/40 px-3 text-xs font-semibold text-destructive hover:bg-destructive/10"
             >
