@@ -255,13 +255,26 @@ function PackageCard({
   async function doShare(targetName: string, targetPhone: string) {
     setSharing(true);
     try {
-      const lines = [
-        `Halo${targetName ? " " + targetName : ""},`,
-        ``,
-        `Pesanan ${item.name} (${fmtBase(pkg.qty_base, item.base_unit)}) siap diambil.`,
-      ];
-      if (pkg.note) lines.push(``, `Catatan: ${pkg.note}`);
-      if (pkg.location_url) lines.push(``, `📍 Lokasi: ${pkg.location_url}`);
+      const shopName = (localStorage.getItem("shop:name") || "").trim();
+      const greetingTarget = targetName?.trim() || targetPhone?.trim() || "";
+      const qtyLabel = `${fmtBase(pkg.qty_base, item.base_unit)} ${item.name}`;
+      const lines: string[] = [];
+      lines.push(`✅ PEMBAYARAN DIKONFIRMASI${shopName ? ` - ${shopName.toUpperCase()}` : ""}`);
+      lines.push(``);
+      lines.push(`Halo${greetingTarget ? ` ${greetingTarget}` : ""}! 👋`);
+      lines.push(``);
+      lines.push(`Terima kasih! Pembayaran Anda sudah kami terima. ✅`);
+      lines.push(``);
+      lines.push(`📍 Lokasi pengambilan ${qtyLabel}:`);
+      lines.push(qtyLabel);
+      if (pkg.note) lines.push(`📝 ${pkg.note}`);
+      if (pkg.location_url) {
+        lines.push(``);
+        lines.push(`🗺️ Buka Maps:`);
+        lines.push(pkg.location_url);
+      }
+      lines.push(``);
+      lines.push(`Silakan ambil produk di lokasi tersebut ya kak. Jika ada pertanyaan, balas pesan ini. Terima kasih! 🙏`);
       const text = lines.join("\n");
 
       const files: File[] = [];
