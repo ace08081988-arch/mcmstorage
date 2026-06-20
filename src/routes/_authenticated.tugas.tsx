@@ -223,6 +223,7 @@ function NumberInput({
   disabled,
   className,
   emptyAs = 0,
+  onStatusChange,
 }: {
   value: number;
   onChange: (n: number) => void;
@@ -231,21 +232,49 @@ function NumberInput({
   className?: string;
   // Nilai yang dipakai saat input dikosongkan. null = jangan ubah state.
   emptyAs?: number | null;
+  // Dipanggil tiap kali status validasi input berubah.
+  onStatusChange?: (status: "valid" | "partial" | "invalid") => void;
 }) {
   const [text, setText] = useState(() => fmtNum(value, maxFrac));
   const focused = useRef(false);
+  // Hitung status validasi dari teks mentah supaya konsisten dengan parseNum.
+  const status: "valid" | "partial" | "invalid" = (() => {
+    const raw = text.trim();
+    if (raw === "") return emptyAs == null ? "invalid" : "valid";
+    // Karakter yang diizinkan: digit, separator desimal, dan tanda.
+    if (!/^[-+]?[\d.,]*$/.test(raw)) return "invalid";
+    // Pola parsial: hanya tanda, hanya separator, atau diakhiri separator.
+    if (/^[-+]?$/.test(raw)) return "partial";
+    if (/^[-+]?[.,]$/.test(raw)) return "partial";
+    if (/[.,]$/.test(raw)) return "partial";
+    const n = parseNum(raw);
+    return n != null && Number.isFinite(n) ? "valid" : "invalid";
+  })();
+  const lastStatus = useRef(status);
+  useEffect(() => {
+    if (lastStatus.current !== status) {
+      lastStatus.current = status;
+      onStatusChange?.(status);
+    }
+  }, [status, onStatusChange]);
   // Sinkronisasi saat nilai numerik berubah dari luar dan input tidak sedang difokuskan.
   useEffect(() => {
     if (focused.current) return;
     const next = fmtNum(value, maxFrac);
     setText((t) => (t === next ? t : next));
   }, [value, maxFrac]);
+  const statusRing =
+    disabled ? "" :
+    status === "invalid" ? "ring-1 ring-destructive border-destructive" :
+    status === "partial" ? "ring-1 ring-amber-400 border-amber-400" :
+    "";
   return (
     <input
       type="text"
       inputMode="decimal"
       disabled={disabled}
       value={text}
+      aria-invalid={status === "invalid"}
       onFocus={() => { focused.current = true; }}
       onBlur={() => {
         focused.current = false;
@@ -262,7 +291,7 @@ function NumberInput({
         if (n == null) return;
         onChange(roundTo(n, maxFrac));
       }}
-      className={className}
+      className={`${className ?? ""} ${statusRing}`.trim()}
     />
   );
 }
@@ -279,6 +308,22 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   const [picked, setPicked] = useState<Record<string, PickedEntry>>({});
   const [manageVariantsFor, setManageVariantsFor] = useState<WItem | null>(null);
   const [busy, setBusy] = useState(false);
+  // Status validasi per baris (count / weight) — dipakai untuk badge indikator.
+  type LineStatus = "valid" | "partial" | "invalid";
+  const [lineStatus, setLineStatus] = useState<Record<string, { count: LineStatus; weight: LineStatus }>>({});
+  function setFieldStatus(key: string, field: "count" | "weight", s: LineStatus) {
+    setLineStatus((m) => {
+      const cur = m[key] ?? { count: "valid", weight: "valid" };
+      if (cur[field] === s) return m;
+      return { ...m, [key]: { ...cur, [field]: s } };
+    });
+  }
+  function rowStatus(key: string): LineStatus {
+    const s = lineStatus[key]; if (!s) return "valid";
+    if (s.count === "invalid" || s.weight === "invalid") return "invalid";
+    if (s.count === "partial" || s.weight === "partial") return "partial";
+    return "valid";
+  }
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -447,6 +492,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         const w = lineWeight(l, variants);
                         const total = w * (l.count || 0);
                         const isManual = !l.variantId;
+                        const rs = rowStatus(l.key);
                         return (
                           <div key={l.key} className="space-y-1.5 rounded border bg-background/60 p-2">
                             <div className="flex items-start gap-1.5">
@@ -473,6 +519,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                   maxFrac={3}
                                   emptyAs={0}
                                   onChange={(n) => updateLine(it.id, l.key, { count: n })}
+                                  onStatusChange={(s) => setFieldStatus(l.key, "count", s)}
                                   className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums"
                                 />
                               </label>
@@ -488,12 +535,38 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                   disabled={!isManual}
                                   emptyAs={isManual ? 0 : null}
                                   onChange={(n) => updateLine(it.id, l.key, { weightOverride: n })}
+                                  onStatusChange={(s) => setFieldStatus(l.key, "weight", s)}
                                   className="h-8 w-full rounded border bg-background px-1 text-center text-xs tabular-nums disabled:opacity-60"
                                 />
                               </label>
                               <div className="pb-1 text-[11px] font-semibold tabular-nums">
                                  = {fmtNum(roundTo(total, 2), 2)} {(itemVariants.find((v) => v.id === l.variantId)?.unit_label) ?? ""}
                               </div>
+                              <span
+                                className={
+                                  "ml-1 inline-flex items-center gap-0.5 rounded px-1.5 py-0.5 text-[10px] font-medium " +
+                                  (rs === "invalid"
+                                    ? "bg-destructive/10 text-destructive"
+                                    : rs === "partial"
+                                    ? "bg-amber-500/10 text-amber-600"
+                                    : "bg-emerald-500/10 text-emerald-600")
+                                }
+                                title={
+                                  rs === "invalid"
+                                    ? "Input tidak valid"
+                                    : rs === "partial"
+                                    ? "Input belum lengkap"
+                                    : "Input valid"
+                                }
+                              >
+                                {rs === "invalid" ? (
+                                  <><AlertTriangle className="h-3 w-3" /> Tidak valid</>
+                                ) : rs === "partial" ? (
+                                  <><AlertTriangle className="h-3 w-3" /> Belum lengkap</>
+                                ) : (
+                                  <><CheckCircle2 className="h-3 w-3" /> Valid</>
+                                )}
+                              </span>
                               <label className="ml-auto flex items-center gap-1 pb-2 text-[10px] text-muted-foreground">
                                 <input type="checkbox" checked={l.split}
                                   onChange={(e) => updateLine(it.id, l.key, { split: e.target.checked })} />
