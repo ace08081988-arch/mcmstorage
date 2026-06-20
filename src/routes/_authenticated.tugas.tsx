@@ -535,11 +535,8 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         files: photoFiles,
         phone: cleanedPhone || undefined,
       });
-      toast.success(
-        result === "shared"
-          ? `Tugas dibuat — dibagikan ke WhatsApp${photoFiles.length ? ` dengan ${photoFiles.length} foto` : ""}`
-          : `Tugas dibuat — WhatsApp dibuka${photoFiles.length ? `, ${photoFiles.length} foto diunduh untuk dilampirkan` : ""}`,
-      );
+      toast.success("Tugas dibuat");
+      notifyShareResult(result);
     } else {
       toast.success("Tugas dibuat");
     }
