@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { logStorageError } from "@/lib/storage-log";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
@@ -51,7 +52,8 @@ function SignedThumb({ path, className }: { path: string; className?: string }) 
     let alive = true;
     const c = signedCache.get(path);
     if (c && c.exp > Date.now()) { setUrl(c.url); return; }
-    supabase.storage.from("ready-packages").createSignedUrl(path, 3600).then(({ data }) => {
+    supabase.storage.from("ready-packages").createSignedUrl(path, 3600).then(({ data, error }) => {
+      logStorageError({ bucket: "ready-packages", op: "createSignedUrl", path, source: "ReadyPackagesPanel.thumb" }, error);
       if (!alive || !data) return;
       signedCache.set(path, { url: data.signedUrl, exp: Date.now() + 50 * 60 * 1000 });
       setUrl(data.signedUrl);
@@ -314,7 +316,8 @@ function PackageCard({
 
       const files: File[] = [];
       if (pkg.photo_path) {
-        const { data } = await supabase.storage.from("ready-packages").createSignedUrl(pkg.photo_path, 600);
+        const { data, error } = await supabase.storage.from("ready-packages").createSignedUrl(pkg.photo_path, 600);
+        logStorageError({ bucket: "ready-packages", op: "createSignedUrl", path: pkg.photo_path, source: "doShare" }, error);
         if (data?.signedUrl) {
           const f = await urlToFile(data.signedUrl, `${item.name.replace(/\W+/g, "-")}.jpg`);
           if (f) files.push(f);
@@ -360,7 +363,10 @@ function PackageCard({
           sent_to_phone: targetPhone || null,
         }).eq("id", pkg.id);
         if (e1) { toast.error(friendlyError(e1)); return; }
-        if (pkg.photo_path) await supabase.storage.from("ready-packages").remove([pkg.photo_path]);
+        if (pkg.photo_path) {
+          const { error: rmErr } = await supabase.storage.from("ready-packages").remove([pkg.photo_path]);
+          logStorageError({ bucket: "ready-packages", op: "remove", path: pkg.photo_path, source: "doShare.delete" }, rmErr);
+        }
         const { error: e2 } = await supabase.from("ready_packages").delete().eq("id", pkg.id);
         if (e2) { toast.error(friendlyError(e2)); return; }
         toast.success("Paket dihapus");
@@ -378,7 +384,10 @@ function PackageCard({
       description: "Stok akan dikembalikan ke gudang. Foto ikut terhapus.",
       confirmText: "Hapus",
     }))) return;
-    if (pkg.photo_path) await supabase.storage.from("ready-packages").remove([pkg.photo_path]);
+    if (pkg.photo_path) {
+      const { error: rmErr } = await supabase.storage.from("ready-packages").remove([pkg.photo_path]);
+      logStorageError({ bucket: "ready-packages", op: "remove", path: pkg.photo_path, source: "deleteReady" }, rmErr);
+    }
     const { error } = await supabase.from("ready_packages").delete().eq("id", pkg.id);
     if (error) toast.error(friendlyError(error));
     else { toast.success("Paket dihapus, stok dikembalikan"); onChanged(); }
@@ -390,7 +399,10 @@ function PackageCard({
       description: "Foto dan link lokasi ikut terhapus permanen.",
       confirmText: "Hapus",
     }))) return;
-    if (pkg.photo_path) await supabase.storage.from("ready-packages").remove([pkg.photo_path]);
+    if (pkg.photo_path) {
+      const { error: rmErr } = await supabase.storage.from("ready-packages").remove([pkg.photo_path]);
+      logStorageError({ bucket: "ready-packages", op: "remove", path: pkg.photo_path, source: "deleteHistory" }, rmErr);
+    }
     const { error } = await supabase.from("ready_packages").delete().eq("id", pkg.id);
     if (error) toast.error(friendlyError(error));
     else { toast.success("Riwayat dihapus"); onChanged(); }
@@ -656,7 +668,11 @@ function PackageForm({
       cacheControl: "3600", upsert: false, contentType: file.type || "image/jpeg",
     });
     setUploadingPhoto(false);
-    if (error) { toast.error("Gagal upload: " + friendlyError(error)); return; }
+    if (error) {
+      logStorageError({ bucket: "ready-packages", op: "upload", path, source: "ReadyPackagesPanel.uploadPhoto" }, error);
+      toast.error("Gagal upload: " + friendlyError(error));
+      return;
+    }
     setPhotoPath(path);
 
     // Auto-fill GPS+link if not yet set
@@ -717,7 +733,10 @@ function PackageForm({
     setSaving(false);
     if (error) {
       // Clean orphan photo on failure
-      if (photoPath) await supabase.storage.from("ready-packages").remove([photoPath]);
+      if (photoPath) {
+        const { error: rmErr } = await supabase.storage.from("ready-packages").remove([photoPath]);
+        logStorageError({ bucket: "ready-packages", op: "remove", path: photoPath, source: "save.cleanup" }, rmErr);
+      }
       toast.error(friendlyError(error)); return;
     }
     toast.success("Paket dibuat, stok dikurangi");

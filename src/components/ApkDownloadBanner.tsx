@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Capacitor } from "@capacitor/core";
 import { Download, Smartphone } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { logStorageError } from "@/lib/storage-log";
 
 const BUCKET = "apk-releases";
 
@@ -39,6 +40,7 @@ export function ApkDownloadBanner() {
             sortBy: { column: "updated_at", order: "desc" },
           });
         if (error || !data) {
+          logStorageError({ bucket: BUCKET, op: "list", path: "", source: "ApkDownloadBanner" }, error);
           setReady(true);
           return;
         }
@@ -48,11 +50,15 @@ export function ApkDownloadBanner() {
           return;
         }
         const latest = apks[0];
-        const { data: signed } = await supabase.storage
+        const { data: signed, error: signErr } = await supabase.storage
           .from(BUCKET)
           .createSignedUrl(latest.name, 60 * 60, {
             download: latest.name,
           });
+        logStorageError(
+          { bucket: BUCKET, op: "createSignedUrl", path: latest.name, source: "ApkDownloadBanner" },
+          signErr,
+        );
         if (cancelled) return;
         setApk({
           name: latest.name,

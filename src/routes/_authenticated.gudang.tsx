@@ -15,6 +15,7 @@ import {
 import { friendlyError } from "@/lib/friendly-error";
 import { buildMailto, isValidEmail } from "@/lib/mailto";
 import { supabase } from "@/integrations/supabase/client";
+import { logStorageError } from "@/lib/storage-log";
 import { confirm } from "@/lib/confirm";
 import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
 
@@ -186,7 +187,11 @@ async function uploadItemPhoto(file: File, uid: string): Promise<string | null> 
   const { error } = await supabase.storage.from("item-photos").upload(path, file, {
     cacheControl: "3600", upsert: false, contentType: file.type || "image/jpeg",
   });
-  if (error) { toast.error("Gagal upload foto: " + friendlyError(error)); return null; }
+  if (error) {
+    logStorageError({ bucket: "item-photos", op: "upload", path, source: "uploadItemPhoto" }, error);
+    toast.error("Gagal upload foto: " + friendlyError(error));
+    return null;
+  }
   return path;
 }
 
@@ -228,7 +233,8 @@ function SignedImg({ path, className, alt }: { path: string; className?: string;
     let alive = true;
     const cached = signedUrlCache.get(path);
     if (cached && cached.exp > Date.now()) { setUrl(cached.url); return; }
-    supabase.storage.from("item-photos").createSignedUrl(path, 3600).then(({ data }) => {
+    supabase.storage.from("item-photos").createSignedUrl(path, 3600).then(({ data, error }) => {
+      logStorageError({ bucket: "item-photos", op: "createSignedUrl", path, source: "SignedImg" }, error);
       if (!alive || !data) return;
       signedUrlCache.set(path, { url: data.signedUrl, exp: Date.now() + 50 * 60 * 1000 });
       setUrl(data.signedUrl);
