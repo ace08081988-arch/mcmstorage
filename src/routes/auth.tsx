@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
 import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
+import { PublicFooter } from "@/components/PublicFooter";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -153,7 +154,8 @@ function AuthPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
+    <div className="flex min-h-screen flex-col bg-background">
+      <div className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <ApkDownloadBanner />
         <div className="text-center">
@@ -264,6 +266,8 @@ function AuthPage() {
           </p>
         </form>
       </div>
+      </div>
+      <PublicFooter />
     </div>
   );
 }
