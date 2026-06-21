@@ -65,16 +65,16 @@ export async function updateMyProfile(input: {
   if (!user) throw new Error("Anda belum masuk.");
 
   // Upsert agar bekerja walau baris belum sempat dibuat oleh trigger.
-  const payload: Record<string, unknown> = {
+  const payload = {
     id: user.id,
     email: user.email ?? null,
     display_name: input.display_name ?? null,
     phone: input.phone ?? null,
+    ...(input.country_code ? { country_code: input.country_code } : {}),
+    ...(input.language ? { language: input.language } : {}),
+    ...(input.currency ? { currency: input.currency } : {}),
+    ...(input.date_format ? { date_format: input.date_format } : {}),
   };
-  if (input.country_code) payload.country_code = input.country_code;
-  if (input.language) payload.language = input.language;
-  if (input.currency) payload.currency = input.currency;
-  if (input.date_format) payload.date_format = input.date_format;
 
   const { data, error } = await supabase
     .from("profiles")
