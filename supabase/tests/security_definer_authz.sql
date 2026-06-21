@@ -25,16 +25,18 @@ LANGUAGE plpgsql AS $$ BEGIN RAISE NOTICE 'PASS %', _label; END $$;
 
 -- ---------- pick two existing users ----------
 DO $$
-DECLARE v_a uuid; v_b uuid; v_task uuid; v_conv uuid; v_order uuid;
+DECLARE v_a uuid; v_b uuid; v_c uuid;
 BEGIN
   SELECT id INTO v_a FROM public.profiles ORDER BY id LIMIT 1;
   SELECT id INTO v_b FROM public.profiles WHERE id <> v_a ORDER BY id LIMIT 1;
-  IF v_a IS NULL OR v_b IS NULL THEN
-    RAISE EXCEPTION 'need at least 2 profiles to run authz tests';
+  SELECT id INTO v_c FROM public.profiles WHERE id NOT IN (v_a, v_b) ORDER BY id LIMIT 1;
+  IF v_a IS NULL OR v_b IS NULL OR v_c IS NULL THEN
+    RAISE EXCEPTION 'need at least 3 profiles to run authz tests';
   END IF;
   PERFORM set_config('test.user_a', v_a::text, true);
   PERFORM set_config('test.user_b', v_b::text, true);
-  RAISE NOTICE 'TEST users  A=% B=%', v_a, v_b;
+  PERFORM set_config('test.user_c', v_c::text, true);
+  RAISE NOTICE 'TEST users  A=% B=% C=%', v_a, v_b, v_c;
 END $$;
 
 -- =====================================================================
@@ -150,25 +152,23 @@ END $$;
 DO $$
 DECLARE v_a uuid := current_setting('test.user_a')::uuid;
         v_b uuid := current_setting('test.user_b')::uuid;
+        v_c uuid := current_setting('test.user_c')::uuid;
         v_cust uuid; v_order uuid;
 BEGIN
-  -- Set up: order owned by B, linked to a customer whose account_user_id = B (self-link won't trigger).
-  -- Use a third synthetic uuid for the account so v_account <> v_owner.
+  -- Set up: order owned by B, linked to a customer whose account_user_id = A.
+  -- Caller C is unrelated to both → ensure_order_conversation must raise not_authorized.
   INSERT INTO public.customers(user_id, name, account_user_id)
-    VALUES (v_b, 'authz-test', gen_random_uuid()) RETURNING id INTO v_cust;
+    VALUES (v_b, 'authz-test', v_a) RETURNING id INTO v_cust;
   INSERT INTO public.order_requests(user_id, customer_id, status)
     VALUES (v_b, v_cust, 'draft') RETURNING id INTO v_order;
 
-  PERFORM pg_temp.as_user(v_a);    -- A is unrelated to this order
+  PERFORM pg_temp.as_user(v_c);    -- C is unrelated to this order
   BEGIN
     PERFORM public.ensure_order_conversation(v_order);
     RAISE EXCEPTION 'FAIL ensure_order_conversation allowed unrelated caller';
   EXCEPTION WHEN SQLSTATE 'P0001' THEN
     RAISE NOTICE 'PASS ensure_order_conversation rejects unrelated caller (%)', SQLERRM;
   END;
-
-  -- The trigger on order_requests already ran ensure_order_conversation as B
-  -- via SECURITY DEFINER; the same call by A must still fail. ✅
 END $$;
 
 -- =====================================================================
