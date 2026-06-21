@@ -2,6 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useServerFn } from "@tanstack/react-start";
+import { sendTestPushToContact } from "@/lib/push.functions";
 import { friendlyError } from "@/lib/friendly-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -50,6 +52,8 @@ function KontakPage() {
   const [suppliers, setSuppliers] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const [linkFor, setLinkFor] = useState<{ kind: Kind; row: Row } | null>(null);
+  const [testing, setTesting] = useState<string | null>(null);
+  const sendTest = useServerFn(sendTestPushToContact);
 
   const refresh = async () => {
     setLoading(true);
@@ -86,6 +90,19 @@ function KontakPage() {
     else {
       toast.success("Tautan akun dilepas");
       void refresh();
+    }
+  };
+
+  const handleTest = async (kind: Kind, row: Row) => {
+    setTesting(row.id);
+    try {
+      const res = await sendTest({ data: { kind, id: row.id } });
+      if (res.sent > 0) toast.success(res.message);
+      else toast.warning(res.message);
+    } catch (e: any) {
+      toast.error(friendlyError(e));
+    } finally {
+      setTesting(null);
     }
   };
 
@@ -160,14 +177,24 @@ function KontakPage() {
                           {r.account_user_id ? "Ubah tautan" : "Tautkan akun"}
                         </Button>
                         {r.account_user_id && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            className="text-destructive hover:text-destructive"
-                            onClick={() => void unlink(tab, r)}
-                          >
-                            Lepas
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={testing === r.id}
+                              onClick={() => void handleTest(tab, r)}
+                            >
+                              {testing === r.id ? "Mengirim…" : "Kirim notifikasi uji"}
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="text-destructive hover:text-destructive"
+                              onClick={() => void unlink(tab, r)}
+                            >
+                              Lepas
+                            </Button>
+                          </>
                         )}
                       </div>
                     </div>
