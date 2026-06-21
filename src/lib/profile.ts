@@ -10,9 +10,11 @@ export type MyProfile = {
   language: string;
   currency: string;
   date_format: string;
+  avatar_url: string | null;
 };
 
-const PROFILE_COLS = "id, display_name, email, phone, country_code, language, currency, date_format";
+const PROFILE_COLS =
+  "id, display_name, email, phone, country_code, language, currency, date_format, avatar_url";
 
 const DEFAULT_PREFS = {
   country_code: "ID",
@@ -46,6 +48,7 @@ export async function getMyProfile(): Promise<MyProfile | null> {
         null,
       email: user.email ?? null,
       phone: user.phone ?? null,
+      avatar_url: null,
       ...DEFAULT_PREFS,
     };
   }
@@ -59,13 +62,14 @@ export async function updateMyProfile(input: {
   language?: string;
   currency?: string;
   date_format?: string;
+  avatar_url?: string | null;
 }): Promise<MyProfile> {
   const { data: userRes } = await supabase.auth.getUser();
   const user = userRes.user;
   if (!user) throw new Error("Anda belum masuk.");
 
   // Upsert agar bekerja walau baris belum sempat dibuat oleh trigger.
-  const payload = {
+  const payload: Record<string, unknown> = {
     id: user.id,
     email: user.email ?? null,
     display_name: input.display_name ?? null,
@@ -74,15 +78,56 @@ export async function updateMyProfile(input: {
     ...(input.language ? { language: input.language } : {}),
     ...(input.currency ? { currency: input.currency } : {}),
     ...(input.date_format ? { date_format: input.date_format } : {}),
+    ...(input.avatar_url !== undefined ? { avatar_url: input.avatar_url } : {}),
   };
 
   const { data, error } = await supabase
     .from("profiles")
-    .upsert(payload, { onConflict: "id" })
+    .upsert(payload as never, { onConflict: "id" })
     .select(PROFILE_COLS)
     .single();
   if (error) throw error;
   return { ...DEFAULT_PREFS, ...(data as Partial<MyProfile> & { id: string }) } as MyProfile;
+}
+
+/** Upload avatar baru ke storage bucket `avatars/{userId}/avatar-...`, lalu kembalikan path-nya. */
+export async function uploadMyAvatar(file: File): Promise<string> {
+  const { data: userRes } = await supabase.auth.getUser();
+  const user = userRes.user;
+  if (!user) throw new Error("Anda belum masuk.");
+  if (!file.type.startsWith("image/")) throw new Error("File harus berupa gambar.");
+  if (file.size > 3 * 1024 * 1024) throw new Error("Ukuran maksimum 3 MB.");
+
+  const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "");
+  const path = `${user.id}/avatar-${Date.now()}.${ext || "jpg"}`;
+  const { error } = await supabase.storage
+    .from("avatars")
+    .upload(path, file, { upsert: true, contentType: file.type, cacheControl: "3600" });
+  if (error) throw error;
+  return path;
+}
+
+/** Hapus avatar saat ini (jika ada) dari storage. */
+export async function removeAvatarObject(path: string | null | undefined): Promise<void> {
+  if (!path) return;
+  await supabase.storage.from("avatars").remove([path]);
+}
+
+/** Ambil signed URL untuk menampilkan avatar (bucket privat). */
+export function useAvatarSignedUrl(path: string | null | undefined) {
+  return useQuery({
+    queryKey: ["avatar-url", path],
+    enabled: !!path,
+    staleTime: 50 * 60 * 1000,
+    queryFn: async () => {
+      if (!path) return null;
+      const { data, error } = await supabase.storage
+        .from("avatars")
+        .createSignedUrl(path, 60 * 60);
+      if (error) throw error;
+      return data.signedUrl;
+    },
+  });
 }
 
 export function useMyProfile() {
