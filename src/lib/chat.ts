@@ -286,3 +286,61 @@ export async function markConversationRead(conversationId: string, userId: strin
     .eq("conversation_id", conversationId)
     .eq("user_id", userId);
 }
+
+/**
+ * Hard-delete a single message I sent. Removes the row for both sides AND
+ * any attachment object from storage so nothing remains. RLS only lets the
+ * sender (or conversation owner) call this.
+ */
+export function useDeleteMessage(conversationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (msg: Pick<MessageRow, "id" | "attachment_path">) => {
+      if (msg.attachment_path) {
+        await supabase.storage.from("chat-attachments").remove([msg.attachment_path]);
+      }
+      const { error } = await supabase.from("messages").delete().eq("id", msg.id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+    },
+  });
+}
+
+/**
+ * Hard-delete every message I sent in this conversation, including their
+ * attachments. Other members keep their own messages. Leaves the conversation
+ * itself intact (since the other side might keep using it).
+ */
+export function useDeleteAllMyMessages(conversationId: string) {
+  const qc = useQueryClient();
+  const { data: myId } = useMyUserId();
+  return useMutation({
+    mutationFn: async () => {
+      if (!myId) throw new Error("not_signed_in");
+      const { data: mine, error: selErr } = await supabase
+        .from("messages")
+        .select("id, attachment_path")
+        .eq("conversation_id", conversationId)
+        .eq("sender_id", myId);
+      if (selErr) throw selErr;
+      const paths = (mine ?? []).map((m) => m.attachment_path).filter((p): p is string => !!p);
+      if (paths.length > 0) {
+        await supabase.storage.from("chat-attachments").remove(paths);
+      }
+      const { error } = await supabase
+        .from("messages")
+        .delete()
+        .eq("conversation_id", conversationId)
+        .eq("sender_id", myId);
+      if (error) throw error;
+      return mine?.length ?? 0;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+    },
+  });
+}
