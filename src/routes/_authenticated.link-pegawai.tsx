@@ -106,6 +106,7 @@ function LinkPegawaiPage() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | Availability>("all");
   const [tokenFilter, setTokenFilter] = useState<"all" | TokenState["kind"]>("all");
+  const [tokenKw, setTokenKw] = useState("");
   const [sort, setSort] = useState<SortKey>("newest");
   const [now, setNow] = useState(Date.now());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -232,6 +233,10 @@ function LinkPegawaiPage() {
     const filtered = list.filter(({ t, avail, tokenState }) => {
       if (filter !== "all" && avail !== filter) return false;
       if (tokenFilter !== "all" && tokenState.kind !== tokenFilter) return false;
+      if (tokenKw.trim()) {
+        const n = tokenKw.trim().toLowerCase();
+        if (!t.title.toLowerCase().includes(n) && !t.id.toLowerCase().includes(n)) return false;
+      }
       if (q.trim()) {
         const needle = q.trim().toLowerCase();
         if (!t.title.toLowerCase().includes(needle) && !t.share_token.toLowerCase().includes(needle)) return false;
@@ -248,7 +253,7 @@ function LinkPegawaiPage() {
     }
     // "newest" / "oldest" come pre-sorted from the server.
     return filtered;
-  }, [tasks, q, filter, tokenFilter, now, sort, regenAt]);
+  }, [tasks, q, filter, tokenFilter, tokenKw, now, sort, regenAt]);
 
   const counts = useMemo(() => {
     const c = { all: 0, active: 0, expired: 0, done: 0, cancelled: 0 } as Record<string, number>;
