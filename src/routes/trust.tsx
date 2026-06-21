@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { PublicFooter } from "@/components/PublicFooter";
 
 export const Route = createFileRoute("/trust")({
   head: () => ({
@@ -20,9 +21,9 @@ export const Route = createFileRoute("/trust")({
   component: TrustPage,
 });
 
-const TRUST_DOC_VERSION = "1.2.0";
+const TRUST_DOC_VERSION = "1.3.0";
 const TRUST_DOC_EFFECTIVE_FROM = "2026-06-18";
-const TRUST_DOC_UPDATED_AT = "2026-06-18";
+const TRUST_DOC_UPDATED_AT = "2026-06-21";
 const TRUST_DOC_TIMEZONE = "Asia/Jakarta";
 const TRUST_DOC_TIMEZONE_LABEL = "WIB (UTC+7)";
 
@@ -54,6 +55,7 @@ function Section({
 
 function TrustPage() {
   return (
+    <div className="min-h-screen bg-background">
     <main className="mx-auto max-w-3xl px-4 py-10">
       <header className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
@@ -99,6 +101,21 @@ function TrustPage() {
       </header>
 
       <div className="space-y-4">
+        <Section title="Penjual & pengendali data">
+          <p>
+            Layanan MCM Storage dioperasikan oleh{" "}
+            <strong>BAROKAH RIZKI</strong> (selanjutnya "kami"). Untuk
+            keperluan UU PDP dan GDPR, BAROKAH RIZKI bertindak sebagai{" "}
+            <strong>pengendali data (data controller)</strong> atas data
+            pribadi pengguna MCM Storage. Pertanyaan terkait privasi dapat
+            dikirim ke{" "}
+            <a href="mailto:admin@mcmstorage.biz" className="underline">
+              admin@mcmstorage.biz
+            </a>
+            .
+          </p>
+        </Section>
+
         <Section title="Ringkasan kebijakan privasi">
           <p>
             MCM Storage memproses data operasional bisnis Anda (pesanan,
@@ -215,11 +232,90 @@ function TrustPage() {
               <strong>Lovable</strong> — platform build &amp; hosting
               aplikasi.
             </li>
+            <li>
+              <strong>Paddle.com</strong> — Merchant of Record untuk
+              pembayaran paket berbayar; memproses data pembayaran, faktur,
+              pajak, dan permintaan pengembalian dana. Lihat{" "}
+              <a
+                href="https://www.paddle.com/legal/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Privacy Notice Paddle
+              </a>
+              .
+            </li>
           </ul>
           <p>
             Daftar ini dapat berubah seiring berkembangnya aplikasi. Versi
             terbaru selalu ada di halaman ini.
           </p>
+        </Section>
+
+        <Section title="Pembayaran (Paddle sebagai Merchant of Record)">
+          <p>
+            Untuk paket berbayar, transaksi diproses oleh{" "}
+            <strong>Paddle.com</strong> sebagai{" "}
+            <strong>Merchant of Record</strong> kami. Saat Anda melakukan
+            pembayaran, data yang dibutuhkan untuk transaksi (nama, email,
+            alamat tagihan, metode pembayaran) dikumpulkan dan diproses
+            langsung oleh Paddle sesuai{" "}
+            <a
+              href="https://www.paddle.com/legal/privacy"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              kebijakan privasi Paddle
+            </a>
+            . Kami hanya menerima informasi minimum yang dibutuhkan untuk
+            mengaktifkan akun (mis. ID pelanggan dan status langganan).
+            Permintaan pengembalian dana diproses melalui{" "}
+            <a
+              href="https://paddle.net"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="underline"
+            >
+              paddle.net
+            </a>{" "}
+            — lihat juga{" "}
+            <Link to="/refund" className="underline">
+              Kebijakan Pengembalian
+            </Link>
+            .
+          </p>
+        </Section>
+
+        <Section title="Retensi data">
+          <p>
+            Kami menyimpan data pribadi dan operasional Anda selama akun
+            Anda aktif. Setelah akun dihapus atau dinonaktifkan:
+          </p>
+          <ul className="list-disc space-y-1 pl-5">
+            <li>
+              <strong>Data operasional & profil</strong> — dihapus atau
+              dianonimkan paling lama dalam{" "}
+              <strong>90 hari</strong> setelah permintaan penghapusan,
+              kecuali peraturan mewajibkan retensi lebih lama.
+            </li>
+            <li>
+              <strong>Cadangan (backup)</strong> — salinan terenkripsi
+              dapat tetap ada hingga <strong>30 hari</strong> sebelum
+              rotasi dan penghapusan otomatis.
+            </li>
+            <li>
+              <strong>Catatan transaksi pembayaran</strong> — disimpan oleh
+              Paddle sesuai kewajiban akuntansi dan pajak (umumnya 5–10
+              tahun) sesuai kebijakan Paddle.
+            </li>
+            <li>
+              <strong>Log keamanan</strong> — disimpan paling lama{" "}
+              <strong>180 hari</strong> untuk keperluan deteksi
+              penyalahgunaan dan audit keamanan.
+            </li>
+          </ul>
         </Section>
 
         <Section title="Komunikasi keluar (WhatsApp & Email)">
@@ -267,5 +363,7 @@ function TrustPage() {
         </Link>
       </footer>
     </main>
+    <PublicFooter />
+    </div>
   );
 }

@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
 import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
+import { PublicFooter } from "@/components/PublicFooter";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
