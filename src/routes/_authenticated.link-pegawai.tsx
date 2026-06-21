@@ -475,15 +475,51 @@ function LinkPegawaiPage() {
             const badge = BADGE[avail];
             const expiresAt = new Date(t.expires_at);
             const openable = (avail === "active" || avail === "done") && !urlError;
+            const tokenState = classifyToken(t.share_token, regenAt[t.id], now);
+            const msToExpire = expiresAt.getTime() - now;
+            const countdown = formatCountdown(msToExpire);
+            const countdownTone =
+              countdown.tone === "danger"
+                ? "bg-destructive/10 text-destructive ring-destructive/20"
+                : countdown.tone === "warn"
+                ? "bg-amber-500/10 text-amber-700 ring-amber-500/20 dark:text-amber-400"
+                : "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-400";
             return (
               <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
                 <div className="flex items-start gap-2 p-3">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <div className="truncate text-sm font-semibold">{t.title}</div>
                       <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ${badge.cls}`}>
                         {badge.label}
                       </span>
+                      {testMode && (
+                        <>
+                          {tokenState.kind === "valid" && (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
+                              <ShieldCheck className="h-3 w-3" /> Valid
+                            </span>
+                          )}
+                          {tokenState.kind === "fresh" && (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 ring-1 ring-sky-500/20 dark:text-sky-400">
+                              <Sparkles className="h-3 w-3" /> Baru · {Math.max(1, Math.floor(tokenState.ageMs / 1000))}d lalu
+                            </span>
+                          )}
+                          {tokenState.kind === "invalid" && (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-400">
+                              <AlertTriangle className="h-3 w-3" /> Invalid
+                            </span>
+                          )}
+                          {tokenState.kind === "empty" && (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive ring-1 ring-destructive/20">
+                              <CircleSlash className="h-3 w-3" /> Kosong
+                            </span>
+                          )}
+                          <span className={`inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 tabular-nums ${countdownTone}`}>
+                            <Timer className="h-3 w-3" /> {countdown.text}
+                          </span>
+                        </>
+                      )}
                     </div>
                     {t.note && (
                       <div className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground whitespace-pre-wrap">{t.note}</div>
