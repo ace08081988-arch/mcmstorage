@@ -39,7 +39,28 @@ export async function uploadPrepPhoto(taskToken: string, itemId: string, blob: B
   return path;
 }
 
+// Format token share: base64url 24 byte ≈ 32 char ([A-Za-z0-9_-]).
+// Validasi defensif sebelum membentuk URL agar tidak mengarahkan pegawai
+// ke halaman gagal saat token kosong/rusak.
+const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{16,128}$/;
+
+export function isValidShareToken(token: unknown): token is string {
+  return typeof token === "string" && SHARE_TOKEN_RE.test(token);
+}
+
+export class InvalidShareTokenError extends Error {
+  constructor(message = "Token link tidak valid") {
+    super(message);
+    this.name = "InvalidShareTokenError";
+  }
+}
+
 export function publicTaskUrl(token: string): string {
+  if (!isValidShareToken(token)) {
+    throw new InvalidShareTokenError(
+      !token ? "Token link kosong" : "Token link tidak valid",
+    );
+  }
   // Selalu gunakan domain publik yang stabil agar link bisa dibuka di mana
   // saja — termasuk saat tombol "Buka di Tab Baru" diklik dari iframe
   // pratinjau Lovable (yang membutuhkan token query). Origin pratinjau
