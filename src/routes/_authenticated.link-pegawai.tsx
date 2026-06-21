@@ -205,9 +205,9 @@ function LinkPegawaiPage() {
     return () => clearTimeout(id);
   }, [fetchFilteredTotal, tasks]);
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
+    const id = setInterval(() => setNow(Date.now()), testMode ? 1_000 : 30_000);
     return () => clearInterval(id);
-  }, []);
+  }, [testMode]);
 
   // Infinite scroll sentinel.
   useEffect(() => {
