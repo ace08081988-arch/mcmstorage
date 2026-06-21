@@ -44,37 +44,6 @@ export const unregisterPushSubscription = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-const dispatchSchema = z.object({
-  userIds: z.array(z.string().uuid()).min(1).max(100),
-  title: z.string().min(1).max(120),
-  body: z.string().min(1).max(500),
-  url: z.string().max(512).optional(),
-  tag: z.string().max(120).optional(),
-  conversationId: z.string().uuid().optional(),
-});
-
-/**
- * Dispatch push notifications to a list of users.
- * Uses service-role to read subscriptions and prune dead endpoints (404/410).
- */
-export const dispatchPush = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((data: unknown) => dispatchSchema.parse(data))
-  .handler(async ({ data, context }) => {
-    const { notifyUsers } = await import("./push.server");
-    return notifyUsers({
-      userIds: data.userIds,
-      excludeUserId: context.userId,
-      payload: {
-        title: data.title,
-        body: data.body,
-        url: data.url ?? (data.conversationId ? `/chat/${data.conversationId}` : "/chat"),
-        tag: data.tag ?? (data.conversationId ? `conv:${data.conversationId}` : undefined),
-        conversationId: data.conversationId,
-      },
-    });
-  });
-
 /** Self-test: send a push to the caller's own subscriptions. */
 export const sendTestPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

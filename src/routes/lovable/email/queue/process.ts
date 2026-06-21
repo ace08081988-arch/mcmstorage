@@ -77,7 +77,7 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
         }
 
         // Verify the caller is the backend cron job using a private bearer token
-        // stored in Supabase Vault and mirrored in email_send_state.cron_secret.
+        // stored in Supabase Vault (read via get_email_cron_secret RPC; service role only).
         const authHeader = request.headers.get('authorization') ?? ''
         const presented = authHeader.toLowerCase().startsWith('bearer ')
           ? authHeader.slice(7).trim()
@@ -88,12 +88,8 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
 
         const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
 
-        const { data: secretRow, error: secretErr } = await supabase
-          .from('email_send_state')
-          .select('cron_secret')
-          .eq('id', 1)
-          .maybeSingle()
-        const expected = (secretRow as { cron_secret?: string } | null)?.cron_secret ?? ''
+        const { data: secretData, error: secretErr } = await supabase.rpc('get_email_cron_secret')
+        const expected = typeof secretData === 'string' ? secretData : ''
         if (secretErr || !expected) {
           console.error('Cron secret not configured', { error: secretErr })
           return Response.json({ error: 'Server configuration error' }, { status: 500 })
