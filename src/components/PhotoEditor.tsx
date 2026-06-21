@@ -69,6 +69,21 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [previewZoom, setPreviewZoom] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [previewFullscreen, setPreviewFullscreen] = useState(false);
+  const previewScrollRef = useRef<HTMLDivElement | null>(null);
+  const panRef = useRef<{ x: number; y: number; sx: number; sy: number } | null>(null);
+
+  function onPreviewPointerDown(e: React.PointerEvent<HTMLDivElement>) {
+    const el = previewScrollRef.current; if (!el) return;
+    panRef.current = { x: e.clientX, y: e.clientY, sx: el.scrollLeft, sy: el.scrollTop };
+    (e.currentTarget as HTMLDivElement).setPointerCapture?.(e.pointerId);
+  }
+  function onPreviewPointerMove(e: React.PointerEvent<HTMLDivElement>) {
+    const el = previewScrollRef.current; const p = panRef.current;
+    if (!el || !p) return;
+    el.scrollLeft = p.sx - (e.clientX - p.x);
+    el.scrollTop = p.sy - (e.clientY - p.y);
+  }
+  function onPreviewPointerUp() { panRef.current = null; }
 
   // Load image
   useEffect(() => {
@@ -459,15 +474,20 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <div
             className={
               previewFullscreen
-                ? "relative flex-1 overflow-auto rounded-md bg-black/80"
-                : "relative max-h-[70vh] overflow-auto rounded-md bg-black/80"
+                ? "relative flex-1 cursor-grab touch-none overflow-auto rounded-md bg-black/80 active:cursor-grabbing"
+                : "relative max-h-[70vh] cursor-grab touch-none overflow-auto rounded-md bg-black/80 active:cursor-grabbing"
             }
+            ref={previewScrollRef}
+            onPointerDown={onPreviewPointerDown}
+            onPointerMove={onPreviewPointerMove}
+            onPointerUp={onPreviewPointerUp}
+            onPointerCancel={onPreviewPointerUp}
           >
             <img
               src={src}
               alt="Pratinjau foto besar"
               style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }}
-              className="block w-full select-none transition-transform"
+              className="pointer-events-none block w-full select-none transition-transform"
               draggable={false}
             />
           </div>
