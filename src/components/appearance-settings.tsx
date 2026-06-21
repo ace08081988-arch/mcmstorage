@@ -263,6 +263,8 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
                 }}
                 className="text-[11px] font-medium text-muted-foreground hover:text-foreground hover:underline"
                 title="Reset preset, overlay, dan blur ke default"
+                aria-label="Reset foto latar, kegelapan overlay, dan blur ke default"
+                aria-controls="appearance-bg-preview"
               >
                 ↺ Reset
               </button>
@@ -270,6 +272,8 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
                 <button
                   onClick={() => { setBgImage(""); localStorage.removeItem(LS.bgImage); applyAppearance(); }}
                   className="text-[11px] font-medium text-destructive hover:underline"
+                  aria-label="Hapus foto latar"
+                  aria-controls="appearance-bg-preview"
                 >
                   Hapus latar
                 </button>
@@ -278,8 +282,14 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           </div>
 
           {/* Pratinjau langsung */}
-          <div className="relative h-32 w-full overflow-hidden rounded-md border">
+          <div
+            id="appearance-bg-preview"
+            role="group"
+            aria-label="Pratinjau foto latar"
+            className="relative h-32 w-full overflow-hidden rounded-md border"
+          >
             <div
+              aria-hidden="true"
               className="absolute inset-0"
               style={{
                 backgroundImage: bgImage ? `url("${bgImage}")` : undefined,
@@ -292,6 +302,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
             />
             {bgImage && (
               <div
+                aria-hidden="true"
                 className="absolute inset-0"
                 style={{
                   background: `color-mix(in oklab, var(--background) ${Math.round(bgOverlay * 100)}%, transparent)`,
@@ -300,8 +311,15 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
             )}
             <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
               <p className="text-sm font-semibold text-foreground">Pratinjau langsung</p>
-              <p className="text-[11px] text-muted-foreground">
-                {bgImage ? `Overlay ${Math.round(bgOverlay * 100)}% · Blur ${bgBlur}px` : "Belum ada foto latar"}
+              <p
+                className="text-[11px] text-muted-foreground"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+              >
+                {bgImage
+                  ? `Foto latar aktif. Overlay ${Math.round(bgOverlay * 100)} persen, blur ${bgBlur} piksel.`
+                  : "Belum ada foto latar."}
               </p>
             </div>
           </div>
