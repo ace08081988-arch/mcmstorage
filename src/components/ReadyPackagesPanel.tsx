@@ -717,6 +717,7 @@ function PackageForm({
     if (!Number.isFinite(qtyNum) || qtyNum <= 0) { toast.error("Jumlah harus > 0"); return; }
     if (qtyNum > item.stock_base) { toast.error(`Stok hanya ${fmtBase(item.stock_base, item.base_unit)}`); return; }
     if (locationUrl && locationUrl.length > 2048) { toast.error("Link lokasi terlalu panjang"); return; }
+    if (locationUrl && !/^https:\/\//i.test(locationUrl.trim())) { toast.error("Link lokasi harus diawali https://"); return; }
     if (note && note.length > 1000) { toast.error("Catatan terlalu panjang"); return; }
     setSaving(true);
     const { error } = await supabase.from("ready_packages").insert({
