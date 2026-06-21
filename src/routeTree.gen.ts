@@ -30,6 +30,7 @@ import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.e
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
+import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
@@ -144,6 +145,12 @@ const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedChatRoute,
 } as any)
+const AuthenticatedChatConversationIdRoute =
+  AuthenticatedChatConversationIdRouteImport.update({
+    id: '/$conversationId',
+    path: '/$conversationId',
+    getParentRoute: () => AuthenticatedChatRoute,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -189,6 +196,7 @@ export interface FileRoutesByFullPath {
   '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
+  '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -214,6 +222,7 @@ export interface FileRoutesByTo {
   '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
+  '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -242,6 +251,7 @@ export interface FileRoutesById {
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -270,6 +280,7 @@ export interface FileRouteTypes {
     | '/request'
     | '/tugas'
     | '/t/$token'
+    | '/chat/$conversationId'
     | '/chat/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/tugas'
     | '/t/$token'
     | '/'
+    | '/chat/$conversationId'
     | '/chat'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -322,6 +334,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tugas'
     | '/t/$token'
     | '/_authenticated/'
+    | '/_authenticated/chat/$conversationId'
     | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -491,6 +504,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
       parentRoute: typeof AuthenticatedChatRoute
     }
+    '/_authenticated/chat/$conversationId': {
+      id: '/_authenticated/chat/$conversationId'
+      path: '/$conversationId'
+      fullPath: '/chat/$conversationId'
+      preLoaderRoute: typeof AuthenticatedChatConversationIdRouteImport
+      parentRoute: typeof AuthenticatedChatRoute
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -523,10 +543,12 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedChatRouteChildren {
+  AuthenticatedChatConversationIdRoute: typeof AuthenticatedChatConversationIdRoute
   AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
 }
 
 const AuthenticatedChatRouteChildren: AuthenticatedChatRouteChildren = {
+  AuthenticatedChatConversationIdRoute: AuthenticatedChatConversationIdRoute,
   AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
 }
 
