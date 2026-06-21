@@ -319,7 +319,7 @@ function LinkAccountDialog({
         <div className="space-y-3">
           <Input
             autoFocus
-            placeholder="Cari nama atau email…"
+            placeholder="Cari nama atau nomor telepon…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
@@ -338,14 +338,14 @@ function LinkAccountDialog({
                     className="flex w-full items-center justify-between gap-2 rounded-md border bg-card px-3 py-2 text-left text-sm hover:bg-accent disabled:opacity-50"
                   >
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-medium">
-                        {c.display_name || c.email || c.user_id}
-                      </span>
-                      {c.email && c.display_name && (
-                        <span className="block truncate text-xs text-muted-foreground">
-                          {c.email}
-                        </span>
-                      )}
+                       <span className="block truncate font-medium">
+                         {c.display_name || c.phone || c.user_id}
+                       </span>
+                       {c.phone && c.display_name && (
+                         <span className="block truncate text-xs text-muted-foreground">
+                           {c.phone}
+                         </span>
+                       )}
                     </span>
                     <span className="text-xs text-primary">Tautkan</span>
                   </button>
