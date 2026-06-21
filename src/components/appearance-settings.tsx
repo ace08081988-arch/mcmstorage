@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Dialog,
   DialogContent,
@@ -104,6 +104,21 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
   const [bgImage, setBgImage] = useState<string>("");
   const [bgOverlay, setBgOverlay] = useState<number>(0.7);
   const [bgBlur, setBgBlur] = useState<number>(0);
+  const [announce, setAnnounce] = useState<string>("");
+  const resetBtnRef = useRef<HTMLButtonElement | null>(null);
+  const announceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const flashAnnouncement = (msg: string) => {
+    if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
+    // Kosongkan dulu agar pembaca layar mengumumkan ulang teks yang sama.
+    setAnnounce("");
+    requestAnimationFrame(() => setAnnounce(msg));
+    announceTimerRef.current = setTimeout(() => setAnnounce(""), 3000);
+  };
+
+  useEffect(() => () => {
+    if (announceTimerRef.current) clearTimeout(announceTimerRef.current);
+  }, []);
 
   useEffect(() => {
     setTheme((localStorage.getItem(LS.theme) as Theme) ?? "dark");
@@ -134,6 +149,19 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
       save(LS.bgImage, url);
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleResetBg = () => {
+    setBgImage("");
+    setBgOverlay(0.7);
+    setBgBlur(0);
+    [LS.bgImage, LS.bgOverlay, LS.bgBlur].forEach((k) => localStorage.removeItem(k));
+    applyAppearance();
+    flashAnnouncement(
+      "Pengaturan foto latar dikembalikan ke default. Overlay 70 persen, blur 0 piksel.",
+    );
+    // Kembalikan fokus ke tombol Reset agar urutan tab tetap konsisten.
+    requestAnimationFrame(() => resetBtnRef.current?.focus());
   };
 
   return (
@@ -254,13 +282,8 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
             <p className="text-xs font-semibold text-muted-foreground">Foto latar</p>
             <div className="flex items-center gap-3">
               <button
-                onClick={() => {
-                  setBgImage("");
-                  setBgOverlay(0.7);
-                  setBgBlur(0);
-                  [LS.bgImage, LS.bgOverlay, LS.bgBlur].forEach((k) => localStorage.removeItem(k));
-                  applyAppearance();
-                }}
+                ref={resetBtnRef}
+                onClick={handleResetBg}
                 className="text-[11px] font-medium text-muted-foreground hover:text-foreground hover:underline"
                 title="Reset preset, overlay, dan blur ke default"
                 aria-label="Reset foto latar, kegelapan overlay, dan blur ke default"
@@ -270,7 +293,13 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
               </button>
               {bgImage && (
                 <button
-                  onClick={() => { setBgImage(""); localStorage.removeItem(LS.bgImage); applyAppearance(); }}
+                  onClick={() => {
+                    setBgImage("");
+                    localStorage.removeItem(LS.bgImage);
+                    applyAppearance();
+                    flashAnnouncement("Foto latar dihapus.");
+                    requestAnimationFrame(() => resetBtnRef.current?.focus());
+                  }}
                   className="text-[11px] font-medium text-destructive hover:underline"
                   aria-label="Hapus foto latar"
                   aria-controls="appearance-bg-preview"
@@ -279,6 +308,11 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
                 </button>
               )}
             </div>
+          </div>
+
+          {/* Pengumuman transien untuk pembaca layar */}
+          <div role="status" aria-live="assertive" aria-atomic="true" className="sr-only">
+            {announce}
           </div>
 
           {/* Pratinjau langsung */}
