@@ -52,7 +52,7 @@ export async function getMyProfile(): Promise<MyProfile | null> {
       ...DEFAULT_PREFS,
     };
   }
-  return { ...DEFAULT_PREFS, ...(data as Partial<MyProfile> & { id: string }) } as MyProfile;
+  return { ...DEFAULT_PREFS, ...((data as unknown) as Partial<MyProfile> & { id: string }) } as MyProfile;
 }
 
 export async function updateMyProfile(input: {
@@ -87,7 +87,7 @@ export async function updateMyProfile(input: {
     .select(PROFILE_COLS)
     .single();
   if (error) throw error;
-  return { ...DEFAULT_PREFS, ...(data as Partial<MyProfile> & { id: string }) } as MyProfile;
+  return { ...DEFAULT_PREFS, ...((data as unknown) as Partial<MyProfile> & { id: string }) } as MyProfile;
 }
 
 /** Upload avatar baru ke storage bucket `avatars/{userId}/avatar-...`, lalu kembalikan path-nya. */
