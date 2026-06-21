@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Loader2, MessageSquarePlus, Search, UserRound } from "lucide-react";
+import { Loader2, MessageSquarePlus, Search, UserRound, Link2, ArrowRight } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
@@ -52,8 +52,25 @@ export function NewDmDialog() {
               <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
             </div>
           ) : (contacts ?? []).length === 0 ? (
-            <div className="p-4 text-center text-xs text-muted-foreground">
-              Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok terlebih dahulu.
+            <div className="flex flex-col items-center gap-3 p-4 text-center">
+              <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary">
+                <Link2 className="h-5 w-5" />
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok terlebih dahulu agar bisa muncul di daftar ini.
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                className="gap-1.5"
+                onClick={() => {
+                  setOpen(false);
+                  navigate({ to: "/kontak" });
+                }}
+              >
+                <Link2 className="h-4 w-4" /> Siapkan kontak chat
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Button>
             </div>
           ) : (
             (contacts ?? []).map((c) => (
