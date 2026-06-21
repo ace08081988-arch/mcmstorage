@@ -124,10 +124,36 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
 });
 
 function RootShell({ children }: { children: ReactNode }) {
+  // Skrip blocking: terapkan tema (dark/light), aksen, radius, dan latar SEBELUM paint
+  // sehingga tidak ada kedipan tema dari light → dark saat hydration.
+  const themeBootstrap = `
+(function(){try{
+  var d=document.documentElement;
+  var ls=window.localStorage;
+  var t=ls.getItem('app-theme')||'dark';
+  var resolved=t;
+  if(t==='system'){resolved=window.matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light';}
+  if(resolved==='dark') d.classList.add('dark'); else d.classList.remove('dark');
+  var ACC={emerald:'oklch(0.62 0.17 155)',blue:'oklch(0.60 0.18 250)',violet:'oklch(0.58 0.22 295)',rose:'oklch(0.63 0.22 20)',amber:'oklch(0.78 0.16 80)',slate:'oklch(0.30 0.04 260)'};
+  var aId=ls.getItem('app-accent')||'emerald';
+  var aVal=ACC[aId]||ACC.emerald;
+  d.style.setProperty('--primary',aVal);
+  d.style.setProperty('--ring',aVal);
+  var r=Number(ls.getItem('app-radius')||'0.625');
+  d.style.setProperty('--radius',r+'rem');
+  var bg=ls.getItem('app-bg-image')||'';
+  var ov=Number(ls.getItem('app-bg-overlay')||'0.7');
+  var bl=Number(ls.getItem('app-bg-blur')||'0');
+  d.style.setProperty('--app-bg-image',bg?'url("'+bg.replace(/"/g,'\\\\"')+'")':'none');
+  d.style.setProperty('--app-bg-overlay',String(bg?ov:1));
+  d.style.setProperty('--app-bg-blur',(bg?bl:0)+'px');
+  var b=document.body;if(b){b.dataset.font=ls.getItem('app-font')||'sans';b.dataset.fontSize=ls.getItem('app-font-size')||'md';}
+}catch(e){}})();`;
   return (
-    <html lang="en">
+    <html lang="en" className="dark">
       <head>
         <HeadContent />
+        <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
       <body>
         {children}
