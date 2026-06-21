@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
+import { fmtItemQty } from "@/lib/stock-format";
 import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
@@ -664,7 +665,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         )}
                       </div>
                       <div className="text-[10px] text-muted-foreground">
-                        {it.category ?? "—"} · stok {it.stock_base}
+                        {it.category ?? "—"} · stok {fmtItemQty(it.stock_base, { name: it.name, base_unit: (it.base_unit ?? "pcs") as "g" | "pcs", package_type: it.package_type ?? "", package_size: Number(it.package_size) || 0 })}
                         {itemVariants.length > 0 && <span className="ml-1">· {itemVariants.length} varian</span>}
                       </div>
                     </div>
