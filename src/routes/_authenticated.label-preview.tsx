@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { jsPDF } from "jspdf";
 
 export const Route = createFileRoute("/_authenticated/label-preview")({
@@ -94,6 +94,9 @@ const DEFAULT_SAMPLES: Sample[] = [
 
 function LabelPreviewPage() {
   const [samples, setSamples] = useState<Sample[]>(DEFAULT_SAMPLES);
+  const [pdfUrl, setPdfUrl] = useState<string | null>(null);
+  const [zoom, setZoom] = useState<number>(100);
+  const lastUrlRef = useRef<string | null>(null);
 
   const update = (idx: number, patch: Partial<Sample>) =>
     setSamples((arr) => arr.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
@@ -213,6 +216,32 @@ function LabelPreviewPage() {
     doc.save(`label-preview-${samples.length}-sampel.pdf`);
   };
 
+  // Build the same PDF used for export, expose as blob URL for live preview.
+  // Debounced so rapid edits don't thrash.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        const doc = new jsPDF({ unit: "mm", format: "a4" });
+        renderSamplesGrid(doc, samples.length ? samples : DEFAULT_SAMPLES);
+        const blob = doc.output("blob");
+        const url = URL.createObjectURL(blob);
+        if (lastUrlRef.current) URL.revokeObjectURL(lastUrlRef.current);
+        lastUrlRef.current = url;
+        setPdfUrl(url);
+      } catch (e) {
+        console.error("Gagal membangun pratinjau PDF", e);
+      }
+    }, 200);
+    return () => clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [samples]);
+
+  useEffect(() => {
+    return () => {
+      if (lastUrlRef.current) URL.revokeObjectURL(lastUrlRef.current);
+    };
+  }, []);
+
   return (
     <div className="p-3 sm:p-6 max-w-5xl mx-auto space-y-5">
       <header className="rounded-xl border bg-card p-4 sm:p-6 shadow-sm">
@@ -246,6 +275,54 @@ function LabelPreviewPage() {
           </span>
         </div>
       </header>
+
+      {/* Live PDF preview — identik dengan hasil ekspor */}
+      <section className="rounded-xl border bg-card shadow-sm overflow-hidden">
+        <div className="flex flex-wrap items-center justify-between gap-2 p-3 border-b bg-muted/40">
+          <div className="text-sm font-medium">Pratinjau PDF langsung</div>
+          <div className="flex items-center gap-2 text-xs">
+            <label className="text-muted-foreground">Zoom</label>
+            <input
+              type="range"
+              min={50}
+              max={200}
+              step={10}
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+            />
+            <span className="tabular-nums w-10 text-right">{zoom}%</span>
+            {pdfUrl ? (
+              <a
+                href={pdfUrl}
+                target="_blank"
+                rel="noreferrer"
+                className="ml-2 px-2 py-1 rounded border hover:bg-muted"
+              >
+                Buka di tab baru
+              </a>
+            ) : null}
+          </div>
+        </div>
+        <div className="bg-neutral-200 dark:bg-neutral-800 p-3 overflow-auto">
+          {pdfUrl ? (
+            <iframe
+              key={pdfUrl}
+              title="Pratinjau PDF Label"
+              src={`${pdfUrl}#toolbar=0&navpanes=0&view=FitH&zoom=${zoom}`}
+              className="bg-white shadow mx-auto block border"
+              style={{
+                width: `${(210 / 297) * 90}vh`,
+                maxWidth: "100%",
+                height: "90vh",
+              }}
+            />
+          ) : (
+            <div className="text-sm text-muted-foreground p-6 text-center">
+              Menyiapkan pratinjau…
+            </div>
+          )}
+        </div>
+      </section>
 
       <div className="grid gap-4">
         {samples.map((s, idx) => {
