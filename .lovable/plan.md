@@ -1,45 +1,53 @@
 ## Tujuan
-Fitur baru "Judul Penyiapan REQUEST" — sama prinsip kerja seperti Ecer, tapi 1 judul berisi beberapa produk sekaligus, dan tiap penyiapan = 1 paket multi-produk dengan foto+lokasi. Stok semua item otomatis berkurang. Bisa diakses admin (halaman /request) maupun pegawai (link tugas + PIN).
 
-## Database (migrasi baru)
+Satu sumber data kontak (nama, email, nomor HP/WhatsApp) yang **selalu mengikuti akun login**, lalu dipakai otomatis di form Pelanggan, Pemasok, dan halaman Link Pegawai.
 
-Tabel baru di `public`:
+## Apa yang akan saya buat
 
-1. **`request_titles`** — judul template paket
-   - kolom domain: `name`, `note`, `position`
-   - GRANT authenticated, RLS scoped `auth.uid()`
+### 1. Database
 
-2. **`request_title_items`** — daftar produk dalam judul (template)
-   - kolom domain: `title_id`, `warehouse_item_id`, `target_grams`, `unit_label`, `note`, `position`
-   - GRANT authenticated, RLS via parent owner (security definer helper)
+**Tabel baru `public.profiles`** (1 baris per `auth.users.id`)
+- field domain: `display_name`, `email`, `phone`
+- FK ke `auth.users(id)` `ON DELETE CASCADE`
+- RLS: pengguna hanya bisa baca/ubah profil miliknya sendiri
+- GRANT `authenticated` + `service_role`
 
-3. **`request_preparations`** — realisasi 1 paket (1 baris per penyiapan)
-   - kolom domain: `title_id`, `photo_path`, `location_url`, `gps_lat`, `gps_lng`, `note`, `created_by`, `prep_task_item_id`
-   - RLS scoped `auth.uid()`
+**Trigger sinkronisasi otomatis (kunci dari "selalu mengikuti akun"):**
+- `on_auth_user_created` — saat akun didaftarkan, langsung insert baris `profiles` dengan email + phone + nama dari metadata `auth.users`
+- `on_auth_user_updated` — saat email/phone di `auth.users` berubah, profil ikut diperbarui
+- `on_profile_updated` — saat user mengubah profil dari aplikasi, simpan saja (tidak menulis balik ke `auth.users` agar tidak konflik dengan flow verifikasi email Supabase)
 
-4. **`request_preparation_items`** — rincian item yg dipotong stoknya per penyiapan
-   - kolom domain: `preparation_id`, `warehouse_item_id`, `actual_grams`
-   - Trigger `apply_request_preparation_item` (security definer) potong stok saat INSERT, balikin saat DELETE
+**Backfill** baris profil untuk semua user yang sudah ada saat ini (dijalankan sekali dalam migrasi).
 
-5. **RPC pegawai** (security definer, sama pola Ecer):
-   - `request_list_titles_via_task(token, pin)` — list judul + items
-   - `request_submit_via_task(token, pin, title_id, items[], photo_path, location_url, gps, note, prep_task_item_id)` — bikin preparation + items dalam 1 transaksi
+### 2. UI
 
-Bucket reuse `ecer-photos` (atau bucket baru `request-photos`? — reuse `ecer-photos` lebih simpel, policy storage sudah ada).
+**Halaman/Dialog "Profil akun"** baru, dapat dibuka dari sidebar atau dari dialog 🎨 Tampilan:
+- Tampilkan email akun (read-only — diatur via Supabase Auth)
+- Input nama tampilan + nomor WhatsApp (editable)
+- Tombol Simpan menulis ke `profiles`
 
-## Kode
+**Pelanggan (`/hutang-piutang` & form Customer):**
+- Tombol kecil "Pakai kontak akun saya" di samping field nama/HP → mengisi otomatis dari `profiles` saat ini. *(Catatan: customer adalah pihak lain, jadi "selalu mengikuti akun" tidak diterapkan per baris — hanya tombol prefill agar tidak salah data.)*
 
-1. `src/lib/request.ts` — types + helper signed URL + upload (reuse bucket ecer-photos dengan prefix folder `request/`)
-2. `src/routes/_authenticated.request.tsx` — halaman admin: CRUD judul (tambah item per judul), daftar penyiapan, form penyiapan baru (pilih semua produk → isi qty + 1 foto+lokasi)
-3. `src/components/ReadyRequestSection.tsx` — mirip ReadyEcerSection di beranda, daftar judul siap kirim
-4. `src/routes/_authenticated.index.tsx` — tambah shortcut "Penyiapan Request" + render `<ReadyRequestSection />`
-5. `src/components/AppSidebar.tsx` — tambah link "Penyiapan Request"
-6. **Halaman pegawai** — tambah tab/section "REQUEST" pada halaman tugas pegawai yang sudah ada (cari route prep worker), pakai RPC `request_list_titles_via_task` / `request_submit_via_task`
+**Pemasok (form Supplier):** sama seperti di atas.
 
-## Catatan teknis
-- Tabel parent (`request_titles`) RLS pakai `auth.uid() = user_id`. Tabel child pakai EXISTS lookup ke parent untuk hindari recursion.
-- Trigger pengurangan stok pakai `FOR UPDATE` + cek `stock_base >= actual_grams` per item (sama pola `apply_ecer_preparation`).
-- Form admin: tombol "Tambah Produk" untuk append baris produk ke judul; saat penyiapan, item bawaan judul muncul auto, qty bisa di-override.
-- Worker flow: pegawai pilih judul → form menampilkan semua item dengan input gram → 1 foto+lokasi → submit RPC.
+**Link Pegawai:** menampilkan badge "Dikirim oleh: {nama dari profil}" pada teks/preview pesan WhatsApp, mengikuti profil terbaru secara otomatis.
 
-Setelah migrasi disetujui, saya lanjut kode TypeScript-nya.
+### 3. Helper kode
+
+- `src/lib/profile.ts` — `getMyProfile()`, `updateMyProfile()`, hook `useMyProfile()` (TanStack Query) dengan cache yang di-invalidate saat `onAuthStateChange` USER_UPDATED.
+
+## Catatan & keputusan teknis
+
+- **Pelanggan & Pemasok** adalah entitas pihak ketiga. Mengupdate massal kontak mereka tiap kali email akun berubah berbahaya (menimpa data nyata pelanggan). Jadi pada keduanya saya hanya menyediakan **prefill** dari profil — bukan sinkronisasi otomatis per baris. Mohon dikonfirmasi di tahap implementasi jika ternyata maksud Anda berbeda (mis. ada field "kontak toko" pada masing-masing record yang memang harus = akun).
+- **Profil pengguna & Link Pegawai** benar-benar mengikuti akun via trigger DB.
+- Trigger DB pakai `SECURITY DEFINER` + `SET search_path = public`.
+- Email tetap dikelola Supabase Auth; profil hanya mencerminkan nilai terbarunya.
+
+## Yang TIDAK saya ubah
+
+- Skema `auth.*` (tidak boleh disentuh).
+- Tabel `customers` / `suppliers` skemanya tidak ditambah kolom baru — hanya UI prefill.
+- Trigger stok & RPC pegawai yang sudah ada.
+
+Setelah Anda setujui rencananya, saya kerjakan migrasi DB dulu (perlu persetujuan terpisah), lalu lanjut kodenya.
