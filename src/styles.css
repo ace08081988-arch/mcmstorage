@@ -137,8 +137,12 @@
     border-color: var(--color-border);
   }
 
-  body {
+  html {
     background-color: var(--color-background);
+  }
+
+  body {
+    background-color: transparent;
     color: var(--color-foreground);
     font-family: var(--app-font-family, "Inter", system-ui, sans-serif);
     font-size: var(--app-font-size, 16px);
