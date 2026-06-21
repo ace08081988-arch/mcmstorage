@@ -41,7 +41,7 @@ export function NewDmDialog() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Cari nama atau email…"
+            placeholder="Cari nama atau nomor telepon…"
             className="pl-8"
             autoFocus
           />
@@ -69,10 +69,10 @@ export function NewDmDialog() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">
-                    {c.display_name || c.email || "Pengguna"}
+                    {c.display_name || c.phone || "Pengguna"}
                   </div>
                   <div className="truncate text-[11px] text-muted-foreground">
-                    {c.label ?? c.kind}
+                    {c.phone ? `${c.phone} · ` : ""}{c.label ?? c.kind}
                   </div>
                 </div>
               </button>
