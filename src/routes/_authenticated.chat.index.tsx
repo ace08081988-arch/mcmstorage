@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MessageCircle, Loader2 } from "lucide-react";
+import { MessageCircle, Loader2, Link2 } from "lucide-react";
 
 import { useConversations } from "@/lib/chat";
 import { NewDmDialog } from "@/components/chat/NewDmDialog";
 import { NewGroupDialog } from "@/components/chat/NewGroupDialog";
+import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   component: ChatListPage,
@@ -31,6 +32,11 @@ function ChatListPage() {
           <h1 className="text-lg font-semibold">Chat</h1>
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm" className="gap-1.5">
+            <Link to="/kontak">
+              <Link2 className="h-4 w-4" /> Siapkan kontak chat
+            </Link>
+          </Button>
           <NewGroupDialog />
           <NewDmDialog />
         </div>
@@ -48,6 +54,13 @@ function ChatListPage() {
             <p className="text-xs text-muted-foreground">
               Mulai chat dengan kontak yang akunnya sudah tertaut, atau buat grup baru.
             </p>
+            <div className="pt-2">
+              <Button asChild size="sm" className="gap-1.5">
+                <Link to="/kontak">
+                  <Link2 className="h-4 w-4" /> Siapkan kontak chat
+                </Link>
+              </Button>
+            </div>
           </div>
         ) : (
           <ul className="divide-y">
