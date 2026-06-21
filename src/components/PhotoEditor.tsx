@@ -5,6 +5,16 @@ import {
   Type, Eraser, Undo2, Redo2, RotateCw, Square, Circle, Pencil, Trash2,
   X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon,
 } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string };
 type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
@@ -53,6 +63,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const [drawing, setDrawing] = useState<Layer | null>(null);
+  const [textPrompt, setTextPrompt] = useState<{ open: boolean; x: number; y: number; value: string }>(
+    { open: false, x: 0, y: 0, value: "" },
+  );
 
   // Load image
   useEffect(() => {
@@ -165,12 +178,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       return;
     }
     if (tool === "text") {
-      const text = window.prompt("Teks:", "");
-      if (text) {
-        const l: Layer = { id: uid(), kind: "text", x: p.x, y: p.y, rotation: 0, scale: 1, color, text, size: textSize, bold: true };
-        pushHistory({ ...state, layers: [...state.layers, l] });
-        setSelectedId(l.id);
-      }
+      setTextPrompt({ open: true, x: p.x, y: p.y, value: "" });
       return;
     }
     if (tool === "emoji") {
@@ -277,6 +285,19 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   const selected = state.layers.find((l) => l.id === selectedId);
 
+  function commitText() {
+    const text = textPrompt.value.trim();
+    if (text) {
+      const l: Layer = {
+        id: uid(), kind: "text", x: textPrompt.x, y: textPrompt.y,
+        rotation: 0, scale: 1, color, text, size: textSize, bold: true,
+      };
+      pushHistory({ ...state, layers: [...state.layers, l] });
+      setSelectedId(l.id);
+    }
+    setTextPrompt((s) => ({ ...s, open: false, value: "" }));
+  }
+
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-background">
       <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
@@ -369,6 +390,26 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           )}
         </div>
       </div>
+
+      <Dialog open={textPrompt.open} onOpenChange={(o) => !o && setTextPrompt((s) => ({ ...s, open: false }))}>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Tambahkan Teks</DialogTitle>
+            <DialogDescription>Tulis teks yang ingin ditampilkan pada foto.</DialogDescription>
+          </DialogHeader>
+          <Input
+            autoFocus
+            value={textPrompt.value}
+            onChange={(e) => setTextPrompt((s) => ({ ...s, value: e.target.value }))}
+            onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); commitText(); } }}
+            placeholder="Contoh: PROMO"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTextPrompt((s) => ({ ...s, open: false, value: "" }))}>Batal</Button>
+            <Button onClick={commitText} disabled={!textPrompt.value.trim()}>Tambah</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
