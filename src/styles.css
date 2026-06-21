@@ -177,32 +177,32 @@
 
 /* Saat gambar latar aktif: jangan tutupi dengan warna solid di wrapper full-page.
    Kartu/input/sticky-header tetap solid agar tetap terbaca. */
-body[data-has-bg="1"] .min-h-screen.bg-background,
-body[data-has-bg="1"] .min-h-svh.bg-background,
-body[data-has-bg="1"] main.bg-background {
+html[data-has-bg="1"] .min-h-screen.bg-background,
+html[data-has-bg="1"] .min-h-svh.bg-background,
+html[data-has-bg="1"] main.bg-background {
   background-color: transparent !important;
 }
 
 /* Wrapper full-page yang memakai gradient ke background juga harus transparan
    saat gambar latar aktif (mis. halaman publik /t/:token). */
-body[data-has-bg="1"] .min-h-screen.bg-gradient-to-b,
-body[data-has-bg="1"] .min-h-svh.bg-gradient-to-b,
-body[data-has-bg="1"] .min-h-screen.bg-gradient-to-t,
-body[data-has-bg="1"] .min-h-screen.bg-gradient-to-br,
-body[data-has-bg="1"] .min-h-screen.bg-gradient-to-bl {
+html[data-has-bg="1"] .min-h-screen.bg-gradient-to-b,
+html[data-has-bg="1"] .min-h-svh.bg-gradient-to-b,
+html[data-has-bg="1"] .min-h-screen.bg-gradient-to-t,
+html[data-has-bg="1"] .min-h-screen.bg-gradient-to-br,
+html[data-has-bg="1"] .min-h-screen.bg-gradient-to-bl {
   background-image: none !important;
   background-color: transparent !important;
 }
 
-body[data-font="sans"]    { --app-font-family: "Inter", system-ui, sans-serif; }
-body[data-font="serif"]   { --app-font-family: "Merriweather", Georgia, serif; }
-body[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, monospace; }
-body[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-serif; }
+html[data-font="sans"]    { --app-font-family: "Inter", system-ui, sans-serif; }
+html[data-font="serif"]   { --app-font-family: "Merriweather", Georgia, serif; }
+html[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, monospace; }
+html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-serif; }
 
-body[data-font-size="sm"] { --app-font-size: 14px; }
-body[data-font-size="md"] { --app-font-size: 16px; }
-body[data-font-size="lg"] { --app-font-size: 18px; }
-body[data-font-size="xl"] { --app-font-size: 20px; }
+html[data-font-size="sm"] { --app-font-size: 14px; }
+html[data-font-size="md"] { --app-font-size: 16px; }
+html[data-font-size="lg"] { --app-font-size: 18px; }
+html[data-font-size="xl"] { --app-font-size: 20px; }
 
 /* === Mode Ringkas (Compact UI) === */
 /* Mode ringkas — fokus pada density tinggi tanpa memutus layout.
