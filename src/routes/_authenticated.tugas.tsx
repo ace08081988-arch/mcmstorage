@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
 import { fmtItemQty } from "@/lib/stock-format";
-import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
+import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 
@@ -216,7 +216,13 @@ function TugasPage() {
           onChanged={load}
         />
       )}
-      {openAudit && <AuditDialog tasks={tasks} onClose={() => setOpenAudit(false)} />}
+      {openAudit && (
+        <AuditDialog
+          tasks={tasks}
+          onClose={() => setOpenAudit(false)}
+          onOpenTask={(t) => { setOpenAudit(false); setOpenTask(t); }}
+        />
+      )}
     </div>
   );
 }
