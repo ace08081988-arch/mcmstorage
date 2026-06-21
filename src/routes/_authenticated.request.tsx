@@ -890,7 +890,7 @@ function WorkerTestDialog({
         _items: [],
       });
       if (error) throw error;
-      const url = publicTaskUrl(token);
+      const url = publicTaskUrl(token, usePin);
       setSession({ url, pin: usePin, token: String(data) });
       toast.success("Sesi uji coba siap. PIN: " + usePin);
     } catch (e) {
