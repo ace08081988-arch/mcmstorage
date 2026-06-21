@@ -412,12 +412,24 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
           {COLORS.map((c) => (
-            <button key={c} onClick={() => { setColor(c); if (selected) patchSelected({ color: c } as Partial<Layer>); }}
+            <button key={c} onClick={() => {
+                setColor(c);
+                if (selected) { liveBeginIfNeeded(); livePatchSelected({ color: c } as Partial<Layer>); commitLivePatch(); }
+              }}
               style={{ background: c }}
               className={`h-6 w-6 rounded-full border-2 ${color === c ? "border-primary" : "border-transparent"}`} />
           ))}
           <label className="ml-auto flex items-center gap-1">Ukuran
-            <input type="range" min={2} max={30} value={thickness} onChange={(e) => { const v = Number(e.target.value); setThickness(v); if (selected && "thickness" in (selected as object)) patchSelected({ thickness: v } as Partial<Layer>); }} />
+            <input
+              type="range" min={2} max={30} value={thickness}
+              onPointerDown={() => { if (selected && "thickness" in (selected as object)) liveBeginIfNeeded(); }}
+              onChange={(e) => {
+                const v = Number(e.target.value); setThickness(v);
+                if (selected && "thickness" in (selected as object)) livePatchSelected({ thickness: v } as Partial<Layer>);
+              }}
+              onPointerUp={commitLivePatch}
+              onBlur={commitLivePatch}
+            />
             <span className="w-6 text-right tabular-nums">{thickness}</span>
           </label>
         </div>
@@ -428,7 +440,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               ["up", ArrowUp], ["down", ArrowDown], ["left", ArrowLeft], ["right", ArrowRight],
               ["upleft", ArrowUpLeft], ["upright", ArrowUpRight], ["downleft", ArrowDownLeft], ["downright", ArrowDownRight],
             ] as const).map(([d, Ico]) => (
-              <button key={d} onClick={() => { setArrowDir(d); if (selected?.kind === "arrow") patchSelected({ dir: d } as Partial<Layer>); }}
+              <button key={d} onClick={() => {
+                  setArrowDir(d);
+                  if (selected?.kind === "arrow") { liveBeginIfNeeded(); livePatchSelected({ dir: d } as Partial<Layer>); commitLivePatch(); }
+                }}
                 className={`inline-flex h-8 w-8 items-center justify-center rounded border ${arrowDir === d ? "border-primary bg-primary/10" : ""}`}>
                 <Ico className="h-4 w-4" />
               </button>
@@ -438,7 +453,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         {tool === "emoji" && (
           <div className="mb-2 flex flex-wrap gap-1">
             {EMOJIS.map((em) => (
-              <button key={em} onClick={() => { setEmoji(em); if (selected?.kind === "emoji") patchSelected({ emoji: em } as Partial<Layer>); }}
+              <button key={em} onClick={() => {
+                  setEmoji(em);
+                  if (selected?.kind === "emoji") { liveBeginIfNeeded(); livePatchSelected({ emoji: em } as Partial<Layer>); commitLivePatch(); }
+                }}
                 className={`h-9 w-9 rounded border text-lg ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
             ))}
           </div>
@@ -446,7 +464,16 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         {tool === "text" && (
           <div className="mb-2 flex items-center gap-2">
             <label className="flex items-center gap-1">Font
-              <input type="range" min={14} max={96} value={textSize} onChange={(e) => { const v = Number(e.target.value); setTextSize(v); if (selected?.kind === "text") patchSelected({ size: v } as Partial<Layer>); }} />
+              <input
+                type="range" min={14} max={96} value={textSize}
+                onPointerDown={() => { if (selected?.kind === "text") liveBeginIfNeeded(); }}
+                onChange={(e) => {
+                  const v = Number(e.target.value); setTextSize(v);
+                  if (selected?.kind === "text") livePatchSelected({ size: v } as Partial<Layer>);
+                }}
+                onPointerUp={commitLivePatch}
+                onBlur={commitLivePatch}
+              />
               <span className="w-8 text-right tabular-nums">{textSize}</span>
             </label>
           </div>
@@ -463,8 +490,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" />
           {selected && (
             <div className="ml-auto flex items-center gap-1">
-              <button onClick={() => moveOrder(-1)} title="Ke bawah" className="inline-flex h-8 w-8 items-center justify-center rounded border"><MoveDown className="h-4 w-4" /></button>
-              <button onClick={() => moveOrder(1)} title="Ke atas" className="inline-flex h-8 w-8 items-center justify-center rounded border"><MoveUp className="h-4 w-4" /></button>
+              <button onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border"><MoveDown className="h-4 w-4" /></button>
+              <button onClick={() => moveOrder(1)} title="Naikkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border"><MoveUp className="h-4 w-4" /></button>
               <button onClick={duplicate} title="Duplikat" className="inline-flex h-8 w-8 items-center justify-center rounded border"><CopyIcon className="h-4 w-4" /></button>
               <button onClick={removeSelected} title="Hapus" className="inline-flex h-8 w-8 items-center justify-center rounded border text-destructive"><Trash2 className="h-4 w-4" /></button>
             </div>
