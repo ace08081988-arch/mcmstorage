@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { confirm } from "@/lib/confirm";
+import { fmtItemQty } from "@/lib/stock-format";
 
 export const Route = createFileRoute("/_authenticated/gudang/pesanan/$id")({
   component: PesananDetailPage,
@@ -171,16 +172,16 @@ function PesananDetailPage() {
                 <div className="grid grid-cols-3 gap-2 text-[11px]">
                   <div className="rounded bg-muted/50 p-2">
                     <div className="text-muted-foreground">Stok saat ini</div>
-                    <div className="font-semibold">{fmtBase(item.stock_base, item.base_unit)}</div>
+                    <div className="font-semibold">{fmtItemQty(item.stock_base, item)}</div>
                   </div>
                   <div className="rounded bg-muted/50 p-2">
                     <div className="text-muted-foreground">Dibutuhkan</div>
-                    <div className="font-semibold">{fmtBase(qtyBase, item.base_unit)}</div>
+                    <div className="font-semibold">{fmtItemQty(qtyBase, item)}</div>
                   </div>
                   <div className={`rounded p-2 ${cukup ? "bg-emerald-500/10" : "bg-destructive/10"}`}>
                     <div className="text-muted-foreground">Sisa setelah</div>
                     <div className={`font-semibold ${cukup ? "" : "text-destructive"}`}>
-                      {cukup ? fmtBase(item.stock_base - qtyBase, item.base_unit) : "KURANG"}
+                      {cukup ? fmtItemQty(item.stock_base - qtyBase, item) : "KURANG"}
                     </div>
                   </div>
                 </div>
