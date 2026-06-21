@@ -443,7 +443,7 @@ function PackageCard({
               {STATUS_LABEL[pkg.status]}
             </span>
           </div>
-          {pkg.location_url && (
+          {pkg.location_url && /^https:\/\//i.test(pkg.location_url) && (
             <a href={pkg.location_url} target="_blank" rel="noreferrer" className="block truncate text-primary hover:underline">
               📍 {pkg.location_url}
             </a>
