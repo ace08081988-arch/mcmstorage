@@ -616,6 +616,31 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
         <div className="text-[9px] text-muted-foreground">
           {new Date(prep.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
         </div>
+        {shareDiag && (
+          <div className="mt-1 space-y-1 rounded border border-destructive/40 bg-destructive/5 p-2 text-[10px]">
+            <div className="flex items-center justify-between gap-1">
+              <span className="font-semibold text-destructive">Diagnostik kirim WA</span>
+              <button type="button" onClick={() => setShareDiag(null)} className="text-muted-foreground hover:underline">Tutup</button>
+            </div>
+            <div>Jaringan: <span className={shareDiag.online ? "text-emerald-600" : "text-destructive"}>{shareDiag.online ? "online" : "offline"}</span></div>
+            <div>Web Share API: {shareDiag.hasWebShare ? "ya" : "tidak"}{shareDiag.canShareFiles !== null && ` · file: ${shareDiag.canShareFiles ? "didukung" : "tidak"}`}</div>
+            {shareDiag.photoFetch && (
+              <div>
+                Foto: {shareDiag.photoFetch.ok ? "ok" : "gagal"} ({shareDiag.photoFetch.status} {shareDiag.photoFetch.statusText})
+                {typeof shareDiag.photoFetch.bytes === "number" && ` · ${shareDiag.photoFetch.bytes} B`}
+                {shareDiag.photoFetch.error && ` · ${shareDiag.photoFetch.error}`}
+              </div>
+            )}
+            <div className="break-all">wa.me: {shareDiag.waUrl}</div>
+            <div className="break-all">Hasil: {JSON.stringify(shareDiag.result)}</div>
+            {shareDiag.error && <div className="text-destructive">Error: {shareDiag.error}</div>}
+            <div className="flex gap-1 pt-1">
+              <button type="button" onClick={copyDiag} className="rounded border px-2 py-0.5 hover:bg-accent">Salin detail</button>
+              <a href={shareDiag.waUrl} target="_blank" rel="noreferrer" className="rounded border px-2 py-0.5 hover:bg-accent">Buka wa.me</a>
+              <button type="button" onClick={onShare} className="rounded border px-2 py-0.5 hover:bg-accent">Coba lagi</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
