@@ -49,7 +49,7 @@ function TugasPage() {
     if (!uid) return;
     const [{ data: t }, { data: w }, { data: v }, { data: cv }] = await Promise.all([
       supabase.from("prep_tasks").select("*").order("created_at", { ascending: false }),
-      supabase.from("warehouse_items").select("id,name,category,image_path,stock_base").order("name"),
+      supabase.from("warehouse_items").select("id,name,category,image_path,stock_base,base_unit,package_type,package_size").order("name"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase.from as any)("warehouse_item_variants").select("*").order("position"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
