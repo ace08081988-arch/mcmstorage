@@ -483,6 +483,32 @@ function LinkPegawaiPage() {
         })}
       </div>
 
+      <div className="mb-3 relative">
+        <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={tokenKw}
+          onChange={(e) => setTokenKw(e.target.value)}
+          placeholder={
+            tokenFilter === "all"
+              ? "Cari nama atau ID pegawai…"
+              : `Cari nama atau ID pegawai dalam status “${
+                  tokenFilter === "valid" ? "Valid" : tokenFilter === "fresh" ? "Baru dibuat" : tokenFilter === "invalid" ? "Invalid" : "Kosong"
+                }”…`
+          }
+          className="h-9 w-full rounded-md border bg-background pl-7 pr-8 text-sm focus:border-primary focus:outline-none"
+        />
+        {tokenKw && (
+          <button
+            type="button"
+            onClick={() => setTokenKw("")}
+            aria-label="Bersihkan pencarian"
+            className="absolute right-1 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:bg-muted"
+          >
+            ×
+          </button>
+        )}
+      </div>
+
       {tasks === null ? (
         <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">Memuat…</div>
       ) : rows.length === 0 ? (
