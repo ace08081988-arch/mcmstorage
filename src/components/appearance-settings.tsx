@@ -262,6 +262,35 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
             )}
           </div>
 
+          {/* Pratinjau langsung */}
+          <div className="relative h-32 w-full overflow-hidden rounded-md border">
+            <div
+              className="absolute inset-0"
+              style={{
+                backgroundImage: bgImage ? `url("${bgImage}")` : undefined,
+                backgroundColor: bgImage ? undefined : "var(--muted)",
+                backgroundSize: "cover",
+                backgroundPosition: "center",
+                filter: bgImage ? `blur(${bgBlur}px)` : undefined,
+                transform: "scale(1.06)",
+              }}
+            />
+            {bgImage && (
+              <div
+                className="absolute inset-0"
+                style={{
+                  background: `color-mix(in oklab, var(--background) ${Math.round(bgOverlay * 100)}%, transparent)`,
+                }}
+              />
+            )}
+            <div className="absolute inset-0 flex flex-col items-center justify-center text-center">
+              <p className="text-sm font-semibold text-foreground">Pratinjau langsung</p>
+              <p className="text-[11px] text-muted-foreground">
+                {bgImage ? `Overlay ${Math.round(bgOverlay * 100)}% · Blur ${bgBlur}px` : "Belum ada foto latar"}
+              </p>
+            </div>
+          </div>
+
           <div className="grid grid-cols-3 gap-2">
             {BG_PRESETS.map((p) => {
               const active = (p.url === "" && !bgImage) || bgImage === p.url;
