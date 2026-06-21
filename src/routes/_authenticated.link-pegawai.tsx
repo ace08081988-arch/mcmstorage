@@ -451,6 +451,33 @@ function LinkPegawaiPage() {
         </div>
       </div>
 
+      <div className="mb-3 flex flex-wrap items-center gap-1">
+        <span className="mr-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+          <ShieldCheck className="h-3.5 w-3.5" /> Token:
+        </span>
+        {([
+          ["all", "Semua", ""],
+          ["valid", "Valid", "data-[active=true]:border-emerald-500/50 data-[active=true]:bg-emerald-500/10 data-[active=true]:text-emerald-700 dark:data-[active=true]:text-emerald-400"],
+          ["fresh", "Baru dibuat", "data-[active=true]:border-sky-500/50 data-[active=true]:bg-sky-500/10 data-[active=true]:text-sky-700 dark:data-[active=true]:text-sky-400"],
+          ["invalid", "Invalid", "data-[active=true]:border-amber-500/50 data-[active=true]:bg-amber-500/10 data-[active=true]:text-amber-700 dark:data-[active=true]:text-amber-400"],
+          ["empty", "Kosong", "data-[active=true]:border-destructive/50 data-[active=true]:bg-destructive/10 data-[active=true]:text-destructive"],
+        ] as const).map(([key, label, activeCls]) => {
+          const active = tokenFilter === key;
+          return (
+            <button
+              key={key}
+              data-active={active}
+              onClick={() => setTokenFilter(key)}
+              className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] hover:bg-muted ${activeCls} ${
+                active && !activeCls ? "border-primary bg-primary/10 text-primary" : ""
+              }`}
+            >
+              {label} <span className="rounded bg-muted px-1 text-[10px] tabular-nums">{tokenCounts[key] ?? 0}</span>
+            </button>
+          );
+        })}
+      </div>
+
       {tasks === null ? (
         <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">Memuat…</div>
       ) : rows.length === 0 ? (
