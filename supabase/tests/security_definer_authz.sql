@@ -164,7 +164,7 @@ BEGIN
   INSERT INTO public.customers(user_id, name, account_user_id)
     VALUES (v_b, 'authz-test', v_a) RETURNING id INTO v_cust;
   INSERT INTO public.order_requests(user_id, customer_id, item_id, qty, qty_mode, status)
-    VALUES (v_b, v_cust, v_item, 1, 'base', 'draft') RETURNING id INTO v_order;
+    VALUES (v_b, v_cust, v_item, 1, 'base', 'menunggu') RETURNING id INTO v_order;
 
   PERFORM pg_temp.as_user(v_c);    -- C is unrelated to this order
   BEGIN
