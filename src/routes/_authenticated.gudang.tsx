@@ -1342,10 +1342,26 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
   const [currentStock, setCurrentStock] = useState(item.stock_base);
   const baseUnit = defaultBase(packageType);
   const effectiveSize = packageType === "pcs" ? 1 : Number(packageSize) || 0;
+  const originalBaseUnit = item.base_unit;
+  const baseUnitChanged = baseUnit !== originalBaseUnit;
 
   async function save() {
     if (!name.trim()) { toast.error("Nama wajib"); return; }
     if (packageType !== "pcs" && effectiveSize <= 0) { toast.error("Ukuran kemasan > 0"); return; }
+    if (baseUnitChanged) {
+      const fromLabel = originalBaseUnit === "g" ? "gram" : "pcs";
+      const toLabel = baseUnit === "g" ? "gram" : "pcs";
+      const ok = await confirm({
+        title: `Ubah satuan dasar ${fromLabel} → ${toLabel}?`,
+        description:
+          `Stok (${item.stock_base} ${originalBaseUnit}) & HPP (Rp${item.avg_cost_per_base}/${originalBaseUnit}) ` +
+          `TIDAK dikonversi otomatis. Histori pembelian & penjualan akan terbaca dalam satuan baru. ` +
+          `Lanjutkan hanya bila Anda yakin (mis. barang ini belum pernah terpakai). ` +
+          `Sebaiknya buat barang baru bila ingin ganti antara botol/sachet/pcs ⇄ gram.`,
+        confirmText: "Ya, paham risikonya",
+      });
+      if (!ok) return;
+    }
     setSaving(true);
     const { error } = await supabase.from("warehouse_items").update({
       name: name.trim(),
@@ -1406,6 +1422,14 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
         <div className="text-[11px] text-amber-500">
           ⚠️ Mengubah stok / HPP manual akan menimpa nilai dari riwayat pembelian.
         </div>
+        {baseUnitChanged && (
+          <div className="rounded-md border border-destructive bg-destructive/10 p-2 text-[11px] text-destructive">
+            🚨 Anda mengubah satuan dasar <b>{originalBaseUnit}</b> → <b>{baseUnit}</b>. Stok & HPP
+            TIDAK dikonversi otomatis, dan histori pembelian/penjualan akan terbaca dalam satuan baru.
+            Untuk barang yang sudah punya transaksi, sebaiknya buat <b>barang baru</b> daripada mengganti
+            jenis kemasan antara <i>gram</i> dan <i>botol/sachet/pcs</i>.
+          </div>
+        )}
         <div className="flex gap-2 pt-1">
           <button disabled={saving} onClick={save} className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
             {saving ? "Menyimpan..." : "Simpan"}
