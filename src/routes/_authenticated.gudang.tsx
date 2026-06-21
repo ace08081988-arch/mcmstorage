@@ -2079,18 +2079,19 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
           {(() => {
             const kurang = qtyBase > item.stock_base;
             const sisa = item.stock_base - qtyBase;
+            const dispMode: "base" | "package" = sellMode === "base" ? "base" : "package";
             return (
               <div className="rounded-md bg-muted/50 p-2 text-[11px] space-y-0.5">
                 <div>
-                  Akan kurangi stok: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, sellMode, item.name)}</b>
+                  Akan kurangi stok: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, dispMode, item.name)}</b>
                 </div>
                 <div>
-                  Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, sellMode, item.name)}</b>
+                  Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, dispMode, item.name)}</b>
                 </div>
                 <div className={kurang ? "text-destructive font-semibold" : ""}>
                   {kurang
                     ? <>Stok kurang {fmtBase(qtyBase - item.stock_base, item.base_unit)} — tidak bisa disimpan</>
-                    : <>Sisa setelah jual: <b>{fmtQtyDual(sisa, item.base_unit, item.package_type, item.package_size, sellMode, item.name)}</b></>}
+                    : <>Sisa setelah jual: <b>{fmtQtyDual(sisa, item.base_unit, item.package_type, item.package_size, dispMode, item.name)}</b></>}
                 </div>
                 <div>Total pendapatan: <b>{rupiah(total)}</b> ({paymentMethod === "hutang" ? "piutang ke pelanggan" : "lunas tunai"})</div>
                 <div className={profit >= 0 ? "text-emerald-600 dark:text-emerald-400" : "text-destructive"}>
