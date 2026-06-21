@@ -151,12 +151,12 @@ function RootShell({ children }: { children: ReactNode }) {
   if(b){ if(bg) b.dataset.hasBg='1'; else delete b.dataset.hasBg; }
 }catch(e){}})();`;
   return (
-    <html lang="en" className="dark">
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
       </head>
-      <body>
+      <body suppressHydrationWarning>
         {children}
         <Scripts />
       </body>
