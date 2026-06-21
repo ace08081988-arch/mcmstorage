@@ -18,7 +18,10 @@ export const Route = createFileRoute("/_authenticated/tugas")({
   component: TugasPage,
 });
 
-type WItem = { id: string; name: string; category: string | null; image_path: string | null; stock_base: number };
+type WItem = {
+  id: string; name: string; category: string | null; image_path: string | null; stock_base: number;
+  base_unit?: "g" | "pcs" | null; package_type?: string | null; package_size?: number | null;
+};
 type Variant = { id: string; warehouse_item_id: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
 type CatVariant = { id: string; category: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
 type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string };
