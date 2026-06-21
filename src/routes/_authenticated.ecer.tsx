@@ -252,7 +252,7 @@ function EcerPage() {
           <option value="">— Pilih produk —</option>
           {items.map((it) => (
             <option key={it.id} value={it.id}>
-              {it.category ? `[${it.category}] ` : ""}{it.name} · stok {it.stock_base} {it.base_unit}
+              {it.category ? `[${it.category}] ` : ""}{it.name} · stok {fmtItemQty(it.stock_base, { ...it, base_unit: it.base_unit as "g" | "pcs" })}
             </option>
           ))}
         </select>
@@ -264,7 +264,7 @@ function EcerPage() {
             <div>
               <CardTitle className="text-base">{selectedItem.name}</CardTitle>
               <div className="text-xs text-muted-foreground">
-                {selectedItem.category ?? "—"} · stok {selectedItem.stock_base} {selectedItem.base_unit}
+                {selectedItem.category ?? "—"} · stok {fmtItemQty(selectedItem.stock_base, { ...selectedItem, base_unit: selectedItem.base_unit as "g" | "pcs" })}
               </div>
             </div>
             <Button size="sm" onClick={() => setCreatingTitle(true)}>
@@ -461,7 +461,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated }: {
               <CardTitle className="truncate text-base">{title.name}</CardTitle>
               <div className="mt-0.5 text-xs text-muted-foreground">
                 <Package className="mr-1 inline h-3 w-3" />
-                {item.name} · target <b>{title.target_grams} {title.unit_label}</b> · stok produk {item.stock_base} {item.base_unit}
+                {item.name} · target <b>{title.target_grams} {title.unit_label}</b> · stok produk {fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}
               </div>
               {title.note && <div className="mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap">{title.note}</div>}
             </div>
