@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Loader2,
@@ -13,6 +13,8 @@ import {
   CalendarDays,
   ShieldCheck,
   BadgeCheck,
+  Camera,
+  Trash2,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -25,10 +27,16 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { useMyProfile, useUpdateMyProfile } from "@/lib/profile";
+import {
+  useMyProfile,
+  useUpdateMyProfile,
+  uploadMyAvatar,
+  removeAvatarObject,
+  useAvatarSignedUrl,
+} from "@/lib/profile";
 import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
 import { COUNTRIES, LANGUAGES, DATE_FORMATS, findCountry } from "@/lib/countries";
 import { formatCurrency, formatDate } from "@/lib/format";
@@ -41,6 +49,8 @@ export const Route = createFileRoute("/_authenticated/profil")({
 function ProfilPage() {
   const { data: profile, isLoading } = useMyProfile();
   const update = useUpdateMyProfile();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
 
   const [displayName, setDisplayName] = useState("");
   const [phone, setPhone] = useState("");
@@ -48,6 +58,8 @@ function ProfilPage() {
   const [language, setLanguage] = useState("id");
   const [currency, setCurrency] = useState("IDR");
   const [dateFormat, setDateFormat] = useState("DD/MM/YYYY");
+
+  const { data: avatarUrl } = useAvatarSignedUrl(profile?.avatar_url);
 
   // Sinkronkan form dengan data profil yang dimuat.
   useEffect(() => {
@@ -124,17 +136,74 @@ function ProfilPage() {
   const country = findCountry(countryCode);
   const phoneValid = phone.trim() ? !!normalizeWaNumber(phone, countryCode) : null;
 
+  const handleAvatarFile = async (file: File | null | undefined) => {
+    if (!file) return;
+    setUploading(true);
+    try {
+      const newPath = await uploadMyAvatar(file);
+      const oldPath = profile?.avatar_url ?? null;
+      await update.mutateAsync({ avatar_url: newPath });
+      if (oldPath && oldPath !== newPath) await removeAvatarObject(oldPath);
+      toast.success("Foto profil diperbarui");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal mengunggah foto";
+      toast.error(msg);
+    } finally {
+      setUploading(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    if (!profile?.avatar_url) return;
+    setUploading(true);
+    try {
+      const oldPath = profile.avatar_url;
+      await update.mutateAsync({ avatar_url: null });
+      await removeAvatarObject(oldPath);
+      toast.success("Foto profil dihapus");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Gagal menghapus foto";
+      toast.error(msg);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   return (
     <main className="mx-auto w-full max-w-3xl space-y-6 p-4 pb-12">
       {/* Hero header */}
       <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 sm:p-6">
         <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
         <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
-          <Avatar className="h-16 w-16 ring-2 ring-primary/30 ring-offset-2 ring-offset-background">
-            <AvatarFallback className="bg-primary/15 text-lg font-semibold text-primary">
-              {initials}
-            </AvatarFallback>
-          </Avatar>
+          <div className="relative">
+            <Avatar className="h-20 w-20 ring-2 ring-primary/30 ring-offset-2 ring-offset-background">
+              {avatarUrl ? <AvatarImage src={avatarUrl} alt="Foto profil" /> : null}
+              <AvatarFallback className="bg-primary/15 text-xl font-semibold text-primary">
+                {initials}
+              </AvatarFallback>
+            </Avatar>
+            <button
+              type="button"
+              onClick={() => fileInputRef.current?.click()}
+              disabled={uploading || isLoading}
+              className="absolute -bottom-1 -right-1 inline-flex h-8 w-8 items-center justify-center rounded-full border bg-background shadow-sm transition hover:bg-accent disabled:opacity-60"
+              aria-label="Ubah foto profil"
+            >
+              {uploading ? (
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+              ) : (
+                <Camera className="h-4 w-4" aria-hidden="true" />
+              )}
+            </button>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => handleAvatarFile(e.target.files?.[0])}
+            />
+          </div>
           <div className="min-w-0 flex-1">
             <div className="flex items-center gap-2">
               <h1 className="truncate text-xl font-semibold tracking-tight">
@@ -147,6 +216,33 @@ function ProfilPage() {
             <p className="truncate text-sm text-muted-foreground">
               {profile?.email ?? "Memuat akun…"}
             </p>
+            <div className="mt-2 flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploading || isLoading}
+                className="h-7 gap-1.5 text-xs"
+              >
+                <Camera className="h-3.5 w-3.5" aria-hidden="true" />
+                {profile?.avatar_url ? "Ganti foto" : "Unggah foto"}
+              </Button>
+              {profile?.avatar_url && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleAvatarRemove}
+                  disabled={uploading}
+                  className="h-7 gap-1.5 text-xs text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" aria-hidden="true" />
+                  Hapus
+                </Button>
+              )}
+              <span className="text-[10px] text-muted-foreground">JPG/PNG, maks 3 MB</span>
+            </div>
             <div className="mt-2 flex flex-wrap items-center gap-1.5">
               <Badge variant="secondary" className="gap-1">
                 <Globe2 className="h-3 w-3" aria-hidden="true" />
