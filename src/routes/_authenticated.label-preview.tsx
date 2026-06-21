@@ -98,83 +98,119 @@ function LabelPreviewPage() {
   const update = (idx: number, patch: Partial<Sample>) =>
     setSamples((arr) => arr.map((s, i) => (i === idx ? { ...s, ...patch } : s)));
 
-  const renderSampleOnDoc = (doc: jsPDF, s: Sample, startY: number) => {
-    const hasPkg = s.package_type && s.package_type !== "pcs" && s.package_size > 0;
-    const left = 15;
-    let y = startY;
+  // Layout: A4 portrait, 2 kolom × 4 baris = 8 label/halaman
+  const PAGE = { w: 210, h: 297, margin: 12, gap: 6, cols: 2, rows: 4 };
+  const CARD_W = (PAGE.w - PAGE.margin * 2 - PAGE.gap * (PAGE.cols - 1)) / PAGE.cols;
+  const CARD_H = (PAGE.h - PAGE.margin * 2 - 14 /*header*/ - 8 /*footer*/ - PAGE.gap * (PAGE.rows - 1)) / PAGE.rows;
 
+  const drawPageChrome = (doc: jsPDF, pageNo: number, totalPages: number) => {
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text("Preview Label", left, y);
-    y += 7;
-
-    doc.setFont("helvetica", "normal");
     doc.setFontSize(11);
-    doc.text(
-      `Item: ${s.name}${hasPkg ? ` (${s.package_type} ${s.package_size} ${s.base_unit})` : ""}`,
-      left,
-      y,
-    );
-    y += 6;
-    doc.text(
-      `Base unit: ${s.base_unit}  •  Kemasan: ${s.package_type || "-"}  •  Isi/kemasan: ${s.package_size}`,
-      left,
-      y,
-    );
-    y += 10;
-
-    const rows: [string, string][] = [
-      ["Nama + kemasan", `${s.name}${hasPkg ? ` (${s.package_type} ${s.package_size} ${s.base_unit})` : ""}`],
-      ["fmtItemQty(stok)", fmtItemQty(s.stock_base, s)],
-      ["fmtItemQty(qty trx)", fmtItemQty(s.qty_base, s)],
-      ["fmtItemPrice(harga/base)", fmtItemPrice(s.price_per_base, s)],
-      ["fmtQtyDual mode=base", fmtQtyDual(s.qty_base, s.base_unit, s.package_type, s.package_size, "base")],
-      ["fmtQtyDual mode=package", fmtQtyDual(s.qty_base, s.base_unit, s.package_type, s.package_size, "package")],
-      ["fmtBase(stok)", fmtBase(s.stock_base, s.base_unit)],
-      ["Total harga trx", `${rupiah(s.price_per_base * s.qty_base)} (${fmtItemQty(s.qty_base, s)} × ${fmtItemPrice(s.price_per_base, s)})`],
-    ];
-
-    doc.setFontSize(10);
-    const labelW = 55;
-    const valW = 180 - left - labelW;
-    rows.forEach(([label, val]) => {
-      doc.setFont("helvetica", "bold");
-      doc.text(label, left, y);
-      doc.setFont("helvetica", "normal");
-      const lines = doc.splitTextToSize(val, valW);
-      doc.text(lines, left + labelW, y);
-      y += Math.max(6, lines.length * 5);
-      if (y > 280) {
-        doc.addPage();
-        y = 18;
-      }
-    });
-
+    doc.setTextColor(30);
+    doc.text("Pratinjau Label · MCM Storage", PAGE.margin, PAGE.margin + 4);
+    doc.setFont("helvetica", "normal");
     doc.setFontSize(8);
     doc.setTextColor(120);
-    doc.text(
-      `Dibuat ${new Date().toLocaleString("id-ID")}`,
-      left,
-      290,
-    );
+    const dateStr = new Date().toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" });
+    doc.text(dateStr, PAGE.w - PAGE.margin, PAGE.margin + 4, { align: "right" });
+    // separator
+    doc.setDrawColor(220);
+    doc.setLineWidth(0.2);
+    doc.line(PAGE.margin, PAGE.margin + 6, PAGE.w - PAGE.margin, PAGE.margin + 6);
+    // footer
+    doc.setTextColor(140);
+    doc.text(`Halaman ${pageNo} / ${totalPages}`, PAGE.w / 2, PAGE.h - PAGE.margin + 2, { align: "center" });
     doc.setTextColor(0);
+  };
+
+  const drawLabelCard = (doc: jsPDF, s: Sample, x: number, y: number, w: number, h: number) => {
+    const hasPkg = !!(s.package_type && s.package_type !== "pcs" && s.package_size > 0);
+    // card border
+    doc.setDrawColor(210);
+    doc.setFillColor(252, 252, 253);
+    doc.setLineWidth(0.3);
+    doc.roundedRect(x, y, w, h, 2, 2, "FD");
+
+    const pad = 4;
+    let cy = y + pad + 4;
+
+    // Title
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11);
+    doc.setTextColor(20);
+    const titleLines = doc.splitTextToSize(s.name, w - pad * 2);
+    doc.text(titleLines.slice(0, 1), x + pad, cy);
+    cy += 5;
+
+    // Subtitle (kemasan)
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(110);
+    const sub = hasPkg
+      ? `${s.package_type} · isi ${s.package_size} ${s.base_unit}`
+      : `satuan: ${s.base_unit}`;
+    doc.text(sub, x + pad, cy);
+    cy += 4;
+
+    // divider
+    doc.setDrawColor(230);
+    doc.line(x + pad, cy, x + w - pad, cy);
+    cy += 4;
+
+    // Key/value pairs — bersih, tanpa nama fungsi
+    const total = s.price_per_base * s.qty_base;
+    const pairs: [string, string][] = [
+      ["Stok", fmtItemQty(s.stock_base, s)],
+      ["Kuantitas", fmtItemQty(s.qty_base, s)],
+      ["Harga", fmtItemPrice(s.price_per_base, s)],
+      ["Total", rupiah(total)],
+    ];
+
+    doc.setFontSize(8.5);
+    const labelW = 18;
+    const valW = w - pad * 2 - labelW;
+    pairs.forEach(([k, v]) => {
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(120);
+      doc.text(k, x + pad, cy);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(25);
+      const lines = doc.splitTextToSize(v, valW);
+      doc.text(lines.slice(0, 2), x + pad + labelW, cy);
+      cy += Math.min(2, lines.length) * 3.6 + 1.2;
+    });
+
+    doc.setTextColor(0);
+  };
+
+  const renderSamplesGrid = (doc: jsPDF, list: Sample[]) => {
+    const perPage = PAGE.cols * PAGE.rows;
+    const totalPages = Math.max(1, Math.ceil(list.length / perPage));
+    list.forEach((s, i) => {
+      const pageIdx = Math.floor(i / perPage);
+      const slot = i % perPage;
+      if (slot === 0 && pageIdx > 0) doc.addPage();
+      if (slot === 0) drawPageChrome(doc, pageIdx + 1, totalPages);
+      const col = slot % PAGE.cols;
+      const row = Math.floor(slot / PAGE.cols);
+      const x = PAGE.margin + col * (CARD_W + PAGE.gap);
+      const y = PAGE.margin + 10 + row * (CARD_H + PAGE.gap);
+      drawLabelCard(doc, s, x, y, CARD_W, CARD_H);
+    });
   };
 
   const buildPdfForSample = (s: Sample) => {
     const doc = new jsPDF({ unit: "mm", format: "a4" });
-    renderSampleOnDoc(doc, s, 18);
+    renderSamplesGrid(doc, [s]);
     const safe = s.name.replace(/[^a-z0-9]+/gi, "-").toLowerCase();
-    doc.save(`label-preview-${safe || "sample"}.pdf`);
+    doc.save(`label-${safe || "sampel"}.pdf`);
   };
 
   const exportAll = () => {
     if (samples.length === 0) return;
     const doc = new jsPDF({ unit: "mm", format: "a4" });
-    samples.forEach((s, i) => {
-      if (i > 0) doc.addPage();
-      renderSampleOnDoc(doc, s, 18);
-    });
-    doc.save(`label-preview-semua-${samples.length}-sampel.pdf`);
+    renderSamplesGrid(doc, samples);
+    doc.save(`label-preview-${samples.length}-sampel.pdf`);
   };
 
   return (
