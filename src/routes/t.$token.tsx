@@ -27,6 +27,7 @@ function PublicPrepPage() {
   const [task, setTask] = useState<PrepTaskRow | null>(null);
   const [items, setItems] = useState<PrepItemRow[]>([]);
   const pinRef = useRef("");
+  const autoTriedRef = useRef(false);
 
   async function fetchTask(p: string) {
     setLoading(true);
@@ -47,6 +48,25 @@ function PublicPrepPage() {
     if (!pinRef.current) return;
     await fetchTask(pinRef.current);
   }
+
+  // Auto-buka tugas jika PIN diberikan via fragment URL ( #p=1234 ).
+  // Fragment tidak dikirim ke server, jadi PIN tetap aman dari log.
+  useEffect(() => {
+    if (authed || autoTriedRef.current || typeof window === "undefined") return;
+    const hash = window.location.hash || "";
+    const m = hash.match(/(?:^#|[#&])p=(\d{4,8})/);
+    if (!m) return;
+    autoTriedRef.current = true;
+    const autoPin = m[1];
+    setPin(autoPin);
+    void fetchTask(autoPin);
+    // Bersihkan fragment dari address bar agar PIN tidak terlihat lagi.
+    try {
+      const { pathname, search } = window.location;
+      window.history.replaceState(null, "", `${pathname}${search}`);
+    } catch { /* noop */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (!authed) {
     return (
