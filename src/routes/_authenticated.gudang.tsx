@@ -2525,7 +2525,7 @@ function PesananTab({
   const [newCustName, setNewCustName] = useState("");
   const [newCustWa, setNewCustWa] = useState("");
   const [qty, setQty] = useState("");
-  const [qtyMode, setQtyMode] = useState<"base" | "package">("base");
+  const [qtyMode, setQtyMode] = useState<"base" | "package" | "karton">("base");
   const [price, setPrice] = useState("");
   const [note, setNote] = useState("");
   const [filter, setFilter] = useState<"aktif" | "semua">("aktif");
@@ -2536,7 +2536,15 @@ function PesananTab({
 
   const item = items.find((i) => i.id === itemId);
   const qtyN = Number(qty) || 0;
-  const qtyBase = item ? (qtyMode === "base" ? qtyN : qtyN * item.package_size) : 0;
+  // Faktor pengali ke base. karton = ×100 botol × isi/botol.
+  const qtyFactor = item
+    ? qtyMode === "base"
+      ? 1
+      : qtyMode === "package"
+        ? item.package_size
+        : BOTOL_PER_KARTON * item.package_size
+    : 0;
+  const qtyBase = qtyN * qtyFactor;
   const enough = item ? qtyBase <= item.stock_base : false;
 
   const itemMap = useMemo(() => Object.fromEntries(items.map((i) => [i.id, i])), [items]);
@@ -2547,8 +2555,11 @@ function PesananTab({
     e.preventDefault();
     if (!uid || !item) return;
     if (qtyN <= 0) { toast.error("Jumlah harus > 0"); return; }
-    if (qtyMode === "package" && item.package_type === "pcs") {
+    if (qtyMode !== "base" && item.package_type === "pcs") {
       toast.error("Barang pcs tidak punya kemasan"); return;
+    }
+    if (qtyMode === "karton" && item.package_type !== "botol") {
+      toast.error("Mode karton hanya untuk barang satuan botol"); return;
     }
     let useCustomerId: string | null = customerId || null;
     if (customerId === "__new__") {
@@ -2563,13 +2574,21 @@ function PesananTab({
       if (ncErr || !nc) { toast.error(friendlyError(ncErr ?? new Error("Gagal simpan pelanggan"))); return; }
       useCustomerId = nc.id;
     }
+    // Simpan ke skema lama: karton → konversi ke package (botol) ×100.
+    const storedMode: "base" | "package" = qtyMode === "base" ? "base" : "package";
+    const storedQty = qtyMode === "karton" ? qtyN * BOTOL_PER_KARTON : qtyN;
+    const storedPrice = price
+      ? qtyMode === "karton"
+        ? Number(price) / BOTOL_PER_KARTON
+        : Number(price)
+      : null;
     const { error } = await supabase.from("order_requests").insert({
       user_id: uid,
       customer_id: useCustomerId,
       item_id: item.id,
-      qty: qtyN,
-      qty_mode: qtyMode,
-      price_per_unit: price ? Number(price) : null,
+      qty: storedQty,
+      qty_mode: storedMode,
+      price_per_unit: storedPrice,
       note: note.trim() || null,
     });
     if (error) { toast.error(friendlyError(error)); return; }
@@ -2733,15 +2752,24 @@ function PesananTab({
                   Per {item.package_type}
                 </button>
               )}
+              {item.package_type === "botol" && (
+                <button type="button" onClick={() => setQtyMode("karton")} className={`flex-1 rounded border px-2 py-1 ${qtyMode === "karton" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+                  Per karton
+                </button>
+              )}
             </div>
 
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
-                <span className="text-[11px] text-muted-foreground">Jumlah ({qtyMode === "base" ? item.base_unit : item.package_type})</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Jumlah ({qtyMode === "base" ? item.base_unit : qtyMode === "karton" ? "karton" : item.package_type})
+                </span>
                 <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
               </label>
               <label className="block">
-                <span className="text-[11px] text-muted-foreground">Harga / {qtyMode === "base" ? item.base_unit : item.package_type} (opsional)</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Harga / {qtyMode === "base" ? item.base_unit : qtyMode === "karton" ? "karton" : item.package_type} (opsional)
+                </span>
                 <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={price} onChange={(e) => setPrice(e.target.value)} />
               </label>
             </div>
@@ -2749,8 +2777,8 @@ function PesananTab({
             <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (mis. dijemput sore)" value={note} onChange={(e) => setNote(e.target.value)} />
 
             <div className={`rounded-md p-2 text-[11px] space-y-0.5 ${enough ? "bg-muted/50" : "bg-destructive/10 text-destructive"}`}>
-              <div>Butuh siapkan: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, qtyMode, item.name)}</b></div>
-              <div>Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, qtyMode, item.name)}</b></div>
+              <div>Butuh siapkan: <b>{fmtQtyDual(qtyBase, item.base_unit, item.package_type, item.package_size, qtyMode === "base" ? "base" : "package", item.name)}</b></div>
+              <div>Stok tersedia: <b>{fmtQtyDual(item.stock_base, item.base_unit, item.package_type, item.package_size, qtyMode === "base" ? "base" : "package", item.name)}</b></div>
               {!enough && <div className="font-semibold">Kurang {fmtBase(qtyBase - item.stock_base, item.base_unit)}</div>}
             </div>
           </>
