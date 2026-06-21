@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useMyProfile, useUpdateMyProfile } from "@/lib/profile";
+import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
 
 export const Route = createFileRoute("/_authenticated/profil")({
   component: ProfilPage,
@@ -33,11 +34,22 @@ function ProfilPage() {
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const rawPhone = phone.trim();
+    let phoneToSave: string | null = null;
+    if (rawPhone) {
+      const norm = normalizeWaNumber(rawPhone);
+      if (!norm) {
+        toast.error("Nomor WhatsApp tidak valid (8–15 digit, contoh 0812xxxxxxxx)");
+        return;
+      }
+      phoneToSave = norm;
+    }
     try {
       await update.mutateAsync({
         display_name: displayName.trim() || null,
-        phone: phone.trim() || null,
+        phone: phoneToSave,
       });
+      if (phoneToSave) setPhone(phoneToSave);
       toast.success("Profil disimpan");
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : "Gagal menyimpan profil";
@@ -100,6 +112,9 @@ function ProfilPage() {
           />
           <p className="text-[11px] text-muted-foreground">
             Dipakai sebagai kontak pengirim di pesan WhatsApp & link pegawai.
+            {phone.trim() && normalizeWaNumber(phone) && (
+              <> Format wa.me: <span className="font-medium text-foreground">{formatWaDisplay(phone)}</span></>
+            )}
           </p>
         </div>
 
