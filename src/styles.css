@@ -183,6 +183,17 @@ body[data-has-bg="1"] main.bg-background {
   background-color: transparent !important;
 }
 
+/* Wrapper full-page yang memakai gradient ke background juga harus transparan
+   saat gambar latar aktif (mis. halaman publik /t/:token). */
+body[data-has-bg="1"] .min-h-screen.bg-gradient-to-b,
+body[data-has-bg="1"] .min-h-svh.bg-gradient-to-b,
+body[data-has-bg="1"] .min-h-screen.bg-gradient-to-t,
+body[data-has-bg="1"] .min-h-screen.bg-gradient-to-br,
+body[data-has-bg="1"] .min-h-screen.bg-gradient-to-bl {
+  background-image: none !important;
+  background-color: transparent !important;
+}
+
 body[data-font="sans"]    { --app-font-family: "Inter", system-ui, sans-serif; }
 body[data-font="serif"]   { --app-font-family: "Merriweather", Georgia, serif; }
 body[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, monospace; }
