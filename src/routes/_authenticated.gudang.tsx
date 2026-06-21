@@ -153,6 +153,23 @@ function fmtQtyDual(
   mode: "base" | "package",
   itemName?: string,
 ) {
+  // Khusus produk GS: tiap unit dasar (pcs) dihitung sebagai 1 botol,
+  // dan 100 botol = 1 karton. Tampilkan sebagai botol + hint karton,
+  // jangan tampilkan format "X botol (= Y pcs)" yang membingungkan.
+  if ((itemName ?? "").trim().toLowerCase() === "gs" && baseUnit === "pcs") {
+    const botol = Math.round(Number(baseQty) || 0);
+    const botolStr = `${botol.toLocaleString("id-ID")} botol`;
+    const per = 100;
+    if (botol >= per) {
+      const k = Math.floor(botol / per);
+      const sisa = botol - k * per;
+      const kStr = k.toLocaleString("id-ID");
+      return sisa > 0
+        ? `${botolStr} (= ${kStr} karton + ${sisa.toLocaleString("id-ID")} botol)`
+        : `${botolStr} (= ${kStr} karton)`;
+    }
+    return botolStr;
+  }
   if (mode === "base" || !packageType || packageType === "pcs" || packageSize <= 0) {
     return fmtBase(baseQty, baseUnit);
   }
