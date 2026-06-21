@@ -115,23 +115,32 @@ function resolveBaseUrl(): string {
   return first ?? PRODUCTION_BASE_FALLBACK;
 }
 
-export function publicTaskUrl(token: string): string {
+function pinFragment(pin?: string | null): string {
+  if (!pin) return "";
+  const clean = String(pin).replace(/\D/g, "");
+  if (clean.length < 4) return "";
+  // Fragment (#) tidak dikirim ke server / log, jadi aman untuk PIN.
+  return `#p=${clean}`;
+}
+
+export function publicTaskUrl(token: string, pin?: string | null): string {
   if (!isValidShareToken(token)) {
     throw new InvalidShareTokenError(
       !token ? "Token link kosong" : "Token link tidak valid",
     );
   }
-  return `${resolveBaseUrl()}/t/${token}`;
+  return `${resolveBaseUrl()}/t/${token}${pinFragment(pin)}`;
 }
 
 /** Semua URL kandidat untuk token tertentu (urutan = prioritas fallback). */
-export function publicTaskUrlCandidates(token: string): string[] {
+export function publicTaskUrlCandidates(token: string, pin?: string | null): string[] {
   if (!isValidShareToken(token)) {
     throw new InvalidShareTokenError(
       !token ? "Token link kosong" : "Token link tidak valid",
     );
   }
-  return taskBaseUrlCandidates().map((b) => `${b}/t/${token}`);
+  const frag = pinFragment(pin);
+  return taskBaseUrlCandidates().map((b) => `${b}/t/${token}${frag}`);
 }
 
 export type PrepSubmissionRow = {
