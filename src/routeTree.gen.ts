@@ -21,6 +21,7 @@ import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
+import { Route as AuthenticatedPricingRouteImport } from './routes/_authenticated.pricing'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
@@ -33,6 +34,7 @@ import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.c
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicPaymentsWebhookRouteImport } from './routes/api/public/payments/webhook'
 import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
 import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_authenticated.gudang.pesanan.$id.edit'
@@ -94,6 +96,11 @@ const AuthenticatedRequestRoute = AuthenticatedRequestRouteImport.update({
 const AuthenticatedProfilRoute = AuthenticatedProfilRouteImport.update({
   id: '/profil',
   path: '/profil',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedPricingRoute = AuthenticatedPricingRouteImport.update({
+  id: '/pricing',
+  path: '/pricing',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPengaturanKunciRoute =
@@ -163,6 +170,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicPaymentsWebhookRoute =
+  ApiPublicPaymentsWebhookRouteImport.update({
+    id: '/api/public/payments/webhook',
+    path: '/api/public/payments/webhook',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksEmailQueueMonitorRoute =
   ApiPublicHooksEmailQueueMonitorRouteImport.update({
     id: '/api/public/hooks/email-queue-monitor',
@@ -199,6 +212,7 @@ export interface FileRoutesByFullPath {
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/pricing': typeof AuthenticatedPricingRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
@@ -207,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
@@ -225,6 +240,7 @@ export interface FileRoutesByTo {
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/pricing': typeof AuthenticatedPricingRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
@@ -234,6 +250,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
@@ -255,6 +272,7 @@ export interface FileRoutesById {
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/_authenticated/pricing': typeof AuthenticatedPricingRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
@@ -264,6 +282,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
+  '/api/public/payments/webhook': typeof ApiPublicPaymentsWebhookRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
@@ -286,6 +305,7 @@ export interface FileRouteTypes {
     | '/label-preview'
     | '/link-pegawai'
     | '/pengaturan-kunci'
+    | '/pricing'
     | '/profil'
     | '/request'
     | '/tugas'
@@ -294,6 +314,7 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
+    | '/api/public/payments/webhook'
     | '/lovable/email/queue/process'
     | '/gudang/pesanan/$id/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -312,6 +333,7 @@ export interface FileRouteTypes {
     | '/label-preview'
     | '/link-pegawai'
     | '/pengaturan-kunci'
+    | '/pricing'
     | '/profil'
     | '/request'
     | '/tugas'
@@ -321,6 +343,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
+    | '/api/public/payments/webhook'
     | '/lovable/email/queue/process'
     | '/gudang/pesanan/$id/edit'
   id:
@@ -341,6 +364,7 @@ export interface FileRouteTypes {
     | '/_authenticated/label-preview'
     | '/_authenticated/link-pegawai'
     | '/_authenticated/pengaturan-kunci'
+    | '/_authenticated/pricing'
     | '/_authenticated/profil'
     | '/_authenticated/request'
     | '/_authenticated/tugas'
@@ -350,6 +374,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
+    | '/api/public/payments/webhook'
     | '/lovable/email/queue/process'
     | '/_authenticated/gudang/pesanan/$id/edit'
   fileRoutesById: FileRoutesById
@@ -364,6 +389,7 @@ export interface RootRouteChildren {
   TrustRoute: typeof TrustRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
+  ApiPublicPaymentsWebhookRoute: typeof ApiPublicPaymentsWebhookRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -453,6 +479,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedProfilRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/pricing': {
+      id: '/_authenticated/pricing'
+      path: '/pricing'
+      fullPath: '/pricing'
+      preLoaderRoute: typeof AuthenticatedPricingRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/pengaturan-kunci': {
       id: '/_authenticated/pengaturan-kunci'
       path: '/pengaturan-kunci'
@@ -537,6 +570,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/payments/webhook': {
+      id: '/api/public/payments/webhook'
+      path: '/api/public/payments/webhook'
+      fullPath: '/api/public/payments/webhook'
+      preLoaderRoute: typeof ApiPublicPaymentsWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/email-queue-monitor': {
       id: '/api/public/hooks/email-queue-monitor'
       path: '/api/public/hooks/email-queue-monitor'
@@ -611,6 +651,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
+  AuthenticatedPricingRoute: typeof AuthenticatedPricingRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
@@ -627,6 +668,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
+  AuthenticatedPricingRoute: AuthenticatedPricingRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
@@ -647,6 +689,7 @@ const rootRouteChildren: RootRouteChildren = {
   TrustRoute: TrustRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
+  ApiPublicPaymentsWebhookRoute: ApiPublicPaymentsWebhookRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
