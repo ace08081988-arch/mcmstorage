@@ -1908,9 +1908,9 @@ export type Database = {
         Args: { _q: string }
         Returns: {
           display_name: string
-          email: string
           kind: string
           label: string
+          phone: string
           user_id: string
         }[]
       }
