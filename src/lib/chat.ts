@@ -53,7 +53,7 @@ export function useChatContacts(q: string) {
       return (data ?? []) as Array<{
         user_id: string;
         display_name: string | null;
-        email: string | null;
+        phone: string | null;
         kind: string;
         label: string | null;
       }>;
@@ -135,13 +135,13 @@ export function useConversations() {
           for (const uid of m) if (uid !== myId) otherIds.add(uid);
         }
       }
-      let profileMap = new Map<string, { display_name: string | null; email: string | null }>();
+      let profileMap = new Map<string, { display_name: string | null; phone: string | null }>();
       if (otherIds.size > 0) {
         const { data: profs } = await supabase
           .from("profiles")
-          .select("id, display_name, email")
+          .select("id, display_name, phone")
           .in("id", Array.from(otherIds));
-        profileMap = new Map((profs ?? []).map((p) => [p.id, { display_name: p.display_name, email: p.email }]));
+        profileMap = new Map((profs ?? []).map((p) => [p.id, { display_name: p.display_name, phone: p.phone }]));
       }
 
       // Last messages
@@ -173,7 +173,7 @@ export function useConversations() {
           const m = memberMap.get(c.id) ?? [];
           const other = m.find((u) => u !== myId);
           const p = other ? profileMap.get(other) : null;
-          display = p?.display_name || p?.email || "Percakapan";
+          display = p?.display_name || p?.phone || "Percakapan";
         } else if (!display) {
           display = c.kind === "order" ? "Diskusi pesanan" : "Grup";
         }
