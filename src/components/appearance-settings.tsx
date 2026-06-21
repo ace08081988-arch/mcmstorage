@@ -18,6 +18,9 @@ const LS = {
   size: "app-font-size",
   accent: "app-accent",
   radius: "app-radius",
+  bgImage: "app-bg-image",
+  bgOverlay: "app-bg-overlay",
+  bgBlur: "app-bg-blur",
 };
 
 const ACCENTS: { id: string; label: string; value: string; swatch: string }[] = [
@@ -27,6 +30,15 @@ const ACCENTS: { id: string; label: string; value: string; swatch: string }[] = 
   { id: "rose",    label: "Merah",  value: "oklch(0.63 0.22 20)",  swatch: "#f43f5e" },
   { id: "amber",   label: "Kuning", value: "oklch(0.78 0.16 80)",  swatch: "#f59e0b" },
   { id: "slate",   label: "Netral", value: "oklch(0.30 0.04 260)", swatch: "#475569" },
+];
+
+const BG_PRESETS: { id: string; label: string; url: string }[] = [
+  { id: "none",     label: "Tanpa foto", url: "" },
+  { id: "mountain", label: "Gunung",     url: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1600&q=80" },
+  { id: "ocean",    label: "Laut",       url: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?auto=format&fit=crop&w=1600&q=80" },
+  { id: "forest",   label: "Hutan",      url: "https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1600&q=80" },
+  { id: "sunset",   label: "Senja",      url: "https://images.unsplash.com/photo-1495616811223-4d98c6e9c869?auto=format&fit=crop&w=1600&q=80" },
+  { id: "abstract", label: "Abstrak",    url: "https://images.unsplash.com/photo-1557672172-298e090bd0f1?auto=format&fit=crop&w=1600&q=80" },
 ];
 
 function resolveTheme(t: Theme): "light" | "dark" {
@@ -48,6 +60,9 @@ export function applyAppearance() {
   const size = (localStorage.getItem(LS.size) as FontSize | null) ?? "md";
   const accentId = localStorage.getItem(LS.accent) ?? "emerald";
   const radius = Number(localStorage.getItem(LS.radius) ?? "0.625");
+  const bgImage = localStorage.getItem(LS.bgImage) ?? "";
+  const bgOverlay = Number(localStorage.getItem(LS.bgOverlay) ?? "0.7");
+  const bgBlur = Number(localStorage.getItem(LS.bgBlur) ?? "0");
 
   root.classList.toggle("dark", resolveTheme(theme) === "dark");
   if (body) {
@@ -58,6 +73,12 @@ export function applyAppearance() {
   root.style.setProperty("--primary", accent.value);
   root.style.setProperty("--ring", accent.value);
   root.style.setProperty("--radius", `${radius}rem`);
+  root.style.setProperty(
+    "--app-bg-image",
+    bgImage ? `url("${bgImage.replace(/"/g, '\\"')}")` : "none",
+  );
+  root.style.setProperty("--app-bg-overlay", String(bgImage ? bgOverlay : 1));
+  root.style.setProperty("--app-bg-blur", `${bgImage ? bgBlur : 0}px`);
 }
 
 export function AppearanceInit() {
@@ -80,6 +101,9 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
   const [size, setSize] = useState<FontSize>("md");
   const [accent, setAccent] = useState<string>("emerald");
   const [radius, setRadius] = useState<number>(0.625);
+  const [bgImage, setBgImage] = useState<string>("");
+  const [bgOverlay, setBgOverlay] = useState<number>(0.7);
+  const [bgBlur, setBgBlur] = useState<number>(0);
 
   useEffect(() => {
     setTheme((localStorage.getItem(LS.theme) as Theme) ?? "dark");
@@ -87,11 +111,29 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
     setSize((localStorage.getItem(LS.size) as FontSize) ?? "md");
     setAccent(localStorage.getItem(LS.accent) ?? "emerald");
     setRadius(Number(localStorage.getItem(LS.radius) ?? "0.625"));
+    setBgImage(localStorage.getItem(LS.bgImage) ?? "");
+    setBgOverlay(Number(localStorage.getItem(LS.bgOverlay) ?? "0.7"));
+    setBgBlur(Number(localStorage.getItem(LS.bgBlur) ?? "0"));
   }, [open]);
 
   const save = (k: string, v: string) => {
     localStorage.setItem(k, v);
     applyAppearance();
+  };
+
+  const onPickFile = (file: File | null) => {
+    if (!file) return;
+    if (file.size > 4 * 1024 * 1024) {
+      alert("Ukuran foto maksimal 4MB. Pilih foto lain.");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      const url = String(reader.result ?? "");
+      setBgImage(url);
+      save(LS.bgImage, url);
+    };
+    reader.readAsDataURL(file);
   };
 
   return (
@@ -108,7 +150,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           {compact ? "🎨" : "🎨 Tampilan"}
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Pengaturan tampilan</DialogTitle>
           <DialogDescription>Atur tema, font, ukuran, warna aksen, dan kelengkungan sudut.</DialogDescription>
@@ -207,9 +249,97 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           />
         </section>
 
+        <section className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-semibold text-muted-foreground">Foto latar</p>
+            {bgImage && (
+              <button
+                onClick={() => { setBgImage(""); localStorage.removeItem(LS.bgImage); applyAppearance(); }}
+                className="text-[11px] font-medium text-destructive hover:underline"
+              >
+                Hapus latar
+              </button>
+            )}
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {BG_PRESETS.map((p) => {
+              const active = (p.url === "" && !bgImage) || bgImage === p.url;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => {
+                    setBgImage(p.url);
+                    if (p.url) save(LS.bgImage, p.url);
+                    else { localStorage.removeItem(LS.bgImage); applyAppearance(); }
+                  }}
+                  className={`relative h-14 overflow-hidden rounded-md border text-[10px] font-medium hover:opacity-90 ${active ? "border-primary ring-2 ring-primary" : "border-muted"}`}
+                  style={p.url ? { backgroundImage: `url("${p.url}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
+                  title={p.label}
+                >
+                  <span className="absolute inset-x-0 bottom-0 bg-black/50 px-1 py-0.5 text-white">
+                    {p.label}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <label className="mt-1 inline-flex w-full cursor-pointer items-center justify-center rounded-md border border-dashed px-3 py-2 text-xs font-medium hover:bg-accent">
+            📷 Unggah foto dari perangkat
+            <input
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
+            />
+          </label>
+
+          {bgImage && (
+            <>
+              <div className="space-y-1">
+                <p className="text-[11px] text-muted-foreground">
+                  Kegelapan overlay: {Math.round(bgOverlay * 100)}%
+                </p>
+                <input
+                  type="range"
+                  min={0}
+                  max={0.95}
+                  step={0.05}
+                  value={bgOverlay}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setBgOverlay(v);
+                    save(LS.bgOverlay, String(v));
+                  }}
+                  className="w-full"
+                />
+              </div>
+              <div className="space-y-1">
+                <p className="text-[11px] text-muted-foreground">
+                  Blur foto: {bgBlur}px
+                </p>
+                <input
+                  type="range"
+                  min={0}
+                  max={20}
+                  step={1}
+                  value={bgBlur}
+                  onChange={(e) => {
+                    const v = Number(e.target.value);
+                    setBgBlur(v);
+                    save(LS.bgBlur, String(v));
+                  }}
+                  className="w-full"
+                />
+              </div>
+            </>
+          )}
+        </section>
+
         <button
           onClick={() => {
-            [LS.theme, LS.font, LS.size, LS.accent, LS.radius].forEach((k) => localStorage.removeItem(k));
+            [LS.theme, LS.font, LS.size, LS.accent, LS.radius, LS.bgImage, LS.bgOverlay, LS.bgBlur].forEach((k) => localStorage.removeItem(k));
             applyAppearance();
             setOpen(false);
           }}
