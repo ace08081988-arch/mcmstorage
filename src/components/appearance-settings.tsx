@@ -79,6 +79,10 @@ export function applyAppearance() {
   );
   root.style.setProperty("--app-bg-overlay", String(bgImage ? bgOverlay : 1));
   root.style.setProperty("--app-bg-blur", `${bgImage ? bgBlur : 0}px`);
+  if (body) {
+    if (bgImage) body.dataset.hasBg = "1";
+    else delete body.dataset.hasBg;
+  }
 }
 
 export function AppearanceInit() {
