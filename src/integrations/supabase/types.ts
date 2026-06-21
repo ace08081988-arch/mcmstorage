@@ -847,26 +847,38 @@ export type Database = {
       }
       profiles: {
         Row: {
+          country_code: string
           created_at: string
+          currency: string
+          date_format: string
           display_name: string | null
           email: string | null
           id: string
+          language: string
           phone: string | null
           updated_at: string
         }
         Insert: {
+          country_code?: string
           created_at?: string
+          currency?: string
+          date_format?: string
           display_name?: string | null
           email?: string | null
           id: string
+          language?: string
           phone?: string | null
           updated_at?: string
         }
         Update: {
+          country_code?: string
           created_at?: string
+          currency?: string
+          date_format?: string
           display_name?: string | null
           email?: string | null
           id?: string
+          language?: string
           phone?: string | null
           updated_at?: string
         }
