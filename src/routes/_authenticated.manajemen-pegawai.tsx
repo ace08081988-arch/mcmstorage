@@ -85,6 +85,7 @@ function ManajemenPegawaiPage() {
   const [openForm, setOpenForm] = useState<Employee | "new" | null>(null);
   const [openDetail, setOpenDetail] = useState<Employee | null>(null);
   const [now, setNow] = useState(Date.now());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
@@ -184,6 +185,65 @@ function ManajemenPegawaiPage() {
     toast.success(`Link penyiapan dikirim ke WA ${emp.name}`);
   }
 
+  // Map empId -> {emp, activeTask} for entries eligible for bulk WA.
+  const eligibleForBulk = useMemo(() => {
+    const m = new Map<string, { emp: Employee; task: TaskRow }>();
+    for (const emp of filteredEmployees) {
+      if (emp.archived_at) continue;
+      if (!normalizeWaDigits(emp.phone)) continue;
+      const empTasks = tasksByEmployee.get(emp.id) ?? [];
+      const active = empTasks.find((t) => taskAvailability(t, now) === "active");
+      if (!active) continue;
+      m.set(emp.id, { emp, task: active });
+    }
+    return m;
+  }, [filteredEmployees, tasksByEmployee, now]);
+
+  function toggleSelect(empId: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(empId)) next.delete(empId);
+      else next.add(empId);
+      return next;
+    });
+  }
+
+  function selectAllEligible() {
+    setSelected(new Set(eligibleForBulk.keys()));
+  }
+
+  function clearSelection() {
+    setSelected(new Set());
+  }
+
+  function sendBulkWa() {
+    const items = Array.from(selected)
+      .map((id) => eligibleForBulk.get(id))
+      .filter((x): x is { emp: Employee; task: TaskRow } => !!x);
+    if (items.length === 0) {
+      toast.error("Pilih minimal satu pegawai yang punya tugas aktif & nomor WA.");
+      return;
+    }
+    let opened = 0;
+    let blocked = 0;
+    // Buka semua window secara sinkron dalam satu user-gesture agar
+    // browser tidak memblokir tab kedua dan seterusnya.
+    for (const { emp, task } of items) {
+      const phone = normalizeWaDigits(emp.phone);
+      if (!phone) continue;
+      const url = buildWhatsAppUrl(buildPrepMessage(emp.name, task), phone);
+      const win = window.open(url, "_blank", "noopener,noreferrer");
+      if (win) opened++;
+      else blocked++;
+    }
+    if (opened > 0) toast.success(`${opened} pesan WA dibuka. Tekan kirim di tiap tab WhatsApp.`);
+    if (blocked > 0) {
+      toast.error(`${blocked} tab diblokir browser. Izinkan popup untuk situs ini lalu coba lagi.`);
+    } else {
+      clearSelection();
+    }
+  }
+
   async function archiveEmployee(emp: Employee) {
     const ok = await confirmDialog({
       title: emp.archived_at ? "Pulihkan pegawai?" : "Arsipkan pegawai?",
@@ -275,6 +335,40 @@ function ManajemenPegawaiPage() {
           <div className="mt-0.5 text-muted-foreground">
             Tautan ada di kartu pegawai (tombol “Tautkan tugas lama”) atau buka{" "}
             <Link to="/link-pegawai" className="underline">daftar link</Link>.
+          </div>
+        </div>
+      )}
+
+      {eligibleForBulk.size > 0 && (
+        <div className="mb-3 flex flex-wrap items-center gap-2 rounded-lg border bg-card px-3 py-2 text-xs">
+          <span className="font-medium">
+            Kirim WA massal
+          </span>
+          <span className="text-muted-foreground">
+            {selected.size} dipilih dari {eligibleForBulk.size} pegawai siap kirim
+          </span>
+          <button
+            onClick={selectAllEligible}
+            className="ml-auto inline-flex h-7 items-center rounded-md border px-2 hover:bg-muted"
+          >
+            Pilih semua
+          </button>
+          <button
+            onClick={clearSelection}
+            disabled={selected.size === 0}
+            className="inline-flex h-7 items-center rounded-md border px-2 hover:bg-muted disabled:opacity-50"
+          >
+            Batal pilih
+          </button>
+          <button
+            onClick={sendBulkWa}
+            disabled={selected.size === 0}
+            className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+          >
+            <Send className="h-3 w-3" /> Kirim {selected.size > 0 ? `(${selected.size})` : "WA"}
+          </button>
+          <div className="basis-full text-[11px] text-muted-foreground">
+            Tiap pegawai akan dibuka di tab WhatsApp baru. Jika browser memblokir, izinkan popup untuk situs ini.
           </div>
         </div>
       )}
@@ -385,6 +479,15 @@ function ManajemenPegawaiPage() {
                 {activeTask && (
                   <div className="mt-2 space-y-1.5 rounded-md border bg-muted/30 p-2 text-[11px]">
                     <div className="flex items-center gap-1 font-medium text-foreground">
+                      {eligibleForBulk.has(emp.id) && (
+                        <input
+                          type="checkbox"
+                          checked={selected.has(emp.id)}
+                          onChange={() => toggleSelect(emp.id)}
+                          title="Pilih untuk kirim WA massal"
+                          className="mr-1 h-3.5 w-3.5"
+                        />
+                      )}
                       <Link2 className="h-3 w-3 text-primary" />
                       Penyiapan: <span className="truncate">{activeTask.title}</span>
                     </div>
