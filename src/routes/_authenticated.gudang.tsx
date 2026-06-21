@@ -115,17 +115,12 @@ function fmtBase(n: number, u: "g" | "pcs") {
 
 export { fmtBase, rupiah };
 
-// Format kuantitas dengan unit terpilih + setara dalam unit dasar.
-// Contoh: 56 botol → "56 botol (= 5.600 pcs)"
-// Aturan khusus: produk "GS" → 100 botol = 1 karton.
-// Jika berlaku, tambahan info karton akan disisipkan ke hasil format.
-const KARTON_RULES: { match: (name: string, pkgType: string) => boolean; botolPerKarton: number }[] = [
-  { match: (n, pt) => n.trim().toLowerCase() === "gs" && pt === "botol", botolPerKarton: 100 },
-];
+// Konversi standar di seluruh aplikasi: 100 botol = 1 karton.
+// Berlaku untuk semua produk/kategori dengan satuan kemasan "botol".
+export const BOTOL_PER_KARTON = 100;
 
-function getBotolPerKarton(name: string | undefined, packageType: string): number | null {
-  if (!name) return null;
-  for (const r of KARTON_RULES) if (r.match(name, packageType)) return r.botolPerKarton;
+function getBotolPerKarton(_name: string | undefined, packageType: string): number | null {
+  if ((packageType ?? "").trim().toLowerCase() === "botol") return BOTOL_PER_KARTON;
   return null;
 }
 
@@ -153,22 +148,12 @@ function fmtQtyDual(
   mode: "base" | "package",
   itemName?: string,
 ) {
-  // Khusus produk GS: tiap unit dasar (pcs) dihitung sebagai 1 botol,
-  // dan 100 botol = 1 karton. Tampilkan sebagai botol + hint karton,
-  // jangan tampilkan format "X botol (= Y pcs)" yang membingungkan.
+  // Kasus khusus: produk GS dimodelkan dengan base=pcs & package_size=100,
+  // tetapi tiap "pcs" sebenarnya = 1 botol. Tampilkan langsung sebagai
+  // botol + hint karton agar konsisten dengan aturan 100 botol = 1 karton.
   if ((itemName ?? "").trim().toLowerCase() === "gs" && baseUnit === "pcs") {
     const botol = Math.round(Number(baseQty) || 0);
-    const botolStr = `${botol.toLocaleString("id-ID")} botol`;
-    const per = 100;
-    if (botol >= per) {
-      const k = Math.floor(botol / per);
-      const sisa = botol - k * per;
-      const kStr = k.toLocaleString("id-ID");
-      return sisa > 0
-        ? `${botolStr} (= ${kStr} karton + ${sisa.toLocaleString("id-ID")} botol)`
-        : `${botolStr} (= ${kStr} karton)`;
-    }
-    return botolStr;
+    return `${botol.toLocaleString("id-ID")} botol${fmtKartonHint(botol, "gs", "botol")}`;
   }
   if (mode === "base" || !packageType || packageType === "pcs" || packageSize <= 0) {
     return fmtBase(baseQty, baseUnit);
