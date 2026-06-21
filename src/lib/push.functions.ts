@@ -100,3 +100,44 @@ export const sendTestPush = createServerFn({ method: "POST" })
     }
     return { sent, message: sent > 0 ? `Terkirim ke ${sent} perangkat` : "Gagal kirim" };
   });
+
+const testContactSchema = z.object({
+  kind: z.enum(["customer", "supplier"]),
+  id: z.string().uuid(),
+});
+
+/** Send a test push to the user account linked to a customer/supplier the caller owns. */
+export const sendTestPushToContact = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => testContactSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const table = data.kind === "customer" ? "customers" : "suppliers";
+    // RLS scopes to caller's rows, so this implicitly authorizes ownership.
+    const { data: row, error } = await context.supabase
+      .from(table)
+      .select("id, name, account_user_id")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (error) throw new Error(error.message);
+    if (!row) throw new Error("Kontak tidak ditemukan");
+    if (!row.account_user_id) {
+      return { sent: 0, message: "Kontak belum tertaut ke akun pengguna" };
+    }
+    const { notifyUsers } = await import("./push.server");
+    const result = await notifyUsers({
+      userIds: [row.account_user_id],
+      payload: {
+        title: "Uji notifikasi dari MCM Storage",
+        body: `Halo ${row.name}, ini notifikasi uji dari akun yang menautkan Anda.`,
+        url: "/chat",
+        tag: `test-contact:${row.id}`,
+      },
+    });
+    return {
+      sent: result.sent,
+      message:
+        result.sent > 0
+          ? `Terkirim ke ${result.sent} perangkat`
+          : "Pengguna belum mengaktifkan notifikasi di perangkatnya",
+    };
+  });
