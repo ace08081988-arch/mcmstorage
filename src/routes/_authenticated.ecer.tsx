@@ -19,7 +19,7 @@ import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
-import { shareToWhatsApp } from "@/lib/share-wa";
+import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -498,6 +498,17 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
   prep: EcerPreparation; index: number; title: EcerTitle; onChanged: () => void; onTitleUpdated: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
+  type ShareDiag = {
+    when: string;
+    online: boolean;
+    hasWebShare: boolean;
+    canShareFiles: boolean | null;
+    photoFetch?: { url: string; ok: boolean; status: number; statusText: string; bytes?: number; error?: string };
+    waUrl: string;
+    result: unknown;
+    error?: string;
+  };
+  const [shareDiag, setShareDiag] = useState<ShareDiag | null>(null);
   useEffect(() => { void ecerSignedUrl(prep.photo_path).then(setUrl); }, [prep.photo_path]);
 
   async function onShare() {
@@ -506,18 +517,61 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
       `Berat aktual: ${prep.actual_grams} ${title.unit_label}\n` +
       (prep.location_url ? `Lokasi: ${prep.location_url}\n` : "") +
       (prep.note ? `Catatan: ${prep.note}\n` : "");
+    const nav = typeof navigator !== "undefined" ? navigator : undefined;
+    const diag: ShareDiag = {
+      when: new Date().toISOString(),
+      online: typeof navigator !== "undefined" ? navigator.onLine : true,
+      hasWebShare: !!(nav && typeof nav.share === "function"),
+      canShareFiles: null,
+      waUrl: buildWhatsAppUrl(text),
+      result: null,
+    };
     let files: File[] | undefined;
     if (prep.photo_path) {
       try {
         const signed = await ecerSignedUrl(prep.photo_path, 600);
         if (signed) {
           const r = await fetch(signed);
-          const blob = await r.blob();
-          files = [new File([blob], `ecer-${prep.id}.jpg`, { type: blob.type || "image/jpeg" })];
+          const blob = r.ok ? await r.blob() : undefined;
+          diag.photoFetch = {
+            url: signed.split("?")[0] + "?…",
+            ok: r.ok, status: r.status, statusText: r.statusText,
+            bytes: blob?.size,
+          };
+          if (blob) {
+            files = [new File([blob], `ecer-${prep.id}.jpg`, { type: blob.type || "image/jpeg" })];
+          }
+        } else {
+          diag.photoFetch = { url: "(signed url null)", ok: false, status: 0, statusText: "no signed url" };
         }
-      } catch { /* abaikan */ }
+      } catch (e) {
+        diag.photoFetch = { url: "(exception)", ok: false, status: 0, statusText: "exception", error: (e as Error)?.message ?? String(e) };
+      }
     }
-    await shareToWhatsApp({ text, files });
+    if (files && nav && typeof nav.canShare === "function") {
+      try { diag.canShareFiles = nav.canShare({ files }); } catch { diag.canShareFiles = false; }
+    }
+    try {
+      const result = await shareToWhatsApp({ text, files });
+      diag.result = result;
+      notifyShareResult(result);
+      if (result.status !== "shared" && result.status !== "cancelled") {
+        setShareDiag(diag);
+      }
+    } catch (e) {
+      diag.error = (e as Error)?.message ?? String(e);
+      toast.error("Gagal kirim WA: " + diag.error);
+      setShareDiag(diag);
+    }
+  }
+
+  async function copyDiag() {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(shareDiag, null, 2));
+      toast.success("Detail disalin");
+    } catch (e) {
+      toast.error("Gagal menyalin: " + ((e as Error)?.message ?? String(e)));
+    }
   }
 
   async function onDelete() {
@@ -562,6 +616,31 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
         <div className="text-[9px] text-muted-foreground">
           {new Date(prep.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
         </div>
+        {shareDiag && (
+          <div className="mt-1 space-y-1 rounded border border-destructive/40 bg-destructive/5 p-2 text-[10px]">
+            <div className="flex items-center justify-between gap-1">
+              <span className="font-semibold text-destructive">Diagnostik kirim WA</span>
+              <button type="button" onClick={() => setShareDiag(null)} className="text-muted-foreground hover:underline">Tutup</button>
+            </div>
+            <div>Jaringan: <span className={shareDiag.online ? "text-emerald-600" : "text-destructive"}>{shareDiag.online ? "online" : "offline"}</span></div>
+            <div>Web Share API: {shareDiag.hasWebShare ? "ya" : "tidak"}{shareDiag.canShareFiles !== null && ` · file: ${shareDiag.canShareFiles ? "didukung" : "tidak"}`}</div>
+            {shareDiag.photoFetch && (
+              <div>
+                Foto: {shareDiag.photoFetch.ok ? "ok" : "gagal"} ({shareDiag.photoFetch.status} {shareDiag.photoFetch.statusText})
+                {typeof shareDiag.photoFetch.bytes === "number" && ` · ${shareDiag.photoFetch.bytes} B`}
+                {shareDiag.photoFetch.error && ` · ${shareDiag.photoFetch.error}`}
+              </div>
+            )}
+            <div className="break-all">wa.me: {shareDiag.waUrl}</div>
+            <div className="break-all">Hasil: {JSON.stringify(shareDiag.result)}</div>
+            {shareDiag.error && <div className="text-destructive">Error: {shareDiag.error}</div>}
+            <div className="flex gap-1 pt-1">
+              <button type="button" onClick={copyDiag} className="rounded border px-2 py-0.5 hover:bg-accent">Salin detail</button>
+              <a href={shareDiag.waUrl} target="_blank" rel="noreferrer" className="rounded border px-2 py-0.5 hover:bg-accent">Buka wa.me</a>
+              <button type="button" onClick={onShare} className="rounded border px-2 py-0.5 hover:bg-accent">Coba lagi</button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
