@@ -58,33 +58,61 @@ export class InvalidShareTokenError extends Error {
 // Daftar host produksi yang sah untuk membuka halaman pegawai (/t/:token).
 // Selain ini dianggap pratinjau / sandbox / origin tidak valid dan akan
 // otomatis di-fallback ke PRODUCTION_BASE.
+// Fallback berlapis untuk QR / link halaman pegawai (/t/:token):
+//   1) Base URL saat ini (origin) — hanya jika host termasuk produksi yang sah.
+//   2) Domain produksi utama (https://mcmstorage.biz).
+//   3) URL pegawai default (mirror lovable.app) sebagai cadangan terakhir
+//      jika base utama tidak bisa diparse.
 const PRODUCTION_BASE = "https://mcmstorage.biz";
+const PRODUCTION_BASE_FALLBACK = "https://mcmstorage.lovable.app";
 const PRODUCTION_HOSTS = new Set<string>([
   "mcmstorage.biz",
   "www.mcmstorage.biz",
   "mcmstorage.lovable.app",
 ]);
 
-function resolveBaseUrl(): string {
-  if (typeof window === "undefined") return PRODUCTION_BASE;
+function isValidHttpBase(url: string): boolean {
+  try {
+    const u = new URL(url);
+    return (u.protocol === "https:" || u.protocol === "http:") && !!u.hostname;
+  } catch {
+    return false;
+  }
+}
+
+function currentOriginIfProduction(): string | null {
+  if (typeof window === "undefined") return null;
   try {
     const { protocol, hostname, origin } = window.location;
-    // Hanya http/https yang valid untuk QR/link share.
-    if (protocol !== "http:" && protocol !== "https:") return PRODUCTION_BASE;
-    // Origin pratinjau Lovable tidak bisa dibuka pegawai.
+    if (protocol !== "http:" && protocol !== "https:") return null;
     const isPreviewSandbox =
       hostname.endsWith("lovableproject.com") ||
       hostname.startsWith("id-preview--") ||
       /--[a-z0-9-]+\.lovable\.app$/i.test(hostname) ||
       hostname === "localhost" ||
       hostname === "127.0.0.1";
-    if (isPreviewSandbox) return PRODUCTION_BASE;
-    // Hanya host produksi yang diizinkan; selain itu fallback.
-    if (!PRODUCTION_HOSTS.has(hostname)) return PRODUCTION_BASE;
-    return origin;
+    if (isPreviewSandbox) return null;
+    if (!PRODUCTION_HOSTS.has(hostname)) return null;
+    return isValidHttpBase(origin) ? origin : null;
   } catch {
-    return PRODUCTION_BASE;
+    return null;
   }
+}
+
+/** Daftar kandidat base URL berurutan dari yang paling diutamakan. */
+export function taskBaseUrlCandidates(): string[] {
+  const list = [
+    currentOriginIfProduction(),
+    isValidHttpBase(PRODUCTION_BASE) ? PRODUCTION_BASE : null,
+    isValidHttpBase(PRODUCTION_BASE_FALLBACK) ? PRODUCTION_BASE_FALLBACK : null,
+  ].filter((v): v is string => !!v);
+  // Dedup tanpa mengubah urutan.
+  return Array.from(new Set(list));
+}
+
+function resolveBaseUrl(): string {
+  const [first] = taskBaseUrlCandidates();
+  return first ?? PRODUCTION_BASE_FALLBACK;
 }
 
 export function publicTaskUrl(token: string): string {
@@ -94,6 +122,16 @@ export function publicTaskUrl(token: string): string {
     );
   }
   return `${resolveBaseUrl()}/t/${token}`;
+}
+
+/** Semua URL kandidat untuk token tertentu (urutan = prioritas fallback). */
+export function publicTaskUrlCandidates(token: string): string[] {
+  if (!isValidShareToken(token)) {
+    throw new InvalidShareTokenError(
+      !token ? "Token link kosong" : "Token link tidak valid",
+    );
+  }
+  return taskBaseUrlCandidates().map((b) => `${b}/t/${token}`);
 }
 
 export type PrepSubmissionRow = {
