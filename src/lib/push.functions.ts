@@ -141,3 +141,50 @@ export const sendTestPushToContact = createServerFn({ method: "POST" })
           : "Pengguna belum mengaktifkan notifikasi di perangkatnya",
     };
   });
+
+const testAllSchema = z.object({
+  kind: z.enum(["customer", "supplier", "all"]).default("all"),
+});
+
+/** Send a test push to every linked account across the caller's contacts. */
+export const sendTestPushToAllContacts = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => testAllSchema.parse(data ?? {}))
+  .handler(async ({ data, context }) => {
+    const tables: ("customers" | "suppliers")[] =
+      data.kind === "all"
+        ? ["customers", "suppliers"]
+        : [data.kind === "customer" ? "customers" : "suppliers"];
+    const userIds = new Set<string>();
+    for (const t of tables) {
+      const { data: rows, error } = await context.supabase
+        .from(t)
+        .select("account_user_id")
+        .not("account_user_id", "is", null);
+      if (error) throw new Error(error.message);
+      for (const r of rows ?? []) {
+        if (r.account_user_id) userIds.add(r.account_user_id);
+      }
+    }
+    if (userIds.size === 0) {
+      return { recipients: 0, sent: 0, message: "Belum ada kontak yang tertaut akun" };
+    }
+    const { notifyUsers } = await import("./push.server");
+    const result = await notifyUsers({
+      userIds: Array.from(userIds),
+      payload: {
+        title: "Uji notifikasi dari MCM Storage",
+        body: "Ini notifikasi uji yang dikirim ke seluruh kontak Anda yang tertaut.",
+        url: "/chat",
+        tag: "test-contact-all",
+      },
+    });
+    return {
+      recipients: userIds.size,
+      sent: result.sent,
+      message:
+        result.sent > 0
+          ? `Terkirim ke ${result.sent} perangkat (${userIds.size} pengguna)`
+          : `Tidak ada perangkat aktif dari ${userIds.size} pengguna tertaut`,
+    };
+  });

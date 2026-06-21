@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
-import { sendTestPushToContact } from "@/lib/push.functions";
+import { sendTestPushToContact, sendTestPushToAllContacts } from "@/lib/push.functions";
 import { friendlyError } from "@/lib/friendly-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -53,7 +53,9 @@ function KontakPage() {
   const [loading, setLoading] = useState(true);
   const [linkFor, setLinkFor] = useState<{ kind: Kind; row: Row } | null>(null);
   const [testing, setTesting] = useState<string | null>(null);
+  const [testingAll, setTestingAll] = useState(false);
   const sendTest = useServerFn(sendTestPushToContact);
+  const sendTestAll = useServerFn(sendTestPushToAllContacts);
 
   const refresh = async () => {
     setLoading(true);
@@ -106,6 +108,24 @@ function KontakPage() {
     }
   };
 
+  const linkedCount = useMemo(
+    () => rows.filter((r) => r.account_user_id).length,
+    [rows],
+  );
+
+  const handleTestAll = async () => {
+    setTestingAll(true);
+    try {
+      const res = await sendTestAll({ data: { kind: tab } });
+      if (res.sent > 0) toast.success(res.message);
+      else toast.warning(res.message);
+    } catch (e: any) {
+      toast.error(friendlyError(e));
+    } finally {
+      setTestingAll(false);
+    }
+  };
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
@@ -120,6 +140,19 @@ function KontakPage() {
           <h1 className="flex-1 truncate text-base font-semibold">
             Pelanggan &amp; Pemasok
           </h1>
+          <Button
+            size="sm"
+            variant="secondary"
+            disabled={testingAll || linkedCount === 0}
+            onClick={() => void handleTestAll()}
+            title={
+              linkedCount === 0
+                ? "Belum ada kontak tertaut"
+                : `Kirim uji ke ${linkedCount} kontak tertaut`
+            }
+          >
+            {testingAll ? "Mengirim…" : "Uji ke semua"}
+          </Button>
         </div>
       </header>
 
