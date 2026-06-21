@@ -4,6 +4,8 @@ import { logStorageError } from "@/lib/storage-log";
 // Reuse ecer-photos bucket — same path scoping rules apply.
 export const REQUEST_BUCKET = "ecer-photos";
 
+type StorageClient = Pick<typeof supabase, "storage">;
+
 export type RequestTitle = {
   id: string;
   user_id: string;
@@ -48,9 +50,10 @@ export type RequestPreparationItem = {
 export async function requestSignedUrl(
   path: string | null | undefined,
   expiresIn = 60 * 60 * 24,
+  client: StorageClient = supabase,
 ): Promise<string | null> {
   if (!path) return null;
-  const { data, error } = await supabase.storage.from(REQUEST_BUCKET).createSignedUrl(path, expiresIn);
+  const { data, error } = await client.storage.from(REQUEST_BUCKET).createSignedUrl(path, expiresIn);
   logStorageError({ bucket: REQUEST_BUCKET, op: "createSignedUrl", path, source: "requestSignedUrl" }, error);
   return data?.signedUrl ?? null;
 }
@@ -60,9 +63,10 @@ export async function uploadRequestPhoto(
   titleId: string,
   blob: Blob,
   ext = "jpg",
+  client: StorageClient = supabase,
 ): Promise<string | null> {
   const path = `${userId}/req-${titleId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await supabase.storage.from(REQUEST_BUCKET).upload(path, blob, {
+  const { error } = await client.storage.from(REQUEST_BUCKET).upload(path, blob, {
     contentType: blob.type || "image/jpeg",
     upsert: false,
   });
@@ -78,9 +82,10 @@ export async function uploadRequestPhotoViaToken(
   shareToken: string,
   blob: Blob,
   ext = "jpg",
+  client: StorageClient = supabase,
 ): Promise<string | null> {
   const path = `${ownerUserId}/${shareToken}/req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await supabase.storage.from(REQUEST_BUCKET).upload(path, blob, {
+  const { error } = await client.storage.from(REQUEST_BUCKET).upload(path, blob, {
     contentType: blob.type || "image/jpeg",
     upsert: false,
   });

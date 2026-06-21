@@ -1,10 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
 import { PhotoEditor } from "@/components/PhotoEditor";
 import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
+import { publicSupabase } from "@/lib/public-supabase";
 import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package } from "lucide-react";
 
 export const Route = createFileRoute("/t/$token")({
@@ -31,7 +31,7 @@ function PublicPrepPage() {
 
   async function fetchTask(p: string) {
     setLoading(true);
-    const { data, error } = await supabase.rpc("prep_get_task", { _token: token, _pin: p });
+    const { data, error } = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: p });
     setLoading(false);
     if (error) { toast.error("Gagal: " + error.message); return false; }
     const res = data as { ok: boolean; error?: string; task?: PrepTaskRow; items?: PrepItemRow[] };
@@ -171,7 +171,7 @@ function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow;
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
 
-  useEffect(() => { signedUrl(item.ref_photo_path).then(setRefSigned); }, [item.ref_photo_path]);
+  useEffect(() => { signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned); }, [item.ref_photo_path]);
 
   function pickCamera() { cameraRef.current?.click(); }
   function pickGallery() { galleryRef.current?.click(); }
@@ -224,7 +224,7 @@ function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow;
     try {
       let photoPath: string | null = null;
       if (photo) {
-        photoPath = await uploadPrepPhoto(token, item.id, photo.blob, "jpg");
+        photoPath = await uploadPrepPhoto(token, item.id, photo.blob, "jpg", publicSupabase);
         if (!photoPath) { toast.error("Upload foto gagal"); setBusy(false); return; }
       }
       const args = {
@@ -234,7 +234,7 @@ function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow;
         _note: note || null, _qty_reported: null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.rpc as any)("prep_submit", args);
+      const { data, error } = await (publicSupabase.rpc as any)("prep_submit", args);
       if (error) throw error;
       const res = data as { ok: boolean; error?: string; available?: number; requested?: number; deducted?: number };
       if (!res?.ok) {
@@ -343,7 +343,7 @@ function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow;
 
 function SubmissionThumb({ path }: { path: string | null }) {
   const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => { signedUrl(path, 60 * 60).then(setUrl); }, [path]);
+  useEffect(() => { signedUrl(path, 60 * 60, publicSupabase).then(setUrl); }, [path]);
   if (!url) return <div className="h-12 w-12 shrink-0 rounded border bg-muted" />;
   return <img src={url} alt="" className="h-12 w-12 shrink-0 rounded border object-cover" />;
 }
@@ -372,7 +372,7 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
 
   async function load() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (supabase.rpc as any)("request_list_titles_via_task", { _token: token, _pin: pin });
+    const { data, error } = await (publicSupabase.rpc as any)("request_list_titles_via_task", { _token: token, _pin: pin });
     if (error) { toast.error("Gagal muat request: " + error.message); return; }
     const res = data as { ok: boolean; titles?: RequestTitleDTO[]; owner_user_id?: string };
     if (res?.ok) {
@@ -480,7 +480,7 @@ function RequestForm({
     setBusy(true);
     try {
       if (!ownerUserId) { toast.error("Sesi belum siap, coba muat ulang"); setBusy(false); return; }
-      const photoPath = await uploadRequestPhotoViaToken(ownerUserId, token, photo.blob);
+      const photoPath = await uploadRequestPhotoViaToken(ownerUserId, token, photo.blob, "jpg", publicSupabase);
       if (!photoPath) throw new Error("Upload foto gagal");
       const itemsPayload = validRows.map((r) => ({
         warehouse_item_id: r.warehouse_item_id,
@@ -494,7 +494,7 @@ function RequestForm({
         _note: note || null, _prep_task_item_id: null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await (supabase.rpc as any)("request_submit_via_task", args);
+      const { data, error } = await (publicSupabase.rpc as any)("request_submit_via_task", args);
       if (error) throw error;
       const res = data as { ok: boolean; error?: string };
       if (!res?.ok) throw new Error(res?.error || "submit_failed");
