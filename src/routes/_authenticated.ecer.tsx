@@ -20,6 +20,7 @@ import {
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
+import { fmtItemQty } from "@/lib/stock-format";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
