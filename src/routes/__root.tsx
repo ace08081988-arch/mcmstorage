@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
 import { AppearanceInit } from "@/components/appearance-settings";
+import { applyCompactMode } from "@/components/CompactModeToggle";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
 
@@ -143,6 +144,7 @@ function RootComponent() {
     bootstrapNativePermissions().catch((e) =>
       console.warn("[perm-bootstrap]", e),
     );
+    applyCompactMode();
   }, []);
 
   return (

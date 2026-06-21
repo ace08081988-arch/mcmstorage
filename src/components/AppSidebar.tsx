@@ -3,6 +3,7 @@ import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, U
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
   SidebarGroupLabel,
@@ -12,6 +13,7 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar";
+import { CompactModeToggle } from "@/components/CompactModeToggle";
 
 const items = [
   { title: "Beranda", url: "/", icon: Home },
@@ -69,6 +71,9 @@ export function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+      <SidebarFooter className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
+        <CompactModeToggle />
+      </SidebarFooter>
     </Sidebar>
   );
 }
