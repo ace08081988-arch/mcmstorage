@@ -1342,10 +1342,26 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
   const [currentStock, setCurrentStock] = useState(item.stock_base);
   const baseUnit = defaultBase(packageType);
   const effectiveSize = packageType === "pcs" ? 1 : Number(packageSize) || 0;
+  const originalBaseUnit = item.base_unit;
+  const baseUnitChanged = baseUnit !== originalBaseUnit;
 
   async function save() {
     if (!name.trim()) { toast.error("Nama wajib"); return; }
     if (packageType !== "pcs" && effectiveSize <= 0) { toast.error("Ukuran kemasan > 0"); return; }
+    if (baseUnitChanged) {
+      const fromLabel = originalBaseUnit === "g" ? "gram" : "pcs";
+      const toLabel = baseUnit === "g" ? "gram" : "pcs";
+      const ok = await confirm({
+        title: `Ubah satuan dasar ${fromLabel} → ${toLabel}?`,
+        description:
+          `Stok (${item.stock_base} ${originalBaseUnit}) & HPP (Rp${item.avg_cost_per_base}/${originalBaseUnit}) ` +
+          `TIDAK dikonversi otomatis. Histori pembelian & penjualan akan terbaca dalam satuan baru. ` +
+          `Lanjutkan hanya bila Anda yakin (mis. barang ini belum pernah terpakai). ` +
+          `Sebaiknya buat barang baru bila ingin ganti antara botol/sachet/pcs ⇄ gram.`,
+        confirmText: "Ya, paham risikonya",
+      });
+      if (!ok) return;
+    }
     setSaving(true);
     const { error } = await supabase.from("warehouse_items").update({
       name: name.trim(),
