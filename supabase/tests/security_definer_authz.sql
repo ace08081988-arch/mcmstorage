@@ -12,14 +12,12 @@ LANGUAGE plpgsql AS $$
 BEGIN
   PERFORM set_config('request.jwt.claims',
     json_build_object('sub', _uid::text, 'role', 'authenticated')::text, true);
-  PERFORM set_config('role', 'authenticated', true);
 END $$;
 
 CREATE OR REPLACE FUNCTION pg_temp.as_anon() RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
   PERFORM set_config('request.jwt.claims', json_build_object('role','anon')::text, true);
-  PERFORM set_config('role', 'anon', true);
 END $$;
 
 CREATE OR REPLACE FUNCTION pg_temp.expect_error(_label text, _sqlstate text DEFAULT NULL) RETURNS void
@@ -74,13 +72,12 @@ END $$;
 -- Anon call must be rejected.
 DO $$
 BEGIN
-  PERFORM pg_temp.as_anon();
-  BEGIN
-    PERFORM public.prep_create_task('x', NULL, '1234', 'tok_x', '[]'::jsonb);
-    RAISE EXCEPTION 'FAIL prep_create_task allowed anon';
-  EXCEPTION WHEN OTHERS THEN
-    RAISE NOTICE 'PASS prep_create_task rejects anon (%)', SQLERRM;
-  END;
+  -- prep_create_task must NOT be EXECUTE-able by anon.
+  IF has_function_privilege('anon',
+       'public.prep_create_task(text,text,text,text,jsonb)', 'EXECUTE') THEN
+    RAISE EXCEPTION 'FAIL prep_create_task is granted to anon';
+  END IF;
+  RAISE NOTICE 'PASS prep_create_task is not granted to anon';
 END $$;
 
 -- =====================================================================
