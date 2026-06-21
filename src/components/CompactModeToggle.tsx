@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 
 const LS_KEY = "app-compact-mode";
 const DEFAULT_ON = true; // default rilis: padat
+export const COMPACT_MODE_EVENT = "compact-mode-change";
 
 export function applyCompactMode() {
   if (typeof document === "undefined") return;
@@ -28,6 +29,9 @@ export function CompactModeToggle() {
   useEffect(() => {
     document.documentElement.classList.toggle("compact", on);
     localStorage.setItem(LS_KEY, on ? "1" : "0");
+    try {
+      window.dispatchEvent(new CustomEvent(COMPACT_MODE_EVENT, { detail: { on } }));
+    } catch { /* ignore */ }
   }, [on]);
 
   return (
