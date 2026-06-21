@@ -96,6 +96,8 @@ function LinkPegawaiPage() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [regenId, setRegenId] = useState<string | null>(null);
+  const [regenAt, setRegenAt] = useState<Record<string, number>>({});
+  const [testMode, setTestMode] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState<number | null>(null);
