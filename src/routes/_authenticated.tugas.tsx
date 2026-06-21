@@ -587,10 +587,10 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             </span>
           </div>
           {summary.linesWithoutPhoto > 0 && (
-            <div className="mt-1 flex items-start gap-1 text-[10px] text-destructive">
+            <div className="mt-1 flex items-start gap-1 text-[10px] text-amber-600">
               <ImageIcon className="mt-0.5 h-3 w-3 shrink-0" />
               <span>
-                <b>{summary.linesWithoutPhoto}</b> baris belum punya foto dan tidak akan ikut dikirim:{" "}
+                <b>{summary.linesWithoutPhoto}</b> baris belum punya foto referensi — tugas tetap bisa dikirim, hanya tanpa lampiran foto:{" "}
                 <span className="text-muted-foreground">{summary.itemsWithoutPhoto.join(", ")}</span>
               </span>
             </div>
