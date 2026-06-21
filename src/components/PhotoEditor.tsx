@@ -430,13 +430,39 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         </DialogContent>
       </Dialog>
 
-      <Dialog open={previewZoom} onOpenChange={setPreviewZoom}>
-        <DialogContent className="max-w-[95vw] p-3 sm:max-w-2xl">
+      <Dialog
+        open={previewZoom}
+        onOpenChange={(o) => { setPreviewZoom(o); if (!o) setPreviewFullscreen(false); }}
+      >
+        <DialogContent
+          className={
+            previewFullscreen
+              ? "h-screen w-screen max-w-none rounded-none border-0 p-3 sm:max-w-none"
+              : "max-w-[95vw] p-3 sm:max-w-2xl"
+          }
+        >
           <DialogHeader>
-            <DialogTitle>Pratinjau Foto</DialogTitle>
+            <DialogTitle className="flex items-center justify-between gap-2 pr-6">
+              <span>Pratinjau Foto</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setPreviewFullscreen((v) => !v)}
+                aria-label={previewFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+                title={previewFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+              >
+                {previewFullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+              </Button>
+            </DialogTitle>
             <DialogDescription>Cubit atau gunakan tombol untuk memperbesar.</DialogDescription>
           </DialogHeader>
-          <div className="relative max-h-[70vh] overflow-auto rounded-md bg-black/80">
+          <div
+            className={
+              previewFullscreen
+                ? "relative flex-1 overflow-auto rounded-md bg-black/80"
+                : "relative max-h-[70vh] overflow-auto rounded-md bg-black/80"
+            }
+          >
             <img
               src={src}
               alt="Pratinjau foto besar"
