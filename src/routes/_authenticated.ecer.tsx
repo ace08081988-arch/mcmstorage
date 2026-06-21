@@ -13,7 +13,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
-  Share2, ExternalLink, Loader2, ChevronLeft, Package,
+  Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw,
 } from "lucide-react";
 import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
@@ -41,23 +41,39 @@ function EcerPage() {
   const [items, setItems] = useState<WarehouseItem[]>([]);
   const [titles, setTitles] = useState<EcerTitle[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>(search.item);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
   const [editingTitle, setEditingTitle] = useState<EcerTitle | null>(null);
   const [creatingTitle, setCreatingTitle] = useState(false);
 
-  useEffect(() => {
-    void (async () => {
+  async function loadAll() {
+    setLoading(true);
+    setLoadError(null);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess?.session) {
+        setLoadError("Sesi belum siap. Coba muat ulang sebentar lagi.");
+        setLoading(false);
+        return;
+      }
       const [wi, et] = await Promise.all([
         supabase.from("warehouse_items").select("id,name,category,base_unit,stock_base,image_path").order("name"),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase.from as any)("ecer_titles").select("*").order("position").order("created_at"),
       ]);
-      if (wi.data) setItems(wi.data as WarehouseItem[]);
-      if (et.data) setTitles(et.data as EcerTitle[]);
+      if (wi.error) throw wi.error;
+      if (et.error) throw et.error;
+      setItems((wi.data ?? []) as WarehouseItem[]);
+      setTitles((et.data ?? []) as EcerTitle[]);
+    } catch (e) {
+      setLoadError((e as Error).message || "Gagal memuat data ecer");
+    } finally {
       setLoading(false);
-    })();
-  }, []);
+    }
+  }
+
+  useEffect(() => { void loadAll(); }, []);
 
   // sync URL when selection changes
   useEffect(() => {
@@ -91,6 +107,21 @@ function EcerPage() {
     return (
       <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
+      </div>
+    );
+  }
+
+  if (loadError && items.length === 0 && titles.length === 0) {
+    return (
+      <div className="mx-auto max-w-md p-6">
+        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5 text-center">
+          <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-destructive" />
+          <div className="mb-1 text-sm font-semibold">Gagal memuat Penyiapan Ecer</div>
+          <div className="mb-3 text-xs text-muted-foreground">{loadError}</div>
+          <Button size="sm" onClick={() => void loadAll()}>
+            <RotateCw className="mr-1 h-4 w-4" /> Coba lagi
+          </Button>
+        </div>
       </div>
     );
   }
