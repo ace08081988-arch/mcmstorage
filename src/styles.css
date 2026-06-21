@@ -175,6 +175,14 @@
   }
 }
 
+/* Saat gambar latar aktif: jangan tutupi dengan warna solid di wrapper full-page.
+   Kartu/input/sticky-header tetap solid agar tetap terbaca. */
+body[data-has-bg="1"] .min-h-screen.bg-background,
+body[data-has-bg="1"] .min-h-svh.bg-background,
+body[data-has-bg="1"] main.bg-background {
+  background-color: transparent !important;
+}
+
 body[data-font="sans"]    { --app-font-family: "Inter", system-ui, sans-serif; }
 body[data-font="serif"]   { --app-font-family: "Merriweather", Georgia, serif; }
 body[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, monospace; }
