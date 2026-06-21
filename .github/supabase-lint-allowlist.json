@@ -1,0 +1,37 @@
+{
+  "_comment": "Intentional Supabase linter findings. Each entry suppresses ONE finding by (name, level, metadata.name). Update only when you intentionally accept a new finding; document why in 'reason'.",
+  "allow": [
+    {
+      "name": "anon_security_definer_function_executable",
+      "level": "WARN",
+      "functions": [
+        "public.prep_get_task",
+        "public.prep_submit",
+        "public.prep_upload_allowed",
+        "public.prep_worker_upload_allowed",
+        "public.ecer_list_titles_via_task",
+        "public.ecer_submit_via_task",
+        "public.request_list_titles_via_task",
+        "public.request_submit_via_task"
+      ],
+      "reason": "Share-token + bcrypt-PIN worker RPCs. Anon access is the auth mechanism for offline warehouse workers; each call re-validates token + PIN and rate-limits failures via prep_pin_failures/prep_pin_alerts."
+    },
+    {
+      "name": "authenticated_security_definer_function_executable",
+      "level": "WARN",
+      "functions": [
+        "public.prep_create_task",
+        "public.start_dm",
+        "public.create_group",
+        "public.add_group_member",
+        "public.ensure_order_conversation",
+        "public.has_role",
+        "public.can_chat",
+        "public.is_conversation_member",
+        "public.is_conversation_owner",
+        "public.search_chat_contacts"
+      ],
+      "reason": "User-facing RPCs that enforce auth.uid() ownership/membership internally. Covered by supabase/tests/security_definer_authz.sql."
+    }
+  ]
+}
