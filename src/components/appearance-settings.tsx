@@ -252,14 +252,29 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
         <section className="space-y-2">
           <div className="flex items-center justify-between">
             <p className="text-xs font-semibold text-muted-foreground">Foto latar</p>
-            {bgImage && (
+            <div className="flex items-center gap-3">
               <button
-                onClick={() => { setBgImage(""); localStorage.removeItem(LS.bgImage); applyAppearance(); }}
-                className="text-[11px] font-medium text-destructive hover:underline"
+                onClick={() => {
+                  setBgImage("");
+                  setBgOverlay(0.7);
+                  setBgBlur(0);
+                  [LS.bgImage, LS.bgOverlay, LS.bgBlur].forEach((k) => localStorage.removeItem(k));
+                  applyAppearance();
+                }}
+                className="text-[11px] font-medium text-muted-foreground hover:text-foreground hover:underline"
+                title="Reset preset, overlay, dan blur ke default"
               >
-                Hapus latar
+                ↺ Reset
               </button>
-            )}
+              {bgImage && (
+                <button
+                  onClick={() => { setBgImage(""); localStorage.removeItem(LS.bgImage); applyAppearance(); }}
+                  className="text-[11px] font-medium text-destructive hover:underline"
+                >
+                  Hapus latar
+                </button>
+              )}
+            </div>
           </div>
 
           {/* Pratinjau langsung */}
