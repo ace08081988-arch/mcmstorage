@@ -620,6 +620,27 @@ function PrepEditorDialog({
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
 
+  /**
+   * Normalisasi nomor WA ke format E.164 digit-only (tanpa "+").
+   * - Hapus semua karakter non-digit (spasi, "-", "()", "+", dst).
+   * - Awalan "00" (mis. 0062…) → buang prefix internasional 00.
+   * - Awalan "0" lokal Indonesia (mis. 0812…) → ganti jadi "62".
+   * Mengembalikan { digits, error }. digits = "" bila tidak valid.
+   */
+  function normalizeWaPhone(raw: string): { digits: string; error: string | null } {
+    let d = (raw || "").replace(/\D/g, "");
+    if (!d) return { digits: "", error: "Nomor WA wajib diisi" };
+    if (d.startsWith("00")) d = d.slice(2);
+    else if (d.startsWith("0")) d = "62" + d.slice(1);
+    if (d.length < 8 || d.length > 15) {
+      return { digits: "", error: "Nomor WA harus 8–15 digit (format internasional)" };
+    }
+    if (/^0+$/.test(d)) return { digits: "", error: "Nomor WA tidak valid" };
+    return { digits: d, error: null };
+  }
+
+  const waNorm = normalizeWaPhone(waPhone);
+
   useEffect(() => {
     if (!open) return;
     setRows(titleItems.map((i) => ({ warehouse_item_id: i.warehouse_item_id, actual_grams: String(i.target_grams) })));
@@ -676,7 +697,12 @@ function PrepEditorDialog({
     if (!photo) { toast.error("Wajib lampirkan foto"); return; }
     const validRows = rows.filter((r) => r.warehouse_item_id && Number(r.actual_grams) > 0);
     if (validRows.length === 0) { toast.error("Minimal 1 produk dengan gram > 0"); return; }
-    if (opts?.sendWa && !waPhone.replace(/\D/g, "")) { toast.error("Isi nomor WA dulu"); return; }
+    let normalizedPhone = "";
+    if (opts?.sendWa) {
+      const n = normalizeWaPhone(waPhone);
+      if (n.error) { toast.error(n.error); return; }
+      normalizedPhone = n.digits;
+    }
     setBusy(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -710,7 +736,7 @@ function PrepEditorDialog({
           const res = await shareToWhatsApp({
             text: buildMessage(),
             title: `Penyiapan ${title.name}`,
-            phone: waPhone,
+            phone: normalizedPhone,
             files: [file],
           });
           notifyShareResult(res);
@@ -794,11 +820,17 @@ function PrepEditorDialog({
               onChange={(e) => setWaPhone(e.target.value)}
               placeholder="cth: 628123456789"
             />
-            <p className="mt-1 text-[10px] text-muted-foreground">Format internasional tanpa tanda +. Opsional — isi jika ingin langsung kirim WA.</p>
+            {waPhone.trim() === "" ? (
+              <p className="mt-1 text-[10px] text-muted-foreground">Format internasional tanpa tanda +. Awalan 0 otomatis diganti jadi 62.</p>
+            ) : waNorm.error ? (
+              <p className="mt-1 text-[10px] text-destructive">{waNorm.error}</p>
+            ) : (
+              <p className="mt-1 text-[10px] text-muted-foreground">Akan dikirim ke: <span className="font-mono">+{waNorm.digits}</span></p>
+            )}
           </div>
         </div>
         <DialogFooter className="flex-col gap-2 sm:flex-col">
-          <Button size="sm" onClick={() => save({ sendWa: true })} disabled={busy || !waPhone.replace(/\D/g, "")} className="w-full">
+          <Button size="sm" onClick={() => save({ sendWa: true })} disabled={busy || !!waNorm.error} className="w-full">
             {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Send className="mr-1 h-3 w-3" />}
             Simpan &amp; Kirim WA
           </Button>
