@@ -133,9 +133,16 @@ function fmtKartonHint(pkgQty: number, name: string | undefined, packageType: st
   const per = getBotolPerKarton(name, packageType);
   if (!per || per <= 0) return "";
   const k = pkgQty / per;
-  if (!Number.isFinite(k) || k === 0) return "";
-  const kStr = k.toLocaleString("id-ID", { maximumFractionDigits: 2 });
-  return ` · ≈ ${kStr} karton`;
+  if (!Number.isFinite(k) || k < 1) return "";
+  // Hanya tampilkan hint karton bila jumlah botol ≥ 1 karton penuh.
+  // Jika tidak genap kelipatan karton, sisanya ditampilkan dalam botol.
+  const kInt = Math.floor(k);
+  const sisaBotol = Math.round(pkgQty - kInt * per);
+  const kStr = kInt.toLocaleString("id-ID");
+  if (sisaBotol > 0) {
+    return ` · = ${kStr} karton + ${sisaBotol.toLocaleString("id-ID")} botol`;
+  }
+  return ` · = ${kStr} karton`;
 }
 
 function fmtQtyDual(
