@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 import { confirm } from "@/lib/confirm";
 import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
+import { useMyProfile } from "@/lib/profile";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
@@ -449,6 +450,14 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
   const [contact, setContact] = useState("");
   const [notes, setNotes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const { data: myProfile } = useMyProfile();
+  const canUseMyContact = !!(myProfile?.display_name || myProfile?.phone);
+  function useMyContact() {
+    if (!myProfile) return;
+    if (myProfile.display_name) setName(myProfile.display_name);
+    if (myProfile.phone) setContact(myProfile.phone);
+    toast.success("Diisi dari akun Anda");
+  }
 
   function resetForm() { setEditingId(null); setName(""); setContact(""); setNotes(""); }
   function startEdit(c: Customer) {
@@ -486,6 +495,15 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama pelanggan *" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. WA / kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={50} />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={200} />
+        <button
+          type="button"
+          onClick={useMyContact}
+          disabled={!canUseMyContact}
+          className="w-full rounded-md border border-dashed px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-accent disabled:opacity-50"
+          title={canUseMyContact ? "Isi nama & no. WA dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
+        >
+          👤 Pakai kontak akun saya
+        </button>
         <div className="flex gap-2">
           <button className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">{editingId ? "Perbarui" : "Simpan"}</button>
           {editingId && <button type="button" onClick={resetForm} className="rounded-md border px-3 py-2 text-sm hover:bg-accent">Batal</button>}
@@ -1424,6 +1442,14 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
   const [emailBcc, setEmailBcc] = useState("");
   const [notes, setNotes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const { data: myProfile } = useMyProfile();
+  const canUseMyContact = !!(myProfile?.display_name || myProfile?.phone);
+  function useMyContact() {
+    if (!myProfile) return;
+    if (myProfile.display_name) setName(myProfile.display_name);
+    if (myProfile.phone) setContact(myProfile.phone);
+    toast.success("Diisi dari akun Anda");
+  }
 
   function resetForm() {
     setEditingId(null); setName(""); setContact(""); setEmail(""); setEmailCc(""); setEmailBcc(""); setNotes("");
@@ -1484,6 +1510,15 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="CC (pisahkan dengan koma, opsional)" value={emailCc} onChange={(e) => setEmailCc(e.target.value)} />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="BCC (pisahkan dengan koma, opsional)" value={emailBcc} onChange={(e) => setEmailBcc(e.target.value)} />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} />
+        <button
+          type="button"
+          onClick={useMyContact}
+          disabled={!canUseMyContact}
+          className="w-full rounded-md border border-dashed px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-accent disabled:opacity-50"
+          title={canUseMyContact ? "Isi nama & no. WA dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
+        >
+          👤 Pakai kontak akun saya
+        </button>
         <div className="flex gap-2">
           <button className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">
             {editingId ? "Perbarui" : "Simpan"}
