@@ -2,14 +2,32 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Loader2, MessageCircle } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
 import {
   getConversationMeta,
   markConversationRead,
+  useDeleteAllMyMessages,
+  useDeleteMessage,
   useConversationMessages,
   useMyUserId,
   type MessageRow,
@@ -33,6 +51,9 @@ function ChatRoomPage() {
   const navigate = useNavigate();
   const { data: myId } = useMyUserId();
   const { data: messages, isLoading } = useConversationMessages(conversationId);
+  const deleteMsg = useDeleteMessage(conversationId);
+  const deleteAllMine = useDeleteAllMyMessages(conversationId);
+  const [confirmAllOpen, setConfirmAllOpen] = useState(false);
 
   const meta = useQuery({
     queryKey: ["chat", "conv-meta", conversationId],
@@ -138,6 +159,22 @@ function ChatRoomPage() {
               `Grup · ${members.data?.length ?? 0} anggota`}
           </div>
         </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="icon" aria-label="Opsi percakapan">
+              <MoreVertical className="h-5 w-5" />
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuItem
+              className="text-destructive focus:text-destructive"
+              onSelect={() => setConfirmAllOpen(true)}
+            >
+              <Trash2 className="mr-2 h-4 w-4" />
+              Hapus semua pesan saya
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </header>
 
       <div ref={scrollerRef} className="flex-1 space-y-3 overflow-y-auto p-3">
@@ -162,24 +199,58 @@ function ChatRoomPage() {
                 const showSender = !mine && (meta.data?.kind !== "dm");
                 return (
                   <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
-                    <div
-                      className={`max-w-[80%] rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm ${
-                        mine
-                          ? "rounded-br-sm bg-primary text-primary-foreground"
-                          : "rounded-bl-sm bg-muted text-foreground"
-                      }`}
-                    >
-                      {showSender ? (
-                        <div className="mb-0.5 text-[10px] font-semibold opacity-80">{senderName}</div>
-                      ) : null}
-                      {m.deleted_at ? (
-                        <em className="opacity-70">(pesan dihapus)</em>
-                      ) : (
-                        <div className="whitespace-pre-wrap break-words">{m.body}</div>
-                      )}
-                      <div className={`mt-0.5 text-right text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                        {fmtTime(m.created_at)}
+                    <div className={`group relative flex max-w-[80%] items-start gap-1 ${mine ? "flex-row-reverse" : "flex-row"}`}>
+                      <div
+                        className={`rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm ${
+                          mine
+                            ? "rounded-br-sm bg-primary text-primary-foreground"
+                            : "rounded-bl-sm bg-muted text-foreground"
+                        }`}
+                      >
+                        {showSender ? (
+                          <div className="mb-0.5 text-[10px] font-semibold opacity-80">{senderName}</div>
+                        ) : null}
+                        {m.deleted_at ? (
+                          <em className="opacity-70">(pesan dihapus)</em>
+                        ) : (
+                          <div className="whitespace-pre-wrap break-words">{m.body}</div>
+                        )}
+                        <div className={`mt-0.5 text-right text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                          {fmtTime(m.created_at)}
+                        </div>
                       </div>
+                      {mine ? (
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-6 w-6 self-center opacity-0 transition-opacity group-hover:opacity-100 data-[state=open]:opacity-100"
+                              aria-label="Opsi pesan"
+                            >
+                              <MoreVertical className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-56">
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              disabled={deleteMsg.isPending}
+                              onSelect={() => {
+                                deleteMsg.mutate(
+                                  { id: m.id, attachment_path: m.attachment_path },
+                                  {
+                                    onError: (e) =>
+                                      toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
+                                  },
+                                );
+                              }}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Hapus untuk semua orang
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      ) : null}
                     </div>
                   </div>
                 );
@@ -212,6 +283,43 @@ function ChatRoomPage() {
           Enter untuk kirim · Shift+Enter untuk baris baru
         </p>
       </form>
+
+      <AlertDialog open={confirmAllOpen} onOpenChange={setConfirmAllOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus semua pesan saya?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Semua pesan yang pernah Anda kirim di percakapan ini akan hilang dari kedua sisi,
+              termasuk lampirannya. Tindakan ini tidak bisa dibatalkan. Pesan dari pihak lain
+              tetap utuh di sisi mereka.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteAllMine.isPending}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={deleteAllMine.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                deleteAllMine.mutate(undefined, {
+                  onSuccess: (n) => {
+                    toast.success(`${n} pesan dihapus`);
+                    setConfirmAllOpen(false);
+                  },
+                  onError: (err) =>
+                    toast.error(err instanceof Error ? err.message : "Gagal menghapus"),
+                });
+              }}
+            >
+              {deleteAllMine.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Trash2 className="mr-2 h-4 w-4" />
+              )}
+              Hapus semua
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
