@@ -61,51 +61,18 @@ export const dispatchPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((data: unknown) => dispatchSchema.parse(data))
   .handler(async ({ data, context }) => {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { sendWebPush } = await import("./push.server");
-
-    // Never push to the sender
-    const targets = data.userIds.filter((u) => u !== context.userId);
-    if (targets.length === 0) return { sent: 0, pruned: 0 };
-
-    const { data: subs, error } = await supabaseAdmin
-      .from("push_subscriptions")
-      .select("id, endpoint, p256dh, auth")
-      .in("user_id", targets);
-    if (error) throw new Error(error.message);
-    if (!subs || subs.length === 0) return { sent: 0, pruned: 0 };
-
-    const payload = {
-      title: data.title,
-      body: data.body,
-      url: data.url ?? (data.conversationId ? `/chat/${data.conversationId}` : "/chat"),
-      tag: data.tag ?? (data.conversationId ? `conv:${data.conversationId}` : undefined),
-      conversationId: data.conversationId,
-    };
-
-    let sent = 0;
-    const deadIds: string[] = [];
-    await Promise.all(
-      subs.map(async (s) => {
-        const r = await sendWebPush(s, payload);
-        if (r.ok) {
-          sent++;
-        } else if (r.status === 404 || r.status === 410) {
-          deadIds.push(s.id);
-        }
-      }),
-    );
-
-    let pruned = 0;
-    if (deadIds.length > 0) {
-      const { error: delErr, count } = await supabaseAdmin
-        .from("push_subscriptions")
-        .delete({ count: "exact" })
-        .in("id", deadIds);
-      if (!delErr) pruned = count ?? deadIds.length;
-    }
-
-    return { sent, pruned };
+    const { notifyUsers } = await import("./push.server");
+    return notifyUsers({
+      userIds: data.userIds,
+      excludeUserId: context.userId,
+      payload: {
+        title: data.title,
+        body: data.body,
+        url: data.url ?? (data.conversationId ? `/chat/${data.conversationId}` : "/chat"),
+        tag: data.tag ?? (data.conversationId ? `conv:${data.conversationId}` : undefined),
+        conversationId: data.conversationId,
+      },
+    });
   });
 
 /** Self-test: send a push to the caller's own subscriptions. */
