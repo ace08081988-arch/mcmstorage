@@ -63,6 +63,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | null>(null);
   const [drawing, setDrawing] = useState<Layer | null>(null);
+  // pre-change snapshot for drag / slider so undo restores the BEFORE state
+  const commitBaselineRef = useRef<EditorState | null>(null);
+  // last pointer position during a drag (for stroke translation)
+  const lastPointRef = useRef<{ x: number; y: number } | null>(null);
   const [textPrompt, setTextPrompt] = useState<{ open: boolean; x: number; y: number; value: string }>(
     { open: false, x: 0, y: 0, value: "" },
   );
@@ -141,6 +145,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setFuture([]);
     setState(next);
   }
+  // Push an explicit baseline into history and set a new state.
+  // Use when the "before" state isn't the current React state (e.g. after a live drag).
+  function pushHistoryFrom(baseline: EditorState, next: EditorState) {
+    setHistory((h) => [...h.slice(-29), baseline]);
+    setFuture([]);
+    setState(next);
+  }
   function undo() {
     setHistory((h) => {
       if (!h.length) return h;
@@ -176,11 +187,15 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     const p = pointAt(e);
-    (e.target as Element).setPointerCapture?.(e.pointerId);
+    e.currentTarget.setPointerCapture?.(e.pointerId);
     if (tool === "select") {
       const hit = hitTest(p);
       setSelectedId(hit?.id ?? null);
-      if (hit) setDrag({ id: hit.id, dx: p.x - hit.x, dy: p.y - hit.y });
+      if (hit) {
+        commitBaselineRef.current = state;
+        lastPointRef.current = p;
+        setDrag({ id: hit.id, dx: 0, dy: 0 });
+      }
       return;
     }
     if (tool === "draw") {
@@ -216,9 +231,18 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
     const p = pointAt(e);
     if (drag && tool === "select") {
+      const last = lastPointRef.current; if (!last) return;
+      const dx = p.x - last.x, dy = p.y - last.y;
+      lastPointRef.current = p;
       setState((s) => ({
         ...s,
-        layers: s.layers.map((l) => (l.id === drag.id ? { ...l, x: p.x - drag.dx, y: p.y - drag.dy } : l)),
+        layers: s.layers.map((l) => {
+          if (l.id !== drag.id) return l;
+          if (l.kind === "stroke") {
+            return { ...l, points: l.points.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })) };
+          }
+          return { ...l, x: l.x + dx, y: l.y + dy };
+        }),
       }));
       return;
     }
@@ -236,14 +260,33 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   function onPointerUp() {
     if (drag) {
-      // commit drag into history (current state already mutated)
-      setHistory((h) => [...h.slice(-29), { ...state }]);
+      // Push the BEFORE-drag snapshot, keep the current (post-drag) state.
+      const baseline = commitBaselineRef.current;
+      if (baseline && baseline !== state) {
+        setHistory((h) => [...h.slice(-29), baseline]);
+        setFuture([]);
+      }
+      commitBaselineRef.current = null;
+      lastPointRef.current = null;
       setDrag(null);
       return;
     }
     if (drawing) {
-      pushHistory({ ...state, layers: [...state.layers, drawing] });
-      setSelectedId(drawing.id);
+      // Normalize rect/circle so subsequent drag/hit-test behave correctly.
+      let final = drawing;
+      if (final.kind === "rect") {
+        const x = Math.min(final.x, final.x + final.w);
+        const y = Math.min(final.y, final.y + final.h);
+        final = { ...final, x, y, w: Math.abs(final.w), h: Math.abs(final.h) };
+        // skip zero-size shapes
+        if (final.w < 2 && final.h < 2) { setDrawing(null); return; }
+      } else if (final.kind === "circle") {
+        if (final.r < 2) { setDrawing(null); return; }
+      } else if (final.kind === "stroke") {
+        if (final.points.length < 2) { setDrawing(null); return; }
+      }
+      pushHistory({ ...state, layers: [...state.layers, final] });
+      setSelectedId(final.id);
       setDrawing(null);
     }
   }
@@ -252,11 +295,31 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     if (!selectedId) return;
     pushHistory({ ...state, layers: state.layers.map((l) => (l.id === selectedId ? ({ ...l, ...patch } as Layer) : l)) });
   }
+  // Live patch without flooding history. Captures baseline on first call,
+  // then on commitLivePatch() pushes a single history entry.
+  function liveBeginIfNeeded() {
+    if (!commitBaselineRef.current) commitBaselineRef.current = state;
+  }
+  function livePatchSelected(patch: Partial<Layer>) {
+    if (!selectedId) return;
+    liveBeginIfNeeded();
+    setState((s) => ({ ...s, layers: s.layers.map((l) => (l.id === selectedId ? ({ ...l, ...patch } as Layer) : l)) }));
+  }
+  function commitLivePatch() {
+    const baseline = commitBaselineRef.current;
+    if (baseline && baseline !== state) {
+      setHistory((h) => [...h.slice(-29), baseline]);
+      setFuture([]);
+    }
+    commitBaselineRef.current = null;
+  }
   function removeSelected() {
     if (!selectedId) return;
     pushHistory({ ...state, layers: state.layers.filter((l) => l.id !== selectedId) });
     setSelectedId(null);
   }
+  // dir = +1 means bring forward (visually higher / later in z-order),
+  // dir = -1 means send backward (earlier in z-order).
   function moveOrder(dir: 1 | -1) {
     if (!selectedId) return;
     const i = state.layers.findIndex((l) => l.id === selectedId);
