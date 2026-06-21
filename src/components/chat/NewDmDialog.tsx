@@ -8,15 +8,41 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { useChatContacts, useStartDm } from "@/lib/chat";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
+import { z } from "zod";
 
-// Normalisasi nomor → digit-only (tanpa "+"). 0xxx → 62xxx, 00xxx → xxx.
+// Normalisasi nomor → digit-only E.164 (tanpa "+").
+// 0xxx → 62xxx, 00xxx → xxx; karakter selain digit/`+` dianggap invalid.
 function normalizeWaDigits(raw: string): string {
-  let d = (raw ?? "").replace(/\D/g, "");
+  const trimmed = (raw ?? "").trim();
+  // Hanya boleh berisi digit, spasi, tanda hubung, kurung, titik, atau awalan "+".
+  if (!/^[+\d\s().-]+$/.test(trimmed)) return "";
+  let d = trimmed.replace(/\D/g, "");
   if (!d) return "";
   if (d.startsWith("00")) d = d.slice(2);
   else if (d.startsWith("0")) d = "62" + d.slice(1);
-  if (d.length < 8 || d.length > 15) return "";
   return d;
+}
+
+// Skema E.164: 8–15 digit, diawali 1–9 (kode negara tidak boleh 0).
+const waPhoneSchema = z
+  .string()
+  .regex(/^[1-9]\d{7,14}$/, {
+    message: "Nomor WhatsApp harus 8–15 digit dan diawali kode negara yang valid.",
+  });
+
+type WaValidation =
+  | { ok: true; phone: string }
+  | { ok: false; phone: ""; reason: string };
+
+function validateWaPhone(raw: string): WaValidation {
+  if (!raw.trim()) return { ok: false, phone: "", reason: "Masukkan nomor terlebih dahulu." };
+  const digits = normalizeWaDigits(raw);
+  if (!digits) return { ok: false, phone: "", reason: "Format nomor tidak valid." };
+  const parsed = waPhoneSchema.safeParse(digits);
+  if (!parsed.success) {
+    return { ok: false, phone: "", reason: parsed.error.issues[0]?.message ?? "Nomor tidak valid." };
+  }
+  return { ok: true, phone: parsed.data };
 }
 
 export function NewDmDialog() {
@@ -29,11 +55,15 @@ export function NewDmDialog() {
   // Anggap query "nomor" kalau setelah dibersihkan tersisa >= 6 digit.
   const queryDigits = useMemo(() => q.replace(/\D/g, ""), [q]);
   const looksLikePhone = queryDigits.length >= 6;
-  const invitePhone = useMemo(() => normalizeWaDigits(q), [q]);
+  const validation = useMemo(() => validateWaPhone(q), [q]);
+  const invitePhone = validation.ok ? validation.phone : "";
 
   function inviteByWhatsApp() {
-    if (!invitePhone) {
-      toast.error("Nomor tidak valid. Contoh: 08123456789 atau 628123456789.");
+    if (!validation.ok) {
+      toast.error(
+        validation.reason +
+          " Contoh format valid: 08123456789 atau 628123456789.",
+      );
       return;
     }
     const origin =
@@ -44,6 +74,7 @@ export function NewDmDialog() {
       "Silakan daftar/masuk lewat tautan berikut, lalu kita bisa saling chat di dalam aplikasi:",
       origin,
     ].join("\n");
+    // buildWhatsAppUrl meng-encode pesan; nomor sudah tervalidasi & digit-only.
     const url = buildWhatsAppUrl(msg, invitePhone);
     const win = window.open(url, "_blank", "noopener,noreferrer");
     if (!win) {
@@ -99,18 +130,23 @@ export function NewDmDialog() {
                   <div className="text-xs text-muted-foreground">
                     Nomor <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat WhatsApp agar dapat diajak chat.
                   </div>
+                  {invitePhone && (
+                    <div className="text-[11px] text-muted-foreground">
+                      Akan dikirim ke: <span className="font-mono text-foreground">+{invitePhone}</span>
+                    </div>
+                  )}
                   <Button
                     type="button"
                     size="sm"
                     className="gap-1.5"
                     onClick={inviteByWhatsApp}
-                    disabled={!invitePhone}
+                    disabled={!validation.ok}
                   >
                     <Send className="h-4 w-4" /> Undang via WhatsApp
                   </Button>
-                  {!invitePhone && (
-                    <p className="text-[11px] text-muted-foreground">
-                      Format nomor belum valid (8–15 digit). Contoh: 08123456789.
+                  {!validation.ok && (
+                    <p className="text-[11px] text-destructive">
+                      {validation.reason} Contoh: 08123456789 atau 628123456789.
                     </p>
                   )}
                 </>
