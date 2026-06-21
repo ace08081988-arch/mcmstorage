@@ -29,6 +29,7 @@ import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.ecer'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
+import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
@@ -138,6 +139,11 @@ const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AuthenticatedChatRoute,
+} as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -171,7 +177,7 @@ export interface FileRoutesByFullPath {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trust': typeof TrustRoute
-  '/chat': typeof AuthenticatedChatRoute
+  '/chat': typeof AuthenticatedChatRouteWithChildren
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/ecer': typeof AuthenticatedEcerRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
@@ -183,6 +189,7 @@ export interface FileRoutesByFullPath {
   '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
+  '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -195,7 +202,6 @@ export interface FileRoutesByTo {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trust': typeof TrustRoute
-  '/chat': typeof AuthenticatedChatRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/ecer': typeof AuthenticatedEcerRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
@@ -208,6 +214,7 @@ export interface FileRoutesByTo {
   '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
+  '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -222,7 +229,7 @@ export interface FileRoutesById {
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/trust': typeof TrustRoute
-  '/_authenticated/chat': typeof AuthenticatedChatRoute
+  '/_authenticated/chat': typeof AuthenticatedChatRouteWithChildren
   '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/_authenticated/ecer': typeof AuthenticatedEcerRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
@@ -235,6 +242,7 @@ export interface FileRoutesById {
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
@@ -262,6 +270,7 @@ export interface FileRouteTypes {
     | '/request'
     | '/tugas'
     | '/t/$token'
+    | '/chat/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
     | '/lovable/email/queue/process'
@@ -274,7 +283,6 @@ export interface FileRouteTypes {
     | '/reset-password'
     | '/sitemap.xml'
     | '/trust'
-    | '/chat'
     | '/device-verify'
     | '/ecer'
     | '/gudang'
@@ -287,6 +295,7 @@ export interface FileRouteTypes {
     | '/tugas'
     | '/t/$token'
     | '/'
+    | '/chat'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
     | '/lovable/email/queue/process'
@@ -313,6 +322,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tugas'
     | '/t/$token'
     | '/_authenticated/'
+    | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
     | '/lovable/email/queue/process'
@@ -474,6 +484,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/chat/': {
+      id: '/_authenticated/chat/'
+      path: '/'
+      fullPath: '/chat/'
+      preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
+      parentRoute: typeof AuthenticatedChatRoute
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -505,6 +522,17 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedChatRouteChildren {
+  AuthenticatedChatIndexRoute: typeof AuthenticatedChatIndexRoute
+}
+
+const AuthenticatedChatRouteChildren: AuthenticatedChatRouteChildren = {
+  AuthenticatedChatIndexRoute: AuthenticatedChatIndexRoute,
+}
+
+const AuthenticatedChatRouteWithChildren =
+  AuthenticatedChatRoute._addFileChildren(AuthenticatedChatRouteChildren)
+
 interface AuthenticatedGudangPesananIdRouteChildren {
   AuthenticatedGudangPesananIdEditRoute: typeof AuthenticatedGudangPesananIdEditRoute
 }
@@ -533,7 +561,7 @@ const AuthenticatedGudangRouteWithChildren =
   AuthenticatedGudangRoute._addFileChildren(AuthenticatedGudangRouteChildren)
 
 interface AuthenticatedRouteChildren {
-  AuthenticatedChatRoute: typeof AuthenticatedChatRoute
+  AuthenticatedChatRoute: typeof AuthenticatedChatRouteWithChildren
   AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
   AuthenticatedEcerRoute: typeof AuthenticatedEcerRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
@@ -548,7 +576,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
-  AuthenticatedChatRoute: AuthenticatedChatRoute,
+  AuthenticatedChatRoute: AuthenticatedChatRouteWithChildren,
   AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
   AuthenticatedEcerRoute: AuthenticatedEcerRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
