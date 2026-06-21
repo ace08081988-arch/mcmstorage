@@ -5,13 +5,15 @@ import { logStorageError } from "@/lib/storage-log";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
-import { fmtBase } from "@/routes/_authenticated.gudang";
+import { fmtBase, fmtItemQty } from "@/lib/stock-format";
 
 type Item = {
   id: string;
   name: string;
   base_unit: "g" | "pcs";
   stock_base: number;
+  package_type?: string | null;
+  package_size?: number | null;
 };
 type Customer = { id: string; name: string; contact: string | null };
 
