@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { publicTaskUrl } from "@/lib/prep";
+import { publicTaskUrl, isValidShareToken, InvalidShareTokenError } from "@/lib/prep";
 import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown } from "lucide-react";
 
 const PAGE_SIZE = 30;
@@ -372,10 +372,21 @@ function LinkPegawaiPage() {
         <>
         <div className="space-y-2">
           {rows.map(({ t, avail }) => {
-            const url = publicTaskUrl(t.share_token);
+            const tokenValid = isValidShareToken(t.share_token);
+            let url = "";
+            let urlError: string | null = null;
+            if (tokenValid) {
+              try {
+                url = publicTaskUrl(t.share_token);
+              } catch (e) {
+                urlError = e instanceof InvalidShareTokenError ? e.message : "Token link tidak valid";
+              }
+            } else {
+              urlError = !t.share_token ? "Token link kosong — link tidak bisa dibuat" : "Token link tidak valid — minta pemilik membuat ulang tugas ini";
+            }
             const badge = BADGE[avail];
             const expiresAt = new Date(t.expires_at);
-            const openable = avail === "active" || avail === "done";
+            const openable = (avail === "active" || avail === "done") && !urlError;
             return (
               <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
                 <div className="flex items-start gap-2 p-3">
@@ -393,13 +404,24 @@ function LinkPegawaiPage() {
                       <span>Dibuat: {new Date(t.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</span>
                       <span>Kedaluwarsa: {expiresAt.toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</span>
                     </div>
-                    <div className="mt-1 truncate font-mono text-[10px] text-muted-foreground" title={url}>{url}</div>
+                    {urlError ? (
+                      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive ring-1 ring-destructive/20">
+                        ⚠ {urlError}
+                      </div>
+                    ) : (
+                      <div className="mt-1 truncate font-mono text-[10px] text-muted-foreground" title={url}>{url}</div>
+                    )}
                   </div>
                 </div>
                 <div className="flex flex-wrap gap-2 border-t bg-muted/30 px-3 py-2">
                   <a
                     href={openable ? url : undefined}
-                    onClick={(e) => { if (!openable) { e.preventDefault(); toast.error(`Link ${badge.label.toLowerCase()} — tidak bisa dibuka`); } }}
+                    onClick={(e) => {
+                      if (!openable) {
+                        e.preventDefault();
+                        toast.error(urlError ?? `Link ${badge.label.toLowerCase()} — tidak bisa dibuka`);
+                      }
+                    }}
                     target="_blank"
                     rel="noreferrer"
                     aria-disabled={!openable}
@@ -412,7 +434,10 @@ function LinkPegawaiPage() {
                     <ExternalLink className="h-3.5 w-3.5" /> Buka di Tab Baru
                   </a>
                   <button
-                    onClick={() => void copyLink(url)}
+                    onClick={() => {
+                      if (urlError) { toast.error(urlError); return; }
+                      void copyLink(url);
+                    }}
                     className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted"
                   >
                     <Copy className="h-3.5 w-3.5" /> Salin Link
