@@ -33,6 +33,8 @@ export const Route = createFileRoute("/_authenticated/ecer")({
 type WarehouseItem = {
   id: string; name: string; category: string | null; base_unit: string;
   stock_base: number; image_path: string | null;
+  package_type?: string | null;
+  package_size?: number | null;
 };
 
 function EcerPage() {
