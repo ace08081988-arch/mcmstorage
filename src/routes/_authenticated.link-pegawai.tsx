@@ -277,6 +277,7 @@ function LinkPegawaiPage() {
         .maybeSingle();
       if (!error && data) {
         setTasks((prev) => (prev ? prev.map((t) => (t.id === taskId ? { ...t, share_token: data.share_token } : t)) : prev));
+        setRegenAt((prev) => ({ ...prev, [taskId]: Date.now() }));
         setRegenId(null);
         toast.success("Token diperbarui — link baru siap dipakai");
         return;
