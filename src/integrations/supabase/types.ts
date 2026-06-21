@@ -593,6 +593,39 @@ export type Database = {
         }
         Relationships: []
       }
+      employees: {
+        Row: {
+          archived_at: string | null
+          created_at: string
+          id: string
+          name: string
+          note: string | null
+          phone: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          name: string
+          note?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived_at?: string | null
+          created_at?: string
+          id?: string
+          name?: string
+          note?: string | null
+          phone?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           attachment_mime: string | null
@@ -917,6 +950,7 @@ export type Database = {
       prep_tasks: {
         Row: {
           created_at: string
+          employee_id: string | null
           expires_at: string
           id: string
           note: string | null
@@ -929,6 +963,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          employee_id?: string | null
           expires_at?: string
           id?: string
           note?: string | null
@@ -941,6 +976,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          employee_id?: string | null
           expires_at?: string
           id?: string
           note?: string | null
@@ -951,7 +987,15 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "prep_tasks_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       prep_upload_grants: {
         Row: {
