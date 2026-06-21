@@ -3,17 +3,26 @@ import { Minimize2, Maximize2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const LS_KEY = "app-compact-mode";
+const DEFAULT_ON = true; // default rilis: padat
 
 export function applyCompactMode() {
   if (typeof document === "undefined") return;
-  const on = localStorage.getItem(LS_KEY) === "1";
+  let raw: string | null = null;
+  try { raw = localStorage.getItem(LS_KEY); } catch { /* ignore */ }
+  if (raw == null) {
+    // First visit: aktifkan mode ringkas sebagai default.
+    try { localStorage.setItem(LS_KEY, DEFAULT_ON ? "1" : "0"); } catch { /* ignore */ }
+    raw = DEFAULT_ON ? "1" : "0";
+  }
+  const on = raw === "1";
   document.documentElement.classList.toggle("compact", on);
 }
 
 export function CompactModeToggle() {
   const [on, setOn] = useState<boolean>(() => {
     if (typeof window === "undefined") return false;
-    return localStorage.getItem(LS_KEY) === "1";
+    const raw = localStorage.getItem(LS_KEY);
+    return raw == null ? DEFAULT_ON : raw === "1";
   });
 
   useEffect(() => {

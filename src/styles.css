@@ -182,7 +182,17 @@ body[data-font-size="lg"] { --app-font-size: 18px; }
 body[data-font-size="xl"] { --app-font-size: 20px; }
 
 /* === Mode Ringkas (Compact UI) === */
-/* Hanya kecilkan skala dan sembunyikan elemen yang sengaja ditandai dengan
-   data-compact-hide. Hindari aturan agresif yang dapat memecah layout. */
-html.compact { font-size: 94%; }
+/* Mode ringkas — fokus pada density tinggi tanpa memutus layout.
+   Aman: hanya skala font + padding/gap halus + sembunyikan elemen yang
+   sengaja ditandai data-compact-hide. */
+html.compact { font-size: 92%; }
 html.compact [data-compact-hide] { display: none !important; }
+html.compact .p-6 { padding: 0.875rem; }
+html.compact .p-5 { padding: 0.75rem; }
+html.compact .p-4 { padding: 0.625rem; }
+html.compact .py-6 { padding-top: 0.875rem; padding-bottom: 0.875rem; }
+html.compact .py-4 { padding-top: 0.5rem; padding-bottom: 0.5rem; }
+html.compact .gap-6 { gap: 0.75rem; }
+html.compact .gap-4 { gap: 0.5rem; }
+html.compact .space-y-6 > * + * { margin-top: 0.75rem; }
+html.compact .space-y-4 > * + * { margin-top: 0.5rem; }

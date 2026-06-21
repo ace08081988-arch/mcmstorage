@@ -193,7 +193,7 @@ function ManajemenPegawaiPage() {
         </button>
       </div>
 
-      <p className="mb-3 text-xs text-muted-foreground">
+      <p className="mb-3 text-xs text-muted-foreground" data-compact-hide>
         Kelola data pegawai, buat link tugas, dan pantau riwayat pengiriman foto/lokasi dari setiap pegawai.
       </p>
 
@@ -219,7 +219,7 @@ function ManajemenPegawaiPage() {
       </div>
 
       {unassignedTasks.length > 0 && (
-        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs">
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs" data-compact-hide>
           <div className="font-medium text-amber-700 dark:text-amber-400">
             {unassignedTasks.length} tugas belum tertaut ke pegawai
           </div>
