@@ -1,39 +1,54 @@
+import { findCountry, DEFAULT_COUNTRY, type Country } from "@/lib/countries";
+
 /**
  * Normalisasi nomor telepon/WhatsApp ke format internasional siap-pakai untuk
  * tautan `wa.me/<digits>`. Tidak menyertakan tanda `+`.
  *
- * Aturan:
- * - Buang semua karakter non-digit (spasi, "-", "(", ")", titik, dst).
- * - Konversi prefix internasional "00" → "" (cth: 0062812… → 62812…).
- * - Nomor diawali "0" (lokal Indonesia) → ganti dengan "62".
- * - Nomor diawali "8" (umum di Indonesia, tanpa prefix) → tambahkan "62".
- * - Selain itu, biarkan apa adanya (asumsi sudah berkode negara).
+ * Aturan (memperhatikan negara yang dipilih):
+ * - Buang semua karakter non-digit.
+ * - Buang prefix "00" (kode akses internasional).
+ * - Bila diawali kode negara `dial` → biarkan.
+ * - Bila diawali digit "trunk" lokal negara → ganti dengan `dial`.
+ * - Bila tidak ada keduanya → tambahkan `dial` di depan.
  *
- * Return null bila kosong atau bukan nomor valid (kurang dari 8 digit / lebih dari 15).
+ * Return `null` bila hasil <8 atau >15 digit (E.164).
  */
-export function normalizeWaNumber(input: string | null | undefined): string | null {
+export function normalizeWaNumber(
+  input: string | null | undefined,
+  countryCode?: string | null,
+): string | null {
   if (!input) return null;
   let digits = String(input).replace(/\D+/g, "");
   if (!digits) return null;
-
   if (digits.startsWith("00")) digits = digits.slice(2);
-  if (digits.startsWith("0")) digits = "62" + digits.slice(1);
-  else if (digits.startsWith("8")) digits = "62" + digits;
 
-  // E.164: 8–15 digit (tanpa "+").
+  const country: Country = findCountry(countryCode ?? DEFAULT_COUNTRY.code);
+  const dial = country.dial;
+
+  if (digits.startsWith(dial)) {
+    // sudah pakai kode negara
+  } else if (country.trunk && digits.startsWith(country.trunk)) {
+    digits = dial + digits.slice(country.trunk.length);
+  } else {
+    digits = dial + digits;
+  }
+
   if (digits.length < 8 || digits.length > 15) return null;
   return digits;
 }
 
-/** Format tampilan ramah-mata: "+62 812-3456-7890" untuk nomor ID, fallback "+<digits>". */
-export function formatWaDisplay(digits: string | null | undefined): string {
-  const n = normalizeWaNumber(digits ?? "");
+/** Format tampilan ramah-mata: "+62 812-3456-7890". */
+export function formatWaDisplay(
+  digits: string | null | undefined,
+  countryCode?: string | null,
+): string {
+  const n = normalizeWaNumber(digits ?? "", countryCode);
   if (!n) return "";
-  if (n.startsWith("62")) {
-    const rest = n.slice(2);
-    // Pisahkan setiap 4 digit, awali tiap blok dengan "-" kecuali blok pertama.
+  const country = findCountry(countryCode);
+  if (n.startsWith(country.dial)) {
+    const rest = n.slice(country.dial.length);
     const parts = rest.match(/.{1,4}/g) ?? [rest];
-    return `+62 ${parts.join("-")}`;
+    return `+${country.dial} ${parts.join("-")}`;
   }
   return `+${n}`;
 }
