@@ -14,12 +14,13 @@ import {
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, PackagePlus, Trash2,
   Loader2, ChevronLeft, Package, FlaskConical, Copy, ExternalLink,
-  AlertTriangle, RotateCw,
+  AlertTriangle, RotateCw, Send,
 } from "lucide-react";
 import {
   requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
+import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/_authenticated/request")({
   head: () => ({ meta: [{ title: "Penyiapan Request · MCM Storage" }] }),
@@ -614,6 +615,7 @@ function PrepEditorDialog({
   const [locUrl, setLocUrl] = useState("");
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [note, setNote] = useState("");
+  const [waPhone, setWaPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
@@ -621,7 +623,7 @@ function PrepEditorDialog({
   useEffect(() => {
     if (!open) return;
     setRows(titleItems.map((i) => ({ warehouse_item_id: i.warehouse_item_id, actual_grams: String(i.target_grams) })));
-    setPhoto(null); setLocUrl(""); setGps(null); setNote("");
+    setPhoto(null); setLocUrl(""); setGps(null); setNote(""); setWaPhone("");
   }, [open, titleItems]);
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
@@ -655,10 +657,26 @@ function PrepEditorDialog({
     );
   }
 
-  async function save() {
+  function buildMessage() {
+    const lines: string[] = [];
+    lines.push(`*Penyiapan — ${title.name}*`);
+    lines.push("");
+    lines.push("Isi paket:");
+    rows.forEach((r) => {
+      const w = warehouseItems.find((x) => x.id === r.warehouse_item_id);
+      const g = Number(r.actual_grams);
+      if (w && g > 0) lines.push(`• ${w.name}: ${g} ${w.base_unit}`);
+    });
+    if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
+    if (locUrl.trim()) { lines.push(""); lines.push(`Lokasi: ${locUrl.trim()}`); }
+    return lines.join("\n");
+  }
+
+  async function save(opts?: { sendWa?: boolean }) {
     if (!photo) { toast.error("Wajib lampirkan foto"); return; }
     const validRows = rows.filter((r) => r.warehouse_item_id && Number(r.actual_grams) > 0);
     if (validRows.length === 0) { toast.error("Minimal 1 produk dengan gram > 0"); return; }
+    if (opts?.sendWa && !waPhone.replace(/\D/g, "")) { toast.error("Isi nomor WA dulu"); return; }
     setBusy(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -686,6 +704,20 @@ function PrepEditorDialog({
         throw e2;
       }
       toast.success("Penyiapan tersimpan, stok dikurangi");
+      if (opts?.sendWa) {
+        try {
+          const file = new File([photo.blob], `penyiapan-${title.name}.jpg`, { type: photo.blob.type || "image/jpeg" });
+          const res = await shareToWhatsApp({
+            text: buildMessage(),
+            title: `Penyiapan ${title.name}`,
+            phone: waPhone,
+            files: [file],
+          });
+          notifyShareResult(res);
+        } catch (err) {
+          toast.error("Gagal kirim WA: " + (err as Error).message);
+        }
+      }
       onSaved(); onClose();
     } catch (e) {
       toast.error("Gagal: " + (e as Error).message);
@@ -752,12 +784,30 @@ function PrepEditorDialog({
             </Button>
           </div>
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" />
+
+          <div>
+            <Label className="text-xs">Nomor WhatsApp tujuan</Label>
+            <Input
+              type="tel"
+              inputMode="tel"
+              value={waPhone}
+              onChange={(e) => setWaPhone(e.target.value)}
+              placeholder="cth: 628123456789"
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground">Format internasional tanpa tanda +. Opsional — isi jika ingin langsung kirim WA.</p>
+          </div>
         </div>
-        <DialogFooter>
-          <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
-          <Button size="sm" onClick={save} disabled={busy}>
-            {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null} Simpan
+        <DialogFooter className="flex-col gap-2 sm:flex-col">
+          <Button size="sm" onClick={() => save({ sendWa: true })} disabled={busy || !waPhone.replace(/\D/g, "")} className="w-full">
+            {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Send className="mr-1 h-3 w-3" />}
+            Simpan &amp; Kirim WA
           </Button>
+          <div className="flex w-full gap-2">
+            <Button variant="outline" size="sm" onClick={onClose} disabled={busy} className="flex-1">Batal</Button>
+            <Button size="sm" onClick={() => save()} disabled={busy} className="flex-1">
+              {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null} Simpan
+            </Button>
+          </div>
         </DialogFooter>
 
         {editorOpen && editorSrc && (
