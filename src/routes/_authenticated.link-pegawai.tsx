@@ -3,9 +3,41 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { publicTaskUrl, isValidShareToken, InvalidShareTokenError, genShareToken } from "@/lib/prep";
-import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown, KeyRound } from "lucide-react";
+import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown, KeyRound, FlaskConical, Sparkles, AlertTriangle, CircleSlash, ShieldCheck, Timer } from "lucide-react";
 
 const PAGE_SIZE = 30;
+const REGEN_FRESH_WINDOW_MS = 5 * 60 * 1000;
+
+type TokenState =
+  | { kind: "empty" }
+  | { kind: "invalid" }
+  | { kind: "fresh"; ageMs: number }
+  | { kind: "valid" };
+
+function classifyToken(token: string | null | undefined, regenAt: number | undefined, now: number): TokenState {
+  if (!token) return { kind: "empty" };
+  if (!isValidShareToken(token)) return { kind: "invalid" };
+  if (regenAt != null) {
+    const age = now - regenAt;
+    if (age >= 0 && age < REGEN_FRESH_WINDOW_MS) return { kind: "fresh", ageMs: age };
+  }
+  return { kind: "valid" };
+}
+
+function formatCountdown(ms: number): { text: string; tone: "ok" | "warn" | "danger" } {
+  if (ms <= 0) return { text: "kedaluwarsa", tone: "danger" };
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const tone: "ok" | "warn" | "danger" =
+    ms < 60 * 60 * 1000 ? "danger" : ms < 24 * 60 * 60 * 1000 ? "warn" : "ok";
+  if (d > 0) return { text: `${d}h ${h}j lagi`, tone };
+  if (h > 0) return { text: `${h}j ${m}m lagi`, tone };
+  if (m > 0) return { text: `${m}m ${sec}d lagi`, tone };
+  return { text: `${sec}d lagi`, tone };
+}
 
 export const Route = createFileRoute("/_authenticated/link-pegawai")({
   head: () => ({
