@@ -397,6 +397,17 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             <DialogTitle>Tambahkan Teks</DialogTitle>
             <DialogDescription>Tulis teks yang ingin ditampilkan pada foto.</DialogDescription>
           </DialogHeader>
+          <div className="flex items-center gap-3 rounded-md border bg-muted/40 p-2">
+            <img
+              src={src}
+              alt="Pratinjau foto"
+              className="h-14 w-14 flex-shrink-0 rounded object-cover"
+            />
+            <div className="min-w-0 text-xs text-muted-foreground">
+              <div className="font-medium text-foreground">Pratinjau foto</div>
+              <div className="truncate">Teks akan ditempatkan pada posisi yang Anda pilih.</div>
+            </div>
+          </div>
           <Input
             autoFocus
             value={textPrompt.value}
