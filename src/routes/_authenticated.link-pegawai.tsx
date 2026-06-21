@@ -105,6 +105,7 @@ function LinkPegawaiPage() {
   const [filteredTotalBusy, setFilteredTotalBusy] = useState(false);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | Availability>("all");
+  const [tokenFilter, setTokenFilter] = useState<"all" | TokenState["kind"]>("all");
   const [sort, setSort] = useState<SortKey>("newest");
   const [now, setNow] = useState(Date.now());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -223,9 +224,14 @@ function LinkPegawaiPage() {
   }, [loadMore]);
 
   const rows = useMemo(() => {
-    const list = (tasks ?? []).map((t) => ({ t, avail: computeAvailability(t, now) }));
-    const filtered = list.filter(({ t, avail }) => {
+    const list = (tasks ?? []).map((t) => ({
+      t,
+      avail: computeAvailability(t, now),
+      tokenState: classifyToken(t.share_token, regenAt[t.id], now),
+    }));
+    const filtered = list.filter(({ t, avail, tokenState }) => {
       if (filter !== "all" && avail !== filter) return false;
+      if (tokenFilter !== "all" && tokenState.kind !== tokenFilter) return false;
       if (q.trim()) {
         const needle = q.trim().toLowerCase();
         if (!t.title.toLowerCase().includes(needle) && !t.share_token.toLowerCase().includes(needle)) return false;
@@ -242,7 +248,7 @@ function LinkPegawaiPage() {
     }
     // "newest" / "oldest" come pre-sorted from the server.
     return filtered;
-  }, [tasks, q, filter, now, sort]);
+  }, [tasks, q, filter, tokenFilter, now, sort, regenAt]);
 
   const counts = useMemo(() => {
     const c = { all: 0, active: 0, expired: 0, done: 0, cancelled: 0 } as Record<string, number>;
@@ -253,6 +259,15 @@ function LinkPegawaiPage() {
     }
     return c;
   }, [tasks, now]);
+
+  const tokenCounts = useMemo(() => {
+    const c = { all: 0, valid: 0, fresh: 0, invalid: 0, empty: 0 } as Record<string, number>;
+    for (const t of tasks ?? []) {
+      c.all += 1;
+      c[classifyToken(t.share_token, regenAt[t.id], now).kind] += 1;
+    }
+    return c;
+  }, [tasks, regenAt, now]);
 
   async function copyLink(url: string) {
     try {
