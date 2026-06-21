@@ -827,10 +827,12 @@ type AuditRow = {
   issues: string[];
   problemItems: { name: string; qty_requested: number; qty_prepared: number; reason: string }[];
 };
-function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void }) {
+function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: () => void; onOpenTask: (t: Task) => void }) {
   const [loading, setLoading] = useState(true);
   const [rows, setRows] = useState<AuditRow[]>([]);
-  const [filter, setFilter] = useState<"all" | "ok" | "bad">("all");
+  const [filter, setFilter] = useState<"all" | "ok" | "bad" | "fixed">("all");
+  const [query, setQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"newest" | "oldest" | "diff_desc" | "diff_asc" | "title">("diff_desc");
   const RESOLVED_KEY = "tugas.audit.resolved.v1";
   const [resolved, setResolved] = useState<Record<string, string>>(() => {
     if (typeof window === "undefined") return {};
@@ -873,6 +875,7 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
       let totalRequested = 0, totalPrepared = 0;
       const problemItems: AuditRow["problemItems"] = [];
       const issues: string[] = [];
+      const nameCount = new Map<string, number>();
       for (const it of items) {
         const q = Number(it.qty_requested);
         const p = Number(it.qty_prepared ?? 0);
@@ -881,8 +884,42 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
         } else if (Number.isFinite(p) && p > q + 1e-9) {
           problemItems.push({ name: it.name_snapshot, qty_requested: q, qty_prepared: p, reason: "qty disiapkan > diminta" });
         }
+        if (!it.unit_label || !String(it.unit_label).trim()) {
+          problemItems.push({ name: it.name_snapshot, qty_requested: q, qty_prepared: p, reason: "satuan kosong" });
+        }
+        const key = (it.name_snapshot || "").trim().toLowerCase();
+        if (key) nameCount.set(key, (nameCount.get(key) ?? 0) + 1);
         if (Number.isFinite(q)) totalRequested += q;
         if (Number.isFinite(p)) totalPrepared += p;
+      }
+      // duplicate item names within a single task
+      for (const [key, n] of nameCount) {
+        if (n > 1) {
+          const sample = items.find((it) => (it.name_snapshot || "").trim().toLowerCase() === key);
+          problemItems.push({
+            name: sample?.name_snapshot ?? key,
+            qty_requested: 0,
+            qty_prepared: 0,
+            reason: `duplikat ${n}× dalam tugas ini`,
+          });
+        }
+      }
+      // status-vs-progress anomalies
+      const isDone = String(t.status).toLowerCase() === "done" || String(t.status).toLowerCase() === "selesai";
+      if (isDone && items.length > 0) {
+        if (totalPrepared <= 1e-9) {
+          issues.push("status selesai tapi belum ada yang disiapkan");
+        } else if (totalPrepared + 1e-9 < totalRequested) {
+          const pct = totalRequested > 0 ? Math.round((1 - totalPrepared / totalRequested) * 100) : 0;
+          issues.push(`status selesai padahal kurang ${pct}% dari permintaan`);
+        }
+      }
+      // significant shortfall on active tasks (not done) — informational only when very large
+      if (!isDone && items.length > 0 && totalRequested > 0) {
+        const ratio = totalPrepared / totalRequested;
+        if (ratio > 0 && ratio < 0.1) {
+          issues.push("progres < 10% — periksa apakah pegawai stuck");
+        }
       }
       if (items.length === 0) issues.push("tidak ada item");
       if (problemItems.length > 0) issues.push(`${problemItems.length} item bermasalah`);
@@ -911,11 +948,116 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
   const badRows = rows.filter((r) => r.issues.length > 0 && !isResolved(r));
   const badCount = badRows.length;
   const resolvedCount = rows.filter((r) => r.issues.length > 0 && isResolved(r)).length;
-  const visibleRows = rows.filter((r) => {
-    if (filter === "ok") return r.issues.length === 0 || isResolved(r);
-    if (filter === "bad") return r.issues.length > 0 && !isResolved(r);
-    return true;
-  });
+  const q = query.trim().toLowerCase();
+  const visibleRows = rows
+    .filter((r) => {
+      if (filter === "ok") return r.issues.length === 0;
+      if (filter === "bad") return r.issues.length > 0 && !isResolved(r);
+      if (filter === "fixed") return r.issues.length > 0 && isResolved(r);
+      return true;
+    })
+    .filter((r) => {
+      if (!q) return true;
+      if (r.task.title.toLowerCase().includes(q)) return true;
+      return r.problemItems.some((p) => p.name.toLowerCase().includes(q));
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case "newest": return +new Date(b.task.created_at) - +new Date(a.task.created_at);
+        case "oldest": return +new Date(a.task.created_at) - +new Date(b.task.created_at);
+        case "diff_desc": return b.remaining - a.remaining;
+        case "diff_asc": return a.remaining - b.remaining;
+        case "title": return a.task.title.localeCompare(b.task.title, "id");
+      }
+    });
+
+  // Aggregate across ALL audited rows (not just visible) so totals stay stable
+  const agg = rows.reduce(
+    (acc, r) => {
+      acc.items += r.items;
+      acc.requested += r.totalRequested;
+      acc.prepared += r.totalPrepared;
+      acc.remaining += r.remaining;
+      return acc;
+    },
+    { items: 0, requested: 0, prepared: 0, remaining: 0 },
+  );
+  const progressPct = agg.requested > 0 ? Math.min(100, Math.round((agg.prepared / agg.requested) * 100)) : 0;
+
+  function buildSummaryText() {
+    const lines: string[] = [];
+    lines.push(`Revalidasi tugas — ${new Date().toLocaleString("id-ID")}`);
+    lines.push(`${rows.length} tugas · ${okCount} OK · ${badCount} bermasalah${resolvedCount ? ` · ${resolvedCount} ditandai dibetulkan` : ""}`);
+    lines.push(`Total: diminta ${fmtNum(agg.requested, 2)} · disiapkan ${fmtNum(agg.prepared, 2)} · sisa ${fmtNum(agg.remaining, 2)} (${progressPct}%)`);
+    lines.push("");
+    for (const r of rows) {
+      const tag = r.issues.length === 0 ? "OK" : isResolved(r) ? "FIXED" : "BAD";
+      lines.push(`[${tag}] ${r.task.title} — ${r.items} item · diminta ${fmtNum(r.totalRequested, 2)} · disiapkan ${fmtNum(r.totalPrepared, 2)} · sisa ${fmtNum(r.remaining, 2)}`);
+      if (r.issues.length) lines.push(`  ! ${r.issues.join(" · ")}`);
+      for (const p of r.problemItems) {
+        lines.push(`  - ${p.name}: diminta ${fmtNum(p.qty_requested, 2)}, disiapkan ${fmtNum(p.qty_prepared, 2)} — ${p.reason}`);
+      }
+    }
+    return lines.join("\n");
+  }
+
+  function copySummary() {
+    const text = buildSummaryText();
+    navigator.clipboard?.writeText(text).then(
+      () => toast.success("Ringkasan disalin"),
+      () => toast.error("Gagal menyalin"),
+    );
+  }
+
+  function exportCsv() {
+    const header = ["status", "judul", "dibuat", "jumlah_item", "diminta", "disiapkan", "sisa", "issues", "item_bermasalah"];
+    const esc = (v: unknown) => {
+      const s = String(v ?? "");
+      return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+    };
+    const lines = [header.join(",")];
+    for (const r of rows) {
+      const tag = r.issues.length === 0 ? "ok" : isResolved(r) ? "fixed" : "bad";
+      const problems = r.problemItems.map((p) => `${p.name} (${p.reason})`).join(" | ");
+      lines.push([
+        tag, r.task.title, new Date(r.task.created_at).toISOString(),
+        r.items, r.totalRequested, r.totalPrepared, r.remaining,
+        r.issues.join(" | "), problems,
+      ].map(esc).join(","));
+    }
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `revalidasi-tugas-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  function copyRowSummary(r: AuditRow) {
+    const tag = r.issues.length === 0 ? "OK" : isResolved(r) ? "FIXED" : "BAD";
+    const lines = [
+      `[${tag}] ${r.task.title}`,
+      `${r.items} item · diminta ${fmtNum(r.totalRequested, 2)} · disiapkan ${fmtNum(r.totalPrepared, 2)} · sisa ${fmtNum(r.remaining, 2)}`,
+    ];
+    if (r.issues.length) lines.push(`! ${r.issues.join(" · ")}`);
+    for (const p of r.problemItems) {
+      lines.push(`- ${p.name}: diminta ${fmtNum(p.qty_requested, 2)}, disiapkan ${fmtNum(p.qty_prepared, 2)} — ${p.reason}`);
+    }
+    lines.push(publicTaskUrl(r.task.share_token));
+    navigator.clipboard?.writeText(lines.join("\n")).then(
+      () => toast.success("Ringkasan tugas disalin"),
+      () => toast.error("Gagal menyalin"),
+    );
+  }
+
+  function openWaForRow(r: AuditRow) {
+    const url = publicTaskUrl(r.task.share_token);
+    const msg = `Mohon dicek tugas berikut:\n\n${r.task.title}\nDiminta ${fmtNum(r.totalRequested, 2)} · disiapkan ${fmtNum(r.totalPrepared, 2)} · sisa ${fmtNum(r.remaining, 2)}\n${url}`;
+    window.open(buildWhatsAppUrl(msg), "_blank", "noopener,noreferrer");
+  }
 
   return (
     <Modal title="Revalidasi total berat & jumlah" onClose={onClose}>
@@ -923,13 +1065,40 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
         <div className="text-muted-foreground">
           {loading ? "Menghitung…" : `${rows.length} tugas diperiksa — ${okCount} OK, ${badCount} bermasalah${resolvedCount ? `, ${resolvedCount} ditandai dibetulkan` : ""}`}
         </div>
-        <button onClick={() => void run()} className="h-8 rounded-md border px-3 text-xs">Hitung ulang</button>
+        <div className="flex items-center gap-1">
+          <button onClick={copySummary} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs" title="Salin ringkasan teks">
+            <Copy className="h-3.5 w-3.5" /> Salin
+          </button>
+          <button onClick={exportCsv} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs" title="Unduh CSV">
+            <Download className="h-3.5 w-3.5" /> CSV
+          </button>
+          <button onClick={() => void run()} className="h-8 rounded-md border px-3 text-xs">Hitung ulang</button>
+        </div>
       </div>
-      <div className="mb-2 flex items-center gap-1 text-xs">
+
+      {/* Aggregate summary */}
+      {!loading && rows.length > 0 && (
+        <div className="mb-3 rounded-md border bg-muted/40 p-2 text-[11px]">
+          <div className="grid grid-cols-4 gap-2 text-center">
+            <div><div className="text-muted-foreground">Item</div><div className="font-semibold tabular-nums">{agg.items}</div></div>
+            <div><div className="text-muted-foreground">Diminta</div><div className="font-semibold tabular-nums">{fmtNum(agg.requested, 2)}</div></div>
+            <div><div className="text-muted-foreground">Disiapkan</div><div className="font-semibold tabular-nums">{fmtNum(agg.prepared, 2)}</div></div>
+            <div><div className="text-muted-foreground">Sisa</div><div className="font-semibold tabular-nums">{fmtNum(agg.remaining, 2)}</div></div>
+          </div>
+          <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-background">
+            <div className="h-full bg-emerald-500 transition-all" style={{ width: `${progressPct}%` }} />
+          </div>
+          <div className="mt-1 text-right text-[10px] text-muted-foreground">{progressPct}% selesai</div>
+        </div>
+      )}
+
+      {/* Filter + search + sort */}
+      <div className="mb-2 flex flex-wrap items-center gap-1 text-xs">
         {([
           ["all", `Semua (${rows.length})`],
           ["bad", `Bermasalah (${badCount})`],
           ["ok", `Aman (${okCount})`],
+          ["fixed", `Dibetulkan (${resolvedCount})`],
         ] as const).map(([key, label]) => (
           <button
             key={key}
@@ -939,6 +1108,31 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
             {label}
           </button>
         ))}
+      </div>
+      <div className="mb-3 flex flex-wrap items-center gap-2 text-xs">
+        <div className="relative flex-1 min-w-[160px]">
+          <Search className="absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari judul tugas atau item bermasalah…"
+            className="h-8 w-full rounded-md border bg-background pl-7 pr-2 text-xs"
+          />
+        </div>
+        <label className="inline-flex items-center gap-1">
+          <ArrowUpDown className="h-3.5 w-3.5 text-muted-foreground" />
+          <select
+            value={sortBy}
+            onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
+            className="h-8 rounded-md border bg-background px-1 text-xs"
+          >
+            <option value="diff_desc">Sisa terbesar</option>
+            <option value="diff_asc">Sisa terkecil</option>
+            <option value="newest">Terbaru</option>
+            <option value="oldest">Terlama</option>
+            <option value="title">Judul A→Z</option>
+          </select>
+        </label>
       </div>
       <div className="max-h-[60vh] space-y-2 overflow-y-auto">
         {visibleRows.map((r) => {
@@ -973,9 +1167,27 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
                       ))}
                     </ul>
                   )}
-                  {hasIssues && (
-                    <div className="mt-2 flex gap-2">
-                      {isFixed ? (
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <button
+                      onClick={() => onOpenTask(r.task)}
+                      className="inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11px]"
+                    >
+                      <ExternalLink className="h-3 w-3" /> Buka detail
+                    </button>
+                    <button
+                      onClick={() => copyRowSummary(r)}
+                      className="inline-flex h-7 items-center gap-1 rounded-md border px-2 text-[11px]"
+                    >
+                      <Copy className="h-3 w-3" /> Salin
+                    </button>
+                    <button
+                      onClick={() => openWaForRow(r)}
+                      className="inline-flex h-7 items-center gap-1 rounded-md border border-[#25D366]/50 bg-[#25D366]/10 px-2 text-[11px] font-medium text-[#1ea952] hover:bg-[#25D366]/20"
+                    >
+                      <MessageCircle className="h-3 w-3" /> Kirim WA
+                    </button>
+                    {hasIssues && (
+                      isFixed ? (
                         <button
                           onClick={() => unmarkFixed(r.task.id)}
                           className="h-7 rounded-md border px-2 text-[11px]"
@@ -989,9 +1201,9 @@ function AuditDialog({ tasks, onClose }: { tasks: Task[]; onClose: () => void })
                         >
                           Tandai sudah dibetulkan
                         </button>
-                      )}
-                    </div>
-                  )}
+                      )
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
