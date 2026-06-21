@@ -1683,6 +1683,8 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   const [priceMode, setPriceMode] = useState<"package" | "base">("package");
   const [pricePerBase, setPricePerBase] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<"kas" | "hutang">(defaultPayment);
+  // Input dalam karton (hanya untuk satuan botol). 1 karton = 100 botol.
+  const [inputKarton, setInputKarton] = useState(false);
 
   useEffect(() => {
     if (mode === "existing" && !itemId && items[0]) setItemId(items[0].id);
@@ -1690,9 +1692,15 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
 
   const baseUnit = defaultBase(packageType);
   const effectivePkgSize = packageType === "pcs" ? 1 : Number(packageSize) || 0;
-  const pkgQ = Number(packageQty) || 0;
+  const kartonActive = inputKarton && packageType === "botol";
+  const rawQty = Number(packageQty) || 0;
+  // Saat mode karton aktif, angka yang diketik = jumlah karton → ×100 botol.
+  const pkgQ = kartonActive ? rawQty * BOTOL_PER_KARTON : rawQty;
+  const rawPricePerPackage = Number(pricePerPackage) || 0;
+  // Harga per karton ÷ 100 = harga per botol.
+  const pricePerBotol = kartonActive ? rawPricePerPackage / BOTOL_PER_KARTON : rawPricePerPackage;
   const price = priceMode === "package"
-    ? Number(pricePerPackage) || 0
+    ? pricePerBotol
     : (Number(pricePerBase) || 0) * effectivePkgSize;
   const baseAdded = pkgQ * effectivePkgSize;
   const totalCost = pkgQ * price;
@@ -1804,12 +1812,16 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
 
       <div className="grid grid-cols-2 gap-2">
         <label className="block">
-          <span className="text-[11px] text-muted-foreground">Jumlah kemasan</span>
+          <span className="text-[11px] text-muted-foreground">
+            Jumlah {kartonActive ? "karton" : "kemasan"}
+          </span>
           <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageQty} onChange={(e) => setPackageQty(e.target.value)} required />
         </label>
         {priceMode === "package" ? (
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">Harga beli / {packageType} (Rp)</span>
+            <span className="text-[11px] text-muted-foreground">
+              Harga beli / {kartonActive ? "karton" : packageType} (Rp)
+            </span>
             <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
           </label>
         ) : (
@@ -1819,6 +1831,23 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           </label>
         )}
       </div>
+
+      {packageType === "botol" && (
+        <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={inputKarton}
+            onChange={(e) => { setInputKarton(e.target.checked); setPriceMode("package"); }}
+            className="h-3.5 w-3.5"
+          />
+          Input dalam karton (1 karton = {BOTOL_PER_KARTON} botol)
+          {kartonActive && rawQty > 0 && (
+            <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+              = {pkgQ.toLocaleString("id-ID")} botol
+            </span>
+          )}
+        </label>
+      )}
 
       {packageType !== "pcs" && (
         <div className="flex gap-1 text-xs">
@@ -1865,7 +1894,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
 /* ----------------- JUAL ----------------- */
 function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; customers: Customer[]; uid: string | null; onChanged: () => void }) {
   const [itemId, setItemId] = useState("");
-  const [sellMode, setSellMode] = useState<"base" | "package">("base");
+  const [sellMode, setSellMode] = useState<"base" | "package" | "karton">("base");
   const [qty, setQty] = useState("");
   const [pricePerBase, setPricePerBase] = useState("");
   const [pricePerPackage, setPricePerPackage] = useState("");
@@ -1881,15 +1910,21 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
 
   const item = items.find((i) => i.id === itemId);
   const qtyN = Number(qty) || 0;
-  const qtyBase = item
-    ? (sellMode === "base" ? qtyN : qtyN * item.package_size)
+  // 1 karton = BOTOL_PER_KARTON botol. Faktor pengali ke base untuk tiap mode.
+  const baseFactor = item
+    ? sellMode === "base"
+      ? 1
+      : sellMode === "package"
+        ? item.package_size
+        : BOTOL_PER_KARTON * item.package_size
     : 0;
+  const qtyBase = qtyN * baseFactor;
   const pricePerBaseEff = item
-    ? (sellMode === "base"
-        ? Number(pricePerBase) || 0
-        : item.package_size > 0
-          ? (Number(pricePerPackage) || 0) / item.package_size
-          : 0)
+    ? sellMode === "base"
+      ? Number(pricePerBase) || 0
+      : baseFactor > 0
+        ? (Number(pricePerPackage) || 0) / baseFactor
+        : 0
     : 0;
   const total = qtyBase * pricePerBaseEff;
   const profit = item ? (pricePerBaseEff - item.avg_cost_per_base) * qtyBase : 0;
@@ -1975,12 +2010,17 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
                 Jual per {item.package_type}
               </button>
             )}
+            {item.package_type === "botol" && (
+              <button type="button" onClick={() => setSellMode("karton")} className={`flex-1 rounded border px-2 py-1 ${sellMode === "karton" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
+                Jual per karton
+              </button>
+            )}
           </div>
 
           <div className="grid grid-cols-2 gap-2">
             <label className="block">
               <span className="text-[11px] text-muted-foreground">
-                Jumlah ({sellMode === "base" ? item.base_unit : item.package_type})
+                Jumlah ({sellMode === "base" ? item.base_unit : sellMode === "karton" ? "karton" : item.package_type})
               </span>
               <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
             </label>
@@ -1991,7 +2031,9 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
               </label>
             ) : (
               <label className="block">
-                <span className="text-[11px] text-muted-foreground">Harga / {item.package_type} (Rp)</span>
+                <span className="text-[11px] text-muted-foreground">
+                  Harga / {sellMode === "karton" ? "karton" : item.package_type} (Rp)
+                </span>
                 <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
               </label>
             )}
