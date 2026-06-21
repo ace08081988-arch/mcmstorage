@@ -1,12 +1,23 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { Loader2, MessageSquarePlus, Search, UserRound, Link2, ArrowRight } from "lucide-react";
+import { Loader2, MessageSquarePlus, Search, UserRound, Link2, ArrowRight, Send } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { useChatContacts, useStartDm } from "@/lib/chat";
+import { buildWhatsAppUrl } from "@/lib/share-wa";
+
+// Normalisasi nomor → digit-only (tanpa "+"). 0xxx → 62xxx, 00xxx → xxx.
+function normalizeWaDigits(raw: string): string {
+  let d = (raw ?? "").replace(/\D/g, "");
+  if (!d) return "";
+  if (d.startsWith("00")) d = d.slice(2);
+  else if (d.startsWith("0")) d = "62" + d.slice(1);
+  if (d.length < 8 || d.length > 15) return "";
+  return d;
+}
 
 export function NewDmDialog() {
   const [open, setOpen] = useState(false);
@@ -14,6 +25,33 @@ export function NewDmDialog() {
   const { data: contacts, isLoading } = useChatContacts(q);
   const startDm = useStartDm();
   const navigate = useNavigate();
+
+  // Anggap query "nomor" kalau setelah dibersihkan tersisa >= 6 digit.
+  const queryDigits = useMemo(() => q.replace(/\D/g, ""), [q]);
+  const looksLikePhone = queryDigits.length >= 6;
+  const invitePhone = useMemo(() => normalizeWaDigits(q), [q]);
+
+  function inviteByWhatsApp() {
+    if (!invitePhone) {
+      toast.error("Nomor tidak valid. Contoh: 08123456789 atau 628123456789.");
+      return;
+    }
+    const origin =
+      typeof window !== "undefined" ? window.location.origin : "https://mcmstorage.biz";
+    const msg = [
+      "Halo! Saya mengundang Anda bergabung di aplikasi MCM Storage.",
+      "",
+      "Silakan daftar/masuk lewat tautan berikut, lalu kita bisa saling chat di dalam aplikasi:",
+      origin,
+    ].join("\n");
+    const url = buildWhatsAppUrl(msg, invitePhone);
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) {
+      toast.error("Popup diblokir browser. Izinkan popup lalu coba lagi.");
+      return;
+    }
+    toast.success("Undangan WA dibuka untuk " + invitePhone);
+  }
 
   const onPick = async (uid: string) => {
     try {
@@ -54,23 +92,47 @@ export function NewDmDialog() {
           ) : (contacts ?? []).length === 0 ? (
             <div className="flex flex-col items-center gap-3 p-4 text-center">
               <div className="grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary">
-                <Link2 className="h-5 w-5" />
+                {looksLikePhone ? <Send className="h-5 w-5" /> : <Link2 className="h-5 w-5" />}
               </div>
-              <div className="text-xs text-muted-foreground">
-                Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok terlebih dahulu agar bisa muncul di daftar ini.
-              </div>
-              <Button
-                type="button"
-                size="sm"
-                className="gap-1.5"
-                onClick={() => {
-                  setOpen(false);
-                  navigate({ to: "/kontak" });
-                }}
-              >
-                <Link2 className="h-4 w-4" /> Siapkan kontak chat
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Button>
+              {looksLikePhone ? (
+                <>
+                  <div className="text-xs text-muted-foreground">
+                    Nomor <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat WhatsApp agar dapat diajak chat.
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={inviteByWhatsApp}
+                    disabled={!invitePhone}
+                  >
+                    <Send className="h-4 w-4" /> Undang via WhatsApp
+                  </Button>
+                  {!invitePhone && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Format nomor belum valid (8–15 digit). Contoh: 08123456789.
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <div className="text-xs text-muted-foreground">
+                    Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok, atau ketik nomor WA untuk mengundang.
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      setOpen(false);
+                      navigate({ to: "/kontak" });
+                    }}
+                  >
+                    <Link2 className="h-4 w-4" /> Siapkan kontak chat
+                    <ArrowRight className="h-3.5 w-3.5" />
+                  </Button>
+                </>
+              )}
             </div>
           ) : (
             (contacts ?? []).map((c) => (
