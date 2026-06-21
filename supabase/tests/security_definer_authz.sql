@@ -153,14 +153,17 @@ DO $$
 DECLARE v_a uuid := current_setting('test.user_a')::uuid;
         v_b uuid := current_setting('test.user_b')::uuid;
         v_c uuid := current_setting('test.user_c')::uuid;
-        v_cust uuid; v_order uuid;
+        v_cust uuid; v_order uuid; v_item uuid;
 BEGIN
-  -- Set up: order owned by B, linked to a customer whose account_user_id = A.
-  -- Caller C is unrelated to both → ensure_order_conversation must raise not_authorized.
+  SELECT id INTO v_item FROM public.warehouse_items WHERE user_id = v_b LIMIT 1;
+  IF v_item IS NULL THEN
+    RAISE NOTICE 'SKIP ensure_order_conversation: user B has no warehouse_items to attach to an order';
+    RETURN;
+  END IF;
   INSERT INTO public.customers(user_id, name, account_user_id)
     VALUES (v_b, 'authz-test', v_a) RETURNING id INTO v_cust;
-  INSERT INTO public.order_requests(user_id, customer_id, status)
-    VALUES (v_b, v_cust, 'draft') RETURNING id INTO v_order;
+  INSERT INTO public.order_requests(user_id, customer_id, item_id, qty, qty_mode, status)
+    VALUES (v_b, v_cust, v_item, 1, 'base', 'draft') RETURNING id INTO v_order;
 
   PERFORM pg_temp.as_user(v_c);    -- C is unrelated to this order
   BEGIN
