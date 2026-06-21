@@ -306,7 +306,34 @@ function LinkPegawaiPage() {
         >
           <RefreshCw className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} /> Muat ulang
         </button>
+        <button
+          onClick={() => setTestMode((v) => !v)}
+          aria-pressed={testMode}
+          title="Tampilkan status token dan hitung mundur kedaluwarsa"
+          className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs transition ${
+            testMode
+              ? "border-primary bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          <FlaskConical className="h-3.5 w-3.5" /> Mode Uji {testMode ? "Aktif" : "Mati"}
+        </button>
       </div>
+
+      {testMode && (
+        <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] text-foreground/80">
+          <div className="flex items-center gap-1.5 font-medium text-primary">
+            <FlaskConical className="h-3.5 w-3.5" /> Mode Uji Coba Token
+          </div>
+          <div className="mt-0.5 leading-relaxed">
+            Indikator status token tampil di tiap baris:{" "}
+            <span className="font-medium text-emerald-600 dark:text-emerald-400">Valid</span> ·{" "}
+            <span className="font-medium text-sky-600 dark:text-sky-400">Baru dibuat</span> ·{" "}
+            <span className="font-medium text-amber-600 dark:text-amber-400">Invalid</span> ·{" "}
+            <span className="font-medium text-destructive">Kosong</span>. Hitung mundur kedaluwarsa diperbarui tiap detik.
+          </div>
+        </div>
+      )}
 
       <p className="mb-3 text-xs text-muted-foreground">
         Semua tugas pegawai yang sudah pernah dibuat — link, status ketersediaan, dan akses langsung untuk pratinjau.
