@@ -452,12 +452,17 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
   const [notes, setNotes] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
   const { data: myProfile } = useMyProfile();
-  const canUseMyContact = !!(myProfile?.display_name || myProfile?.phone);
+  const normalizedMyPhone = normalizeWaNumber(myProfile?.phone);
+  const canUseMyContact = !!(myProfile?.display_name || normalizedMyPhone);
   function useMyContact() {
     if (!myProfile) return;
-    if (myProfile.display_name) setName(myProfile.display_name);
-    if (myProfile.phone) setContact(myProfile.phone);
-    toast.success("Diisi dari akun Anda");
+    const filled: string[] = [];
+    if (myProfile.display_name) { setName(myProfile.display_name); filled.push("nama"); }
+    if (normalizedMyPhone) { setContact(normalizedMyPhone); filled.push("no. WA"); }
+    else if (myProfile.phone) {
+      toast.warning("Nomor WA di profil tidak valid — perbarui di halaman Profil Akun");
+    }
+    if (filled.length) toast.success(`Diisi dari akun Anda (${filled.join(" & ")})`);
   }
 
   function resetForm() { setEditingId(null); setName(""); setContact(""); setNotes(""); }
