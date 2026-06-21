@@ -260,6 +260,18 @@ export function useConversationMessages(conversationId: string | undefined) {
           );
         },
       )
+      .on(
+        "postgres_changes",
+        { event: "DELETE", schema: "public", table: "messages", filter: `conversation_id=eq.${conversationId}` },
+        (payload) => {
+          const oldId = (payload.old as { id?: string }).id;
+          if (!oldId) return;
+          qc.setQueryData<MessageRow[]>(["chat", "messages", conversationId], (prev) =>
+            (prev ?? []).filter((m) => m.id !== oldId),
+          );
+          qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+        },
+      )
       .subscribe();
     return () => {
       supabase.removeChannel(ch);
