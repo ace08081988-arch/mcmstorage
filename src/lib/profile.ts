@@ -13,7 +13,7 @@ export type MyProfile = {
   avatar_url: string | null;
 };
 
-const PROFILE_COLS =
+const PROFILE_COLS: string =
   "id, display_name, email, phone, country_code, language, currency, date_format, avatar_url";
 
 const DEFAULT_PREFS = {
