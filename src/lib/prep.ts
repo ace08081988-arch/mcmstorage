@@ -40,8 +40,19 @@ export async function uploadPrepPhoto(taskToken: string, itemId: string, blob: B
 }
 
 export function publicTaskUrl(token: string): string {
-  if (typeof window === "undefined") return `/t/${token}`;
-  return `${window.location.origin}/t/${token}`;
+  // Selalu gunakan domain publik yang stabil agar link bisa dibuka di mana
+  // saja — termasuk saat tombol "Buka di Tab Baru" diklik dari iframe
+  // pratinjau Lovable (yang membutuhkan token query). Origin pratinjau
+  // (lovableproject.com / *-preview*.lovable.app) tidak bisa dipakai pegawai.
+  const PUBLIC_BASE = "https://mcmstorage.biz";
+  if (typeof window === "undefined") return `${PUBLIC_BASE}/t/${token}`;
+  const origin = window.location.origin;
+  const isPreviewSandbox =
+    origin.includes("lovableproject.com") ||
+    origin.includes("id-preview--") ||
+    /--[a-z0-9-]+\.lovable\.app$/i.test(origin);
+  const base = isPreviewSandbox ? PUBLIC_BASE : origin;
+  return `${base}/t/${token}`;
 }
 
 export type PrepSubmissionRow = {
