@@ -152,14 +152,27 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
   };
 
   const handleResetBg = () => {
+    // Catat perubahan yang BENAR-BENAR terjadi sebelum kita ubah state.
+    const changes: string[] = [];
+    if (bgImage !== "") changes.push("foto latar dihapus");
+    if (bgOverlay !== 0.7) {
+      changes.push(`overlay ${Math.round(bgOverlay * 100)} persen menjadi 70 persen`);
+    }
+    if (bgBlur !== 0) changes.push(`blur ${bgBlur} piksel menjadi 0 piksel`);
+
+    if (changes.length === 0) {
+      // Sudah default — beri umpan balik singkat sekali saja, jangan ulang pesan reset.
+      flashAnnouncement("Pengaturan foto latar sudah pada nilai default.");
+      requestAnimationFrame(() => resetBtnRef.current?.focus());
+      return;
+    }
+
     setBgImage("");
     setBgOverlay(0.7);
     setBgBlur(0);
     [LS.bgImage, LS.bgOverlay, LS.bgBlur].forEach((k) => localStorage.removeItem(k));
     applyAppearance();
-    flashAnnouncement(
-      "Pengaturan foto latar dikembalikan ke default. Overlay 70 persen, blur 0 piksel.",
-    );
+    flashAnnouncement(`Pengaturan diperbarui: ${changes.join(", ")}.`);
     // Kembalikan fokus ke tombol Reset agar urutan tab tetap konsisten.
     requestAnimationFrame(() => resetBtnRef.current?.focus());
   };
