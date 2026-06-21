@@ -576,6 +576,17 @@ function LinkPegawaiPage() {
                       Buat Ulang Token
                     </button>
                   )}
+                  {testMode && !urlError && (
+                    <button
+                      onClick={() => void regenerateToken(t.id)}
+                      disabled={regenId === t.id}
+                      title="Buat token baru untuk pengujian"
+                      className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted disabled:opacity-50"
+                    >
+                      {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
+                      Token Baru
+                    </button>
+                  )}
                   <Link
                     to="/tugas"
                     className="ml-auto inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted"
