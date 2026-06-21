@@ -105,6 +105,7 @@ function LinkPegawaiPage() {
   const [filteredTotalBusy, setFilteredTotalBusy] = useState(false);
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | Availability>("all");
+  const [tokenFilter, setTokenFilter] = useState<"all" | TokenState["kind"]>("all");
   const [sort, setSort] = useState<SortKey>("newest");
   const [now, setNow] = useState(Date.now());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -223,9 +224,14 @@ function LinkPegawaiPage() {
   }, [loadMore]);
 
   const rows = useMemo(() => {
-    const list = (tasks ?? []).map((t) => ({ t, avail: computeAvailability(t, now) }));
-    const filtered = list.filter(({ t, avail }) => {
+    const list = (tasks ?? []).map((t) => ({
+      t,
+      avail: computeAvailability(t, now),
+      tokenState: classifyToken(t.share_token, regenAt[t.id], now),
+    }));
+    const filtered = list.filter(({ t, avail, tokenState }) => {
       if (filter !== "all" && avail !== filter) return false;
+      if (tokenFilter !== "all" && tokenState.kind !== tokenFilter) return false;
       if (q.trim()) {
         const needle = q.trim().toLowerCase();
         if (!t.title.toLowerCase().includes(needle) && !t.share_token.toLowerCase().includes(needle)) return false;
@@ -242,7 +248,7 @@ function LinkPegawaiPage() {
     }
     // "newest" / "oldest" come pre-sorted from the server.
     return filtered;
-  }, [tasks, q, filter, now, sort]);
+  }, [tasks, q, filter, tokenFilter, now, sort, regenAt]);
 
   const counts = useMemo(() => {
     const c = { all: 0, active: 0, expired: 0, done: 0, cancelled: 0 } as Record<string, number>;
@@ -253,6 +259,15 @@ function LinkPegawaiPage() {
     }
     return c;
   }, [tasks, now]);
+
+  const tokenCounts = useMemo(() => {
+    const c = { all: 0, valid: 0, fresh: 0, invalid: 0, empty: 0 } as Record<string, number>;
+    for (const t of tasks ?? []) {
+      c.all += 1;
+      c[classifyToken(t.share_token, regenAt[t.id], now).kind] += 1;
+    }
+    return c;
+  }, [tasks, regenAt, now]);
 
   async function copyLink(url: string) {
     try {
@@ -434,6 +449,33 @@ function LinkPegawaiPage() {
             </button>
           ))}
         </div>
+      </div>
+
+      <div className="mb-3 flex flex-wrap items-center gap-1">
+        <span className="mr-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+          <ShieldCheck className="h-3.5 w-3.5" /> Token:
+        </span>
+        {([
+          ["all", "Semua", ""],
+          ["valid", "Valid", "data-[active=true]:border-emerald-500/50 data-[active=true]:bg-emerald-500/10 data-[active=true]:text-emerald-700 dark:data-[active=true]:text-emerald-400"],
+          ["fresh", "Baru dibuat", "data-[active=true]:border-sky-500/50 data-[active=true]:bg-sky-500/10 data-[active=true]:text-sky-700 dark:data-[active=true]:text-sky-400"],
+          ["invalid", "Invalid", "data-[active=true]:border-amber-500/50 data-[active=true]:bg-amber-500/10 data-[active=true]:text-amber-700 dark:data-[active=true]:text-amber-400"],
+          ["empty", "Kosong", "data-[active=true]:border-destructive/50 data-[active=true]:bg-destructive/10 data-[active=true]:text-destructive"],
+        ] as const).map(([key, label, activeCls]) => {
+          const active = tokenFilter === key;
+          return (
+            <button
+              key={key}
+              data-active={active}
+              onClick={() => setTokenFilter(key)}
+              className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] hover:bg-muted ${activeCls} ${
+                active && !activeCls ? "border-primary bg-primary/10 text-primary" : ""
+              }`}
+            >
+              {label} <span className="rounded bg-muted px-1 text-[10px] tabular-nums">{tokenCounts[key] ?? 0}</span>
+            </button>
+          );
+        })}
       </div>
 
       {tasks === null ? (
