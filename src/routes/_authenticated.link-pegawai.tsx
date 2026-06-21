@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { publicTaskUrl, isValidShareToken, InvalidShareTokenError, genShareToken } from "@/lib/prep";
-import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown, KeyRound, FlaskConical, Sparkles, AlertTriangle, CircleSlash, ShieldCheck, Timer } from "lucide-react";
+import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown, KeyRound, FlaskConical, Sparkles, AlertTriangle, CircleSlash, ShieldCheck, Timer, RotateCw } from "lucide-react";
 
 const PAGE_SIZE = 30;
 const REGEN_FRESH_WINDOW_MS = 5 * 60 * 1000;
@@ -94,6 +94,7 @@ const STATUS_ORDER: Record<Availability, number> = {
 
 function LinkPegawaiPage() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [regenId, setRegenId] = useState<string | null>(null);
   const [regenAt, setRegenAt] = useState<Record<string, number>>({});
@@ -118,13 +119,31 @@ function LinkPegawaiPage() {
 
   const reload = useCallback(async () => {
     setBusy(true);
+    setLoadError(null);
+    // Pastikan sesi masih ada — auto-lock kadang menghapus token sehingga
+    // query berikutnya 401 dan halaman terjebak di status "Memuat…".
+    const { data: sessionData } = await supabase.auth.getSession();
+    if (!sessionData.session) {
+      setBusy(false);
+      setTasks([]);
+      setLoadError("Sesi berakhir. Silakan muat ulang halaman atau masuk kembali.");
+      return;
+    }
     const { data, error, count } = await supabase
       .from("prep_tasks")
       .select("id,title,note,share_token,status,expires_at,created_at", { count: "exact" })
       .order("created_at", { ascending: serverAscending })
       .range(0, PAGE_SIZE - 1);
     setBusy(false);
-    if (error) { toast.error("Gagal memuat: " + error.message); return; }
+    if (error) {
+      const msg = error.message || "Tidak diketahui";
+      toast.error("Gagal memuat: " + msg);
+      // Jangan biarkan UI terkunci di skeleton "Memuat…" — tampilkan pesan
+      // error + tombol coba lagi.
+      setTasks((prev) => prev ?? []);
+      setLoadError(msg);
+      return;
+    }
     const rows = (data ?? []) as Task[];
     setTasks(rows);
     setTotal(count ?? rows.length);
@@ -510,7 +529,25 @@ function LinkPegawaiPage() {
       </div>
 
       {tasks === null ? (
-        <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">Memuat…</div>
+        <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">
+          <Loader2 className="mx-auto mb-2 h-4 w-4 animate-spin" /> Memuat…
+        </div>
+      ) : loadError && tasks.length === 0 ? (
+        <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-5 text-center">
+          <AlertTriangle className="mx-auto mb-2 h-5 w-5 text-destructive" />
+          <div className="text-sm font-medium text-destructive">Gagal memuat daftar link</div>
+          <p className="mx-auto mt-1 max-w-sm text-[11px] leading-relaxed text-muted-foreground">
+            {loadError}
+          </p>
+          <button
+            onClick={() => void reload()}
+            disabled={busy}
+            className="mt-3 inline-flex h-9 items-center gap-1.5 rounded-md border bg-background px-3 text-xs font-medium hover:bg-muted disabled:opacity-50"
+          >
+            {busy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />}
+            Coba lagi
+          </button>
+        </div>
       ) : rows.length === 0 ? (
         <>
           <div className="rounded-xl border bg-card p-6 text-center text-xs text-muted-foreground">
