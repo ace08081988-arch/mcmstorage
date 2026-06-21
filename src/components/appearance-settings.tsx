@@ -65,10 +65,8 @@ export function applyAppearance() {
   const bgBlur = Number(localStorage.getItem(LS.bgBlur) ?? "0");
 
   root.classList.toggle("dark", resolveTheme(theme) === "dark");
-  if (body) {
-    body.dataset.font = font;
-    body.dataset.fontSize = size;
-  }
+  root.dataset.font = font;
+  root.dataset.fontSize = size;
   const accent = ACCENTS.find((a) => a.id === accentId) ?? ACCENTS[0];
   root.style.setProperty("--primary", accent.value);
   root.style.setProperty("--ring", accent.value);
@@ -79,10 +77,8 @@ export function applyAppearance() {
   );
   root.style.setProperty("--app-bg-overlay", String(bgImage ? bgOverlay : 1));
   root.style.setProperty("--app-bg-blur", `${bgImage ? bgBlur : 0}px`);
-  if (body) {
-    if (bgImage) body.dataset.hasBg = "1";
-    else delete body.dataset.hasBg;
-  }
+  if (bgImage) root.dataset.hasBg = "1";
+  else delete root.dataset.hasBg;
 }
 
 export function AppearanceInit() {

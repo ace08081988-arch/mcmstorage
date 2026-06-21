@@ -147,8 +147,9 @@ function RootShell({ children }: { children: ReactNode }) {
   d.style.setProperty('--app-bg-image',bg?'url("'+bg.replace(/"/g,'\\\\"')+'")':'none');
   d.style.setProperty('--app-bg-overlay',String(bg?ov:1));
   d.style.setProperty('--app-bg-blur',(bg?bl:0)+'px');
-  var b=document.body;if(b){b.dataset.font=ls.getItem('app-font')||'sans';b.dataset.fontSize=ls.getItem('app-font-size')||'md';}
-  if(b){ if(bg) b.dataset.hasBg='1'; else delete b.dataset.hasBg; }
+  d.dataset.font=ls.getItem('app-font')||'sans';
+  d.dataset.fontSize=ls.getItem('app-font-size')||'md';
+  if(bg) d.dataset.hasBg='1'; else delete d.dataset.hasBg;
 }catch(e){}})();`;
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
