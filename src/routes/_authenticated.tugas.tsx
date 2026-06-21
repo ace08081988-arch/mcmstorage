@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
+import { fmtItemQty } from "@/lib/stock-format";
 import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
@@ -18,7 +19,10 @@ export const Route = createFileRoute("/_authenticated/tugas")({
   component: TugasPage,
 });
 
-type WItem = { id: string; name: string; category: string | null; image_path: string | null; stock_base: number };
+type WItem = {
+  id: string; name: string; category: string | null; image_path: string | null; stock_base: number;
+  base_unit?: "g" | "pcs" | null; package_type?: string | null; package_size?: number | null;
+};
 type Variant = { id: string; warehouse_item_id: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
 type CatVariant = { id: string; category: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
 type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string };
@@ -46,7 +50,7 @@ function TugasPage() {
     if (!uid) return;
     const [{ data: t }, { data: w }, { data: v }, { data: cv }] = await Promise.all([
       supabase.from("prep_tasks").select("*").order("created_at", { ascending: false }),
-      supabase.from("warehouse_items").select("id,name,category,image_path,stock_base").order("name"),
+      supabase.from("warehouse_items").select("id,name,category,image_path,stock_base,base_unit,package_type,package_size").order("name"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase.from as any)("warehouse_item_variants").select("*").order("position"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -661,7 +665,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         )}
                       </div>
                       <div className="text-[10px] text-muted-foreground">
-                        {it.category ?? "—"} · stok {it.stock_base}
+                        {it.category ?? "—"} · stok {fmtItemQty(it.stock_base, { name: it.name, base_unit: (it.base_unit ?? "pcs") as "g" | "pcs", package_type: it.package_type ?? "", package_size: Number(it.package_size) || 0 })}
                         {itemVariants.length > 0 && <span className="ml-1">· {itemVariants.length} varian</span>}
                       </div>
                     </div>

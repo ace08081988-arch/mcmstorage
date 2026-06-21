@@ -20,6 +20,7 @@ import {
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
+import { fmtItemQty } from "@/lib/stock-format";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -33,6 +34,8 @@ export const Route = createFileRoute("/_authenticated/ecer")({
 type WarehouseItem = {
   id: string; name: string; category: string | null; base_unit: string;
   stock_base: number; image_path: string | null;
+  package_type?: string | null;
+  package_size?: number | null;
 };
 
 function EcerPage() {
@@ -96,7 +99,7 @@ function EcerPage() {
         setLoading(false); return;
       }
       const [wi, et] = await Promise.all([
-        supabase.from("warehouse_items").select("id,name,category,base_unit,stock_base,image_path").order("name"),
+        supabase.from("warehouse_items").select("id,name,category,base_unit,stock_base,image_path,package_type,package_size").order("name"),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase.from as any)("ecer_titles").select("*").order("position").order("created_at"),
       ]);
@@ -249,7 +252,7 @@ function EcerPage() {
           <option value="">— Pilih produk —</option>
           {items.map((it) => (
             <option key={it.id} value={it.id}>
-              {it.category ? `[${it.category}] ` : ""}{it.name} · stok {it.stock_base} {it.base_unit}
+              {it.category ? `[${it.category}] ` : ""}{it.name} · stok {fmtItemQty(it.stock_base, { ...it, base_unit: it.base_unit as "g" | "pcs" })}
             </option>
           ))}
         </select>
@@ -261,7 +264,7 @@ function EcerPage() {
             <div>
               <CardTitle className="text-base">{selectedItem.name}</CardTitle>
               <div className="text-xs text-muted-foreground">
-                {selectedItem.category ?? "—"} · stok {selectedItem.stock_base} {selectedItem.base_unit}
+                {selectedItem.category ?? "—"} · stok {fmtItemQty(selectedItem.stock_base, { ...selectedItem, base_unit: selectedItem.base_unit as "g" | "pcs" })}
               </div>
             </div>
             <Button size="sm" onClick={() => setCreatingTitle(true)}>
@@ -458,7 +461,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated }: {
               <CardTitle className="truncate text-base">{title.name}</CardTitle>
               <div className="mt-0.5 text-xs text-muted-foreground">
                 <Package className="mr-1 inline h-3 w-3" />
-                {item.name} · target <b>{title.target_grams} {title.unit_label}</b> · stok produk {item.stock_base} {item.base_unit}
+                {item.name} · target <b>{title.target_grams} {title.unit_label}</b> · stok produk {fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}
               </div>
               {title.note && <div className="mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap">{title.note}</div>}
             </div>

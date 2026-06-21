@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { fmtItemQty } from "@/lib/stock-format";
 
 export const Route = createFileRoute("/_authenticated/gudang/pesanan/$id/edit")({
   component: PesananEditPage,
@@ -130,7 +131,7 @@ function PesananEditPage() {
                 ))}
               </select>
               {selectedItem && (
-                <div className="text-[10px] text-muted-foreground">Stok: {selectedItem.stock_base} {selectedItem.base_unit}</div>
+                <div className="text-[10px] text-muted-foreground">Stok: {fmtItemQty(selectedItem.stock_base, selectedItem)}</div>
               )}
             </div>
 
