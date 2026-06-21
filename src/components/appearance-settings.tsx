@@ -150,7 +150,7 @@ export function AppearanceSettings({ triggerClassName, compact = false }: { trig
           {compact ? "🎨" : "🎨 Tampilan"}
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Pengaturan tampilan</DialogTitle>
           <DialogDescription>Atur tema, font, ukuran, warna aksen, dan kelengkungan sudut.</DialogDescription>
