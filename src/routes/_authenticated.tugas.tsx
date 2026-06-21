@@ -402,10 +402,9 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
           validLines++;
           const w = lineWeight(l, variants) * (l.count || 0);
           totalWeight += w;
-          if (hasPhoto) {
-            readyLines++;
-            readyWeight += w;
-          }
+          // Foto referensi opsional → baris valid selalu dihitung siap kirim.
+          readyLines++;
+          readyWeight += w;
         } else if (rs === "partial") partialLines++;
         else invalidLines++;
       }
@@ -465,12 +464,12 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     const entries = Object.values(picked);
     if (entries.length === 0) { toast.error("Pilih minimal 1 barang"); return; }
     if (pin.length < 4) { toast.error("PIN minimal 4 digit"); return; }
-    // Validasi akhir: blokir pengiriman jika ada barang yang belum punya foto.
+    // Foto referensi bersifat opsional — barang tanpa foto tetap dibuatkan tugas,
+    // hanya saja tidak ada lampiran foto referensi ke WhatsApp.
     const missingPhoto = entries.filter((e) => !e.item.image_path).map((e) => e.item.name);
     if (missingPhoto.length > 0) {
-      const list = missingPhoto.slice(0, 5).join(", ") + (missingPhoto.length > 5 ? `, +${missingPhoto.length - 5} lainnya` : "");
-      toast.error(`Tidak bisa kirim: ${missingPhoto.length} barang belum punya foto — ${list}`, { duration: 6000 });
-      return;
+      const list = missingPhoto.slice(0, 3).join(", ") + (missingPhoto.length > 3 ? `, +${missingPhoto.length - 3} lainnya` : "");
+      toast.warning(`${missingPhoto.length} barang tanpa foto referensi: ${list}. Pegawai tetap menerima link & PIN.`, { duration: 5000 });
     }
     const cleanedPhone = phone.replace(/\D/g, "");
     setBusy(true);
@@ -588,10 +587,10 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             </span>
           </div>
           {summary.linesWithoutPhoto > 0 && (
-            <div className="mt-1 flex items-start gap-1 text-[10px] text-destructive">
+            <div className="mt-1 flex items-start gap-1 text-[10px] text-amber-600">
               <ImageIcon className="mt-0.5 h-3 w-3 shrink-0" />
               <span>
-                <b>{summary.linesWithoutPhoto}</b> baris belum punya foto dan tidak akan ikut dikirim:{" "}
+                <b>{summary.linesWithoutPhoto}</b> baris belum punya foto referensi — tugas tetap bisa dikirim, hanya tanpa lampiran foto:{" "}
                 <span className="text-muted-foreground">{summary.itemsWithoutPhoto.join(", ")}</span>
               </span>
             </div>
@@ -782,8 +781,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
           const canSend =
             summary.validLines > 0 &&
             summary.partialLines === 0 &&
-            summary.invalidLines === 0 &&
-            summary.linesWithoutPhoto === 0;
+            summary.invalidLines === 0;
           const reason =
             summary.validLines === 0
               ? "Pilih minimal satu barang dengan baris valid"
@@ -791,8 +789,6 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
               ? `${summary.invalidLines} baris tidak valid`
               : summary.partialLines > 0
               ? `${summary.partialLines} baris belum lengkap`
-              : summary.linesWithoutPhoto > 0
-              ? `Tidak ada foto untuk: ${summary.itemsWithoutPhoto.join(", ")}`
               : "";
           return (
             <button
