@@ -3,7 +3,7 @@ import {
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
   ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight,
   Type, Eraser, Undo2, Redo2, RotateCw, Square, Circle, Pencil, Trash2,
-  X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon, ZoomIn, ZoomOut,
+  X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon, ZoomIn, ZoomOut, Maximize2, Minimize2,
 } from "lucide-react";
 import {
   Dialog,
@@ -68,6 +68,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   );
   const [previewZoom, setPreviewZoom] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
+  const [previewFullscreen, setPreviewFullscreen] = useState(false);
 
   // Load image
   useEffect(() => {
