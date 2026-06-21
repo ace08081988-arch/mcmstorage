@@ -193,7 +193,7 @@ function ManajemenPegawaiPage() {
         </button>
       </div>
 
-      <p className="mb-3 text-xs text-muted-foreground">
+      <p className="mb-3 text-xs text-muted-foreground" data-compact-hide>
         Kelola data pegawai, buat link tugas, dan pantau riwayat pengiriman foto/lokasi dari setiap pegawai.
       </p>
 
@@ -219,7 +219,7 @@ function ManajemenPegawaiPage() {
       </div>
 
       {unassignedTasks.length > 0 && (
-        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs">
+        <div className="mb-4 rounded-lg border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs" data-compact-hide>
           <div className="font-medium text-amber-700 dark:text-amber-400">
             {unassignedTasks.length} tugas belum tertaut ke pegawai
           </div>
@@ -306,24 +306,24 @@ function ManajemenPegawaiPage() {
                     </span>
                   )}
                   {counts.expired > 0 && (
-                    <span className={`rounded-md px-1.5 py-0.5 ring-1 ${AVAIL_BADGE.expired.cls}`}>
+                    <span className={`rounded-md px-1.5 py-0.5 ring-1 ${AVAIL_BADGE.expired.cls}`} data-compact-hide>
                       <Clock className="mr-0.5 inline h-3 w-3" /> {counts.expired} expired
                     </span>
                   )}
                   {counts.done > 0 && (
-                    <span className={`rounded-md px-1.5 py-0.5 ring-1 ${AVAIL_BADGE.done.cls}`}>
+                    <span className={`rounded-md px-1.5 py-0.5 ring-1 ${AVAIL_BADGE.done.cls}`} data-compact-hide>
                       {counts.done} selesai
                     </span>
                   )}
                   {counts.cancelled > 0 && (
-                    <span className={`rounded-md px-1.5 py-0.5 ring-1 ${AVAIL_BADGE.cancelled.cls}`}>
+                    <span className={`rounded-md px-1.5 py-0.5 ring-1 ${AVAIL_BADGE.cancelled.cls}`} data-compact-hide>
                       <CircleSlash className="mr-0.5 inline h-3 w-3" /> {counts.cancelled} batal
                     </span>
                   )}
                 </div>
 
                 {lastTask && (
-                  <div className="mt-2 truncate border-t pt-2 text-[11px] text-muted-foreground">
+                  <div className="mt-2 truncate border-t pt-2 text-[11px] text-muted-foreground" data-compact-hide>
                     Terakhir: <span className="font-medium text-foreground">{lastTask.title}</span> ·{" "}
                     {new Date(lastTask.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
                   </div>

@@ -341,7 +341,7 @@ function LinkPegawaiPage() {
       </div>
 
       {testMode && (
-        <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] text-foreground/80">
+        <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] text-foreground/80" data-compact-hide>
           <div className="flex items-center gap-1.5 font-medium text-primary">
             <FlaskConical className="h-3.5 w-3.5" /> Mode Uji Coba Token
           </div>
@@ -355,7 +355,7 @@ function LinkPegawaiPage() {
         </div>
       )}
 
-      <p className="mb-3 text-xs text-muted-foreground">
+      <p className="mb-3 text-xs text-muted-foreground" data-compact-hide>
         Semua tugas pegawai yang sudah pernah dibuat — link, status ketersediaan, dan akses langsung untuk pratinjau.
         {total != null && (() => {
           const loaded = tasks?.length ?? 0;
