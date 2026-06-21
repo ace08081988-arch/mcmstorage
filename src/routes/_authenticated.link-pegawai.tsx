@@ -3,9 +3,41 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { publicTaskUrl, isValidShareToken, InvalidShareTokenError, genShareToken } from "@/lib/prep";
-import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown, KeyRound } from "lucide-react";
+import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown, KeyRound, FlaskConical, Sparkles, AlertTriangle, CircleSlash, ShieldCheck, Timer } from "lucide-react";
 
 const PAGE_SIZE = 30;
+const REGEN_FRESH_WINDOW_MS = 5 * 60 * 1000;
+
+type TokenState =
+  | { kind: "empty" }
+  | { kind: "invalid" }
+  | { kind: "fresh"; ageMs: number }
+  | { kind: "valid" };
+
+function classifyToken(token: string | null | undefined, regenAt: number | undefined, now: number): TokenState {
+  if (!token) return { kind: "empty" };
+  if (!isValidShareToken(token)) return { kind: "invalid" };
+  if (regenAt != null) {
+    const age = now - regenAt;
+    if (age >= 0 && age < REGEN_FRESH_WINDOW_MS) return { kind: "fresh", ageMs: age };
+  }
+  return { kind: "valid" };
+}
+
+function formatCountdown(ms: number): { text: string; tone: "ok" | "warn" | "danger" } {
+  if (ms <= 0) return { text: "kedaluwarsa", tone: "danger" };
+  const s = Math.floor(ms / 1000);
+  const d = Math.floor(s / 86400);
+  const h = Math.floor((s % 86400) / 3600);
+  const m = Math.floor((s % 3600) / 60);
+  const sec = s % 60;
+  const tone: "ok" | "warn" | "danger" =
+    ms < 60 * 60 * 1000 ? "danger" : ms < 24 * 60 * 60 * 1000 ? "warn" : "ok";
+  if (d > 0) return { text: `${d}h ${h}j lagi`, tone };
+  if (h > 0) return { text: `${h}j ${m}m lagi`, tone };
+  if (m > 0) return { text: `${m}m ${sec}d lagi`, tone };
+  return { text: `${sec}d lagi`, tone };
+}
 
 export const Route = createFileRoute("/_authenticated/link-pegawai")({
   head: () => ({
@@ -64,6 +96,8 @@ function LinkPegawaiPage() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [busy, setBusy] = useState(false);
   const [regenId, setRegenId] = useState<string | null>(null);
+  const [regenAt, setRegenAt] = useState<Record<string, number>>({});
+  const [testMode, setTestMode] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState<number | null>(null);
@@ -171,9 +205,9 @@ function LinkPegawaiPage() {
     return () => clearTimeout(id);
   }, [fetchFilteredTotal, tasks]);
   useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 30_000);
+    const id = setInterval(() => setNow(Date.now()), testMode ? 1_000 : 30_000);
     return () => clearInterval(id);
-  }, []);
+  }, [testMode]);
 
   // Infinite scroll sentinel.
   useEffect(() => {
@@ -243,6 +277,7 @@ function LinkPegawaiPage() {
         .maybeSingle();
       if (!error && data) {
         setTasks((prev) => (prev ? prev.map((t) => (t.id === taskId ? { ...t, share_token: data.share_token } : t)) : prev));
+        setRegenAt((prev) => ({ ...prev, [taskId]: Date.now() }));
         setRegenId(null);
         toast.success("Token diperbarui — link baru siap dipakai");
         return;
@@ -271,7 +306,34 @@ function LinkPegawaiPage() {
         >
           <RefreshCw className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} /> Muat ulang
         </button>
+        <button
+          onClick={() => setTestMode((v) => !v)}
+          aria-pressed={testMode}
+          title="Tampilkan status token dan hitung mundur kedaluwarsa"
+          className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs transition ${
+            testMode
+              ? "border-primary bg-primary/10 text-primary"
+              : "text-muted-foreground hover:bg-muted"
+          }`}
+        >
+          <FlaskConical className="h-3.5 w-3.5" /> Mode Uji {testMode ? "Aktif" : "Mati"}
+        </button>
       </div>
+
+      {testMode && (
+        <div className="mb-3 rounded-lg border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] text-foreground/80">
+          <div className="flex items-center gap-1.5 font-medium text-primary">
+            <FlaskConical className="h-3.5 w-3.5" /> Mode Uji Coba Token
+          </div>
+          <div className="mt-0.5 leading-relaxed">
+            Indikator status token tampil di tiap baris:{" "}
+            <span className="font-medium text-emerald-600 dark:text-emerald-400">Valid</span> ·{" "}
+            <span className="font-medium text-sky-600 dark:text-sky-400">Baru dibuat</span> ·{" "}
+            <span className="font-medium text-amber-600 dark:text-amber-400">Invalid</span> ·{" "}
+            <span className="font-medium text-destructive">Kosong</span>. Hitung mundur kedaluwarsa diperbarui tiap detik.
+          </div>
+        </div>
+      )}
 
       <p className="mb-3 text-xs text-muted-foreground">
         Semua tugas pegawai yang sudah pernah dibuat — link, status ketersediaan, dan akses langsung untuk pratinjau.
@@ -413,15 +475,51 @@ function LinkPegawaiPage() {
             const badge = BADGE[avail];
             const expiresAt = new Date(t.expires_at);
             const openable = (avail === "active" || avail === "done") && !urlError;
+            const tokenState = classifyToken(t.share_token, regenAt[t.id], now);
+            const msToExpire = expiresAt.getTime() - now;
+            const countdown = formatCountdown(msToExpire);
+            const countdownTone =
+              countdown.tone === "danger"
+                ? "bg-destructive/10 text-destructive ring-destructive/20"
+                : countdown.tone === "warn"
+                ? "bg-amber-500/10 text-amber-700 ring-amber-500/20 dark:text-amber-400"
+                : "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-400";
             return (
               <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
                 <div className="flex items-start gap-2 p-3">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-2">
+                    <div className="flex flex-wrap items-center gap-1.5">
                       <div className="truncate text-sm font-semibold">{t.title}</div>
                       <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ${badge.cls}`}>
                         {badge.label}
                       </span>
+                      {testMode && (
+                        <>
+                          {tokenState.kind === "valid" && (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
+                              <ShieldCheck className="h-3 w-3" /> Valid
+                            </span>
+                          )}
+                          {tokenState.kind === "fresh" && (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 ring-1 ring-sky-500/20 dark:text-sky-400">
+                              <Sparkles className="h-3 w-3" /> Baru · {Math.max(1, Math.floor(tokenState.ageMs / 1000))}d lalu
+                            </span>
+                          )}
+                          {tokenState.kind === "invalid" && (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-400">
+                              <AlertTriangle className="h-3 w-3" /> Invalid
+                            </span>
+                          )}
+                          {tokenState.kind === "empty" && (
+                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive ring-1 ring-destructive/20">
+                              <CircleSlash className="h-3 w-3" /> Kosong
+                            </span>
+                          )}
+                          <span className={`inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 tabular-nums ${countdownTone}`}>
+                            <Timer className="h-3 w-3" /> {countdown.text}
+                          </span>
+                        </>
+                      )}
                     </div>
                     {t.note && (
                       <div className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground whitespace-pre-wrap">{t.note}</div>
@@ -476,6 +574,17 @@ function LinkPegawaiPage() {
                     >
                       {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
                       Buat Ulang Token
+                    </button>
+                  )}
+                  {testMode && !urlError && (
+                    <button
+                      onClick={() => void regenerateToken(t.id)}
+                      disabled={regenId === t.id}
+                      title="Buat token baru untuk pengujian"
+                      className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted disabled:opacity-50"
+                    >
+                      {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
+                      Token Baru
                     </button>
                   )}
                   <Link
