@@ -1,11 +1,33 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Save, User } from "lucide-react";
+import {
+  Loader2,
+  Save,
+  User,
+  Mail,
+  Phone,
+  Globe2,
+  Languages,
+  Coins,
+  CalendarDays,
+  ShieldCheck,
+  BadgeCheck,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
 import { useMyProfile, useUpdateMyProfile } from "@/lib/profile";
 import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
 import { COUNTRIES, LANGUAGES, DATE_FORMATS, findCountry } from "@/lib/countries";
@@ -93,131 +115,243 @@ function ProfilPage() {
 
   const previewProfile = { currency, country_code: countryCode, date_format: dateFormat, language };
 
+  const initials = (displayName || profile?.email || "?")
+    .split(/[\s@._-]+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((s) => s[0]?.toUpperCase())
+    .join("") || "?";
+  const country = findCountry(countryCode);
+  const phoneValid = phone.trim() ? !!normalizeWaNumber(phone, countryCode) : null;
+
   return (
-    <main className="mx-auto max-w-xl space-y-4 p-4">
-      <header className="flex items-center gap-2">
-        <User className="h-5 w-5 text-primary" aria-hidden="true" />
-        <h1 className="text-lg font-semibold">Profil akun</h1>
-      </header>
-      <p className="text-xs text-muted-foreground">
-        Data berikut otomatis mengikuti akun login. Email dikelola oleh sistem autentikasi
-        dan akan otomatis menyamai akun. Nama tampilan & nomor WhatsApp bisa Anda ubah di sini
-        dan akan dipakai sebagai kontak default di seluruh aplikasi.
-      </p>
-
-      <form onSubmit={onSubmit} className="space-y-4 rounded-lg border p-4">
-        <div className="space-y-1.5">
-          <Label htmlFor="profil-email">Email akun</Label>
-          <Input
-            id="profil-email"
-            type="email"
-            value={profile?.email ?? ""}
-            readOnly
-            aria-readonly="true"
-            className="bg-muted/40"
-          />
-          <p className="text-[11px] text-muted-foreground">
-            Untuk mengubah email, gunakan menu ubah email pada pengaturan akun.
-          </p>
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="profil-nama">Nama tampilan</Label>
-          <Input
-            id="profil-nama"
-            type="text"
-            placeholder="Mis. Toko MCM / Budi"
-            value={displayName}
-            onChange={(e) => setDisplayName(e.target.value)}
-            maxLength={120}
-            disabled={isLoading}
-          />
-        </div>
-
-        <div className="space-y-1.5">
-          <Label htmlFor="profil-hp">Nomor WhatsApp / HP</Label>
-          <div className="flex gap-2">
-            <select
-              aria-label="Kode negara"
-              value={countryCode}
-              onChange={(e) => onCountryChange(e.target.value)}
-              disabled={isLoading}
-              className="h-9 max-w-[10rem] rounded-md border bg-background px-2 text-sm"
-            >
-              {COUNTRIES.map((c) => (
-                <option key={c.code} value={c.code}>
-                  {c.flag} {c.name} (+{c.dial})
-                </option>
-              ))}
-            </select>
-          <Input
-            id="profil-hp"
-            type="tel"
-            inputMode="tel"
-              placeholder={countryCode === "ID" ? "0812xxxxxxxx" : "nomor lokal"}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            maxLength={32}
-            disabled={isLoading}
-          />
-          </div>
-          <p className="text-[11px] text-muted-foreground">
-            Dipakai sebagai kontak pengirim di pesan WhatsApp & link pegawai.
-            {phone.trim() && normalizeWaNumber(phone, countryCode) && (
-              <> Format wa.me: <span className="font-medium text-foreground">{formatWaDisplay(phone, countryCode)}</span></>
-            )}
-          </p>
-        </div>
-
-        <div className="grid gap-3 sm:grid-cols-2">
-          <div className="space-y-1.5">
-            <Label htmlFor="profil-lang">Bahasa antarmuka</Label>
-            <select
-              id="profil-lang"
-              value={language}
-              onChange={(e) => setLanguage(e.target.value)}
-              disabled={isLoading}
-              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-            >
-              {LANGUAGES.map((l) => (
-                <option key={l.code} value={l.code}>{l.name}</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <Label htmlFor="profil-currency">Mata uang</Label>
-            <Input
-              id="profil-currency"
-              type="text"
-              value={currency}
-              onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
-              maxLength={3}
-              disabled={isLoading}
-            />
-            <p className="text-[11px] text-muted-foreground">
-              Contoh: <span className="font-medium text-foreground">{formatCurrency(1234567, previewProfile)}</span>
+    <main className="mx-auto w-full max-w-3xl space-y-6 p-4 pb-12">
+      {/* Hero header */}
+      <section className="relative overflow-hidden rounded-2xl border bg-gradient-to-br from-primary/15 via-primary/5 to-background p-5 sm:p-6">
+        <div className="absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/10 blur-3xl" aria-hidden="true" />
+        <div className="relative flex flex-col gap-4 sm:flex-row sm:items-center">
+          <Avatar className="h-16 w-16 ring-2 ring-primary/30 ring-offset-2 ring-offset-background">
+            <AvatarFallback className="bg-primary/15 text-lg font-semibold text-primary">
+              {initials}
+            </AvatarFallback>
+          </Avatar>
+          <div className="min-w-0 flex-1">
+            <div className="flex items-center gap-2">
+              <h1 className="truncate text-xl font-semibold tracking-tight">
+                {displayName || "Profil akun"}
+              </h1>
+              {profile?.email && (
+                <BadgeCheck className="h-4 w-4 flex-none text-primary" aria-hidden="true" />
+              )}
+            </div>
+            <p className="truncate text-sm text-muted-foreground">
+              {profile?.email ?? "Memuat akun…"}
             </p>
-          </div>
-          <div className="space-y-1.5 sm:col-span-2">
-            <Label htmlFor="profil-date">Format tanggal</Label>
-            <select
-              id="profil-date"
-              value={dateFormat}
-              onChange={(e) => setDateFormat(e.target.value)}
-              disabled={isLoading}
-              className="h-9 w-full rounded-md border bg-background px-2 text-sm"
-            >
-              {DATE_FORMATS.map((f) => (
-                <option key={f.code} value={f.code}>{f.code} — {f.sample}</option>
-              ))}
-            </select>
-            <p className="text-[11px] text-muted-foreground">
-              Hari ini: <span className="font-medium text-foreground">{formatDate(new Date(), previewProfile)}</span>
-            </p>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5">
+              <Badge variant="secondary" className="gap-1">
+                <Globe2 className="h-3 w-3" aria-hidden="true" />
+                {country.flag} {country.name}
+              </Badge>
+              <Badge variant="secondary" className="gap-1">
+                <Coins className="h-3 w-3" aria-hidden="true" />
+                {currency}
+              </Badge>
+              <Badge variant="secondary" className="gap-1">
+                <Languages className="h-3 w-3" aria-hidden="true" />
+                {LANGUAGES.find((l) => l.code === language)?.name ?? language}
+              </Badge>
+            </div>
           </div>
         </div>
+      </section>
 
-        <div className="flex items-center justify-end gap-2 pt-2">
+      <form onSubmit={onSubmit} className="space-y-5">
+        {/* Identitas */}
+        <Card>
+          <CardHeader className="space-y-1">
+            <div className="flex items-center gap-2">
+              <User className="h-4 w-4 text-primary" aria-hidden="true" />
+              <CardTitle className="text-base">Identitas</CardTitle>
+            </div>
+            <CardDescription>
+              Nama tampilan dan email yang dipakai di seluruh aplikasi.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="profil-nama">Nama tampilan</Label>
+              <Input
+                id="profil-nama"
+                type="text"
+                placeholder="Mis. Toko MCM / Budi"
+                value={displayName}
+                onChange={(e) => setDisplayName(e.target.value)}
+                maxLength={120}
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="profil-email" className="flex items-center gap-1.5">
+                <Mail className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                Email akun
+              </Label>
+              <div className="relative">
+                <Input
+                  id="profil-email"
+                  type="email"
+                  value={profile?.email ?? ""}
+                  readOnly
+                  aria-readonly="true"
+                  className="bg-muted/40 pr-20"
+                />
+                <Badge
+                  variant="outline"
+                  className="absolute right-2 top-1/2 -translate-y-1/2 gap-1 text-[10px]"
+                >
+                  <ShieldCheck className="h-3 w-3" aria-hidden="true" />
+                  Terkunci
+                </Badge>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Untuk mengubah email, gunakan menu ubah email pada pengaturan akun.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Kontak */}
+        <Card>
+          <CardHeader className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
+              <CardTitle className="text-base">Kontak WhatsApp</CardTitle>
+            </div>
+            <CardDescription>
+              Nomor pengirim default untuk pesan WhatsApp & link pegawai.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="space-y-1.5">
+              <Label htmlFor="profil-hp">Nomor WhatsApp / HP</Label>
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <select
+                  aria-label="Kode negara"
+                  value={countryCode}
+                  onChange={(e) => onCountryChange(e.target.value)}
+                  disabled={isLoading}
+                  className="h-10 w-full rounded-md border bg-background px-2 text-sm sm:max-w-[12rem]"
+                >
+                  {COUNTRIES.map((c) => (
+                    <option key={c.code} value={c.code}>
+                      {c.flag} {c.name} (+{c.dial})
+                    </option>
+                  ))}
+                </select>
+                <Input
+                  id="profil-hp"
+                  type="tel"
+                  inputMode="tel"
+                  placeholder={countryCode === "ID" ? "0812xxxxxxxx" : "nomor lokal"}
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  maxLength={32}
+                  disabled={isLoading}
+                  className="h-10"
+                />
+              </div>
+              {phone.trim() && (
+                <div className="flex items-center gap-2 pt-1">
+                  {phoneValid ? (
+                    <Badge variant="secondary" className="gap-1 text-[10px]">
+                      <BadgeCheck className="h-3 w-3 text-primary" aria-hidden="true" />
+                      {formatWaDisplay(phone, countryCode)}
+                    </Badge>
+                  ) : (
+                    <Badge variant="destructive" className="text-[10px]">
+                      Nomor belum valid
+                    </Badge>
+                  )}
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Preferensi Regional */}
+        <Card>
+          <CardHeader className="space-y-1">
+            <div className="flex items-center gap-2">
+              <Globe2 className="h-4 w-4 text-primary" aria-hidden="true" />
+              <CardTitle className="text-base">Preferensi regional</CardTitle>
+            </div>
+            <CardDescription>
+              Bahasa, mata uang, dan format tanggal di seluruh aplikasi.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="profil-lang" className="flex items-center gap-1.5">
+                <Languages className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                Bahasa antarmuka
+              </Label>
+              <select
+                id="profil-lang"
+                value={language}
+                onChange={(e) => setLanguage(e.target.value)}
+                disabled={isLoading}
+                className="h-10 w-full rounded-md border bg-background px-2 text-sm"
+              >
+                {LANGUAGES.map((l) => (
+                  <option key={l.code} value={l.code}>{l.name}</option>
+                ))}
+              </select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="profil-currency" className="flex items-center gap-1.5">
+                <Coins className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                Mata uang
+              </Label>
+              <Input
+                id="profil-currency"
+                type="text"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value.toUpperCase().slice(0, 3))}
+                maxLength={3}
+                disabled={isLoading}
+                className="h-10 uppercase tracking-wider"
+              />
+              <p className="text-[11px] text-muted-foreground">
+                Contoh: <span className="font-medium text-foreground">{formatCurrency(1234567, previewProfile)}</span>
+              </p>
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
+              <Label htmlFor="profil-date" className="flex items-center gap-1.5">
+                <CalendarDays className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+                Format tanggal
+              </Label>
+              <select
+                id="profil-date"
+                value={dateFormat}
+                onChange={(e) => setDateFormat(e.target.value)}
+                disabled={isLoading}
+                className="h-10 w-full rounded-md border bg-background px-2 text-sm"
+              >
+                {DATE_FORMATS.map((f) => (
+                  <option key={f.code} value={f.code}>{f.code} — {f.sample}</option>
+                ))}
+              </select>
+              <p className="text-[11px] text-muted-foreground">
+                Hari ini: <span className="font-medium text-foreground">{formatDate(new Date(), previewProfile)}</span>
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Action bar */}
+        <div className="sticky bottom-2 z-10 flex items-center justify-between gap-3 rounded-xl border bg-background/95 p-3 shadow-sm backdrop-blur">
+          <p className="text-xs text-muted-foreground">
+            {dirty ? "Ada perubahan belum disimpan." : "Semua perubahan tersimpan."}
+          </p>
           <Button
             type="submit"
             disabled={!dirty || update.isPending || isLoading}
@@ -232,6 +366,8 @@ function ProfilPage() {
           </Button>
         </div>
       </form>
+
+      <Separator />
 
       <PushNotificationSettings />
     </main>
