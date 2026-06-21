@@ -1422,6 +1422,14 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
         <div className="text-[11px] text-amber-500">
           ⚠️ Mengubah stok / HPP manual akan menimpa nilai dari riwayat pembelian.
         </div>
+        {baseUnitChanged && (
+          <div className="rounded-md border border-destructive bg-destructive/10 p-2 text-[11px] text-destructive">
+            🚨 Anda mengubah satuan dasar <b>{originalBaseUnit}</b> → <b>{baseUnit}</b>. Stok & HPP
+            TIDAK dikonversi otomatis, dan histori pembelian/penjualan akan terbaca dalam satuan baru.
+            Untuk barang yang sudah punya transaksi, sebaiknya buat <b>barang baru</b> daripada mengganti
+            jenis kemasan antara <i>gram</i> dan <i>botol/sachet/pcs</i>.
+          </div>
+        )}
         <div className="flex gap-2 pt-1">
           <button disabled={saving} onClick={save} className="flex-1 rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50">
             {saving ? "Menyimpan..." : "Simpan"}
