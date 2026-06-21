@@ -2,8 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { publicTaskUrl, isValidShareToken, InvalidShareTokenError } from "@/lib/prep";
-import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown } from "lucide-react";
+import { publicTaskUrl, isValidShareToken, InvalidShareTokenError, genShareToken } from "@/lib/prep";
+import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown, KeyRound } from "lucide-react";
 
 const PAGE_SIZE = 30;
 
@@ -63,6 +63,7 @@ const STATUS_ORDER: Record<Availability, number> = {
 function LinkPegawaiPage() {
   const [tasks, setTasks] = useState<Task[] | null>(null);
   const [busy, setBusy] = useState(false);
+  const [regenId, setRegenId] = useState<string | null>(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [total, setTotal] = useState<number | null>(null);
@@ -226,6 +227,31 @@ function LinkPegawaiPage() {
     } catch {
       toast.error("Gagal menyalin");
     }
+  }
+
+  async function regenerateToken(taskId: string) {
+    setRegenId(taskId);
+    // Coba beberapa kali jika token unik bentrok (sangat kecil kemungkinannya).
+    let lastErr: string | null = null;
+    for (let i = 0; i < 3; i++) {
+      const next = genShareToken();
+      const { data, error } = await supabase
+        .from("prep_tasks")
+        .update({ share_token: next })
+        .eq("id", taskId)
+        .select("id,share_token")
+        .maybeSingle();
+      if (!error && data) {
+        setTasks((prev) => (prev ? prev.map((t) => (t.id === taskId ? { ...t, share_token: data.share_token } : t)) : prev));
+        setRegenId(null);
+        toast.success("Token diperbarui — link baru siap dipakai");
+        return;
+      }
+      lastErr = error?.message ?? "Tidak ada baris yang diperbarui (izin?)";
+      if (error && !/duplicate|unique/i.test(error.message)) break;
+    }
+    setRegenId(null);
+    toast.error("Gagal memperbarui token: " + (lastErr ?? "tidak diketahui"));
   }
 
   return (
@@ -442,6 +468,16 @@ function LinkPegawaiPage() {
                   >
                     <Copy className="h-3.5 w-3.5" /> Salin Link
                   </button>
+                  {urlError && (
+                    <button
+                      onClick={() => void regenerateToken(t.id)}
+                      disabled={regenId === t.id}
+                      className="inline-flex h-8 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 text-[11px] font-medium text-primary hover:bg-primary/20 disabled:opacity-50"
+                    >
+                      {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
+                      Buat Ulang Token
+                    </button>
+                  )}
                   <Link
                     to="/tugas"
                     className="ml-auto inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted"
