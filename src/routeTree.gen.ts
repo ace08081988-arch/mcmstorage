@@ -25,6 +25,7 @@ import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
+import { Route as AuthenticatedManajemenPegawaiRouteImport } from './routes/_authenticated.manajemen-pegawai'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
 import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
@@ -118,6 +119,12 @@ const AuthenticatedPengaturanKunciRoute =
   AuthenticatedPengaturanKunciRouteImport.update({
     id: '/pengaturan-kunci',
     path: '/pengaturan-kunci',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedManajemenPegawaiRoute =
+  AuthenticatedManajemenPegawaiRouteImport.update({
+    id: '/manajemen-pegawai',
+    path: '/manajemen-pegawai',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedLinkPegawaiRoute =
@@ -219,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/kontak': typeof AuthenticatedKontakRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
+  '/manajemen-pegawai': typeof AuthenticatedManajemenPegawaiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
@@ -248,6 +256,7 @@ export interface FileRoutesByTo {
   '/kontak': typeof AuthenticatedKontakRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
+  '/manajemen-pegawai': typeof AuthenticatedManajemenPegawaiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
@@ -281,6 +290,7 @@ export interface FileRoutesById {
   '/_authenticated/kontak': typeof AuthenticatedKontakRoute
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
+  '/_authenticated/manajemen-pegawai': typeof AuthenticatedManajemenPegawaiRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
@@ -315,6 +325,7 @@ export interface FileRouteTypes {
     | '/kontak'
     | '/label-preview'
     | '/link-pegawai'
+    | '/manajemen-pegawai'
     | '/pengaturan-kunci'
     | '/profil'
     | '/request'
@@ -344,6 +355,7 @@ export interface FileRouteTypes {
     | '/kontak'
     | '/label-preview'
     | '/link-pegawai'
+    | '/manajemen-pegawai'
     | '/pengaturan-kunci'
     | '/profil'
     | '/request'
@@ -376,6 +388,7 @@ export interface FileRouteTypes {
     | '/_authenticated/kontak'
     | '/_authenticated/label-preview'
     | '/_authenticated/link-pegawai'
+    | '/_authenticated/manajemen-pegawai'
     | '/_authenticated/pengaturan-kunci'
     | '/_authenticated/profil'
     | '/_authenticated/request'
@@ -518,6 +531,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-kunci'
       fullPath: '/pengaturan-kunci'
       preLoaderRoute: typeof AuthenticatedPengaturanKunciRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/manajemen-pegawai': {
+      id: '/_authenticated/manajemen-pegawai'
+      path: '/manajemen-pegawai'
+      fullPath: '/manajemen-pegawai'
+      preLoaderRoute: typeof AuthenticatedManajemenPegawaiRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/link-pegawai': {
@@ -670,6 +690,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedKontakRoute: typeof AuthenticatedKontakRoute
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
+  AuthenticatedManajemenPegawaiRoute: typeof AuthenticatedManajemenPegawaiRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
@@ -686,6 +707,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedKontakRoute: AuthenticatedKontakRoute,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
+  AuthenticatedManajemenPegawaiRoute: AuthenticatedManajemenPegawaiRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
