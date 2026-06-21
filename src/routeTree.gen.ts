@@ -20,6 +20,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
+import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
@@ -84,6 +85,11 @@ const AuthenticatedTugasRoute = AuthenticatedTugasRouteImport.update({
 const AuthenticatedRequestRoute = AuthenticatedRequestRouteImport.update({
   id: '/request',
   path: '/request',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProfilRoute = AuthenticatedProfilRouteImport.update({
+  id: '/profil',
+  path: '/profil',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedPengaturanKunciRoute =
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
@@ -213,6 +221,7 @@ export interface FileRoutesById {
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
@@ -239,6 +248,7 @@ export interface FileRouteTypes {
     | '/label-preview'
     | '/link-pegawai'
     | '/pengaturan-kunci'
+    | '/profil'
     | '/request'
     | '/tugas'
     | '/t/$token'
@@ -261,6 +271,7 @@ export interface FileRouteTypes {
     | '/label-preview'
     | '/link-pegawai'
     | '/pengaturan-kunci'
+    | '/profil'
     | '/request'
     | '/tugas'
     | '/t/$token'
@@ -285,6 +296,7 @@ export interface FileRouteTypes {
     | '/_authenticated/label-preview'
     | '/_authenticated/link-pegawai'
     | '/_authenticated/pengaturan-kunci'
+    | '/_authenticated/profil'
     | '/_authenticated/request'
     | '/_authenticated/tugas'
     | '/t/$token'
@@ -385,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/request'
       fullPath: '/request'
       preLoaderRoute: typeof AuthenticatedRequestRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/profil': {
+      id: '/_authenticated/profil'
+      path: '/profil'
+      fullPath: '/profil'
+      preLoaderRoute: typeof AuthenticatedProfilRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-kunci': {
@@ -502,6 +521,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
+  AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -515,6 +535,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
+  AuthenticatedProfilRoute: AuthenticatedProfilRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
