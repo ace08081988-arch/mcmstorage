@@ -41,33 +41,94 @@ function EcerPage() {
   const [items, setItems] = useState<WarehouseItem[]>([]);
   const [titles, setTitles] = useState<EcerTitle[]>([]);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<{
+    source: string;
+    message: string;
+    code?: string;
+    status?: number | string;
+    hint?: string;
+    details?: string;
+    diagnosis?: string;
+  } | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>(search.item);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
   const [editingTitle, setEditingTitle] = useState<EcerTitle | null>(null);
   const [creatingTitle, setCreatingTitle] = useState(false);
 
+  function diagnose(err: { code?: string; message?: string; status?: number | string; details?: string }): string {
+    const code = err?.code ?? "";
+    const msg = (err?.message ?? "").toLowerCase();
+    const status = String(err?.status ?? "");
+    if (code === "PGRST301" || msg.includes("jwt") || status === "401") {
+      return "Sesi login tidak valid / kedaluwarsa. Coba logout lalu login lagi.";
+    }
+    if (code === "42501" || msg.includes("permission denied")) {
+      return "Permission denied — kemungkinan GRANT tabel di Data API belum diberikan ke role 'authenticated'.";
+    }
+    if (code === "PGRST116" || msg.includes("row-level security") || msg.includes("violates row-level")) {
+      return "Terblokir oleh Row Level Security (RLS). Periksa policy SELECT untuk user yang login.";
+    }
+    if (code === "PGRST205" || msg.includes("not find the table") || msg.includes("does not exist")) {
+      return "Tabel tidak ditemukan di schema cache. Restart PostgREST atau cek nama tabel.";
+    }
+    if (msg.includes("failed to fetch") || msg.includes("networkerror") || msg.includes("load failed")) {
+      return "Jaringan gagal terhubung ke server. Cek koneksi internet Anda.";
+    }
+    if (status.startsWith("5")) return "Server backend sedang bermasalah (5xx). Coba beberapa saat lagi.";
+    return "Penyebab tidak dikenali — lihat detail di bawah.";
+  }
+
   async function loadAll() {
     setLoading(true);
     setLoadError(null);
     try {
-      const { data: sess } = await supabase.auth.getSession();
+      const { data: sess, error: sessErr } = await supabase.auth.getSession();
+      if (sessErr) {
+        setLoadError({ source: "auth.getSession", message: sessErr.message, diagnosis: "Gagal membaca sesi login dari browser." });
+        setLoading(false); return;
+      }
       if (!sess?.session) {
-        setLoadError("Sesi belum siap. Coba muat ulang sebentar lagi.");
-        setLoading(false);
-        return;
+        setLoadError({
+          source: "auth.getSession",
+          message: "Belum ada sesi aktif.",
+          diagnosis: "Anda belum login atau sesi sudah berakhir. Silakan login ulang.",
+        });
+        setLoading(false); return;
       }
       const [wi, et] = await Promise.all([
         supabase.from("warehouse_items").select("id,name,category,base_unit,stock_base,image_path").order("name"),
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (supabase.from as any)("ecer_titles").select("*").order("position").order("created_at"),
       ]);
-      if (wi.error) throw wi.error;
-      if (et.error) throw et.error;
+      if (wi.error) {
+        const e = wi.error as { code?: string; message: string; hint?: string; details?: string };
+        setLoadError({
+          source: "warehouse_items.select",
+          message: e.message, code: e.code, hint: e.hint, details: e.details,
+          diagnosis: diagnose({ code: e.code, message: e.message }),
+        });
+        setLoading(false); return;
+      }
+      if (et.error) {
+        const e = et.error as { code?: string; message: string; hint?: string; details?: string };
+        setLoadError({
+          source: "ecer_titles.select",
+          message: e.message, code: e.code, hint: e.hint, details: e.details,
+          diagnosis: diagnose({ code: e.code, message: e.message }),
+        });
+        setLoading(false); return;
+      }
       setItems((wi.data ?? []) as WarehouseItem[]);
       setTitles((et.data ?? []) as EcerTitle[]);
     } catch (e) {
-      setLoadError((e as Error).message || "Gagal memuat data ecer");
+      const err = e as { message?: string; status?: number; code?: string; name?: string };
+      setLoadError({
+        source: "loadAll/exception",
+        message: err?.message || String(e),
+        status: err?.status,
+        code: err?.code ?? err?.name,
+        diagnosis: diagnose({ message: err?.message, status: err?.status, code: err?.code }),
+      });
     } finally {
       setLoading(false);
     }
@@ -112,15 +173,44 @@ function EcerPage() {
   }
 
   if (loadError && items.length === 0 && titles.length === 0) {
+    const navOnline = typeof navigator !== "undefined" ? navigator.onLine : true;
     return (
-      <div className="mx-auto max-w-md p-6">
-        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5 text-center">
-          <AlertTriangle className="mx-auto mb-2 h-6 w-6 text-destructive" />
-          <div className="mb-1 text-sm font-semibold">Gagal memuat Penyiapan Ecer</div>
-          <div className="mb-3 text-xs text-muted-foreground">{loadError}</div>
-          <Button size="sm" onClick={() => void loadAll()}>
-            <RotateCw className="mr-1 h-4 w-4" /> Coba lagi
-          </Button>
+      <div className="mx-auto max-w-lg p-4 sm:p-6">
+        <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-5">
+          <div className="mb-3 flex items-start gap-3">
+            <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
+            <div className="min-w-0 flex-1">
+              <div className="text-sm font-semibold">Gagal memuat Penyiapan Ecer</div>
+              <div className="mt-0.5 text-xs text-muted-foreground">Sumber: <code className="rounded bg-muted px-1 py-0.5">{loadError.source}</code></div>
+            </div>
+          </div>
+
+          {loadError.diagnosis && (
+            <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-xs leading-relaxed text-amber-700 dark:text-amber-400">
+              <b>Kemungkinan penyebab:</b> {loadError.diagnosis}
+            </div>
+          )}
+
+          <div className="space-y-1.5 rounded-md border bg-background/60 p-2.5 text-[11px] leading-relaxed">
+            <div><span className="text-muted-foreground">Pesan:</span> <span className="break-words font-mono">{loadError.message}</span></div>
+            {loadError.code && <div><span className="text-muted-foreground">Kode:</span> <span className="font-mono">{loadError.code}</span></div>}
+            {loadError.status !== undefined && <div><span className="text-muted-foreground">HTTP:</span> <span className="font-mono">{String(loadError.status)}</span></div>}
+            {loadError.hint && <div><span className="text-muted-foreground">Hint:</span> <span className="font-mono">{loadError.hint}</span></div>}
+            {loadError.details && <div><span className="text-muted-foreground">Detail:</span> <span className="font-mono">{loadError.details}</span></div>}
+            <div><span className="text-muted-foreground">Jaringan:</span> <span className="font-mono">{navOnline ? "online" : "offline"}</span></div>
+          </div>
+
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => void loadAll()}>
+              <RotateCw className="mr-1 h-4 w-4" /> Coba lagi
+            </Button>
+            <Button size="sm" variant="outline" onClick={() => {
+              const txt = JSON.stringify(loadError, null, 2);
+              if (navigator.clipboard) {
+                void navigator.clipboard.writeText(txt).then(() => toast.success("Detail error disalin"));
+              } else toast.message(txt);
+            }}>Salin detail</Button>
+          </div>
         </div>
       </div>
     );
