@@ -6,7 +6,20 @@ export type MyProfile = {
   display_name: string | null;
   email: string | null;
   phone: string | null;
+  country_code: string;
+  language: string;
+  currency: string;
+  date_format: string;
 };
+
+const PROFILE_COLS = "id, display_name, email, phone, country_code, language, currency, date_format";
+
+const DEFAULT_PREFS = {
+  country_code: "ID",
+  language: "id",
+  currency: "IDR",
+  date_format: "DD/MM/YYYY",
+} as const;
 
 export const MY_PROFILE_KEY = ["my-profile"] as const;
 
@@ -17,7 +30,7 @@ export async function getMyProfile(): Promise<MyProfile | null> {
 
   const { data, error } = await supabase
     .from("profiles")
-    .select("id, display_name, email, phone")
+    .select(PROFILE_COLS)
     .eq("id", user.id)
     .maybeSingle();
   if (error) throw error;
@@ -33,35 +46,43 @@ export async function getMyProfile(): Promise<MyProfile | null> {
         null,
       email: user.email ?? null,
       phone: user.phone ?? null,
+      ...DEFAULT_PREFS,
     };
   }
-  return data as MyProfile;
+  return { ...DEFAULT_PREFS, ...(data as Partial<MyProfile> & { id: string }) } as MyProfile;
 }
 
 export async function updateMyProfile(input: {
   display_name?: string | null;
   phone?: string | null;
+  country_code?: string;
+  language?: string;
+  currency?: string;
+  date_format?: string;
 }): Promise<MyProfile> {
   const { data: userRes } = await supabase.auth.getUser();
   const user = userRes.user;
   if (!user) throw new Error("Anda belum masuk.");
 
   // Upsert agar bekerja walau baris belum sempat dibuat oleh trigger.
+  const payload: Record<string, unknown> = {
+    id: user.id,
+    email: user.email ?? null,
+    display_name: input.display_name ?? null,
+    phone: input.phone ?? null,
+  };
+  if (input.country_code) payload.country_code = input.country_code;
+  if (input.language) payload.language = input.language;
+  if (input.currency) payload.currency = input.currency;
+  if (input.date_format) payload.date_format = input.date_format;
+
   const { data, error } = await supabase
     .from("profiles")
-    .upsert(
-      {
-        id: user.id,
-        email: user.email ?? null,
-        display_name: input.display_name ?? null,
-        phone: input.phone ?? null,
-      },
-      { onConflict: "id" },
-    )
-    .select("id, display_name, email, phone")
+    .upsert(payload, { onConflict: "id" })
+    .select(PROFILE_COLS)
     .single();
   if (error) throw error;
-  return data as MyProfile;
+  return { ...DEFAULT_PREFS, ...(data as Partial<MyProfile> & { id: string }) } as MyProfile;
 }
 
 export function useMyProfile() {
