@@ -19,6 +19,7 @@ import { logStorageError } from "@/lib/storage-log";
 import { confirm } from "@/lib/confirm";
 import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
 import { useMyProfile } from "@/lib/profile";
+import { normalizeWaNumber } from "@/lib/phone";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
