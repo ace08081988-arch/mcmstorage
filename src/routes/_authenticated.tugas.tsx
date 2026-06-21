@@ -465,12 +465,12 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
     const entries = Object.values(picked);
     if (entries.length === 0) { toast.error("Pilih minimal 1 barang"); return; }
     if (pin.length < 4) { toast.error("PIN minimal 4 digit"); return; }
-    // Validasi akhir: blokir pengiriman jika ada barang yang belum punya foto.
+    // Foto referensi bersifat opsional — barang tanpa foto tetap dibuatkan tugas,
+    // hanya saja tidak ada lampiran foto referensi ke WhatsApp.
     const missingPhoto = entries.filter((e) => !e.item.image_path).map((e) => e.item.name);
     if (missingPhoto.length > 0) {
-      const list = missingPhoto.slice(0, 5).join(", ") + (missingPhoto.length > 5 ? `, +${missingPhoto.length - 5} lainnya` : "");
-      toast.error(`Tidak bisa kirim: ${missingPhoto.length} barang belum punya foto — ${list}`, { duration: 6000 });
-      return;
+      const list = missingPhoto.slice(0, 3).join(", ") + (missingPhoto.length > 3 ? `, +${missingPhoto.length - 3} lainnya` : "");
+      toast.warning(`${missingPhoto.length} barang tanpa foto referensi: ${list}. Pegawai tetap menerima link & PIN.`, { duration: 5000 });
     }
     const cleanedPhone = phone.replace(/\D/g, "");
     setBusy(true);
