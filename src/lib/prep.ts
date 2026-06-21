@@ -55,25 +55,45 @@ export class InvalidShareTokenError extends Error {
   }
 }
 
+// Daftar host produksi yang sah untuk membuka halaman pegawai (/t/:token).
+// Selain ini dianggap pratinjau / sandbox / origin tidak valid dan akan
+// otomatis di-fallback ke PRODUCTION_BASE.
+const PRODUCTION_BASE = "https://mcmstorage.biz";
+const PRODUCTION_HOSTS = new Set<string>([
+  "mcmstorage.biz",
+  "www.mcmstorage.biz",
+  "mcmstorage.lovable.app",
+]);
+
+function resolveBaseUrl(): string {
+  if (typeof window === "undefined") return PRODUCTION_BASE;
+  try {
+    const { protocol, hostname, origin } = window.location;
+    // Hanya http/https yang valid untuk QR/link share.
+    if (protocol !== "http:" && protocol !== "https:") return PRODUCTION_BASE;
+    // Origin pratinjau Lovable tidak bisa dibuka pegawai.
+    const isPreviewSandbox =
+      hostname.endsWith("lovableproject.com") ||
+      hostname.startsWith("id-preview--") ||
+      /--[a-z0-9-]+\.lovable\.app$/i.test(hostname) ||
+      hostname === "localhost" ||
+      hostname === "127.0.0.1";
+    if (isPreviewSandbox) return PRODUCTION_BASE;
+    // Hanya host produksi yang diizinkan; selain itu fallback.
+    if (!PRODUCTION_HOSTS.has(hostname)) return PRODUCTION_BASE;
+    return origin;
+  } catch {
+    return PRODUCTION_BASE;
+  }
+}
+
 export function publicTaskUrl(token: string): string {
   if (!isValidShareToken(token)) {
     throw new InvalidShareTokenError(
       !token ? "Token link kosong" : "Token link tidak valid",
     );
   }
-  // Selalu gunakan domain publik yang stabil agar link bisa dibuka di mana
-  // saja — termasuk saat tombol "Buka di Tab Baru" diklik dari iframe
-  // pratinjau Lovable (yang membutuhkan token query). Origin pratinjau
-  // (lovableproject.com / *-preview*.lovable.app) tidak bisa dipakai pegawai.
-  const PUBLIC_BASE = "https://mcmstorage.biz";
-  if (typeof window === "undefined") return `${PUBLIC_BASE}/t/${token}`;
-  const origin = window.location.origin;
-  const isPreviewSandbox =
-    origin.includes("lovableproject.com") ||
-    origin.includes("id-preview--") ||
-    /--[a-z0-9-]+\.lovable\.app$/i.test(origin);
-  const base = isPreviewSandbox ? PUBLIC_BASE : origin;
-  return `${base}/t/${token}`;
+  return `${resolveBaseUrl()}/t/${token}`;
 }
 
 export type PrepSubmissionRow = {
