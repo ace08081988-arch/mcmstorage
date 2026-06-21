@@ -3,7 +3,7 @@ import {
   ArrowUp, ArrowDown, ArrowLeft, ArrowRight,
   ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight,
   Type, Eraser, Undo2, Redo2, RotateCw, Square, Circle, Pencil, Trash2,
-  X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon,
+  X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon, ZoomIn, ZoomOut,
 } from "lucide-react";
 import {
   Dialog,
@@ -66,6 +66,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [textPrompt, setTextPrompt] = useState<{ open: boolean; x: number; y: number; value: string }>(
     { open: false, x: 0, y: 0, value: "" },
   );
+  const [previewZoom, setPreviewZoom] = useState(false);
+  const [zoomLevel, setZoomLevel] = useState(1);
 
   // Load image
   useEffect(() => {
@@ -397,17 +399,22 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             <DialogTitle>Tambahkan Teks</DialogTitle>
             <DialogDescription>Tulis teks yang ingin ditampilkan pada foto.</DialogDescription>
           </DialogHeader>
-          <div className="flex items-center gap-3 rounded-md border bg-muted/40 p-2">
+          <button
+            type="button"
+            onClick={() => { setZoomLevel(1); setPreviewZoom(true); }}
+            className="flex w-full items-center gap-3 rounded-md border bg-muted/40 p-2 text-left transition hover:bg-muted"
+          >
             <img
               src={src}
               alt="Pratinjau foto"
               className="h-14 w-14 flex-shrink-0 rounded object-cover"
             />
-            <div className="min-w-0 text-xs text-muted-foreground">
+            <div className="min-w-0 flex-1 text-xs text-muted-foreground">
               <div className="font-medium text-foreground">Pratinjau foto</div>
-              <div className="truncate">Teks akan ditempatkan pada posisi yang Anda pilih.</div>
+              <div className="truncate">Ketuk untuk memperbesar pratinjau.</div>
             </div>
-          </div>
+            <ZoomIn className="h-4 w-4 flex-shrink-0 text-muted-foreground" />
+          </button>
           <Input
             autoFocus
             value={textPrompt.value}
@@ -418,6 +425,49 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <DialogFooter>
             <Button variant="outline" onClick={() => setTextPrompt((s) => ({ ...s, open: false, value: "" }))}>Batal</Button>
             <Button onClick={commitText} disabled={!textPrompt.value.trim()}>Tambah</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={previewZoom} onOpenChange={setPreviewZoom}>
+        <DialogContent className="max-w-[95vw] p-3 sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Pratinjau Foto</DialogTitle>
+            <DialogDescription>Cubit atau gunakan tombol untuk memperbesar.</DialogDescription>
+          </DialogHeader>
+          <div className="relative max-h-[70vh] overflow-auto rounded-md bg-black/80">
+            <img
+              src={src}
+              alt="Pratinjau foto besar"
+              style={{ transform: `scale(${zoomLevel})`, transformOrigin: "top left" }}
+              className="block w-full select-none transition-transform"
+              draggable={false}
+            />
+          </div>
+          <DialogFooter className="flex-row items-center justify-between gap-2 sm:justify-between">
+            <div className="flex items-center gap-1">
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setZoomLevel((z) => Math.max(0.5, +(z - 0.25).toFixed(2)))}
+                disabled={zoomLevel <= 0.5}
+                aria-label="Perkecil"
+              >
+                <ZoomOut className="h-4 w-4" />
+              </Button>
+              <span className="w-12 text-center text-xs tabular-nums">{Math.round(zoomLevel * 100)}%</span>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setZoomLevel((z) => Math.min(4, +(z + 0.25).toFixed(2)))}
+                disabled={zoomLevel >= 4}
+                aria-label="Perbesar"
+              >
+                <ZoomIn className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setZoomLevel(1)}>Reset</Button>
+            </div>
+            <Button onClick={() => setPreviewZoom(false)}>Tutup</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
