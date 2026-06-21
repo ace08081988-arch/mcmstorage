@@ -3,6 +3,8 @@ import { logStorageError } from "@/lib/storage-log";
 
 export const PREP_BUCKET = "prep-photos";
 
+type StorageClient = Pick<typeof supabase, "storage">;
+
 export function genShareToken(): string {
   const bytes = new Uint8Array(24);
   crypto.getRandomValues(bytes);
@@ -16,9 +18,9 @@ export function genPin(): string {
   return n.toString().padStart(6, "0");
 }
 
-export async function signedUrl(path: string | null | undefined, expiresIn = 60 * 60 * 24 * 7): Promise<string | null> {
+export async function signedUrl(path: string | null | undefined, expiresIn = 60 * 60 * 24 * 7, client: StorageClient = supabase): Promise<string | null> {
   if (!path) return null;
-  const { data, error } = await supabase.storage.from(PREP_BUCKET).createSignedUrl(path, expiresIn);
+  const { data, error } = await client.storage.from(PREP_BUCKET).createSignedUrl(path, expiresIn);
   if (error) {
     logStorageError({ bucket: PREP_BUCKET, op: "createSignedUrl", path, source: "signedUrl" }, error);
     return null;
@@ -26,9 +28,9 @@ export async function signedUrl(path: string | null | undefined, expiresIn = 60 
   return data?.signedUrl ?? null;
 }
 
-export async function uploadPrepPhoto(taskToken: string, itemId: string, blob: Blob, ext = "jpg"): Promise<string | null> {
+export async function uploadPrepPhoto(taskToken: string, itemId: string, blob: Blob, ext = "jpg", client: StorageClient = supabase): Promise<string | null> {
   const path = `${taskToken}/${itemId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await supabase.storage.from(PREP_BUCKET).upload(path, blob, {
+  const { error } = await client.storage.from(PREP_BUCKET).upload(path, blob, {
     contentType: blob.type || "image/jpeg",
     upsert: false,
   });
