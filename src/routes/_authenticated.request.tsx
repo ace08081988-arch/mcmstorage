@@ -21,6 +21,7 @@ import {
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { publicTaskUrl } from "@/lib/prep";
 
 export const Route = createFileRoute("/_authenticated/request")({
   head: () => ({ meta: [{ title: "Penyiapan Request · MCM Storage" }] }),
@@ -889,7 +890,7 @@ function WorkerTestDialog({
         _items: [],
       });
       if (error) throw error;
-      const url = `${window.location.origin}/t/${token}`;
+      const url = publicTaskUrl(token);
       setSession({ url, pin: usePin, token: String(data) });
       toast.success("Sesi uji coba siap. PIN: " + usePin);
     } catch (e) {
