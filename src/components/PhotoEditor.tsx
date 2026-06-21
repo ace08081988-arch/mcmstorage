@@ -61,12 +61,24 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [arrowDir, setArrowDir] = useState<ArrowDir>("right");
   const [emoji, setEmoji] = useState("⭐");
   const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [drag, setDrag] = useState<{ id: string; dx: number; dy: number } | null>(null);
-  const [drawing, setDrawing] = useState<Layer | null>(null);
+  // drag/draw kept in refs — pointermove no longer triggers React re-renders
+  const dragLiveRef = useRef<{ id: string; dx: number; dy: number } | null>(null);
+  const drawingRef = useRef<Layer | null>(null);
   // pre-change snapshot for drag / slider so undo restores the BEFORE state
   const commitBaselineRef = useRef<EditorState | null>(null);
   // last pointer position during a drag (for stroke translation)
   const lastPointRef = useRef<{ x: number; y: number } | null>(null);
+  // Cached base (image + rotation) rendered once per (img, view, rotation)
+  const baseCanvasRef = useRef<HTMLCanvasElement | null>(null);
+  // rAF scheduler so multiple pointer events coalesce into one paint
+  const rafIdRef = useRef<number | null>(null);
+  // Refs mirroring reactive values so render() doesn't depend on closures
+  const stateRef = useRef<EditorState>({ layers: [], rotation: 0 });
+  const viewRef = useRef({ w: 0, h: 0 });
+  const selectedIdRef = useRef<string | null>(null);
+  useEffect(() => { stateRef.current = state; }, [state]);
+  useEffect(() => { viewRef.current = view; }, [view]);
+  useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
   const [textPrompt, setTextPrompt] = useState<{ open: boolean; x: number; y: number; value: string }>(
     { open: false, x: 0, y: 0, value: "" },
   );
@@ -117,16 +129,17 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     return () => window.removeEventListener("resize", update);
   }, [img, state.rotation]);
 
-  // Draw
+  // Build (and re-build) the base canvas only when image / view / rotation changes.
+  // This avoids re-rasterising the (often large) source image on every paint.
   useEffect(() => {
-    const cvs = canvasRef.current; if (!cvs || !img || !view.w) return;
-    const dpr = window.devicePixelRatio || 1;
-    cvs.width = view.w * dpr; cvs.height = view.h * dpr;
-    cvs.style.width = `${view.w}px`; cvs.style.height = `${view.h}px`;
-    const ctx = cvs.getContext("2d")!; ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    ctx.clearRect(0, 0, view.w, view.h);
-
-    // base image with rotation
+    if (!img || !view.w) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const base = document.createElement("canvas");
+    base.width = Math.round(view.w * dpr);
+    base.height = Math.round(view.h * dpr);
+    const ctx = base.getContext("2d")!;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingQuality = "high";
     ctx.save();
     ctx.translate(view.w / 2, view.h / 2);
     ctx.rotate((state.rotation * Math.PI) / 180);
@@ -135,10 +148,53 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const dh = rotated ? view.w : view.h;
     ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
     ctx.restore();
+    baseCanvasRef.current = base;
+    scheduleRedraw();
+  }, [img, view, state.rotation]);
 
-    for (const layer of state.layers) drawLayer(ctx, layer, selectedId === layer.id);
-    if (drawing) drawLayer(ctx, drawing, false);
-  }, [img, view, state, drawing, selectedId]);
+  // Composite layer pass — copies cached base then draws layers + in-progress shape.
+  function render() {
+    const cvs = canvasRef.current;
+    const base = baseCanvasRef.current;
+    const v = viewRef.current;
+    if (!cvs || !base || !v.w) return;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const W = Math.round(v.w * dpr), H = Math.round(v.h * dpr);
+    if (cvs.width !== W || cvs.height !== H) {
+      cvs.width = W; cvs.height = H;
+      cvs.style.width = `${v.w}px`; cvs.style.height = `${v.h}px`;
+    }
+    const ctx = cvs.getContext("2d")!;
+    ctx.setTransform(1, 0, 0, 1, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(base, 0, 0);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    const drag = dragLiveRef.current;
+    for (const l of stateRef.current.layers) {
+      const sel = selectedIdRef.current === l.id;
+      if (drag && l.id === drag.id && (drag.dx || drag.dy)) {
+        const moved: Layer = l.kind === "stroke"
+          ? { ...l, points: l.points.map((pt) => ({ x: pt.x + drag.dx, y: pt.y + drag.dy })) }
+          : ({ ...l, x: l.x + drag.dx, y: l.y + drag.dy } as Layer);
+        drawLayer(ctx, moved, sel);
+      } else {
+        drawLayer(ctx, l, sel);
+      }
+    }
+    if (drawingRef.current) drawLayer(ctx, drawingRef.current, false);
+  }
+
+  function scheduleRedraw() {
+    if (rafIdRef.current != null) return;
+    rafIdRef.current = requestAnimationFrame(() => {
+      rafIdRef.current = null;
+      render();
+    });
+  }
+
+  // Repaint whenever reactive state changes (layers, view, selection)
+  useEffect(() => { scheduleRedraw(); }, [state, view, selectedId]);
+  useEffect(() => () => { if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current); }, []);
 
   function pushHistory(next: EditorState) {
     setHistory((h) => [...h.slice(-29), state]);
@@ -194,20 +250,23 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       if (hit) {
         commitBaselineRef.current = state;
         lastPointRef.current = p;
-        setDrag({ id: hit.id, dx: 0, dy: 0 });
+        dragLiveRef.current = { id: hit.id, dx: 0, dy: 0 };
       }
       return;
     }
     if (tool === "draw") {
-      setDrawing({ id: uid(), kind: "stroke", x: 0, y: 0, rotation: 0, scale: 1, color, thickness, points: [p] });
+      drawingRef.current = { id: uid(), kind: "stroke", x: 0, y: 0, rotation: 0, scale: 1, color, thickness, points: [p] };
+      scheduleRedraw();
       return;
     }
     if (tool === "rect") {
-      setDrawing({ id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, thickness, fill: false });
+      drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      scheduleRedraw();
       return;
     }
     if (tool === "circle") {
-      setDrawing({ id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, thickness, fill: false });
+      drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      scheduleRedraw();
       return;
     }
     if (tool === "text") {
@@ -230,47 +289,54 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
     const p = pointAt(e);
+    const drag = dragLiveRef.current;
     if (drag && tool === "select") {
       const last = lastPointRef.current; if (!last) return;
-      const dx = p.x - last.x, dy = p.y - last.y;
+      drag.dx += p.x - last.x;
+      drag.dy += p.y - last.y;
       lastPointRef.current = p;
-      setState((s) => ({
-        ...s,
-        layers: s.layers.map((l) => {
-          if (l.id !== drag.id) return l;
-          if (l.kind === "stroke") {
-            return { ...l, points: l.points.map((pt) => ({ x: pt.x + dx, y: pt.y + dy })) };
-          }
-          return { ...l, x: l.x + dx, y: l.y + dy };
-        }),
-      }));
+      scheduleRedraw();
       return;
     }
-    if (drawing) {
-      if (drawing.kind === "stroke") {
-        setDrawing({ ...drawing, points: [...drawing.points, p] });
-      } else if (drawing.kind === "rect") {
-        setDrawing({ ...drawing, w: p.x - drawing.x, h: p.y - drawing.y });
-      } else if (drawing.kind === "circle") {
-        const dx = p.x - drawing.x, dy = p.y - drawing.y;
-        setDrawing({ ...drawing, r: Math.hypot(dx, dy) });
+    const d = drawingRef.current;
+    if (d) {
+      if (d.kind === "stroke") {
+        // mutate in place — no React state churn
+        d.points.push(p);
+      } else if (d.kind === "rect") {
+        d.w = p.x - d.x; d.h = p.y - d.y;
+      } else if (d.kind === "circle") {
+        d.r = Math.hypot(p.x - d.x, p.y - d.y);
       }
+      scheduleRedraw();
     }
   }
 
   function onPointerUp() {
+    const drag = dragLiveRef.current;
     if (drag) {
-      // Push the BEFORE-drag snapshot, keep the current (post-drag) state.
+      // Apply the accumulated drag delta to state once, with the pre-drag snapshot in history.
       const baseline = commitBaselineRef.current;
-      if (baseline && baseline !== state) {
-        setHistory((h) => [...h.slice(-29), baseline]);
-        setFuture([]);
+      const moved: EditorState = {
+        ...state,
+        layers: state.layers.map((l) => {
+          if (l.id !== drag.id) return l;
+          if (l.kind === "stroke") {
+            return { ...l, points: l.points.map((pt) => ({ x: pt.x + drag.dx, y: pt.y + drag.dy })) };
+          }
+          return { ...l, x: l.x + drag.dx, y: l.y + drag.dy } as Layer;
+        }),
+      };
+      if (baseline && (drag.dx !== 0 || drag.dy !== 0)) {
+        pushHistoryFrom(baseline, moved);
       }
       commitBaselineRef.current = null;
       lastPointRef.current = null;
-      setDrag(null);
+      dragLiveRef.current = null;
+      scheduleRedraw();
       return;
     }
+    const drawing = drawingRef.current;
     if (drawing) {
       // Normalize rect/circle so subsequent drag/hit-test behave correctly.
       let final = drawing;
@@ -279,15 +345,15 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         const y = Math.min(final.y, final.y + final.h);
         final = { ...final, x, y, w: Math.abs(final.w), h: Math.abs(final.h) };
         // skip zero-size shapes
-        if (final.w < 2 && final.h < 2) { setDrawing(null); return; }
+        if (final.w < 2 && final.h < 2) { drawingRef.current = null; scheduleRedraw(); return; }
       } else if (final.kind === "circle") {
-        if (final.r < 2) { setDrawing(null); return; }
+        if (final.r < 2) { drawingRef.current = null; scheduleRedraw(); return; }
       } else if (final.kind === "stroke") {
-        if (final.points.length < 2) { setDrawing(null); return; }
+        if (final.points.length < 2) { drawingRef.current = null; scheduleRedraw(); return; }
       }
       pushHistory({ ...state, layers: [...state.layers, final] });
       setSelectedId(final.id);
-      setDrawing(null);
+      drawingRef.current = null;
     }
   }
 
