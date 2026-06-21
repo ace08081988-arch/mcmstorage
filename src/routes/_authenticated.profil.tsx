@@ -10,6 +10,7 @@ import { useMyProfile, useUpdateMyProfile } from "@/lib/profile";
 import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
 import { COUNTRIES, LANGUAGES, DATE_FORMATS, findCountry } from "@/lib/countries";
 import { formatCurrency, formatDate } from "@/lib/format";
+import { PushNotificationSettings } from "@/components/chat/PushNotificationSettings";
 
 export const Route = createFileRoute("/_authenticated/profil")({
   component: ProfilPage,
@@ -231,6 +232,8 @@ function ProfilPage() {
           </Button>
         </div>
       </form>
+
+      <PushNotificationSettings />
     </main>
   );
 }
