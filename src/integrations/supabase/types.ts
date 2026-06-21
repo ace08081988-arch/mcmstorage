@@ -14,6 +14,82 @@ export type Database = {
   }
   public: {
     Tables: {
+      conversation_members: {
+        Row: {
+          conversation_id: string
+          joined_at: string
+          last_read_at: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          joined_at?: string
+          last_read_at?: string | null
+          role?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          joined_at?: string
+          last_read_at?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversations: {
+        Row: {
+          created_at: string
+          created_by: string
+          id: string
+          kind: string
+          last_message_at: string | null
+          order_request_id: string | null
+          owner_user_id: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          id?: string
+          kind: string
+          last_message_at?: string | null
+          order_request_id?: string | null
+          owner_user_id: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          id?: string
+          kind?: string
+          last_message_at?: string | null
+          order_request_id?: string | null
+          owner_user_id?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversations_order_request_id_fkey"
+            columns: ["order_request_id"]
+            isOneToOne: false
+            referencedRelation: "order_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       customer_payments: {
         Row: {
           amount: number
@@ -61,6 +137,7 @@ export type Database = {
       }
       customers: {
         Row: {
+          account_user_id: string | null
           contact: string | null
           created_at: string
           id: string
@@ -70,6 +147,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_user_id?: string | null
           contact?: string | null
           created_at?: string
           id?: string
@@ -79,6 +157,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_user_id?: string | null
           contact?: string | null
           created_at?: string
           id?: string
@@ -517,6 +596,56 @@ export type Database = {
         }
         Relationships: []
       }
+      messages: {
+        Row: {
+          attachment_mime: string | null
+          attachment_name: string | null
+          attachment_path: string | null
+          attachment_size: number | null
+          body: string | null
+          conversation_id: string
+          created_at: string
+          deleted_at: string | null
+          edited_at: string | null
+          id: string
+          sender_id: string
+        }
+        Insert: {
+          attachment_mime?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
+          attachment_size?: number | null
+          body?: string | null
+          conversation_id: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          sender_id: string
+        }
+        Update: {
+          attachment_mime?: string | null
+          attachment_name?: string | null
+          attachment_path?: string | null
+          attachment_size?: number | null
+          body?: string | null
+          conversation_id?: string
+          created_at?: string
+          deleted_at?: string | null
+          edited_at?: string | null
+          id?: string
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "messages_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_request_events: {
         Row: {
           created_at: string
@@ -941,6 +1070,39 @@ export type Database = {
           },
         ]
       }
+      push_subscriptions: {
+        Row: {
+          auth: string
+          created_at: string
+          endpoint: string
+          id: string
+          last_used_at: string | null
+          p256dh: string
+          user_agent: string | null
+          user_id: string
+        }
+        Insert: {
+          auth: string
+          created_at?: string
+          endpoint: string
+          id?: string
+          last_used_at?: string | null
+          p256dh: string
+          user_agent?: string | null
+          user_id: string
+        }
+        Update: {
+          auth?: string
+          created_at?: string
+          endpoint?: string
+          id?: string
+          last_used_at?: string | null
+          p256dh?: string
+          user_agent?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       ready_packages: {
         Row: {
           created_at: string
@@ -1299,6 +1461,7 @@ export type Database = {
       }
       suppliers: {
         Row: {
+          account_user_id: string | null
           contact: string | null
           created_at: string
           email: string | null
@@ -1311,6 +1474,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          account_user_id?: string | null
           contact?: string | null
           created_at?: string
           email?: string | null
@@ -1323,6 +1487,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          account_user_id?: string | null
           contact?: string | null
           created_at?: string
           email?: string | null
@@ -1574,6 +1739,15 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_group_member: {
+        Args: { _conv: string; _user: string }
+        Returns: undefined
+      }
+      can_chat: { Args: { _a: string; _b: string }; Returns: boolean }
+      create_group: {
+        Args: { _member_ids: string[]; _title: string }
+        Returns: string
+      }
       delete_email: {
         Args: { message_id: number; queue_name: string }
         Returns: boolean
@@ -1602,11 +1776,20 @@ export type Database = {
         Args: { payload: Json; queue_name: string }
         Returns: number
       }
+      ensure_order_conversation: { Args: { _order: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_conversation_member: {
+        Args: { _conv: string; _user: string }
+        Returns: boolean
+      }
+      is_conversation_owner: {
+        Args: { _conv: string; _user: string }
         Returns: boolean
       }
       move_to_dlq: {
@@ -1676,6 +1859,17 @@ export type Database = {
         }
         Returns: Json
       }
+      search_chat_contacts: {
+        Args: { _q: string }
+        Returns: {
+          display_name: string
+          email: string
+          kind: string
+          label: string
+          user_id: string
+        }[]
+      }
+      start_dm: { Args: { _partner: string }; Returns: string }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
