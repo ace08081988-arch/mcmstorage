@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 import { confirm } from "@/lib/confirm";
 import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
+import { useMyProfile } from "@/lib/profile";
 
 export const Route = createFileRoute("/_authenticated/gudang")({
   head: () => ({
