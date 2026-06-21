@@ -27,9 +27,10 @@ LANGUAGE plpgsql AS $$ BEGIN RAISE NOTICE 'PASS %', _label; END $$;
 DO $$
 DECLARE v_a uuid; v_b uuid; v_c uuid;
 BEGIN
-  SELECT id INTO v_a FROM public.profiles ORDER BY id LIMIT 1;
-  SELECT id INTO v_b FROM public.profiles WHERE id <> v_a ORDER BY id LIMIT 1;
-  SELECT id INTO v_c FROM public.profiles WHERE id NOT IN (v_a, v_b) ORDER BY id LIMIT 1;
+  -- Prefer a user with warehouse_items as user B so order_requests setup works.
+  SELECT user_id INTO v_b FROM public.warehouse_items GROUP BY user_id ORDER BY count(*) DESC LIMIT 1;
+  SELECT id INTO v_a FROM public.profiles WHERE id <> coalesce(v_b, gen_random_uuid()) ORDER BY id LIMIT 1;
+  SELECT id INTO v_c FROM public.profiles WHERE id NOT IN (coalesce(v_a, gen_random_uuid()), coalesce(v_b, gen_random_uuid())) ORDER BY id LIMIT 1;
   IF v_a IS NULL OR v_b IS NULL OR v_c IS NULL THEN
     RAISE EXCEPTION 'need at least 3 profiles to run authz tests';
   END IF;
@@ -210,7 +211,12 @@ END $$;
 DO $$
 DECLARE r record; v_src text; v_allow text[] := ARRAY[
   'has_role','can_chat','is_conversation_member','is_conversation_owner',
-  'search_chat_contacts','ensure_order_conversation'
+  'search_chat_contacts','ensure_order_conversation',
+  -- Worker portal RPCs: gated by share_token + PIN (pgcrypto), not auth.uid().
+  'prep_get_task','prep_submit','prep_upload_allowed','prep_worker_upload_allowed',
+  'ecer_list_titles_via_task','ecer_submit_via_task',
+  'request_list_titles_via_task','request_submit_via_task',
+  'record_prep_pin_failure'
 ];
 BEGIN
   FOR r IN
