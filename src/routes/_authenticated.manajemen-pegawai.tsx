@@ -4,10 +4,11 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { publicTaskUrl } from "@/lib/prep";
 import { confirm as confirmDialog } from "@/lib/confirm";
+import { buildWhatsAppUrl } from "@/lib/share-wa";
 import {
   Users, Plus, Pencil, Archive, ArchiveRestore, ChevronLeft, RefreshCw, Search,
   Phone, ExternalLink, Copy, Link2, ClipboardList, Image as ImageIcon, MapPin, X,
-  CheckCircle2, Clock, CircleSlash, Trash2,
+  CheckCircle2, Clock, CircleSlash, Trash2, Send, Info,
 } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/manajemen-pegawai")({
@@ -33,6 +34,7 @@ type Employee = {
 type TaskRow = {
   id: string;
   title: string;
+  note: string | null;
   share_token: string;
   status: string;
   expires_at: string;
@@ -100,7 +102,7 @@ function ManajemenPegawaiPage() {
         .order("name"),
       supabase
         .from("prep_tasks")
-        .select("id,title,share_token,status,expires_at,created_at,employee_id")
+        .select("id,title,note,share_token,status,expires_at,created_at,employee_id")
         .order("created_at", { ascending: false })
         .limit(500),
     ]);
@@ -134,6 +136,53 @@ function ManajemenPegawaiPage() {
   }, [employees, q, showArchived]);
 
   const unassignedTasks = tasksByEmployee.get(null) ?? [];
+
+  // Normalisasi nomor WA → digit-only E.164 (tanpa "+").
+  // 0xxx → 62xxx, 00xxx → xxx, lainnya: hanya digit.
+  function normalizeWaDigits(raw: string | null | undefined): string {
+    let d = (raw ?? "").replace(/\D/g, "");
+    if (!d) return "";
+    if (d.startsWith("00")) d = d.slice(2);
+    else if (d.startsWith("0")) d = "62" + d.slice(1);
+    if (d.length < 8 || d.length > 15) return "";
+    return d;
+  }
+
+  function buildPrepMessage(empName: string, task: TaskRow): string {
+    const url = publicTaskUrl(task.share_token);
+    const lines: string[] = [];
+    lines.push(`Halo ${empName}, berikut link penyiapan untukmu:`);
+    lines.push("");
+    lines.push(`*${task.title}*`);
+    if (task.note && task.note.trim()) {
+      lines.push("");
+      lines.push(`Instruksi: ${task.note.trim()}`);
+    }
+    lines.push("");
+    lines.push("Langkah penyiapan:");
+    lines.push("1. Buka link di bawah ini.");
+    lines.push("2. Isi jumlah aktual tiap produk.");
+    lines.push("3. Lampirkan foto bukti + bagikan lokasi.");
+    lines.push("4. Tekan Kirim untuk menyelesaikan.");
+    lines.push("");
+    lines.push(url);
+    return lines.join("\n");
+  }
+
+  function sendPrepToWa(emp: Employee, task: TaskRow) {
+    const phone = normalizeWaDigits(emp.phone);
+    if (!phone) {
+      toast.error("Nomor WA pegawai belum valid. Edit pegawai untuk mengisi nomor.");
+      return;
+    }
+    const url = buildWhatsAppUrl(buildPrepMessage(emp.name, task), phone);
+    const win = window.open(url, "_blank", "noopener,noreferrer");
+    if (!win) {
+      toast.error("Popup diblokir browser. Izinkan popup lalu coba lagi.");
+      return;
+    }
+    toast.success(`Link penyiapan dikirim ke WA ${emp.name}`);
+  }
 
   async function archiveEmployee(emp: Employee) {
     const ok = await confirmDialog({
@@ -249,6 +298,10 @@ function ManajemenPegawaiPage() {
               { active: 0, expired: 0, done: 0, cancelled: 0 } as Record<string, number>,
             );
             const lastTask = empTasks[0];
+            // Tugas aktif terbaru — diutamakan untuk tombol Kirim WA.
+            const activeTask =
+              empTasks.find((t) => taskAvailability(t, now) === "active") ?? lastTask;
+            const hasPhone = !!normalizeWaDigits(emp.phone);
             return (
               <div
                 key={emp.id}
@@ -326,6 +379,53 @@ function ManajemenPegawaiPage() {
                   <div className="mt-2 truncate border-t pt-2 text-[11px] text-muted-foreground" data-compact-hide>
                     Terakhir: <span className="font-medium text-foreground">{lastTask.title}</span> ·{" "}
                     {new Date(lastTask.created_at).toLocaleDateString("id-ID", { day: "numeric", month: "short" })}
+                  </div>
+                )}
+
+                {activeTask && (
+                  <div className="mt-2 space-y-1.5 rounded-md border bg-muted/30 p-2 text-[11px]">
+                    <div className="flex items-center gap-1 font-medium text-foreground">
+                      <Link2 className="h-3 w-3 text-primary" />
+                      Penyiapan: <span className="truncate">{activeTask.title}</span>
+                    </div>
+                    <div className="flex items-start gap-1 text-muted-foreground">
+                      <Info className="mt-0.5 h-3 w-3 shrink-0" />
+                      <span className="leading-snug">
+                        Pegawai membuka link → isi jumlah aktual → foto bukti + lokasi → kirim.
+                      </span>
+                    </div>
+                    <div className="truncate font-mono text-[10px] text-muted-foreground">
+                      {publicTaskUrl(activeTask.share_token)}
+                    </div>
+                    <div className="flex flex-wrap gap-1 pt-0.5">
+                      <button
+                        onClick={() => {
+                          navigator.clipboard
+                            .writeText(publicTaskUrl(activeTask.share_token))
+                            .then(() => toast.success("Link disalin"))
+                            .catch(() => toast.error("Gagal menyalin"));
+                        }}
+                        className="inline-flex h-7 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted"
+                      >
+                        <Copy className="h-3 w-3" /> Salin
+                      </button>
+                      <a
+                        href={publicTaskUrl(activeTask.share_token)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex h-7 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted"
+                      >
+                        <ExternalLink className="h-3 w-3" /> Buka
+                      </a>
+                      <button
+                        onClick={() => sendPrepToWa(emp, activeTask)}
+                        disabled={!hasPhone}
+                        title={hasPhone ? `Kirim ke WA ${emp.phone}` : "Nomor WA pegawai belum valid"}
+                        className="ml-auto inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50"
+                      >
+                        <Send className="h-3 w-3" /> Kirim WA
+                      </button>
+                    </div>
                   </div>
                 )}
               </div>
