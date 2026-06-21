@@ -1377,7 +1377,14 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
       </div>
       {showPackages && uid && (
         <ReadyPackagesPanel
-          item={{ id: item.id, name: item.name, base_unit: baseUnit, stock_base: currentStock }}
+          item={{
+            id: item.id,
+            name: item.name,
+            base_unit: baseUnit,
+            stock_base: currentStock,
+            package_type: item.package_type,
+            package_size: item.package_size,
+          }}
           uid={uid}
           onClose={() => setShowPackages(false)}
           onStockChanged={async () => {
