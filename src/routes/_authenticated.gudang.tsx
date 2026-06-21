@@ -99,93 +99,15 @@ type OrderRequest = {
   created_at: string;
 };
 
-function rupiah(n: number) {
-  return new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
-}
-function fmtBase(n: number, u: "g" | "pcs") {
-  const v = Number(n) || 0;
-  if (u === "g") {
-    if (Math.abs(v) >= 1000) {
-      return `${(v / 1000).toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`;
-    }
-    return `${v.toLocaleString("id-ID", { maximumFractionDigits: 2 })} g`;
-  }
-  return `${v.toLocaleString("id-ID")} pcs`;
-}
-
-export { fmtBase, rupiah };
-
-// Konversi standar di seluruh aplikasi: 100 botol = 1 karton.
-// Berlaku untuk semua produk/kategori dengan satuan kemasan "botol".
-export const BOTOL_PER_KARTON = 100;
-
-function getBotolPerKarton(_name: string | undefined, packageType: string): number | null {
-  if ((packageType ?? "").trim().toLowerCase() === "botol") return BOTOL_PER_KARTON;
-  return null;
-}
-
-function fmtKartonHint(pkgQty: number, name: string | undefined, packageType: string): string {
-  const per = getBotolPerKarton(name, packageType);
-  if (!per || per <= 0) return "";
-  const k = pkgQty / per;
-  if (!Number.isFinite(k) || k < 1) return "";
-  // Hanya tampilkan hint karton bila jumlah botol ≥ 1 karton penuh.
-  // Jika tidak genap kelipatan karton, sisanya ditampilkan dalam botol.
-  const kInt = Math.floor(k);
-  const sisaBotol = Math.round(pkgQty - kInt * per);
-  const kStr = kInt.toLocaleString("id-ID");
-  if (sisaBotol > 0) {
-    return ` · = ${kStr} karton + ${sisaBotol.toLocaleString("id-ID")} botol`;
-  }
-  return ` · = ${kStr} karton`;
-}
-
-function fmtQtyDual(
-  baseQty: number,
-  baseUnit: "g" | "pcs",
-  packageType: string,
-  packageSize: number,
-  mode: "base" | "package",
-  itemName?: string,
-) {
-  // Kasus khusus: produk GS dimodelkan dengan base=pcs & package_size=100,
-  // tetapi tiap "pcs" sebenarnya = 1 botol. Tampilkan langsung sebagai
-  // botol + hint karton agar konsisten dengan aturan 100 botol = 1 karton.
-  if ((itemName ?? "").trim().toLowerCase() === "gs" && baseUnit === "pcs") {
-    const botol = Math.round(Number(baseQty) || 0);
-    return `${botol.toLocaleString("id-ID")} botol${fmtKartonHint(botol, "gs", "botol")}`;
-  }
-  if (mode === "base" || !packageType || packageType === "pcs" || packageSize <= 0) {
-    return fmtBase(baseQty, baseUnit);
-  }
-  const pkgQty = baseQty / packageSize;
-  const pkgStr = `${pkgQty.toLocaleString("id-ID", { maximumFractionDigits: 2 })} ${packageType}`;
-  return `${pkgStr} (= ${fmtBase(baseQty, baseUnit)})${fmtKartonHint(pkgQty, itemName, packageType)}`;
-}
-
-// Format default untuk barang: pakai unit kemasan bila ada, fallback ke base.
-function fmtItemQty(
-  baseQty: number,
-  item: { name?: string; base_unit: "g" | "pcs"; package_type: string; package_size: number } | null | undefined,
-) {
-  if (!item) return fmtBase(baseQty, "pcs");
-  const mode: "base" | "package" =
-    item.package_type && item.package_type !== "pcs" && item.package_size > 0 ? "package" : "base";
-  return fmtQtyDual(baseQty, item.base_unit, item.package_type, item.package_size, mode, item.name);
-}
-
-// Format harga per unit terpilih (jika package, kalikan package_size).
-function fmtItemPrice(
-  pricePerBase: number,
-  item: { base_unit: "g" | "pcs"; package_type: string; package_size: number } | null | undefined,
-) {
-  if (!item) return `${rupiah(pricePerBase)}/pcs`;
-  if (item.package_type && item.package_type !== "pcs" && item.package_size > 0) {
-    const perPkg = pricePerBase * item.package_size;
-    return `${rupiah(perPkg)}/${item.package_type} (= ${rupiah(pricePerBase)}/${item.base_unit})`;
-  }
-  return `${rupiah(pricePerBase)}/${item.base_unit}`;
-}
+import {
+  BOTOL_PER_KARTON,
+  fmtBase,
+  fmtItemPrice,
+  fmtItemQty,
+  fmtQtyDual,
+  rupiah,
+} from "@/lib/stock-format";
+export { BOTOL_PER_KARTON, fmtBase, fmtItemPrice, fmtItemQty, fmtQtyDual, rupiah };
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
