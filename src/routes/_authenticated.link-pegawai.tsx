@@ -106,6 +106,7 @@ function LinkPegawaiPage() {
   const [q, setQ] = useState("");
   const [filter, setFilter] = useState<"all" | Availability>("all");
   const [tokenFilter, setTokenFilter] = useState<"all" | TokenState["kind"]>("all");
+  const [tokenKw, setTokenKw] = useState("");
   const [sort, setSort] = useState<SortKey>("newest");
   const [now, setNow] = useState(Date.now());
   const sentinelRef = useRef<HTMLDivElement | null>(null);
@@ -232,6 +233,10 @@ function LinkPegawaiPage() {
     const filtered = list.filter(({ t, avail, tokenState }) => {
       if (filter !== "all" && avail !== filter) return false;
       if (tokenFilter !== "all" && tokenState.kind !== tokenFilter) return false;
+      if (tokenKw.trim()) {
+        const n = tokenKw.trim().toLowerCase();
+        if (!t.title.toLowerCase().includes(n) && !t.id.toLowerCase().includes(n)) return false;
+      }
       if (q.trim()) {
         const needle = q.trim().toLowerCase();
         if (!t.title.toLowerCase().includes(needle) && !t.share_token.toLowerCase().includes(needle)) return false;
@@ -248,7 +253,7 @@ function LinkPegawaiPage() {
     }
     // "newest" / "oldest" come pre-sorted from the server.
     return filtered;
-  }, [tasks, q, filter, tokenFilter, now, sort, regenAt]);
+  }, [tasks, q, filter, tokenFilter, tokenKw, now, sort, regenAt]);
 
   const counts = useMemo(() => {
     const c = { all: 0, active: 0, expired: 0, done: 0, cancelled: 0 } as Record<string, number>;
@@ -476,6 +481,32 @@ function LinkPegawaiPage() {
             </button>
           );
         })}
+      </div>
+
+      <div className="mb-3 relative">
+        <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+        <input
+          value={tokenKw}
+          onChange={(e) => setTokenKw(e.target.value)}
+          placeholder={
+            tokenFilter === "all"
+              ? "Cari nama atau ID pegawai…"
+              : `Cari nama atau ID pegawai dalam status “${
+                  tokenFilter === "valid" ? "Valid" : tokenFilter === "fresh" ? "Baru dibuat" : tokenFilter === "invalid" ? "Invalid" : "Kosong"
+                }”…`
+          }
+          className="h-9 w-full rounded-md border bg-background pl-7 pr-8 text-sm focus:border-primary focus:outline-none"
+        />
+        {tokenKw && (
+          <button
+            type="button"
+            onClick={() => setTokenKw("")}
+            aria-label="Bersihkan pencarian"
+            className="absolute right-1 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded text-muted-foreground hover:bg-muted"
+          >
+            ×
+          </button>
+        )}
       </div>
 
       {tasks === null ? (
