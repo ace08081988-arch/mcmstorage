@@ -9,7 +9,7 @@
  * Optional env:
  *   FAIL_ON_LEVEL          minimum level that fails the build (default: WARN; values: INFO|WARN|ERROR)
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, appendFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -76,6 +76,89 @@ for (const f of findings) {
 console.log(
   `Supabase linter: ${findings.length} total, ${suppressed.length} allowlisted, ${unexpected.length} unexpected (fail threshold: ${FAIL_ON_LEVEL}).`,
 );
+
+// ---------- GitHub Actions summary ----------
+const summaryPath = process.env.GITHUB_STEP_SUMMARY;
+if (summaryPath) {
+  const lines = [];
+  lines.push(`# Supabase Security Linter`);
+  lines.push("");
+  lines.push(`**Project:** \`${REF}\` &nbsp; **Fail threshold:** \`${FAIL_ON_LEVEL}\``);
+  lines.push("");
+  lines.push(`| Metric | Count |`);
+  lines.push(`| --- | ---: |`);
+  lines.push(`| Total findings returned | ${findings.length} |`);
+  lines.push(`| ✅ Matched allowlist (suppressed) | ${suppressed.length} |`);
+  lines.push(`| ❌ Unexpected (new) findings | ${unexpected.length} |`);
+  lines.push("");
+
+  if (unexpected.length) {
+    lines.push(`## ❌ Unexpected findings (build will fail)`);
+    lines.push("");
+    lines.push(`| Level | Rule | Identifier | Description |`);
+    lines.push(`| --- | --- | --- | --- |`);
+    for (const f of unexpected) {
+      const desc = (f.description?.split("\n")[0] || "").replace(/\|/g, "\\|");
+      lines.push(`| \`${f.level}\` | \`${f.name}\` | \`${f.ident || "—"}\` | ${desc} |`);
+    }
+    lines.push("");
+    lines.push(
+      `> If any of these are intentional, document and add them to \`.github/supabase-lint-allowlist.json\`.`,
+    );
+    lines.push("");
+  } else {
+    lines.push(`## ✅ No unexpected findings`);
+    lines.push("");
+  }
+
+  if (suppressed.length) {
+    // Group suppressed by rule name for a compact view
+    const byRule = new Map();
+    for (const f of suppressed) {
+      if (!byRule.has(f.name)) byRule.set(f.name, []);
+      byRule.get(f.name).push(f);
+    }
+    lines.push(`<details><summary>Allowlist matches (${suppressed.length})</summary>`);
+    lines.push("");
+    for (const [rule, items] of byRule) {
+      lines.push(`### \`${rule}\` — ${items.length} match${items.length === 1 ? "" : "es"}`);
+      lines.push("");
+      lines.push(`| Level | Identifier |`);
+      lines.push(`| --- | --- |`);
+      for (const f of items) {
+        lines.push(`| \`${f.level}\` | \`${f.ident || "—"}\` |`);
+      }
+      lines.push("");
+    }
+    lines.push(`</details>`);
+    lines.push("");
+  }
+
+  // Allowlist coverage: entries declared but not seen in this scan
+  const seenIdents = new Set(suppressed.map((f) => f.ident).filter(Boolean));
+  const unusedEntries = [];
+  for (const entry of allowlist.allow || []) {
+    for (const fn of entry.functions || []) {
+      if (!seenIdents.has(fn)) unusedEntries.push({ rule: entry.name, fn });
+    }
+  }
+  if (unusedEntries.length) {
+    lines.push(
+      `<details><summary>Allowlist entries not matched by this scan (${unusedEntries.length})</summary>`,
+    );
+    lines.push("");
+    lines.push(`| Rule | Identifier |`);
+    lines.push(`| --- | --- |`);
+    for (const u of unusedEntries) lines.push(`| \`${u.rule}\` | \`${u.fn}\` |`);
+    lines.push("");
+    lines.push(`> These may be stale entries safe to remove from the allowlist.`);
+    lines.push("");
+    lines.push(`</details>`);
+    lines.push("");
+  }
+
+  appendFileSync(summaryPath, lines.join("\n") + "\n");
+}
 
 if (unexpected.length) {
   console.error("\n❌ Unexpected findings:");
