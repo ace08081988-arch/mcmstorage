@@ -14,6 +14,7 @@ import {
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, PackagePlus, Trash2,
   Loader2, ChevronLeft, Package, FlaskConical, Copy, ExternalLink,
+  AlertTriangle, RotateCw,
 } from "lucide-react";
 import {
   requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
@@ -43,21 +44,67 @@ function RequestPage() {
   const [titles, setTitles] = useState<RequestTitle[]>([]);
   const [titleItems, setTitleItems] = useState<RequestTitleItem[]>([]);
   const [loading, setLoading] = useState(true);
+  type LoadErr = {
+    source: string; message: string; code?: string; status?: number;
+    hint?: string; details?: string; diagnosis: string;
+  };
+  const [loadError, setLoadError] = useState<LoadErr | null>(null);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
 
+  function diagnose(code?: string, status?: number, msg?: string): string {
+    if (status === 0 || /Failed to fetch|NetworkError/i.test(msg ?? "")) return "Jaringan terputus — periksa koneksi internet.";
+    if (code === "PGRST301" || /JWT expired/i.test(msg ?? "")) return "Sesi login kedaluwarsa. Muat ulang halaman atau login ulang.";
+    if (code === "42501") return "Izin database hilang (GRANT belum diberikan ke role authenticated).";
+    if (code === "PGRST116") return "Baris diblokir RLS / tidak ditemukan untuk akun ini.";
+    if (code === "PGRST205") return "Tabel tidak ditemukan di skema Data API.";
+    if (status && status >= 500) return `Backend error (HTTP ${status}). Coba beberapa saat lagi.`;
+    if (status === 401 || status === 403) return "Tidak diizinkan — sesi belum siap atau policy menolak.";
+    return "Permintaan gagal — lihat detail di bawah.";
+  }
+
   async function loadAll() {
-    const [wi, t, ti] = await Promise.all([
-      supabase.from("warehouse_items").select("id,name,category,base_unit,stock_base").order("name"),
-      sb.from("request_titles").select("*").order("position").order("created_at"),
-      sb.from("request_title_items").select("*").order("position"),
-    ]);
-    if (wi.data) setItems(wi.data as WarehouseItem[]);
-    if (t.data) setTitles(t.data as RequestTitle[]);
-    if (ti.data) setTitleItems(ti.data as RequestTitleItem[]);
-    setLoading(false);
+    setLoadError(null);
+    setLoading(true);
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      if (!sess.session) {
+        setLoadError({ source: "session", message: "Sesi belum siap", diagnosis: "Sesi login belum aktif. Coba muat ulang halaman atau login kembali." });
+        return;
+      }
+      const [wi, t, ti] = await Promise.all([
+        supabase.from("warehouse_items").select("id,name,category,base_unit,stock_base").order("name"),
+        sb.from("request_titles").select("*").order("position").order("created_at"),
+        sb.from("request_title_items").select("*").order("position"),
+      ]);
+      for (const [src, res] of [["warehouse_items", wi], ["request_titles", t], ["request_title_items", ti]] as const) {
+        if (res.error) {
+          const code = (res.error as { code?: string }).code;
+          const status = (res.error as { status?: number }).status;
+          setLoadError({
+            source: src, message: res.error.message, code, status,
+            hint: (res.error as { hint?: string }).hint,
+            details: (res.error as { details?: string }).details,
+            diagnosis: diagnose(code, status, res.error.message),
+          });
+          return;
+        }
+      }
+      if (wi.data) setItems(wi.data as WarehouseItem[]);
+      if (t.data) setTitles(t.data as RequestTitle[]);
+      if (ti.data) setTitleItems(ti.data as RequestTitleItem[]);
+    } catch (e) {
+      const err = e as { message?: string; status?: number; code?: string };
+      setLoadError({
+        source: "exception", message: err.message ?? String(e),
+        code: err.code, status: err.status,
+        diagnosis: diagnose(err.code, err.status, err.message),
+      });
+    } finally {
+      setLoading(false);
+    }
   }
 
   useEffect(() => { void loadAll(); }, []);
@@ -79,6 +126,37 @@ function RequestPage() {
     return (
       <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
         <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat…
+      </div>
+    );
+  }
+
+  if (loadError) {
+    return (
+      <div className="mx-auto max-w-2xl space-y-3 p-4">
+        <div className="rounded-lg border border-destructive/50 bg-destructive/5 p-4 text-sm">
+          <div className="mb-2 flex items-center gap-2 font-semibold text-destructive">
+            <AlertTriangle className="h-4 w-4" /> Gagal memuat Penyiapan Request
+          </div>
+          <div className="space-y-1 text-xs">
+            <div><b>Sumber:</b> {loadError.source}</div>
+            <div className="rounded bg-amber-500/10 p-2 text-amber-700 dark:text-amber-300"><b>Diagnosa:</b> {loadError.diagnosis}</div>
+            <div><b>Pesan:</b> {loadError.message}</div>
+            {loadError.code && <div><b>Kode:</b> {loadError.code}</div>}
+            {loadError.status !== undefined && <div><b>HTTP:</b> {loadError.status}</div>}
+            {loadError.hint && <div><b>Hint:</b> {loadError.hint}</div>}
+            {loadError.details && <div><b>Detail:</b> {loadError.details}</div>}
+            <div><b>Jaringan:</b> {typeof navigator !== "undefined" && navigator.onLine ? "online" : "offline"}</div>
+          </div>
+          <div className="mt-3 flex gap-2">
+            <Button size="sm" onClick={() => void loadAll()}>
+              <RotateCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
+            </Button>
+            <Button size="sm" variant="outline" onClick={async () => {
+              try { await navigator.clipboard.writeText(JSON.stringify(loadError, null, 2)); toast.success("Detail disalin"); }
+              catch (e) { toast.error("Gagal menyalin: " + ((e as Error)?.message ?? String(e))); }
+            }}>Salin detail</Button>
+          </div>
+        </div>
       </div>
     );
   }
