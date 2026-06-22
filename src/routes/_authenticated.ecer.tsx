@@ -419,7 +419,16 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
         <div className="space-y-3">
           <div>
             <Label className="text-xs">Nama judul</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. KRISTAL 1 gram" />
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="mis. KRISTAL 1 gram"
+              autoComplete="off"
+              autoCorrect="off"
+              autoCapitalize="characters"
+              spellCheck={false}
+              inputMode="text"
+            />
           </div>
           <div className="grid grid-cols-2 gap-2">
             <div>
