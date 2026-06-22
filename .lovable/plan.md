@@ -1,152 +1,75 @@
 ## Tujuan
+Sederhanakan alur penyiapan produk: hapus total menu **Manajemen Pegawai** (beserta data pegawai existing) dan ganti dengan dua mode yang dipilih langsung dari halaman **Penyiapan Produk**:
 
-Tambah fitur chat antar pengguna terdaftar dengan batasan: hanya owner ↔ akun pelanggan/pemasok miliknya yang boleh saling chat. Mendukung 1‑on‑1, grup otomatis per `order_request`, dan grup manual. Realtime, lampiran gambar/file, tanda dibaca + badge unread, Web Push + notif in‑app.
+1. **Siapkan Sendiri** — owner foto + paste link lokasi → simpan → masuk daftar "Siap Dikirim" → tombol **Kirim WA** memindahkan ke **Riwayat Terkirim**.
+2. **Via Pegawai** — pilih kontak pegawai sederhana (nama + nomor WA) → owner isi item yang harus disiapkan → kirim link tugas + PIN via WA atau salin.
 
-## Konsep akses
+---
 
-- "Kontak terkait transaksi" = pasangan user (A, B) di mana **salah satu** adalah owner dan **yang lain** adalah akun yang ditautkan ke `customers.user_id` atau `suppliers.user_id` milik owner tsb.
-- Tambah kolom opsional `customers.user_id` dan `suppliers.user_id` (FK ke `auth.users`). Owner bisa "menautkan" customer/supplier ke akun lewat email (lookup via fn server `link_contact_account_by_email`). Selama belum ditaut, kontak tsb tetap pakai WhatsApp seperti sekarang — tidak muncul di daftar chat.
-- Helper SECURITY DEFINER `public.can_chat(a uuid, b uuid)` → true bila pasangan owner ↔ kontak tertaut ditemukan; dipakai oleh RLS dan saat membuat conversation.
+## Ringkasan Perubahan
 
-## Skema database
+### A. Hapus Manajemen Pegawai
+- Hapus route `src/routes/_authenticated.manajemen-pegawai.tsx`.
+- Hapus item menu "Manajemen Pegawai" dari `src/components/AppSidebar.tsx`.
+- Drop tabel `public.employees` (saat ini 1 baris — akan hilang).
+- Bersihkan referensi `employees` di `audit`, `index`, `gudang`, dan tipe Supabase (regen otomatis via migration).
+- `link-pegawai.tsx` tetap dipertahankan sebagai halaman tugas (sudah pakai `prep_tasks`, tidak butuh tabel employees).
 
-```text
-profiles                              (sudah ada; pakai untuk display_name/avatar)
-customers   + user_id uuid NULL FK auth.users  (taut akun)
-suppliers   + user_id uuid NULL FK auth.users  (taut akun)
+### B. Tabel baru: kontak pegawai ringan
+- `public.staff_contacts` — `id`, `user_id`, `name`, `wa_phone`, `created_at`. RLS per-owner + GRANT lengkap.
 
-conversations
-  id uuid PK
-  kind text CHECK in ('dm','order','group')
-  title text NULL           -- group: nama; dm/order: derive di UI
-  owner_user_id uuid NOT NULL FK auth.users   -- pemilik (untuk skoping)
-  order_request_id uuid NULL FK order_requests (UNIQUE per order utk kind='order')
-  created_by uuid NOT NULL
-  last_message_at timestamptz
-  created_at/updated_at
+### C. Tabel baru: hasil "Siapkan Sendiri"
+- `public.self_prep_items` — `id`, `user_id`, `title`, `photo_path` (storage), `location_url`, `note`, `status` ('ready' | 'sent'), `sent_at`, `wa_target`, `created_at`.
+- Reuse bucket `prep-photos` untuk foto.
+- RLS per-owner + GRANT lengkap.
 
-conversation_members
-  conversation_id uuid FK conversations ON DELETE CASCADE
-  user_id uuid FK auth.users
-  role text CHECK in ('owner','member')
-  last_read_at timestamptz NULL
-  joined_at timestamptz
-  PK (conversation_id, user_id)
+### D. Halaman Penyiapan Produk baru
+Lokasi: refactor `src/routes/_authenticated.tugas.tsx` (atau buat ulang sebagai entry "Penyiapan Produk") menjadi 2 tab/section:
 
-messages
-  id uuid PK
-  conversation_id uuid FK
-  sender_id uuid FK auth.users
-  body text NULL
-  attachment_path text NULL    -- storage object path di bucket 'chat-attachments'
-  attachment_mime text NULL
-  attachment_name text NULL
-  attachment_size int NULL
-  created_at timestamptz
-  edited_at timestamptz NULL
-  deleted_at timestamptz NULL  -- soft delete
-  -- CHECK: body OR attachment_path NOT NULL
+**Tab 1 — Siapkan Sendiri**
+- Form: input judul, upload foto (galeri/kamera HP via `<input type="file" accept="image/*">`), input link lokasi (paste), catatan, tombol **Simpan**.
+- List "Siap Dikirim" (status='ready'): kartu dengan thumbnail, judul, link lokasi (clickable), tombol **Kirim WA** (buka `https://wa.me/?text=...`), tombol hapus.
+- Saat **Kirim WA** ditekan: update status → 'sent', isi `sent_at`, item pindah ke section "Riwayat Terkirim".
+- Section "Riwayat Terkirim" (status='sent'): list ringkas, tombol hapus.
 
-push_subscriptions
-  id uuid PK
-  user_id uuid FK auth.users
-  endpoint text UNIQUE
-  p256dh text, auth text
-  user_agent text, created_at, last_used_at
-```
+**Tab 2 — Via Pegawai**
+- Daftar kontak pegawai sederhana (CRUD inline: tambah nama+WA, edit, hapus) — pakai `staff_contacts`.
+- Tombol "Buat tugas baru" → form: judul tugas, daftar item (nama, qty, satuan, catatan opsional) — ini reuse RPC `prep_create_task` yang sudah ada (membuat `prep_tasks` + `prep_task_items` + PIN + share_token).
+- Setelah dibuat: tampil kartu tugas dengan link `publicTaskUrl(token, pin)` + PIN, tombol **Kirim via WA** (ke nomor pegawai terpilih) dan **Salin**.
 
-GRANTs lengkap pada setiap tabel + `ALTER PUBLICATION supabase_realtime ADD TABLE messages, conversation_members, conversations`.
+### E. Routing
+- Sidebar: ganti item "Manajemen Pegawai" → tidak ada lagi. "Penyiapan Produk" tetap arah ke `/tugas`.
+- `/link-pegawai` tetap dapat diakses owner sebagai daftar tugas aktif (atau di-embed dalam tab "Via Pegawai"). Untuk MVP biarkan apa adanya.
 
-### Fungsi/trigger
+---
 
-- `can_chat(a, b)` security definer.
-- `start_dm(_partner uuid)` server fn DB: validasi `can_chat`, cari/buat conversation kind='dm' antar (owner_user_id, partner), insert kedua member, return id.
-- `ensure_order_conversation(_order uuid)` security definer: idempotent — buat kind='order' bila belum ada, anggota = owner order + semua akun pemilik/staff yang terlibat (saat ini: owner + akun terkait customer order, bila ada).
-- Trigger `after insert on order_requests`: panggil `ensure_order_conversation(NEW.id)` (lewati bila gagal can_chat).
-- Trigger `after insert on messages`: update `conversations.last_message_at`; panggil server fn `notify_new_message` lewat `pg_notify` ATAU dari server fn pengirim (lebih sederhana — pakai opsi server fn).
-- Trigger `after update of user_id on customers/suppliers`: bila baru ditautkan, panggil `ensure_order_conversation` untuk semua order terkait.
+## Implementasi (urutan)
 
-### RLS (intisari)
+1. **Migration** (1 migration):
+   - `DROP TABLE public.employees CASCADE;`
+   - `CREATE TABLE public.staff_contacts (...)` + GRANT + RLS + policy `auth.uid()=user_id`.
+   - `CREATE TABLE public.self_prep_items (...)` + GRANT + RLS + policy `auth.uid()=user_id`.
 
-- `conversations`: SELECT bila `user_id ∈ conversation_members`. INSERT lewat server fn saja (policy `USING (false)` untuk INSERT/UPDATE dari klien; gunakan SECURITY DEFINER RPC).
-- `conversation_members`: SELECT bila user adalah anggota conversation tsb. INSERT/UPDATE/DELETE lewat RPC.
-- `messages`: SELECT bila anggota conversation; INSERT bila anggota & `sender_id = auth.uid()` & passing helper `is_member(conv, auth.uid())`; UPDATE hanya `deleted_at` oleh sender atau owner; DELETE: server fn saja.
-- `push_subscriptions`: row‑level oleh `user_id = auth.uid()`.
+2. **Hapus & bersihkan**:
+   - Hapus `src/routes/_authenticated.manajemen-pegawai.tsx`.
+   - Edit `AppSidebar.tsx` (hapus 1 item).
+   - Audit `src/routes/_authenticated.audit.tsx`, `_authenticated.index.tsx`, `_authenticated.gudang.tsx`: hapus query/section yang baca `employees`.
 
-## Storage
+3. **Komponen baru**:
+   - `src/components/SiapkanSendiriSection.tsx` — form + list ready + list sent.
+   - `src/components/ViaPegawaiSection.tsx` — CRUD kontak + bridge ke `prep_create_task`.
+   - Refactor `_authenticated.tugas.tsx` menjadi shell 2-tab yang merangkai dua section di atas.
 
-- Bucket privat baru `chat-attachments` (via tool). Path: `{conversation_id}/{message_id}/{filename}`.
-- RLS pada `storage.objects`: anggota conversation boleh SELECT/INSERT; UPDATE/DELETE hanya uploader.
+4. **WA helper**: pakai `src/lib/share-wa.ts` yang sudah ada (`waUrl(phone, text)`); fallback ke `https://wa.me/?text=` jika nomor kosong.
 
-## Server functions (TanStack)
+5. **Verifikasi**:
+   - Build check otomatis.
+   - Buka `/tugas` via Playwright untuk memastikan tab tampil & form bisa dikirim.
 
-Di `src/lib/chat.functions.ts` (semua pakai `requireSupabaseAuth`):
+---
 
-- `listConversations()` → list + unread count (`messages where created_at > member.last_read_at`).
-- `getConversation(id)` + `listMessages(id, beforeCursor?)` (pagination).
-- `sendMessage({ conversationId, body?, attachment? })` — insert; panggil `dispatchPush` (fire & forget) ke anggota lain.
-- `markRead({ conversationId, lastReadAt? })`.
-- `startDirectMessage({ partnerUserId })` → RPC `start_dm`.
-- `createGroup({ title, memberIds[] })` — validasi tiap memberId `can_chat(owner, member)`.
-- `addGroupMembers / removeMember / leaveGroup / renameGroup` — hanya creator/owner_user_id.
-- `searchEligibleContacts(q)` → join `customers/suppliers` milik saya yang `user_id IS NOT NULL` → profil (display_name, avatar, email partial).
-- `linkContactAccountByEmail({ kind:'customer'|'supplier', id, email })` — admin server‑only lookup user via `auth.admin.listUsers` (atau RPC SECURITY DEFINER), set `user_id`.
-- `registerPushSubscription({...})` / `unregisterPushSubscription(endpoint)`.
-- `dispatchPush({ conversationId, messageId })` — kirim Web Push via VAPID (lib `web-push` di server fn / atau fetch langsung ke endpoint). Skip self.
-
-## Web Push
-
-- Tambah dependency `web-push` (server‑only).
-- Secrets baru: `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT` (di‑request lewat `add_secret`, dengan instruksi generate).
-- `public/sw-push.js` (service worker khusus push, terpisah dari skill PWA app‑shell): handler `push` → `showNotification`; `notificationclick` → `clients.openWindow('/chat/{conversationId}')`.
-- Registrasi SW + `pushManager.subscribe({ userVisibleOnly:true, applicationServerKey })` di tombol "Aktifkan notifikasi chat" pada Profil; juga di‑prompt setelah membuka chat pertama kali (re‑use `permission-bootstrap`).
-- Simpan subscription via `registerPushSubscription`.
-
-## UI
-
-Route baru di bawah `_authenticated`:
-
-- `src/routes/_authenticated.chat.tsx` — layout split: kiri daftar conversation (search + tab "Semua/DM/Grup/Order"), kanan `<Outlet/>`. Badge unread total ditarik ke menu utama (lewat hook `useUnreadTotal`).
-- `src/routes/_authenticated.chat.index.tsx` — empty state + tombol "Mulai chat" / "Buat grup".
-- `src/routes/_authenticated.chat.$conversationId.tsx` — header (nama+anggota), list pesan (virtualized sederhana / reverse scroll), composer (textarea + tombol lampiran + kirim). Lampiran dipreview inline (gambar) atau sebagai kartu file.
-- Komponen: `NewDmDialog` (pilih dari `searchEligibleContacts`), `NewGroupDialog`, `GroupSettingsSheet` (anggota, rename, leave).
-- Halaman Pelanggan/Pemasok: tambah aksi "Tautkan akun" (input email) + indikator status taut, tombol "Buka chat" muncul bila tertaut.
-- Halaman detail order (jika ada): tombol "Buka chat order".
-- Navigasi utama: tambah item "Chat" dengan badge unread.
-
-### Realtime + state
-
-- `useConversationList()` → query + subscribe channel `conversations:user_id={me}` (filter `conversation_members` join → invalidate query).
-- `useConversation(id)` → query messages + subscribe `messages:conversation_id=eq.{id}`; mark read pada mount & saat tab focus.
-- `useUnreadTotal()` → sum unread per conversation; subscribe `messages` di semua conversation user.
-- Cleanup channel di `useEffect` return (sesuai aturan realtime).
-
-### In‑app notif
-
-- Subscriber global di `_authenticated/route.tsx` mendengarkan event `messages` untuk user; saat ada pesan baru & user **tidak** sedang membuka conversation tsb → `sonner` toast + update badge. Pesan tidak ditampilkan bila tab konversasi aktif.
-
-## Pengujian
-
-- Buat 2 akun A (owner) & B; tautkan B ke salah satu customer milik A → cek B muncul di "Mulai chat", chat 1‑on‑1 berjalan dua arah dengan realtime.
-- Buat order baru milik A dengan customer tertaut B → conversation kind='order' otomatis muncul untuk keduanya.
-- Buat grup manual, tambah/keluarkan anggota, rename.
-- Upload gambar & PDF — preview & download bekerja, hanya anggota yang bisa akses (cek dengan akun ketiga).
-- Unread badge: kirim dari B saat A tidak buka thread → badge naik, hilang setelah dibuka.
-- Web Push: aktifkan di B, kirim dari A saat tab B tertutup → notifikasi muncul, klik membuka `/chat/{id}`.
-- RLS: akun C (tidak terkait) gagal SELECT messages/conversations milik A‑B (403).
-
-## Catatan teknis
-
-- Tabel & policy memakai pola `is_member(conv_id, user_id)` SECURITY DEFINER untuk hindari rekursi RLS.
-- `messages` realtime memerlukan REPLICA IDENTITY FULL pada conversation_members agar payload `old.last_read_at` ikut terkirim — opsional, cukup query ulang via React Query invalidation.
-- Web Push hanya aktif di HTTPS / preview Lovable; di iOS Safari hanya jalan untuk PWA terpasang (sudah di‑handle oleh prompt PWA install yang ada).
-- Tidak menyentuh skema `auth/storage/realtime` selain `ALTER PUBLICATION` & policy `storage.objects`.
-
-## Urutan kerja
-
-1. Migrasi: kolom `user_id` di customers/suppliers, tabel chat + push, helper fn, RLS, publication, trigger order.
-2. Bucket `chat-attachments` + policy storage.
-3. Server fns (`src/lib/chat.functions.ts`, `chat.server.ts`) + `web-push` install + secret VAPID.
-4. UI route chat + integrasi link akun di Pelanggan/Pemasok + item menu + badge unread.
-5. Service worker push + tombol aktivasi di Profil.
-6. Tes manual end‑to‑end sesuai daftar di atas.
+## Catatan Teknis
+- Data 1 baris di `employees` akan hilang (sesuai persetujuan "hapus total").
+- Tugas existing di `prep_tasks` (3 baris, 39 item) tidak terdampak — RPC dan halaman pegawai (`/t/:token`) tetap berjalan.
+- Tidak menyentuh `auth`, `storage`, atau bucket existing — hanya menambah row di `prep-photos`.
+- Validasi link lokasi: `https://` only, ≤2048 char (konsisten dengan validasi prep_submit yang sudah ada).
