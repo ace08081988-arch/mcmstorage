@@ -6,7 +6,7 @@ export type SecurityFinding = {
   code: string
   severity: string
   title: string
-  detail: Record<string, unknown>
+  detail: unknown
   first_seen_at: string
   last_seen_at: string
   acknowledged_at: string | null
