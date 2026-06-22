@@ -347,6 +347,8 @@ function LinkAccountDialog({
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Contact[]>([]);
   const [busy, setBusy] = useState(false);
+  const startDm = useStartDm();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!target) {
@@ -381,13 +383,25 @@ function LinkAccountDialog({
       .from(table)
       .update({ account_user_id: userId })
       .eq("id", target.row.id);
-    setBusy(false);
     if (error) {
+      setBusy(false);
       toast.error(friendlyError(error));
       return;
     }
-    toast.success("Akun ditautkan");
-    onSaved();
+    toast.success("Akun ditautkan. Membuka room chat…");
+    try {
+      const conversationId = await startDm.mutateAsync(userId);
+      onSaved();
+      if (conversationId) {
+        navigate({ to: "/chat/$conversationId", params: { conversationId } });
+      }
+    } catch (e) {
+      // Tautan tetap berhasil; chat bisa dibuka manual dari daftar kontak.
+      toast.error(friendlyError(e));
+      onSaved();
+    } finally {
+      setBusy(false);
+    }
   };
 
   const open = useMemo(() => !!target, [target]);
