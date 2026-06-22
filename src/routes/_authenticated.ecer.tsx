@@ -539,11 +539,7 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
 }
 
 // ---- Detail view: preparations grid ----
-function TitleDetailView({ item, title, onBack, onTitleUpdated }: {
-  item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
-  onCreateTitle?: () => void;
-  onCreateProduct?: () => void;
-}: {
+function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct }: {
   item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
   onCreateTitle?: () => void; onCreateProduct?: () => void;
 }) {
