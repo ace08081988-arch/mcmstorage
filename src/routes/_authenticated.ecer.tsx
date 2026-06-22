@@ -163,6 +163,21 @@ function EcerPage() {
     [titles, selectedTitleId],
   );
 
+  // Auto-select product + scroll & highlight target title when arriving via deep link
+  useEffect(() => {
+    if (!highlightTitleId || titles.length === 0) return;
+    const t = titles.find((x) => x.id === highlightTitleId);
+    if (t && selectedItemId !== t.warehouse_item_id) {
+      setSelectedItemId(t.warehouse_item_id);
+    }
+    const scrollId = window.setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[data-title-id="${highlightTitleId}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    const clearId = window.setTimeout(() => setHighlightTitleId(undefined), 2600);
+    return () => { window.clearTimeout(scrollId); window.clearTimeout(clearId); };
+  }, [highlightTitleId, titles, selectedItemId]);
+
   async function refetchTitles() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase.from as any)("ecer_titles").select("*").order("position").order("created_at");
