@@ -176,7 +176,7 @@ export function WhatsAppPreviewHost() {
             className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white disabled:opacity-60"
           >
             {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-            {sending ? "Menyiapkan…" : "Lanjut Kirim WA"}
+            {sending ? "Menyiapkan…" : hasPhoto ? "Pilih WhatsApp" : "Lanjut Kirim WA"}
           </button>
         </div>
       </div>
