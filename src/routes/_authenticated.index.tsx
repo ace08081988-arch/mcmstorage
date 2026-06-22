@@ -23,6 +23,7 @@ import { AppearanceSettings } from "@/components/appearance-settings";
 import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
+import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
 import { ReadyEcerSection } from "@/components/ReadyEcerSection";
 import { ReadyRequestSection } from "@/components/ReadyRequestSection";
 
@@ -956,6 +957,7 @@ function Index() {
 
         <main className="mx-auto w-full max-w-6xl px-3 py-3 sm:px-6">
         <SecurityScanReminder />
+        <SecurityFindingsBanner />
         {(() => {
           const total = scopedItems.length;
           const terkirim = scopedItems.filter((i) => i.status === "Sudah Dikirim");

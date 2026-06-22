@@ -2,6 +2,7 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ClipboardCheck, Play, CheckCircle2, XCircle, Loader2, Download, Trash2 } from "lucide-react";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
+import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
 
 export const Route = createFileRoute("/_authenticated/audit")({
   head: () => ({
@@ -152,6 +153,7 @@ function AuditPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-3 py-4">
+      <SecurityFindingsBanner compact />
       <div className="mb-3 flex flex-wrap items-center gap-2">
         <Link to="/" className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs text-muted-foreground hover:bg-muted">
           <ChevronLeft className="h-3.5 w-3.5" /> Beranda
