@@ -332,17 +332,28 @@ function TitleCard({ title, onOpen, onEdit, onDeleted }: {
   }
 
   return (
-    <div className="rounded-lg border bg-card p-3 transition hover:border-primary/40">
-      <button onClick={onOpen} className="block w-full text-left">
-        <div className="font-medium leading-tight">{title.name}</div>
-        <div className="mt-1 text-xs text-muted-foreground">
-          Target: <b>{title.target_grams} {title.unit_label}</b> · {count ?? "…"} penyiapan
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
+      className="cursor-pointer rounded-lg border bg-card p-3 transition hover:border-primary/40 hover:bg-accent/30 active:bg-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+    >
+      <div className="font-medium leading-tight">{title.name}</div>
+      <div className="mt-1 text-xs text-muted-foreground">
+        Target: <b>{title.target_grams} {title.unit_label}</b> · {count ?? "…"} penyiapan
+      </div>
+      {title.note && <div className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{title.note}</div>}
+      <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
+        <span className="text-[10px] text-muted-foreground">Tap untuk buka penyimpanan →</span>
+        <div className="flex gap-1">
+          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
+            <Edit3 className="h-3.5 w-3.5" />
+          </Button>
+          <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); void onDelete(); }}>
+            <Trash2 className="h-3.5 w-3.5 text-destructive" />
+          </Button>
         </div>
-        {title.note && <div className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{title.note}</div>}
-      </button>
-      <div className="mt-2 flex justify-end gap-1">
-        <Button size="sm" variant="ghost" onClick={onEdit}><Edit3 className="h-3.5 w-3.5" /></Button>
-        <Button size="sm" variant="ghost" onClick={onDelete}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
       </div>
     </div>
   );
