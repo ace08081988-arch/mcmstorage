@@ -1857,6 +1857,10 @@ export type Database = {
         Returns: string
       }
       prep_get_task: { Args: { _pin: string; _token: string }; Returns: Json }
+      prep_reset_pin: {
+        Args: { _pin: string; _task_id: string }
+        Returns: boolean
+      }
       prep_submit: {
         Args: {
           _gps_lat: number
