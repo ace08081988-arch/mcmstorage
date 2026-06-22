@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2, RefreshCw, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 import { confirm as confirmDialog } from "@/lib/confirm";
 
 const BUCKET = "self-prep-photos";
@@ -180,8 +180,6 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
-  const [previewSend, setPreviewSend] = useState<Row | null>(null);
-  const [sending, setSending] = useState(false);
 
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -301,23 +299,26 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
     if (r.note) lines.push(r.note);
     const text = lines.join("\n");
 
-    let files: File[] | undefined;
-    if (r.photo_path) {
-      const url = thumbs[r.photo_path];
-      if (url) {
-        try {
-          const res = await fetch(url);
-          if (res.ok) {
-            const blob = await res.blob();
-            const name = r.photo_path.split("/").pop() || "foto.jpg";
-            files = [new File([blob], name, { type: blob.type || "image/jpeg" })];
+    const photoPath = r.photo_path;
+    const thumbUrl = photoPath ? thumbs[photoPath] : undefined;
+    const result = await previewAndShareWA({
+      text,
+      title: r.title,
+      previewImageUrls: thumbUrl ? [thumbUrl] : undefined,
+      resolveFiles: photoPath
+        ? async () => {
+            const url = thumbUrl ?? (await supabase.storage.from(BUCKET).createSignedUrl(photoPath, 3600)).data?.signedUrl;
+            if (!url) return undefined;
+            try {
+              const res = await fetch(url);
+              if (!res.ok) return undefined;
+              const blob = await res.blob();
+              const name = photoPath.split("/").pop() || "foto.jpg";
+              return [new File([blob], name, { type: blob.type || "image/jpeg" })];
+            } catch { return undefined; }
           }
-        } catch { /* ignore — fallback ke teks saja */ }
-      }
-    }
-
-    const result = await shareToWhatsApp({ text, files });
-    notifyShareResult(result);
+        : undefined,
+    });
     if (result.status === "shared" || result.status === "fallback") {
       const { error } = await table()
         .update({ status: "sent", sent_at: new Date().toISOString() })
@@ -561,7 +562,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button
-                      onClick={() => setPreviewSend(r)}
+                      onClick={() => onSendWA(r)}
                       className="inline-flex h-8 items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/10 px-2 text-[11px] font-semibold text-[#1ea952]"
                     >
                       <Send className="h-3.5 w-3.5" /> Kirim WA
