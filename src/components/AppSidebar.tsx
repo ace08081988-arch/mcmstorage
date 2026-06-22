@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Search, X } from "lucide-react";
+import { useMemo, useState } from "react";
 import {
   Sidebar,
   SidebarContent,
@@ -37,7 +38,16 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const matchRoute = useMatchRoute();
   const { data: conversations } = useConversations();
-  const recentConversations = (conversations ?? []).slice(0, 6);
+  const [chatQuery, setChatQuery] = useState("");
+  const filteredConversations = useMemo(() => {
+    const q = chatQuery.trim().toLowerCase();
+    const list = conversations ?? [];
+    if (!q) return list.slice(0, 6);
+    return list
+      .filter((c) => (c.display_title ?? "").toLowerCase().includes(q))
+      .slice(0, 20);
+  }, [conversations, chatQuery]);
+  const hasConversations = (conversations ?? []).length > 0;
   // Highlight mengikuti route aktif sepenuhnya — tidak terpengaruh search params
   // (mis. /ecer?item=…&highlight=…) maupun child route (mis. /chat/$id, /gudang/pesanan/$id).
   const isActive = (path: string) => {
@@ -88,12 +98,39 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-        {recentConversations.length > 0 && (
+        {hasConversations && (
           <SidebarGroup className="group-data-[collapsible=icon]:hidden">
-            <SidebarGroupLabel>Percakapan terbaru</SidebarGroupLabel>
+            <SidebarGroupLabel>
+              {chatQuery ? "Hasil pencarian chat" : "Percakapan terbaru"}
+            </SidebarGroupLabel>
             <SidebarGroupContent>
+              <div className="relative mb-1 px-2">
+                <Search className="pointer-events-none absolute left-4 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+                <input
+                  type="search"
+                  value={chatQuery}
+                  onChange={(e) => setChatQuery(e.target.value)}
+                  placeholder="Cari nama lawan bicara…"
+                  className="h-8 w-full rounded-md border bg-background pl-7 pr-7 text-xs outline-none ring-0 placeholder:text-muted-foreground focus:border-primary"
+                />
+                {chatQuery && (
+                  <button
+                    type="button"
+                    onClick={() => setChatQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 rounded p-0.5 text-muted-foreground hover:text-foreground"
+                    aria-label="Bersihkan pencarian"
+                  >
+                    <X className="h-3.5 w-3.5" />
+                  </button>
+                )}
+              </div>
+              {filteredConversations.length === 0 && (
+                <div className="px-3 py-2 text-[11px] text-muted-foreground">
+                  Tidak ada percakapan cocok dengan "{chatQuery}".
+                </div>
+              )}
               <SidebarMenu>
-                {recentConversations.map((c) => {
+                {filteredConversations.map((c) => {
                   const active = pathname === `/chat/${c.id}`;
                   return (
                     <SidebarMenuItem key={c.id}>
