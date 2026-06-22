@@ -20,39 +20,42 @@ function pickFile(
   const ext = (f.name.split(".").pop() || "").toLowerCase();
   const mimeOk = ALLOWED_MIME.includes(f.type as (typeof ALLOWED_MIME)[number]);
   const extOk = ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number]);
-  const retryAction = inputEl
-    ? {
-        label: "Coba Upload Lagi",
-        onClick: () => {
-          inputEl.value = "";
-          inputEl.click();
-        },
-      }
-    : undefined;
+  const makeRetryAction = (toastId: string | number) =>
+    inputEl
+      ? {
+          label: "Coba Upload Lagi",
+          onClick: () => {
+            toast.dismiss(toastId);
+            inputEl.value = "";
+            // Tunggu toast tertutup sebelum membuka dialog file
+            setTimeout(() => inputEl.click(), 0);
+          },
+        }
+      : undefined;
   if (!mimeOk && !extOk) {
-    toast.error("Format foto tidak didukung", {
+    const id = toast.error("Format foto tidak didukung", {
       description: `File "${f.name}" tidak bisa diunggah.\nSaran: konversi foto ke salah satu format JPG, PNG, WEBP, atau HEIC/HEIF, lalu coba unggah ulang (maks 8 MB).`,
       duration: 7000,
-      action: retryAction,
     });
+    if (inputEl) toast.error("Format foto tidak didukung", { id, description: `File "${f.name}" tidak bisa diunggah.\nSaran: konversi foto ke salah satu format JPG, PNG, WEBP, atau HEIC/HEIF, lalu coba unggah ulang (maks 8 MB).`, duration: 7000, action: makeRetryAction(id) });
     if (inputEl) inputEl.value = "";
     return;
   }
   if (f.size > MAX_FILE_BYTES) {
-    toast.error("Ukuran foto terlalu besar", {
+    const id = toast.error("Ukuran foto terlalu besar", {
       description: `File "${f.name}" berukuran ${(f.size / 1024 / 1024).toFixed(1)} MB (maksimal 8 MB).\nSaran: kompres foto agar di bawah 8 MB (mis. aplikasi 'Photo Compress' / 'Compress Image'), turunkan resolusi, atau ambil ulang dengan resolusi kamera lebih rendah.`,
       duration: 8000,
-      action: retryAction,
     });
+    if (inputEl) toast.error("Ukuran foto terlalu besar", { id, description: `File "${f.name}" berukuran ${(f.size / 1024 / 1024).toFixed(1)} MB (maksimal 8 MB).\nSaran: kompres foto agar di bawah 8 MB (mis. aplikasi 'Photo Compress' / 'Compress Image'), turunkan resolusi, atau ambil ulang dengan resolusi kamera lebih rendah.`, duration: 8000, action: makeRetryAction(id) });
     if (inputEl) inputEl.value = "";
     return;
   }
   if (f.size === 0) {
-    toast.error("File foto kosong atau rusak", {
+    const id = toast.error("File foto kosong atau rusak", {
       description: "Tidak ada data pada file ini.\nSaran: pilih ulang foto dari galeri, atau ambil foto baru dengan kamera. Pastikan format JPG/PNG/WEBP/HEIC dan ukuran di bawah 8 MB.",
       duration: 7000,
-      action: retryAction,
     });
+    if (inputEl) toast.error("File foto kosong atau rusak", { id, description: "Tidak ada data pada file ini.\nSaran: pilih ulang foto dari galeri, atau ambil foto baru dengan kamera. Pastikan format JPG/PNG/WEBP/HEIC dan ukuran di bawah 8 MB.", duration: 7000, action: makeRetryAction(id) });
     if (inputEl) inputEl.value = "";
     return;
   }
