@@ -150,42 +150,6 @@ function TugasPage() {
       ) : (
         <ViaPegawaiBlock />
       )}
-
-      {/* Dialog-dialog di bawah hanya muncul saat state mengaktifkannya dari blok Via Pegawai. */}
-      {openCreate && (
-        <CreateDialog
-          warehouse={warehouse}
-          variants={effectiveVariants}
-          onVariantsChanged={load}
-          onClose={() => setOpenCreate(false)}
-          onCreated={(info) => { setOpenCreate(false); setCreatedInfo(info); void load(); }}
-        />
-      )}
-      {createdInfo && <ShareDialog info={createdInfo} onClose={() => setCreatedInfo(null)} />}
-      {openTask && <TaskDetail task={openTask} onClose={() => { setOpenTask(null); void load(); }} />}
-      {openVariantsHub && (
-        <VariantsHub
-          warehouse={warehouse}
-          catVariants={catVariants}
-          onPickCategory={(cat) => setManageCategoryFor(cat)}
-          onClose={() => setOpenVariantsHub(false)}
-        />
-      )}
-      {manageCategoryFor && (
-        <CategoryVariantManager
-          category={manageCategoryFor}
-          variants={catVariants.filter((v) => v.category === manageCategoryFor)}
-          onClose={() => setManageCategoryFor(null)}
-          onChanged={load}
-        />
-      )}
-      {openAudit && (
-        <AuditDialog
-          tasks={tasks}
-          onClose={() => setOpenAudit(false)}
-          onOpenTask={(t) => { setOpenAudit(false); setOpenTask(t); }}
-        />
-      )}
     </div>
   );
 
@@ -194,7 +158,7 @@ function TugasPage() {
       <>
       <StaffContactsPanel uid={uid} />
 
-      <div className="mb-3 flex items-center justify-between">
+      <div className="mt-3 mb-3 flex items-center justify-between">
         <h2 className="mt-3 text-sm font-semibold">Tugas untuk Pegawai</h2>
         <div className="flex items-center gap-2">
           <button onClick={() => setOpenVariantsHub(true)} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs font-semibold">
@@ -302,8 +266,9 @@ function TugasPage() {
           onOpenTask={(t) => { setOpenAudit(false); setOpenTask(t); }}
         />
       )}
-    </div>
+      </>
   );
+  }
 }
 
 // ---------- Create dialog ----------
