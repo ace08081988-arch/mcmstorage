@@ -14,7 +14,7 @@ import {
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, PackagePlus, Trash2,
   Loader2, ChevronLeft, Package, FlaskConical, Copy, ExternalLink,
-  AlertTriangle, RotateCw, Send,
+  AlertTriangle, RotateCw, Send, MessageCircle,
 } from "lucide-react";
 import {
   requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
@@ -203,6 +203,31 @@ function RequestPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {titles.map((t) => {
             const tItems = titleItems.filter((i) => i.title_id === t.id);
+            const sendTitleWA = () => {
+              const lines: string[] = [];
+              lines.push(`*Request — ${t.name}*`);
+              if (t.note) lines.push(t.note);
+              if (tItems.length > 0) {
+                lines.push("");
+                lines.push("Isi paket:");
+                tItems.forEach((i) => {
+                  const w = items.find((wi) => wi.id === i.warehouse_item_id);
+                  lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${i.unit_label}`);
+                });
+              }
+              void shareToWhatsApp({ text: lines.join("\n"), title: `Request ${t.name}` }).then(notifyShareResult);
+            };
+            const deleteTitle = async () => {
+              if (!confirm(`Hapus judul request "${t.name}"? Aksi ini permanen.`)) return;
+              try {
+                const { error } = await sb.from("request_titles").delete().eq("id", t.id);
+                if (error) throw error;
+                toast.success("Judul dihapus");
+                void loadAll();
+              } catch (e) {
+                toast.error("Gagal hapus: " + (e as Error).message);
+              }
+            };
             return (
               <button
                 key={t.id}
@@ -225,14 +250,36 @@ function RequestPage() {
                         .join(" · ")
                     : "Belum ada produk"}
                 </div>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); setEditingTitle(t); }}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setEditingTitle(t); } }}
-                  className="mt-1 inline-flex w-fit cursor-pointer items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
-                >
-                  <Edit3 className="h-3 w-3" /> Edit judul
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); setEditingTitle(t); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setEditingTitle(t); } }}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                  >
+                    <Edit3 className="h-3 w-3" /> Edit
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); sendTitleWA(); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); sendTitleWA(); } }}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-2 py-0.5 text-[10px] text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+                    aria-label="Kirim WA"
+                  >
+                    <MessageCircle className="h-3 w-3" /> Kirim WA
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); void deleteTitle(); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void deleteTitle(); } }}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive hover:bg-destructive/20"
+                    aria-label="Hapus judul"
+                  >
+                    <Trash2 className="h-3 w-3" /> Hapus
+                  </div>
                 </div>
               </button>
             );
@@ -561,15 +608,46 @@ function PrepCard({
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   useEffect(() => { requestSignedUrl(prep.photo_path, 60 * 60).then(setPhoto); }, [prep.photo_path]);
+  const sendWA = () => {
+    const lines: string[] = [];
+    lines.push(`*Paket #${index}*`);
+    if (items.length > 0) {
+      lines.push("Isi:");
+      items.forEach((it) => {
+        const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
+        lines.push(`• ${w?.name ?? "?"} ${it.actual_grams}${w?.base_unit ?? "g"}`);
+      });
+    }
+    if (prep.note) { lines.push(""); lines.push(`Catatan: ${prep.note}`); }
+    if (prep.location_url) { lines.push(""); lines.push(`Lokasi: ${prep.location_url}`); }
+    lines.push("");
+    lines.push(`Disiapkan: ${new Date(prep.created_at).toLocaleString("id-ID")}`);
+    void shareToWhatsApp({ text: lines.join("\n"), title: `Paket #${index}` }).then(notifyShareResult);
+  };
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Paket #{index} · {prep.created_by}
         </div>
-        <button onClick={onDelete} className="text-destructive hover:opacity-70">
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={sendWA}
+            className="rounded-md border border-[#25D366]/40 bg-[#25D366]/15 p-1 text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+            aria-label="Kirim WA"
+            title="Kirim ringkasan via WhatsApp"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={onDelete}
+            className="rounded-md border border-destructive/40 bg-destructive/10 p-1 text-destructive hover:bg-destructive/20"
+            aria-label="Hapus penyiapan"
+            title="Hapus penyiapan"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
       {photo ? (
         <img src={photo} alt="" className="aspect-square w-full object-cover" />
