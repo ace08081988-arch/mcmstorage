@@ -10,11 +10,69 @@ const BUCKET = "self-prep-photos";
 const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"] as const;
 const ALLOWED_EXT = ["jpg", "jpeg", "png", "webp", "heic", "heif"] as const;
 const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
+const COMPRESS_TARGET_BYTES = 7.5 * 1024 * 1024; // sedikit di bawah batas
 
-function pickFile(
+// Kompres gambar via canvas → JPEG. Mengembalikan File baru, atau null bila gagal
+// (mis. HEIC yang tidak bisa di-decode browser).
+async function compressImage(file: File): Promise<File | null> {
+  try {
+    const bitmap = await createImageBitmap(file).catch(async () => {
+      // Fallback via HTMLImageElement bila createImageBitmap gagal
+      const url = URL.createObjectURL(file);
+      try {
+        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+          const el = new Image();
+          el.onload = () => resolve(el);
+          el.onerror = () => reject(new Error("decode-failed"));
+          el.src = url;
+        });
+        return img as unknown as ImageBitmap;
+      } finally {
+        URL.revokeObjectURL(url);
+      }
+    });
+    const srcW = (bitmap as ImageBitmap).width || (bitmap as unknown as HTMLImageElement).naturalWidth;
+    const srcH = (bitmap as ImageBitmap).height || (bitmap as unknown as HTMLImageElement).naturalHeight;
+    if (!srcW || !srcH) return null;
+
+    // Iterasi: turunkan dimensi & kualitas sampai <= target
+    const attempts: Array<{ scale: number; quality: number }> = [
+      { scale: 1, quality: 0.85 },
+      { scale: 1, quality: 0.7 },
+      { scale: 0.8, quality: 0.7 },
+      { scale: 0.6, quality: 0.65 },
+      { scale: 0.5, quality: 0.6 },
+      { scale: 0.4, quality: 0.55 },
+    ];
+    for (const { scale, quality } of attempts) {
+      const w = Math.max(1, Math.round(srcW * scale));
+      const h = Math.max(1, Math.round(srcH * scale));
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return null;
+      ctx.drawImage(bitmap as CanvasImageSource, 0, 0, w, h);
+      const blob: Blob | null = await new Promise((res) =>
+        canvas.toBlob((b) => res(b), "image/jpeg", quality),
+      );
+      if (!blob) continue;
+      if (blob.size <= COMPRESS_TARGET_BYTES) {
+        const base = file.name.replace(/\.[^.]+$/, "") || "foto";
+        return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
+      }
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
+
+async function pickFile(
   f: File | null | undefined,
   setFile: (f: File | null) => void,
   inputEl?: HTMLInputElement | null,
+  opts: { autoCompress?: boolean } = {},
 ) {
   if (!f) return;
   const ext = (f.name.split(".").pop() || "").toLowerCase();
@@ -44,6 +102,26 @@ function pickFile(
     );
   }
   if (f.size > MAX_FILE_BYTES) {
+    if (opts.autoCompress) {
+      const loadingId = toast.loading("Mengompres foto…", {
+        description: `Ukuran asli ${(f.size / 1024 / 1024).toFixed(1)} MB. Menyesuaikan agar di bawah 8 MB.`,
+      });
+      const compressed = await compressImage(f);
+      toast.dismiss(loadingId);
+      if (compressed && compressed.size <= MAX_FILE_BYTES && compressed.size > 0) {
+        toast.success("Foto dikompres otomatis", {
+          description: `Ukuran ${(f.size / 1024 / 1024).toFixed(1)} MB → ${(compressed.size / 1024 / 1024).toFixed(2)} MB (JPEG).`,
+        });
+        if (inputEl) inputEl.value = "";
+        setFile(compressed);
+        return;
+      }
+      return reject(
+        "Kompres otomatis gagal",
+        `File "${f.name}" berukuran ${(f.size / 1024 / 1024).toFixed(1)} MB tidak bisa dikompres otomatis (mungkin format HEIC/HEIF).\nSaran: kompres manual ke JPG/PNG/WEBP di bawah 8 MB, lalu coba lagi.`,
+        8000,
+      );
+    }
     return reject(
       "Ukuran foto terlalu besar",
       `File "${f.name}" berukuran ${(f.size / 1024 / 1024).toFixed(1)} MB (maksimal 8 MB).\nSaran: kompres foto agar di bawah 8 MB (mis. aplikasi 'Photo Compress' / 'Compress Image'), turunkan resolusi, atau ambil ulang dengan resolusi kamera lebih rendah.`,
@@ -97,6 +175,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [locationUrl, setLocationUrl] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [autoCompress, setAutoCompress] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
@@ -262,7 +341,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => pickFile(e.target.files?.[0], setFile, e.currentTarget)}
+                onChange={(e) => void pickFile(e.target.files?.[0], setFile, e.currentTarget, { autoCompress })}
                 className="hidden"
               />
               <input
@@ -270,7 +349,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 type="file"
                 accept="image/*"
                 capture="environment"
-                onChange={(e) => pickFile(e.target.files?.[0], setFile, e.currentTarget)}
+                onChange={(e) => void pickFile(e.target.files?.[0], setFile, e.currentTarget, { autoCompress })}
                 className="hidden"
               />
               <button
@@ -296,6 +375,17 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
             <div className="mt-1 text-[10px] text-muted-foreground">
               Format: JPG, PNG, WEBP, HEIC. Ukuran maks 8 MB.
             </div>
+            <label className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={autoCompress}
+                onChange={(e) => setAutoCompress(e.target.checked)}
+                className="h-3.5 w-3.5 accent-primary"
+              />
+              <span>
+                Auto-kompres foto besar (otomatis diturunkan ke &lt; 8 MB, JPG)
+              </span>
+            </label>
             {previewUrl && file && (
               <div className="mt-2 rounded-lg border bg-background p-2">
                 <div className="mb-1 flex items-center justify-between gap-2">
