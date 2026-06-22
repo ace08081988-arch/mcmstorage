@@ -475,9 +475,47 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <button onClick={redo} disabled={!future.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:opacity-40"><Redo2 className="h-4 w-4" /></button>
           <button onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border"><RotateCw className="h-4 w-4" /></button>
         </div>
-        <button onClick={exportImage} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
-          <Check className="h-4 w-4" /> Simpan
-        </button>
+        <div className="flex items-center gap-2">
+          <div
+            role="radiogroup"
+            aria-label="Latar saat ekspor"
+            className="flex h-9 items-center rounded-md border p-0.5 text-xs"
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={exportBg === "white"}
+              onClick={() => setExportBg("white")}
+              title="Ekspor JPEG dengan latar putih"
+              className={`flex h-8 items-center gap-1 rounded px-2 ${exportBg === "white" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              <span className="inline-block h-3 w-3 rounded-sm border bg-white" />
+              Putih
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={exportBg === "transparent"}
+              onClick={() => setExportBg("transparent")}
+              title="Ekspor PNG dengan latar transparan"
+              className={`flex h-8 items-center gap-1 rounded px-2 ${exportBg === "transparent" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              <span
+                className="inline-block h-3 w-3 rounded-sm border"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%)",
+                  backgroundSize: "6px 6px",
+                  backgroundPosition: "0 0,0 3px,3px -3px,-3px 0",
+                }}
+              />
+              Transparan
+            </button>
+          </div>
+          <button onClick={exportImage} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
+            <Check className="h-4 w-4" /> Simpan
+          </button>
+        </div>
       </div>
 
       <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-black/80 p-2">
