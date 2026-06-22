@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/ecer")({
   validateSearch: (s: Record<string, unknown>) => ({
     item: typeof s.item === "string" ? s.item : undefined,
     title: typeof s.title === "string" ? s.title : undefined,
+    highlight: typeof s.highlight === "string" ? s.highlight : undefined,
   }),
   component: EcerPage,
 });
@@ -55,6 +56,7 @@ function EcerPage() {
   } | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>(search.item);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
+  const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
   const [editingTitle, setEditingTitle] = useState<EcerTitle | null>(null);
   const [creatingTitle, setCreatingTitle] = useState(false);
 
