@@ -126,6 +126,17 @@ function RequestPage() {
     [titleItems, selectedTitleId],
   );
 
+  // Scroll & highlight target title when arriving via deep-link
+  useEffect(() => {
+    if (!highlightTitleId || titles.length === 0) return;
+    const scrollId = window.setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[data-request-title-id="${highlightTitleId}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    const clearId = window.setTimeout(() => setHighlightTitleId(undefined), 2600);
+    return () => { window.clearTimeout(scrollId); window.clearTimeout(clearId); };
+  }, [highlightTitleId, titles]);
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
