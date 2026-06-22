@@ -247,9 +247,15 @@ function newLine(variantId: string | null = null): Line {
   return { key: Math.random().toString(36).slice(2), variantId, count: 1, weightOverride: null, split: false };
 }
 function lineWeight(line: Line, variants: Variant[]): number {
-  if (line.weightOverride != null) return line.weightOverride;
-  const v = variants.find((x) => x.id === line.variantId);
-  return v ? Number(v.weight_per_unit) : 1;
+  // Saat varian dipilih, berat selalu mengikuti preset varian — meski
+  // `weightOverride` lama tersisa di state. `weightOverride` hanya berlaku
+  // di mode manual (variantId == null).
+  if (line.variantId) {
+    const v = variants.find((x) => x.id === line.variantId);
+    if (v) return Number(v.weight_per_unit) || 0;
+  }
+  if (line.weightOverride != null) return Number(line.weightOverride) || 0;
+  return 0;
 }
 // Parser angka yang menerima koma desimal (format Indonesia) maupun titik.
 function parseNum(input: string): number | null {
@@ -419,14 +425,20 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       for (const l of entry.lines) {
         totalLines++;
         if (!hasPhoto) linesWithoutPhoto++;
-        const rs = rowStatus(l.key);
-        if (rs === "valid") {
+        // Validasi numerik berdasarkan state baris (bukan dari lineStatus
+        // yang diperbarui async oleh NumberInput) supaya ringkasan langsung
+        // konsisten dengan badge per-baris dan kolom "Siap dikirim".
+        const w = lineWeight(l, variants);
+        const c = Number(l.count) || 0;
+        const numericValid = Number.isFinite(w) && Number.isFinite(c) && w > 0 && c > 0;
+        const rs = numericValid ? rowStatus(l.key) : "invalid";
+        if (rs === "valid" && numericValid) {
           validLines++;
-          const w = lineWeight(l, variants) * (l.count || 0);
-          totalWeight += w;
+          const tw = w * c;
+          totalWeight += tw;
           // Foto referensi opsional → baris valid selalu dihitung siap kirim.
           readyLines++;
-          readyWeight += w;
+          readyWeight += tw;
         } else if (rs === "partial") partialLines++;
         else invalidLines++;
       }
@@ -597,7 +609,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                 className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-destructive"
                 title={`Belum ada foto: ${summary.itemsWithoutPhoto.join(", ")}`}
               >
-                <ImageIcon className="h-3 w-3" /> {summary.linesWithoutPhoto} tanpa foto
+                <ImageIcon className="h-3 w-3" /> {summary.itemsWithoutPhoto.length} barang tanpa foto
               </span>
             )}
             <span
@@ -612,7 +624,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             <div className="mt-1 flex items-start gap-1 text-[10px] text-amber-600">
               <ImageIcon className="mt-0.5 h-3 w-3 shrink-0" />
               <span>
-                <b>{summary.linesWithoutPhoto}</b> baris belum punya foto referensi — tugas tetap bisa dikirim, hanya tanpa lampiran foto:{" "}
+                <b>{summary.itemsWithoutPhoto.length}</b> barang belum punya foto referensi — tugas tetap bisa dikirim, hanya tanpa lampiran foto:{" "}
                 <span className="text-muted-foreground">{summary.itemsWithoutPhoto.join(", ")}</span>
               </span>
             </div>
@@ -737,7 +749,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 </div>
                                 <NumberInput
                                   key={`${l.key}-${l.variantId ?? "m"}`}
-                                  value={l.weightOverride ?? w}
+                                  value={isManual ? (l.weightOverride ?? 0) : w}
                                   maxFrac={3}
                                   disabled={!isManual}
                                   emptyAs={isManual ? 0 : null}
