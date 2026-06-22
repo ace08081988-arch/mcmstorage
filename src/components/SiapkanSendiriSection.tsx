@@ -22,21 +22,24 @@ function pickFile(
   const extOk = ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number]);
   if (!mimeOk && !extOk) {
     toast.error("Format foto tidak didukung", {
-      description: `File "${f.name}" tidak bisa diunggah. Format yang didukung: JPG, PNG, WEBP, HEIC/HEIF. Maks 8 MB per foto.`,
+      description: `File "${f.name}" tidak bisa diunggah.\nSaran: konversi foto ke salah satu format JPG, PNG, WEBP, atau HEIC/HEIF, lalu coba unggah ulang (maks 8 MB).`,
+      duration: 7000,
     });
     if (inputEl) inputEl.value = "";
     return;
   }
   if (f.size > MAX_FILE_BYTES) {
     toast.error("Ukuran foto terlalu besar", {
-      description: `File "${f.name}" berukuran ${(f.size / 1024 / 1024).toFixed(1)} MB. Maksimal 8 MB. Coba kompres atau pilih foto lain.`,
+      description: `File "${f.name}" berukuran ${(f.size / 1024 / 1024).toFixed(1)} MB (maksimal 8 MB).\nSaran: kompres foto agar di bawah 8 MB (mis. aplikasi 'Photo Compress' / 'Compress Image'), turunkan resolusi, atau ambil ulang dengan resolusi kamera lebih rendah.`,
+      duration: 8000,
     });
     if (inputEl) inputEl.value = "";
     return;
   }
   if (f.size === 0) {
     toast.error("File foto kosong atau rusak", {
-      description: "Tidak ada data pada file ini. Pilih foto lain dengan format JPG, PNG, WEBP, atau HEIC (maks 8 MB).",
+      description: "Tidak ada data pada file ini.\nSaran: pilih ulang foto dari galeri, atau ambil foto baru dengan kamera. Pastikan format JPG/PNG/WEBP/HEIC dan ukuran di bawah 8 MB.",
+      duration: 7000,
     });
     if (inputEl) inputEl.value = "";
     return;
