@@ -245,7 +245,8 @@ function RequestPage() {
               <button
                 key={t.id}
                 onClick={() => setSelectedTitleId(t.id)}
-                className="flex flex-col gap-1 rounded-xl border bg-card p-3 text-left hover:border-primary/40 hover:bg-accent"
+                data-request-title-id={t.id}
+                className={`flex flex-col gap-1 rounded-xl border bg-card p-3 text-left hover:border-primary/40 hover:bg-accent ${highlightTitleId === t.id ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="truncate font-semibold">{t.name}</div>
