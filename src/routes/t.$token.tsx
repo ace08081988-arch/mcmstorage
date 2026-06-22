@@ -32,6 +32,18 @@ function PublicPrepPage() {
   const [now, setNow] = useState(() => Date.now());
 
   useEffect(() => {
+    if (typeof document === "undefined") return;
+    const root = document.documentElement;
+    const previousTranslate = root.getAttribute("translate");
+    root.setAttribute("translate", "no");
+    root.classList.add("notranslate");
+    return () => {
+      if (previousTranslate == null) root.removeAttribute("translate");
+      else root.setAttribute("translate", previousTranslate);
+    };
+  }, []);
+
+  useEffect(() => {
     if (lockedUntil == null) return;
     const id = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(id);
