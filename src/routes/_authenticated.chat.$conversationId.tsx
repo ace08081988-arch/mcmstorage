@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2 } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -33,6 +33,7 @@ import {
   type MessageRow,
 } from "@/lib/chat";
 import { sendMessage } from "@/lib/chat.functions";
+import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/_authenticated/chat/$conversationId")({
   component: ChatRoomPage,
@@ -219,7 +220,7 @@ function ChatRoomPage() {
                           {fmtTime(m.created_at)}
                         </div>
                       </div>
-                      {mine ? (
+                      {!m.deleted_at ? (
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -233,21 +234,44 @@ function ChatRoomPage() {
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-56">
                             <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              disabled={deleteMsg.isPending}
+                              onSelect={async () => {
+                                const text = `${senderName}: ${m.body}`;
+                                const res = await shareToWhatsApp({ text });
+                                notifyShareResult(res);
+                              }}
+                            >
+                              <Share2 className="mr-2 h-4 w-4" />
+                              Teruskan via WhatsApp
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
                               onSelect={() => {
-                                deleteMsg.mutate(
-                                  { id: m.id, attachment_path: m.attachment_path },
-                                  {
-                                    onError: (e) =>
-                                      toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
-                                  },
+                                navigator.clipboard?.writeText(m.body ?? "").then(
+                                  () => toast.success("Teks pesan disalin"),
+                                  () => toast.error("Gagal menyalin"),
                                 );
                               }}
                             >
-                              <Trash2 className="mr-2 h-4 w-4" />
-                              Hapus untuk semua orang
+                              <Copy className="mr-2 h-4 w-4" />
+                              Salin teks
                             </DropdownMenuItem>
+                            {mine ? (
+                              <DropdownMenuItem
+                                className="text-destructive focus:text-destructive"
+                                disabled={deleteMsg.isPending}
+                                onSelect={() => {
+                                  deleteMsg.mutate(
+                                    { id: m.id, attachment_path: m.attachment_path },
+                                    {
+                                      onError: (e) =>
+                                        toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
+                                    },
+                                  );
+                                }}
+                              >
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Hapus untuk semua orang
+                              </DropdownMenuItem>
+                            ) : null}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       ) : null}
