@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/ecer")({
   validateSearch: (s: Record<string, unknown>) => ({
     item: typeof s.item === "string" ? s.item : undefined,
     title: typeof s.title === "string" ? s.title : undefined,
+    highlight: typeof s.highlight === "string" ? s.highlight : undefined,
   }),
   component: EcerPage,
 });
@@ -55,6 +56,7 @@ function EcerPage() {
   } | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>(search.item);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
+  const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
   const [editingTitle, setEditingTitle] = useState<EcerTitle | null>(null);
   const [creatingTitle, setCreatingTitle] = useState(false);
 
@@ -160,6 +162,21 @@ function EcerPage() {
     () => titles.find((t) => t.id === selectedTitleId),
     [titles, selectedTitleId],
   );
+
+  // Auto-select product + scroll & highlight target title when arriving via deep link
+  useEffect(() => {
+    if (!highlightTitleId || titles.length === 0) return;
+    const t = titles.find((x) => x.id === highlightTitleId);
+    if (t && selectedItemId !== t.warehouse_item_id) {
+      setSelectedItemId(t.warehouse_item_id);
+    }
+    const scrollId = window.setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[data-title-id="${highlightTitleId}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    const clearId = window.setTimeout(() => setHighlightTitleId(undefined), 2600);
+    return () => { window.clearTimeout(scrollId); window.clearTimeout(clearId); };
+  }, [highlightTitleId, titles, selectedItemId]);
 
   async function refetchTitles() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -285,6 +302,7 @@ function EcerPage() {
                     onOpen={() => setSelectedTitleId(t.id)}
                     onEdit={() => setEditingTitle(t)}
                     onDeleted={refetchTitles}
+                    highlighted={highlightTitleId === t.id}
                   />
                 ))}
               </div>
@@ -305,8 +323,9 @@ function EcerPage() {
   );
 }
 
-function TitleCard({ title, onOpen, onEdit, onDeleted }: {
+function TitleCard({ title, onOpen, onEdit, onDeleted, highlighted }: {
   title: EcerTitle; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
+  highlighted?: boolean;
 }) {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
@@ -337,7 +356,8 @@ function TitleCard({ title, onOpen, onEdit, onDeleted }: {
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
-      className="cursor-pointer rounded-lg border bg-card p-3 transition hover:border-primary/40 hover:bg-accent/30 active:bg-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      data-title-id={title.id}
+      className={`cursor-pointer rounded-lg border bg-card p-3 transition hover:border-primary/40 hover:bg-accent/30 active:bg-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${highlighted ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
     >
       <div className="font-medium leading-tight">{title.name}</div>
       <div className="mt-1 text-xs text-muted-foreground">

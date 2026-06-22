@@ -92,7 +92,7 @@ export function ReadyRequestSection() {
             <Link
               key={r.id}
               to="/request"
-              search={{ title: r.id }}
+              search={{ highlight: r.id }}
               className="flex flex-col gap-0.5 rounded-md border bg-card p-2.5 hover:border-primary/40 hover:bg-accent"
             >
               <div className="flex items-center justify-between">

@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/request")({
   head: () => ({ meta: [{ title: "Penyiapan Request · MCM Storage" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     title: typeof s.title === "string" ? s.title : undefined,
+    highlight: typeof s.highlight === "string" ? s.highlight : undefined,
   }),
   component: RequestPage,
 });
@@ -52,6 +53,7 @@ function RequestPage() {
   };
   const [loadError, setLoadError] = useState<LoadErr | null>(null);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
+  const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
@@ -123,6 +125,17 @@ function RequestPage() {
     () => titleItems.filter((i) => i.title_id === selectedTitleId).sort((a, b) => a.position - b.position),
     [titleItems, selectedTitleId],
   );
+
+  // Scroll & highlight target title when arriving via deep-link
+  useEffect(() => {
+    if (!highlightTitleId || titles.length === 0) return;
+    const scrollId = window.setTimeout(() => {
+      const el = document.querySelector<HTMLElement>(`[data-request-title-id="${highlightTitleId}"]`);
+      if (el) el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }, 80);
+    const clearId = window.setTimeout(() => setHighlightTitleId(undefined), 2600);
+    return () => { window.clearTimeout(scrollId); window.clearTimeout(clearId); };
+  }, [highlightTitleId, titles]);
 
   if (loading) {
     return (
@@ -232,7 +245,8 @@ function RequestPage() {
               <button
                 key={t.id}
                 onClick={() => setSelectedTitleId(t.id)}
-                className="flex flex-col gap-1 rounded-xl border bg-card p-3 text-left hover:border-primary/40 hover:bg-accent"
+                data-request-title-id={t.id}
+                className={`flex flex-col gap-1 rounded-xl border bg-card p-3 text-left hover:border-primary/40 hover:bg-accent ${highlightTitleId === t.id ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
               >
                 <div className="flex items-center justify-between">
                   <div className="truncate font-semibold">{t.name}</div>
