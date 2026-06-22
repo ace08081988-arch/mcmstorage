@@ -175,6 +175,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [locationUrl, setLocationUrl] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [autoCompress, setAutoCompress] = useState(true);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
@@ -340,7 +341,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => pickFile(e.target.files?.[0], setFile, e.currentTarget)}
+                onChange={(e) => void pickFile(e.target.files?.[0], setFile, e.currentTarget, { autoCompress })}
                 className="hidden"
               />
               <input
@@ -348,7 +349,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 type="file"
                 accept="image/*"
                 capture="environment"
-                onChange={(e) => pickFile(e.target.files?.[0], setFile, e.currentTarget)}
+                onChange={(e) => void pickFile(e.target.files?.[0], setFile, e.currentTarget, { autoCompress })}
                 className="hidden"
               />
               <button
@@ -374,6 +375,17 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
             <div className="mt-1 text-[10px] text-muted-foreground">
               Format: JPG, PNG, WEBP, HEIC. Ukuran maks 8 MB.
             </div>
+            <label className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer select-none">
+              <input
+                type="checkbox"
+                checked={autoCompress}
+                onChange={(e) => setAutoCompress(e.target.checked)}
+                className="h-3.5 w-3.5 accent-primary"
+              />
+              <span>
+                Auto-kompres foto besar (otomatis diturunkan ke &lt; 8 MB, JPG)
+              </span>
+            </label>
             {previewUrl && file && (
               <div className="mt-2 rounded-lg border bg-background p-2">
                 <div className="mb-1 flex items-center justify-between gap-2">
