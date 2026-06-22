@@ -56,7 +56,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     }
     const delay = 500 * Math.pow(2, attempt); // 500ms, 1s, 2s
     const t = window.setTimeout(() => {
-      setAttempt((n) => n + 1);
+      setAttempt((n: number) => n + 1);
       router.invalidate();
       reset();
     }, delay);
