@@ -177,6 +177,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
         <CompactModeToggle />
+        <ResetCacheButton fullWidth variant="ghost" size="sm" label="Reset cache" />
       </SidebarFooter>
     </Sidebar>
   );
