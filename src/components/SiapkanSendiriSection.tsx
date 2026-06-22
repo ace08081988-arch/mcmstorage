@@ -274,7 +274,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
               )}
             </div>
             <div className="mt-1 text-[10px] text-muted-foreground">
-              Pilih dari galeri/berkas atau ambil foto langsung dari kamera.
+              Format: JPG, PNG, WEBP, HEIC. Ukuran maks 8 MB.
             </div>
             {previewUrl && file && (
               <div className="mt-2 rounded-lg border bg-background p-2">
