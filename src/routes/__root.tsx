@@ -197,7 +197,7 @@ function RootShell({ children }: { children: ReactNode }) {
   if(bg) d.dataset.hasBg='1'; else delete d.dataset.hasBg;
 }catch(e){}})();`;
   return (
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="id" translate="no" className="dark notranslate" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
