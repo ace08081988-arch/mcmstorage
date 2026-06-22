@@ -38,6 +38,7 @@ import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
 import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
 import { Route as AuthenticatedGudangPesananIdRouteImport } from './routes/_authenticated.gudang.pesanan.$id'
 import { Route as AuthenticatedGudangPesananIdEditRouteImport } from './routes/_authenticated.gudang.pesanan.$id.edit'
@@ -194,6 +195,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksSecurityScanDailyRoute =
+  ApiPublicHooksSecurityScanDailyRouteImport.update({
+    id: '/api/public/hooks/security-scan-daily',
+    path: '/api/public/hooks/security-scan-daily',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksEmailQueueMonitorRoute =
   ApiPublicHooksEmailQueueMonitorRouteImport.update({
     id: '/api/public/hooks/email-queue-monitor',
@@ -243,6 +250,7 @@ export interface FileRoutesByFullPath {
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
+  '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
@@ -275,6 +283,7 @@ export interface FileRoutesByTo {
   '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
+  '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
@@ -310,6 +319,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
+  '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/_authenticated/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
@@ -345,6 +355,7 @@ export interface FileRouteTypes {
     | '/chat/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
+    | '/api/public/hooks/security-scan-daily'
     | '/lovable/email/queue/process'
     | '/gudang/pesanan/$id/edit'
   fileRoutesByTo: FileRoutesByTo
@@ -377,6 +388,7 @@ export interface FileRouteTypes {
     | '/chat'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
+    | '/api/public/hooks/security-scan-daily'
     | '/lovable/email/queue/process'
     | '/gudang/pesanan/$id/edit'
   id:
@@ -411,6 +423,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
+    | '/api/public/hooks/security-scan-daily'
     | '/lovable/email/queue/process'
     | '/_authenticated/gudang/pesanan/$id/edit'
   fileRoutesById: FileRoutesById
@@ -428,6 +441,7 @@ export interface RootRouteChildren {
   TrustRoute: typeof TrustRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
+  ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
 }
 
@@ -636,6 +650,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/security-scan-daily': {
+      id: '/api/public/hooks/security-scan-daily'
+      path: '/api/public/hooks/security-scan-daily'
+      fullPath: '/api/public/hooks/security-scan-daily'
+      preLoaderRoute: typeof ApiPublicHooksSecurityScanDailyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/email-queue-monitor': {
       id: '/api/public/hooks/email-queue-monitor'
       path: '/api/public/hooks/email-queue-monitor'
@@ -753,18 +774,9 @@ const rootRouteChildren: RootRouteChildren = {
   TrustRoute: TrustRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
+  ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
