@@ -21,7 +21,7 @@ export function buildWhatsAppUrl(text: string, phone?: string) {
 
 export type ShareResult =
   | { status: "shared"; withFiles: boolean }
-  | { status: "cancelled" }
+  | { status: "cancelled"; fallbackText?: string; phone?: string }
   | { status: "failed"; error: string; withFiles: boolean }
   | { status: "fallback"; withFiles: boolean; reason: "no-web-share" | "share-failed" };
 
@@ -46,7 +46,7 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
     } catch (err) {
       const name = (err as DOMException)?.name;
       if (name === "AbortError" || name === "NotAllowedError") {
-        return { status: "cancelled" };
+        return { status: "cancelled", fallbackText: url ? `${text}\n${url}` : text, phone };
       }
       shareFailed = true;
       shareError = (err as Error)?.message || String(err);
@@ -88,7 +88,18 @@ export function notifyShareResult(result: ShareResult) {
       }
       return;
     case "cancelled":
-      toast.message("Dibatalkan — tidak jadi mengirim.");
+      toast.message("Dibatalkan — tidak jadi mengirim.", {
+        action: result.fallbackText
+          ? {
+              label: "Buka WhatsApp langsung",
+              onClick: () => {
+                const href = buildWhatsAppUrl(result.fallbackText!, result.phone);
+                window.open(href, "_blank", "noopener,noreferrer");
+              },
+            }
+          : undefined,
+        duration: 8000,
+      });
       return;
     case "fallback":
       if (result.withFiles) {
