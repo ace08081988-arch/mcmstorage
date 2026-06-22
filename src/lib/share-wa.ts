@@ -34,22 +34,28 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   let shareFailed = false;
   let shareError = "";
   if (nav && typeof nav.share === "function") {
-    try {
-      const filesPayload = hasFiles && typeof nav.canShare === "function" && nav.canShare({ files })
-        ? files
-        : undefined;
-      const payload: ShareData = filesPayload
-        ? { files: filesPayload, text, title }
-        : { text, title, url };
-      await nav.share(payload);
-      return { status: "shared", withFiles: !!filesPayload };
-    } catch (err) {
+    const canShareFiles =
+      hasFiles && typeof nav.canShare === "function" && nav.canShare({ files });
+    // Jika ada foto tapi perangkat tak bisa share file, JANGAN diam-diam
+    // turunkan ke share teks saja — lewati Web Share API dan jatuh ke
+    // fallback manual supaya pengguna tahu foto perlu dilampirkan sendiri.
+    if (hasFiles && !canShareFiles) {
+      shareFailed = false;
+    } else {
+      try {
+        const payload: ShareData = canShareFiles
+          ? { files, text, title }
+          : { text, title, url };
+        await nav.share(payload);
+        return { status: "shared", withFiles: !!canShareFiles };
+      } catch (err) {
       const name = (err as DOMException)?.name;
       if (name === "AbortError" || name === "NotAllowedError") {
         return { status: "cancelled", fallbackText: url ? `${text}\n${url}` : text, phone };
       }
       shareFailed = true;
       shareError = (err as Error)?.message || String(err);
+      }
     }
   }
 
