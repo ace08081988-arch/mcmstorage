@@ -14,7 +14,7 @@ import {
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, PackagePlus, Trash2,
   Loader2, ChevronLeft, Package, FlaskConical, Copy, ExternalLink,
-  AlertTriangle, RotateCw, Send,
+  AlertTriangle, RotateCw, Send, MessageCircle,
 } from "lucide-react";
 import {
   requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
