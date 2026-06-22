@@ -1422,6 +1422,7 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
   const [items, setItems] = useState<TaskItem[]>([]);
   const [subs, setSubs] = useState<Submission[]>([]);
   const [busy, setBusy] = useState(false);
+  const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
 
   async function load() {
     const [{ data: i }, { data: s }] = await Promise.all([
@@ -1461,18 +1462,33 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
       <div className="space-y-3">
         {items.map((it) => {
           const itemSubs = subs.filter((s) => s.task_item_id === it.id);
+          const open = !!openItems[it.id];
           return (
-            <div key={it.id} className="rounded-xl border bg-card p-3">
-              <div className="flex items-center gap-2">
+            <div key={it.id} className="rounded-xl border bg-card">
+              <button
+                type="button"
+                onClick={() => setOpenItems((p) => ({ ...p, [it.id]: !p[it.id] }))}
+                aria-expanded={open}
+                className="flex w-full items-center gap-2 p-3 text-left transition-colors hover:bg-accent/30 active:bg-accent/50 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              >
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold">{it.name_snapshot}</div>
                   <div className="text-[11px] text-muted-foreground">{it.category_snapshot ?? "—"} · diminta {it.qty_requested} · disiapkan {it.qty_prepared}</div>
                 </div>
                 <span className="rounded-full bg-muted px-2 py-0.5 text-[10px]">{itemSubs.length} kiriman</span>
-              </div>
-              {itemSubs.length > 0 && (
-                <div className="mt-2 grid grid-cols-2 gap-2 sm:grid-cols-3">
-                  {itemSubs.map((s) => <SubmissionCard key={s.id} sub={s} />)}
+                <span className="text-muted-foreground text-xs">{open ? "▾" : "▸"}</span>
+              </button>
+              {open && (
+                <div className="border-t p-3">
+                  {itemSubs.length > 0 ? (
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                      {itemSubs.map((s) => <SubmissionCard key={s.id} sub={s} />)}
+                    </div>
+                  ) : (
+                    <div className="rounded-md border border-dashed bg-background/50 p-3 text-center text-[11px] text-muted-foreground">
+                      Belum ada kiriman foto/lokasi untuk item ini.
+                    </div>
+                  )}
                 </div>
               )}
             </div>
