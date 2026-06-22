@@ -72,7 +72,10 @@ async function pickFile(
   f: File | null | undefined,
   setFile: (f: File | null) => void,
   inputEl?: HTMLInputElement | null,
-  opts: { autoCompress?: boolean } = {},
+  opts: {
+    autoCompress?: boolean;
+    onCompressed?: (info: { originalBytes: number; compressedBytes: number }) => void;
+  } = {},
 ) {
   if (!f) return;
   const ext = (f.name.split(".").pop() || "").toLowerCase();
@@ -109,9 +112,18 @@ async function pickFile(
       const compressed = await compressImage(f);
       toast.dismiss(loadingId);
       if (compressed && compressed.size <= MAX_FILE_BYTES && compressed.size > 0) {
+        const beforeMB = f.size / 1024 / 1024;
+        const afterMB = compressed.size / 1024 / 1024;
+        const savedMB = beforeMB - afterMB;
+        const savedPct = (savedMB / beforeMB) * 100;
         toast.success("Foto dikompres otomatis", {
-          description: `Ukuran ${(f.size / 1024 / 1024).toFixed(1)} MB → ${(compressed.size / 1024 / 1024).toFixed(2)} MB (JPEG).`,
+          description:
+            `Sebelum: ${beforeMB.toFixed(2)} MB\n` +
+            `Sesudah: ${afterMB.toFixed(2)} MB (JPEG)\n` +
+            `Hemat: ${savedMB.toFixed(2)} MB (≈ ${savedPct.toFixed(0)}%)`,
+          duration: 7000,
         });
+        opts.onCompressed?.({ originalBytes: f.size, compressedBytes: compressed.size });
         if (inputEl) inputEl.value = "";
         setFile(compressed);
         return;
