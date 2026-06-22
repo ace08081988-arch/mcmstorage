@@ -1,4 +1,4 @@
-import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
 import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, Users, ClipboardCheck, MessageCircle } from "lucide-react";
 import {
   Sidebar,
@@ -34,8 +34,16 @@ export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { isMobile, setOpenMobile } = useSidebar();
   const navigate = useNavigate();
-  const isActive = (path: string) =>
-    path === "/" ? pathname === "/" : pathname === path || pathname.startsWith(path + "/");
+  const matchRoute = useMatchRoute();
+  // Highlight mengikuti route aktif sepenuhnya — tidak terpengaruh search params
+  // (mis. /ecer?item=…&highlight=…) maupun child route (mis. /chat/$id, /gudang/pesanan/$id).
+  const isActive = (path: string) => {
+    if (path === "/") return pathname === "/";
+    // exact match selalu menang
+    if (pathname === path) return true;
+    // fuzzy untuk child route bertingkat
+    return !!matchRoute({ to: path, fuzzy: true });
+  };
 
   return (
     <Sidebar collapsible="icon">
