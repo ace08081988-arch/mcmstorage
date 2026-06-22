@@ -213,6 +213,20 @@ function TugasPage() {
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold">{t.title}</div>
               <div className="text-[11px] text-muted-foreground">Dibuat {new Date(t.created_at).toLocaleString("id-ID")} · Status {t.status}</div>
+              {t.pin && (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground">PIN</span>
+                  <span className="rounded border bg-background px-1.5 py-0.5 font-mono text-[11px] tracking-widest tabular-nums">{t.pin}</span>
+                  <button
+                    type="button"
+                    onClick={() => { void navigator.clipboard?.writeText(t.pin!); toast.success("PIN disalin"); }}
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-md border text-muted-foreground hover:text-foreground"
+                    title="Salin PIN"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
             </div>
             <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs">Buka</button>
             <button
