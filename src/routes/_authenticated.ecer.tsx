@@ -59,6 +59,10 @@ function EcerPage() {
   const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
   const [editingTitle, setEditingTitle] = useState<EcerTitle | null>(null);
   const [creatingTitle, setCreatingTitle] = useState(false);
+  // Membuat judul lain untuk item tertentu langsung dari halaman detail.
+  const [creatingTitleForItem, setCreatingTitleForItem] = useState<WarehouseItem | null>(null);
+  // Membuat produk gudang baru (lanjut otomatis ke pembuatan judul untuk produk itu).
+  const [creatingProduct, setCreatingProduct] = useState(false);
 
   function diagnose(err: { code?: string; message?: string; status?: number | string; details?: string }): string {
     const code = err?.code ?? "";
@@ -184,6 +188,14 @@ function EcerPage() {
     if (data) setTitles(data as EcerTitle[]);
   }
 
+  async function refetchItems() {
+    const { data } = await supabase
+      .from("warehouse_items")
+      .select("id,name,category,base_unit,stock_base,image_path,package_type,package_size")
+      .order("name");
+    if (data) setItems(data as WarehouseItem[]);
+  }
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
@@ -239,12 +251,43 @@ function EcerPage() {
   // ---- Detail view: a specific title ----
   if (selectedTitle && selectedItem) {
     return (
-      <TitleDetailView
-        item={selectedItem}
-        title={selectedTitle}
-        onBack={() => setSelectedTitleId(undefined)}
-        onTitleUpdated={refetchTitles}
-      />
+      <>
+        <TitleDetailView
+          item={selectedItem}
+          title={selectedTitle}
+          onBack={() => setSelectedTitleId(undefined)}
+          onTitleUpdated={refetchTitles}
+          onCreateTitle={() => setCreatingTitleForItem(selectedItem)}
+          onCreateProduct={() => setCreatingProduct(true)}
+        />
+        {creatingTitleForItem && (
+          <TitleFormDialog
+            item={creatingTitleForItem}
+            existing={null}
+            onClose={() => setCreatingTitleForItem(null)}
+            onSaved={(newId) => {
+              setCreatingTitleForItem(null);
+              void refetchTitles().then(() => {
+                if (newId) setSelectedTitleId(newId);
+              });
+            }}
+          />
+        )}
+        {creatingProduct && (
+          <NewProductDialog
+            onClose={() => setCreatingProduct(false)}
+            onCreated={async (newItem) => {
+              setCreatingProduct(false);
+              await refetchItems();
+              // Lanjutkan langsung ke pembuatan judul untuk produk baru.
+              setCreatingTitleForItem(newItem);
+              // Pindahkan konteks ke produk baru agar judul nanti muncul di sini.
+              setSelectedItemId(newItem.id);
+              setSelectedTitleId(undefined);
+            }}
+          />
+        )}
+      </>
     );
   }
 
@@ -316,9 +359,43 @@ function EcerPage() {
           item={selectedItem}
           existing={editingTitle}
           onClose={() => { setCreatingTitle(false); setEditingTitle(null); }}
-          onSaved={() => { setCreatingTitle(false); setEditingTitle(null); void refetchTitles(); }}
+          onSaved={(newId) => {
+            setCreatingTitle(false); setEditingTitle(null);
+            void refetchTitles().then(() => { if (newId) setSelectedTitleId(newId); });
+          }}
         />
       )}
+
+      {creatingProduct && (
+        <NewProductDialog
+          onClose={() => setCreatingProduct(false)}
+          onCreated={async (newItem) => {
+            setCreatingProduct(false);
+            await refetchItems();
+            setSelectedItemId(newItem.id);
+            setSelectedTitleId(undefined);
+            setCreatingTitleForItem(newItem);
+          }}
+        />
+      )}
+
+      {creatingTitleForItem && (
+        <TitleFormDialog
+          item={creatingTitleForItem}
+          existing={null}
+          onClose={() => setCreatingTitleForItem(null)}
+          onSaved={(newId) => {
+            setCreatingTitleForItem(null);
+            void refetchTitles().then(() => { if (newId) setSelectedTitleId(newId); });
+          }}
+        />
+      )}
+
+      <div className="pt-1">
+        <Button variant="outline" size="sm" onClick={() => setCreatingProduct(true)}>
+          <Plus className="h-4 w-4" /> Produk gudang baru
+        </Button>
+      </div>
     </div>
   );
 }
