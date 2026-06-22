@@ -183,7 +183,19 @@ function TugasPage() {
               <div className="text-[11px] text-muted-foreground">Dibuat {new Date(t.created_at).toLocaleString("id-ID")} · Status {t.status}</div>
             </div>
             <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs">Buka</button>
-            <button onClick={() => removeTask(t.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive"><Trash2 className="h-4 w-4" /></button>
+            <button
+              onClick={async () => {
+                const url = publicTaskUrl(t.share_token);
+                const message = `Tugas: ${t.title}\n${url}\n(PIN dikirim terpisah)`;
+                const res = await shareToWhatsApp({ text: message, title: t.title, url });
+                notifyShareResult(res);
+              }}
+              title="Bagikan tugas ini via WhatsApp"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20"
+            >
+              <MessageCircle className="h-4 w-4" />
+            </button>
+            <button onClick={() => removeTask(t.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive" title="Hapus tugas"><Trash2 className="h-4 w-4" /></button>
           </div>
         ))}
         {tasks.length === 0 && <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Belum ada tugas. Klik "Buat tugas".</div>}

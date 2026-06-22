@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { sendTestPushToContact, sendTestPushToAllContacts } from "@/lib/push.functions";
 import { friendlyError } from "@/lib/friendly-error";
+import { confirm } from "@/lib/confirm";
+import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -93,6 +95,32 @@ function KontakPage() {
       toast.success("Tautan akun dilepas");
       void refresh();
     }
+  };
+
+  const removeRow = async (kind: Kind, row: Row) => {
+    const label = kind === "customer" ? "pelanggan" : "pemasok";
+    if (
+      !(await confirm({
+        title: `Hapus ${label}?`,
+        description: `${row.name} akan dihapus permanen. Riwayat transaksi terkait tetap ada, tapi tidak lagi tertaut ke kontak ini.`,
+        confirmText: "Hapus",
+        destructive: true,
+      }))
+    ) return;
+    const table = kind === "customer" ? "customers" : "suppliers";
+    const { error } = await supabase.from(table).delete().eq("id", row.id);
+    if (error) toast.error(friendlyError(error));
+    else {
+      toast.success(`${label[0].toUpperCase() + label.slice(1)} dihapus`);
+      void refresh();
+    }
+  };
+
+  const sendWa = async (row: Row) => {
+    const text = `Halo ${row.name}, ada yang ingin saya sampaikan.`;
+    const phone = row.contact?.replace(/\D/g, "") || undefined;
+    const res = await shareToWhatsApp({ text, title: row.name, phone });
+    notifyShareResult(res);
   };
 
   const handleTest = async (kind: Kind, row: Row) => {
@@ -209,6 +237,17 @@ function KontakPage() {
                         >
                           {r.account_user_id ? "Ubah tautan" : "Tautkan akun"}
                         </Button>
+                        {r.contact && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            onClick={() => void sendWa(r)}
+                            title={`Kirim WA ke ${r.contact}`}
+                          >
+                            Kirim WA
+                          </Button>
+                        )}
                         {r.account_user_id && (
                           <>
                             <Button
@@ -229,6 +268,14 @@ function KontakPage() {
                             </Button>
                           </>
                         )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:text-destructive"
+                          onClick={() => void removeRow(tab, r)}
+                        >
+                          Hapus
+                        </Button>
                       </div>
                     </div>
                   </li>

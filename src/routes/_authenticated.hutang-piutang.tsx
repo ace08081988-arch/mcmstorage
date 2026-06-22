@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
+import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -64,7 +65,7 @@ type Payment = {
   note: string | null;
 };
 
-type Party = { id: string; name: string };
+type Party = { id: string; name: string; contact?: string | null };
 
 const rupiah = (n: number) =>
   "Rp " + Math.round(n).toLocaleString("id-ID");
@@ -92,8 +93,8 @@ function HutangPiutangPage() {
         .select("*")
         .order("created_at", { ascending: false }),
       supabase.from("debt_payments").select("*"),
-      supabase.from("suppliers").select("id,name").order("name"),
-      supabase.from("customers").select("id,name").order("name"),
+      supabase.from("suppliers").select("id,name,contact").order("name"),
+      supabase.from("customers").select("id,name,contact").order("name"),
     ]);
     if (d.error) toast.error(friendlyError(d.error));
     else setDebts((d.data ?? []) as Debt[]);
@@ -143,6 +144,30 @@ function HutangPiutangPage() {
       toast.success("Dihapus");
       void refresh();
     }
+  };
+
+  const partyPhone = (d: Debt): string | undefined => {
+    const list = d.kind === "hutang" ? suppliers : customers;
+    const id = d.kind === "hutang" ? d.supplier_id : d.customer_id;
+    const found = id ? list.find((p) => p.id === id) : undefined;
+    const raw = found?.contact ?? "";
+    const digits = raw.replace(/\D/g, "");
+    return digits.length >= 8 ? digits : undefined;
+  };
+
+  const sendReminderWA = async (d: Debt) => {
+    const paid = paidByDebt.get(d.id) ?? 0;
+    const sisa = Math.max(0, Number(d.amount) - paid);
+    const due = d.due_date
+      ? `jatuh tempo ${new Date(d.due_date).toLocaleDateString("id-ID")}`
+      : "tanpa jatuh tempo";
+    const greet = `Halo ${d.party_name},`;
+    const body = d.kind === "hutang"
+      ? `Ini pengingat hutang saya kepada Anda sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon konfirmasi cara & waktu pelunasannya. Terima kasih.`
+      : `Ini pengingat tagihan dari saya sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon segera diselesaikan ya, terima kasih.`;
+    const text = `${greet}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
+    const res = await shareToWhatsApp({ text, title: d.party_name, phone: partyPhone(d) });
+    notifyShareResult(res);
   };
 
   return (
@@ -272,6 +297,17 @@ function HutangPiutangPage() {
                               onClick={() => setPayFor(d)}
                             >
                               + Bayar
+                            </Button>
+                          )}
+                          {!lunas && (
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                              onClick={() => void sendReminderWA(d)}
+                              title="Kirim pengingat via WhatsApp"
+                            >
+                              Tagih via WA
                             </Button>
                           )}
                           <Button
