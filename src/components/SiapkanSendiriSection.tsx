@@ -236,6 +236,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   function resetForm() {
     setTitle("");
     setFile(null);
+    setCompressionInfo(null);
     setLocationUrl("");
     setNote("");
     if (fileRef.current) fileRef.current.value = "";
