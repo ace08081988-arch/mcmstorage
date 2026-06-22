@@ -446,21 +446,16 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       for (const l of entry.lines) {
         totalLines++;
         if (!hasPhoto) linesWithoutPhoto++;
-        // Validasi numerik berdasarkan state baris (bukan dari lineStatus
-        // yang diperbarui async oleh NumberInput) supaya ringkasan langsung
-        // konsisten dengan badge per-baris dan kolom "Siap dikirim".
-        const w = lineWeight(l, variants);
-        const c = Number(l.count) || 0;
-        const numericValid = Number.isFinite(w) && Number.isFinite(c) && w > 0 && c > 0;
-        const rs = numericValid ? rowStatus(l.key) : "invalid";
-        if (rs === "valid" && numericValid) {
+        // Satu selector tunggal — ringkasan & badge per-baris memakai
+        // hasil yang sama, tidak ada lagi ketergantungan ke lineStatus.
+        const ev = evaluateLine(l, variants);
+        if (ev.status === "valid") {
           validLines++;
-          const tw = w * c;
-          totalWeight += tw;
+          totalWeight += ev.total;
           // Foto referensi opsional → baris valid selalu dihitung siap kirim.
           readyLines++;
-          readyWeight += tw;
-        } else if (rs === "partial") partialLines++;
+          readyWeight += ev.total;
+        } else if (ev.status === "partial") partialLines++;
         else invalidLines++;
       }
     }
@@ -473,7 +468,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       linesWithoutPhoto,
       itemsWithoutPhoto,
     };
-  }, [picked, lineStatus, variants]);
+  }, [picked, variants]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
