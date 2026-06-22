@@ -583,7 +583,19 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
               </div>
               {title.note && <div className="mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap">{title.note}</div>}
             </div>
-            <Button size="sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Penyiapan</Button>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {onCreateTitle && (
+                <Button size="sm" variant="outline" onClick={onCreateTitle} title="Judul ecer baru untuk produk yang sama">
+                  <Plus className="h-4 w-4" /> Judul lain
+                </Button>
+              )}
+              {onCreateProduct && (
+                <Button size="sm" variant="outline" onClick={onCreateProduct} title="Buat produk gudang baru lalu langsung dibuatkan judulnya">
+                  <Package className="h-4 w-4" /> Produk baru
+                </Button>
+              )}
+              <Button size="sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Penyiapan</Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
