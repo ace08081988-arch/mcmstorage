@@ -67,7 +67,7 @@ function normalizeShareFile(file: File) {
 
 export type ShareResult =
   | { status: "shared"; withFiles: boolean }
-  | { status: "cancelled"; fallbackText?: string; phone?: string }
+  | { status: "cancelled"; fallbackText?: string; phone?: string; withFiles?: boolean }
   | { status: "failed"; error: string; withFiles: boolean }
   | { status: "fallback"; withFiles: boolean; reason: "no-web-share" | "share-failed" };
 
@@ -95,7 +95,9 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
         } catch (err) {
           const name = (err as DOMException)?.name;
           if (name === "AbortError" || name === "NotAllowedError") {
-            return { status: "cancelled", fallbackText: fullText, phone };
+            for (const f of shareFiles) downloadFile(f, f.name);
+            try { await nav.clipboard?.writeText(fullText); } catch { /* ignore */ }
+            return { status: "cancelled", fallbackText: fullText, phone, withFiles: true };
           }
           shareFailed = true;
           shareError = (err as Error)?.message || String(err);
@@ -120,7 +122,7 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
       } catch (err) {
         const name = (err as DOMException)?.name;
         if (name === "AbortError" || name === "NotAllowedError") {
-          return { status: "cancelled", fallbackText: fullText, phone };
+          return { status: "cancelled", fallbackText: fullText, phone, withFiles: false };
         }
         shareFailed = true;
         shareError = (err as Error)?.message || String(err);
@@ -151,14 +153,18 @@ export function notifyShareResult(result: ShareResult) {
   switch (result.status) {
     case "shared":
       if (result.withFiles) {
-        toast.success("Dibagikan — pilih WhatsApp di share sheet agar foto + teks terkirim bersamaan.");
+        toast.success("Foto dibuka di share sheet. Jika teks belum muncul di WhatsApp, tempel teks yang sudah disalin.");
       } else {
         toast.success("Dibagikan ke WhatsApp.");
       }
       return;
     case "cancelled":
-      toast.message("Dibatalkan — tidak jadi mengirim.", {
-        action: result.fallbackText
+      toast.message(
+        result.withFiles
+          ? "Dibatalkan — foto tidak terkirim. Pilih WhatsApp dari share sheet agar foto ikut; teks sudah disalin."
+          : "Dibatalkan — tidak jadi mengirim.",
+        {
+        action: result.fallbackText && !result.withFiles
           ? {
               label: "Buka WhatsApp langsung",
               onClick: () => {
