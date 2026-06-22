@@ -2031,6 +2031,14 @@ export type Database = {
           user_id: string
         }[]
       }
+      search_profiles_for_link: {
+        Args: { _q: string }
+        Returns: {
+          display_name: string
+          phone: string
+          user_id: string
+        }[]
+      }
       security_findings_acknowledge: {
         Args: { _ids: string[] }
         Returns: number
