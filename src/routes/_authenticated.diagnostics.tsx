@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CheckCircle2, AlertTriangle, ChevronLeft } from "lucide-react";
+import { CheckCircle2, AlertTriangle, ChevronLeft, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 import reactRouterPkg from "@tanstack/react-router/package.json";
 import reactStartPkg from "@tanstack/react-start/package.json";
@@ -77,6 +78,27 @@ function DiagnosticsPage() {
   const checks = runChecks();
   const allOk = checks.every((c) => c.ok);
 
+  async function copySummary() {
+    const lines: string[] = [];
+    lines.push(`Diagnostik MCM Storage — ${new Date().toISOString()}`);
+    lines.push(`Status: ${allOk ? "KOMPATIBEL ✓" : "ADA KETIDAKCOCOKAN ⚠"}`);
+    lines.push("");
+    lines.push("Versi paket:");
+    for (const p of packages) lines.push(`  - ${p.name}@${p.version}`);
+    lines.push("");
+    lines.push("Hasil cek:");
+    for (const c of checks) lines.push(`  [${c.ok ? "OK" : "FAIL"}] ${c.label} — ${c.detail}`);
+    const text = lines.join("\n");
+    try {
+      await navigator.clipboard.writeText(text);
+      toast.success("Ringkasan diagnostik disalin");
+    } catch {
+      toast.error("Gagal menyalin", { description: "Salin manual dari kotak di bawah." });
+      // Fallback: show in a prompt-like toast
+      toast.message(text);
+    }
+  }
+
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-3 sm:p-5">
       <div className="flex items-center gap-2">
@@ -84,6 +106,9 @@ function DiagnosticsPage() {
           <Link to="/"><ChevronLeft className="h-4 w-4" /> Kembali</Link>
         </Button>
         <h1 className="text-lg font-semibold">Diagnostik Aplikasi</h1>
+        <Button size="sm" variant="outline" className="ml-auto" onClick={copySummary}>
+          <Copy className="h-4 w-4" /> Salin ringkasan
+        </Button>
       </div>
 
       <Card>
