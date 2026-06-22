@@ -98,6 +98,19 @@ export function notifyShareResult(result: ShareResult) {
               },
             }
           : undefined,
+        cancel: result.fallbackText
+          ? {
+              label: "Salin teks WhatsApp",
+              onClick: async () => {
+                try {
+                  await navigator.clipboard?.writeText(result.fallbackText!);
+                  toast.success("Teks disalin. Tempel di WhatsApp untuk kirim manual.");
+                } catch {
+                  toast.error("Gagal menyalin — salin manual dari pesan.");
+                }
+              },
+            }
+          : undefined,
         duration: 8000,
       });
       return;
