@@ -933,3 +933,95 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
 
 // keep ECER_BUCKET reachable so unused import is not flagged
 void ECER_BUCKET;
+
+// ---- Dialog: buat produk gudang baru langsung dari halaman ecer ----
+function NewProductDialog({ onClose, onCreated }: {
+  onClose: () => void;
+  onCreated: (item: WarehouseItem) => void | Promise<void>;
+}) {
+  type PkgType = "gram" | "botol" | "sachet" | "pcs";
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [packageType, setPackageType] = useState<PkgType>("gram");
+  const [packageSize, setPackageSize] = useState("1000");
+  const [busy, setBusy] = useState(false);
+
+  const baseUnit: "g" | "pcs" = packageType === "pcs" || packageType === "botol" || packageType === "sachet"
+    ? (packageType === "pcs" ? "pcs" : "g")
+    : "g";
+
+  async function save() {
+    if (!name.trim()) { toast.error("Nama produk wajib diisi"); return; }
+    const size = packageType === "pcs" ? 1 : Number(String(packageSize).replace(",", "."));
+    if (packageType !== "pcs" && (!Number.isFinite(size) || size <= 0)) {
+      toast.error("Isi/kemasan harus > 0"); return;
+    }
+    setBusy(true);
+    const { data: u } = await supabase.auth.getUser();
+    const userId = u.user?.id;
+    if (!userId) { toast.error("Sesi tidak valid"); setBusy(false); return; }
+    const { data, error } = await supabase.from("warehouse_items").insert({
+      user_id: userId,
+      name: name.trim(),
+      category: category.trim() || null,
+      package_type: packageType,
+      package_size: size,
+      base_unit: baseUnit,
+    }).select("id,name,category,base_unit,stock_base,image_path,package_type,package_size").single();
+    setBusy(false);
+    if (error || !data) { toast.error("Gagal: " + (error?.message ?? "tidak ada data")); return; }
+    toast.success("Produk gudang dibuat");
+    await onCreated(data as WarehouseItem);
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Produk gudang baru</DialogTitle>
+          <DialogDescription>Setelah dibuat, akan langsung dibuatkan judul ecer untuk produk ini.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Nama produk</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. KRISTAL" autoCapitalize="characters" />
+          </div>
+          <div>
+            <Label className="text-xs">Kategori (opsional)</Label>
+            <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="mis. Bahan baku" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Jenis kemasan</Label>
+              <select
+                value={packageType}
+                onChange={(e) => setPackageType(e.target.value as PkgType)}
+                className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm"
+              >
+                <option value="gram">gram (curah)</option>
+                <option value="botol">botol</option>
+                <option value="sachet">sachet</option>
+                <option value="pcs">pcs</option>
+              </select>
+            </div>
+            {packageType !== "pcs" && (
+              <div>
+                <Label className="text-xs">Isi/kemasan ({baseUnit})</Label>
+                <Input inputMode="decimal" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
+              </div>
+            )}
+          </div>
+          <div className="rounded-md border border-dashed bg-muted/30 p-2 text-[11px] text-muted-foreground">
+            Stok awal = 0. Tambah stok dari halaman Gudang (catat pembelian) setelah produk dibuat.
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Batal</Button>
+          <Button onClick={save} disabled={busy}>
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan & buat judul
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
