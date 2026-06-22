@@ -1053,10 +1053,62 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
     );
   }
 
-  function openWaForRow(r: AuditRow) {
+  function statusLabel(r: AuditRow) {
+    if (r.issues.length === 0) return "✅ Aman";
+    if (isResolved(r)) return "🟢 Sudah dibetulkan";
+    return "⚠️ Perlu dicek";
+  }
+
+  function buildTaskWaMessage(r: AuditRow) {
     const url = publicTaskUrl(r.task.share_token);
-    const msg = `Mohon dicek tugas berikut:\n\n${r.task.title}\nDiminta ${fmtNum(r.totalRequested, 2)} · disiapkan ${fmtNum(r.totalPrepared, 2)} · sisa ${fmtNum(r.remaining, 2)}\n${url}`;
-    window.open(buildWhatsAppUrl(msg), "_blank", "noopener,noreferrer");
+    const lines: string[] = [];
+    lines.push(`${statusLabel(r)} — *${r.task.title}*`);
+    lines.push(
+      `${r.items} item · diminta *${fmtNum(r.totalRequested, 2)}* · disiapkan *${fmtNum(r.totalPrepared, 2)}* · sisa *${fmtNum(r.remaining, 2)}*`,
+    );
+    if (r.issues.length > 0) {
+      lines.push("");
+      lines.push("Catatan:");
+      for (const i of r.issues) lines.push(`• ${i}`);
+    }
+    if (r.problemItems.length > 0) {
+      lines.push("");
+      lines.push("Item yang perlu dibetulkan:");
+      for (const p of r.problemItems) {
+        lines.push(
+          `• ${p.name} — diminta ${fmtNum(p.qty_requested, 2)}, disiapkan ${fmtNum(p.qty_prepared, 2)} (${p.reason})`,
+        );
+      }
+    }
+    lines.push("");
+    lines.push(`Buka tugas: ${url}`);
+    lines.push(`(PIN dikirim terpisah)`);
+    return { text: lines.join("\n"), url };
+  }
+
+  async function openWaForRow(r: AuditRow) {
+    const { text, url } = buildTaskWaMessage(r);
+    const result = await shareToWhatsApp({ text, title: r.task.title, url });
+    notifyShareResult(result);
+  }
+
+  async function openWaForItem(
+    r: AuditRow,
+    item: AuditRow["problemItems"][number],
+  ) {
+    const url = publicTaskUrl(r.task.share_token);
+    const lines = [
+      `⚠️ Perlu dibetulkan — *${r.task.title}*`,
+      "",
+      `Item: *${item.name}*`,
+      `Diminta: ${fmtNum(item.qty_requested, 2)}`,
+      `Disiapkan: ${fmtNum(item.qty_prepared, 2)}`,
+      `Masalah: ${item.reason}`,
+      "",
+      `Buka tugas: ${url}`,
+    ];
+    const result = await shareToWhatsApp({ text: lines.join("\n"), title: r.task.title, url });
+    notifyShareResult(result);
   }
 
   return (
@@ -1161,8 +1213,17 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                   {r.problemItems.length > 0 && (
                     <ul className="mt-1 space-y-0.5 text-[10px]">
                       {r.problemItems.map((p, i) => (
-                        <li key={i} className="text-destructive">
-                          • {p.name}: diminta {fmtNum(p.qty_requested, 2)}, disiapkan {fmtNum(p.qty_prepared, 2)} — {p.reason}
+                        <li key={i} className="flex items-start justify-between gap-2 text-destructive">
+                          <span className="min-w-0 flex-1">
+                            • {p.name}: diminta {fmtNum(p.qty_requested, 2)}, disiapkan {fmtNum(p.qty_prepared, 2)} — {p.reason}
+                          </span>
+                          <button
+                            onClick={() => void openWaForItem(r, p)}
+                            title={`Kirim detail item "${p.name}" via WhatsApp`}
+                            className="inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-[#25D366]/40 bg-[#25D366]/10 px-1.5 text-[10px] font-medium text-[#1ea952] hover:bg-[#25D366]/20"
+                          >
+                            <MessageCircle className="h-2.5 w-2.5" /> WA
+                          </button>
                         </li>
                       ))}
                     </ul>
@@ -1181,8 +1242,9 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                       <Copy className="h-3 w-3" /> Salin
                     </button>
                     <button
-                      onClick={() => openWaForRow(r)}
+                      onClick={() => void openWaForRow(r)}
                       className="inline-flex h-7 items-center gap-1 rounded-md border border-[#25D366]/50 bg-[#25D366]/10 px-2 text-[11px] font-medium text-[#1ea952] hover:bg-[#25D366]/20"
+                      title="Kirim ringkasan lengkap tugas + semua item bermasalah"
                     >
                       <MessageCircle className="h-3 w-3" /> Kirim WA
                     </button>
