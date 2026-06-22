@@ -15,6 +15,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { CompactModeToggle } from "@/components/CompactModeToggle";
+import { ResetCacheButton } from "@/components/ResetCacheButton";
 import { useConversations } from "@/lib/chat";
 
 const items = [
@@ -177,6 +178,7 @@ export function AppSidebar() {
       </SidebarContent>
       <SidebarFooter className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
         <CompactModeToggle />
+        <ResetCacheButton fullWidth variant="ghost" size="sm" label="Reset cache" />
       </SidebarFooter>
     </Sidebar>
   );
