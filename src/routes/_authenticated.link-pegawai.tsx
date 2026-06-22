@@ -174,7 +174,10 @@ function LinkPegawaiPage() {
       .from("prep_tasks")
       .select("id", { count: "exact", head: true });
 
-    const nowIso = new Date(now).toISOString();
+    // Use a fresh timestamp at query time. Including `now` in deps would
+    // recreate this callback on every tick (30s or 1s in test mode) and
+    // spam the server with count queries from the effect below.
+    const nowIso = new Date().toISOString();
     if (filter === "cancelled") query = query.eq("status", "cancelled");
     else if (filter === "done") query = query.eq("status", "done");
     else if (filter === "active") {
@@ -208,7 +211,7 @@ function LinkPegawaiPage() {
       });
     }
     filteredFetchedOnceRef.current = true;
-  }, [filter, q, now]);
+  }, [filter, q]);
 
   const loadMore = useCallback(async () => {
     if (loadingMore || !hasMore || tasks === null) return;
