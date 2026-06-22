@@ -834,6 +834,10 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     if (grams > Number(item.stock_base)) {
       toast.error(`Stok tidak cukup (tersedia ${item.stock_base} ${item.base_unit})`); return;
     }
+    if (!photo) { toast.error("Foto wajib diisi"); return; }
+    if (!locUrl.trim() || !(gps && Number.isFinite(gps.lat) && Number.isFinite(gps.lng))) {
+      toast.error("Lokasi GPS wajib diisi (tekan tombol GPS)"); return;
+    }
     if (locUrl) {
       if (locUrl.length > 2048) { toast.error("URL lokasi terlalu panjang"); return; }
       if (!/^https:\/\//i.test(locUrl)) { toast.error("URL harus diawali https://"); return; }
