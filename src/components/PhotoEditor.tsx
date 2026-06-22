@@ -160,7 +160,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.restore();
     baseCanvasRef.current = base;
     scheduleRedraw();
-  }, [img, view, state.rotation]);
+  }, [img, view, state.rotation, exportBg]);
 
   // Composite layer pass — copies cached base then draws layers + in-progress shape.
   function render() {
