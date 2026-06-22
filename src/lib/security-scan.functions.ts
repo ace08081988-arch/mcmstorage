@@ -6,7 +6,7 @@ export type SecurityFinding = {
   code: string
   severity: string
   title: string
-  detail: unknown
+  detail: string
   first_seen_at: string
   last_seen_at: string
   acknowledged_at: string | null
@@ -39,7 +39,17 @@ export const listSecurityFindings = createServerFn({ method: 'GET' })
       .order('started_at', { ascending: false })
       .limit(1)
       .maybeSingle()
-    const list = (findings ?? []) as SecurityFinding[]
+    const list: SecurityFinding[] = (findings ?? []).map((f) => ({
+      id: f.id as string,
+      code: f.code as string,
+      severity: f.severity as string,
+      title: f.title as string,
+      detail: JSON.stringify(f.detail ?? {}),
+      first_seen_at: f.first_seen_at as string,
+      last_seen_at: f.last_seen_at as string,
+      acknowledged_at: (f.acknowledged_at as string | null) ?? null,
+      notified_at: (f.notified_at as string | null) ?? null,
+    }))
     return {
       isAdmin: true,
       findings: list,
