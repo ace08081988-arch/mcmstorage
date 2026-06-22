@@ -268,6 +268,12 @@ function AuthPage() {
         </form>
       </div>
       </div>
+      <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-2 px-4 pb-4 text-center">
+        <p className="text-[11px] text-muted-foreground">
+          Halaman gagal muat? Coba bersihkan cache aplikasi.
+        </p>
+        <ResetCacheButton fullWidth />
+      </div>
       <PublicFooter />
     </div>
   );
