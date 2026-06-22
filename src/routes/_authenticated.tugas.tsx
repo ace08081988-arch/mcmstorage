@@ -833,6 +833,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
   const [filter, setFilter] = useState<"all" | "ok" | "bad" | "fixed">("all");
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "diff_desc" | "diff_asc" | "title">("diff_desc");
+  const [waPreview, setWaPreview] = useState<{ text: string; url: string; title: string } | null>(null);
   const RESOLVED_KEY = "tugas.audit.resolved.v1";
   const [resolved, setResolved] = useState<Record<string, string>>(() => {
     if (typeof window === "undefined") return {};
@@ -1092,12 +1093,9 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
     notifyShareResult(result);
   }
 
-  async function openWaForItem(
-    r: AuditRow,
-    item: AuditRow["problemItems"][number],
-  ) {
+  function buildItemWaMessage(r: AuditRow, item: AuditRow["problemItems"][number]) {
     const url = publicTaskUrl(r.task.share_token);
-    const lines = [
+    const text = [
       `⚠️ Perlu dibetulkan — *${r.task.title}*`,
       "",
       `Item: *${item.name}*`,
@@ -1106,9 +1104,12 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
       `Masalah: ${item.reason}`,
       "",
       `Buka tugas: ${url}`,
-    ];
-    const result = await shareToWhatsApp({ text: lines.join("\n"), title: r.task.title, url });
-    notifyShareResult(result);
+    ].join("\n");
+    return { text, url, title: r.task.title };
+  }
+
+  function previewWaForItem(r: AuditRow, item: AuditRow["problemItems"][number]) {
+    setWaPreview(buildItemWaMessage(r, item));
   }
 
   return (
@@ -1218,7 +1219,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                             • {p.name}: diminta {fmtNum(p.qty_requested, 2)}, disiapkan {fmtNum(p.qty_prepared, 2)} — {p.reason}
                           </span>
                           <button
-                            onClick={() => void openWaForItem(r, p)}
+                            onClick={() => previewWaForItem(r, p)}
                             title={`Kirim detail item "${p.name}" via WhatsApp`}
                             className="inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-[#25D366]/40 bg-[#25D366]/10 px-1.5 text-[10px] font-medium text-[#1ea952] hover:bg-[#25D366]/20"
                           >
@@ -1280,6 +1281,60 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
       </div>
       <div className="mt-3 flex justify-end">
         <button onClick={onClose} className="h-9 rounded-md border px-3 text-sm">Tutup</button>
+      </div>
+      {waPreview && (
+        <WaPreviewDialog
+          initial={waPreview}
+          onClose={() => setWaPreview(null)}
+        />
+      )}
+    </Modal>
+  );
+}
+
+function WaPreviewDialog({
+  initial,
+  onClose,
+}: {
+  initial: { text: string; url: string; title: string };
+  onClose: () => void;
+}) {
+  const [text, setText] = useState(initial.text);
+  function copy() {
+    navigator.clipboard?.writeText(text).then(
+      () => toast.success("Pesan disalin"),
+      () => toast.error("Gagal menyalin"),
+    );
+  }
+  async function send() {
+    const result = await shareToWhatsApp({ text, title: initial.title, url: initial.url });
+    notifyShareResult(result);
+    onClose();
+  }
+  return (
+    <Modal title="Pratinjau pesan WhatsApp" onClose={onClose}>
+      <div className="space-y-3 text-sm">
+        <div className="text-[11px] text-muted-foreground">
+          Cek isi pesan di bawah. Anda bisa mengedit sebelum mengirim.
+        </div>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={10}
+          className="min-h-[180px] w-full rounded-md border bg-background p-2 text-xs font-mono leading-relaxed"
+        />
+        <div className="flex flex-wrap justify-end gap-2">
+          <button onClick={onClose} className="h-9 rounded-md border px-3 text-xs">Batal</button>
+          <button onClick={copy} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs">
+            <Copy className="h-3.5 w-3.5" /> Salin
+          </button>
+          <button
+            onClick={() => void send()}
+            className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white hover:opacity-90"
+          >
+            <MessageCircle className="h-3.5 w-3.5" /> Kirim ke WhatsApp
+          </button>
+        </div>
       </div>
     </Modal>
   );
