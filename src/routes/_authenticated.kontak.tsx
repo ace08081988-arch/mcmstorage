@@ -275,6 +275,21 @@ function KontakPage() {
                             <Button
                               size="sm"
                               variant="secondary"
+                              disabled={chatting === r.id}
+                              onClick={() => void openChat(r)}
+                              title={`Chat dengan ${r.name}`}
+                              className="bg-primary/10 text-primary hover:bg-primary/20"
+                            >
+                              {chatting === r.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MessageSquare className="h-4 w-4" />
+                              )}
+                              Chat
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="secondary"
                               disabled={testing === r.id}
                               onClick={() => void handleTest(tab, r)}
                             >
