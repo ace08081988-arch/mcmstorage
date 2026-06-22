@@ -14,6 +14,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { CompactModeToggle } from "@/components/CompactModeToggle";
+import { useConversations } from "@/lib/chat";
 
 const items = [
   { title: "Beranda", url: "/", icon: Home },
@@ -35,6 +36,8 @@ export function AppSidebar() {
   const { isMobile, setOpenMobile } = useSidebar();
   const navigate = useNavigate();
   const matchRoute = useMatchRoute();
+  const { data: conversations } = useConversations();
+  const recentConversations = (conversations ?? []).slice(0, 6);
   // Highlight mengikuti route aktif sepenuhnya — tidak terpengaruh search params
   // (mis. /ecer?item=…&highlight=…) maupun child route (mis. /chat/$id, /gudang/pesanan/$id).
   const isActive = (path: string) => {
@@ -85,6 +88,55 @@ export function AppSidebar() {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {recentConversations.length > 0 && (
+          <SidebarGroup className="group-data-[collapsible=icon]:hidden">
+            <SidebarGroupLabel>Percakapan terbaru</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                {recentConversations.map((c) => {
+                  const active = pathname === `/chat/${c.id}`;
+                  return (
+                    <SidebarMenuItem key={c.id}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={c.display_title}
+                        size="sm"
+                      >
+                        <Link
+                          to="/chat/$conversationId"
+                          params={{ conversationId: c.id }}
+                          preload="intent"
+                          className="flex items-center gap-2"
+                          onPointerDown={(e) => {
+                            if (!isMobile) return;
+                            if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+                            e.preventDefault();
+                            setOpenMobile(false);
+                            if (!active) {
+                              void navigate({
+                                to: "/chat/$conversationId",
+                                params: { conversationId: c.id },
+                              });
+                            }
+                          }}
+                        >
+                          <MessageCircle className="h-4 w-4 shrink-0" />
+                          <span className="truncate">{c.display_title}</span>
+                          {c.unread > 0 && (
+                            <span className="ml-auto inline-flex h-4 min-w-[16px] items-center justify-center rounded-full bg-primary px-1 text-[10px] font-semibold text-primary-foreground">
+                              {c.unread > 99 ? "99+" : c.unread}
+                            </span>
+                          )}
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
       </SidebarContent>
       <SidebarFooter className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
         <CompactModeToggle />
