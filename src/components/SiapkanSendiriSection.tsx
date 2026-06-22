@@ -627,6 +627,114 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           </ul>
         )}
       </section>
+
+      {previewSend && (
+        <PreviewSendModal
+          row={previewSend}
+          thumbUrl={previewSend.photo_path ? thumbs[previewSend.photo_path] ?? null : null}
+          sending={sending}
+          onCancel={() => { if (!sending) setPreviewSend(null); }}
+          onConfirm={async () => {
+            setSending(true);
+            try {
+              await onSendWA(previewSend);
+            } finally {
+              setSending(false);
+              setPreviewSend(null);
+            }
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function PreviewSendModal({
+  row, thumbUrl, sending, onCancel, onConfirm,
+}: {
+  row: Row;
+  thumbUrl: string | null;
+  sending: boolean;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  const lines = [row.title];
+  if (row.location_url) lines.push(`📍 ${row.location_url}`);
+  if (row.note) lines.push(row.note);
+  const text = lines.join("\n");
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/60 p-3 sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      onClick={onCancel}
+    >
+      <div
+        className="w-full max-w-md rounded-2xl border bg-card p-4 shadow-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="mb-3 flex items-start justify-between gap-2">
+          <div>
+            <h3 className="text-sm font-semibold">Pratinjau Kiriman WA</h3>
+            <p className="text-[11px] text-muted-foreground">Pastikan foto & teks benar sebelum membuka WhatsApp.</p>
+          </div>
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={sending}
+            aria-label="Tutup pratinjau"
+            className="rounded-md p-1 text-muted-foreground hover:bg-accent disabled:opacity-50"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+
+        <div className="mb-3 overflow-hidden rounded-xl border bg-background">
+          {row.photo_path ? (
+            thumbUrl ? (
+              <img
+                src={thumbUrl}
+                alt={row.title}
+                className="max-h-72 w-full object-contain bg-black/5"
+              />
+            ) : (
+              <div className="flex h-48 items-center justify-center text-[11px] text-muted-foreground">
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat foto…
+              </div>
+            )
+          ) : (
+            <div className="flex h-32 items-center justify-center gap-2 text-[11px] text-muted-foreground">
+              <ImageIcon className="h-4 w-4" /> Tidak ada foto — hanya teks yang akan dikirim.
+            </div>
+          )}
+        </div>
+
+        <div className="mb-3">
+          <div className="mb-1 text-[11px] font-medium text-muted-foreground">Teks pesan</div>
+          <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-2 text-[12px] leading-relaxed">{text}</pre>
+        </div>
+
+        <div className="flex justify-end gap-2">
+          <button
+            type="button"
+            onClick={onCancel}
+            disabled={sending}
+            className="inline-flex h-9 items-center rounded-md border px-3 text-xs disabled:opacity-50"
+          >
+            Batal
+          </button>
+          <button
+            type="button"
+            onClick={onConfirm}
+            disabled={sending}
+            className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white disabled:opacity-60"
+          >
+            {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
+            {sending ? "Menyiapkan…" : "Lanjut Kirim WA"}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
