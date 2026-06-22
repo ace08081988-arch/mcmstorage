@@ -1089,7 +1089,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
   async function openWaForRow(r: AuditRow) {
     const { text, url } = buildTaskWaMessage(r);
     const result = await shareToWhatsApp({ text, title: r.task.title, url });
-    notifyShareResult(result, { okMsg: "Pesan WhatsApp dibuka", fallbackMsg: "Membuka WhatsApp Web…" });
+    notifyShareResult(result);
   }
 
   async function openWaForItem(
@@ -1108,7 +1108,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
       `Buka tugas: ${url}`,
     ];
     const result = await shareToWhatsApp({ text: lines.join("\n"), title: r.task.title, url });
-    notifyShareResult(result, { okMsg: "Pesan WhatsApp dibuka", fallbackMsg: "Membuka WhatsApp Web…" });
+    notifyShareResult(result);
   }
 
   return (
