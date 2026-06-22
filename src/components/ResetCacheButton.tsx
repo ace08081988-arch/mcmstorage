@@ -77,8 +77,10 @@ export function ResetCacheButton({
       }
       // 4. Clear IndexedDB (best-effort)
       try {
-        // @ts-expect-error - databases() is not in older TS lib
-        const dbs: { name?: string }[] = (await indexedDB.databases?.()) ?? [];
+        const anyIdb = indexedDB as unknown as {
+          databases?: () => Promise<{ name?: string }[]>;
+        };
+        const dbs = (await anyIdb.databases?.()) ?? [];
         await Promise.allSettled(
           dbs
             .map((d) => d.name)
