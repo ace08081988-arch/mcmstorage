@@ -2,8 +2,19 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { publicTaskUrl, isValidShareToken, InvalidShareTokenError, genShareToken } from "@/lib/prep";
-import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown, KeyRound, FlaskConical, Sparkles, AlertTriangle, CircleSlash, ShieldCheck, Timer, RotateCw } from "lucide-react";
+import { publicTaskUrl, isValidShareToken, InvalidShareTokenError, genShareToken, genPin } from "@/lib/prep";
+import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ExternalLink, Copy, Link2, Search, RefreshCw, ChevronLeft, Loader2, ArrowUpDown, KeyRound, FlaskConical, Sparkles, AlertTriangle, CircleSlash, ShieldCheck, Timer, RotateCw, LockKeyhole, MessageCircle, Dices } from "lucide-react";
 
 const PAGE_SIZE = 30;
 const REGEN_FRESH_WINDOW_MS = 5 * 60 * 1000;
@@ -98,6 +109,10 @@ function LinkPegawaiPage() {
   const [busy, setBusy] = useState(false);
   const [regenId, setRegenId] = useState<string | null>(null);
   const [regenAt, setRegenAt] = useState<Record<string, number>>({});
+  const [resetTask, setResetTask] = useState<Task | null>(null);
+  const [resetPin, setResetPin] = useState("");
+  const [resetBusy, setResetBusy] = useState(false);
+  const [resetDone, setResetDone] = useState(false);
   const [testMode, setTestMode] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -326,6 +341,52 @@ function LinkPegawaiPage() {
     }
     setRegenId(null);
     toast.error("Gagal memperbarui token: " + (lastErr ?? "tidak diketahui"));
+  }
+
+  function openResetPin(task: Task) {
+    setResetTask(task);
+    setResetPin(genPin());
+    setResetDone(false);
+  }
+
+  async function submitResetPin() {
+    if (!resetTask) return;
+    if (!/^\d{4,8}$/.test(resetPin)) {
+      toast.error("PIN harus 4–8 digit angka");
+      return;
+    }
+    setResetBusy(true);
+    const { error } = await supabase.rpc("prep_reset_pin", { _task_id: resetTask.id, _pin: resetPin });
+    setResetBusy(false);
+    if (error) {
+      toast.error("Gagal reset PIN: " + error.message);
+      return;
+    }
+    setResetDone(true);
+    toast.success("PIN baru aktif — PIN lama tidak berlaku");
+  }
+
+  async function copyPin() {
+    try {
+      await navigator.clipboard.writeText(resetPin);
+      toast.success("PIN disalin");
+    } catch {
+      toast.error("Gagal menyalin");
+    }
+  }
+
+  async function sharePinToWa() {
+    if (!resetTask) return;
+    let url = "";
+    try { url = publicTaskUrl(resetTask.share_token); } catch { /* ignore */ }
+    const lines = [
+      `Halo, berikut akses tugas: ${resetTask.title}`,
+      url ? `Link: ${url}` : null,
+      `PIN baru: ${resetPin}`,
+      "Mohon jangan dibagikan ke orang lain. PIN lama tidak berlaku lagi.",
+    ].filter(Boolean) as string[];
+    const res = await shareToWhatsApp({ text: lines.join("\n"), title: resetTask.title });
+    notifyShareResult(res);
   }
 
   return (
@@ -697,6 +758,13 @@ function LinkPegawaiPage() {
                       Token Baru
                     </button>
                   )}
+                  <button
+                    onClick={() => openResetPin(t)}
+                    title="Buat PIN baru — PIN lama otomatis tidak berlaku"
+                    className="inline-flex h-8 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-700 hover:bg-amber-500/20 dark:text-amber-400"
+                  >
+                    <LockKeyhole className="h-3.5 w-3.5" /> Reset PIN
+                  </button>
                   <Link
                     to="/tugas"
                     className="ml-auto inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] hover:bg-muted"
@@ -727,6 +795,78 @@ function LinkPegawaiPage() {
         </div>
         </>
       )}
+
+      <Dialog
+        open={!!resetTask}
+        onOpenChange={(v) => {
+          if (!v) { setResetTask(null); setResetPin(""); setResetDone(false); }
+        }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <LockKeyhole className="h-4 w-4 text-amber-600" /> Reset PIN
+            </DialogTitle>
+            <DialogDescription>
+              {resetDone
+                ? "PIN baru aktif. Catat atau kirim sekarang — PIN tidak bisa dilihat lagi setelah dialog ditutup."
+                : `Buat PIN baru (4–8 digit) untuk "${resetTask?.title ?? ""}". PIN lama akan langsung tidak berlaku.`}
+            </DialogDescription>
+          </DialogHeader>
+
+          {!resetDone ? (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <Input
+                  type="text"
+                  inputMode="numeric"
+                  autoFocus
+                  maxLength={8}
+                  value={resetPin}
+                  onChange={(e) => setResetPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                  placeholder="4–8 digit"
+                  className="tracking-[0.3em] text-center font-mono text-base"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setResetPin(genPin())}
+                  title="Acak PIN"
+                >
+                  <Dices className="h-4 w-4" /> Acak
+                </Button>
+              </div>
+              <DialogFooter className="gap-2">
+                <Button variant="outline" onClick={() => setResetTask(null)}>Batal</Button>
+                <Button onClick={() => void submitResetPin()} disabled={resetBusy}>
+                  {resetBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <KeyRound className="h-4 w-4" />}
+                  Simpan PIN Baru
+                </Button>
+              </DialogFooter>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-3 text-center">
+                <div className="text-[10px] uppercase tracking-wider text-amber-700 dark:text-amber-400">PIN Baru</div>
+                <div className="mt-1 font-mono text-2xl tracking-[0.4em]">{resetPin}</div>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => void copyPin()}>
+                  <Copy className="h-4 w-4" /> Salin
+                </Button>
+                <Button className="flex-1 bg-emerald-600 hover:bg-emerald-600/90" onClick={() => void sharePinToWa()}>
+                  <MessageCircle className="h-4 w-4" /> Kirim WA
+                </Button>
+              </div>
+              <DialogFooter>
+                <Button variant="ghost" onClick={() => { setResetTask(null); setResetPin(""); setResetDone(false); }}>
+                  Selesai
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
