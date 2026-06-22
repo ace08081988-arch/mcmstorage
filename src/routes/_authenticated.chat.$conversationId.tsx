@@ -236,8 +236,7 @@ function ChatRoomPage() {
                             <DropdownMenuItem
                               onSelect={async () => {
                                 const text = `${senderName}: ${m.body}`;
-                                const res = await shareToWhatsApp({ text });
-                                notifyShareResult(res);
+                                const res = await previewAndShareWA({ text });
                               }}
                             >
                               <Share2 className="mr-2 h-4 w-4" />

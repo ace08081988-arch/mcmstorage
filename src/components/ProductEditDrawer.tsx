@@ -74,8 +74,7 @@ export function ProductEditDrawer(props: Props) {
       const f = await urlToFile(photoUrls[i], `produk-${i + 1}.jpg`);
       if (f) files.push(f);
     }
-    const res = await shareToWhatsApp({ text, title: d.nama, files, url: d.lokasi || undefined });
-    notifyShareResult(res);
+    const res = await previewAndShareWA({ text, title: d.nama, files, url: d.lokasi || undefined });
   }
 
   const patch = (p: Partial<Produk>) => setDraft((d) => (d ? { ...d, ...p } : d));

@@ -141,8 +141,7 @@ function KontakPage() {
   const sendWa = async (row: Row) => {
     const text = `Halo ${row.name}, ada yang ingin saya sampaikan.`;
     const phone = row.contact?.replace(/\D/g, "") || undefined;
-    const res = await shareToWhatsApp({ text, title: row.name, phone });
-    notifyShareResult(res);
+    const res = await previewAndShareWA({ text, title: row.name, phone });
   };
 
   const handleTest = async (kind: Kind, row: Row) => {
@@ -418,8 +417,8 @@ function LinkAccountDialog({
       "Silakan daftar/masuk di tautan berikut, lalu beritahu saya agar akunnya saya tautkan:",
       origin,
     ].join("\n");
-    void shareToWhatsApp({ text, title: target?.row.name, phone: phone || undefined })
-      .then(notifyShareResult);
+    void previewAndShareWA({ text, title: target?.row.name, phone: phone || undefined })
+      ;
   };
 
   return (

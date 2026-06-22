@@ -330,13 +330,12 @@ function PackageCard({
       // Jika ada foto: jangan kirim phone agar share sheet sistem muncul
       // (di Android tap "WhatsApp" → foto otomatis terlampir + teks jadi caption).
       // Tanpa foto: pakai wa.me ke nomor langsung.
-      const res = await shareToWhatsApp({
+      const res = await previewAndShareWA({
         text,
         title: item.name,
         files,
         phone: files.length === 0 ? (targetPhone || undefined) : undefined,
       });
-      notifyShareResult(res);
       setPickWA(false);
       if (res.status === "cancelled" || res.status === "failed") {
         // Tidak jadi kirim — paket tetap "ready", tak perlu tanya lanjut.

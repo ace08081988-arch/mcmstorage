@@ -685,9 +685,8 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
       try { diag.canShareFiles = nav.canShare({ files }); } catch { diag.canShareFiles = false; }
     }
     try {
-      const result = await shareToWhatsApp({ text, files });
+      const result = await previewAndShareWA({ text, files });
       diag.result = result;
-      notifyShareResult(result);
       if (result.status !== "shared" && result.status !== "cancelled") {
         setShareDiag(diag);
       }
