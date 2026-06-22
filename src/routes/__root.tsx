@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -42,9 +42,43 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const [attempt, setAttempt] = useState(0);
+  const [autoRetrying, setAutoRetrying] = useState(true);
+  const MAX_AUTO_RETRIES = 3;
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+
+  useEffect(() => {
+    if (attempt >= MAX_AUTO_RETRIES) {
+      setAutoRetrying(false);
+      return;
+    }
+    const delay = 500 * Math.pow(2, attempt); // 500ms, 1s, 2s
+    const t = window.setTimeout(() => {
+      setAttempt((n: number) => n + 1);
+      router.invalidate();
+      reset();
+    }, delay);
+    return () => window.clearTimeout(t);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  if (autoRetrying && attempt < MAX_AUTO_RETRIES) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-muted border-t-primary" />
+          <h1 className="text-base font-semibold text-foreground">
+            Memuat ulang halaman…
+          </h1>
+          <p className="mt-2 text-xs text-muted-foreground">
+            Percobaan otomatis {attempt + 1} dari {MAX_AUTO_RETRIES}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -53,23 +87,25 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          Sudah dicoba memuat ulang otomatis {MAX_AUTO_RETRIES}× namun belum berhasil. Anda bisa coba lagi atau kembali ke beranda.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
+              setAttempt(0);
+              setAutoRetrying(true);
               router.invalidate();
               reset();
             }}
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
-            Try again
+            Muat ulang
           </button>
           <a
             href="/"
             className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
           >
-            Go home
+            Beranda
           </a>
         </div>
       </div>
