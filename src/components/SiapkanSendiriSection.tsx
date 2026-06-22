@@ -7,6 +7,39 @@ import { confirm as confirmDialog } from "@/lib/confirm";
 
 const BUCKET = "self-prep-photos";
 
+const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"] as const;
+const ALLOWED_EXT = ["jpg", "jpeg", "png", "webp", "heic", "heif"] as const;
+const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
+
+function pickFile(
+  f: File | null | undefined,
+  setFile: (f: File | null) => void,
+  inputEl?: HTMLInputElement | null,
+) {
+  if (!f) return;
+  const ext = (f.name.split(".").pop() || "").toLowerCase();
+  const mimeOk = ALLOWED_MIME.includes(f.type as (typeof ALLOWED_MIME)[number]);
+  const extOk = ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number]);
+  if (!mimeOk && !extOk) {
+    toast.error("Format tidak didukung. Gunakan JPG, PNG, WEBP, atau HEIC.");
+    if (inputEl) inputEl.value = "";
+    return;
+  }
+  if (f.size > MAX_FILE_BYTES) {
+    toast.error(
+      `Ukuran foto maksimal 8 MB. File Anda ${(f.size / 1024 / 1024).toFixed(1)} MB.`,
+    );
+    if (inputEl) inputEl.value = "";
+    return;
+  }
+  if (f.size === 0) {
+    toast.error("File foto kosong/rusak.");
+    if (inputEl) inputEl.value = "";
+    return;
+  }
+  setFile(f);
+}
+
 type Row = {
   id: string;
   user_id: string;
@@ -209,7 +242,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => pickFile(e.target.files?.[0], setFile, e.currentTarget)}
                 className="hidden"
               />
               <input
@@ -217,7 +250,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 type="file"
                 accept="image/*"
                 capture="environment"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                onChange={(e) => pickFile(e.target.files?.[0], setFile, e.currentTarget)}
                 className="hidden"
               />
               <button
