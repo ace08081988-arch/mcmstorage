@@ -86,6 +86,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [previewZoom, setPreviewZoom] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [previewFullscreen, setPreviewFullscreen] = useState(false);
+  const [exportBg, setExportBg] = useState<"white" | "transparent">("white");
   const previewScrollRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ x: number; y: number; sx: number; sy: number } | null>(null);
 
@@ -141,9 +142,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const ctx = base.getContext("2d")!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingQuality = "high";
-    // Fill white background so transparent PNGs don't show as black
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, view.w, view.h);
+    // Fill white background for white-bg export so transparent PNGs don't look black.
+    // For transparent export, leave the base canvas clear so the original alpha shows through.
+    if (exportBg === "white") {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, view.w, view.h);
+    } else {
+      ctx.clearRect(0, 0, view.w, view.h);
+    }
     ctx.save();
     ctx.translate(view.w / 2, view.h / 2);
     ctx.rotate((state.rotation * Math.PI) / 180);
@@ -154,7 +160,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.restore();
     baseCanvasRef.current = base;
     scheduleRedraw();
-  }, [img, view, state.rotation]);
+  }, [img, view, state.rotation, exportBg]);
 
   // Composite layer pass — copies cached base then draws layers + in-progress shape.
   function render() {
@@ -418,9 +424,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const cvs = document.createElement("canvas");
     cvs.width = outW; cvs.height = outH;
     const ctx = cvs.getContext("2d")!;
-    // Fill white background so transparent PNGs don't export as black on JPEG
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, outW, outH);
+    if (exportBg === "white") {
+      // Fill white background so transparent PNGs don't export as black on JPEG
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, outW, outH);
+    }
     ctx.save();
     ctx.translate(outW / 2, outH / 2);
     ctx.rotate((state.rotation * Math.PI) / 180);
@@ -432,8 +440,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.scale(sx, sy);
     for (const layer of state.layers) drawLayer(ctx, layer, false);
     ctx.restore();
-    const dataUrl = cvs.toDataURL("image/jpeg", 0.88);
-    const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, "image/jpeg", 0.88));
+    // Transparent export must use PNG to preserve alpha; white export keeps smaller JPEG.
+    const mime = exportBg === "transparent" ? "image/png" : "image/jpeg";
+    const quality = exportBg === "transparent" ? undefined : 0.88;
+    const dataUrl = cvs.toDataURL(mime, quality);
+    const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, mime, quality));
     if (blob) onSave(blob, dataUrl);
   }
 
@@ -464,9 +475,47 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <button onClick={redo} disabled={!future.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:opacity-40"><Redo2 className="h-4 w-4" /></button>
           <button onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border"><RotateCw className="h-4 w-4" /></button>
         </div>
-        <button onClick={exportImage} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
-          <Check className="h-4 w-4" /> Simpan
-        </button>
+        <div className="flex items-center gap-2">
+          <div
+            role="radiogroup"
+            aria-label="Latar saat ekspor"
+            className="flex h-9 items-center rounded-md border p-0.5 text-xs"
+          >
+            <button
+              type="button"
+              role="radio"
+              aria-checked={exportBg === "white"}
+              onClick={() => setExportBg("white")}
+              title="Ekspor JPEG dengan latar putih"
+              className={`flex h-8 items-center gap-1 rounded px-2 ${exportBg === "white" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              <span className="inline-block h-3 w-3 rounded-sm border bg-white" />
+              Putih
+            </button>
+            <button
+              type="button"
+              role="radio"
+              aria-checked={exportBg === "transparent"}
+              onClick={() => setExportBg("transparent")}
+              title="Ekspor PNG dengan latar transparan"
+              className={`flex h-8 items-center gap-1 rounded px-2 ${exportBg === "transparent" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+            >
+              <span
+                className="inline-block h-3 w-3 rounded-sm border"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%)",
+                  backgroundSize: "6px 6px",
+                  backgroundPosition: "0 0,0 3px,3px -3px,-3px 0",
+                }}
+              />
+              Transparan
+            </button>
+          </div>
+          <button onClick={exportImage} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
+            <Check className="h-4 w-4" /> Simpan
+          </button>
+        </div>
       </div>
 
       <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-black/80 p-2">
