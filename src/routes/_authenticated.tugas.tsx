@@ -603,7 +603,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                 className="inline-flex items-center gap-1 rounded bg-destructive/10 px-1.5 py-0.5 text-destructive"
                 title={`Belum ada foto: ${summary.itemsWithoutPhoto.join(", ")}`}
               >
-                <ImageIcon className="h-3 w-3" /> {summary.linesWithoutPhoto} tanpa foto
+                <ImageIcon className="h-3 w-3" /> {summary.itemsWithoutPhoto.length} barang tanpa foto
               </span>
             )}
             <span
@@ -618,7 +618,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             <div className="mt-1 flex items-start gap-1 text-[10px] text-amber-600">
               <ImageIcon className="mt-0.5 h-3 w-3 shrink-0" />
               <span>
-                <b>{summary.linesWithoutPhoto}</b> baris belum punya foto referensi — tugas tetap bisa dikirim, hanya tanpa lampiran foto:{" "}
+                <b>{summary.itemsWithoutPhoto.length}</b> barang belum punya foto referensi — tugas tetap bisa dikirim, hanya tanpa lampiran foto:{" "}
                 <span className="text-muted-foreground">{summary.itemsWithoutPhoto.join(", ")}</span>
               </span>
             </div>
