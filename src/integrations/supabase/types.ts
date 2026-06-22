@@ -1417,6 +1417,89 @@ export type Database = {
           },
         ]
       }
+      security_scan_findings: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          code: string
+          detail: Json
+          first_seen_at: string
+          id: string
+          last_run_id: string | null
+          last_seen_at: string
+          notified_at: string | null
+          resolved_at: string | null
+          severity: string
+          title: string
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          code: string
+          detail?: Json
+          first_seen_at?: string
+          id?: string
+          last_run_id?: string | null
+          last_seen_at?: string
+          notified_at?: string | null
+          resolved_at?: string | null
+          severity?: string
+          title: string
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          code?: string
+          detail?: Json
+          first_seen_at?: string
+          id?: string
+          last_run_id?: string | null
+          last_seen_at?: string
+          notified_at?: string | null
+          resolved_at?: string | null
+          severity?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "security_scan_findings_last_run_id_fkey"
+            columns: ["last_run_id"]
+            isOneToOne: false
+            referencedRelation: "security_scan_runs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      security_scan_runs: {
+        Row: {
+          finding_count: number
+          finished_at: string | null
+          id: string
+          new_count: number
+          resolved_count: number
+          started_at: string
+          status: string
+        }
+        Insert: {
+          finding_count?: number
+          finished_at?: string | null
+          id?: string
+          new_count?: number
+          resolved_count?: number
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          finding_count?: number
+          finished_at?: string | null
+          id?: string
+          new_count?: number
+          resolved_count?: number
+          started_at?: string
+          status?: string
+        }
+        Relationships: []
+      }
       self_prep_items: {
         Row: {
           created_at: string
@@ -1937,6 +2020,7 @@ export type Database = {
         }
         Returns: Json
       }
+      run_internal_security_scan: { Args: never; Returns: Json }
       search_chat_contacts: {
         Args: { _q: string }
         Returns: {
@@ -1946,6 +2030,10 @@ export type Database = {
           phone: string
           user_id: string
         }[]
+      }
+      security_findings_acknowledge: {
+        Args: { _ids: string[] }
+        Returns: number
       }
       start_dm: { Args: { _partner: string }; Returns: string }
     }
