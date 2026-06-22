@@ -21,19 +21,23 @@ function pickFile(
   const mimeOk = ALLOWED_MIME.includes(f.type as (typeof ALLOWED_MIME)[number]);
   const extOk = ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number]);
   if (!mimeOk && !extOk) {
-    toast.error("Format tidak didukung. Gunakan JPG, PNG, WEBP, atau HEIC.");
+    toast.error("Format foto tidak didukung", {
+      description: `File "${f.name}" tidak bisa diunggah. Format yang didukung: JPG, PNG, WEBP, HEIC/HEIF. Maks 8 MB per foto.`,
+    });
     if (inputEl) inputEl.value = "";
     return;
   }
   if (f.size > MAX_FILE_BYTES) {
-    toast.error(
-      `Ukuran foto maksimal 8 MB. File Anda ${(f.size / 1024 / 1024).toFixed(1)} MB.`,
-    );
+    toast.error("Ukuran foto terlalu besar", {
+      description: `File "${f.name}" berukuran ${(f.size / 1024 / 1024).toFixed(1)} MB. Maksimal 8 MB. Coba kompres atau pilih foto lain.`,
+    });
     if (inputEl) inputEl.value = "";
     return;
   }
   if (f.size === 0) {
-    toast.error("File foto kosong/rusak.");
+    toast.error("File foto kosong atau rusak", {
+      description: "Tidak ada data pada file ini. Pilih foto lain dengan format JPG, PNG, WEBP, atau HEIC (maks 8 MB).",
+    });
     if (inputEl) inputEl.value = "";
     return;
   }
