@@ -54,15 +54,23 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       setAutoRetrying(false);
       return;
     }
+    let cancelled = false;
     const delay = 500 * Math.pow(2, attempt); // 500ms, 1s, 2s
     const t = window.setTimeout(() => {
+      if (cancelled) return;
       setAttempt((n: number) => n + 1);
-      router.invalidate();
-      reset();
+      // Defer reset to next tick so we don't unmount mid-setState batch.
+      Promise.resolve().then(() => {
+        if (cancelled) return;
+        router.invalidate();
+        reset();
+      });
     }, delay);
-    return () => window.clearTimeout(t);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [attempt, router, reset]);
 
   if (autoRetrying && attempt < MAX_AUTO_RETRIES) {
     return (
