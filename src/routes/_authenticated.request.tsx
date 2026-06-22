@@ -27,6 +27,7 @@ export const Route = createFileRoute("/_authenticated/request")({
   head: () => ({ meta: [{ title: "Penyiapan Request · MCM Storage" }] }),
   validateSearch: (s: Record<string, unknown>) => ({
     title: typeof s.title === "string" ? s.title : undefined,
+    highlight: typeof s.highlight === "string" ? s.highlight : undefined,
   }),
   component: RequestPage,
 });
@@ -52,6 +53,7 @@ function RequestPage() {
   };
   const [loadError, setLoadError] = useState<LoadErr | null>(null);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
+  const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
