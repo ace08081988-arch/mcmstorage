@@ -418,6 +418,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const cvs = document.createElement("canvas");
     cvs.width = outW; cvs.height = outH;
     const ctx = cvs.getContext("2d")!;
+    // Fill white background so transparent PNGs don't export as black on JPEG
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, outW, outH);
     ctx.save();
     ctx.translate(outW / 2, outH / 2);
     ctx.rotate((state.rotation * Math.PI) / 180);
