@@ -51,15 +51,6 @@ d("SECURITY DEFINER boundary — restricted RPCs reject anon", () => {
       args: { _ids: ["00000000-0000-0000-0000-000000000000"] },
     },
     { name: "search_chat_contacts", args: { _q: "x" } },
-    { name: "prep_pin_locked_until", args: { _token: "nope" } },
-    { name: "prep_upload_allowed", args: { _share_token: "nope" } },
-    {
-      name: "prep_worker_upload_allowed",
-      args: {
-        _owner_user_id: "00000000-0000-0000-0000-000000000000",
-        _share_token: "nope",
-      },
-    },
   ];
 
   it.each(restricted)("anon cannot execute $name", async ({ name, args }) => {
@@ -113,6 +104,30 @@ d("SECURITY DEFINER boundary — worker share-link RPCs are anon-callable", () =
     expect(isPermissionDenied(error)).toBe(false);
     expect(error).toBeNull();
     expect(data).toMatchObject({ ok: false, error: "not_found" });
+  });
+});
+
+d("SECURITY DEFINER boundary — storage RLS helpers stay anon-callable", () => {
+  // These three are referenced by storage RLS policies on prep-photos /
+  // ecer-photos buckets. Policies evaluate as the caller (anon), so anon
+  // MUST retain EXECUTE or every worker-portal photo upload breaks.
+  const helpers: Array<{ name: string; args: Record<string, unknown> }> = [
+    { name: "prep_pin_locked_until", args: { _token: "nope" } },
+    { name: "prep_upload_allowed", args: { _share_token: "nope" } },
+    {
+      name: "prep_worker_upload_allowed",
+      args: {
+        _owner_user_id: "00000000-0000-0000-0000-000000000000",
+        _share_token: "nope",
+      },
+    },
+  ];
+
+  it.each(helpers)("anon can execute $name (no permission error)", async ({ name, args }) => {
+    // deno-lint-ignore no-explicit-any
+    const { error } = await (anon.rpc as any)(name, args);
+    expect(isPermissionDenied(error)).toBe(false);
+    expect(error).toBeNull();
   });
 });
 
