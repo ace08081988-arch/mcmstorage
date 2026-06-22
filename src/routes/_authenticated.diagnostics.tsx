@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CheckCircle2, AlertTriangle, ChevronLeft, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { buildDiagnosticsSummary } from "@/lib/diagnostics-summary";
 
 import reactRouterPkg from "@tanstack/react-router/package.json";
 import reactStartPkg from "@tanstack/react-start/package.json";
@@ -79,52 +80,12 @@ function DiagnosticsPage() {
   const allOk = checks.every((c) => c.ok);
 
   function buildSummary(): string {
-    const W = 64;
-    const rule = "═".repeat(W);
-    const thin = "─".repeat(W);
-    const center = (s: string) => {
-      const pad = Math.max(0, Math.floor((W - s.length) / 2));
-      return " ".repeat(pad) + s;
-    };
-    const now = new Date();
-    const ts = now.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "medium" });
-
-    const okCount = checks.filter((c) => c.ok).length;
-    const failCount = checks.length - okCount;
-    const statusLine = allOk
-      ? "✓ SEMUA PAKET KOMPATIBEL"
-      : `⚠ ${failCount} KETIDAKCOCOKAN TERDETEKSI`;
-
-    const nameW = Math.max(...packages.map((p) => p.name.length));
-
-    const lines: string[] = [];
-    lines.push(rule);
-    lines.push(center("DIAGNOSTIK MCM STORAGE"));
-    lines.push(center(ts));
-    lines.push(rule);
-    lines.push("");
-    lines.push(`STATUS  : ${statusLine}`);
-    lines.push(`RINGKAS : ${okCount}/${checks.length} cek lolos`);
-    lines.push("");
-    lines.push("VERSI PAKET TANSTACK");
-    lines.push(thin);
-    for (const p of packages) {
-      lines.push(`  ${p.name.padEnd(nameW, " ")}  ${p.version}`);
-    }
-    lines.push("");
-    lines.push("HASIL CEK KOMPATIBILITAS");
-    lines.push(thin);
-    checks.forEach((c, i) => {
-      const mark = c.ok ? "[ ✓ OK   ]" : "[ ✗ GAGAL]";
-      lines.push(`  ${i + 1}. ${mark}  ${c.label}`);
-      lines.push(`             ${c.detail}`);
+    return buildDiagnosticsSummary({
+      appName: "MCM Storage",
+      timestamp: new Date(),
+      packages: packages.map((p) => ({ name: p.name, version: p.version })),
+      checks: checks.map((c) => ({ label: c.label, ok: c.ok, detail: c.detail })),
     });
-    lines.push("");
-    lines.push(rule);
-    lines.push(center("— akhir laporan —"));
-    lines.push(rule);
-
-    return lines.join("\n");
   }
 
   async function copySummary() {
