@@ -257,6 +257,27 @@ function lineWeight(line: Line, variants: Variant[]): number {
   if (line.weightOverride != null) return Number(line.weightOverride) || 0;
   return 0;
 }
+
+// Satu-satunya sumber kebenaran untuk status sebuah baris. Dipakai
+// baik oleh ringkasan maupun badge per-baris, sehingga keduanya
+// tidak pernah berbeda. Murni dihitung dari state baris (tanpa
+// `lineStatus` yang diperbarui asinkron oleh NumberInput).
+function evaluateLine(line: Line, variants: Variant[]): {
+  status: "valid" | "partial" | "invalid";
+  weight: number;
+  count: number;
+  total: number;
+} {
+  const weight = lineWeight(line, variants);
+  const count = Number(line.count);
+  const cOk = Number.isFinite(count) && count > 0;
+  const wOk = Number.isFinite(weight) && weight > 0;
+  let status: "valid" | "partial" | "invalid";
+  if (!cOk || !wOk) status = "invalid";
+  else status = "valid";
+  const total = status === "valid" ? weight * count : 0;
+  return { status, weight: wOk ? weight : 0, count: cOk ? count : 0, total };
+}
 // Parser angka yang menerima koma desimal (format Indonesia) maupun titik.
 function parseNum(input: string): number | null {
   // Terima input parsial saat user masih mengetik (mis. "0.", ".", "-", "1,"),
@@ -425,21 +446,16 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       for (const l of entry.lines) {
         totalLines++;
         if (!hasPhoto) linesWithoutPhoto++;
-        // Validasi numerik berdasarkan state baris (bukan dari lineStatus
-        // yang diperbarui async oleh NumberInput) supaya ringkasan langsung
-        // konsisten dengan badge per-baris dan kolom "Siap dikirim".
-        const w = lineWeight(l, variants);
-        const c = Number(l.count) || 0;
-        const numericValid = Number.isFinite(w) && Number.isFinite(c) && w > 0 && c > 0;
-        const rs = numericValid ? rowStatus(l.key) : "invalid";
-        if (rs === "valid" && numericValid) {
+        // Satu selector tunggal — ringkasan & badge per-baris memakai
+        // hasil yang sama, tidak ada lagi ketergantungan ke lineStatus.
+        const ev = evaluateLine(l, variants);
+        if (ev.status === "valid") {
           validLines++;
-          const tw = w * c;
-          totalWeight += tw;
+          totalWeight += ev.total;
           // Foto referensi opsional → baris valid selalu dihitung siap kirim.
           readyLines++;
-          readyWeight += tw;
-        } else if (rs === "partial") partialLines++;
+          readyWeight += ev.total;
+        } else if (ev.status === "partial") partialLines++;
         else invalidLines++;
       }
     }
@@ -452,7 +468,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       linesWithoutPhoto,
       itemsWithoutPhoto,
     };
-  }, [picked, lineStatus, variants]);
+  }, [picked, variants]);
 
   const filtered = useMemo(() => {
     const q = query.toLowerCase().trim();
@@ -708,10 +724,11 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                   {p && (
                     <div className="mt-2 space-y-1.5 pl-6">
                       {p.lines.map((l) => {
-                        const w = lineWeight(l, variants);
-                        const total = w * (l.count || 0);
+                        const ev = evaluateLine(l, variants);
+                        const w = ev.weight;
+                        const total = ev.total;
                         const isManual = !l.variantId;
-                        const rs = rowStatus(l.key);
+                        const rs = ev.status;
                         return (
                           <div key={l.key} className="space-y-1.5 rounded border bg-background/60 p-2">
                             <div className="flex items-start gap-1.5">
