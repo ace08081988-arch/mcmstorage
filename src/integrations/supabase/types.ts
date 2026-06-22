@@ -1885,6 +1885,7 @@ export type Database = {
         Returns: string
       }
       prep_get_task: { Args: { _pin: string; _token: string }; Returns: Json }
+      prep_pin_locked_until: { Args: { _token: string }; Returns: string }
       prep_reset_pin: {
         Args: { _pin: string; _task_id: string }
         Returns: boolean
