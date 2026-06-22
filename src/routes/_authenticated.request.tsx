@@ -640,7 +640,7 @@ function PrepCard({
             <MessageCircle className="h-3.5 w-3.5" />
           </button>
           <button
-            onClick={() => { if (confirm("Hapus penyiapan ini? Stok akan dikembalikan.")) onDelete(); }}
+            onClick={onDelete}
             className="rounded-md border border-destructive/40 bg-destructive/10 p-1 text-destructive hover:bg-destructive/20"
             aria-label="Hapus penyiapan"
             title="Hapus penyiapan"
