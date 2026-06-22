@@ -302,6 +302,7 @@ function EcerPage() {
                     onOpen={() => setSelectedTitleId(t.id)}
                     onEdit={() => setEditingTitle(t)}
                     onDeleted={refetchTitles}
+                    highlighted={highlightTitleId === t.id}
                   />
                 ))}
               </div>
