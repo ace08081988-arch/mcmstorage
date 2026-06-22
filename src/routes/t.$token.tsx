@@ -28,17 +28,36 @@ function PublicPrepPage() {
   const [items, setItems] = useState<PrepItemRow[]>([]);
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
+  const [lockedUntil, setLockedUntil] = useState<number | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (lockedUntil == null) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [lockedUntil]);
+
+  const lockedSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - now) / 1000)) : 0;
+  const isLocked = lockedSecondsLeft > 0;
 
   async function fetchTask(p: string) {
+    if (isLocked) return false;
     setLoading(true);
     const { data, error } = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: p });
     setLoading(false);
     if (error) { toast.error("Gagal: " + error.message); return false; }
-    const res = data as { ok: boolean; error?: string; task?: PrepTaskRow; items?: PrepItemRow[] };
+    const res = data as { ok: boolean; error?: string; retry_after?: number; task?: PrepTaskRow; items?: PrepItemRow[] };
     if (!res?.ok) {
-      toast.error(res?.error === "bad_pin" ? "PIN salah" : "Tugas tidak ditemukan / kedaluwarsa");
+      if (res?.error === "rate_limited") {
+        const secs = Math.max(1, res.retry_after ?? 600);
+        setLockedUntil(Date.now() + secs * 1000);
+        toast.error(`Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(secs / 60)} menit.`);
+      } else {
+        toast.error(res?.error === "bad_pin" ? "PIN salah" : "Tugas tidak ditemukan / kedaluwarsa");
+      }
       return false;
     }
+    setLockedUntil(null);
     setTask(res.task!); setItems(res.items ?? []); setAuthed(true); pinRef.current = p;
     return true;
   }
@@ -84,11 +103,18 @@ function PublicPrepPage() {
             <p className="mb-5 text-xs leading-relaxed text-muted-foreground">Masukkan PIN dari pemilik untuk membuka daftar barang yang harus disiapkan.</p>
             <input
               inputMode="numeric" maxLength={8} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
-              placeholder="••••••" className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums shadow-inner focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
-            <button disabled={pin.length < 4 || loading} onClick={() => fetchTask(pin)}
+              placeholder="••••••" disabled={isLocked}
+              className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums shadow-inner focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60" />
+            <button disabled={pin.length < 4 || loading || isLocked} onClick={() => fetchTask(pin)}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50">
-              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Buka Tugas
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              {isLocked ? `Terkunci · ${Math.floor(lockedSecondsLeft / 60)}:${String(lockedSecondsLeft % 60).padStart(2, "0")}` : "Buka Tugas"}
             </button>
+            {isLocked && (
+              <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-[11px] leading-relaxed text-destructive">
+                Terlalu banyak PIN salah. Tunggu hingga hitungan mundur selesai, lalu coba lagi.
+              </div>
+            )}
             <div className="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
               <ShieldCheck className="h-3 w-3" /> Koneksi terenkripsi · Sesi terbatas waktu
             </div>

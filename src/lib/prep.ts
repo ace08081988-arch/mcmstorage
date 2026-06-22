@@ -14,8 +14,16 @@ export function genShareToken(): string {
 }
 
 export function genPin(): string {
-  const n = Math.floor(Math.random() * 1_000_000);
-  return n.toString().padStart(6, "0");
+  // PIN 6 digit acak kriptografis. Pakai rejection sampling agar
+  // distribusi 0..999999 seragam (tanpa bias modulo).
+  const buf = new Uint32Array(1);
+  const MAX = 4_294_000_000; // kelipatan 1_000_000 terbesar < 2^32
+  let n: number;
+  do {
+    crypto.getRandomValues(buf);
+    n = buf[0];
+  } while (n >= MAX);
+  return (n % 1_000_000).toString().padStart(6, "0");
 }
 
 export async function signedUrl(path: string | null | undefined, expiresIn = 60 * 60 * 24 * 7, client: StorageClient = supabase): Promise<string | null> {
