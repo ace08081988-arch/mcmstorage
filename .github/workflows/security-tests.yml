@@ -1,0 +1,49 @@
+name: Security Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  security-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+      VITE_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.VITE_SUPABASE_PUBLISHABLE_KEY }}
+      VITE_SUPABASE_PROJECT_ID: ${{ secrets.VITE_SUPABASE_PROJECT_ID }}
+      # Optional live-fixture rate-limit smoke test. When unset, that
+      # describe block is skipped automatically.
+      TEST_PREP_SHARE_TOKEN: ${{ secrets.TEST_PREP_SHARE_TOKEN }}
+      TEST_PREP_PIN_BAD: ${{ secrets.TEST_PREP_PIN_BAD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run security boundary tests
+        id: security
+        run: |
+          mkdir -p reports
+          bun run test:security --reporter=default --reporter=junit \
+            --outputFile.junit=reports/security-junit.xml \
+            2>&1 | tee reports/security-output.log
+
+      - name: Upload failure report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-test-report
+          path: |
+            reports/security-output.log
+            reports/security-junit.xml
+          if-no-files-found: warn
+          retention-days: 14
