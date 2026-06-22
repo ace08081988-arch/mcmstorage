@@ -19,6 +19,52 @@ export function buildWhatsAppUrl(text: string, phone?: string) {
   return `${base}?text=${encodeURIComponent(text)}`;
 }
 
+const IMAGE_MIME_BY_EXT: Record<string, string> = {
+  jpg: "image/jpeg",
+  jpeg: "image/jpeg",
+  png: "image/png",
+  webp: "image/webp",
+  gif: "image/gif",
+  heic: "image/heic",
+  heif: "image/heif",
+  avif: "image/avif",
+};
+
+function inferImageMime(...values: Array<string | undefined | null>) {
+  const explicit = values.find((v) => v && /^image\//i.test(v));
+  if (explicit) return explicit.toLowerCase();
+
+  for (const value of values) {
+    const ext = value?.split(/[?#]/)[0]?.match(/\.([a-z0-9]+)$/i)?.[1]?.toLowerCase();
+    if (ext && IMAGE_MIME_BY_EXT[ext]) return IMAGE_MIME_BY_EXT[ext];
+  }
+  return "image/jpeg";
+}
+
+function extensionForMime(mime: string) {
+  if (mime.includes("png")) return "png";
+  if (mime.includes("webp")) return "webp";
+  if (mime.includes("gif")) return "gif";
+  if (mime.includes("heic")) return "heic";
+  if (mime.includes("heif")) return "heif";
+  if (mime.includes("avif")) return "avif";
+  return "jpg";
+}
+
+function withImageExtension(filename: string, mime: string) {
+  const safeName = filename.trim() || "foto";
+  return /\.(jpe?g|png|webp|gif|heic|heif|avif)$/i.test(safeName)
+    ? safeName
+    : `${safeName.replace(/\.[^.]+$/, "")}.${extensionForMime(mime)}`;
+}
+
+function normalizeShareFile(file: File) {
+  const mime = inferImageMime(file.type, file.name);
+  const name = withImageExtension(file.name, mime);
+  if (file.type === mime && file.name === name) return file;
+  return new File([file], name, { type: mime, lastModified: file.lastModified });
+}
+
 export type ShareResult =
   | { status: "shared"; withFiles: boolean }
   | { status: "cancelled"; fallbackText?: string; phone?: string }
@@ -28,42 +74,59 @@ export type ShareResult =
 export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   const { text, title, url, files, phone } = input;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
+  const fullText = url ? `${text}\n${url}` : text;
 
-  const hasFiles = !!(files && files.length > 0);
+  const shareFiles = (files ?? []).map(normalizeShareFile);
+  const hasFiles = shareFiles.length > 0;
 
   let shareFailed = false;
   let shareError = "";
+
+  if (hasFiles) {
+    if (nav && typeof nav.share === "function") {
+      const canShareFiles = typeof nav.canShare !== "function" || nav.canShare({ files: shareFiles });
+      if (canShareFiles) {
+        try {
+          // WhatsApp sering mengubah URL menjadi preview link dan mengabaikan media.
+          // Kirim file sebagai media utama; teks lengkap disiapkan di clipboard untuk caption/pesan lanjutan.
+          void nav.clipboard?.writeText(fullText).catch(() => undefined);
+          await nav.share({ files: shareFiles, title });
+          return { status: "shared", withFiles: true };
+        } catch (err) {
+          const name = (err as DOMException)?.name;
+          if (name === "AbortError" || name === "NotAllowedError") {
+            return { status: "cancelled", fallbackText: fullText, phone };
+          }
+          shareFailed = true;
+          shareError = (err as Error)?.message || String(err);
+        }
+      }
+    }
+
+    for (const f of shareFiles) downloadFile(f, f.name);
+    try { await nav?.clipboard?.writeText(fullText); } catch { /* ignore */ }
+    return {
+      status: "fallback",
+      withFiles: true,
+      reason: shareFailed ? "share-failed" : "no-web-share",
+      ...(shareFailed ? { _error: shareError } as never : {}),
+    };
+  }
+
   if (nav && typeof nav.share === "function") {
-    const canShareFiles =
-      hasFiles && typeof nav.canShare === "function" && nav.canShare({ files });
-    // Jika ada foto tapi perangkat tak bisa share file, JANGAN diam-diam
-    // turunkan ke share teks saja — lewati Web Share API dan jatuh ke
-    // fallback manual supaya pengguna tahu foto perlu dilampirkan sendiri.
-    if (hasFiles && !canShareFiles) {
-      shareFailed = false;
-    } else {
       try {
-        const payload: ShareData = canShareFiles
-          ? { files, text, title }
-          : { text, title, url };
-        await nav.share(payload);
-        return { status: "shared", withFiles: !!canShareFiles };
+        await nav.share({ text, title, url });
+        return { status: "shared", withFiles: false };
       } catch (err) {
-      const name = (err as DOMException)?.name;
-      if (name === "AbortError" || name === "NotAllowedError") {
-        return { status: "cancelled", fallbackText: url ? `${text}\n${url}` : text, phone };
-      }
-      shareFailed = true;
-      shareError = (err as Error)?.message || String(err);
-      }
+        const name = (err as DOMException)?.name;
+        if (name === "AbortError" || name === "NotAllowedError") {
+          return { status: "cancelled", fallbackText: fullText, phone };
+        }
+        shareFailed = true;
+        shareError = (err as Error)?.message || String(err);
     }
   }
 
-  const fullText = url ? `${text}\n${url}` : text;
-  if (hasFiles) {
-    for (const f of files!) downloadFile(f, f.name);
-    try { await navigator.clipboard?.writeText(fullText); } catch { /* ignore */ }
-  }
   const win = window.open(buildWhatsAppUrl(fullText, phone), "_blank", "noopener,noreferrer");
   if (!win) {
     return {
