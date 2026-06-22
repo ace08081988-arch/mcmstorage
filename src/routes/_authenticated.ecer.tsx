@@ -829,19 +829,63 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   }
 
   async function save() {
+    // Kumpulkan semua masalah agar pengguna tahu semua yang harus diperbaiki sekaligus.
+    const issues: string[] = [];
     const grams = Number(String(actual).replace(",", "."));
-    if (!Number.isFinite(grams) || grams <= 0) { toast.error("Berat aktual tidak valid"); return; }
-    if (grams > Number(item.stock_base)) {
-      toast.error(`Stok tidak cukup (tersedia ${item.stock_base} ${item.base_unit})`); return;
+
+    // Foto
+    if (!photo) {
+      toast.error("Foto wajib diisi", {
+        description: "Ambil atau pilih foto produk dulu sebelum menyimpan.",
+      });
+      issues.push("photo");
     }
-    if (!photo) { toast.error("Foto wajib diisi"); return; }
-    if (!locUrl.trim() || !(gps && Number.isFinite(gps.lat) && Number.isFinite(gps.lng))) {
-      toast.error("Lokasi GPS wajib diisi (tekan tombol GPS)"); return;
+
+    // Berat aktual
+    if (!String(actual).trim()) {
+      toast.error("Berat aktual wajib diisi", {
+        description: `Masukkan berat aktual dalam ${title.unit_label}.`,
+      });
+      issues.push("grams");
+    } else if (!Number.isFinite(grams) || grams <= 0) {
+      toast.error("Berat aktual tidak valid", {
+        description: "Gunakan angka lebih besar dari 0 (contoh: 1 atau 1.5).",
+      });
+      issues.push("grams");
+    } else if (grams > Number(item.stock_base)) {
+      toast.error("Stok produk tidak cukup", {
+        description: `Berat ${grams} ${item.base_unit} melebihi stok tersedia ${item.stock_base} ${item.base_unit}.`,
+      });
+      issues.push("grams");
     }
-    if (locUrl) {
-      if (locUrl.length > 2048) { toast.error("URL lokasi terlalu panjang"); return; }
-      if (!/^https:\/\//i.test(locUrl)) { toast.error("URL harus diawali https://"); return; }
+
+    // GPS / lokasi
+    const hasGps = gps && Number.isFinite(gps.lat) && Number.isFinite(gps.lng);
+    if (!locUrl.trim() && !hasGps) {
+      toast.error("Lokasi GPS wajib diisi", {
+        description: "Tekan tombol GPS untuk mengambil lokasi otomatis, atau tempel link Google Maps.",
+      });
+      issues.push("gps");
+    } else if (!hasGps) {
+      toast.error("Koordinat GPS belum terambil", {
+        description: "Tekan tombol GPS agar koordinat (latitude/longitude) ikut tersimpan.",
+      });
+      issues.push("gps");
+    } else if (locUrl.trim()) {
+      if (locUrl.length > 2048) {
+        toast.error("Link lokasi terlalu panjang", {
+          description: "Maksimal 2048 karakter. Persingkat URL atau ambil ulang dengan tombol GPS.",
+        });
+        issues.push("gps");
+      } else if (!/^https:\/\//i.test(locUrl)) {
+        toast.error("Format link lokasi salah", {
+          description: "Link harus diawali https:// (contoh: https://maps.google.com/…).",
+        });
+        issues.push("gps");
+      }
     }
+
+    if (issues.length) return;
     setBusy(true);
     try {
       const { data: u } = await supabase.auth.getUser();
