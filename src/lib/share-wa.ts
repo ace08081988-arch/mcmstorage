@@ -84,7 +84,11 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
 
   if (hasFiles) {
     if (nav && typeof nav.share === "function") {
-      const canShareFiles = typeof nav.canShare !== "function" || nav.canShare({ files: shareFiles });
+      let canShareFiles = typeof nav.canShare !== "function";
+      if (!canShareFiles) {
+        try { canShareFiles = nav.canShare({ files: shareFiles }); }
+        catch { canShareFiles = false; }
+      }
       if (canShareFiles) {
         try {
           // WhatsApp sering mengubah URL menjadi preview link dan mengabaikan media.
