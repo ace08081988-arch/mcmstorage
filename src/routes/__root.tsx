@@ -127,6 +127,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
+      { name: "google", content: "notranslate" },
       { title: "MCM Storage — Kelola Pesanan & Kirim WhatsApp" },
       { name: "description", content: "MCM Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       { name: "author", content: "MCM Storage" },
