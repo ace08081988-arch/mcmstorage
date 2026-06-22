@@ -3,7 +3,8 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
-import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
+import { urlToFile, buildWhatsAppUrl } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 import { fmtItemQty } from "@/lib/stock-format";
 import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
@@ -218,8 +219,7 @@ function TugasPage() {
               onClick={async () => {
                 const url = publicTaskUrl(t.share_token);
                 const message = `Tugas: ${t.title}\n${url}\n(PIN dikirim terpisah)`;
-                const res = await shareToWhatsApp({ text: message, title: t.title, url });
-                notifyShareResult(res);
+                const res = await previewAndShareWA({ text: message, title: t.title, url });
               }}
               title="Bagikan tugas ini via WhatsApp"
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20"
@@ -609,7 +609,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       if (cleanedPhone) localStorage.setItem("prep:last_phone", cleanedPhone);
       const url = publicTaskUrl(token);
       const text = `Tolong siapkan barang berikut. Buka link, masukkan PIN, foto barangnya & kirim:\n\n${title}\nPIN: ${pin}`;
-      const result = await shareToWhatsApp({
+      const result = await previewAndShareWA({
         title,
         text,
         url,
@@ -617,7 +617,6 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         phone: cleanedPhone || undefined,
       });
       toast.success("Tugas dibuat");
-      notifyShareResult(result);
     } else {
       toast.success("Tugas dibuat");
     }
@@ -1162,8 +1161,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
 
   async function openWaForRow(r: AuditRow) {
     const { text, url } = buildTaskWaMessage(r);
-    const result = await shareToWhatsApp({ text, title: r.task.title, url });
-    notifyShareResult(result);
+    const result = await previewAndShareWA({ text, title: r.task.title, url });
   }
 
   function buildItemWaMessage(r: AuditRow, item: AuditRow["problemItems"][number]) {
@@ -1380,8 +1378,7 @@ function WaPreviewDialog({
     );
   }
   async function send() {
-    const result = await shareToWhatsApp({ text, title: initial.title, url: initial.url });
-    notifyShareResult(result);
+    const result = await previewAndShareWA({ text, title: initial.title, url: initial.url });
     onClose();
   }
   return (
@@ -1435,7 +1432,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 pt-2">
-          <button onClick={() => shareToWhatsApp({ text: message, title: info.title, url })}
+          <button onClick={() => previewAndShareWA({ text: message, title: info.title, url })}
             className="inline-flex h-10 items-center justify-center gap-1 rounded-md bg-[#25D366] text-sm font-semibold text-white">
             <MessageCircle className="h-4 w-4" /> Bagikan
           </button>
@@ -1487,7 +1484,7 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
   return (
     <Modal title={task.title} onClose={onClose} wide>
       <div className="mb-3 flex flex-wrap gap-2">
-        <button onClick={() => shareToWhatsApp({ text: message, title: task.title, url })} className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white"><MessageCircle className="h-4 w-4" /> Bagikan ulang</button>
+        <button onClick={() => previewAndShareWA({ text: message, title: task.title, url })} className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white"><MessageCircle className="h-4 w-4" /> Bagikan ulang</button>
         <button disabled={busy} onClick={() => setStatus(task.status === "done" ? "active" : "done")} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs">{task.status === "done" ? "Aktifkan lagi" : "Tandai selesai"}</button>
         <a href={url} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs"><ExternalLink className="h-4 w-4" /> Pratinjau link pegawai</a>
       </div>
@@ -1546,8 +1543,7 @@ function SubmissionCard({ sub }: { sub: Submission }) {
       sub.note ? `Catatan: ${sub.note}` : "",
       sub.location_url ? `Lokasi: ${sub.location_url}` : "",
     ].filter(Boolean).join("\n");
-    const result = await shareToWhatsApp({ text: text || "Foto barang", files, url: sub.location_url ?? undefined });
-    notifyShareResult(result);
+    const result = await previewAndShareWA({ text: text || "Foto barang", files, url: sub.location_url ?? undefined });
   }
 
   return (

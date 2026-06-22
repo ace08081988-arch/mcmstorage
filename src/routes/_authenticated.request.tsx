@@ -20,7 +20,7 @@ import {
   requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
-import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 import { publicTaskUrl } from "@/lib/prep";
 
 export const Route = createFileRoute("/_authenticated/request")({
@@ -228,7 +228,7 @@ function RequestPage() {
                   lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${i.unit_label}`);
                 });
               }
-              void shareToWhatsApp({ text: lines.join("\n"), title: `Request ${t.name}` }).then(notifyShareResult);
+              void previewAndShareWA({ text: lines.join("\n"), title: `Request ${t.name}` });
             };
             const deleteTitle = async () => {
               if (!confirm(`Hapus judul request "${t.name}"? Aksi ini permanen.`)) return;
@@ -636,7 +636,7 @@ function PrepCard({
     if (prep.location_url) { lines.push(""); lines.push(`Lokasi: ${prep.location_url}`); }
     lines.push("");
     lines.push(`Disiapkan: ${new Date(prep.created_at).toLocaleString("id-ID")}`);
-    void shareToWhatsApp({ text: lines.join("\n"), title: `Paket #${index}` }).then(notifyShareResult);
+    void previewAndShareWA({ text: lines.join("\n"), title: `Paket #${index}` });
   };
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
@@ -826,13 +826,12 @@ function PrepEditorDialog({
       if (opts?.sendWa) {
         try {
           const file = new File([photo.blob], `penyiapan-${title.name}.jpg`, { type: photo.blob.type || "image/jpeg" });
-          const res = await shareToWhatsApp({
+          const res = await previewAndShareWA({
             text: buildMessage(),
             title: `Penyiapan ${title.name}`,
             phone: normalizedPhone,
             files: [file],
           });
-          notifyShareResult(res);
         } catch (err) {
           toast.error("Gagal kirim WA: " + (err as Error).message);
         }

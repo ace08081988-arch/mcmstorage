@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
-import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -166,8 +166,7 @@ function HutangPiutangPage() {
       ? `Ini pengingat hutang saya kepada Anda sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon konfirmasi cara & waktu pelunasannya. Terima kasih.`
       : `Ini pengingat tagihan dari saya sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon segera diselesaikan ya, terima kasih.`;
     const text = `${greet}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
-    const res = await shareToWhatsApp({ text, title: d.party_name, phone: partyPhone(d) });
-    notifyShareResult(res);
+    const res = await previewAndShareWA({ text, title: d.party_name, phone: partyPhone(d) });
   };
 
   return (

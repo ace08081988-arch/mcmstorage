@@ -19,7 +19,8 @@ import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
-import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
+import { buildWhatsAppUrl } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 import { fmtItemQty } from "@/lib/stock-format";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
@@ -685,9 +686,8 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
       try { diag.canShareFiles = nav.canShare({ files }); } catch { diag.canShareFiles = false; }
     }
     try {
-      const result = await shareToWhatsApp({ text, files });
+      const result = await previewAndShareWA({ text, files });
       diag.result = result;
-      notifyShareResult(result);
       if (result.status !== "shared" && result.status !== "cancelled") {
         setShareDiag(diag);
       }

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { publicTaskUrl, isValidShareToken, InvalidShareTokenError, genShareToken, genPin } from "@/lib/prep";
-import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 import {
   Dialog,
   DialogContent,
@@ -388,8 +388,7 @@ function LinkPegawaiPage() {
       `PIN baru: ${resetPin}`,
       "Mohon jangan dibagikan ke orang lain. PIN lama tidak berlaku lagi.",
     ].filter(Boolean) as string[];
-    const res = await shareToWhatsApp({ text: lines.join("\n"), title: resetTask.title });
-    notifyShareResult(res);
+    const res = await previewAndShareWA({ text: lines.join("\n"), title: resetTask.title });
   }
 
   return (
