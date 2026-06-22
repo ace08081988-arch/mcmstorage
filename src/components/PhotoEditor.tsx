@@ -424,9 +424,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const cvs = document.createElement("canvas");
     cvs.width = outW; cvs.height = outH;
     const ctx = cvs.getContext("2d")!;
-    // Fill white background so transparent PNGs don't export as black on JPEG
-    ctx.fillStyle = "#ffffff";
-    ctx.fillRect(0, 0, outW, outH);
+    if (exportBg === "white") {
+      // Fill white background so transparent PNGs don't export as black on JPEG
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, outW, outH);
+    }
     ctx.save();
     ctx.translate(outW / 2, outH / 2);
     ctx.rotate((state.rotation * Math.PI) / 180);
@@ -438,8 +440,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.scale(sx, sy);
     for (const layer of state.layers) drawLayer(ctx, layer, false);
     ctx.restore();
-    const dataUrl = cvs.toDataURL("image/jpeg", 0.88);
-    const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, "image/jpeg", 0.88));
+    // Transparent export must use PNG to preserve alpha; white export keeps smaller JPEG.
+    const mime = exportBg === "transparent" ? "image/png" : "image/jpeg";
+    const quality = exportBg === "transparent" ? undefined : 0.88;
+    const dataUrl = cvs.toDataURL(mime, quality);
+    const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, mime, quality));
     if (blob) onSave(blob, dataUrl);
   }
 
