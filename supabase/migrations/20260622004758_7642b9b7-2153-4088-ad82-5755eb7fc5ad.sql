@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.prep_reset_pin(uuid, text) FROM PUBLIC, anon;
