@@ -30,6 +30,39 @@ function rule(char: string): string {
   return char.repeat(SUMMARY_MAX_WIDTH);
 }
 
+/**
+ * Map common Unicode punctuation to ASCII so labels/details copied from a
+ * UI string (which often contain ↔, —, –, “”, ✓, ✗, …) still render the
+ * same on every clipboard / font. Anything else outside printable ASCII is
+ * replaced with "?".
+ */
+const UNICODE_TO_ASCII: Record<string, string> = {
+  "↔": "<->", "→": "->", "←": "<-", "↑": "^", "↓": "v",
+  "—": "-", "–": "-", "−": "-",
+  "“": '"', "”": '"', "„": '"', "‟": '"',
+  "‘": "'", "’": "'", "‚": "'", "‛": "'",
+  "•": "*", "·": "-", "…": "...",
+  "✓": "[ok]", "✔": "[ok]", "✗": "[x]", "✘": "[x]",
+  "⚠": "(!)", "⚡": "(!)",
+  "©": "(c)", "®": "(r)", "™": "(tm)",
+  "\u00a0": " ", "\u2009": " ", "\u200a": " ", "\u202f": " ",
+};
+
+function toAscii(s: string): string {
+  let out = "";
+  for (const ch of s) {
+    const code = ch.codePointAt(0) ?? 0;
+    if (code === 0x0a || (code >= 0x20 && code <= 0x7e)) {
+      out += ch;
+    } else if (UNICODE_TO_ASCII[ch]) {
+      out += UNICODE_TO_ASCII[ch];
+    } else {
+      out += "?";
+    }
+  }
+  return out;
+}
+
 function fmtTimestamp(d: Date): string {
   // YYYY-MM-DD HH:MM (UTC) — stable, locale-independent.
   const pad = (n: number) => String(n).padStart(2, "0");
@@ -40,7 +73,7 @@ function fmtTimestamp(d: Date): string {
 }
 
 export function buildDiagnosticsSummary(input: SummaryInput): string {
-  const appName = input.appName ?? "Aplikasi";
+  const appName = toAscii(input.appName ?? "Aplikasi");
   const okCount = input.checks.filter((c) => c.ok).length;
   const allOk = okCount === input.checks.length;
 
@@ -56,16 +89,16 @@ export function buildDiagnosticsSummary(input: SummaryInput): string {
   lines.push("VERSI PAKET");
   lines.push(rule("-"));
   for (const p of input.packages) {
-    lines.push(`- ${p.name}@${p.version}`);
+    lines.push(`- ${toAscii(p.name)}@${toAscii(p.version)}`);
   }
   lines.push("");
   lines.push("HASIL CEK");
   lines.push(rule("-"));
   input.checks.forEach((c, i) => {
     const mark = c.ok ? "[OK]  " : "[FAIL]";
-    lines.push(`${i + 1}. ${mark} ${c.label}`);
+    lines.push(`${i + 1}. ${mark} ${toAscii(c.label)}`);
     // Wrap detail to width, indenting continuation lines by 4 spaces.
-    for (const wrapped of wrapText(c.detail, SUMMARY_MAX_WIDTH - 4)) {
+    for (const wrapped of wrapText(toAscii(c.detail), SUMMARY_MAX_WIDTH - 4)) {
       lines.push(`    ${wrapped}`);
     }
   });
