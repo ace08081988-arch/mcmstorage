@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
-import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
+import { urlToFile } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 import { fmtBase, fmtItemQty } from "@/lib/stock-format";
 
 type Item = {

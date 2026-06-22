@@ -10,7 +10,8 @@ import {
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
-import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
+import { urlToFile } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 
 export type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
 

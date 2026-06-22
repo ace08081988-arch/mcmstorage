@@ -19,7 +19,8 @@ import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
-import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
+import { buildWhatsAppUrl } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 import { fmtItemQty } from "@/lib/stock-format";
 
 export const Route = createFileRoute("/_authenticated/ecer")({

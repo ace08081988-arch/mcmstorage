@@ -20,7 +20,7 @@ import {
   requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
-import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 import { publicTaskUrl } from "@/lib/prep";
 
 export const Route = createFileRoute("/_authenticated/request")({

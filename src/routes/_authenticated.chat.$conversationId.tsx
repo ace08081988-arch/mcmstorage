@@ -33,7 +33,7 @@ import {
   type MessageRow,
 } from "@/lib/chat";
 import { sendMessage } from "@/lib/chat.functions";
-import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { previewAndShareWA } from "@/lib/share-wa-preview";
 
 export const Route = createFileRoute("/_authenticated/chat/$conversationId")({
   component: ChatRoomPage,
