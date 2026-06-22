@@ -833,6 +833,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
   const [filter, setFilter] = useState<"all" | "ok" | "bad" | "fixed">("all");
   const [query, setQuery] = useState("");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "diff_desc" | "diff_asc" | "title">("diff_desc");
+  const [waPreview, setWaPreview] = useState<{ text: string; url: string; title: string } | null>(null);
   const RESOLVED_KEY = "tugas.audit.resolved.v1";
   const [resolved, setResolved] = useState<Record<string, string>>(() => {
     if (typeof window === "undefined") return {};
@@ -1092,12 +1093,9 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
     notifyShareResult(result);
   }
 
-  async function openWaForItem(
-    r: AuditRow,
-    item: AuditRow["problemItems"][number],
-  ) {
+  function buildItemWaMessage(r: AuditRow, item: AuditRow["problemItems"][number]) {
     const url = publicTaskUrl(r.task.share_token);
-    const lines = [
+    const text = [
       `⚠️ Perlu dibetulkan — *${r.task.title}*`,
       "",
       `Item: *${item.name}*`,
@@ -1106,9 +1104,12 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
       `Masalah: ${item.reason}`,
       "",
       `Buka tugas: ${url}`,
-    ];
-    const result = await shareToWhatsApp({ text: lines.join("\n"), title: r.task.title, url });
-    notifyShareResult(result);
+    ].join("\n");
+    return { text, url, title: r.task.title };
+  }
+
+  function previewWaForItem(r: AuditRow, item: AuditRow["problemItems"][number]) {
+    setWaPreview(buildItemWaMessage(r, item));
   }
 
   return (
