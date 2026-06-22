@@ -5,6 +5,7 @@ import { friendlyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
 import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
 import { PublicFooter } from "@/components/PublicFooter";
+import { ResetCacheButton } from "@/components/ResetCacheButton";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
