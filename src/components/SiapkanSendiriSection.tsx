@@ -180,6 +180,8 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
+  const [previewSend, setPreviewSend] = useState<Row | null>(null);
+  const [sending, setSending] = useState(false);
 
   const [title, setTitle] = useState("");
   const [file, setFile] = useState<File | null>(null);
@@ -559,7 +561,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
                     <button
-                      onClick={() => onSendWA(r)}
+                      onClick={() => setPreviewSend(r)}
                       className="inline-flex h-8 items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/10 px-2 text-[11px] font-semibold text-[#1ea952]"
                     >
                       <Send className="h-3.5 w-3.5" /> Kirim WA
