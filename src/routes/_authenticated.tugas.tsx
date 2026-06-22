@@ -28,7 +28,7 @@ type WItem = {
 };
 type Variant = { id: string; warehouse_item_id: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
 type CatVariant = { id: string; category: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
-type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string };
+type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string; pin?: string | null };
 type TaskItem = { id: string; task_id: string; name_snapshot: string; category_snapshot: string | null; qty_requested: number; qty_prepared: number; unit_label: string | null; ref_photo_path: string | null; warehouse_item_id: string | null };
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
 type PinAlert = { id: string; task_id: string; share_token: string; failure_count: number; window_start: string; window_end: string; created_at: string };
@@ -213,6 +213,20 @@ function TugasPage() {
             <div className="min-w-0 flex-1">
               <div className="truncate text-sm font-semibold">{t.title}</div>
               <div className="text-[11px] text-muted-foreground">Dibuat {new Date(t.created_at).toLocaleString("id-ID")} · Status {t.status}</div>
+              {t.pin && (
+                <div className="mt-1 flex items-center gap-1.5">
+                  <span className="text-[10px] text-muted-foreground">PIN</span>
+                  <span className="rounded border bg-background px-1.5 py-0.5 font-mono text-[11px] tracking-widest tabular-nums">{t.pin}</span>
+                  <button
+                    type="button"
+                    onClick={() => { void navigator.clipboard?.writeText(t.pin!); toast.success("PIN disalin"); }}
+                    className="inline-flex h-6 w-6 items-center justify-center rounded-md border text-muted-foreground hover:text-foreground"
+                    title="Salin PIN"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                </div>
+              )}
             </div>
             <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs">Buka</button>
             <button
