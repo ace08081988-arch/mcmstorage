@@ -593,39 +593,6 @@ export type Database = {
         }
         Relationships: []
       }
-      employees: {
-        Row: {
-          archived_at: string | null
-          created_at: string
-          id: string
-          name: string
-          note: string | null
-          phone: string | null
-          updated_at: string
-          user_id: string
-        }
-        Insert: {
-          archived_at?: string | null
-          created_at?: string
-          id?: string
-          name: string
-          note?: string | null
-          phone?: string | null
-          updated_at?: string
-          user_id: string
-        }
-        Update: {
-          archived_at?: string | null
-          created_at?: string
-          id?: string
-          name?: string
-          note?: string | null
-          phone?: string | null
-          updated_at?: string
-          user_id?: string
-        }
-        Relationships: []
-      }
       messages: {
         Row: {
           attachment_mime: string | null
@@ -987,15 +954,7 @@ export type Database = {
           title?: string
           updated_at?: string
         }
-        Relationships: [
-          {
-            foreignKeyName: "prep_tasks_employee_id_fkey"
-            columns: ["employee_id"]
-            isOneToOne: false
-            referencedRelation: "employees"
-            referencedColumns: ["id"]
-          },
-        ]
+        Relationships: []
       }
       prep_upload_grants: {
         Row: {
@@ -1457,6 +1416,75 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      self_prep_items: {
+        Row: {
+          created_at: string
+          id: string
+          location_url: string | null
+          note: string | null
+          photo_path: string | null
+          sent_at: string | null
+          status: string
+          title: string
+          updated_at: string
+          user_id: string
+          wa_target: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location_url?: string | null
+          note?: string | null
+          photo_path?: string | null
+          sent_at?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+          user_id: string
+          wa_target?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location_url?: string | null
+          note?: string | null
+          photo_path?: string | null
+          sent_at?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+          user_id?: string
+          wa_target?: string | null
+        }
+        Relationships: []
+      }
+      staff_contacts: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+          wa_phone: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+          wa_phone: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+          wa_phone?: string
+        }
+        Relationships: []
       }
       supplier_payments: {
         Row: {
