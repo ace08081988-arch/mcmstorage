@@ -203,6 +203,31 @@ function RequestPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {titles.map((t) => {
             const tItems = titleItems.filter((i) => i.title_id === t.id);
+            const sendTitleWA = () => {
+              const lines: string[] = [];
+              lines.push(`*Request — ${t.name}*`);
+              if (t.note) lines.push(t.note);
+              if (tItems.length > 0) {
+                lines.push("");
+                lines.push("Isi paket:");
+                tItems.forEach((i) => {
+                  const w = items.find((wi) => wi.id === i.warehouse_item_id);
+                  lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${i.unit_label}`);
+                });
+              }
+              void shareToWhatsApp({ text: lines.join("\n"), title: `Request ${t.name}` }).then(notifyShareResult);
+            };
+            const deleteTitle = async () => {
+              if (!confirm(`Hapus judul request "${t.name}"? Aksi ini permanen.`)) return;
+              try {
+                const { error } = await sb.from("request_titles").delete().eq("id", t.id);
+                if (error) throw error;
+                toast.success("Judul dihapus");
+                void loadAll();
+              } catch (e) {
+                toast.error("Gagal hapus: " + (e as Error).message);
+              }
+            };
             return (
               <button
                 key={t.id}
@@ -225,14 +250,36 @@ function RequestPage() {
                         .join(" · ")
                     : "Belum ada produk"}
                 </div>
-                <div
-                  role="button"
-                  tabIndex={0}
-                  onClick={(e) => { e.stopPropagation(); setEditingTitle(t); }}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setEditingTitle(t); } }}
-                  className="mt-1 inline-flex w-fit cursor-pointer items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
-                >
-                  <Edit3 className="h-3 w-3" /> Edit judul
+                <div className="mt-1 flex flex-wrap gap-1.5">
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); setEditingTitle(t); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setEditingTitle(t); } }}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                  >
+                    <Edit3 className="h-3 w-3" /> Edit
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); sendTitleWA(); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); sendTitleWA(); } }}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-2 py-0.5 text-[10px] text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+                    aria-label="Kirim WA"
+                  >
+                    <MessageCircle className="h-3 w-3" /> Kirim WA
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); void deleteTitle(); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void deleteTitle(); } }}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive hover:bg-destructive/20"
+                    aria-label="Hapus judul"
+                  >
+                    <Trash2 className="h-3 w-3" /> Hapus
+                  </div>
                 </div>
               </button>
             );
