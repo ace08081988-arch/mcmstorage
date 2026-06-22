@@ -208,7 +208,6 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                capture="environment"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
                 className="block w-full text-xs file:mr-2 file:rounded-md file:border file:bg-muted file:px-2 file:py-1.5 file:text-xs"
               />
