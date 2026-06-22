@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2 } from "lucide-react";
+import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2, RefreshCw, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
@@ -243,8 +243,49 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
             <div className="mt-1 text-[10px] text-muted-foreground">
               Pilih dari galeri/berkas atau ambil foto langsung dari kamera.
             </div>
-            {previewUrl && (
-              <img src={previewUrl} alt="" className="mt-2 h-28 w-28 rounded-md border object-cover" />
+            {previewUrl && file && (
+              <div className="mt-2 rounded-lg border bg-background p-2">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <span className="text-[10px] font-medium text-muted-foreground">
+                    Pratinjau foto
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {(file.size / 1024).toFixed(0)} KB
+                  </span>
+                </div>
+                <img
+                  src={previewUrl}
+                  alt="Pratinjau foto produk"
+                  className="w-full max-h-64 rounded-md border object-contain bg-muted/30"
+                />
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => fileRef.current?.click()}
+                    className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1.5 text-xs hover:bg-muted/80"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5" /> Ganti dari file
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => cameraRef.current?.click()}
+                    className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1.5 text-xs hover:bg-muted/80"
+                  >
+                    <Camera className="h-3.5 w-3.5" /> Foto ulang
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFile(null);
+                      if (fileRef.current) fileRef.current.value = "";
+                      if (cameraRef.current) cameraRef.current.value = "";
+                    }}
+                    className="inline-flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-xs text-destructive hover:bg-destructive/20"
+                  >
+                    <X className="h-3.5 w-3.5" /> Hapus
+                  </button>
+                </div>
+              </div>
             )}
           </div>
 
