@@ -86,6 +86,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [previewZoom, setPreviewZoom] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [previewFullscreen, setPreviewFullscreen] = useState(false);
+  const [exportBg, setExportBg] = useState<"white" | "transparent">("white");
   const previewScrollRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ x: number; y: number; sx: number; sy: number } | null>(null);
 
