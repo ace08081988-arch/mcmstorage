@@ -608,15 +608,46 @@ function PrepCard({
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   useEffect(() => { requestSignedUrl(prep.photo_path, 60 * 60).then(setPhoto); }, [prep.photo_path]);
+  const sendWA = () => {
+    const lines: string[] = [];
+    lines.push(`*Paket #${index}*`);
+    if (items.length > 0) {
+      lines.push("Isi:");
+      items.forEach((it) => {
+        const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
+        lines.push(`• ${w?.name ?? "?"} ${it.actual_grams}${w?.base_unit ?? "g"}`);
+      });
+    }
+    if (prep.note) { lines.push(""); lines.push(`Catatan: ${prep.note}`); }
+    if (prep.location_url) { lines.push(""); lines.push(`Lokasi: ${prep.location_url}`); }
+    lines.push("");
+    lines.push(`Disiapkan: ${new Date(prep.created_at).toLocaleString("id-ID")}`);
+    void shareToWhatsApp({ text: lines.join("\n"), title: `Paket #${index}` }).then(notifyShareResult);
+  };
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
       <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Paket #{index} · {prep.created_by}
         </div>
-        <button onClick={onDelete} className="text-destructive hover:opacity-70">
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
+        <div className="flex items-center gap-1">
+          <button
+            onClick={sendWA}
+            className="rounded-md border border-[#25D366]/40 bg-[#25D366]/15 p-1 text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+            aria-label="Kirim WA"
+            title="Kirim ringkasan via WhatsApp"
+          >
+            <MessageCircle className="h-3.5 w-3.5" />
+          </button>
+          <button
+            onClick={() => { if (confirm("Hapus penyiapan ini? Stok akan dikembalikan.")) onDelete(); }}
+            className="rounded-md border border-destructive/40 bg-destructive/10 p-1 text-destructive hover:bg-destructive/20"
+            aria-label="Hapus penyiapan"
+            title="Hapus penyiapan"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        </div>
       </div>
       {photo ? (
         <img src={photo} alt="" className="aspect-square w-full object-cover" />
