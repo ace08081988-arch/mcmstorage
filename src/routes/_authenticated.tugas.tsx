@@ -1282,6 +1282,60 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
       <div className="mt-3 flex justify-end">
         <button onClick={onClose} className="h-9 rounded-md border px-3 text-sm">Tutup</button>
       </div>
+      {waPreview && (
+        <WaPreviewDialog
+          initial={waPreview}
+          onClose={() => setWaPreview(null)}
+        />
+      )}
+    </Modal>
+  );
+}
+
+function WaPreviewDialog({
+  initial,
+  onClose,
+}: {
+  initial: { text: string; url: string; title: string };
+  onClose: () => void;
+}) {
+  const [text, setText] = useState(initial.text);
+  function copy() {
+    navigator.clipboard?.writeText(text).then(
+      () => toast.success("Pesan disalin"),
+      () => toast.error("Gagal menyalin"),
+    );
+  }
+  async function send() {
+    const result = await shareToWhatsApp({ text, title: initial.title, url: initial.url });
+    notifyShareResult(result);
+    onClose();
+  }
+  return (
+    <Modal title="Pratinjau pesan WhatsApp" onClose={onClose}>
+      <div className="space-y-3 text-sm">
+        <div className="text-[11px] text-muted-foreground">
+          Cek isi pesan di bawah. Anda bisa mengedit sebelum mengirim.
+        </div>
+        <textarea
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          rows={10}
+          className="min-h-[180px] w-full rounded-md border bg-background p-2 text-xs font-mono leading-relaxed"
+        />
+        <div className="flex flex-wrap justify-end gap-2">
+          <button onClick={onClose} className="h-9 rounded-md border px-3 text-xs">Batal</button>
+          <button onClick={copy} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs">
+            <Copy className="h-3.5 w-3.5" /> Salin
+          </button>
+          <button
+            onClick={() => void send()}
+            className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white hover:opacity-90"
+          >
+            <MessageCircle className="h-3.5 w-3.5" /> Kirim ke WhatsApp
+          </button>
+        </div>
+      </div>
     </Modal>
   );
 }
