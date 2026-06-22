@@ -141,6 +141,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const ctx = base.getContext("2d")!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingQuality = "high";
+    // Fill white background so transparent PNGs don't show as black
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, view.w, view.h);
     ctx.save();
     ctx.translate(view.w / 2, view.h / 2);
     ctx.rotate((state.rotation * Math.PI) / 180);
