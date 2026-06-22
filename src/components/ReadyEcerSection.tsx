@@ -138,7 +138,7 @@ export function ReadyEcerSection() {
             <Link
               key={r.id}
               to="/ecer"
-              search={{ item: r.warehouse_item_id, title: r.id }}
+              search={{ item: r.warehouse_item_id, highlight: r.id }}
               className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
             >
               <div className="flex items-center gap-1.5">
