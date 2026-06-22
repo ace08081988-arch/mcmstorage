@@ -724,10 +724,11 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                   {p && (
                     <div className="mt-2 space-y-1.5 pl-6">
                       {p.lines.map((l) => {
-                        const w = lineWeight(l, variants);
-                        const total = w * (l.count || 0);
+                        const ev = evaluateLine(l, variants);
+                        const w = ev.weight;
+                        const total = ev.total;
                         const isManual = !l.variantId;
-                        const rs = rowStatus(l.key);
+                        const rs = ev.status;
                         return (
                           <div key={l.key} className="space-y-1.5 rounded border bg-background/60 p-2">
                             <div className="flex items-start gap-1.5">
