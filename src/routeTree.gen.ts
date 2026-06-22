@@ -32,6 +32,7 @@ import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
 import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.ecer'
+import { Route as AuthenticatedDiagnosticsRouteImport } from './routes/_authenticated.diagnostics'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
@@ -161,6 +162,12 @@ const AuthenticatedEcerRoute = AuthenticatedEcerRouteImport.update({
   path: '/ecer',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedDiagnosticsRoute =
+  AuthenticatedDiagnosticsRouteImport.update({
+    id: '/diagnostics',
+    path: '/diagnostics',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedDeviceVerifyRoute =
   AuthenticatedDeviceVerifyRouteImport.update({
     id: '/device-verify',
@@ -227,6 +234,7 @@ export interface FileRoutesByFullPath {
   '/audit': typeof AuthenticatedAuditRoute
   '/chat': typeof AuthenticatedChatRouteWithChildren
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
+  '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
@@ -258,6 +266,7 @@ export interface FileRoutesByTo {
   '/trust': typeof TrustRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
+  '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
@@ -293,6 +302,7 @@ export interface FileRoutesById {
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/chat': typeof AuthenticatedChatRouteWithChildren
   '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
+  '/_authenticated/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/_authenticated/ecer': typeof AuthenticatedEcerRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
@@ -329,6 +339,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/chat'
     | '/device-verify'
+    | '/diagnostics'
     | '/ecer'
     | '/gudang'
     | '/hutang-piutang'
@@ -360,6 +371,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/audit'
     | '/device-verify'
+    | '/diagnostics'
     | '/ecer'
     | '/gudang'
     | '/hutang-piutang'
@@ -394,6 +406,7 @@ export interface FileRouteTypes {
     | '/_authenticated/audit'
     | '/_authenticated/chat'
     | '/_authenticated/device-verify'
+    | '/_authenticated/diagnostics'
     | '/_authenticated/ecer'
     | '/_authenticated/gudang'
     | '/_authenticated/hutang-piutang'
@@ -594,6 +607,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedEcerRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/diagnostics': {
+      id: '/_authenticated/diagnostics'
+      path: '/diagnostics'
+      fullPath: '/diagnostics'
+      preLoaderRoute: typeof AuthenticatedDiagnosticsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/device-verify': {
       id: '/_authenticated/device-verify'
       path: '/device-verify'
@@ -704,6 +724,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRouteWithChildren
   AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
+  AuthenticatedDiagnosticsRoute: typeof AuthenticatedDiagnosticsRoute
   AuthenticatedEcerRoute: typeof AuthenticatedEcerRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
@@ -722,6 +743,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedChatRoute: AuthenticatedChatRouteWithChildren,
   AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
+  AuthenticatedDiagnosticsRoute: AuthenticatedDiagnosticsRoute,
   AuthenticatedEcerRoute: AuthenticatedEcerRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
