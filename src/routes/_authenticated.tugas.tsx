@@ -247,9 +247,15 @@ function newLine(variantId: string | null = null): Line {
   return { key: Math.random().toString(36).slice(2), variantId, count: 1, weightOverride: null, split: false };
 }
 function lineWeight(line: Line, variants: Variant[]): number {
-  if (line.weightOverride != null) return line.weightOverride;
-  const v = variants.find((x) => x.id === line.variantId);
-  return v ? Number(v.weight_per_unit) : 1;
+  // Saat varian dipilih, berat selalu mengikuti preset varian — meski
+  // `weightOverride` lama tersisa di state. `weightOverride` hanya berlaku
+  // di mode manual (variantId == null).
+  if (line.variantId) {
+    const v = variants.find((x) => x.id === line.variantId);
+    if (v) return Number(v.weight_per_unit) || 0;
+  }
+  if (line.weightOverride != null) return Number(line.weightOverride) || 0;
+  return 0;
 }
 // Parser angka yang menerima koma desimal (format Indonesia) maupun titik.
 function parseNum(input: string): number | null {
