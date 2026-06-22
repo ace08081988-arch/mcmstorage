@@ -77,4 +77,45 @@ test.describe("Sidebar highlight follows active route", () => {
     await expect(page).toHaveURL(/\/ecer/);
     await expectActive(page, "Penyiapan Ecer");
   });
+
+  test("grandchild /gudang/pesanan/$id/edit keeps Gudang active", async ({ page }) => {
+    await page.goto("/gudang");
+    const firstOrder = page.locator('a[href^="/gudang/pesanan/"]').first();
+    if (!(await firstOrder.isVisible().catch(() => false))) test.skip(true, "No orders.");
+    await firstOrder.click();
+    await expect(page).toHaveURL(/\/gudang\/pesanan\/[^/]+/);
+    const editLink = page.locator('a[href$="/edit"]').first();
+    if (await editLink.isVisible().catch(() => false)) {
+      await editLink.click();
+    } else {
+      const url = new URL(page.url());
+      await page.goto(url.pathname.replace(/\/?$/, "/edit"));
+    }
+    await expect(page).toHaveURL(/\/gudang\/pesanan\/[^/]+\/edit/);
+    await expectActive(page, "Gudang & Supplier");
+  });
+
+  test("/chat index keeps Chat active", async ({ page }) => {
+    await page.goto("/chat");
+    await expectActive(page, "Chat");
+  });
+
+  test("/request with search params keeps Penyiapan Request active", async ({ page }) => {
+    await page.goto("/request?highlight=dummy");
+    await expectActive(page, "Penyiapan Request");
+  });
+
+  for (const { label, path } of [
+    { label: "Tugas Pegawai", path: "/tugas" },
+    { label: "Manajemen Pegawai", path: "/manajemen-pegawai" },
+    { label: "Hutang & Piutang", path: "/hutang-piutang" },
+    { label: "Pratinjau Label", path: "/label-preview" },
+    { label: "Pengaturan Kunci", path: "/pengaturan-kunci" },
+    { label: "Audit Rute", path: "/audit" },
+  ]) {
+    test(`top-level extra: ${path}`, async ({ page }) => {
+      await page.goto(path);
+      await expectActive(page, label);
+    });
+  }
 });
