@@ -323,8 +323,9 @@ function EcerPage() {
   );
 }
 
-function TitleCard({ title, onOpen, onEdit, onDeleted }: {
+function TitleCard({ title, onOpen, onEdit, onDeleted, highlighted }: {
   title: EcerTitle; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
+  highlighted?: boolean;
 }) {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
@@ -355,7 +356,8 @@ function TitleCard({ title, onOpen, onEdit, onDeleted }: {
       tabIndex={0}
       onClick={onOpen}
       onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onOpen(); } }}
-      className="cursor-pointer rounded-lg border bg-card p-3 transition hover:border-primary/40 hover:bg-accent/30 active:bg-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+      data-title-id={title.id}
+      className={`cursor-pointer rounded-lg border bg-card p-3 transition hover:border-primary/40 hover:bg-accent/30 active:bg-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${highlighted ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
     >
       <div className="font-medium leading-tight">{title.name}</div>
       <div className="mt-1 text-xs text-muted-foreground">
