@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -10,6 +10,8 @@ import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { useStartDm } from "@/lib/chat";
+import { MessageSquare, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -58,6 +60,26 @@ function KontakPage() {
   const [testingAll, setTestingAll] = useState(false);
   const sendTest = useServerFn(sendTestPushToContact);
   const sendTestAll = useServerFn(sendTestPushToAllContacts);
+  const navigate = useNavigate();
+  const startDm = useStartDm();
+  const [chatting, setChatting] = useState<string | null>(null);
+
+  const openChat = async (row: Row) => {
+    if (!row.account_user_id) {
+      toast.error("Tautkan akun pengguna dulu sebelum memulai chat.");
+      return;
+    }
+    setChatting(row.id);
+    try {
+      const conversationId = await startDm.mutateAsync(row.account_user_id);
+      if (!conversationId) throw new Error("Tidak menerima ID percakapan");
+      navigate({ to: "/chat/$conversationId", params: { conversationId } });
+    } catch (e) {
+      toast.error(friendlyError(e));
+    } finally {
+      setChatting(null);
+    }
+  };
 
   const refresh = async () => {
     setLoading(true);
@@ -250,6 +272,21 @@ function KontakPage() {
                         )}
                         {r.account_user_id && (
                           <>
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              disabled={chatting === r.id}
+                              onClick={() => void openChat(r)}
+                              title={`Chat dengan ${r.name}`}
+                              className="bg-primary/10 text-primary hover:bg-primary/20"
+                            >
+                              {chatting === r.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <MessageSquare className="h-4 w-4" />
+                              )}
+                              Chat
+                            </Button>
                             <Button
                               size="sm"
                               variant="secondary"
