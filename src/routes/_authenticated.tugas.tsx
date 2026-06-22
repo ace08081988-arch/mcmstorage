@@ -1219,7 +1219,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                             • {p.name}: diminta {fmtNum(p.qty_requested, 2)}, disiapkan {fmtNum(p.qty_prepared, 2)} — {p.reason}
                           </span>
                           <button
-                            onClick={() => void openWaForItem(r, p)}
+                            onClick={() => previewWaForItem(r, p)}
                             title={`Kirim detail item "${p.name}" via WhatsApp`}
                             className="inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-[#25D366]/40 bg-[#25D366]/10 px-1.5 text-[10px] font-medium text-[#1ea952] hover:bg-[#25D366]/20"
                           >
