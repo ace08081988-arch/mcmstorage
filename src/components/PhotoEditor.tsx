@@ -446,7 +446,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setTextPrompt((s) => ({ ...s, open: false, value: "" }));
   }
 
-  return (
+  if (typeof document === "undefined") return null;
+  return createPortal(
     <div className="fixed inset-0 z-[100] flex flex-col bg-background">
       <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
         <button onClick={onCancel} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-sm">
@@ -675,7 +676,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </div>,
+    document.body,
   );
 }
 
