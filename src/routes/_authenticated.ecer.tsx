@@ -59,6 +59,10 @@ function EcerPage() {
   const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
   const [editingTitle, setEditingTitle] = useState<EcerTitle | null>(null);
   const [creatingTitle, setCreatingTitle] = useState(false);
+  // Membuat judul lain untuk item tertentu langsung dari halaman detail.
+  const [creatingTitleForItem, setCreatingTitleForItem] = useState<WarehouseItem | null>(null);
+  // Membuat produk gudang baru (lanjut otomatis ke pembuatan judul untuk produk itu).
+  const [creatingProduct, setCreatingProduct] = useState(false);
 
   function diagnose(err: { code?: string; message?: string; status?: number | string; details?: string }): string {
     const code = err?.code ?? "";
@@ -184,6 +188,14 @@ function EcerPage() {
     if (data) setTitles(data as EcerTitle[]);
   }
 
+  async function refetchItems() {
+    const { data } = await supabase
+      .from("warehouse_items")
+      .select("id,name,category,base_unit,stock_base,image_path,package_type,package_size")
+      .order("name");
+    if (data) setItems(data as WarehouseItem[]);
+  }
+
   if (loading) {
     return (
       <div className="flex h-full items-center justify-center p-8 text-sm text-muted-foreground">
@@ -239,12 +251,43 @@ function EcerPage() {
   // ---- Detail view: a specific title ----
   if (selectedTitle && selectedItem) {
     return (
-      <TitleDetailView
-        item={selectedItem}
-        title={selectedTitle}
-        onBack={() => setSelectedTitleId(undefined)}
-        onTitleUpdated={refetchTitles}
-      />
+      <>
+        <TitleDetailView
+          item={selectedItem}
+          title={selectedTitle}
+          onBack={() => setSelectedTitleId(undefined)}
+          onTitleUpdated={refetchTitles}
+          onCreateTitle={() => setCreatingTitleForItem(selectedItem)}
+          onCreateProduct={() => setCreatingProduct(true)}
+        />
+        {creatingTitleForItem && (
+          <TitleFormDialog
+            item={creatingTitleForItem}
+            existing={null}
+            onClose={() => setCreatingTitleForItem(null)}
+            onSaved={(newId) => {
+              setCreatingTitleForItem(null);
+              void refetchTitles().then(() => {
+                if (newId) setSelectedTitleId(newId);
+              });
+            }}
+          />
+        )}
+        {creatingProduct && (
+          <NewProductDialog
+            onClose={() => setCreatingProduct(false)}
+            onCreated={async (newItem) => {
+              setCreatingProduct(false);
+              await refetchItems();
+              // Lanjutkan langsung ke pembuatan judul untuk produk baru.
+              setCreatingTitleForItem(newItem);
+              // Pindahkan konteks ke produk baru agar judul nanti muncul di sini.
+              setSelectedItemId(newItem.id);
+              setSelectedTitleId(undefined);
+            }}
+          />
+        )}
+      </>
     );
   }
 
@@ -316,9 +359,43 @@ function EcerPage() {
           item={selectedItem}
           existing={editingTitle}
           onClose={() => { setCreatingTitle(false); setEditingTitle(null); }}
-          onSaved={() => { setCreatingTitle(false); setEditingTitle(null); void refetchTitles(); }}
+          onSaved={(newId) => {
+            setCreatingTitle(false); setEditingTitle(null);
+            void refetchTitles().then(() => { if (newId) setSelectedTitleId(newId); });
+          }}
         />
       )}
+
+      {creatingProduct && (
+        <NewProductDialog
+          onClose={() => setCreatingProduct(false)}
+          onCreated={async (newItem) => {
+            setCreatingProduct(false);
+            await refetchItems();
+            setSelectedItemId(newItem.id);
+            setSelectedTitleId(undefined);
+            setCreatingTitleForItem(newItem);
+          }}
+        />
+      )}
+
+      {creatingTitleForItem && (
+        <TitleFormDialog
+          item={creatingTitleForItem}
+          existing={null}
+          onClose={() => setCreatingTitleForItem(null)}
+          onSaved={(newId) => {
+            setCreatingTitleForItem(null);
+            void refetchTitles().then(() => { if (newId) setSelectedTitleId(newId); });
+          }}
+        />
+      )}
+
+      <div className="pt-1">
+        <Button variant="outline" size="sm" onClick={() => setCreatingProduct(true)}>
+          <Plus className="h-4 w-4" /> Produk gudang baru
+        </Button>
+      </div>
     </div>
   );
 }
@@ -381,7 +458,7 @@ function TitleCard({ title, onOpen, onEdit, onDeleted, highlighted }: {
 
 function TitleFormDialog({ item, existing, onClose, onSaved }: {
   item: WarehouseItem; existing: EcerTitle | null;
-  onClose: () => void; onSaved: () => void;
+  onClose: () => void; onSaved: (newId?: string) => void;
 }) {
   const [name, setName] = useState(existing?.name ?? `${item.name} `);
   const [target, setTarget] = useState(existing ? String(existing.target_grams) : "1");
@@ -400,13 +477,13 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
     const payload = { name: name.trim(), target_grams: t, unit_label: unit, note: note.trim() || null };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tbl = (supabase.from as any)("ecer_titles");
-    const { error } = existing
-      ? await tbl.update(payload).eq("id", existing.id)
-      : await tbl.insert({ ...payload, user_id: userId, warehouse_item_id: item.id });
+    const res = existing
+      ? await tbl.update(payload).eq("id", existing.id).select("id").maybeSingle()
+      : await tbl.insert({ ...payload, user_id: userId, warehouse_item_id: item.id }).select("id").single();
     setBusy(false);
-    if (error) { toast.error("Gagal: " + error.message); return; }
+    if (res.error) { toast.error("Gagal: " + res.error.message); return; }
     toast.success(existing ? "Tersimpan" : "Judul dibuat");
-    onSaved();
+    onSaved((res.data as { id?: string } | null)?.id ?? existing?.id);
   }
 
   return (
@@ -462,8 +539,9 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
 }
 
 // ---- Detail view: preparations grid ----
-function TitleDetailView({ item, title, onBack, onTitleUpdated }: {
+function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct }: {
   item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
+  onCreateTitle?: () => void; onCreateProduct?: () => void;
 }) {
   const [preps, setPreps] = useState<EcerPreparation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -505,7 +583,19 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated }: {
               </div>
               {title.note && <div className="mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap">{title.note}</div>}
             </div>
-            <Button size="sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Penyiapan</Button>
+            <div className="flex flex-wrap items-center gap-1.5">
+              {onCreateTitle && (
+                <Button size="sm" variant="outline" onClick={onCreateTitle} title="Judul ecer baru untuk produk yang sama">
+                  <Plus className="h-4 w-4" /> Judul lain
+                </Button>
+              )}
+              {onCreateProduct && (
+                <Button size="sm" variant="outline" onClick={onCreateProduct} title="Buat produk gudang baru lalu langsung dibuatkan judulnya">
+                  <Package className="h-4 w-4" /> Produk baru
+                </Button>
+              )}
+              <Button size="sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Penyiapan</Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
@@ -843,3 +933,95 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
 
 // keep ECER_BUCKET reachable so unused import is not flagged
 void ECER_BUCKET;
+
+// ---- Dialog: buat produk gudang baru langsung dari halaman ecer ----
+function NewProductDialog({ onClose, onCreated }: {
+  onClose: () => void;
+  onCreated: (item: WarehouseItem) => void | Promise<void>;
+}) {
+  type PkgType = "gram" | "botol" | "sachet" | "pcs";
+  const [name, setName] = useState("");
+  const [category, setCategory] = useState("");
+  const [packageType, setPackageType] = useState<PkgType>("gram");
+  const [packageSize, setPackageSize] = useState("1000");
+  const [busy, setBusy] = useState(false);
+
+  const baseUnit: "g" | "pcs" = packageType === "pcs" || packageType === "botol" || packageType === "sachet"
+    ? (packageType === "pcs" ? "pcs" : "g")
+    : "g";
+
+  async function save() {
+    if (!name.trim()) { toast.error("Nama produk wajib diisi"); return; }
+    const size = packageType === "pcs" ? 1 : Number(String(packageSize).replace(",", "."));
+    if (packageType !== "pcs" && (!Number.isFinite(size) || size <= 0)) {
+      toast.error("Isi/kemasan harus > 0"); return;
+    }
+    setBusy(true);
+    const { data: u } = await supabase.auth.getUser();
+    const userId = u.user?.id;
+    if (!userId) { toast.error("Sesi tidak valid"); setBusy(false); return; }
+    const { data, error } = await supabase.from("warehouse_items").insert({
+      user_id: userId,
+      name: name.trim(),
+      category: category.trim() || null,
+      package_type: packageType,
+      package_size: size,
+      base_unit: baseUnit,
+    }).select("id,name,category,base_unit,stock_base,image_path,package_type,package_size").single();
+    setBusy(false);
+    if (error || !data) { toast.error("Gagal: " + (error?.message ?? "tidak ada data")); return; }
+    toast.success("Produk gudang dibuat");
+    await onCreated(data as WarehouseItem);
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Produk gudang baru</DialogTitle>
+          <DialogDescription>Setelah dibuat, akan langsung dibuatkan judul ecer untuk produk ini.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">Nama produk</Label>
+            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="mis. KRISTAL" autoCapitalize="characters" />
+          </div>
+          <div>
+            <Label className="text-xs">Kategori (opsional)</Label>
+            <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="mis. Bahan baku" />
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <Label className="text-xs">Jenis kemasan</Label>
+              <select
+                value={packageType}
+                onChange={(e) => setPackageType(e.target.value as PkgType)}
+                className="mt-1 h-9 w-full rounded-md border bg-background px-2 text-sm"
+              >
+                <option value="gram">gram (curah)</option>
+                <option value="botol">botol</option>
+                <option value="sachet">sachet</option>
+                <option value="pcs">pcs</option>
+              </select>
+            </div>
+            {packageType !== "pcs" && (
+              <div>
+                <Label className="text-xs">Isi/kemasan ({baseUnit})</Label>
+                <Input inputMode="decimal" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
+              </div>
+            )}
+          </div>
+          <div className="rounded-md border border-dashed bg-muted/30 p-2 text-[11px] text-muted-foreground">
+            Stok awal = 0. Tambah stok dari halaman Gudang (catat pembelian) setelah produk dibuat.
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={onClose}>Batal</Button>
+          <Button onClick={save} disabled={busy}>
+            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan & buat judul
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
