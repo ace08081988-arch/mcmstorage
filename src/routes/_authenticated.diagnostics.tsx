@@ -78,23 +78,62 @@ function DiagnosticsPage() {
   const checks = runChecks();
   const allOk = checks.every((c) => c.ok);
 
-  async function copySummary() {
+  function buildSummary(): string {
+    const W = 64;
+    const rule = "═".repeat(W);
+    const thin = "─".repeat(W);
+    const center = (s: string) => {
+      const pad = Math.max(0, Math.floor((W - s.length) / 2));
+      return " ".repeat(pad) + s;
+    };
+    const now = new Date();
+    const ts = now.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "medium" });
+
+    const okCount = checks.filter((c) => c.ok).length;
+    const failCount = checks.length - okCount;
+    const statusLine = allOk
+      ? "✓ SEMUA PAKET KOMPATIBEL"
+      : `⚠ ${failCount} KETIDAKCOCOKAN TERDETEKSI`;
+
+    const nameW = Math.max(...packages.map((p) => p.name.length));
+
     const lines: string[] = [];
-    lines.push(`Diagnostik MCM Storage — ${new Date().toISOString()}`);
-    lines.push(`Status: ${allOk ? "KOMPATIBEL ✓" : "ADA KETIDAKCOCOKAN ⚠"}`);
+    lines.push(rule);
+    lines.push(center("DIAGNOSTIK MCM STORAGE"));
+    lines.push(center(ts));
+    lines.push(rule);
     lines.push("");
-    lines.push("Versi paket:");
-    for (const p of packages) lines.push(`  - ${p.name}@${p.version}`);
+    lines.push(`STATUS  : ${statusLine}`);
+    lines.push(`RINGKAS : ${okCount}/${checks.length} cek lolos`);
     lines.push("");
-    lines.push("Hasil cek:");
-    for (const c of checks) lines.push(`  [${c.ok ? "OK" : "FAIL"}] ${c.label} — ${c.detail}`);
-    const text = lines.join("\n");
+    lines.push("VERSI PAKET TANSTACK");
+    lines.push(thin);
+    for (const p of packages) {
+      lines.push(`  ${p.name.padEnd(nameW, " ")}  ${p.version}`);
+    }
+    lines.push("");
+    lines.push("HASIL CEK KOMPATIBILITAS");
+    lines.push(thin);
+    checks.forEach((c, i) => {
+      const mark = c.ok ? "[ ✓ OK   ]" : "[ ✗ GAGAL]";
+      lines.push(`  ${i + 1}. ${mark}  ${c.label}`);
+      lines.push(`             ${c.detail}`);
+    });
+    lines.push("");
+    lines.push(rule);
+    lines.push(center("— akhir laporan —"));
+    lines.push(rule);
+
+    return lines.join("\n");
+  }
+
+  async function copySummary() {
+    const text = buildSummary();
     try {
       await navigator.clipboard.writeText(text);
       toast.success("Ringkasan diagnostik disalin");
     } catch {
       toast.error("Gagal menyalin", { description: "Salin manual dari kotak di bawah." });
-      // Fallback: show in a prompt-like toast
       toast.message(text);
     }
   }
