@@ -1053,10 +1053,62 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
     );
   }
 
-  function openWaForRow(r: AuditRow) {
+  function statusLabel(r: AuditRow) {
+    if (r.issues.length === 0) return "✅ Aman";
+    if (isResolved(r)) return "🟢 Sudah dibetulkan";
+    return "⚠️ Perlu dicek";
+  }
+
+  function buildTaskWaMessage(r: AuditRow) {
     const url = publicTaskUrl(r.task.share_token);
-    const msg = `Mohon dicek tugas berikut:\n\n${r.task.title}\nDiminta ${fmtNum(r.totalRequested, 2)} · disiapkan ${fmtNum(r.totalPrepared, 2)} · sisa ${fmtNum(r.remaining, 2)}\n${url}`;
-    window.open(buildWhatsAppUrl(msg), "_blank", "noopener,noreferrer");
+    const lines: string[] = [];
+    lines.push(`${statusLabel(r)} — *${r.task.title}*`);
+    lines.push(
+      `${r.items} item · diminta *${fmtNum(r.totalRequested, 2)}* · disiapkan *${fmtNum(r.totalPrepared, 2)}* · sisa *${fmtNum(r.remaining, 2)}*`,
+    );
+    if (r.issues.length > 0) {
+      lines.push("");
+      lines.push("Catatan:");
+      for (const i of r.issues) lines.push(`• ${i}`);
+    }
+    if (r.problemItems.length > 0) {
+      lines.push("");
+      lines.push("Item yang perlu dibetulkan:");
+      for (const p of r.problemItems) {
+        lines.push(
+          `• ${p.name} — diminta ${fmtNum(p.qty_requested, 2)}, disiapkan ${fmtNum(p.qty_prepared, 2)} (${p.reason})`,
+        );
+      }
+    }
+    lines.push("");
+    lines.push(`Buka tugas: ${url}`);
+    lines.push(`(PIN dikirim terpisah)`);
+    return { text: lines.join("\n"), url };
+  }
+
+  async function openWaForRow(r: AuditRow) {
+    const { text, url } = buildTaskWaMessage(r);
+    const result = await shareToWhatsApp({ text, title: r.task.title, url });
+    notifyShareResult(result, { okMsg: "Pesan WhatsApp dibuka", fallbackMsg: "Membuka WhatsApp Web…" });
+  }
+
+  async function openWaForItem(
+    r: AuditRow,
+    item: AuditRow["problemItems"][number],
+  ) {
+    const url = publicTaskUrl(r.task.share_token);
+    const lines = [
+      `⚠️ Perlu dibetulkan — *${r.task.title}*`,
+      "",
+      `Item: *${item.name}*`,
+      `Diminta: ${fmtNum(item.qty_requested, 2)}`,
+      `Disiapkan: ${fmtNum(item.qty_prepared, 2)}`,
+      `Masalah: ${item.reason}`,
+      "",
+      `Buka tugas: ${url}`,
+    ];
+    const result = await shareToWhatsApp({ text: lines.join("\n"), title: r.task.title, url });
+    notifyShareResult(result, { okMsg: "Pesan WhatsApp dibuka", fallbackMsg: "Membuka WhatsApp Web…" });
   }
 
   return (
