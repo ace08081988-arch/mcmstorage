@@ -425,14 +425,20 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
       for (const l of entry.lines) {
         totalLines++;
         if (!hasPhoto) linesWithoutPhoto++;
-        const rs = rowStatus(l.key);
-        if (rs === "valid") {
+        // Validasi numerik berdasarkan state baris (bukan dari lineStatus
+        // yang diperbarui async oleh NumberInput) supaya ringkasan langsung
+        // konsisten dengan badge per-baris dan kolom "Siap dikirim".
+        const w = lineWeight(l, variants);
+        const c = Number(l.count) || 0;
+        const numericValid = Number.isFinite(w) && Number.isFinite(c) && w > 0 && c > 0;
+        const rs = numericValid ? rowStatus(l.key) : "invalid";
+        if (rs === "valid" && numericValid) {
           validLines++;
-          const w = lineWeight(l, variants) * (l.count || 0);
-          totalWeight += w;
+          const tw = w * c;
+          totalWeight += tw;
           // Foto referensi opsional → baris valid selalu dihitung siap kirim.
           readyLines++;
-          readyWeight += w;
+          readyWeight += tw;
         } else if (rs === "partial") partialLines++;
         else invalidLines++;
       }
