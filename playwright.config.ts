@@ -47,5 +47,14 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      name: "sidebar-highlight",
+      testMatch: /sidebar-highlight\.spec\.ts/,
+      use: {
+        ...devices["iPhone 14"],
+        viewport: { width: 390, height: 844 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });

@@ -11,7 +11,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test:visual": "playwright test",
-    "test:visual:update": "playwright test --update-snapshots"
+    "test:visual:update": "playwright test --update-snapshots",
+    "test:sidebar": "playwright test --project=sidebar-highlight"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
