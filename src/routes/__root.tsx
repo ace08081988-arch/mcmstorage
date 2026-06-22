@@ -42,9 +42,6 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
-  const [attempt, setAttempt] = useState(0);
-  const [autoRetrying, setAutoRetrying] = useState(true);
-  const MAX_AUTO_RETRIES = 3;
   // Chunk-load / dynamic import failures cannot be recovered with reset() —
   // the browser is holding a stale index.html that points at a chunk that
   // no longer exists on the server. A hard reload is the only fix.
@@ -71,30 +68,11 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     window.location.reload();
   }, [isChunkLoadError]);
 
-  useEffect(() => {
-    if (attempt >= MAX_AUTO_RETRIES) {
-      setAutoRetrying(false);
-      return;
-    }
-    let cancelled = false;
-    const delay = 500 * Math.pow(2, attempt); // 500ms, 1s, 2s
-    const t = window.setTimeout(() => {
-      if (cancelled) return;
-      setAttempt((n: number) => n + 1);
-      // Defer reset to next tick so we don't unmount mid-setState batch.
-      Promise.resolve().then(() => {
-        if (cancelled) return;
-        router.invalidate();
-        reset();
-      });
-    }, delay);
-    return () => {
-      cancelled = true;
-      window.clearTimeout(t);
-    };
-  }, [attempt, router, reset]);
-
-  if (autoRetrying && attempt < MAX_AUTO_RETRIES) {
+  // Chunk-load errors: show a spinner while the page hard-reloads.
+  // Other errors are shown to the user immediately — auto-resetting the
+  // boundary silently remounts the route and loses user-entered state
+  // (PIN, form fields), which is worse than showing the error.
+  if (isChunkLoadError) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="max-w-md text-center">
@@ -103,7 +81,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             Memuat ulang halaman…
           </h1>
           <p className="mt-2 text-xs text-muted-foreground">
-            Percobaan otomatis {attempt + 1} dari {MAX_AUTO_RETRIES}
+            Versi aplikasi diperbarui, sedang menyegarkan…
           </p>
         </div>
       </div>
@@ -114,16 +92,17 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          This page didn't load
+          Halaman gagal dimuat
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Sudah dicoba memuat ulang otomatis {MAX_AUTO_RETRIES}× namun belum berhasil. Anda bisa coba lagi atau kembali ke beranda.
+          Terjadi kesalahan sementara saat memuat halaman ini. Coba muat ulang, atau kembali ke beranda.
         </p>
+        {msg && (
+          <p className="mt-2 text-[11px] text-muted-foreground/80 break-words">{msg}</p>
+        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
-              setAttempt(0);
-              setAutoRetrying(true);
               router.invalidate();
               reset();
             }}
