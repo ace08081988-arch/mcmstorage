@@ -35,3 +35,8 @@ dist-ssr
 tests/visual/.auth/
 playwright-report/
 test-results/
+
+# Environment files (never commit secrets)
+.env
+.env.*
+!.env.example
