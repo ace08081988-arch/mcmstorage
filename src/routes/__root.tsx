@@ -45,9 +45,31 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   const [attempt, setAttempt] = useState(0);
   const [autoRetrying, setAutoRetrying] = useState(true);
   const MAX_AUTO_RETRIES = 3;
+  // Chunk-load / dynamic import failures cannot be recovered with reset() —
+  // the browser is holding a stale index.html that points at a chunk that
+  // no longer exists on the server. A hard reload is the only fix.
+  const msg = String(error?.message ?? "");
+  const isChunkLoadError =
+    /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk \d+ failed/i.test(
+      msg,
+    );
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
+
+  useEffect(() => {
+    if (!isChunkLoadError) return;
+    if (typeof window === "undefined") return;
+    // Avoid infinite reload loops: only auto-reload once per session.
+    const KEY = "__chunk_reload_once";
+    try {
+      if (window.sessionStorage.getItem(KEY)) return;
+      window.sessionStorage.setItem(KEY, "1");
+    } catch {
+      // ignore storage errors
+    }
+    window.location.reload();
+  }, [isChunkLoadError]);
 
   useEffect(() => {
     if (attempt >= MAX_AUTO_RETRIES) {
