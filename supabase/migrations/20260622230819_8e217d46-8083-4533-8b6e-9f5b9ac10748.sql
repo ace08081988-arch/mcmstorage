@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.search_profiles_for_link(text) FROM PUBLIC, anon;
