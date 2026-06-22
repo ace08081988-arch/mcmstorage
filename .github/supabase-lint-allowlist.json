@@ -29,7 +29,9 @@
         "public.can_chat",
         "public.is_conversation_member",
         "public.is_conversation_owner",
-        "public.search_chat_contacts"
+        "public.search_chat_contacts",
+        "public.run_internal_security_scan",
+        "public.security_findings_acknowledge"
       ],
       "reason": "User-facing RPCs that enforce auth.uid() ownership/membership internally. Covered by supabase/tests/security_definer_authz.sql."
     }
