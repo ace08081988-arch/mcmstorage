@@ -8,12 +8,14 @@ import { fmtItemQty } from "@/lib/stock-format";
 import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
+import { SiapkanSendiriSection } from "@/components/SiapkanSendiriSection";
+import { StaffContactsPanel } from "@/components/StaffContactsPanel";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
     meta: [
-      { title: "Tugas Pegawai · MCM Storage" },
-      { name: "description", content: "Buat tugas siapkan barang dan kirim link ke pegawai." },
+      { title: "Penyiapan Produk · MCM Storage" },
+      { name: "description", content: "Siapkan produk sendiri atau lewat pegawai dengan link & PIN." },
     ],
   }),
   component: TugasPage,
@@ -32,6 +34,7 @@ type PinAlert = { id: string; task_id: string; share_token: string; failure_coun
 
 function TugasPage() {
   const [uid, setUid] = useState<string | null>(null);
+  const [mode, setMode] = useState<"self" | "staff">("self");
   const [tasks, setTasks] = useState<Task[]>([]);
   const [warehouse, setWarehouse] = useState<WItem[]>([]);
   const [variants, setVariants] = useState<Variant[]>([]);
@@ -127,8 +130,72 @@ function TugasPage() {
 
   return (
     <div className="mx-auto max-w-4xl px-3 py-4">
+      <div className="mb-3">
+        <h1 className="text-lg font-semibold">Penyiapan Produk</h1>
+        <p className="text-[11px] text-muted-foreground">Pilih cara menyiapkan: kerjakan sendiri, atau kirim tugas ke pegawai.</p>
+      </div>
+      <div className="mb-3 inline-flex rounded-lg border bg-card p-1 text-xs shadow-sm">
+        <button
+          onClick={() => setMode("self")}
+          className={`rounded-md px-3 py-1.5 font-semibold transition ${mode === "self" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+        >Siapkan Sendiri</button>
+        <button
+          onClick={() => setMode("staff")}
+          className={`rounded-md px-3 py-1.5 font-semibold transition ${mode === "staff" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent"}`}
+        >Via Pegawai</button>
+      </div>
+
+      {mode === "self" ? (
+        <SiapkanSendiriSection uid={uid} />
+      ) : (
+        <ViaPegawaiBlock />
+      )}
+
+      {/* Dialog-dialog di bawah hanya muncul saat state mengaktifkannya dari blok Via Pegawai. */}
+      {openCreate && (
+        <CreateDialog
+          warehouse={warehouse}
+          variants={effectiveVariants}
+          onVariantsChanged={load}
+          onClose={() => setOpenCreate(false)}
+          onCreated={(info) => { setOpenCreate(false); setCreatedInfo(info); void load(); }}
+        />
+      )}
+      {createdInfo && <ShareDialog info={createdInfo} onClose={() => setCreatedInfo(null)} />}
+      {openTask && <TaskDetail task={openTask} onClose={() => { setOpenTask(null); void load(); }} />}
+      {openVariantsHub && (
+        <VariantsHub
+          warehouse={warehouse}
+          catVariants={catVariants}
+          onPickCategory={(cat) => setManageCategoryFor(cat)}
+          onClose={() => setOpenVariantsHub(false)}
+        />
+      )}
+      {manageCategoryFor && (
+        <CategoryVariantManager
+          category={manageCategoryFor}
+          variants={catVariants.filter((v) => v.category === manageCategoryFor)}
+          onClose={() => setManageCategoryFor(null)}
+          onChanged={load}
+        />
+      )}
+      {openAudit && (
+        <AuditDialog
+          tasks={tasks}
+          onClose={() => setOpenAudit(false)}
+          onOpenTask={(t) => { setOpenAudit(false); setOpenTask(t); }}
+        />
+      )}
+    </div>
+  );
+
+  function ViaPegawaiBlock() {
+    return (
+      <>
+      <StaffContactsPanel uid={uid} />
+
       <div className="mb-3 flex items-center justify-between">
-        <h1 className="text-lg font-semibold">Tugas Pegawai</h1>
+        <h2 className="mt-3 text-sm font-semibold">Tugas untuk Pegawai</h2>
         <div className="flex items-center gap-2">
           <button onClick={() => setOpenVariantsHub(true)} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs font-semibold">
             <Settings2 className="h-4 w-4" /> Kelola Varian
