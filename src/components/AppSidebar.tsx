@@ -15,6 +15,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { CompactModeToggle } from "@/components/CompactModeToggle";
+import { ResetCacheButton } from "@/components/ResetCacheButton";
 import { useConversations } from "@/lib/chat";
 
 const items = [
