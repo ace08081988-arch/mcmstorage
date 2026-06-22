@@ -743,7 +743,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                                 </div>
                                 <NumberInput
                                   key={`${l.key}-${l.variantId ?? "m"}`}
-                                  value={l.weightOverride ?? w}
+                                  value={isManual ? (l.weightOverride ?? 0) : w}
                                   maxFrac={3}
                                   disabled={!isManual}
                                   emptyAs={isManual ? 0 : null}
