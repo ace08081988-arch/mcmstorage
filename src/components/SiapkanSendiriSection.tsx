@@ -188,6 +188,10 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [autoCompress, setAutoCompress] = useState(true);
+  const [compressionInfo, setCompressionInfo] = useState<{
+    originalBytes: number;
+    compressedBytes: number;
+  } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
   const cameraRef = useRef<HTMLInputElement>(null);
 
@@ -353,7 +357,13 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => void pickFile(e.target.files?.[0], setFile, e.currentTarget, { autoCompress })}
+                onChange={(e) => {
+                  setCompressionInfo(null);
+                  void pickFile(e.target.files?.[0], setFile, e.currentTarget, {
+                    autoCompress,
+                    onCompressed: setCompressionInfo,
+                  });
+                }}
                 className="hidden"
               />
               <input
@@ -361,7 +371,13 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 type="file"
                 accept="image/*"
                 capture="environment"
-                onChange={(e) => void pickFile(e.target.files?.[0], setFile, e.currentTarget, { autoCompress })}
+                onChange={(e) => {
+                  setCompressionInfo(null);
+                  void pickFile(e.target.files?.[0], setFile, e.currentTarget, {
+                    autoCompress,
+                    onCompressed: setCompressionInfo,
+                  });
+                }}
                 className="hidden"
               />
               <button
@@ -405,9 +421,30 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                     Pratinjau foto
                   </span>
                   <span className="text-[10px] text-muted-foreground">
-                    {(file.size / 1024).toFixed(0)} KB
+                    {file.size >= 1024 * 1024
+                      ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
+                      : `${(file.size / 1024).toFixed(0)} KB`}
                   </span>
                 </div>
+                {compressionInfo && (
+                  <div className="mb-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] text-emerald-700 dark:text-emerald-300">
+                    Auto-kompres aktif:
+                    {" "}
+                    <strong>{(compressionInfo.originalBytes / 1024 / 1024).toFixed(2)} MB</strong>
+                    {" → "}
+                    <strong>{(compressionInfo.compressedBytes / 1024 / 1024).toFixed(2)} MB</strong>
+                    {" "}
+                    (hemat{" "}
+                    {((compressionInfo.originalBytes - compressionInfo.compressedBytes) / 1024 / 1024).toFixed(2)} MB,
+                    {" ≈ "}
+                    {(
+                      ((compressionInfo.originalBytes - compressionInfo.compressedBytes) /
+                        compressionInfo.originalBytes) *
+                      100
+                    ).toFixed(0)}
+                    %)
+                  </div>
+                )}
                 <img
                   src={previewUrl}
                   alt="Pratinjau foto produk"
@@ -432,6 +469,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                     type="button"
                     onClick={() => {
                       setFile(null);
+                      setCompressionInfo(null);
                       if (fileRef.current) fileRef.current.value = "";
                       if (cameraRef.current) cameraRef.current.value = "";
                     }}
