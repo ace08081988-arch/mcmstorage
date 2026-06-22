@@ -45,6 +45,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const cameraRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     if (!uid) return;
@@ -203,17 +204,44 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Foto produk</label>
-            <div className="mt-1 flex items-center gap-2">
+            <div className="mt-1 flex flex-wrap items-center gap-2">
               <input
                 ref={fileRef}
                 type="file"
                 accept="image/*"
                 onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="block w-full text-xs file:mr-2 file:rounded-md file:border file:bg-muted file:px-2 file:py-1.5 file:text-xs"
+                className="hidden"
               />
+              <input
+                ref={cameraRef}
+                type="file"
+                accept="image/*"
+                capture="environment"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => fileRef.current?.click()}
+                className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1.5 text-xs hover:bg-muted/80"
+              >
+                <ImageIcon className="h-3.5 w-3.5" /> Pilih file
+              </button>
+              <button
+                type="button"
+                onClick={() => cameraRef.current?.click()}
+                className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1.5 text-xs hover:bg-muted/80"
+              >
+                <Camera className="h-3.5 w-3.5" /> Foto langsung
+              </button>
+              {file && (
+                <span className="truncate text-[10px] text-muted-foreground max-w-[140px]">
+                  {file.name}
+                </span>
+              )}
             </div>
-            <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
-              <Camera className="h-3 w-3" /> kamera HP <span>•</span> <ImageIcon className="h-3 w-3" /> galeri
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              Pilih dari galeri/berkas atau ambil foto langsung dari kamera.
             </div>
             {previewUrl && (
               <img src={previewUrl} alt="" className="mt-2 h-28 w-28 rounded-md border object-cover" />
