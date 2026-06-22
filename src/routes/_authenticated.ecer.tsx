@@ -834,6 +834,10 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     if (grams > Number(item.stock_base)) {
       toast.error(`Stok tidak cukup (tersedia ${item.stock_base} ${item.base_unit})`); return;
     }
+    if (!photo) { toast.error("Foto wajib diisi"); return; }
+    if (!locUrl.trim() || !(gps && Number.isFinite(gps.lat) && Number.isFinite(gps.lng))) {
+      toast.error("Lokasi GPS wajib diisi (tekan tombol GPS)"); return;
+    }
     if (locUrl) {
       if (locUrl.length > 2048) { toast.error("URL lokasi terlalu panjang"); return; }
       if (!/^https:\/\//i.test(locUrl)) { toast.error("URL harus diawali https://"); return; }
@@ -897,13 +901,13 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
 
           <div>
-            <Label className="text-xs">Berat aktual ({title.unit_label})</Label>
+            <Label className="text-xs">Berat aktual ({title.unit_label}) <span className="text-destructive">*</span></Label>
             <Input inputMode="decimal" value={actual} onChange={(e) => setActual(e.target.value)} />
             <div className="mt-1 text-[10px] text-muted-foreground">Stok produk akan berkurang sebanyak angka ini.</div>
           </div>
 
           <div>
-            <Label className="text-xs">Link lokasi</Label>
+            <Label className="text-xs">Link lokasi (GPS) <span className="text-destructive">*</span></Label>
             <div className="flex gap-2">
               <Input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="https://maps.google.com/…" />
               <Button variant="outline" onClick={takeLocation}><MapPin className="h-4 w-4" /> GPS</Button>
