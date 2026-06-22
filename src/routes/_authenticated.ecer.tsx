@@ -458,7 +458,7 @@ function TitleCard({ title, onOpen, onEdit, onDeleted, highlighted }: {
 
 function TitleFormDialog({ item, existing, onClose, onSaved }: {
   item: WarehouseItem; existing: EcerTitle | null;
-  onClose: () => void; onSaved: () => void;
+  onClose: () => void; onSaved: (newId?: string) => void;
 }) {
   const [name, setName] = useState(existing?.name ?? `${item.name} `);
   const [target, setTarget] = useState(existing ? String(existing.target_grams) : "1");
@@ -477,13 +477,13 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
     const payload = { name: name.trim(), target_grams: t, unit_label: unit, note: note.trim() || null };
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const tbl = (supabase.from as any)("ecer_titles");
-    const { error } = existing
-      ? await tbl.update(payload).eq("id", existing.id)
-      : await tbl.insert({ ...payload, user_id: userId, warehouse_item_id: item.id });
+    const res = existing
+      ? await tbl.update(payload).eq("id", existing.id).select("id").maybeSingle()
+      : await tbl.insert({ ...payload, user_id: userId, warehouse_item_id: item.id }).select("id").single();
     setBusy(false);
-    if (error) { toast.error("Gagal: " + error.message); return; }
+    if (res.error) { toast.error("Gagal: " + res.error.message); return; }
     toast.success(existing ? "Tersimpan" : "Judul dibuat");
-    onSaved();
+    onSaved((res.data as { id?: string } | null)?.id ?? existing?.id);
   }
 
   return (
@@ -541,6 +541,11 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
 // ---- Detail view: preparations grid ----
 function TitleDetailView({ item, title, onBack, onTitleUpdated }: {
   item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
+  onCreateTitle?: () => void;
+  onCreateProduct?: () => void;
+}: {
+  item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
+  onCreateTitle?: () => void; onCreateProduct?: () => void;
 }) {
   const [preps, setPreps] = useState<EcerPreparation[]>([]);
   const [loading, setLoading] = useState(true);
