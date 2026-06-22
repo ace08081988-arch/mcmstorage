@@ -257,6 +257,27 @@ function lineWeight(line: Line, variants: Variant[]): number {
   if (line.weightOverride != null) return Number(line.weightOverride) || 0;
   return 0;
 }
+
+// Satu-satunya sumber kebenaran untuk status sebuah baris. Dipakai
+// baik oleh ringkasan maupun badge per-baris, sehingga keduanya
+// tidak pernah berbeda. Murni dihitung dari state baris (tanpa
+// `lineStatus` yang diperbarui asinkron oleh NumberInput).
+function evaluateLine(line: Line, variants: Variant[]): {
+  status: "valid" | "partial" | "invalid";
+  weight: number;
+  count: number;
+  total: number;
+} {
+  const weight = lineWeight(line, variants);
+  const count = Number(line.count);
+  const cOk = Number.isFinite(count) && count > 0;
+  const wOk = Number.isFinite(weight) && weight > 0;
+  let status: "valid" | "partial" | "invalid";
+  if (!cOk || !wOk) status = "invalid";
+  else status = "valid";
+  const total = status === "valid" ? weight * count : 0;
+  return { status, weight: wOk ? weight : 0, count: cOk ? count : 0, total };
+}
 // Parser angka yang menerima koma desimal (format Indonesia) maupun titik.
 function parseNum(input: string): number | null {
   // Terima input parsial saat user masih mengetik (mis. "0.", ".", "-", "1,"),
