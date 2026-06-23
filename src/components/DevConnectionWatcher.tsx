@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
+import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type DevStatus = "connected" | "disconnected" | "unknown";
@@ -120,25 +121,37 @@ export function DevConnectionStatusBadge({ className }: { className?: string }) 
       : "Dev server tersambung";
 
   return (
-    <span
-      role="status"
-      aria-live="polite"
-      title={title}
-      className={cn(
-        "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium leading-none transition-colors",
-        isDown
-          ? "border-destructive/40 bg-destructive/10 text-destructive"
-          : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
-        className,
-      )}
-    >
+    <span className={cn("inline-flex items-center gap-1", className)}>
       <span
+        role="status"
+        aria-live="polite"
+        title={title}
         className={cn(
-          "inline-block h-1.5 w-1.5 rounded-full",
-          isDown ? "bg-destructive animate-pulse" : "bg-emerald-500",
+          "inline-flex items-center gap-1.5 rounded-full border px-2 py-0.5 text-[10px] font-medium leading-none transition-colors",
+          isDown
+            ? "border-destructive/40 bg-destructive/10 text-destructive"
+            : "border-emerald-500/30 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
         )}
-      />
-      {label}
+      >
+        <span
+          className={cn(
+            "inline-block h-1.5 w-1.5 rounded-full",
+            isDown ? "bg-destructive animate-pulse" : "bg-emerald-500",
+          )}
+        />
+        {label}
+      </span>
+      {isDown && (
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          title="Muat ulang halaman sekarang"
+          className="inline-flex items-center gap-1 rounded-full border border-destructive/40 bg-destructive px-2 py-0.5 text-[10px] font-medium leading-none text-destructive-foreground transition-colors hover:bg-destructive/90 focus:outline-none focus:ring-2 focus:ring-destructive/40"
+        >
+          <RefreshCw className="h-3 w-3" />
+          Muat ulang
+        </button>
+      )}
     </span>
   );
 }
