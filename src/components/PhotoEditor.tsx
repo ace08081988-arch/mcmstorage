@@ -90,6 +90,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [exportBg, setExportBg] = useState<"white" | "transparent">("white");
   const previewScrollRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ x: number; y: number; sx: number; sy: number } | null>(null);
+  const [savePreview, setSavePreview] = useState<{ open: boolean; dataUrl: string; blob: Blob | null; building: boolean }>(
+    { open: false, dataUrl: "", blob: null, building: false },
+  );
 
   function onPreviewPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     const el = previewScrollRef.current; if (!el) return;
@@ -469,9 +472,29 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     // Transparent export must use PNG to preserve alpha; white export keeps smaller JPEG.
     const mime = exportBg === "transparent" ? "image/png" : "image/jpeg";
     const quality = exportBg === "transparent" ? undefined : 0.88;
-    const dataUrl = cvs.toDataURL(mime, quality);
-    const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, mime, quality));
-    if (blob) onSave(blob, dataUrl);
+    let dataUrl = "";
+    let blob: Blob | null = null;
+    try {
+      dataUrl = cvs.toDataURL(mime, quality);
+      blob = await new Promise<Blob | null>((r) => cvs.toBlob(r, mime, quality));
+    } catch {
+      setSavePreview({ open: false, dataUrl: "", blob: null, building: false });
+      alert("Gagal menyiapkan pratinjau. Foto mungkin diblokir oleh kebijakan CORS.");
+      return;
+    }
+    setSavePreview({ open: true, dataUrl, blob, building: false });
+  }
+
+  function openSavePreview() {
+    setSavePreview({ open: true, dataUrl: "", blob: null, building: true });
+    // Defer to next tick so the dialog can show its loading state first.
+    setTimeout(() => { void exportImage(); }, 0);
+  }
+
+  function confirmSave() {
+    if (!savePreview.blob || !savePreview.dataUrl) return;
+    onSave(savePreview.blob, savePreview.dataUrl);
+    setSavePreview({ open: false, dataUrl: "", blob: null, building: false });
   }
 
   const selected = state.layers.find((l) => l.id === selectedId);
