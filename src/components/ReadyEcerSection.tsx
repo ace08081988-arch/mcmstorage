@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Scale, Plus, ChevronRight, Search, X, Edit3, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { countMatchingSelfPreps } from "@/lib/ecer-ready-count";
+import { confirm } from "@/lib/confirm";
 
 type Row = {
   id: string;
@@ -58,9 +59,14 @@ export function ReadyEcerSection() {
   useEffect(() => { void load(); }, []);
 
   async function onDelete(r: Row) {
-    const ok = typeof window !== "undefined" && window.confirm(
-      `Hapus judul ecer "${r.name}"? Semua kotak penyiapan di judul ini juga akan dihapus dan stok yang sudah dikurangi sebelumnya akan dikembalikan.`,
-    );
+    const ok = await confirm({
+      title: `Hapus "${r.name}"?`,
+      description:
+        "Semua kotak penyiapan di judul ini juga akan dihapus dan stok yang sudah dikurangi sebelumnya akan dikembalikan.\n\nTindakan ini tidak dapat dibatalkan.",
+      confirmText: "Hapus",
+      cancelText: "Batal",
+      destructive: true,
+    });
     if (!ok) return;
     setBusyId(r.id);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
