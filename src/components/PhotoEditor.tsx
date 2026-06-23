@@ -169,18 +169,20 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     // Try immediately; if the wrap hasn't been measured yet, retry on the
     // next animation frame and again after a short delay to cover slow
     // layouts (mobile Safari sometimes needs an extra tick).
+    let raf = 0;
+    let timer: ReturnType<typeof setTimeout> | null = null;
     if (!update()) {
-      const raf = requestAnimationFrame(() => {
-        if (!update()) setTimeout(update, 50);
+      raf = requestAnimationFrame(() => {
+        if (!update()) timer = setTimeout(update, 50);
       });
-      // best-effort cleanup
-      return () => cancelAnimationFrame(raf);
     }
     const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => update()) : null;
     ro?.observe(el);
     window.addEventListener("resize", update);
     window.addEventListener("orientationchange", update);
     return () => {
+      if (raf) cancelAnimationFrame(raf);
+      if (timer) clearTimeout(timer);
       ro?.disconnect();
       window.removeEventListener("resize", update);
       window.removeEventListener("orientationchange", update);
