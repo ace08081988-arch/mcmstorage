@@ -1,5 +1,6 @@
 import { useEffect, useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
+import { RefreshCw } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type DevStatus = "connected" | "disconnected" | "unknown";
