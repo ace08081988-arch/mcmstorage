@@ -267,19 +267,30 @@ function HutangPiutangPage() {
               ))}
             </div>
             {period === "custom" && (
+              (() => {
+                const invalidRange = Boolean(
+                  draftFrom && draftTo && draftFrom > draftTo,
+                );
+                return (
               <div className="flex flex-wrap items-center gap-2">
                 <Input
                   type="date"
                   value={draftFrom}
                   onChange={(e) => setDraftFrom(e.target.value)}
-                  className="h-8 w-auto text-xs"
+                  className={
+                    "h-8 w-auto text-xs" +
+                    (invalidRange ? " border-destructive" : "")
+                  }
                 />
                 <span className="text-muted-foreground">–</span>
                 <Input
                   type="date"
                   value={draftTo}
                   onChange={(e) => setDraftTo(e.target.value)}
-                  className="h-8 w-auto text-xs"
+                  className={
+                    "h-8 w-auto text-xs" +
+                    (invalidRange ? " border-destructive" : "")
+                  }
                 />
                 <Button
                   type="button"
@@ -290,7 +301,8 @@ function HutangPiutangPage() {
                     setCustomTo(draftTo);
                   }}
                   disabled={
-                    draftFrom === customFrom && draftTo === customTo
+                    invalidRange ||
+                    (draftFrom === customFrom && draftTo === customTo)
                   }
                 >
                   Terapkan
@@ -310,7 +322,14 @@ function HutangPiutangPage() {
                 >
                   Reset
                 </Button>
+                {invalidRange && (
+                  <span className="w-full text-xs text-destructive">
+                    Tanggal mulai tidak boleh lebih besar dari tanggal selesai.
+                  </span>
+                )}
               </div>
+                );
+              })()
             )}
           </div>
         </div>
