@@ -1521,6 +1521,24 @@ export type Database = {
           },
         ]
       }
+      security_scan_hook_secrets: {
+        Row: {
+          hook_name: string
+          hook_secret: string
+          updated_at: string
+        }
+        Insert: {
+          hook_name: string
+          hook_secret?: string
+          updated_at?: string
+        }
+        Update: {
+          hook_name?: string
+          hook_secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       security_scan_runs: {
         Row: {
           finding_count: number
