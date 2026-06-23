@@ -28,10 +28,7 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
           request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
           null
         const userAgent = request.headers.get('user-agent')
-        const presentedAuthRaw =
-          request.headers.get('x-hook-secret') ??
-          request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') ??
-          request.headers.get('apikey')
+        const presentedAuthRaw = request.headers.get('x-hook-secret')
 
         const auditFailure = async (reason: string) => {
           // Selalu coba catat ke console agar terlihat di log worker
