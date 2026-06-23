@@ -99,7 +99,6 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
         } catch (err) {
           const name = (err as DOMException)?.name;
           if (name === "AbortError" || name === "NotAllowedError") {
-            for (const f of shareFiles) downloadFile(f, f.name);
             try { await nav.clipboard?.writeText(fullText); } catch { /* ignore */ }
             return { status: "cancelled", fallbackText: fullText, phone, withFiles: true };
           }
@@ -109,7 +108,6 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
       }
     }
 
-    for (const f of shareFiles) downloadFile(f, f.name);
     try { await nav?.clipboard?.writeText(fullText); } catch { /* ignore */ }
     return {
       status: "fallback",
@@ -197,8 +195,8 @@ export function notifyShareResult(result: ShareResult) {
       if (result.withFiles) {
         toast.message(
           result.reason === "share-failed"
-            ? "Share sheet gagal. Foto sudah diunduh & teks disalin — di WhatsApp, tempel teks lalu lampirkan foto."
-            : "Perangkat ini tak mendukung lampiran otomatis. Foto sudah diunduh & teks disalin — di WhatsApp, tempel teks lalu lampirkan foto.",
+            ? "Share sheet gagal. Teks sudah disalin — di WhatsApp, tempel teks lalu lampirkan foto secara manual."
+            : "Perangkat ini tak mendukung lampiran otomatis. Teks sudah disalin — di WhatsApp, tempel teks lalu lampirkan foto secara manual.",
           { duration: 8000 },
         );
       } else {
