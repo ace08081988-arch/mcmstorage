@@ -14,7 +14,12 @@ import routerPluginPkg from "@tanstack/router-plugin/package.json";
 import reactQueryPkg from "@tanstack/react-query/package.json";
 
 export const Route = createFileRoute("/_authenticated/diagnostics")({
-  head: () => ({ meta: [{ title: "Diagnostik · MCM Storage" }] }),
+  head: () => ({
+    meta: [
+      { title: "Diagnostik · MCM Storage" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
   component: DiagnosticsPage,
 });
 

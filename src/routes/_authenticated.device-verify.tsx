@@ -36,6 +36,12 @@ function sanitizeRedirect(value: string | undefined): string {
 
 export const Route = createFileRoute("/_authenticated/device-verify")({
   validateSearch: searchSchema,
+  head: () => ({
+    meta: [
+      { title: "Verifikasi Perangkat · MCM Storage" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
   component: DeviceVerifyPage,
 });
 
