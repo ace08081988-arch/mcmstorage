@@ -64,11 +64,41 @@ function PublicPrepPage() {
       else window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch { /* ignore quota */ }
   }
+  // Reset total: state in-memory + localStorage benar-benar dibersihkan.
+  // Dipanggil saat PIN benar agar refresh browser memulai dari 0 percobaan.
+  function resetAttemptsFully() {
+    setAttempts(0);
+    setLockedUntil(null);
+    setJustUnlocked(false);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(STORAGE_KEY);
+        // jaga-jaga jika ada key lama dari versi sebelumnya
+        window.sessionStorage.removeItem(STORAGE_KEY);
+      } catch { /* ignore */ }
+    }
+  }
 
   useEffect(() => {
     const s = readAttemptState();
     setAttempts(s.attempts);
     if (s.lockedUntil) setLockedUntil(s.lockedUntil);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // Sinkronkan antar-tab: jika tab lain berhasil verifikasi PIN dan
+  // menghapus STORAGE_KEY, tab ini juga ikut reset.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== STORAGE_KEY) return;
+      if (e.newValue == null) {
+        setAttempts(0);
+        setLockedUntil(null);
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -128,9 +158,9 @@ function PublicPrepPage() {
       }
       return false;
     }
-    setLockedUntil(null);
-    setAttempts(0);
-    writeAttemptState({ attempts: 0, lockedUntil: null });
+    // PIN benar → reset penuh, termasuk localStorage, sehingga refresh
+    // browser tidak membawa sisa percobaan/lock.
+    resetAttemptsFully();
     setTask(res.task!); setItems(res.items ?? []); setAuthed(true); pinRef.current = p;
     return true;
   }
