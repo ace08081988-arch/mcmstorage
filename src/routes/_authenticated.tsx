@@ -7,6 +7,11 @@ import {
 } from "@/lib/device-fingerprint";
 import { isDeviceTrusted } from "@/lib/device.functions";
 import {
+  extractStatus,
+  recordDeviceTrustCall,
+  type AttemptEvent,
+} from "@/lib/device-trust-telemetry";
+import {
   APP_LOCK_EVENT,
   APP_LOCK_REQUEST,
   getLockConfig,
@@ -151,18 +156,46 @@ export const Route = createFileRoute("/_authenticated")({
     } catch {}
     if (cached && cached.trusted && Date.now() - cached.at < 10 * 60 * 1000) {
       trusted = true;
+      recordDeviceTrustCall({
+        ts: new Date().toISOString(),
+        tag: "device-trust",
+        outcome: "trusted",
+        totalMs: 0,
+        attempts: [],
+        retries: 0,
+        cacheHit: true,
+      });
     } else {
       // Retry dengan exponential backoff + jitter agar 500 sesekali
       // (mis. cold start / rate limit) tidak langsung mendepak user ke
       // halaman verifikasi.
       const maxAttempts = 3;
       const baseDelay = 250; // ms
+      const attempts: AttemptEvent[] = [];
+      const startedAt = performance.now();
+      let lastErr: unknown = null;
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        const attemptStart = performance.now();
         try {
           const res = await isDeviceTrusted({ data: { deviceHash: hash } });
+          attempts.push({
+            attempt: attempt + 1,
+            ok: true,
+            status: 200,
+            durationMs: Math.round(performance.now() - attemptStart),
+          });
           trusted = !!res?.trusted;
+          lastErr = null;
           break;
         } catch (err) {
+          lastErr = err;
+          attempts.push({
+            attempt: attempt + 1,
+            ok: false,
+            status: extractStatus(err),
+            durationMs: Math.round(performance.now() - attemptStart),
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
           if (attempt === maxAttempts - 1) {
             trusted = false;
             break;
@@ -171,6 +204,15 @@ export const Route = createFileRoute("/_authenticated")({
           await new Promise((r) => setTimeout(r, delay));
         }
       }
+      recordDeviceTrustCall({
+        ts: new Date().toISOString(),
+        tag: "device-trust",
+        outcome: lastErr ? "failed" : trusted ? "trusted" : "untrusted",
+        totalMs: Math.round(performance.now() - startedAt),
+        attempts,
+        retries: Math.max(0, attempts.length - 1),
+        cacheHit: false,
+      });
       try {
         sessionStorage.setItem(cacheKey, JSON.stringify({ trusted, at: Date.now() }));
       } catch {}
