@@ -185,6 +185,16 @@ function EcerPage() {
     return () => { window.clearTimeout(scrollId); window.clearTimeout(clearId); };
   }, [highlightTitleId, titles, selectedItemId]);
 
+  // Buka dialog edit langsung saat dideep-link dengan ?edit=1.
+  useEffect(() => {
+    if (search.edit !== "1" || !selectedTitleId || titles.length === 0) return;
+    const t = titles.find((x) => x.id === selectedTitleId);
+    if (!t) return;
+    if (selectedItemId !== t.warehouse_item_id) setSelectedItemId(t.warehouse_item_id);
+    setEditingTitle(t);
+    void router.navigate({ to: "/ecer", search: { item: t.warehouse_item_id, title: undefined }, replace: true });
+  }, [search.edit, selectedTitleId, titles, selectedItemId, router]);
+
   async function refetchTitles() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase.from as any)("ecer_titles").select("*").order("position").order("created_at");
