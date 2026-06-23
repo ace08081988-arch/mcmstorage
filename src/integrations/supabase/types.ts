@@ -870,6 +870,7 @@ export type Database = {
           ref_photo_path: string | null
           task_id: string
           unit_label: string | null
+          updated_at: string
           warehouse_item_id: string | null
         }
         Insert: {
@@ -884,6 +885,7 @@ export type Database = {
           ref_photo_path?: string | null
           task_id: string
           unit_label?: string | null
+          updated_at?: string
           warehouse_item_id?: string | null
         }
         Update: {
@@ -898,6 +900,7 @@ export type Database = {
           ref_photo_path?: string | null
           task_id?: string
           unit_label?: string | null
+          updated_at?: string
           warehouse_item_id?: string | null
         }
         Relationships: [
@@ -2047,20 +2050,36 @@ export type Database = {
         Args: { _pin: string; _task_id: string }
         Returns: boolean
       }
-      prep_submit: {
-        Args: {
-          _gps_lat: number
-          _gps_lng: number
-          _location_url: string
-          _note: string
-          _photo_path: string
-          _pin: string
-          _qty_reported: number
-          _task_item_id: string
-          _token: string
-        }
-        Returns: Json
-      }
+      prep_submit:
+        | {
+            Args: {
+              _gps_lat: number
+              _gps_lng: number
+              _location_url: string
+              _note: string
+              _photo_path: string
+              _pin: string
+              _qty_reported: number
+              _task_item_id: string
+              _token: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _expected_updated_at?: string
+              _gps_lat: number
+              _gps_lng: number
+              _location_url: string
+              _note: string
+              _photo_path: string
+              _pin: string
+              _qty_reported: number
+              _task_item_id: string
+              _token: string
+            }
+            Returns: Json
+          }
       prep_upload_allowed: { Args: { _share_token: string }; Returns: boolean }
       prep_worker_upload_allowed: {
         Args: { _owner_user_id: string; _share_token: string }
