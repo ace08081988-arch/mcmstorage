@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -24,6 +24,7 @@ const items = [
   { title: "Chat", url: "/chat", icon: MessageCircle },
   { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
   { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
+  { title: "Langganan", url: "/langganan", icon: Sparkles },
   { title: "Profil Akun", url: "/profil", icon: User },
   { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },
   { title: "Audit Rute", url: "/audit", icon: ClipboardCheck },
