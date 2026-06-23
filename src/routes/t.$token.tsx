@@ -5,7 +5,7 @@ import { PhotoEditor } from "@/components/PhotoEditor";
 import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
-import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle } from "lucide-react";
+import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft } from "lucide-react";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/t/$token")({
@@ -164,12 +164,30 @@ function PublicPrepPage() {
     setTask(res.task!); setItems(res.items ?? []); setAuthed(true); pinRef.current = p;
     toast.success("PIN berhasil — selamat datang", {
       description: "Percobaan PIN telah di-reset.",
+      action: {
+        label: "Kembali",
+        onClick: () => goBackToPin(),
+      },
+      duration: 6000,
     });
     // Pastikan posisi scroll kembali ke atas halaman tugas.
     if (typeof window !== "undefined") {
       try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
     }
     return true;
+  }
+
+  // Kembali ke layar verifikasi PIN tanpa mengganggu data percobaan
+  // (yang sudah di-reset sebelumnya saat PIN benar).
+  function goBackToPin() {
+    setAuthed(false);
+    setTask(null);
+    setItems([]);
+    setPin("");
+    pinRef.current = "";
+    if (typeof window !== "undefined") {
+      try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
+    }
   }
 
   // poll-ish refresh after submission
@@ -327,9 +345,14 @@ function PublicPrepPage() {
     <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background pb-12">
       <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur">
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary/10 ring-1 ring-primary/20">
-            <Package className="h-4 w-4 text-primary" />
-          </div>
+          <button
+            type="button"
+            onClick={goBackToPin}
+            aria-label="Kembali ke halaman awal"
+            className="flex h-9 w-9 items-center justify-center rounded-lg border bg-background text-muted-foreground transition hover:bg-muted hover:text-foreground"
+          >
+            <ArrowLeft className="h-4 w-4" />
+          </button>
           <div className="min-w-0 flex-1">
             <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">MCM Storage</div>
             <div className="truncate text-sm font-semibold">Tugas Penyiapan Barang</div>
