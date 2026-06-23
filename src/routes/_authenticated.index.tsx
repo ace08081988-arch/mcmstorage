@@ -344,7 +344,7 @@ function Index() {
             () => reject(new Error(`Timeout ${ATTEMPT_TIMEOUT}ms saat ${label}`)),
             ATTEMPT_TIMEOUT,
           );
-          p.then(
+          Promise.resolve(p).then(
             (v) => {
               clearTimeout(t);
               resolve(v);
@@ -365,18 +365,19 @@ function Index() {
       }
       const uid = userRes.user?.id;
       if (!uid) return { ok: true }; // tidak ada sesi → bukan kegagalan retry
-      let data: { items: unknown; categories: unknown } | null = null;
+      type QueryRes = { data: { items: unknown; categories: unknown } | null; error: unknown };
+      let data: QueryRes["data"] = null;
       let error: unknown = null;
       try {
-        const res = await withTimeout(
+        const res = (await withTimeout(
           supabase
             .from("user_storage")
             .select("items, categories")
             .eq("user_id", uid)
-            .maybeSingle(),
+            .maybeSingle() as unknown as Promise<QueryRes>,
           "user_storage.select",
-        );
-        data = res.data as typeof data;
+        )) as QueryRes;
+        data = res.data;
         error = res.error;
       } catch (e) {
         return { ok: false, lastError: e };
