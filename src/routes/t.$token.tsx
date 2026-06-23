@@ -5,7 +5,7 @@ import { PhotoEditor } from "@/components/PhotoEditor";
 import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
-import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft } from "lucide-react";
+import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw } from "lucide-react";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/t/$token")({
@@ -29,6 +29,10 @@ function PublicPrepPage() {
   const [items, setItems] = useState<PrepItemRow[]>([]);
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
+  const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found">(null);
+  const [staleItemIds, setStaleItemIds] = useState<Record<string, true>>({});
+  const itemsRef = useRef<PrepItemRow[]>([]);
+  useEffect(() => { itemsRef.current = items; }, [items]);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
@@ -195,6 +199,62 @@ function PublicPrepPage() {
     if (!pinRef.current) return;
     await fetchTask(pinRef.current);
   }
+
+  // Refresh ringan untuk dipanggil oleh realtime / heartbeat / visibilitychange.
+  // Bedanya: bila PIN telah diubah admin atau tugas ditutup, langsung pindah
+  // ke layar yang sesuai tanpa menghapus state percobaan.
+  async function silentRefresh() {
+    if (!pinRef.current || !authed) return;
+    const { data } = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
+    const res = data as { ok: boolean; error?: string; task?: PrepTaskRow; items?: PrepItemRow[] };
+    if (!res?.ok) {
+      if (res?.error === "bad_pin") {
+        setClosedReason("pin_changed");
+      } else if (res?.error === "not_found") {
+        setClosedReason("not_found");
+      }
+      return;
+    }
+    // Deteksi item yang sedang dilihat pegawai tapi sudah berubah versinya.
+    const prev = new Map(itemsRef.current.map((i) => [i.id, i.updated_at ?? null]));
+    const nextStale: Record<string, true> = { ...staleItemIds };
+    for (const it of res.items ?? []) {
+      const before = prev.get(it.id);
+      if (before && it.updated_at && before !== it.updated_at) {
+        nextStale[it.id] = true;
+      }
+    }
+    setStaleItemIds(nextStale);
+    setTask(res.task!);
+    setItems(res.items ?? []);
+  }
+
+  function clearStale(itemId: string) {
+    setStaleItemIds((s) => {
+      if (!s[itemId]) return s;
+      const copy = { ...s }; delete copy[itemId]; return copy;
+    });
+  }
+
+  // Realtime broadcast + fallback heartbeat & visibility refresh.
+  useEffect(() => {
+    if (!authed) return;
+    const ch = publicSupabase
+      .channel(`prep:${token}`, { config: { broadcast: { self: false } } })
+      .on("broadcast", { event: "change" }, () => { void silentRefresh(); })
+      .subscribe();
+    const onVis = () => { if (document.visibilityState === "visible") void silentRefresh(); };
+    document.addEventListener("visibilitychange", onVis);
+    const hb = window.setInterval(() => {
+      if (document.visibilityState === "visible") void silentRefresh();
+    }, 15000);
+    return () => {
+      publicSupabase.removeChannel(ch);
+      document.removeEventListener("visibilitychange", onVis);
+      window.clearInterval(hb);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, token]);
 
   // Auto-buka tugas jika PIN diberikan via fragment URL ( #p=1234 ).
   // Fragment tidak dikirim ke server, jadi PIN tetap aman dari log.
