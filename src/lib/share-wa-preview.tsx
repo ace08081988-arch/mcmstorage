@@ -37,6 +37,9 @@ export function WhatsAppPreviewHost() {
   const [sending, setSending] = useState(false);
   const [filePreviewUrls, setFilePreviewUrls] = useState<string[]>([]);
   const [lastResult, setLastResult] = useState<ShareResult | null>(null);
+  // Cache resolved files so retry reuses the exact same payload (text, url, photo)
+  // that the user saw in the preview — no re-fetching, no re-rendering.
+  const [resolvedFiles, setResolvedFiles] = useState<File[] | undefined>(undefined);
 
   useEffect(() => {
     openRequest = (req) => setCurrent(req);
@@ -47,8 +50,8 @@ export function WhatsAppPreviewHost() {
     return () => { openRequest = null; };
   }, []);
 
-  // Reset inline status whenever a new request opens
-  useEffect(() => { setLastResult(null); }, [current]);
+  // Reset inline status & cached payload whenever a new request opens
+  useEffect(() => { setLastResult(null); setResolvedFiles(undefined); }, [current]);
 
   // Generate object URLs untuk files yang sudah disediakan upfront
   useEffect(() => {
@@ -92,10 +95,12 @@ export function WhatsAppPreviewHost() {
     setSending(true);
     setLastResult(null);
     try {
-      let files = input.files;
+      let files = resolvedFiles ?? input.files;
       if (!files && input.resolveFiles) {
         files = await input.resolveFiles();
       }
+      // Cache for subsequent retries — same exact bytes the user previewed.
+      if (files && !resolvedFiles) setResolvedFiles(files);
       const res = await shareToWhatsApp({ ...input, files });
       // Always surface inline status. Auto-close only on confirmed success.
       notifyShareResult(res);
