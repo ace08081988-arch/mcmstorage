@@ -324,58 +324,61 @@ function Index() {
       if (v) setViewMode(v);
     } catch {}
     (async () => {
-      const { data: userRes } = await supabase.auth.getUser();
-      const uid = userRes.user?.id;
-      if (!uid) {
+      try {
+        const { data: userRes } = await supabase.auth.getUser();
+        const uid = userRes.user?.id;
+        if (!uid) return;
+        const { data, error } = await supabase
+          .from("user_storage")
+          .select("items, categories")
+          .eq("user_id", uid)
+          .maybeSingle();
+        if (error) {
+          toast.error("Gagal memuat data: " + friendlyError(error), {
+            action: {
+              label: "Lihat detail",
+              onClick: () =>
+                navigate({
+                  to: "/error",
+                  search: { kind: "data", title: "Gagal memuat data", message: (error as any).message, code: (error as any).code, from: "/" },
+                }),
+            },
+          });
+        } else {
+          const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
+          const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
+          setItems(loadedItems);
+          setCategories(loadedCats);
+          try {
+            const saved = localStorage.getItem(ACTIVE_CAT_KEY);
+            if (saved && loadedCats.includes(saved)) setActiveCat(saved);
+          } catch {}
+        }
+      } catch (e) {
+        // Jangan biarkan exception apa pun mengunci layar di "Memuat…".
+        console.warn("[index] hydrate error", e);
+      } finally {
         setHydrated(true);
-        return;
       }
-      const { data, error } = await supabase
-        .from("user_storage")
-        .select("items, categories")
-        .eq("user_id", uid)
-        .maybeSingle();
-      if (error) {
-        toast.error("Gagal memuat data: " + friendlyError(error), {
-          action: {
-            label: "Lihat detail",
-            onClick: () =>
-              navigate({
-                to: "/error",
-                search: { kind: "data", title: "Gagal memuat data", message: (error as any).message, code: (error as any).code, from: "/" },
-              }),
-          },
-        });
-      } else {
-        const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
-        const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
-        setItems(loadedItems);
-        setCategories(loadedCats);
-        try {
-          const saved = localStorage.getItem(ACTIVE_CAT_KEY);
-          if (saved && loadedCats.includes(saved)) setActiveCat(saved);
-        } catch {}
-      }
-      setHydrated(true);
     })();
   }, []);
 
   // Safety watchdog: jangan biarkan halaman menggantung di "Memuat…" jika
   // useEffect inisialisasi tidak menyelesaikan setHydrated(true) (mis. HMR
-  // putus, jaringan ke Supabase stuck tanpa error). Setelah 8 dtk paksa
+  // putus, jaringan ke Supabase stuck tanpa error). Setelah 3 dtk paksa
   // lepas dari layar loading sehingga konten dasar tetap bisa diakses.
   useEffect(() => {
     if (hydrated) return;
     const t = window.setTimeout(() => {
       setHydrated((h) => {
         if (!h) {
-          console.warn("[index] hydrated watchdog fired after 8s", {
+          console.warn("[index] hydrated watchdog fired after 3s", {
             tag: "index-hydrate",
           });
         }
         return true;
       });
-    }, 8000);
+    }, 3000);
     return () => window.clearTimeout(t);
   }, [hydrated]);
 
