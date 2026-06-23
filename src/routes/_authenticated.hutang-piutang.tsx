@@ -81,6 +81,9 @@ function HutangPiutangPage() {
   const [addOpen, setAddOpen] = useState(false);
   const [payFor, setPayFor] = useState<Debt | null>(null);
   const [editFor, setEditFor] = useState<Debt | null>(null);
+  const [period, setPeriod] = useState<"all" | "week" | "month" | "custom">("all");
+  const [customFrom, setCustomFrom] = useState<string>("");
+  const [customTo, setCustomTo] = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
@@ -117,7 +120,40 @@ function HutangPiutangPage() {
     return m;
   }, [payments]);
 
-  const filtered = debts.filter((d) => d.kind === tab);
+  const periodRange = useMemo<{ from: Date | null; to: Date | null }>(() => {
+    const now = new Date();
+    if (period === "week") {
+      const from = new Date(now);
+      from.setDate(from.getDate() - 7);
+      return { from, to: null };
+    }
+    if (period === "month") {
+      const from = new Date(now);
+      from.setMonth(from.getMonth() - 1);
+      return { from, to: null };
+    }
+    if (period === "custom") {
+      const from = customFrom ? new Date(customFrom + "T00:00:00") : null;
+      const to = customTo ? new Date(customTo + "T23:59:59") : null;
+      return { from, to };
+    }
+    return { from: null, to: null };
+  }, [period, customFrom, customTo]);
+
+  const inPeriod = (iso: string) => {
+    if (!periodRange.from && !periodRange.to) return true;
+    const t = new Date(iso).getTime();
+    if (periodRange.from && t < periodRange.from.getTime()) return false;
+    if (periodRange.to && t > periodRange.to.getTime()) return false;
+    return true;
+  };
+
+  const debtsInPeriod = useMemo(
+    () => debts.filter((d) => inPeriod(d.created_at)),
+    [debts, periodRange],
+  );
+
+  const filtered = debtsInPeriod.filter((d) => d.kind === tab);
 
   const totals = useMemo(() => {
     let total = 0;
@@ -132,13 +168,13 @@ function HutangPiutangPage() {
   const overall = useMemo(() => {
     let hutangSisa = 0;
     let piutangSisa = 0;
-    for (const d of debts) {
+    for (const d of debtsInPeriod) {
       const sisa = Math.max(0, Number(d.amount) - (paidByDebt.get(d.id) ?? 0));
       if (d.kind === "hutang") hutangSisa += sisa;
       else piutangSisa += sisa;
     }
     return { hutangSisa, piutangSisa, net: piutangSisa - hutangSisa };
-  }, [debts, paidByDebt]);
+  }, [debtsInPeriod, paidByDebt]);
 
   const removeDebt = async (d: Debt) => {
     if (
@@ -203,6 +239,51 @@ function HutangPiutangPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-3 py-4 sm:px-6">
+        <div className="mb-3 rounded-lg border bg-card p-3">
+          <div className="flex flex-wrap items-center gap-2 text-xs">
+            <span className="text-muted-foreground">Periode:</span>
+            <div className="flex flex-wrap gap-1">
+              {([
+                { v: "all", l: "Semua" },
+                { v: "week", l: "7 hari" },
+                { v: "month", l: "30 hari" },
+                { v: "custom", l: "Custom" },
+              ] as const).map((opt) => (
+                <button
+                  key={opt.v}
+                  type="button"
+                  onClick={() => setPeriod(opt.v)}
+                  className={
+                    "rounded-md border px-2 py-1 text-xs " +
+                    (period === opt.v
+                      ? "bg-primary text-primary-foreground border-primary"
+                      : "hover:bg-accent")
+                  }
+                >
+                  {opt.l}
+                </button>
+              ))}
+            </div>
+            {period === "custom" && (
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  type="date"
+                  value={customFrom}
+                  onChange={(e) => setCustomFrom(e.target.value)}
+                  className="h-8 w-auto text-xs"
+                />
+                <span className="text-muted-foreground">–</span>
+                <Input
+                  type="date"
+                  value={customTo}
+                  onChange={(e) => setCustomTo(e.target.value)}
+                  className="h-8 w-auto text-xs"
+                />
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="mb-3 grid grid-cols-3 gap-2 rounded-lg border bg-card p-3 text-center text-xs">
           <div>
             <div className="text-muted-foreground">Sisa hutang</div>
