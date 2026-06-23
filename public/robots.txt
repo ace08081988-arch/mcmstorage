@@ -1,4 +1,30 @@
 User-agent: *
 Allow: /
 
+# Halaman publik yang diindeks ada di sitemap:
+#   /, /pricing, /refund, /terms, /trust, /download, /auth
+
+# Endpoint API & internal — tidak untuk diindeks
+Disallow: /api/
+Disallow: /lovable/
+
+# Halaman utilitas / privat (butuh login, token, atau hanya error state)
+Disallow: /error
+Disallow: /reset-password
+Disallow: /t/
+Disallow: /audit
+Disallow: /chat
+Disallow: /device-verify
+Disallow: /diagnostics
+Disallow: /ecer
+Disallow: /gudang
+Disallow: /hutang-piutang
+Disallow: /kontak
+Disallow: /label-preview
+Disallow: /link-pegawai
+Disallow: /pengaturan-kunci
+Disallow: /profil
+Disallow: /request
+Disallow: /tugas
+
 Sitemap: https://mcmstorage.biz/sitemap.xml
