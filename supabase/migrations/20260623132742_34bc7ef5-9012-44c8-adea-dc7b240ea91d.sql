@@ -1,0 +1,1 @@
+UPDATE prep_tasks SET pin_hash = extensions.crypt('123456', extensions.gen_salt('bf', 8)) WHERE share_token = 'WclRNJpA3GB8OB2b2o-ZIzTDwbC0AU7X';
