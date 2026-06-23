@@ -237,17 +237,37 @@ function maskEmail(email: string) {
 
 export const isDeviceTrusted = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data: { deviceHash: string }) => {
+  .inputValidator((data: { deviceHash: string; correlationId?: string }) => {
     if (!data?.deviceHash || typeof data.deviceHash !== "string" || data.deviceHash.length < 16) {
       throw new Error("deviceHash tidak valid");
     }
-    return { deviceHash: data.deviceHash };
+    const correlationId =
+      typeof data.correlationId === "string" && data.correlationId.length > 0 && data.correlationId.length <= 64
+        ? data.correlationId
+        : randomUUID();
+    return { deviceHash: data.deviceHash, correlationId };
   })
   .handler(async ({ data, context }) => {
     const { userId } = context;
     const ip = clientIp();
     const ua = getRequestHeader("user-agent") || "unknown";
     const fullHash = combinedHash(data.deviceHash, ip);
+    const correlationId = data.correlationId;
+    const startedAt = Date.now();
+    const log = (level: "info" | "warn" | "error", msg: string, extra?: Record<string, unknown>) => {
+      const payload = {
+        tag: "device-trust",
+        fn: "isDeviceTrusted",
+        correlationId,
+        userId,
+        ip,
+        msg,
+        ...extra,
+      };
+      (console[level] as (...a: unknown[]) => void)("[device-trust]", payload);
+    };
+    log("info", "begin");
+    try {
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("user_devices")
@@ -266,7 +286,15 @@ export const isDeviceTrusted = createServerFn({ method: "POST" })
         })
         .eq("id", row.id);
     }
-    return { trusted };
+      log("info", "end", { trusted, durationMs: Date.now() - startedAt });
+      return { trusted, correlationId };
+    } catch (err) {
+      log("error", "failed", {
+        durationMs: Date.now() - startedAt,
+        errorMessage: err instanceof Error ? err.message : String(err),
+      });
+      throw err;
+    }
   });
 
 export const checkDeviceOtpEmailStatus = createServerFn({ method: "POST" })
