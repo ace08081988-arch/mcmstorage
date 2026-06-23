@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
+import { timingSafeEqual } from 'crypto'
 
 type Finding = {
   id: string
@@ -16,17 +17,28 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
       POST: async ({ request }) => {
         const supabaseUrl = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-        const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
+        const hookSecret = process.env.SECURITY_SCAN_HOOK_SECRET
         const slackUrl = process.env.SLACK_SECURITY_WEBHOOK_URL
         const lovableApiKey = process.env.LOVABLE_API_KEY
         const senderDomain = process.env.SENDER_DOMAIN ?? 'notify.mcmstorage.biz'
         const lovableSendUrl = process.env.LOVABLE_SEND_URL
 
-        // Auth: pg_cron memanggil dengan header apikey=<anon-key>
+        // Auth: shared-secret privat (SECURITY_SCAN_HOOK_SECRET) yang
+        // hanya ada di server. Anon/publishable key TIDAK boleh dipakai
+        // karena ter-bundle ke klien dan bisa diambil siapa saja.
         const auth =
-          request.headers.get('apikey') ??
-          request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
-        if (!anonKey || auth !== anonKey) {
+          request.headers.get('x-hook-secret') ??
+          request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') ??
+          request.headers.get('apikey')
+        if (!hookSecret) {
+          return Response.json({ error: 'hook_secret_not_configured' }, { status: 500 })
+        }
+        if (!auth) {
+          return new Response('Unauthorized', { status: 401 })
+        }
+        const a = Buffer.from(auth)
+        const b = Buffer.from(hookSecret)
+        if (a.length !== b.length || !timingSafeEqual(a, b)) {
           return new Response('Unauthorized', { status: 401 })
         }
         if (!supabaseUrl || !serviceKey) {
@@ -146,7 +158,8 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
                 },
                 { apiKey: lovableApiKey, sendUrl: lovableSendUrl },
               )
-              channels.email = { sent: true, to }
+              // Jangan bocorkan alamat email admin di response.
+              channels.email = { sent: true }
             }
           } catch (e) {
             channels.email = { sent: false, error: e instanceof Error ? e.message : String(e) }
