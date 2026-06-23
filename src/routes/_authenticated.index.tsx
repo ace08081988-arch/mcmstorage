@@ -360,6 +360,25 @@ function Index() {
     })();
   }, []);
 
+  // Safety watchdog: jangan biarkan halaman menggantung di "Memuat…" jika
+  // useEffect inisialisasi tidak menyelesaikan setHydrated(true) (mis. HMR
+  // putus, jaringan ke Supabase stuck tanpa error). Setelah 8 dtk paksa
+  // lepas dari layar loading sehingga konten dasar tetap bisa diakses.
+  useEffect(() => {
+    if (hydrated) return;
+    const t = window.setTimeout(() => {
+      setHydrated((h) => {
+        if (!h) {
+          console.warn("[index] hydrated watchdog fired after 8s", {
+            tag: "index-hydrate",
+          });
+        }
+        return true;
+      });
+    }, 8000);
+    return () => window.clearTimeout(t);
+  }, [hydrated]);
+
   useEffect(() => {
     if (!hydrated) return;
     let cancelled = false;
