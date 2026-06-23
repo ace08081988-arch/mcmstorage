@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
+import { z } from 'zod'
 
 export type SecurityFinding = {
   id: string
@@ -74,9 +75,16 @@ export const runSecurityScanNow = createServerFn({ method: 'POST' })
 
 export const acknowledgeFindings = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { ids: string[] }) => input)
+  .inputValidator((input: { ids: string[] }) =>
+    z.object({ ids: z.array(z.string().uuid()).min(1).max(500) }).parse(input),
+  )
   .handler(async ({ data, context }) => {
-    const { supabase } = context
+    const { supabase, userId } = context
+    const { data: isAdmin } = await supabase.rpc('has_role', {
+      _user_id: userId,
+      _role: 'admin',
+    })
+    if (!isAdmin) throw new Error('Forbidden')
     const { data: count, error } = await supabase.rpc('security_findings_acknowledge', {
       _ids: data.ids,
     })
