@@ -1,5 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
+import { timingSafeEqual } from 'crypto'
 
 type Finding = {
   id: string
@@ -16,19 +17,11 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
       POST: async ({ request }) => {
         const supabaseUrl = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-        const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
         const slackUrl = process.env.SLACK_SECURITY_WEBHOOK_URL
         const lovableApiKey = process.env.LOVABLE_API_KEY
         const senderDomain = process.env.SENDER_DOMAIN ?? 'notify.mcmstorage.biz'
         const lovableSendUrl = process.env.LOVABLE_SEND_URL
 
-        // Auth: pg_cron memanggil dengan header apikey=<anon-key>
-        const auth =
-          request.headers.get('apikey') ??
-          request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
-        if (!anonKey || auth !== anonKey) {
-          return new Response('Unauthorized', { status: 401 })
-        }
         if (!supabaseUrl || !serviceKey) {
           return Response.json({ error: 'config_missing' }, { status: 500 })
         }
@@ -36,6 +29,23 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
         const supabase = createClient(supabaseUrl, serviceKey, {
           auth: { persistSession: false, autoRefreshToken: false },
         })
+
+        // Auth: pg_cron sends a per-hook shared secret stored in
+        // public.security_scan_hook_secrets (hook_name = 'security-scan-daily').
+        // The anon/publishable key is in the public JS bundle, so it cannot
+        // gate this endpoint.
+        const provided = request.headers.get('x-hook-secret') ?? ''
+        const { data: secretRow } = await supabase
+          .from('security_scan_hook_secrets')
+          .select('hook_secret')
+          .eq('hook_name', 'security-scan-daily')
+          .maybeSingle()
+        const expected = secretRow?.hook_secret ?? ''
+        const a = Buffer.from(provided)
+        const b = Buffer.from(expected)
+        if (!expected || a.length !== b.length || !timingSafeEqual(a, b)) {
+          return new Response('Unauthorized', { status: 401 })
+        }
 
         // 1. Jalankan scan
         const { data: scan, error: scanErr } = await supabase.rpc('run_internal_security_scan')
