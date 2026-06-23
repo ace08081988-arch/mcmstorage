@@ -406,24 +406,8 @@ function Index() {
     };
   }, [loadRetryToken]);
 
-  // Safety watchdog: jangan biarkan halaman menggantung di "Memuat…" jika
-  // useEffect inisialisasi tidak menyelesaikan setHydrated(true) (mis. HMR
-  // putus, jaringan ke Supabase stuck tanpa error). Setelah 3 dtk paksa
-  // lepas dari layar loading sehingga konten dasar tetap bisa diakses.
-  useEffect(() => {
-    if (hydrated) return;
-    const t = window.setTimeout(() => {
-      setHydrated((h) => {
-        if (!h) {
-          console.warn("[index] hydrated watchdog fired after 3s", {
-            tag: "index-hydrate",
-          });
-        }
-        return true;
-      });
-    }, 3000);
-    return () => window.clearTimeout(t);
-  }, [hydrated]);
+  // Watchdog dihapus — alur retry (3x backoff) + state loadFailed sudah
+  // memastikan UI tidak menggantung di "Memuat…" tanpa jalan keluar.
 
   useEffect(() => {
     if (!hydrated) return;
