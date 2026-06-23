@@ -149,7 +149,18 @@ export const Route = createFileRoute("/_authenticated")({
     // Cache hasil pengecekan selama 10 menit agar beforeLoad tidak memanggil
     // server fn pada setiap perubahan navigasi (hash, search params, dll).
     let trusted = false;
-    let failureInfo: { correlationId: string; message: string } | null = null;
+    let failureInfo:
+      | {
+          correlationId: string;
+          message: string;
+          attempts: Array<{
+            attempt: number;
+            status: number | null;
+            durationMs: number;
+            ok: boolean;
+          }>;
+        }
+      | null = null;
     let cached: { trusted: boolean; at: number } | null = null;
     try {
       const raw = sessionStorage.getItem(cacheKey);
@@ -235,6 +246,12 @@ export const Route = createFileRoute("/_authenticated")({
         failureInfo = {
           correlationId,
           message: lastErr instanceof Error ? lastErr.message : String(lastErr),
+          attempts: attempts.map((a) => ({
+            attempt: a.attempt,
+            status: a.status,
+            durationMs: a.durationMs,
+            ok: a.ok,
+          })),
         };
       }
     }
