@@ -320,10 +320,10 @@ export function EcerSection() {
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
+    <section id="ecer" className="scroll-mt-16 space-y-4">
       <div className="flex items-center gap-2">
         <Scale className="h-5 w-5 text-primary" />
-        <h1 className="text-lg font-semibold">Penyiapan Ecer</h1>
+        <h2 className="text-lg font-semibold">Penyiapan Ecer</h2>
       </div>
       <p className="text-xs leading-relaxed text-muted-foreground">
         Buat <b>Judul Ecer</b> per produk (mis. <i>KRISTAL 1 gram</i>), lalu tambahkan kotak-kotak penyiapan
@@ -425,7 +425,7 @@ export function EcerSection() {
           <Plus className="h-4 w-4" /> Produk gudang baru
         </Button>
       </div>
-    </div>
+    </section>
   );
 }
 
