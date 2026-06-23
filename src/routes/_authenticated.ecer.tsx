@@ -785,6 +785,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   const [photo, setPhoto] = useState<{ dataUrl: string; blob: Blob } | null>(null);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
+  const [zoomOpen, setZoomOpen] = useState(false);
   const [locUrl, setLocUrl] = useState("");
   const [gps, setGps] = useState<{ lat: number; lng: number } | null>(null);
   const [actual, setActual] = useState(String(title.target_grams));
@@ -927,10 +928,29 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         <div className="space-y-3">
           {photo ? (
             <div>
-              <img src={photo.dataUrl} alt="" className="w-full rounded-lg border object-cover" />
-              <div className="mt-1 flex gap-2">
+              <div className="mb-1 flex items-center justify-between text-[11px]">
+                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-400">
+                  ✓ Pratinjau foto
+                </span>
+                <span className="text-muted-foreground">{Math.round(photo.blob.size / 1024)} KB · ketuk untuk perbesar</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setZoomOpen(true)}
+                className="block w-full overflow-hidden rounded-lg border bg-muted"
+                aria-label="Perbesar pratinjau foto"
+              >
+                <img src={photo.dataUrl} alt="Pratinjau foto penyiapan" className="max-h-72 w-full object-contain" />
+              </button>
+              <div className="mt-2 flex flex-wrap gap-2">
                 <Button size="sm" variant="outline" onClick={() => { setEditorSrc(photo.dataUrl); setEditorOpen(true); }}>
                   <Edit3 className="h-3 w-3" /> Edit lagi
+                </Button>
+                <Button size="sm" variant="outline" type="button" onClick={() => galleryRef.current?.click()}>
+                  <ImageIcon className="h-3 w-3" /> Ganti dari galeri
+                </Button>
+                <Button size="sm" variant="outline" type="button" onClick={() => cameraRef.current?.click()}>
+                  <Camera className="h-3 w-3" /> Foto ulang
                 </Button>
                 <Button size="sm" variant="ghost" onClick={() => setPhoto(null)}>Hapus foto</Button>
               </div>
@@ -978,6 +998,18 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         {editorOpen && editorSrc && (
           <PhotoEditor src={editorSrc} onCancel={() => setEditorOpen(false)}
             onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }} />
+        )}
+
+        {zoomOpen && photo && (
+          <Dialog open onOpenChange={(o) => { if (!o) setZoomOpen(false); }}>
+            <DialogContent className="max-w-3xl p-2">
+              <DialogHeader className="px-2 pt-1">
+                <DialogTitle className="text-sm">Pratinjau foto</DialogTitle>
+                <DialogDescription className="text-[11px]">Periksa hasil foto sebelum menyimpan.</DialogDescription>
+              </DialogHeader>
+              <img src={photo.dataUrl} alt="Pratinjau foto besar" className="max-h-[75vh] w-full rounded-md object-contain" />
+            </DialogContent>
+          </Dialog>
         )}
       </DialogContent>
     </Dialog>
