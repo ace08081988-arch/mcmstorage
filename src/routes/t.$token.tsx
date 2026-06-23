@@ -30,15 +30,64 @@ function PublicPrepPage() {
   const autoTriedRef = useRef(false);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
+  // berturut-turut sebelum input PIN dikunci selama LOCK_SECONDS.
+  // Data disimpan di localStorage per-token agar reload halaman tidak
+  // mem-bypass pembatasan. Server juga punya rate-limit terpisah
+  // (mengembalikan "rate_limited" + retry_after).
+  const MAX_ATTEMPTS = 3;
+  const LOCK_SECONDS = 60;
+  const STORAGE_KEY = `prep_pin_attempts:${token}`;
+  const [attempts, setAttempts] = useState(0);
+
+  type AttemptState = { attempts: number; lockedUntil: number | null };
+  function readAttemptState(): AttemptState {
+    if (typeof window === "undefined") return { attempts: 0, lockedUntil: null };
+    try {
+      const raw = window.localStorage.getItem(STORAGE_KEY);
+      if (!raw) return { attempts: 0, lockedUntil: null };
+      const parsed = JSON.parse(raw) as AttemptState;
+      return {
+        attempts: Number(parsed.attempts) || 0,
+        lockedUntil: parsed.lockedUntil && parsed.lockedUntil > Date.now() ? parsed.lockedUntil : null,
+      };
+    } catch {
+      return { attempts: 0, lockedUntil: null };
+    }
+  }
+  function writeAttemptState(state: AttemptState) {
+    if (typeof window === "undefined") return;
+    try {
+      if (!state.attempts && !state.lockedUntil) window.localStorage.removeItem(STORAGE_KEY);
+      else window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    } catch { /* ignore quota */ }
+  }
+
+  useEffect(() => {
+    const s = readAttemptState();
+    setAttempts(s.attempts);
+    if (s.lockedUntil) setLockedUntil(s.lockedUntil);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (lockedUntil == null) return;
-    const id = setInterval(() => setNow(Date.now()), 1000);
+    const id = setInterval(() => {
+      const t = Date.now();
+      setNow(t);
+      if (lockedUntil <= t) {
+        setLockedUntil(null);
+        setAttempts(0);
+        writeAttemptState({ attempts: 0, lockedUntil: null });
+      }
+    }, 1000);
     return () => clearInterval(id);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lockedUntil]);
 
   const lockedSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - now) / 1000)) : 0;
   const isLocked = lockedSecondsLeft > 0;
+  const attemptsLeft = Math.max(0, MAX_ATTEMPTS - attempts);
 
   async function fetchTask(p: string) {
     if (isLocked) return false;
@@ -51,13 +100,32 @@ function PublicPrepPage() {
       if (res?.error === "rate_limited") {
         const secs = Math.max(1, res.retry_after ?? 600);
         setLockedUntil(Date.now() + secs * 1000);
+        writeAttemptState({ attempts: MAX_ATTEMPTS, lockedUntil: Date.now() + secs * 1000 });
         toast.error(`Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(secs / 60)} menit.`);
       } else {
-        toast.error(res?.error === "bad_pin" ? "PIN salah" : "Tugas tidak ditemukan / kedaluwarsa");
+        if (res?.error === "bad_pin") {
+          const next = attempts + 1;
+          if (next >= MAX_ATTEMPTS) {
+            const until = Date.now() + LOCK_SECONDS * 1000;
+            setAttempts(next);
+            setLockedUntil(until);
+            writeAttemptState({ attempts: next, lockedUntil: until });
+            toast.error(`PIN salah. Input dikunci ${LOCK_SECONDS} detik.`);
+          } else {
+            setAttempts(next);
+            writeAttemptState({ attempts: next, lockedUntil: null });
+            toast.error(`PIN salah. Sisa percobaan: ${MAX_ATTEMPTS - next}`);
+          }
+          setPin("");
+        } else {
+          toast.error("Tugas tidak ditemukan / kedaluwarsa");
+        }
       }
       return false;
     }
     setLockedUntil(null);
+    setAttempts(0);
+    writeAttemptState({ attempts: 0, lockedUntil: null });
     setTask(res.task!); setItems(res.items ?? []); setAuthed(true); pinRef.current = p;
     return true;
   }
@@ -113,6 +181,11 @@ function PublicPrepPage() {
             {isLocked && (
               <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-[11px] leading-relaxed text-destructive">
                 Terlalu banyak PIN salah. Tunggu hingga hitungan mundur selesai, lalu coba lagi.
+              </div>
+            )}
+            {!isLocked && attempts > 0 && (
+              <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+                Sisa percobaan: <b>{attemptsLeft}</b> dari {MAX_ATTEMPTS}. Setelah {MAX_ATTEMPTS} kali salah, input akan dikunci {LOCK_SECONDS} detik.
               </div>
             )}
             <div className="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
