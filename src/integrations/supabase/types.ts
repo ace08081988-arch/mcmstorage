@@ -1417,6 +1417,24 @@ export type Database = {
           },
         ]
       }
+      security_ack_rate_limit: {
+        Row: {
+          called_at: string
+          id: number
+          user_id: string
+        }
+        Insert: {
+          called_at?: string
+          id?: number
+          user_id: string
+        }
+        Update: {
+          called_at?: string
+          id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
       security_hook_audit: {
         Row: {
           created_at: string
@@ -1932,6 +1950,7 @@ export type Database = {
         Returns: undefined
       }
       can_chat: { Args: { _a: string; _b: string }; Returns: boolean }
+      check_acknowledge_rate_limit: { Args: never; Returns: Json }
       create_group: {
         Args: { _member_ids: string[]; _title: string }
         Returns: string
