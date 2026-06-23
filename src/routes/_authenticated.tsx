@@ -152,11 +152,24 @@ export const Route = createFileRoute("/_authenticated")({
     if (cached && cached.trusted && Date.now() - cached.at < 10 * 60 * 1000) {
       trusted = true;
     } else {
-      try {
-        const res = await isDeviceTrusted({ data: { deviceHash: hash } });
-        trusted = !!res?.trusted;
-      } catch {
-        trusted = false;
+      // Retry dengan exponential backoff + jitter agar 500 sesekali
+      // (mis. cold start / rate limit) tidak langsung mendepak user ke
+      // halaman verifikasi.
+      const maxAttempts = 3;
+      const baseDelay = 250; // ms
+      for (let attempt = 0; attempt < maxAttempts; attempt++) {
+        try {
+          const res = await isDeviceTrusted({ data: { deviceHash: hash } });
+          trusted = !!res?.trusted;
+          break;
+        } catch (err) {
+          if (attempt === maxAttempts - 1) {
+            trusted = false;
+            break;
+          }
+          const delay = baseDelay * Math.pow(2, attempt) + Math.floor(Math.random() * 150);
+          await new Promise((r) => setTimeout(r, delay));
+        }
       }
       try {
         sessionStorage.setItem(cacheKey, JSON.stringify({ trusted, at: Date.now() }));
