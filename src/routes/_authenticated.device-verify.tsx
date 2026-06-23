@@ -29,6 +29,17 @@ const searchSchema = z.object({
     .object({
       correlationId: z.string().max(64).optional(),
       message: z.string().max(300).optional(),
+      attempts: z
+        .array(
+          z.object({
+            attempt: z.number().int().min(1).max(20),
+            status: z.number().int().nullable().optional(),
+            durationMs: z.number().nonnegative(),
+            ok: z.boolean(),
+          }),
+        )
+        .max(10)
+        .optional(),
     })
     .optional()
     .catch(undefined),
@@ -44,9 +55,16 @@ function sanitizeRedirect(value: string | undefined): string {
 function CorrelationIdBanner({
   correlationId,
   message,
+  attempts,
 }: {
   correlationId: string;
   message?: string;
+  attempts?: Array<{
+    attempt: number;
+    status?: number | null;
+    durationMs: number;
+    ok: boolean;
+  }>;
 }) {
   const [copied, setCopied] = useState(false);
   const copy = async () => {
@@ -75,6 +93,30 @@ function CorrelationIdBanner({
       <div className="mt-1 text-[10px] text-destructive/70">
         Bagikan ID ini ke admin untuk membantu pelacakan.
       </div>
+      {attempts && attempts.length > 0 && (
+        <div className="mt-2 overflow-hidden rounded border border-destructive/30">
+          <table className="w-full text-[10px]">
+            <thead className="bg-destructive/10 text-destructive/80">
+              <tr>
+                <th className="px-1.5 py-1 text-left font-medium">#</th>
+                <th className="px-1.5 py-1 text-left font-medium">Status</th>
+                <th className="px-1.5 py-1 text-right font-medium">Durasi</th>
+                <th className="px-1.5 py-1 text-left font-medium">Hasil</th>
+              </tr>
+            </thead>
+            <tbody className="font-mono">
+              {attempts.map((a) => (
+                <tr key={a.attempt} className="border-t border-destructive/20">
+                  <td className="px-1.5 py-0.5">{a.attempt}</td>
+                  <td className="px-1.5 py-0.5">{a.status ?? "—"}</td>
+                  <td className="px-1.5 py-0.5 text-right">{a.durationMs}ms</td>
+                  <td className="px-1.5 py-0.5">{a.ok ? "ok" : "gagal"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
     </div>
   );
 }
@@ -259,6 +301,7 @@ function DeviceVerifyPage() {
               <CorrelationIdBanner
                 correlationId={trustError.correlationId}
                 message={trustError.message}
+                attempts={trustError.attempts}
               />
             )}
             <button
@@ -276,6 +319,7 @@ function DeviceVerifyPage() {
               <CorrelationIdBanner
                 correlationId={trustError.correlationId}
                 message={trustError.message}
+                attempts={trustError.attempts}
               />
             )}
             {emailWarning && (
