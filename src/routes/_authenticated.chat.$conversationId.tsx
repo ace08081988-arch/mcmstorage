@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -34,6 +34,7 @@ import {
 } from "@/lib/chat";
 import { sendMessage } from "@/lib/chat.functions";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
 
 export const Route = createFileRoute("/_authenticated/chat/$conversationId")({
   component: ChatRoomPage,
@@ -55,6 +56,7 @@ function ChatRoomPage() {
   const deleteMsg = useDeleteMessage(conversationId);
   const deleteAllMine = useDeleteAllMyMessages(conversationId);
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
+  const [manageOpen, setManageOpen] = useState(false);
 
   const meta = useQuery({
     queryKey: ["chat", "conv-meta", conversationId],
@@ -167,6 +169,12 @@ function ChatRoomPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
+            {meta.data?.kind === "group" ? (
+              <DropdownMenuItem onSelect={() => setManageOpen(true)}>
+                <Users className="mr-2 h-4 w-4" />
+                Kelola grup &amp; anggota
+              </DropdownMenuItem>
+            ) : null}
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onSelect={() => setConfirmAllOpen(true)}
@@ -344,6 +352,17 @@ function ChatRoomPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {meta.data?.kind === "group" ? (
+        <ManageGroupDialog
+          open={manageOpen}
+          onOpenChange={setManageOpen}
+          conversationId={conversationId}
+          currentTitle={meta.data.title}
+          ownerUserId={meta.data.owner_user_id}
+          onLeft={() => navigate({ to: "/chat" })}
+        />
+      ) : null}
     </div>
   );
 }

@@ -356,3 +356,64 @@ export function useDeleteAllMyMessages(conversationId: string) {
     },
   });
 }
+
+/** Add a contact (already chat-eligible via can_chat) into a group I own. */
+export function useAddGroupMember(conversationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase.rpc("add_group_member", {
+        _conv: conversationId,
+        _user: userId,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chat", "conv-members", conversationId] });
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+    },
+  });
+}
+
+/**
+ * Remove a member from a group. RLS `cm_delete_self_or_owner` lets either
+ * the member themselves or the conversation owner do this.
+ */
+export function useRemoveGroupMember(conversationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (userId: string) => {
+      const { error } = await supabase
+        .from("conversation_members")
+        .delete()
+        .eq("conversation_id", conversationId)
+        .eq("user_id", userId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chat", "conv-members", conversationId] });
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+    },
+  });
+}
+
+/** Rename a group/order conversation. RLS only lets the owner update. */
+export function useRenameConversation(conversationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (title: string) => {
+      const t = title.trim();
+      if (t.length === 0) throw new Error("Nama tidak boleh kosong");
+      if (t.length > 80) throw new Error("Nama maksimal 80 karakter");
+      const { error } = await supabase
+        .from("conversations")
+        .update({ title: t })
+        .eq("id", conversationId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chat", "conv-meta", conversationId] });
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+    },
+  });
+}
