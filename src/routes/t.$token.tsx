@@ -5,7 +5,7 @@ import { PhotoEditor } from "@/components/PhotoEditor";
 import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
-import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw } from "lucide-react";
+import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/t/$token")({
@@ -33,6 +33,11 @@ function PublicPrepPage() {
   const [staleItemIds, setStaleItemIds] = useState<Record<string, true>>({});
   const itemsRef = useRef<PrepItemRow[]>([]);
   useEffect(() => { itemsRef.current = items; }, [items]);
+  // Status koneksi realtime: 'connecting' saat awal, 'connected' setelah SUBSCRIBED,
+  // 'error' bila channel gagal/terputus. lastSyncAt diisi setiap silentRefresh sukses.
+  const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
+  const [syncTick, setSyncTick] = useState(0); // memicu re-render label "x dtk lalu"
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
@@ -227,6 +232,7 @@ function PublicPrepPage() {
     setStaleItemIds(nextStale);
     setTask(res.task!);
     setItems(res.items ?? []);
+    setLastSyncAt(Date.now());
   }
 
   function clearStale(itemId: string) {
@@ -239,19 +245,25 @@ function PublicPrepPage() {
   // Realtime broadcast + fallback heartbeat & visibility refresh.
   useEffect(() => {
     if (!authed) return;
+    setRtStatus("connecting");
     const ch = publicSupabase
       .channel(`prep:${token}`, { config: { broadcast: { self: false } } })
       .on("broadcast", { event: "change" }, () => { void silentRefresh(); })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") setRtStatus("connected");
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") setRtStatus("error");
+      });
     const onVis = () => { if (document.visibilityState === "visible") void silentRefresh(); };
     document.addEventListener("visibilitychange", onVis);
     const hb = window.setInterval(() => {
       if (document.visibilityState === "visible") void silentRefresh();
     }, 15000);
+    const tick = window.setInterval(() => setSyncTick((n) => n + 1), 5000);
     return () => {
       publicSupabase.removeChannel(ch);
       document.removeEventListener("visibilitychange", onVis);
       window.clearInterval(hb);
+      window.clearInterval(tick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, token]);
