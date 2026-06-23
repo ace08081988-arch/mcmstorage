@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          bank_account_holder: string
+          bank_account_number: string
+          bank_name: string
+          created_at: string
+          id: boolean
+          pro_price_monthly_idr: number
+          pro_price_yearly_idr: number
+          trial_days: number
+          updated_at: string
+          whatsapp_admin: string
+        }
+        Insert: {
+          bank_account_holder?: string
+          bank_account_number?: string
+          bank_name?: string
+          created_at?: string
+          id?: boolean
+          pro_price_monthly_idr?: number
+          pro_price_yearly_idr?: number
+          trial_days?: number
+          updated_at?: string
+          whatsapp_admin?: string
+        }
+        Update: {
+          bank_account_holder?: string
+          bank_account_number?: string
+          bank_name?: string
+          created_at?: string
+          id?: boolean
+          pro_price_monthly_idr?: number
+          pro_price_yearly_idr?: number
+          trial_days?: number
+          updated_at?: string
+          whatsapp_admin?: string
+        }
+        Relationships: []
+      }
       conversation_members: {
         Row: {
           conversation_id: string
@@ -1644,6 +1683,96 @@ export type Database = {
         }
         Relationships: []
       }
+      subscription_payments: {
+        Row: {
+          admin_note: string | null
+          amount_idr: number
+          billing_cycle: string
+          created_at: string
+          id: string
+          proof_path: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          sender_bank: string | null
+          sender_name: string
+          status: string
+          transfer_date: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          admin_note?: string | null
+          amount_idr: number
+          billing_cycle: string
+          created_at?: string
+          id?: string
+          proof_path: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sender_bank?: string | null
+          sender_name: string
+          status?: string
+          transfer_date: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          admin_note?: string | null
+          amount_idr?: number
+          billing_cycle?: string
+          created_at?: string
+          id?: string
+          proof_path?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          sender_bank?: string | null
+          sender_name?: string
+          status?: string
+          transfer_date?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      subscriptions: {
+        Row: {
+          billing_cycle: string | null
+          created_at: string
+          id: string
+          period_end: string | null
+          period_start: string | null
+          plan: string
+          status: string
+          trial_used_at: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          billing_cycle?: string | null
+          created_at?: string
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          plan?: string
+          status?: string
+          trial_used_at?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          billing_cycle?: string | null
+          created_at?: string
+          id?: string
+          period_end?: string | null
+          period_start?: string | null
+          plan?: string
+          status?: string
+          trial_used_at?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       supplier_payments: {
         Row: {
           amount: number
@@ -1973,6 +2102,14 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: undefined
       }
+      admin_approve_payment: {
+        Args: { _note?: string; _payment_id: string }
+        Returns: Json
+      }
+      admin_reject_payment: {
+        Args: { _note: string; _payment_id: string }
+        Returns: Json
+      }
       can_chat: { Args: { _a: string; _b: string }; Returns: boolean }
       check_acknowledge_rate_limit: { Args: never; Returns: Json }
       create_group: {
@@ -2008,7 +2145,9 @@ export type Database = {
         Returns: number
       }
       ensure_order_conversation: { Args: { _order: string }; Returns: string }
+      expire_subscriptions: { Args: never; Returns: number }
       get_email_cron_secret: { Args: never; Returns: string }
+      has_active_pro: { Args: { _uid: string }; Returns: boolean }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -2137,6 +2276,7 @@ export type Database = {
         Returns: number
       }
       start_dm: { Args: { _partner: string }; Returns: string }
+      start_pro_trial: { Args: never; Returns: Json }
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
