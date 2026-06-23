@@ -105,8 +105,15 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   // Load image
   useEffect(() => {
     const i = new Image();
-    i.crossOrigin = "anonymous";
+    // Jangan paksa crossOrigin untuk data: / blob: URL — di sebagian browser
+    // Android Chrome/WebView ini membuat image gagal load secara senyap
+    // sehingga kanvas tidak pernah dirender (terlihat sebagai foto "gelap").
+    if (/^https?:\/\//i.test(src)) i.crossOrigin = "anonymous";
     i.onload = () => { setImg(i); imgRef.current = i; };
+    i.onerror = () => {
+      // Tampilkan error agar user tahu, daripada layar hitam tanpa pesan.
+      console.error("PhotoEditor: gagal memuat gambar", src.slice(0, 64));
+    };
     i.src = src;
   }, [src]);
 
@@ -114,7 +121,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   useEffect(() => {
     if (!img || !wrapRef.current) return;
     const update = () => {
-      const containerW = wrapRef.current!.clientWidth;
+      const el = wrapRef.current;
+      if (!el) return;
+      const containerW = el.clientWidth;
+      if (!containerW) return; // tunggu sampai layout punya lebar
       const containerH = Math.min(window.innerHeight - 240, 560);
       const ratio = img.width / img.height;
       const rotated = state.rotation === 90 || state.rotation === 270;
@@ -127,7 +137,16 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     };
     update();
     window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    // ResizeObserver supaya view juga terhitung saat lebar container
+    // berubah karena keyboard mobile / rotasi / animasi mount.
+    const ro = typeof ResizeObserver !== "undefined"
+      ? new ResizeObserver(() => update())
+      : null;
+    if (ro && wrapRef.current) ro.observe(wrapRef.current);
+    return () => {
+      window.removeEventListener("resize", update);
+      ro?.disconnect();
+    };
   }, [img, state.rotation]);
 
   // Build (and re-build) the base canvas only when image / view / rotation changes.
