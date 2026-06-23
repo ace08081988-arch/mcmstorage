@@ -1195,6 +1195,7 @@ function Index() {
                         inputMode="numeric"
                         min={0}
                         value={p.harga}
+                        aria-label="Harga produk"
                         onFocus={() => setFlashId(p.id)}
                         onBlur={() =>
                           setFlashId((cur) => (cur === p.id ? null : cur))
