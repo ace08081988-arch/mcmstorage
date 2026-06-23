@@ -30,7 +30,13 @@ function PublicPrepPage() {
   const [items, setItems] = useState<PrepItemRow[]>([]);
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
-  const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found">(null);
+  const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found" | "expired" | "closed">(null);
+  // Pesan error terakhir dari proses verifikasi PIN; ditampilkan inline di kartu PIN.
+  const [lastError, setLastError] = useState<null | {
+    kind: "bad_pin" | "rate_limited" | "not_found" | "expired" | "closed" | "network";
+    message: string;
+    detail?: string;
+  }>(null);
   const [staleItemIds, setStaleItemIds] = useState<Record<string, true>>({});
   const itemsRef = useRef<PrepItemRow[]>([]);
   useEffect(() => { itemsRef.current = items; }, [items]);
@@ -185,14 +191,24 @@ function PublicPrepPage() {
     setLoading(true);
     const { data, error } = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: p });
     setLoading(false);
-    if (error) { toast.error("Gagal: " + error.message); return false; }
-    const res = data as { ok: boolean; error?: string; retry_after?: number; task?: PrepTaskRow; items?: PrepItemRow[] };
+    if (error) {
+      const msg = "Tidak bisa menghubungi server. Periksa koneksi internet lalu coba lagi.";
+      setLastError({ kind: "network", message: msg, detail: error.message });
+      toast.error(msg);
+      return false;
+    }
+    const res = data as { ok: boolean; error?: string; retry_after?: number; expires_at?: string; status?: string; task?: PrepTaskRow; items?: PrepItemRow[] };
     if (!res?.ok) {
       if (res?.error === "rate_limited") {
         const secs = Math.max(1, res.retry_after ?? 600);
-        setLockedUntil(Date.now() + secs * 1000);
-        writeAttemptState({ attempts: MAX_ATTEMPTS, lockedUntil: Date.now() + secs * 1000 });
-        toast.error(`Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(secs / 60)} menit.`);
+        const until = Date.now() + secs * 1000;
+        setLockedUntil(until);
+        writeAttemptState({ attempts: MAX_ATTEMPTS, lockedUntil: until });
+        const mins = Math.floor(secs / 60);
+        const remain = mins >= 1 ? `${mins} menit ${secs % 60} detik` : `${secs} detik`;
+        const msg = `Akses terkunci oleh server. Coba lagi dalam ${remain}.`;
+        setLastError({ kind: "rate_limited", message: msg });
+        toast.error(msg);
       } else {
         if (res?.error === "bad_pin") {
           const next = attempts + 1;
@@ -201,19 +217,45 @@ function PublicPrepPage() {
             setAttempts(next);
             setLockedUntil(until);
             writeAttemptState({ attempts: next, lockedUntil: until });
-            toast.error(`PIN salah. Input dikunci ${LOCK_SECONDS} detik.`);
+            const msg = `PIN salah. Anda sudah ${MAX_ATTEMPTS} kali keliru — input dikunci ${LOCK_SECONDS} detik.`;
+            setLastError({ kind: "bad_pin", message: msg });
+            toast.error(msg);
           } else {
             setAttempts(next);
             writeAttemptState({ attempts: next, lockedUntil: null });
-            toast.error(`PIN salah. Sisa percobaan: ${MAX_ATTEMPTS - next}`);
+            const left = MAX_ATTEMPTS - next;
+            const msg = `PIN salah. Sisa percobaan: ${left} dari ${MAX_ATTEMPTS}.`;
+            setLastError({ kind: "bad_pin", message: msg });
+            toast.error(msg);
           }
           setPin("");
+        } else if (res?.error === "expired") {
+          const expAt = res.expires_at ? new Date(res.expires_at) : null;
+          const detail = expAt
+            ? `Kedaluwarsa pada ${expAt.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}.`
+            : undefined;
+          const msg = "Link tugas sudah kedaluwarsa. Minta pemilik mengirim link / PIN baru.";
+          setLastError({ kind: "expired", message: msg, detail });
+          toast.error(msg);
+        } else if (res?.error === "closed") {
+          const msg = res.status === "cancelled"
+            ? "Tugas ini sudah dibatalkan pemilik."
+            : "Tugas ini sudah ditutup pemilik (sudah selesai).";
+          setLastError({ kind: "closed", message: msg });
+          toast.error(msg);
+        } else if (res?.error === "not_found") {
+          const msg = "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik.";
+          setLastError({ kind: "not_found", message: msg });
+          toast.error(msg);
         } else {
-          toast.error("Tugas tidak ditemukan / kedaluwarsa");
+          const msg = "Tugas tidak bisa dibuka. Coba lagi atau hubungi pemilik.";
+          setLastError({ kind: "not_found", message: msg, detail: res?.error });
+          toast.error(msg);
         }
       }
       return false;
     }
+    setLastError(null);
     // PIN benar → reset penuh, termasuk localStorage, sehingga refresh
     // browser tidak membawa sisa percobaan/lock.
     resetAttemptsFully();
@@ -262,6 +304,10 @@ function PublicPrepPage() {
     if (!res?.ok) {
       if (res?.error === "bad_pin") {
         setClosedReason("pin_changed");
+      } else if (res?.error === "expired") {
+        setClosedReason("expired");
+      } else if (res?.error === "closed") {
+        setClosedReason("closed");
       } else if (res?.error === "not_found") {
         setClosedReason("not_found");
       }
@@ -348,6 +394,29 @@ function PublicPrepPage() {
           <div className="w-full rounded-2xl border bg-card p-6 shadow-lg shadow-black/5">
             <div className="mb-1 flex items-center gap-2 text-base font-semibold"><Lock className="h-4 w-4 text-primary" /> Verifikasi PIN</div>
             <p className="mb-5 text-xs leading-relaxed text-muted-foreground">Masukkan PIN dari pemilik untuk membuka daftar barang yang harus disiapkan.</p>
+            {lastError && !isLocked && (
+              <div
+                className={
+                  "mb-3 rounded-md border px-3 py-2 text-[11px] leading-relaxed " +
+                  (lastError.kind === "bad_pin"
+                    ? "border-destructive/40 bg-destructive/5 text-destructive"
+                    : lastError.kind === "expired" || lastError.kind === "closed" || lastError.kind === "not_found"
+                      ? "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400"
+                      : "border-destructive/40 bg-destructive/5 text-destructive")
+                }
+                role="alert"
+              >
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="font-semibold">{lastError.message}</div>
+                    {lastError.detail && (
+                      <div className="mt-0.5 break-words opacity-80">{lastError.detail}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             {(isLocked || attempts > 0) && (
               <div
                 className={
@@ -389,7 +458,11 @@ function PublicPrepPage() {
               </div>
             )}
             <input
-              inputMode="numeric" maxLength={8} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+              inputMode="numeric" maxLength={8} value={pin}
+              onChange={(e) => {
+                setPin(e.target.value.replace(/\D/g, ""));
+                if (lastError?.kind === "bad_pin") setLastError(null);
+              }}
               placeholder="••••••" disabled={isLocked}
               className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums shadow-inner focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60" />
             <button disabled={pin.length < 4 || loading || isLocked} onClick={() => fetchTask(pin)}
@@ -462,7 +535,17 @@ function PublicPrepPage() {
 
   // Tugas ditutup / PIN diubah pemilik → layar khusus
   if (closedReason) {
-    const isPin = closedReason === "pin_changed";
+    const copy = closedReason === "pin_changed"
+      ? { title: "PIN diperbarui pemilik",
+          body: "PIN tugas baru saja diubah. Silakan minta PIN terbaru ke pemilik lalu masukkan kembali." }
+      : closedReason === "expired"
+      ? { title: "Tugas sudah kedaluwarsa",
+          body: "Masa berlaku link tugas sudah habis. Minta pemilik mengirim link / PIN baru." }
+      : closedReason === "closed"
+      ? { title: "Tugas sudah ditutup pemilik",
+          body: "Tugas ini telah ditandai selesai atau dibatalkan oleh pemilik. Hubungi pemilik bila masih perlu mengisi." }
+      : { title: "Tugas tidak ditemukan",
+          body: "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik." };
     return (
       <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
         <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-8">
@@ -470,12 +553,8 @@ function PublicPrepPage() {
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/30">
               <AlertTriangle className="h-6 w-6" />
             </div>
-            <div className="text-base font-semibold">{isPin ? "PIN diperbarui pemilik" : "Tugas sudah ditutup"}</div>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              {isPin
-                ? "PIN tugas baru saja diubah. Silakan minta PIN terbaru ke pemilik lalu masukkan kembali."
-                : "Tugas ini sudah selesai atau masa berlakunya habis. Hubungi pemilik bila perlu."}
-            </p>
+            <div className="text-base font-semibold">{copy.title}</div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{copy.body}</p>
             <button
               type="button"
               onClick={() => { setClosedReason(null); goBackToPin(); }}
