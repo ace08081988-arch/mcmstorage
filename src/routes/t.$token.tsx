@@ -464,7 +464,7 @@ function PublicPrepPage() {
                 if (lastError?.kind === "bad_pin") setLastError(null);
               }}
               placeholder="••••••" disabled={isLocked}
-              className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums shadow-inner focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60" />
+              className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60" />
             <button disabled={pin.length < 4 || loading || isLocked} onClick={() => fetchTask(pin)}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
