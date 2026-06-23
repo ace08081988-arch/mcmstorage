@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Scale, Plus, ChevronRight, Search, X } from "lucide-react";
+import { countMatchingSelfPreps } from "@/lib/ecer-ready-count";
 
 type Row = {
   id: string;
@@ -41,24 +42,10 @@ export function ReadyEcerSection() {
       for (const p of ((preps ?? []) as Array<{ title_id: string }>)) {
         countMap.set(p.title_id, (countMap.get(p.title_id) ?? 0) + 1);
       }
-      // Tautkan Siapkan Sendiri ke judul ecer berdasarkan nama:
-      // cocokkan jika judul Siapkan Sendiri (normalisasi) memuat nama judul ecer
-      // ATAU memuat nama produk gudang, agar item lepas seperti "KRISTAL 1 gram"
-      // ikut terhitung untuk kartu "KRISTAL 1 G".
-      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
-      const selfTitles = ((selfs ?? []) as Array<{ title: string | null }>)
-        .map((s) => norm(s.title ?? ""))
-        .filter(Boolean);
+      const selfTitles = ((selfs ?? []) as Array<{ title: string | null }>).map((s) => s.title);
       setRows(list.map((t) => {
         const product = itemMap.get(t.warehouse_item_id) ?? "—";
-        const tName = norm(t.name);
-        const pName = norm(product);
-        const selfCount = selfTitles.reduce((acc, st) => {
-          const hit =
-            (tName.length > 0 && (st.includes(tName) || tName.includes(st))) ||
-            (pName.length > 0 && pName !== "—" && st.includes(pName));
-          return acc + (hit ? 1 : 0);
-        }, 0);
+        const selfCount = countMatchingSelfPreps(t.name, product, selfTitles);
         return {
           ...t,
           prep_count: (countMap.get(t.id) ?? 0) + selfCount,

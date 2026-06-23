@@ -22,6 +22,7 @@ import {
 import { buildWhatsAppUrl } from "@/lib/share-wa";
 import { previewAndShareWA } from "@/lib/share-wa-preview";
 import { fmtItemQty } from "@/lib/stock-format";
+import { countMatchingSelfPreps } from "@/lib/ecer-ready-count";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -343,6 +344,7 @@ function EcerPage() {
                   <TitleCard
                     key={t.id}
                     title={t}
+                    productName={selectedItem?.name ?? ""}
                     onOpen={() => setSelectedTitleId(t.id)}
                     onEdit={() => setEditingTitle(t)}
                     onDeleted={refetchTitles}
@@ -401,20 +403,24 @@ function EcerPage() {
   );
 }
 
-function TitleCard({ title, onOpen, onEdit, onDeleted, highlighted }: {
-  title: EcerTitle; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
+function TitleCard({ title, productName, onOpen, onEdit, onDeleted, highlighted }: {
+  title: EcerTitle; productName: string; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
   highlighted?: boolean;
 }) {
   const [count, setCount] = useState<number | null>(null);
   useEffect(() => {
     void (async () => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { count: c } = await (supabase.from as any)("ecer_preparations")
-        .select("id", { count: "exact", head: true })
-        .eq("title_id", title.id);
-      setCount(c ?? 0);
+      const sb = supabase as any;
+      const [{ count: c }, { data: selfs }] = await Promise.all([
+        sb.from("ecer_preparations").select("id", { count: "exact", head: true }).eq("title_id", title.id),
+        sb.from("self_prep_items").select("title"),
+      ]);
+      const selfTitles = ((selfs ?? []) as Array<{ title: string | null }>).map((s) => s.title);
+      const selfCount = countMatchingSelfPreps(title.name, productName, selfTitles);
+      setCount((c ?? 0) + selfCount);
     })();
-  }, [title.id]);
+  }, [title.id, title.name, productName]);
 
   async function onDelete() {
     const ok = typeof window !== "undefined" && window.confirm(
