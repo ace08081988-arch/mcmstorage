@@ -124,6 +124,10 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
     let emailError: string | null = null;
     const messageId = randomUUID();
     const idempotencyKey = `device-otp-${challenge.id}`;
+    await supabaseAdmin
+      .from("device_otp_challenges")
+      .update({ otp_message_id: messageId } as never)
+      .eq("id", challenge.id);
     try {
       const { error: rpcErr } = await supabaseAdmin.rpc("enqueue_email" as never, {
         queue_name: "transactional_emails",
