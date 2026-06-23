@@ -47,6 +47,7 @@ function TugasPage() {
   const [manageCategoryFor, setManageCategoryFor] = useState<string | null>(null);
   const [openAudit, setOpenAudit] = useState(false);
   const [pinAlerts, setPinAlerts] = useState<PinAlert[]>([]);
+  const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
@@ -216,13 +217,8 @@ function TugasPage() {
             </div>
             <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs">Buka</button>
             <button
-              onClick={async () => {
-                const url = publicTaskUrl(t.share_token);
-                const message = `Tugas: ${t.title}\n${url}\n(PIN dikirim terpisah)`;
-                const res = await shareToWhatsApp({ text: message, title: t.title, url });
-                notifyShareResult(res);
-              }}
-              title="Bagikan tugas ini via WhatsApp"
+              onClick={() => setSharePinFor(t)}
+              title="Bagikan link + PIN via WhatsApp"
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20"
             >
               <MessageCircle className="h-4 w-4" />
