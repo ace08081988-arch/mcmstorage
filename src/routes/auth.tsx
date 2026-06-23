@@ -154,6 +154,21 @@ function AuthPage() {
     setResendCooldown(60);
   };
 
+  const signInWithApple = async () => {
+    setLoading(true);
+    const result = await lovable.auth.signInWithOAuth("apple", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setLoading(false);
+      toast.error(friendlyError(result.error));
+      return;
+    }
+    if (result.redirected) return;
+    toast.success("Berhasil masuk");
+    navigate({ to: "/", replace: true });
+  };
+
   const signInWithGoogle = async () => {
     setLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
@@ -221,6 +236,18 @@ function AuthPage() {
             <path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.3-2.3 4.2-4.1 5.6l6.2 5.2c-.4.4 6.6-4.8 6.6-14.8 0-1.3-.1-2.3-.4-3.5z"/>
           </svg>
           Lanjutkan dengan Google
+        </button>
+
+        <button
+          type="button"
+          onClick={signInWithApple}
+          disabled={loading}
+          className="flex w-full items-center justify-center gap-2 rounded-md border bg-black px-3 py-2 text-sm font-medium text-white hover:bg-black/90 disabled:opacity-50"
+        >
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path d="M16.365 1.43c0 1.14-.43 2.23-1.2 3.04-.81.86-2.13 1.52-3.21 1.43-.13-1.12.43-2.29 1.16-3.04.83-.86 2.25-1.49 3.25-1.43zM20.5 17.27c-.58 1.33-.86 1.93-1.61 3.1-1.05 1.64-2.53 3.69-4.37 3.7-1.63.02-2.05-1.06-4.27-1.05-2.22.01-2.68 1.07-4.31 1.05-1.84-.02-3.24-1.86-4.29-3.5C-.83 17.18-1.13 12.46.5 9.74c1.16-1.93 2.99-3.06 4.71-3.06 1.76 0 2.86 1.06 4.31 1.06 1.41 0 2.27-1.06 4.3-1.06 1.53 0 3.15.83 4.31 2.27-3.78 2.07-3.17 7.47-1.63 8.32z"/>
+          </svg>
+          Lanjutkan dengan Apple
         </button>
 
         <div className="flex items-center gap-2 text-[10px] uppercase tracking-wider text-muted-foreground">
