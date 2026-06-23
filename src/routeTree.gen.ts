@@ -37,6 +37,7 @@ import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.c
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
+import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
@@ -190,6 +191,11 @@ const ApiPublicPrepRealtimeTokenRoute =
     path: '/api/public/prep-realtime-token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicAiPingRoute = ApiPublicAiPingRouteImport.update({
+  id: '/api/public/ai-ping',
+  path: '/api/public/ai-ping',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthenticatedChatConversationIdRoute =
   AuthenticatedChatConversationIdRouteImport.update({
     id: '/$conversationId',
@@ -254,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -288,6 +295,7 @@ export interface FileRoutesByTo {
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -325,6 +333,7 @@ export interface FileRoutesById {
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -362,6 +371,7 @@ export interface FileRouteTypes {
     | '/tugas'
     | '/t/$token'
     | '/chat/$conversationId'
+    | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/chat/'
     | '/gudang/pesanan/$id'
@@ -396,6 +406,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/'
     | '/chat/$conversationId'
+    | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/chat'
     | '/gudang/pesanan/$id'
@@ -432,6 +443,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/chat/$conversationId'
+    | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
@@ -453,6 +465,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TrustRoute: typeof TrustRoute
   TTokenRoute: typeof TTokenRoute
+  ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
@@ -657,6 +670,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPrepRealtimeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/ai-ping': {
+      id: '/api/public/ai-ping'
+      path: '/api/public/ai-ping'
+      fullPath: '/api/public/ai-ping'
+      preLoaderRoute: typeof ApiPublicAiPingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/chat/$conversationId': {
       id: '/_authenticated/chat/$conversationId'
       path: '/$conversationId'
@@ -794,6 +814,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TrustRoute: TrustRoute,
   TTokenRoute: TTokenRoute,
+  ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
