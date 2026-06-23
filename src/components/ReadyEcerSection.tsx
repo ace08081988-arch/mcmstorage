@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { Scale, Plus, ChevronRight, Search, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Row = {
   id: string;
@@ -109,16 +110,32 @@ export function ReadyEcerSection() {
       )}
 
       {rows === null ? (
-        <div className="rounded-md border bg-card p-4 text-center text-[11px] text-muted-foreground">Memuat…</div>
+        <div className="grid grid-cols-2 gap-2" aria-busy="true" aria-label="Memuat produk eceran">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-1 rounded-md border bg-card px-3 py-2.5">
+              <div className="flex items-center gap-1.5">
+                <Skeleton className="h-3.5 w-3.5 rounded" />
+                <Skeleton className="h-3 w-2/3" />
+              </div>
+              <Skeleton className="h-2.5 w-3/4" />
+              <Skeleton className="h-2.5 w-1/2" />
+            </div>
+          ))}
+        </div>
       ) : rows.length === 0 ? (
         <Link
           to="/ecer"
           search={{ item: undefined, title: undefined, highlight: undefined }}
-          className="flex items-center gap-2 rounded-md border border-dashed bg-card/50 p-4 text-[11px] text-muted-foreground hover:border-primary/40 hover:bg-accent"
+          className="flex flex-col items-center gap-1.5 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground hover:border-primary/40 hover:bg-accent"
         >
-          <Scale className="h-4 w-4 text-primary" />
-          <span className="flex-1">Belum ada Judul Ecer. Tap untuk membuat yang pertama.</span>
-          <Plus className="h-4 w-4" />
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+            <Scale className="h-4 w-4 text-primary" />
+          </div>
+          <span className="font-medium text-foreground">Belum ada Judul Ecer</span>
+          <span>Tap untuk membuat yang pertama.</span>
+          <span className="mt-0.5 inline-flex items-center gap-1 rounded-full bg-primary/10 px-2 py-0.5 text-primary">
+            <Plus className="h-3 w-3" /> Buat sekarang
+          </span>
         </Link>
       ) : filtered && filtered.length === 0 ? (
         <div className="flex flex-col items-center gap-2 rounded-md border border-dashed bg-card/50 p-4 text-center text-[11px] text-muted-foreground">
