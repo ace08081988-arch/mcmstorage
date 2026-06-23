@@ -3,6 +3,7 @@ import { toast } from "sonner";
 import { useEffect, useRef } from "react";
 import { Copy, MessageCircle, X, KeyRound, Eye, EyeOff } from "lucide-react";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Dialog kecil untuk membagikan link tugas + PIN dalam satu pesan.
@@ -14,14 +15,19 @@ import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 export function SharePinDialog({
   title,
   url,
+  taskId,
+  shareToken,
   onClose,
 }: {
   title: string;
   url: string;
+  taskId?: string;
+  shareToken?: string;
   onClose: () => void;
 }) {
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
+  const [savedPin, setSavedPin] = useState("");
   // PIN dimask secara default. Setelah pemilik mengetik PIN ≥ 4 digit,
   // tombol "Tampilkan" akan membuka PIN selama beberapa detik lalu
   // otomatis kembali tersembunyi — aman tapi mudah dicek sebelum kirim.
@@ -70,23 +76,54 @@ export function SharePinDialog({
     `Buka link → masukkan PIN → foto barangnya & kirim.`,
   ].join("\n");
 
+  async function ensurePinActive() {
+    if (!/^\d{4,8}$/.test(pin)) {
+      toast.error("PIN harus 4–8 digit angka");
+      return false;
+    }
+    if (!taskId || savedPin === pin) return true;
+
+    const { error } = await supabase.rpc("prep_reset_pin", { _task_id: taskId, _pin: pin });
+    if (error) {
+      toast.error("Gagal mengaktifkan PIN baru: " + error.message);
+      return false;
+    }
+
+    if (shareToken) {
+      // Bersihkan lock/percobaan salah lama supaya pegawai bisa langsung mencoba PIN baru.
+      await (supabase.rpc as any)("prep_pin_reset", { _token: shareToken });
+    }
+
+    setSavedPin(pin);
+    toast.success("PIN baru aktif untuk tugas ini");
+    return true;
+  }
+
   async function copyAll() {
-    if (!pin) return toast.error("Isi PIN dulu");
+    if (busy) return;
+    setBusy(true);
     try {
+      if (!(await ensurePinActive())) return;
       await navigator.clipboard.writeText(message);
       toast.success("Pesan & PIN disalin");
     } catch {
       toast.error("Gagal menyalin");
+    } finally {
+      setBusy(false);
     }
   }
 
   async function shareWa() {
-    if (!pin) return toast.error("Isi PIN dulu");
+    if (busy) return;
     setBusy(true);
-    const res = await shareToWhatsApp({ text: message, title, url });
-    notifyShareResult(res);
-    setBusy(false);
-    onClose();
+    try {
+      if (!(await ensurePinActive())) return;
+      const res = await shareToWhatsApp({ text: message, title, url });
+      notifyShareResult(res);
+      onClose();
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -150,7 +187,7 @@ export function SharePinDialog({
               </div>
             )}
             <div className="mt-1 text-[10px] text-muted-foreground">
-              PIN dimask demi keamanan. Tekan "Lihat" untuk memeriksa sebentar sebelum dikirim. PIN tidak disimpan ulang — hanya disertakan dalam pesan yang Anda kirim. Lupa PIN? Pakai menu "Link pegawai" untuk reset.
+              PIN dimask demi keamanan. Tekan "Lihat" untuk memeriksa sebentar sebelum dikirim. {taskId ? "Saat disalin/dikirim, PIN ini diaktifkan untuk tugas dan percobaan salah pegawai direset." : "PIN tidak disimpan ulang — hanya disertakan dalam pesan yang Anda kirim."}
             </div>
           </div>
 
