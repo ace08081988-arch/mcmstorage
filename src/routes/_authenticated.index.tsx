@@ -268,6 +268,12 @@ function Index() {
   };
   const [items, setItems] = useState<Produk[]>([]);
   const [hydrated, setHydrated] = useState(false);
+  // Status retry pemuatan user_storage. `attempt` = jumlah percobaan yang
+  // sudah dijalankan (0..3). `failed` = true setelah 3x gagal, sehingga UI
+  // berhenti menampilkan "Memuat…" dan menawarkan tombol Muat ulang manual.
+  const [loadAttempt, setLoadAttempt] = useState(0);
+  const [loadFailed, setLoadFailed] = useState(false);
+  const [loadRetryToken, setLoadRetryToken] = useState(0);
   const [filter, setFilter] = useState<"semua" | Status>(() => {
     if (typeof window === "undefined") return "semua";
     const v = window.localStorage.getItem("mcm_filter");
@@ -323,64 +329,85 @@ function Index() {
       const v = localStorage.getItem(VIEW_KEY) as "list" | "grid" | null;
       if (v) setViewMode(v);
     } catch {}
-    (async () => {
-      try {
-        const { data: userRes } = await supabase.auth.getUser();
-        const uid = userRes.user?.id;
-        if (!uid) return;
-        const { data, error } = await supabase
-          .from("user_storage")
-          .select("items, categories")
-          .eq("user_id", uid)
-          .maybeSingle();
-        if (error) {
-          toast.error("Gagal memuat data: " + friendlyError(error), {
-            action: {
-              label: "Lihat detail",
-              onClick: () =>
-                navigate({
-                  to: "/error",
-                  search: { kind: "data", title: "Gagal memuat data", message: (error as any).message, code: (error as any).code, from: "/" },
-                }),
-            },
-          });
-        } else {
-          const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
-          const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
-          setItems(loadedItems);
-          setCategories(loadedCats);
-          try {
-            const saved = localStorage.getItem(ACTIVE_CAT_KEY);
-            if (saved && loadedCats.includes(saved)) setActiveCat(saved);
-          } catch {}
-        }
-      } catch (e) {
-        // Jangan biarkan exception apa pun mengunci layar di "Memuat…".
-        console.warn("[index] hydrate error", e);
-      } finally {
-        setHydrated(true);
-      }
-    })();
-  }, []);
+    let cancelled = false;
+    const MAX_ATTEMPTS = 3;
+    const BASE_DELAY = 400; // ms — backoff: 400, 800, 1600 (+jitter)
 
-  // Safety watchdog: jangan biarkan halaman menggantung di "Memuat…" jika
-  // useEffect inisialisasi tidak menyelesaikan setHydrated(true) (mis. HMR
-  // putus, jaringan ke Supabase stuck tanpa error). Setelah 3 dtk paksa
-  // lepas dari layar loading sehingga konten dasar tetap bisa diakses.
-  useEffect(() => {
-    if (hydrated) return;
-    const t = window.setTimeout(() => {
-      setHydrated((h) => {
-        if (!h) {
-          console.warn("[index] hydrated watchdog fired after 3s", {
-            tag: "index-hydrate",
-          });
+    const loadOnce = async (): Promise<{ ok: boolean; lastError?: unknown }> => {
+      const { data: userRes } = await supabase.auth.getUser();
+      const uid = userRes.user?.id;
+      if (!uid) return { ok: true }; // tidak ada sesi → bukan kegagalan retry
+      const { data, error } = await supabase
+        .from("user_storage")
+        .select("items, categories")
+        .eq("user_id", uid)
+        .maybeSingle();
+      if (error) return { ok: false, lastError: error };
+      const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
+      const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
+      if (cancelled) return { ok: true };
+      setItems(loadedItems);
+      setCategories(loadedCats);
+      try {
+        const saved = localStorage.getItem(ACTIVE_CAT_KEY);
+        if (saved && loadedCats.includes(saved)) setActiveCat(saved);
+      } catch {}
+      return { ok: true };
+    };
+
+    (async () => {
+      let lastError: unknown = null;
+      for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
+        if (cancelled) return;
+        setLoadAttempt(attempt);
+        try {
+          const res = await loadOnce();
+          if (res.ok) {
+            if (!cancelled) {
+              setLoadFailed(false);
+              setHydrated(true);
+            }
+            return;
+          }
+          lastError = res.lastError;
+        } catch (e) {
+          lastError = e;
+          console.warn(`[index] load attempt ${attempt} threw`, e);
         }
-        return true;
+        if (attempt < MAX_ATTEMPTS && !cancelled) {
+          const delay = BASE_DELAY * Math.pow(2, attempt - 1) + Math.floor(Math.random() * 200);
+          await new Promise((r) => setTimeout(r, delay));
+        }
+      }
+      if (cancelled) return;
+      console.warn("[index] user_storage gagal setelah 3 percobaan", lastError);
+      toast.error("Gagal memuat data: " + friendlyError(lastError as any), {
+        action: {
+          label: "Lihat detail",
+          onClick: () =>
+            navigate({
+              to: "/error",
+              search: {
+                kind: "data",
+                title: "Gagal memuat data",
+                message: (lastError as any)?.message ?? String(lastError),
+                code: (lastError as any)?.code,
+                from: "/",
+              },
+            }),
+        },
       });
-    }, 3000);
-    return () => window.clearTimeout(t);
-  }, [hydrated]);
+      setLoadFailed(true);
+      setHydrated(true);
+    })();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [loadRetryToken]);
+
+  // Watchdog dihapus — alur retry (3x backoff) + state loadFailed sudah
+  // memastikan UI tidak menggantung di "Memuat…" tanpa jalan keluar.
 
   useEffect(() => {
     if (!hydrated) return;
@@ -630,7 +657,9 @@ function Index() {
   if (!hydrated) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4 text-sm text-muted-foreground">
-        <span>Memuat…</span>
+        <span>
+          Memuat{loadAttempt > 1 ? ` (percobaan ${loadAttempt}/3)` : ""}…
+        </span>
         <button
           type="button"
           onClick={() => window.location.reload()}
@@ -638,6 +667,39 @@ function Index() {
         >
           Muat ulang halaman
         </button>
+      </div>
+    );
+  }
+
+  if (loadFailed) {
+    return (
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4 text-center text-sm text-muted-foreground">
+        <span className="font-medium text-foreground">Gagal memuat data</span>
+        <span className="max-w-xs text-xs">
+          Sudah dicoba 3 kali otomatis namun belum berhasil. Periksa koneksi
+          lalu coba lagi.
+        </span>
+        <div className="flex flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setLoadFailed(false);
+              setHydrated(false);
+              setLoadAttempt(0);
+              setLoadRetryToken((n) => n + 1);
+            }}
+            className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
+          >
+            Coba lagi
+          </button>
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+          >
+            Muat ulang halaman
+          </button>
+        </div>
       </div>
     );
   }
