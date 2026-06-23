@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { useEntitlement } from "@/hooks/useEntitlement";
+import { ProPaywall } from "@/components/ProPaywall";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -71,6 +73,7 @@ const rupiah = (n: number) =>
   "Rp " + Math.round(n).toLocaleString("id-ID");
 
 function HutangPiutangPage() {
+  const ent = useEntitlement();
   const [uid, setUid] = useState<string | null>(null);
   const [tab, setTab] = useState<Kind>("hutang");
   const [debts, setDebts] = useState<Debt[]>([]);
@@ -90,6 +93,17 @@ function HutangPiutangPage() {
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
   }, []);
+
+  if (!ent.loading && !ent.isPro) {
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-6">
+        <ProPaywall
+          feature="Hutang & Piutang"
+          description="Modul pelacakan hutang dan piutang, beserta riwayat pembayaran cicilan, hanya untuk pelanggan Pro."
+        />
+      </div>
+    );
+  }
 
   const refresh = async () => {
     setLoading(true);
