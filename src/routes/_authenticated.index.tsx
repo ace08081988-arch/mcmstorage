@@ -722,7 +722,6 @@ function Index() {
             <div className="grid grid-cols-2 gap-2">
               {[
                 { to: "/gudang", label: "Gudang & Supplier", emoji: "📦", desc: "Stok, pembelian, penjualan" },
-                { to: "/ecer", label: "Penyiapan Ecer", emoji: "⚖️", desc: "Judul & kotak penyiapan" },
                 { to: "/request", label: "Penyiapan Request", emoji: "📦", desc: "Paket multi-produk" },
                 { to: "/tugas", label: "Tugas Pegawai", emoji: "📋", desc: "Buat & pantau penyiapan" },
                 { to: "/hutang-piutang", label: "Hutang & Piutang", emoji: "💳", desc: "Pelanggan & supplier" },
