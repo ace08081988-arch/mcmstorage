@@ -642,6 +642,22 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               </button>
             </div>
           </div>
+        ) : img ? (
+          <WaitingForSize
+            onForce={() => {
+              // Manual fallback: force a view size from the viewport so the
+              // canvas can render even if the container never reports a size.
+              const w = typeof window !== "undefined" ? Math.max(window.innerWidth - 16, 320) : 320;
+              const rotated = state.rotation === 90 || state.rotation === 270;
+              const baseW = rotated ? img.height : img.width;
+              const baseH = rotated ? img.width : img.height;
+              const r = baseW / baseH;
+              const maxH = typeof window !== "undefined" ? Math.max(window.innerHeight - 240, 320) : 520;
+              let vw = w, vh = w / r;
+              if (vh > maxH) { vh = maxH; vw = vh * r; }
+              setView({ w: vw, h: vh });
+            }}
+          />
         ) : (
           <div className="flex flex-col items-center gap-2 text-xs text-white/80">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
