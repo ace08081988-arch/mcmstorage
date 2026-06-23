@@ -816,6 +816,58 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={savePreview.open}
+        onOpenChange={(o) => { if (!o) setSavePreview({ open: false, dataUrl: "", blob: null, building: false }); }}
+      >
+        <DialogContent className="max-w-[95vw] p-3 sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Pratinjau Hasil</DialogTitle>
+            <DialogDescription>
+              Periksa hasil edit. Jika sudah benar, tekan Simpan; atau Kembali untuk mengubah.
+            </DialogDescription>
+          </DialogHeader>
+          <div
+            className="relative max-h-[60vh] overflow-auto rounded-md p-2"
+            style={
+              exportBg === "transparent"
+                ? {
+                    backgroundImage:
+                      "linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%)",
+                    backgroundSize: "16px 16px",
+                    backgroundPosition: "0 0,0 8px,8px -8px,-8px 0",
+                  }
+                : { background: "#f3f4f6" }
+            }
+          >
+            {savePreview.building || !savePreview.dataUrl ? (
+              <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+                <span>Menyiapkan pratinjau…</span>
+              </div>
+            ) : (
+              <img
+                src={savePreview.dataUrl}
+                alt="Pratinjau hasil edit"
+                className="mx-auto block max-h-[58vh] w-auto select-none"
+                draggable={false}
+              />
+            )}
+          </div>
+          <DialogFooter className="flex-row justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSavePreview({ open: false, dataUrl: "", blob: null, building: false })}
+            >
+              Kembali
+            </Button>
+            <Button onClick={confirmSave} disabled={!savePreview.blob || savePreview.building}>
+              <Check className="mr-1 h-4 w-4" /> Simpan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>,
     document.body,
   );
