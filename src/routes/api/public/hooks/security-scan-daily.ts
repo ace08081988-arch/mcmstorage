@@ -28,10 +28,7 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
           request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
           null
         const userAgent = request.headers.get('user-agent')
-        const presentedAuthRaw =
-          request.headers.get('x-hook-secret') ??
-          request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') ??
-          request.headers.get('apikey')
+        const presentedAuthRaw = request.headers.get('x-hook-secret')
 
         const auditFailure = async (reason: string) => {
           // Selalu coba catat ke console agar terlihat di log worker
@@ -66,30 +63,46 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
           }
         }
 
-        // Auth: shared-secret privat (SECURITY_SCAN_HOOK_SECRET) yang
-        // hanya ada di server. Anon/publishable key TIDAK boleh dipakai
-        // karena ter-bundle ke klien dan bisa diambil siapa saja.
-        if (!hookSecret) {
-          await auditFailure('hook_secret_not_configured')
-          return Response.json({ error: 'hook_secret_not_configured' }, { status: 500 })
+        if (!supabaseUrl || !serviceKey) {
+          await auditFailure('config_missing')
+          return Response.json({ error: 'config_missing' }, { status: 500 })
         }
+        const supabase = createClient(supabaseUrl, serviceKey, {
+          auth: { persistSession: false, autoRefreshToken: false },
+        })
+
+        // Auth: shared-secret privat. Anon/publishable key TIDAK boleh dipakai
+        // karena ter-bundle ke klien dan bisa diambil siapa saja. Cron harian
+        // memakai secret yang tersimpan di DB backend; env secret tetap diterima
+        // agar rotasi/rollback tidak memutus pemanggil tepercaya.
         if (!presentedAuthRaw) {
           await auditFailure('missing_secret')
           return new Response('Unauthorized', { status: 401 })
         }
-        const a = Buffer.from(presentedAuthRaw)
-        const b = Buffer.from(hookSecret)
-        if (a.length !== b.length || !timingSafeEqual(a, b)) {
-          await auditFailure(a.length !== b.length ? 'wrong_length' : 'wrong_secret')
+        const { data: storedSecretRow, error: storedSecretError } = await supabase
+          .from('security_scan_hook_secrets')
+          .select('hook_secret')
+          .eq('hook_name', 'security-scan-daily')
+          .maybeSingle()
+        if (storedSecretError) {
+          await auditFailure('stored_secret_lookup_failed')
+          return Response.json({ error: 'stored_secret_lookup_failed' }, { status: 500 })
+        }
+        const validSecrets = [hookSecret, storedSecretRow?.hook_secret]
+          .filter((s): s is string => Boolean(s))
+        if (validSecrets.length === 0) {
+          await auditFailure('hook_secret_not_configured')
+          return Response.json({ error: 'hook_secret_not_configured' }, { status: 500 })
+        }
+        const presented = Buffer.from(presentedAuthRaw)
+        const matched = validSecrets.some((secret) => {
+          const expected = Buffer.from(secret)
+          return presented.length === expected.length && timingSafeEqual(presented, expected)
+        })
+        if (!matched) {
+          await auditFailure('wrong_secret')
           return new Response('Unauthorized', { status: 401 })
         }
-        if (!supabaseUrl || !serviceKey) {
-          return Response.json({ error: 'config_missing' }, { status: 500 })
-        }
-
-        const supabase = createClient(supabaseUrl, serviceKey, {
-          auth: { persistSession: false, autoRefreshToken: false },
-        })
 
         // 1. Jalankan scan
         const { data: scan, error: scanErr } = await supabase.rpc('run_internal_security_scan')
