@@ -39,6 +39,34 @@ type Tool = "select" | "draw" | "text" | "emoji" | "arrow" | "rect" | "circle";
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
+function WaitingForSize({ onForce }: { onForce: () => void }) {
+  const [showForce, setShowForce] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setShowForce(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div className="flex max-w-xs flex-col items-center gap-2 text-center text-xs text-white/85">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+      <span>Menyiapkan tampilan editor…</span>
+      {showForce && (
+        <>
+          <p className="text-[11px] text-white/70">
+            Tampilan belum siap. Coba muat ulang tampilan editor.
+          </p>
+          <button
+            type="button"
+            onClick={onForce}
+            className="rounded-md border border-white/40 px-3 py-1 text-xs text-white hover:bg-white/10"
+          >
+            Muat ulang tampilan
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export type PhotoEditorProps = {
   src: string;
   onCancel: () => void;
@@ -642,6 +670,22 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               </button>
             </div>
           </div>
+        ) : img ? (
+          <WaitingForSize
+            onForce={() => {
+              // Manual fallback: force a view size from the viewport so the
+              // canvas can render even if the container never reports a size.
+              const w = typeof window !== "undefined" ? Math.max(window.innerWidth - 16, 320) : 320;
+              const rotated = state.rotation === 90 || state.rotation === 270;
+              const baseW = rotated ? img.height : img.width;
+              const baseH = rotated ? img.width : img.height;
+              const r = baseW / baseH;
+              const maxH = typeof window !== "undefined" ? Math.max(window.innerHeight - 240, 320) : 520;
+              let vw = w, vh = w / r;
+              if (vh > maxH) { vh = maxH; vw = vh * r; }
+              setView({ w: vw, h: vh });
+            }}
+          />
         ) : (
           <div className="flex flex-col items-center gap-2 text-xs text-white/80">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
