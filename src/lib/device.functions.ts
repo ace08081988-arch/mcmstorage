@@ -124,6 +124,10 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
     let emailError: string | null = null;
     const messageId = randomUUID();
     const idempotencyKey = `device-otp-${challenge.id}`;
+    await supabaseAdmin
+      .from("device_otp_challenges")
+      .update({ otp_message_id: messageId } as never)
+      .eq("id", challenge.id);
     try {
       const { error: rpcErr } = await supabaseAdmin.rpc("enqueue_email" as never, {
         queue_name: "transactional_emails",
@@ -277,8 +281,20 @@ export const checkDeviceOtpEmailStatus = createServerFn({ method: "POST" })
     }
     return { messageId: data.messageId };
   })
-  .handler(async ({ data }) => {
+  .handler(async ({ data, context }) => {
+    const { userId } = context;
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    // Ownership check: only return status if this messageId was issued to the caller.
+    const { data: owned } = await supabaseAdmin
+      .from("device_otp_challenges")
+      .select("id")
+      .eq("user_id", userId)
+      .eq("otp_message_id" as never, data.messageId)
+      .limit(1)
+      .maybeSingle();
+    if (!owned) {
+      return { status: "pending" as string, error: null as string | null };
+    }
     const { data: rows } = await supabaseAdmin
       .from("email_send_log")
       .select("status, error_message, created_at")
