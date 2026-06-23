@@ -373,6 +373,9 @@ function HutangPiutangPage() {
           editFor ? paidByDebt.get(editFor.id) ?? 0 : 0
         }
         onClose={() => setEditFor(null)}
+        onLocalUpdate={(patch) =>
+          setDebts((prev) => prev.map((x) => (x.id === patch.id ? { ...x, ...patch } : x)))
+        }
         onSaved={refresh}
       />
     </div>
