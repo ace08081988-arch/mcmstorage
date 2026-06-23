@@ -12,6 +12,8 @@ import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useStartDm } from "@/lib/chat";
 import { MessageSquare, Loader2 } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Users2, Truck } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -215,14 +217,39 @@ function KontakPage() {
 
           <TabsContent value={tab} className="mt-3">
             {loading ? (
-              <div className="py-12 text-center text-sm text-muted-foreground">
-                Memuat…
-              </div>
+              <ul className="space-y-2" aria-busy="true" aria-label="Memuat kontak">
+                {Array.from({ length: 5 }).map((_, i) => (
+                  <li key={i} className="rounded-lg border bg-card p-3">
+                    <div className="flex items-start gap-2">
+                      <div className="min-w-0 flex-1 space-y-2">
+                        <Skeleton className="h-4 w-2/5" />
+                        <Skeleton className="h-3 w-1/3" />
+                        <Skeleton className="h-3 w-20 rounded-full" />
+                      </div>
+                      <div className="flex flex-col gap-1.5">
+                        <Skeleton className="h-7 w-24 rounded-md" />
+                        <Skeleton className="h-7 w-24 rounded-md" />
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
             ) : rows.length === 0 ? (
-              <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
-                Belum ada {tab === "customer" ? "pelanggan" : "pemasok"}.
-                Tambahkan lewat halaman terkait (mis. pesanan atau hutang
-                piutang).
+              <div className="flex flex-col items-center gap-3 rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  {tab === "customer" ? <Users2 className="h-5 w-5" /> : <Truck className="h-5 w-5" />}
+                </div>
+                <div className="space-y-1">
+                  <p className="font-medium text-foreground">
+                    Belum ada {tab === "customer" ? "pelanggan" : "pemasok"}
+                  </p>
+                  <p className="mx-auto max-w-xs text-xs">
+                    Tambahkan lewat halaman terkait seperti{" "}
+                    <Link to="/gudang" className="text-primary hover:underline">pesanan</Link>
+                    {" "}atau{" "}
+                    <Link to="/hutang-piutang" className="text-primary hover:underline">hutang piutang</Link>.
+                  </p>
+                </div>
               </div>
             ) : (
               <ul className="space-y-2">

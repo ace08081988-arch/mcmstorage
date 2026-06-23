@@ -5,7 +5,8 @@ import { PhotoEditor } from "@/components/PhotoEditor";
 import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
-import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff } from "lucide-react";
+import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff, Inbox } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/t/$token")({
@@ -568,7 +569,35 @@ function PublicPrepPage() {
               onSubmitted={refresh}
             />
           ))}
-          {items.length === 0 && <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Belum ada item.</div>}
+          {items.length === 0 && (
+            loading ? (
+              <div className="space-y-3" aria-busy="true" aria-label="Memuat daftar tugas">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="space-y-3 rounded-xl border bg-card p-4">
+                    <div className="flex items-start gap-3">
+                      <Skeleton className="h-14 w-14 rounded-lg" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-3/4" />
+                        <Skeleton className="h-3 w-1/2" />
+                        <Skeleton className="h-3 w-1/3" />
+                      </div>
+                    </div>
+                    <Skeleton className="h-9 w-full rounded-md" />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
+                <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
+                  <Inbox className="h-5 w-5" />
+                </div>
+                <div className="space-y-1">
+                  <p className="font-medium text-foreground">Belum ada item tugas</p>
+                  <p className="text-xs">Admin belum menambahkan item ke tugas ini. Coba muat ulang sebentar lagi.</p>
+                </div>
+              </div>
+            )
+          )}
         </div>
 
         <RequestSection token={token} pin={pinRef.current} />
