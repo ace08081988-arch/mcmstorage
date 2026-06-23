@@ -13,7 +13,12 @@ const searchSchema = z.object({
 
 export const Route = createFileRoute("/error")({
   validateSearch: (s) => searchSchema.parse(s),
-  head: () => ({ meta: [{ title: "Terjadi kesalahan" }] }),
+  head: () => ({
+    meta: [
+      { title: "Terjadi kesalahan" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
   component: ErrorPage,
 });
 
