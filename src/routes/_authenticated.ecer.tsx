@@ -791,6 +791,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   const [actual, setActual] = useState(String(title.target_grams));
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [progress, setProgress] = useState<{ step: "upload" | "save" | "done" | "error"; message: string } | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
 
@@ -888,6 +889,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
 
     if (issues.length) return;
     setBusy(true);
+    setProgress({ step: "upload", message: photo ? "Mengunggah foto…" : "Menyiapkan data…" });
     try {
       const { data: u } = await supabase.auth.getUser();
       const userId = u.user?.id;
@@ -897,6 +899,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         photoPath = await uploadEcerPhoto(userId, title.id, photo.blob, "jpg");
         if (!photoPath) throw new Error("Upload foto gagal");
       }
+      setProgress({ step: "save", message: "Menyimpan penyiapan…" });
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error } = await (supabase.from as any)("ecer_preparations").insert({
         user_id: userId,
@@ -911,11 +914,17 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         created_by: "admin",
       });
       if (error) { if (photoPath) await deleteEcerPhoto(photoPath); throw error; }
+      setProgress({ step: "done", message: "Selesai" });
       toast.success(`Tersimpan. Stok dikurangi ${grams} ${title.unit_label}`);
       onSaved();
     } catch (e) {
+      setProgress({ step: "error", message: (e as Error).message });
       toast.error("Gagal: " + (e as Error).message);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+      // Sembunyikan progress sukses setelah singkat agar pengguna sempat membacanya.
+      setTimeout(() => setProgress((p) => (p?.step === "done" ? null : p)), 1200);
+    }
   }
 
   return (
@@ -989,10 +998,45 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           </div>
         </div>
         <DialogFooter>
-          <Button variant="ghost" onClick={onClose}>Batal</Button>
-          <Button onClick={save} disabled={busy}>
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
-          </Button>
+          <div className="flex w-full flex-col gap-2">
+            {progress && (
+              <div
+                role="status"
+                aria-live="polite"
+                className={`flex items-center gap-2 rounded-md border px-2 py-1.5 text-[11px] ${
+                  progress.step === "error"
+                    ? "border-destructive/40 bg-destructive/10 text-destructive"
+                    : progress.step === "done"
+                    ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                    : "border-border bg-muted text-foreground"
+                }`}
+              >
+                {progress.step === "upload" || progress.step === "save" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : progress.step === "done" ? (
+                  <span aria-hidden>✓</span>
+                ) : (
+                  <span aria-hidden>⚠</span>
+                )}
+                <span className="flex-1 truncate">{progress.message}</span>
+                <span className="text-muted-foreground">
+                  {progress.step === "upload" ? "1/2" : progress.step === "save" ? "2/2" : ""}
+                </span>
+              </div>
+            )}
+            {busy && (
+              <div className="h-1 w-full overflow-hidden rounded-full bg-muted" aria-hidden>
+                <div className="h-full w-1/3 animate-pulse rounded-full bg-primary" />
+              </div>
+            )}
+            <div className="flex justify-end gap-2">
+              <Button variant="ghost" onClick={onClose} disabled={busy}>Batal</Button>
+              <Button onClick={save} disabled={busy}>
+                {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                {busy ? (progress?.step === "save" ? " Menyimpan…" : " Mengunggah…") : " Simpan"}
+              </Button>
+            </div>
+          </div>
         </DialogFooter>
 
         {editorOpen && editorSrc && (
