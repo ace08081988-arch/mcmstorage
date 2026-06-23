@@ -31,20 +31,40 @@ export function ReadyEcerSection() {
       if (list.length === 0) { setRows([]); return; }
       const itemIds = Array.from(new Set(list.map((t) => t.warehouse_item_id)));
       const titleIds = list.map((t) => t.id);
-      const [{ data: items }, { data: preps }] = await Promise.all([
+      const [{ data: items }, { data: preps }, { data: selfs }] = await Promise.all([
         sb.from("warehouse_items").select("id,name").in("id", itemIds),
         sb.from("ecer_preparations").select("title_id").in("title_id", titleIds),
+        sb.from("self_prep_items").select("title"),
       ]);
       const itemMap = new Map<string, string>(((items ?? []) as Array<{ id: string; name: string }>).map((i) => [i.id, i.name]));
       const countMap = new Map<string, number>();
       for (const p of ((preps ?? []) as Array<{ title_id: string }>)) {
         countMap.set(p.title_id, (countMap.get(p.title_id) ?? 0) + 1);
       }
-      setRows(list.map((t) => ({
-        ...t,
-        prep_count: countMap.get(t.id) ?? 0,
-        product_name: itemMap.get(t.warehouse_item_id) ?? "—",
-      })));
+      // Tautkan Siapkan Sendiri ke judul ecer berdasarkan nama:
+      // cocokkan jika judul Siapkan Sendiri (normalisasi) memuat nama judul ecer
+      // ATAU memuat nama produk gudang, agar item lepas seperti "KRISTAL 1 gram"
+      // ikut terhitung untuk kartu "KRISTAL 1 G".
+      const norm = (s: string) => s.toLowerCase().replace(/\s+/g, " ").trim();
+      const selfTitles = ((selfs ?? []) as Array<{ title: string | null }>)
+        .map((s) => norm(s.title ?? ""))
+        .filter(Boolean);
+      setRows(list.map((t) => {
+        const product = itemMap.get(t.warehouse_item_id) ?? "—";
+        const tName = norm(t.name);
+        const pName = norm(product);
+        const selfCount = selfTitles.reduce((acc, st) => {
+          const hit =
+            (tName.length > 0 && (st.includes(tName) || tName.includes(st))) ||
+            (pName.length > 0 && pName !== "—" && st.includes(pName));
+          return acc + (hit ? 1 : 0);
+        }, 0);
+        return {
+          ...t,
+          prep_count: (countMap.get(t.id) ?? 0) + selfCount,
+          product_name: product,
+        };
+      }));
     })();
   }, []);
 
