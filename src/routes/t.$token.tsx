@@ -458,9 +458,12 @@ function PublicPrepPage() {
             <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">MCM Storage</div>
             <div className="truncate text-sm font-semibold">Tugas Penyiapan Barang</div>
           </div>
-          <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
-            <ShieldCheck className="h-3 w-3" /> Terverifikasi
-          </div>
+          <SyncBadge
+            status={rtStatus}
+            lastSyncAt={lastSyncAt}
+            tick={syncTick}
+            onRefresh={() => { void silentRefresh(); }}
+          />
         </div>
       </header>
 
