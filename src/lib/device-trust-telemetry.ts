@@ -13,6 +13,7 @@ export type AttemptEvent = {
   status: number | null;    // HTTP status bila terdeteksi
   durationMs: number;
   errorMessage?: string;
+  correlationId?: string;
 };
 
 export type CallEvent = {
@@ -23,6 +24,7 @@ export type CallEvent = {
   attempts: AttemptEvent[];
   retries: number;          // attempts.length - 1
   cacheHit: boolean;
+  correlationId?: string;
 };
 
 const LOG_KEY = "mcm_device_trust_log";
@@ -100,6 +102,7 @@ export function recordDeviceTrustCall(event: CallEvent) {
     attempts: event.attempts,
     cacheHit: event.cacheHit,
     ts: event.ts,
+    correlationId: event.correlationId,
   });
 }
 
