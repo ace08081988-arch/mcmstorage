@@ -149,6 +149,7 @@ export const Route = createFileRoute("/_authenticated")({
     // Cache hasil pengecekan selama 10 menit agar beforeLoad tidak memanggil
     // server fn pada setiap perubahan navigasi (hash, search params, dll).
     let trusted = false;
+    let failureInfo: { correlationId: string; message: string } | null = null;
     let cached: { trusted: boolean; at: number } | null = null;
     try {
       const raw = sessionStorage.getItem(cacheKey);
@@ -231,12 +232,19 @@ export const Route = createFileRoute("/_authenticated")({
         try {
           (lastErr as { correlationId?: string }).correlationId = correlationId;
         } catch {}
+        failureInfo = {
+          correlationId,
+          message: lastErr instanceof Error ? lastErr.message : String(lastErr),
+        };
       }
     }
     if (!trusted) {
       throw redirect({
         to: "/device-verify",
-        search: { redirect: location.href },
+        search: {
+          redirect: location.href,
+          ...(failureInfo ? { trustError: failureInfo } : {}),
+        },
       });
     }
   },

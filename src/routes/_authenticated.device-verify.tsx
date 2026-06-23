@@ -25,6 +25,13 @@ const safeRedirect = z
   });
 const searchSchema = z.object({
   redirect: safeRedirect.optional().catch(undefined),
+  trustError: z
+    .object({
+      correlationId: z.string().max(64).optional(),
+      message: z.string().max(300).optional(),
+    })
+    .optional()
+    .catch(undefined),
 });
 
 function sanitizeRedirect(value: string | undefined): string {
@@ -34,6 +41,44 @@ function sanitizeRedirect(value: string | undefined): string {
     : "/";
 }
 
+function CorrelationIdBanner({
+  correlationId,
+  message,
+}: {
+  correlationId: string;
+  message?: string;
+}) {
+  const [copied, setCopied] = useState(false);
+  const copy = async () => {
+    try {
+      await navigator.clipboard.writeText(correlationId);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* ignore */
+    }
+  };
+  return (
+    <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-left text-[11px] text-destructive">
+      <div className="font-medium">Pemeriksaan device gagal</div>
+      {message && <div className="mt-0.5 text-destructive/80">{message}</div>}
+      <div className="mt-1 flex items-center justify-between gap-2">
+        <code className="truncate font-mono text-[10px]">{correlationId}</code>
+        <button
+          type="button"
+          onClick={copy}
+          className="shrink-0 rounded border border-destructive/40 px-2 py-0.5 text-[10px] hover:bg-destructive/10"
+        >
+          {copied ? "Tersalin" : "Salin ID"}
+        </button>
+      </div>
+      <div className="mt-1 text-[10px] text-destructive/70">
+        Bagikan ID ini ke admin untuk membantu pelacakan.
+      </div>
+    </div>
+  );
+}
+
 export const Route = createFileRoute("/_authenticated/device-verify")({
   validateSearch: searchSchema,
   component: DeviceVerifyPage,
@@ -41,7 +86,7 @@ export const Route = createFileRoute("/_authenticated/device-verify")({
 
 function DeviceVerifyPage() {
   const navigate = useNavigate();
-  const { redirect } = useSearch({ from: "/_authenticated/device-verify" });
+  const { redirect, trustError } = useSearch({ from: "/_authenticated/device-verify" });
   const safeTarget = sanitizeRedirect(redirect);
   const [stage, setStage] = useState<"loading" | "otp" | "error">("loading");
   const [challengeId, setChallengeId] = useState<string | null>(null);
@@ -210,6 +255,12 @@ function DeviceVerifyPage() {
         {stage === "error" && (
           <div className="space-y-3 text-center">
             <p className="text-sm text-destructive">Gagal memulai verifikasi.</p>
+            {trustError?.correlationId && (
+              <CorrelationIdBanner
+                correlationId={trustError.correlationId}
+                message={trustError.message}
+              />
+            )}
             <button
               onClick={() => location.reload()}
               className="rounded-md border px-3 py-2 text-sm"
@@ -221,6 +272,12 @@ function DeviceVerifyPage() {
 
         {stage === "otp" && (
           <form onSubmit={submit} className="space-y-3">
+            {trustError?.correlationId && (
+              <CorrelationIdBanner
+                correlationId={trustError.correlationId}
+                message={trustError.message}
+              />
+            )}
             {emailWarning && (
               <p className="rounded-md border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-800">
                 {emailWarning}
