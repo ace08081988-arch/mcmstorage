@@ -38,6 +38,22 @@ function PublicPrepPage() {
   const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [syncTick, setSyncTick] = useState(0); // memicu re-render label "x dtk lalu"
+  const [resyncing, setResyncing] = useState(false);
+
+  // Paksa muat ulang data sekarang juga (dipakai tombol "Resync sekarang").
+  async function manualResync() {
+    if (resyncing) return;
+    setResyncing(true);
+    const toastId = toast.loading("Menyinkronkan ulang…");
+    try {
+      await silentRefresh();
+      toast.success("Data terbaru dimuat", { id: toastId, duration: 2000 });
+    } catch (e) {
+      toast.error("Gagal menyinkronkan: " + (e as Error).message, { id: toastId });
+    } finally {
+      setResyncing(false);
+    }
+  }
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
@@ -462,7 +478,7 @@ function PublicPrepPage() {
             status={rtStatus}
             lastSyncAt={lastSyncAt}
             tick={syncTick}
-            onRefresh={() => { void silentRefresh(); }}
+            onRefresh={() => { void manualResync(); }}
           />
         </div>
       </header>
@@ -488,6 +504,24 @@ function PublicPrepPage() {
           </div>
           <div className="h-1.5 w-full bg-muted">
             <div className="h-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
+          </div>
+          <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-3 py-2">
+            <div className="text-[10px] text-muted-foreground">
+              {lastSyncAt
+                ? <>Diperbarui {Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000))} dtk lalu<span className="hidden sm:inline"> · {new Date(lastSyncAt).toLocaleTimeString("id-ID")}</span></>
+                : "Belum ada pembaruan"}
+              <span className="ml-1 hidden text-[9px] opacity-60 sm:inline">(otomatis tiap 15 dtk)</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => { void manualResync(); }}
+              disabled={resyncing}
+              className="inline-flex h-7 items-center gap-1 rounded-md border bg-background px-2 text-[10px] font-semibold transition hover:bg-muted disabled:opacity-60"
+            >
+              {resyncing
+                ? <Loader2 className="h-3 w-3 animate-spin" />
+                : <RefreshCw className="h-3 w-3" />} Resync sekarang
+            </button>
           </div>
         </div>
 
