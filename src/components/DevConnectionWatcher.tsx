@@ -111,11 +111,19 @@ export function DevConnectionStatusBadge({ className }: { className?: string }) 
 
   const isDown = status === "disconnected";
   const downMs = isDown && lastDisconnectAt ? Date.now() - lastDisconnectAt : 0;
-  const label = isDown
-    ? `Dev terputus · ${Math.max(0, Math.floor(downMs / 1000))}s`
-    : "Dev tersambung";
+  const downSeconds = Math.max(0, Math.floor(downMs / 1000));
+  const formatDuration = (totalSec: number) => {
+    const h = Math.floor(totalSec / 3600);
+    const m = Math.floor((totalSec % 3600) / 60);
+    const s = totalSec % 60;
+    if (h > 0) return `${h}j ${m}m ${s}d`;
+    if (m > 0) return `${m}m ${s}d`;
+    return `${s}d`;
+  };
+  const durationLabel = formatDuration(downSeconds);
+  const label = isDown ? `Dev terputus · ${durationLabel}` : "Dev tersambung";
   const title = isDown
-    ? "Koneksi WebSocket Vite HMR terputus. Halaman akan reload otomatis saat pulih."
+    ? `Koneksi WebSocket Vite HMR terputus selama ${durationLabel}. Halaman akan reload otomatis saat pulih.`
     : lastConnectAt
       ? `Tersambung sejak ${new Date(lastConnectAt).toLocaleTimeString()}`
       : "Dev server tersambung";
