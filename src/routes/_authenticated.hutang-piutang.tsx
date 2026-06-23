@@ -773,16 +773,30 @@ function EditDebtDialog({
   const submit = async () => {
     if (!debt) return;
     const nm = partyName.trim();
-    if (!nm) return toast.error("Nama pihak wajib diisi");
+    if (!nm) {
+      toast.error("Nama pihak wajib diisi", {
+        description: "Isi nama pihak sebelum menyimpan perubahan.",
+      });
+      return;
+    }
     const amt = Number(amount.replace(/[^\d.,]/g, "").replace(",", "."));
-    if (!amt || amt <= 0) return toast.error("Jumlah tidak valid");
+    if (!amt || amt <= 0) {
+      toast.error("Jumlah tidak valid", {
+        description: "Masukkan angka lebih besar dari 0.",
+      });
+      return;
+    }
     if (amt < minAmount) {
-      return toast.error(
-        `Jumlah tidak boleh lebih kecil dari total terbayar (${rupiah(minAmount)}). Hapus sebagian pembayaran dulu.`,
-      );
+      toast.error("Jumlah lebih kecil dari total terbayar", {
+        description: `Minimal ${rupiah(minAmount)}. Hapus sebagian pembayaran dulu jika ingin menurunkan nominal.`,
+      });
+      return;
     }
     setSaving(true);
-    const { error } = await supabase
+    const toastId = toast.loading("Menyimpan perubahan…", {
+      description: `${debt.kind === "hutang" ? "Hutang ke" : "Piutang dari"} ${nm}`,
+    });
+    const { data, error } = await supabase
       .from("debts")
       .update({
         party_name: nm,
@@ -790,13 +804,39 @@ function EditDebtDialog({
         due_date: due || null,
         note: note.trim() || null,
       })
-      .eq("id", debt.id);
+      .eq("id", debt.id)
+      .select("id")
+      .maybeSingle();
     setSaving(false);
     if (error) {
-      toast.error(friendlyError(error));
+      // Sertakan kode/detail dari server agar pengguna bisa melaporkan masalah.
+      const code = (error as { code?: string }).code;
+      const details = (error as { details?: string }).details;
+      const serverInfo = [code ? `kode ${code}` : null, details]
+        .filter(Boolean)
+        .join(" · ");
+      toast.error("Gagal menyimpan perubahan", {
+        id: toastId,
+        description: serverInfo
+          ? `${friendlyError(error)} (${serverInfo})`
+          : friendlyError(error),
+        duration: 8000,
+      });
       return;
     }
-    toast.success("Perubahan tersimpan");
+    if (!data) {
+      toast.error("Tidak ada perubahan yang tersimpan", {
+        id: toastId,
+        description:
+          "Catatan mungkin sudah dihapus atau Anda tidak punya akses untuk mengubahnya.",
+        duration: 8000,
+      });
+      return;
+    }
+    toast.success("Perubahan tersimpan", {
+      id: toastId,
+      description: `${debt.kind === "hutang" ? "Hutang ke" : "Piutang dari"} ${nm} · ${rupiah(amt)}`,
+    });
     onSaved();
     onClose();
   };
