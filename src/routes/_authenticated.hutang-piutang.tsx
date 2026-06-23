@@ -129,6 +129,17 @@ function HutangPiutangPage() {
     return { total, paid, sisa: total - paid };
   }, [filtered, paidByDebt]);
 
+  const overall = useMemo(() => {
+    let hutangSisa = 0;
+    let piutangSisa = 0;
+    for (const d of debts) {
+      const sisa = Math.max(0, Number(d.amount) - (paidByDebt.get(d.id) ?? 0));
+      if (d.kind === "hutang") hutangSisa += sisa;
+      else piutangSisa += sisa;
+    }
+    return { hutangSisa, piutangSisa, net: piutangSisa - hutangSisa };
+  }, [debts, paidByDebt]);
+
   const removeDebt = async (d: Debt) => {
     if (
       !(await confirm({
@@ -192,6 +203,33 @@ function HutangPiutangPage() {
       </header>
 
       <main className="mx-auto max-w-3xl px-3 py-4 sm:px-6">
+        <div className="mb-3 grid grid-cols-3 gap-2 rounded-lg border bg-card p-3 text-center text-xs">
+          <div>
+            <div className="text-muted-foreground">Sisa hutang</div>
+            <div className="font-semibold text-red-600">
+              {rupiah(overall.hutangSisa)}
+            </div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Sisa piutang</div>
+            <div className="font-semibold text-emerald-600">
+              {rupiah(overall.piutangSisa)}
+            </div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Selisih bersih</div>
+            <div
+              className={
+                "font-semibold " +
+                (overall.net >= 0 ? "text-emerald-600" : "text-red-600")
+              }
+            >
+              {(overall.net >= 0 ? "+" : "−") +
+                rupiah(Math.abs(overall.net)).replace("Rp ", "Rp ")}
+            </div>
+          </div>
+        </div>
+
         <Tabs value={tab} onValueChange={(v) => setTab(v as Kind)}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="hutang">Hutang saya</TabsTrigger>
