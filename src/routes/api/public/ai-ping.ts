@@ -3,7 +3,29 @@ import { createFileRoute } from "@tanstack/react-router";
 export const Route = createFileRoute("/api/public/ai-ping")({
   server: {
     handlers: {
-      GET: async () => {
+      GET: async ({ request }) => {
+        // Require a shared secret so this diagnostic endpoint cannot be used
+        // by anonymous internet users to drain our LOVABLE_API_KEY credits.
+        const expected = process.env.DIAGNOSTIC_TOKEN;
+        if (!expected) {
+          return Response.json(
+            { ok: false, stage: "config", error: "DIAGNOSTIC_TOKEN missing" },
+            { status: 500 },
+          );
+        }
+        const auth = request.headers.get("authorization") ?? "";
+        const provided = auth.toLowerCase().startsWith("bearer ")
+          ? auth.slice(7).trim()
+          : (request.headers.get("x-diagnostic-token") ?? "").trim();
+        // Constant-time compare
+        const a = Buffer.from(provided);
+        const b = Buffer.from(expected);
+        const ok =
+          a.length === b.length &&
+          (await import("crypto")).timingSafeEqual(a, b);
+        if (!ok) {
+          return new Response("Unauthorized", { status: 401 });
+        }
         const key = process.env.LOVABLE_API_KEY;
         if (!key) {
           return Response.json(
