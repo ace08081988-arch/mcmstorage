@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState, useRef } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
-import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
+import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult, copyText } from "@/lib/share-wa";
 import { fmtItemQty } from "@/lib/stock-format";
 import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown, RotateCcw } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
@@ -1471,27 +1471,57 @@ function WaPreviewDialog({
 function ShareDialog({ info, onClose }: { info: { token: string; pin: string; title: string }; onClose: () => void }) {
   const url = publicTaskUrl(info.token);
   const message = `Tolong siapkan barang berikut. Buka link, masukkan PIN, foto barangnya & kirim:\n\n${info.title}\n${url}\nPIN: ${info.pin}`;
-  function copy(t: string) { navigator.clipboard?.writeText(t).then(() => toast.success("Disalin")); }
+  async function copy(t: string, label: string) {
+    const res = await copyText(t);
+    if (res.ok) {
+      toast.success(`${label} disalin`);
+      return;
+    }
+    if (res.reason === "denied") {
+      toast.error(`Izin clipboard ditolak`, {
+        description: `Pilih teks ${label.toLowerCase()} di kotaknya lalu tekan Ctrl/Cmd + C untuk menyalin manual.`,
+        duration: 9000,
+      });
+    } else {
+      toast.error(`Browser ini tidak mendukung salin otomatis`, {
+        description: `Pilih teks ${label.toLowerCase()} lalu tekan Ctrl/Cmd + C.`,
+        duration: 9000,
+      });
+    }
+  }
   const waUrl = buildWhatsAppUrl(message);
   async function onShare(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
+    const hasWebShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+    if (!hasWebShare) {
+      toast.message("Browser ini tak mendukung tombol Bagikan langsung.", {
+        description: "Coba 'Buka WA Web' atau Salin pesan lalu tempel di WhatsApp.",
+        duration: 7000,
+      });
+    }
     try {
       const res = await shareToWhatsApp({ text: message, title: info.title, url });
       notifyShareResult(res);
     } catch (err) {
-      toast.error(`Gagal membagikan: ${(err as Error)?.message ?? String(err)}`);
+      toast.error(`Gagal membagikan: ${(err as Error)?.message ?? String(err)}`, {
+        description: "Salin pesan lalu tempel manual di WhatsApp.",
+        duration: 9000,
+      });
     }
   }
   function onOpenWa(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
     const win = window.open(waUrl, "_blank", "noopener,noreferrer");
-    if (!win) {
-      // Popup blocked (mis. dalam iframe pratinjau) — buka di tab teratas.
-      try { window.top!.location.href = waUrl; }
-      catch { window.location.href = waUrl; }
-    }
+    if (win) return;
+    // Popup diblokir (mis. iframe pratinjau) — coba buka di tab teratas.
+    toast.message("Popup diblokir browser.", {
+      description: "Membuka WhatsApp di tab ini. Izinkan popup untuk situs ini agar terbuka di tab baru.",
+      duration: 8000,
+    });
+    try { window.top!.location.href = waUrl; }
+    catch { window.location.href = waUrl; }
   }
   return (
     <Modal title="Bagikan ke pegawai" onClose={onClose}>
@@ -1500,14 +1530,14 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
           <div className="text-[11px] text-muted-foreground">Link</div>
           <div className="flex gap-2">
             <input readOnly value={url} className="h-9 flex-1 rounded-md border bg-background px-2 text-xs" />
-            <button onClick={() => copy(url)} className="inline-flex h-9 items-center gap-1 rounded-md border px-2 text-xs"><Copy className="h-4 w-4" /></button>
+            <button onClick={() => void copy(url, "Link")} className="inline-flex h-9 items-center gap-1 rounded-md border px-2 text-xs"><Copy className="h-4 w-4" /></button>
           </div>
         </div>
         <div>
           <div className="text-[11px] text-muted-foreground">PIN (kirim terpisah agar lebih aman)</div>
           <div className="flex gap-2">
             <input readOnly value={info.pin} className="h-9 w-32 rounded-md border bg-background px-2 text-center text-base tracking-widest tabular-nums" />
-            <button onClick={() => copy(info.pin)} className="inline-flex h-9 items-center gap-1 rounded-md border px-2 text-xs"><Copy className="h-4 w-4" /></button>
+            <button onClick={() => void copy(info.pin, "PIN")} className="inline-flex h-9 items-center gap-1 rounded-md border px-2 text-xs"><Copy className="h-4 w-4" /></button>
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 pt-2">
