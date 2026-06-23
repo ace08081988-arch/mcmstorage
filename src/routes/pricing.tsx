@@ -51,21 +51,20 @@ function PricingPage() {
           </h1>
           <p className="mt-3 text-muted-foreground">
             MCM Storage dioperasikan oleh <strong>BAROKAH RIZKI</strong>.
-            Saat ini seluruh fitur dapat digunakan secara gratis untuk
-            pengguna terdaftar.
+            Mulai gratis. Upgrade ke Pro saat usaha Anda berkembang.
           </p>
         </header>
 
         <div className="mt-10 grid gap-6 sm:grid-cols-2">
-          <div className="rounded-2xl border-2 border-primary bg-card p-6 shadow-sm">
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">Free</h2>
-              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                Aktif saat ini
+              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                Selamanya
               </span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Akses penuh ke semua fitur.
+              Cukup untuk usaha kecil yang baru mulai.
             </p>
             <p className="mt-4 text-3xl font-bold text-foreground">
               Rp 0
@@ -74,7 +73,7 @@ function PricingPage() {
               </span>
             </p>
             <ul className="mt-6 space-y-2 text-sm text-foreground">
-              {features.map((f) => (
+              {freeFeatures.map((f) => (
                 <li key={f} className="flex gap-2">
                   <Check className="mt-0.5 h-4 w-4 text-primary" /> {f}
                 </li>
@@ -88,49 +87,44 @@ function PricingPage() {
             </Link>
           </div>
 
-          <div className="rounded-2xl border border-dashed border-border bg-muted/30 p-6">
+          <div className="rounded-2xl border-2 border-primary bg-card p-6 shadow-sm">
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">Pro</h2>
-              <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                Segera hadir
+              <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                Uji coba 14 hari gratis
               </span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
-              Paket berbayar dengan kuota lebih besar dan dukungan prioritas
-              akan diluncurkan menyusul.
+              Buka modul keuangan, chat, dan kapasitas tanpa batas.
             </p>
-            <p className="mt-4 text-3xl font-bold text-muted-foreground">
-              —
+            <p className="mt-4 text-3xl font-bold text-foreground">
+              Rp 99.000
+              <span className="text-base font-normal text-muted-foreground">
+                /bulan
+              </span>
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              Harga akan diumumkan saat tersedia.
+              atau Rp 990.000/tahun (hemat ~17%)
             </p>
-            <ul className="mt-6 space-y-2 text-sm text-muted-foreground">
-              <li className="flex gap-2">
-                <Check className="mt-0.5 h-4 w-4 text-muted-foreground" />{" "}
-                Semua fitur Free
-              </li>
-              <li className="flex gap-2">
-                <Check className="mt-0.5 h-4 w-4 text-muted-foreground" />{" "}
-                Dukungan prioritas
-              </li>
-              <li className="flex gap-2">
-                <Check className="mt-0.5 h-4 w-4 text-muted-foreground" />{" "}
-                Kuota lanjutan
-              </li>
+            <ul className="mt-6 space-y-2 text-sm text-foreground">
+              {proFeatures.map((f) => (
+                <li key={f} className="flex gap-2">
+                  <Check className="mt-0.5 h-4 w-4 text-primary" /> {f}
+                </li>
+              ))}
             </ul>
-            <button
-              disabled
-              className="mt-6 w-full cursor-not-allowed rounded-md border border-border bg-background px-4 py-2 text-sm font-medium text-muted-foreground"
+            <Link
+              to="/langganan"
+              className="mt-6 inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Segera hadir
-            </button>
+              Mulai uji coba 14 hari
+            </Link>
           </div>
         </div>
 
         <p className="mt-8 text-center text-xs text-muted-foreground">
-          Pembelian paket berbayar (saat tersedia) akan diproses oleh{" "}
-          <strong>Paddle.com</strong> sebagai Merchant of Record. Lihat{" "}
+          Pembayaran Pro dilakukan via transfer bank dan dikonfirmasi admin
+          dalam beberapa jam kerja. Lihat{" "}
           <Link to="/terms" className="underline">
             Syarat &amp; Ketentuan
           </Link>{" "}
