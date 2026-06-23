@@ -186,7 +186,7 @@ function HutangPiutangPage() {
             Hutang & Piutang
           </h1>
           <Button size="sm" onClick={() => setAddOpen(true)}>
-            + Tambah
+            {tab === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
           </Button>
         </div>
       </header>
@@ -225,7 +225,14 @@ function HutangPiutangPage() {
                 </div>
               ) : filtered.length === 0 ? (
                 <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
-                  Belum ada catatan {k}.
+                  <p>Belum ada catatan {k}.</p>
+                  <Button
+                    size="sm"
+                    className="mt-3"
+                    onClick={() => setAddOpen(true)}
+                  >
+                    {k === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
+                  </Button>
                 </div>
               ) : (
                 <ul className="space-y-2">
