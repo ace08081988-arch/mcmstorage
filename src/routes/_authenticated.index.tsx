@@ -744,7 +744,7 @@ function Index() {
             </div>
           </div>
 
-          <ReadyEcerSection />
+          <EcerSection />
           <ReadyRequestSection />
         </main>
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
