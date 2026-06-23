@@ -5,7 +5,8 @@ import { PhotoEditor } from "@/components/PhotoEditor";
 import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
-import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package } from "lucide-react";
+import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle } from "lucide-react";
+import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -188,6 +189,31 @@ function PublicPrepPage() {
                 Sisa percobaan: <b>{attemptsLeft}</b> dari {MAX_ATTEMPTS}. Setelah {MAX_ATTEMPTS} kali salah, input akan dikunci {LOCK_SECONDS} detik.
               </div>
             )}
+            {(isLocked || attempts > 0) && (
+              <button
+                type="button"
+                onClick={async () => {
+                  const pageUrl = typeof window !== "undefined" ? window.location.href.split("#")[0] : "";
+                  const text = [
+                    "Halo, saya pegawai untuk tugas penyiapan barang.",
+                    isLocked
+                      ? "Akses saya terkunci karena PIN salah beberapa kali."
+                      : "Sepertinya PIN yang saya terima tidak cocok / sudah kedaluwarsa.",
+                    "Mohon kirim ulang PIN tugas yang baru.",
+                    "",
+                    `Link tugas: ${pageUrl}`,
+                  ].join("\n");
+                  const res = await shareToWhatsApp({ text, title: "Minta PIN baru", url: pageUrl });
+                  notifyShareResult(res);
+                }}
+                className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-[#25D366]/40 bg-[#25D366]/10 px-3 text-xs font-semibold text-[#128C7E] transition hover:bg-[#25D366]/20 dark:text-[#25D366]"
+              >
+                <MessageCircle className="h-4 w-4" /> Minta PIN baru ke pemilik
+              </button>
+            )}
+            <p className="mt-2 text-center text-[10px] leading-relaxed text-muted-foreground">
+              Tombol ini hanya membuka WhatsApp dengan pesan siap kirim — pembatasan percobaan tetap berlaku sampai hitungan mundur selesai.
+            </p>
             <div className="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
               <ShieldCheck className="h-3 w-3" /> Koneksi terenkripsi · Sesi terbatas waktu
             </div>
