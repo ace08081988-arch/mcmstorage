@@ -205,6 +205,7 @@ function RootShell({ children }: { children: ReactNode }) {
   var aVal=ACC[aId]||ACC.emerald;
   d.style.setProperty('--primary',aVal);
   d.style.setProperty('--ring',aVal);
+  d.style.setProperty('--primary-foreground','oklch(0.985 0 0)');
   var r=Number(ls.getItem('app-radius')||'0.625');
   d.style.setProperty('--radius',r+'rem');
   var bg=ls.getItem('app-bg-image')||'';
