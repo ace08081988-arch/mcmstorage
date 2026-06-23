@@ -143,21 +143,48 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   // Compute view size based on container width
   useEffect(() => {
     if (!img || !wrapRef.current) return;
+    const el = wrapRef.current;
     const update = () => {
-      const containerW = wrapRef.current!.clientWidth;
-      const containerH = Math.min(window.innerHeight - 240, 560);
-      const ratio = img.width / img.height;
+      // Wrap might briefly report 0 right after portal mount on some
+      // browsers — fall back to the viewport width minus padding so the
+      // canvas never gets stuck at zero (which used to leave the black
+      // background showing instead of the photo).
+      const measuredW = el.clientWidth;
+      const fallbackW = typeof window !== "undefined" ? Math.max(window.innerWidth - 16, 0) : 0;
+      const containerW = measuredW > 0 ? measuredW : fallbackW;
+      const measuredH = el.clientHeight;
+      const viewportH = typeof window !== "undefined" ? window.innerHeight - 240 : 560;
+      const containerH = Math.max(160, Math.min(measuredH > 0 ? measuredH : viewportH, 720));
+      if (containerW <= 0) return false;
       const rotated = state.rotation === 90 || state.rotation === 270;
       const baseW = rotated ? img.height : img.width;
       const baseH = rotated ? img.width : img.height;
       const r = baseW / baseH;
       let w = containerW, h = containerW / r;
       if (h > containerH) { h = containerH; w = h * r; }
-      setView({ w, h });
+      // Avoid useless setState churn when value is unchanged.
+      setView((prev) => (Math.round(prev.w) === Math.round(w) && Math.round(prev.h) === Math.round(h) ? prev : { w, h }));
+      return true;
     };
-    update();
+    // Try immediately; if the wrap hasn't been measured yet, retry on the
+    // next animation frame and again after a short delay to cover slow
+    // layouts (mobile Safari sometimes needs an extra tick).
+    if (!update()) {
+      const raf = requestAnimationFrame(() => {
+        if (!update()) setTimeout(update, 50);
+      });
+      // best-effort cleanup
+      return () => cancelAnimationFrame(raf);
+    }
+    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => update()) : null;
+    ro?.observe(el);
     window.addEventListener("resize", update);
-    return () => window.removeEventListener("resize", update);
+    window.addEventListener("orientationchange", update);
+    return () => {
+      ro?.disconnect();
+      window.removeEventListener("resize", update);
+      window.removeEventListener("orientationchange", update);
+    };
   }, [img, state.rotation]);
 
   // Build (and re-build) the base canvas only when image / view / rotation changes.
