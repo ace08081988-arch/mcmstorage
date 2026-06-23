@@ -36,6 +36,7 @@ import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authent
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
+import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
@@ -183,6 +184,12 @@ const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedChatRoute,
 } as any)
+const ApiPublicPrepRealtimeTokenRoute =
+  ApiPublicPrepRealtimeTokenRouteImport.update({
+    id: '/api/public/prep-realtime-token',
+    path: '/api/public/prep-realtime-token',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedChatConversationIdRoute =
   AuthenticatedChatConversationIdRouteImport.update({
     id: '/$conversationId',
@@ -247,6 +254,7 @@ export interface FileRoutesByFullPath {
   '/tugas': typeof AuthenticatedTugasRoute
   '/t/$token': typeof TTokenRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -280,6 +288,7 @@ export interface FileRoutesByTo {
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -316,6 +325,7 @@ export interface FileRoutesById {
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -352,6 +362,7 @@ export interface FileRouteTypes {
     | '/tugas'
     | '/t/$token'
     | '/chat/$conversationId'
+    | '/api/public/prep-realtime-token'
     | '/chat/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -385,6 +396,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/'
     | '/chat/$conversationId'
+    | '/api/public/prep-realtime-token'
     | '/chat'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -420,6 +432,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/chat/$conversationId'
+    | '/api/public/prep-realtime-token'
     | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -440,6 +453,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TrustRoute: typeof TrustRoute
   TTokenRoute: typeof TTokenRoute
+  ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -636,6 +650,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
       parentRoute: typeof AuthenticatedChatRoute
     }
+    '/api/public/prep-realtime-token': {
+      id: '/api/public/prep-realtime-token'
+      path: '/api/public/prep-realtime-token'
+      fullPath: '/api/public/prep-realtime-token'
+      preLoaderRoute: typeof ApiPublicPrepRealtimeTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/chat/$conversationId': {
       id: '/_authenticated/chat/$conversationId'
       path: '/$conversationId'
@@ -773,6 +794,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TrustRoute: TrustRoute,
   TTokenRoute: TTokenRoute,
+  ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
