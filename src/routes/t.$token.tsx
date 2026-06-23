@@ -394,6 +394,29 @@ function PublicPrepPage() {
           <div className="w-full rounded-2xl border bg-card p-6 shadow-lg shadow-black/5">
             <div className="mb-1 flex items-center gap-2 text-base font-semibold"><Lock className="h-4 w-4 text-primary" /> Verifikasi PIN</div>
             <p className="mb-5 text-xs leading-relaxed text-muted-foreground">Masukkan PIN dari pemilik untuk membuka daftar barang yang harus disiapkan.</p>
+            {lastError && !isLocked && (
+              <div
+                className={
+                  "mb-3 rounded-md border px-3 py-2 text-[11px] leading-relaxed " +
+                  (lastError.kind === "bad_pin"
+                    ? "border-destructive/40 bg-destructive/5 text-destructive"
+                    : lastError.kind === "expired" || lastError.kind === "closed" || lastError.kind === "not_found"
+                      ? "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400"
+                      : "border-destructive/40 bg-destructive/5 text-destructive")
+                }
+                role="alert"
+              >
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="font-semibold">{lastError.message}</div>
+                    {lastError.detail && (
+                      <div className="mt-0.5 break-words opacity-80">{lastError.detail}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             {(isLocked || attempts > 0) && (
               <div
                 className={
@@ -435,7 +458,11 @@ function PublicPrepPage() {
               </div>
             )}
             <input
-              inputMode="numeric" maxLength={8} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
+              inputMode="numeric" maxLength={8} value={pin}
+              onChange={(e) => {
+                setPin(e.target.value.replace(/\D/g, ""));
+                if (lastError?.kind === "bad_pin") setLastError(null);
+              }}
               placeholder="••••••" disabled={isLocked}
               className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums shadow-inner focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60" />
             <button disabled={pin.length < 4 || loading || isLocked} onClick={() => fetchTask(pin)}
