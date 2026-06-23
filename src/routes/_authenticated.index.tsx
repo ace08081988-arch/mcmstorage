@@ -469,7 +469,7 @@ function Index() {
   // memastikan UI tidak menggantung di "Memuat…" tanpa jalan keluar.
 
   useEffect(() => {
-    if (!hydrated) return;
+    if (!hydrated || loadFailed) return;
     let cancelled = false;
     const t = setTimeout(async () => {
       const { data: userRes } = await supabase.auth.getUser();
@@ -484,7 +484,7 @@ function Index() {
       cancelled = true;
       clearTimeout(t);
     };
-  }, [items, categories, hydrated]);
+  }, [items, categories, hydrated, loadFailed]);
 
   useEffect(() => {
     if (hydrated) localStorage.setItem(VIEW_KEY, viewMode);
