@@ -69,6 +69,8 @@ function ChatRoomPage() {
   const deleteAllMine = useDeleteAllMyMessages(conversationId);
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const entitlement = useEntitlement();
+  const chatBlocked = !entitlement.loading && !entitlement.isPro;
 
   const meta = useQuery({
     queryKey: ["chat", "conv-meta", conversationId],
