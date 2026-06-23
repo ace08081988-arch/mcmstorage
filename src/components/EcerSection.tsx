@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -24,17 +24,6 @@ import { previewAndShareWA } from "@/lib/share-wa-preview";
 import { fmtItemQty } from "@/lib/stock-format";
 import { countMatchingSelfPreps } from "@/lib/ecer-ready-count";
 
-export const Route = createFileRoute("/_authenticated/ecer")({
-  head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
-  validateSearch: (s: Record<string, unknown>) => ({
-    item: typeof s.item === "string" ? s.item : undefined,
-    title: typeof s.title === "string" ? s.title : undefined,
-    highlight: typeof s.highlight === "string" ? s.highlight : undefined,
-    edit: typeof s.edit === "string" ? s.edit : undefined,
-  }),
-  component: EcerPage,
-});
-
 type WarehouseItem = {
   id: string; name: string; category: string | null; base_unit: string;
   stock_base: number; image_path: string | null;
@@ -42,9 +31,21 @@ type WarehouseItem = {
   package_size?: number | null;
 };
 
-function EcerPage() {
-  const search = Route.useSearch();
-  const router = useRouter();
+export function EcerSection() {
+  const search = useRouterState({
+    select: (s) => {
+      // Read ecer-related params regardless of the route they live on.
+      const raw = (s.location.search ?? {}) as Record<string, unknown>;
+      return {
+        item: typeof raw.item === "string" ? raw.item : undefined,
+        title: typeof raw.title === "string" ? raw.title : undefined,
+        highlight: typeof raw.highlight === "string" ? raw.highlight : undefined,
+        edit: typeof raw.edit === "string" ? raw.edit : undefined,
+      };
+    },
+  });
+  const navigate = useNavigate();
+  const router = { navigate } as { navigate: typeof navigate };
   const [items, setItems] = useState<WarehouseItem[]>([]);
   const [titles, setTitles] = useState<EcerTitle[]>([]);
   const [loading, setLoading] = useState(true);
