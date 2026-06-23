@@ -84,6 +84,8 @@ function HutangPiutangPage() {
   const [period, setPeriod] = useState<"all" | "week" | "month" | "custom">("all");
   const [customFrom, setCustomFrom] = useState<string>("");
   const [customTo, setCustomTo] = useState<string>("");
+  const [draftFrom, setDraftFrom] = useState<string>("");
+  const [draftTo, setDraftTo] = useState<string>("");
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
@@ -268,17 +270,46 @@ function HutangPiutangPage() {
               <div className="flex flex-wrap items-center gap-2">
                 <Input
                   type="date"
-                  value={customFrom}
-                  onChange={(e) => setCustomFrom(e.target.value)}
+                  value={draftFrom}
+                  onChange={(e) => setDraftFrom(e.target.value)}
                   className="h-8 w-auto text-xs"
                 />
                 <span className="text-muted-foreground">–</span>
                 <Input
                   type="date"
-                  value={customTo}
-                  onChange={(e) => setCustomTo(e.target.value)}
+                  value={draftTo}
+                  onChange={(e) => setDraftTo(e.target.value)}
                   className="h-8 w-auto text-xs"
                 />
+                <Button
+                  type="button"
+                  size="sm"
+                  className="h-8 px-2 text-xs"
+                  onClick={() => {
+                    setCustomFrom(draftFrom);
+                    setCustomTo(draftTo);
+                  }}
+                  disabled={
+                    draftFrom === customFrom && draftTo === customTo
+                  }
+                >
+                  Terapkan
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-8 px-2 text-xs"
+                  onClick={() => {
+                    setDraftFrom("");
+                    setDraftTo("");
+                    setCustomFrom("");
+                    setCustomTo("");
+                  }}
+                  disabled={!draftFrom && !draftTo && !customFrom && !customTo}
+                >
+                  Reset
+                </Button>
               </div>
             )}
           </div>
