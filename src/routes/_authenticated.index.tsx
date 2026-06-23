@@ -629,8 +629,15 @@ function Index() {
 
   if (!hydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background text-sm text-muted-foreground">
-        Memuat…
+      <div className="flex min-h-screen flex-col items-center justify-center gap-3 bg-background px-4 text-sm text-muted-foreground">
+        <span>Memuat…</span>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="rounded-md border px-3 py-1.5 text-xs font-medium hover:bg-accent"
+        >
+          Muat ulang halaman
+        </button>
       </div>
     );
   }
