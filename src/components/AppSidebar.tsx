@@ -21,7 +21,7 @@ import { useConversations } from "@/lib/chat";
 const items = [
   { title: "Beranda", url: "/", icon: Home },
   { title: "Gudang & Supplier", url: "/gudang", icon: Package },
-  { title: "Penyiapan Ecer", url: "/ecer", icon: Scale },
+  { title: "Penyiapan Ecer", url: "/", hash: "ecer", icon: Scale },
   { title: "Penyiapan Request", url: "/request", icon: PackagePlus },
   { title: "Penyiapan Produk", url: "/tugas", icon: ClipboardList },
   { title: "Chat", url: "/chat", icon: MessageCircle },
