@@ -100,20 +100,41 @@ function TugasPage() {
       confirmText: "Reset percobaan",
     });
     if (!ok) return;
+    const loadingId = toast.loading(`Mereset percobaan PIN untuk “${title}”…`);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (supabase.rpc as any)("prep_pin_reset", { _token: token });
-    if (error) return toast.error(error.message);
+    if (error) {
+      toast.error("Gagal me-reset percobaan PIN", {
+        id: loadingId,
+        description: `Alasan: ${error.message}`,
+      });
+      return;
+    }
     const res = data as { ok: boolean; error?: string; deleted_failures?: number; acknowledged_alerts?: number };
     if (!res?.ok) {
-      if (res?.error === "forbidden") return toast.error("Hanya pemilik tugas atau admin yang boleh me-reset.");
-      if (res?.error === "not_found") return toast.error("Tugas tidak ditemukan.");
-      if (res?.error === "unauthenticated") return toast.error("Anda harus login.");
-      return toast.error("Gagal me-reset percobaan.");
+      const reasonMap: Record<string, string> = {
+        forbidden: "Hanya pemilik tugas atau admin yang boleh me-reset percobaan PIN.",
+        not_found: "Tugas tidak ditemukan atau sudah dihapus.",
+        unauthenticated: "Sesi Anda berakhir. Silakan login ulang.",
+      };
+      const reason = reasonMap[res?.error ?? ""] ?? `Server menolak permintaan (${res?.error ?? "unknown"}).`;
+      toast.error(`Gagal me-reset percobaan PIN untuk “${title}”`, {
+        id: loadingId,
+        description: `Alasan: ${reason}`,
+      });
+      return;
     }
     setPinAlerts((prev) => prev.filter((a) => a.share_token !== token));
-    toast.success(
-      `Percobaan PIN di-reset (${res.deleted_failures ?? 0} kegagalan dihapus, ${res.acknowledged_alerts ?? 0} peringatan ditangani).`,
-    );
+    const dF = res.deleted_failures ?? 0;
+    const aA = res.acknowledged_alerts ?? 0;
+    const parts: string[] = [];
+    parts.push(dF > 0 ? `${dF} catatan kegagalan dihapus` : "Tidak ada catatan kegagalan tersisa");
+    if (aA > 0) parts.push(`${aA} peringatan ditandai sudah ditangani`);
+    parts.push("Pegawai bisa langsung mencoba PIN lagi.");
+    toast.success(`Reset percobaan PIN berhasil — “${title}”`, {
+      id: loadingId,
+      description: parts.join(" · "),
+    });
   }
 
   async function removeTask(id: string) {
