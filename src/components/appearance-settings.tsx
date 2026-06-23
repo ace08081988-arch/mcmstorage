@@ -70,6 +70,7 @@ export function applyAppearance() {
   const accent = ACCENTS.find((a) => a.id === accentId) ?? ACCENTS[0];
   root.style.setProperty("--primary", accent.value);
   root.style.setProperty("--ring", accent.value);
+  root.style.setProperty("--primary-foreground", "oklch(0.985 0 0)");
   root.style.setProperty("--radius", `${radius}rem`);
   root.style.setProperty(
     "--app-bg-image",
