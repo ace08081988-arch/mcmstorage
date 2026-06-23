@@ -1,6 +1,6 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
-import { timingSafeEqual } from 'crypto'
+import { timingSafeEqual, createHash } from 'crypto'
 
 type Finding = {
   id: string
@@ -23,22 +23,64 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
         const senderDomain = process.env.SENDER_DOMAIN ?? 'notify.mcmstorage.biz'
         const lovableSendUrl = process.env.LOVABLE_SEND_URL
 
-        // Auth: shared-secret privat (SECURITY_SCAN_HOOK_SECRET) yang
-        // hanya ada di server. Anon/publishable key TIDAK boleh dipakai
-        // karena ter-bundle ke klien dan bisa diambil siapa saja.
-        const auth =
+        const ip =
+          request.headers.get('cf-connecting-ip') ??
+          request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+          null
+        const userAgent = request.headers.get('user-agent')
+        const presentedAuthRaw =
           request.headers.get('x-hook-secret') ??
           request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '') ??
           request.headers.get('apikey')
+
+        const auditFailure = async (reason: string) => {
+          // Selalu coba catat ke console agar terlihat di log worker
+          // walaupun DB insert gagal (mis. config_missing).
+          console.warn('[security-scan-daily] auth_failed', {
+            reason,
+            ip,
+            userAgent,
+            hasAuthHeader: Boolean(presentedAuthRaw),
+          })
+          if (!supabaseUrl || !serviceKey) return
+          try {
+            const adminClient = createClient(supabaseUrl, serviceKey, {
+              auth: { persistSession: false, autoRefreshToken: false },
+            })
+            await adminClient.from('security_hook_audit').insert({
+              hook_name: 'security-scan-daily',
+              reason,
+              ip,
+              user_agent: userAgent,
+              presented_auth_hash: presentedAuthRaw
+                ? createHash('sha256').update(presentedAuthRaw).digest('hex')
+                : null,
+              headers: {
+                has_x_hook_secret: Boolean(request.headers.get('x-hook-secret')),
+                has_authorization: Boolean(request.headers.get('Authorization')),
+                has_apikey: Boolean(request.headers.get('apikey')),
+              },
+            })
+          } catch (e) {
+            console.error('[security-scan-daily] audit_insert_failed', e)
+          }
+        }
+
+        // Auth: shared-secret privat (SECURITY_SCAN_HOOK_SECRET) yang
+        // hanya ada di server. Anon/publishable key TIDAK boleh dipakai
+        // karena ter-bundle ke klien dan bisa diambil siapa saja.
         if (!hookSecret) {
+          await auditFailure('hook_secret_not_configured')
           return Response.json({ error: 'hook_secret_not_configured' }, { status: 500 })
         }
-        if (!auth) {
+        if (!presentedAuthRaw) {
+          await auditFailure('missing_secret')
           return new Response('Unauthorized', { status: 401 })
         }
-        const a = Buffer.from(auth)
+        const a = Buffer.from(presentedAuthRaw)
         const b = Buffer.from(hookSecret)
         if (a.length !== b.length || !timingSafeEqual(a, b)) {
+          await auditFailure(a.length !== b.length ? 'wrong_length' : 'wrong_secret')
           return new Response('Unauthorized', { status: 401 })
         }
         if (!supabaseUrl || !serviceKey) {

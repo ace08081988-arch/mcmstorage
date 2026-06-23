@@ -1417,6 +1417,39 @@ export type Database = {
           },
         ]
       }
+      security_hook_audit: {
+        Row: {
+          created_at: string
+          headers: Json | null
+          hook_name: string
+          id: string
+          ip: string | null
+          presented_auth_hash: string | null
+          reason: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          headers?: Json | null
+          hook_name: string
+          id?: string
+          ip?: string | null
+          presented_auth_hash?: string | null
+          reason: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          headers?: Json | null
+          hook_name?: string
+          id?: string
+          ip?: string | null
+          presented_auth_hash?: string | null
+          reason?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       security_scan_findings: {
         Row: {
           acknowledged_at: string | null
