@@ -561,7 +561,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               Transparan
             </button>
           </div>
-          <button onClick={exportImage} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
+          <button onClick={openSavePreview} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
             <Check className="h-4 w-4" /> Simpan
           </button>
         </div>
