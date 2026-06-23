@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://mcmstorage.lovable.app/sitemap.xml
+Sitemap: https://mcmstorage.biz/sitemap.xml
