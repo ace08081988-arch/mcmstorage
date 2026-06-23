@@ -99,12 +99,65 @@ export function notifyShareResult(result: ShareResult) {
           { duration: 8000 },
         );
       } else {
-        toast.success("WhatsApp dibuka.");
+        toast.success(
+          result.reason === "share-failed"
+            ? "Share sheet gagal — WhatsApp dibuka di tab baru sebagai gantinya."
+            : "Browser ini belum mendukung tombol Bagikan langsung. WhatsApp dibuka di tab baru — tempel pesan lalu kirim.",
+          { duration: 7000 },
+        );
       }
       return;
     case "failed":
-      toast.error(`Gagal mengirim: ${result.error}`);
+      toast.error(`Gagal membagikan: ${result.error}`, {
+        description: "Pakai tombol Salin lalu tempel manual di WhatsApp.",
+        duration: 9000,
+      });
       return;
+  }
+}
+
+/**
+ * Salin teks ke clipboard dengan fallback execCommand untuk konteks yang
+ * memblokir Clipboard API (mis. iframe pratinjau tanpa izin clipboard-write,
+ * Safari lama, atau halaman non-HTTPS).
+ */
+export async function copyText(text: string): Promise<{ ok: true } | { ok: false; reason: "denied" | "unsupported" | "error"; error?: string }> {
+  try {
+    if (navigator.clipboard?.writeText) {
+      await navigator.clipboard.writeText(text);
+      return { ok: true };
+    }
+  } catch (err) {
+    const name = (err as DOMException)?.name;
+    if (name !== "NotAllowedError" && name !== "SecurityError") {
+      // Bukan masalah izin — coba fallback dulu sebelum menyerah.
+    } else {
+      // Coba fallback execCommand sebelum melaporkan ditolak.
+      if (legacyCopy(text)) return { ok: true };
+      return { ok: false, reason: "denied", error: (err as Error).message };
+    }
+  }
+  if (legacyCopy(text)) return { ok: true };
+  return { ok: false, reason: "unsupported" };
+}
+
+function legacyCopy(text: string): boolean {
+  try {
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.top = "0";
+    ta.style.left = "0";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.focus();
+    ta.select();
+    const ok = document.execCommand("copy");
+    ta.remove();
+    return ok;
+  } catch {
+    return false;
   }
 }
 
