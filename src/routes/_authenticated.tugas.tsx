@@ -295,6 +295,8 @@ function TugasPage() {
         <SharePinDialog
           title={sharePinFor.title}
           url={publicTaskUrl(sharePinFor.share_token)}
+          taskId={sharePinFor.id}
+          shareToken={sharePinFor.share_token}
           onClose={() => setSharePinFor(null)}
         />
       )}
@@ -1598,7 +1600,7 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
         <a href={url} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs"><ExternalLink className="h-4 w-4" /> Pratinjau link pegawai</a>
       </div>
       {sharePinOpen && (
-        <SharePinDialog title={task.title} url={url} onClose={() => setSharePinOpen(false)} />
+        <SharePinDialog title={task.title} url={url} taskId={task.id} shareToken={task.share_token} onClose={() => setSharePinOpen(false)} />
       )}
       <div className="space-y-3">
         {items.map((it) => {
