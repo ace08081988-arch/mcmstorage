@@ -1417,6 +1417,57 @@ export type Database = {
           },
         ]
       }
+      security_ack_rate_limit: {
+        Row: {
+          called_at: string
+          id: number
+          user_id: string
+        }
+        Insert: {
+          called_at?: string
+          id?: number
+          user_id: string
+        }
+        Update: {
+          called_at?: string
+          id?: number
+          user_id?: string
+        }
+        Relationships: []
+      }
+      security_hook_audit: {
+        Row: {
+          created_at: string
+          headers: Json | null
+          hook_name: string
+          id: string
+          ip: string | null
+          presented_auth_hash: string | null
+          reason: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          headers?: Json | null
+          hook_name: string
+          id?: string
+          ip?: string | null
+          presented_auth_hash?: string | null
+          reason: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          headers?: Json | null
+          hook_name?: string
+          id?: string
+          ip?: string | null
+          presented_auth_hash?: string | null
+          reason?: string
+          user_agent?: string | null
+        }
+        Relationships: []
+      }
       security_scan_findings: {
         Row: {
           acknowledged_at: string | null
@@ -1469,6 +1520,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      security_scan_hook_secrets: {
+        Row: {
+          hook_name: string
+          hook_secret: string
+          updated_at: string
+        }
+        Insert: {
+          hook_name: string
+          hook_secret?: string
+          updated_at?: string
+        }
+        Update: {
+          hook_name?: string
+          hook_secret?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       security_scan_runs: {
         Row: {
@@ -1899,6 +1968,7 @@ export type Database = {
         Returns: undefined
       }
       can_chat: { Args: { _a: string; _b: string }; Returns: boolean }
+      check_acknowledge_rate_limit: { Args: never; Returns: Json }
       create_group: {
         Args: { _member_ids: string[]; _title: string }
         Returns: string
@@ -2027,6 +2097,14 @@ export type Database = {
           display_name: string
           kind: string
           label: string
+          phone: string
+          user_id: string
+        }[]
+      }
+      search_profiles_for_link: {
+        Args: { _q: string }
+        Returns: {
+          display_name: string
           phone: string
           user_id: string
         }[]

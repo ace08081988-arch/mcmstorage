@@ -155,13 +155,16 @@ function AuthPage() {
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <div className="flex flex-1 items-center justify-center px-4 py-10">
+      <main className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <ApkDownloadBanner />
         <div className="text-center">
           <img
             src="/icon-512.png"
             alt="MCM Storage"
+            width={64}
+            height={64}
+            fetchPriority="high"
             className="mx-auto h-16 w-16 rounded-2xl"
           />
           <h1 className="mt-3 text-lg font-semibold tracking-tight">Masuk ke MCM Storage</h1>
@@ -266,7 +269,7 @@ function AuthPage() {
           </p>
         </form>
       </div>
-      </div>
+      </main>
       <PublicFooter />
     </div>
   );
