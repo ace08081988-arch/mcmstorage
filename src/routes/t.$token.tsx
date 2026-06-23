@@ -5,7 +5,7 @@ import { PhotoEditor } from "@/components/PhotoEditor";
 import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
-import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft } from "lucide-react";
+import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw } from "lucide-react";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/t/$token")({
@@ -29,6 +29,10 @@ function PublicPrepPage() {
   const [items, setItems] = useState<PrepItemRow[]>([]);
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
+  const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found">(null);
+  const [staleItemIds, setStaleItemIds] = useState<Record<string, true>>({});
+  const itemsRef = useRef<PrepItemRow[]>([]);
+  useEffect(() => { itemsRef.current = items; }, [items]);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
@@ -196,6 +200,62 @@ function PublicPrepPage() {
     await fetchTask(pinRef.current);
   }
 
+  // Refresh ringan untuk dipanggil oleh realtime / heartbeat / visibilitychange.
+  // Bedanya: bila PIN telah diubah admin atau tugas ditutup, langsung pindah
+  // ke layar yang sesuai tanpa menghapus state percobaan.
+  async function silentRefresh() {
+    if (!pinRef.current || !authed) return;
+    const { data } = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
+    const res = data as { ok: boolean; error?: string; task?: PrepTaskRow; items?: PrepItemRow[] };
+    if (!res?.ok) {
+      if (res?.error === "bad_pin") {
+        setClosedReason("pin_changed");
+      } else if (res?.error === "not_found") {
+        setClosedReason("not_found");
+      }
+      return;
+    }
+    // Deteksi item yang sedang dilihat pegawai tapi sudah berubah versinya.
+    const prev = new Map(itemsRef.current.map((i) => [i.id, i.updated_at ?? null]));
+    const nextStale: Record<string, true> = { ...staleItemIds };
+    for (const it of res.items ?? []) {
+      const before = prev.get(it.id);
+      if (before && it.updated_at && before !== it.updated_at) {
+        nextStale[it.id] = true;
+      }
+    }
+    setStaleItemIds(nextStale);
+    setTask(res.task!);
+    setItems(res.items ?? []);
+  }
+
+  function clearStale(itemId: string) {
+    setStaleItemIds((s) => {
+      if (!s[itemId]) return s;
+      const copy = { ...s }; delete copy[itemId]; return copy;
+    });
+  }
+
+  // Realtime broadcast + fallback heartbeat & visibility refresh.
+  useEffect(() => {
+    if (!authed) return;
+    const ch = publicSupabase
+      .channel(`prep:${token}`, { config: { broadcast: { self: false } } })
+      .on("broadcast", { event: "change" }, () => { void silentRefresh(); })
+      .subscribe();
+    const onVis = () => { if (document.visibilityState === "visible") void silentRefresh(); };
+    document.addEventListener("visibilitychange", onVis);
+    const hb = window.setInterval(() => {
+      if (document.visibilityState === "visible") void silentRefresh();
+    }, 15000);
+    return () => {
+      publicSupabase.removeChannel(ch);
+      document.removeEventListener("visibilitychange", onVis);
+      window.clearInterval(hb);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, token]);
+
   // Auto-buka tugas jika PIN diberikan via fragment URL ( #p=1234 ).
   // Fragment tidak dikirim ke server, jadi PIN tetap aman dari log.
   useEffect(() => {
@@ -341,6 +401,35 @@ function PublicPrepPage() {
   const completedItems = items.filter((i) => (i.submissions?.length ?? 0) > 0).length;
   const progressPct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
+  // Tugas ditutup / PIN diubah pemilik → layar khusus
+  if (closedReason) {
+    const isPin = closedReason === "pin_changed";
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
+        <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-8">
+          <div className="w-full rounded-2xl border bg-card p-6 text-center shadow-lg shadow-black/5">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/30">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div className="text-base font-semibold">{isPin ? "PIN diperbarui pemilik" : "Tugas sudah ditutup"}</div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {isPin
+                ? "PIN tugas baru saja diubah. Silakan minta PIN terbaru ke pemilik lalu masukkan kembali."
+                : "Tugas ini sudah selesai atau masa berlakunya habis. Hubungi pemilik bila perlu."}
+            </p>
+            <button
+              type="button"
+              onClick={() => { setClosedReason(null); goBackToPin(); }}
+              className="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-semibold transition hover:bg-muted"
+            >
+              <ArrowLeft className="h-4 w-4" /> Kembali ke halaman PIN
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background pb-12">
       <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur">
@@ -389,7 +478,16 @@ function PublicPrepPage() {
 
         <div className="space-y-3">
           {items.map((it, idx) => (
-            <ItemCard key={it.id} index={idx + 1} item={it} token={token} pin={pinRef.current} onSubmitted={refresh} />
+            <ItemCard
+              key={it.id}
+              index={idx + 1}
+              item={it}
+              token={token}
+              pin={pinRef.current}
+              isStale={!!staleItemIds[it.id]}
+              onAcknowledgeStale={() => clearStale(it.id)}
+              onSubmitted={refresh}
+            />
           ))}
           {items.length === 0 && <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Belum ada item.</div>}
         </div>
@@ -402,7 +500,7 @@ function PublicPrepPage() {
   );
 }
 
-function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow; index: number; token: string; pin: string; onSubmitted: () => void }) {
+function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubmitted }: { item: PrepItemRow; index: number; token: string; pin: string; isStale?: boolean; onAcknowledgeStale?: () => void; onSubmitted: () => void }) {
   const [photo, setPhoto] = useState<StagedPhoto | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
@@ -455,6 +553,10 @@ function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow;
   }
 
   async function submit() {
+    if (isStale) {
+      toast.error("Item baru saja diubah admin. Tinjau ulang sebelum kirim.");
+      return;
+    }
     if (!photo) {
       toast.error("Wajib lampirkan foto bukti timbangan/barang");
       return;
@@ -475,12 +577,18 @@ function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow;
         _photo_path: photoPath, _location_url: locUrl || null,
         _gps_lat: gps?.lat ?? null, _gps_lng: gps?.lng ?? null,
         _note: note || null, _qty_reported: null,
+        _expected_updated_at: item.updated_at ?? null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (publicSupabase.rpc as any)("prep_submit", args);
       if (error) throw error;
-      const res = data as { ok: boolean; error?: string; available?: number; requested?: number; deducted?: number };
+      const res = data as { ok: boolean; error?: string; available?: number; requested?: number; deducted?: number; current_updated_at?: string };
       if (!res?.ok) {
+        if (res?.error === "item_changed") {
+          toast.error("Item baru saja diubah admin. Periksa kembali sebelum kirim.");
+          onSubmitted(); // muat ulang dari server
+          return;
+        }
         const msg = res?.error === "insufficient_stock"
           ? `Stok gudang tidak cukup (tersedia ${res.available}, diminta ${res.requested})`
           : res?.error === "item_not_found"
@@ -499,7 +607,22 @@ function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow;
 
   const isDone = (item.submissions?.length ?? 0) > 0;
   return (
-    <div className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isDone ? "border-emerald-500/30" : ""}`}>
+    <div className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}>
+      {isStale && (
+        <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div className="flex-1">
+            <b>Item ini baru saja diubah admin.</b> Periksa kembali sebelum kirim.
+          </div>
+          <button
+            type="button"
+            onClick={onAcknowledgeStale}
+            className="inline-flex h-7 items-center gap-1 rounded-md border border-amber-500/40 bg-background px-2 text-[10px] font-semibold text-amber-700 hover:bg-amber-500/10 dark:text-amber-300"
+          >
+            <RefreshCw className="h-3 w-3" /> Lanjutkan
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Item #{index}</div>
         {isDone ? (

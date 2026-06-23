@@ -170,6 +170,7 @@ export type PrepItemRow = {
   unit_label: string | null;
   ref_photo_path: string | null;
   note: string | null;
+  updated_at?: string | null;
   submissions: PrepSubmissionRow[];
 };
 

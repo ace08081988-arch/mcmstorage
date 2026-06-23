@@ -1,75 +1,48 @@
 ## Tujuan
-Sederhanakan alur penyiapan produk: hapus total menu **Manajemen Pegawai** (beserta data pegawai existing) dan ganti dengan dua mode yang dipilih langsung dari halaman **Penyiapan Produk**:
+Membuat data tugas penyiapan sinkron otomatis dua arah antara aplikasi admin (`/tugas`) dan link pegawai (`/t/<token>`), serta menjaga konsistensi saat admin mengedit item, PIN, status, atau masa berlaku — termasuk perlindungan dari konflik tulis-baca saat pegawai sedang mengisi foto.
 
-1. **Siapkan Sendiri** — owner foto + paste link lokasi → simpan → masuk daftar "Siap Dikirim" → tombol **Kirim WA** memindahkan ke **Riwayat Terkirim**.
-2. **Via Pegawai** — pilih kontak pegawai sederhana (nama + nomor WA) → owner isi item yang harus disiapkan → kirim link tugas + PIN via WA atau salin.
+## Apa yang akan diubah
 
----
+### 1. Realtime dua arah
+- **Admin → Pegawai (baru):** trigger Postgres di `prep_tasks` & `prep_task_items` mengirim "ping" via `realtime.send()` ke topic `prep:<share_token>` setiap kali ada INSERT/UPDATE/DELETE. Payload hanya berisi `{kind, op}` (tidak ada data sensitif).
+- **Pegawai berlangganan:** halaman `/t/<token>` membuka channel broadcast `prep:<token>` setelah PIN benar; setiap ping memanggil ulang `prep_get_task` (PIN sudah disimpan in-memory) sehingga daftar item, status, dan waktu kedaluwarsa langsung diperbarui tanpa reload.
+- **Pegawai → Admin (sudah ada):** `TaskDetail` di `_authenticated.tugas.tsx` sudah berlangganan `postgres_changes` untuk `prep_submissions` & `prep_task_items` — tetap dipertahankan.
+- **Fallback:** re-fetch otomatis saat tab kembali aktif (`visibilitychange`) dan heartbeat 15 detik, agar jika websocket terputus pun data tidak basi lama.
 
-## Ringkasan Perubahan
+### 2. Konsistensi edit
+- **Item tugas:** kolom `updated_at` ditambahkan ke `prep_task_items` (+ trigger auto-update) supaya setiap perubahan punya versi.
+- **PIN diganti:** jika admin mengubah PIN saat pegawai sedang aktif, RPC berikutnya akan mengembalikan `bad_pin`; halaman pegawai menangkapnya dan otomatis melempar kembali ke layar verifikasi PIN dengan pesan "PIN diperbarui pemilik, masukkan PIN baru".
+- **Status tugas → selesai / kedaluwarsa:** ping realtime memicu refresh; jika `prep_get_task` mengembalikan `not_found`, halaman pegawai menampilkan layar "Tugas sudah ditutup pemilik" dan menonaktifkan semua tombol kirim.
+- **Stok gudang:** tidak diubah — pengurangan stok tetap dilakukan atomik di dalam `prep_submit` (sudah benar). Tidak ada double-deduct karena setiap submit menghasilkan baris `prep_submissions` baru dengan pengurangan satu kali.
 
-### A. Hapus Manajemen Pegawai
-- Hapus route `src/routes/_authenticated.manajemen-pegawai.tsx`.
-- Hapus item menu "Manajemen Pegawai" dari `src/components/AppSidebar.tsx`.
-- Drop tabel `public.employees` (saat ini 1 baris — akan hilang).
-- Bersihkan referensi `employees` di `audit`, `index`, `gudang`, dan tipe Supabase (regen otomatis via migration).
-- `link-pegawai.tsx` tetap dipertahankan sebagai halaman tugas (sudah pakai `prep_tasks`, tidak butuh tabel employees).
+### 3. Perlindungan konflik (Beri peringatan & blokir submit)
+- `prep_submit` menerima parameter baru `_expected_updated_at timestamptz` (opsional).
+- Sebelum mengurangi stok, RPC membandingkan dengan `prep_task_items.updated_at`. Jika item berubah setelah pegawai membuka layar → kembalikan `{ok:false, error:'item_changed', current_updated_at}`.
+- Halaman pegawai menangkap error tersebut: foto **tidak** terkirim, muncul banner kuning "Item ini baru saja diubah admin. Silakan periksa kembali sebelum kirim." dan tombol "Muat ulang item" yang memuat versi terbaru.
+- Saat ping realtime diterima dan item yang sedang dikerjakan pegawai (sudah memilih foto) berubah, banner yang sama muncul preemptive, jadi pegawai tahu sebelum klik kirim.
 
-### B. Tabel baru: kontak pegawai ringan
-- `public.staff_contacts` — `id`, `user_id`, `name`, `wa_phone`, `created_at`. RLS per-owner + GRANT lengkap.
+### 4. RLS / akses anon
+- Tambah policy `realtime.messages` agar role `anon` boleh `SELECT` (subscribe) hanya untuk topic dengan prefix `prep:`. Tidak ada policy `INSERT` untuk anon → pegawai tidak bisa kirim ping palsu.
+- Tidak menambah akses anon ke tabel `prep_*` (semua tetap lewat RPC SECURITY DEFINER + PIN).
 
-### C. Tabel baru: hasil "Siapkan Sendiri"
-- `public.self_prep_items` — `id`, `user_id`, `title`, `photo_path` (storage), `location_url`, `note`, `status` ('ready' | 'sent'), `sent_at`, `wa_target`, `created_at`.
-- Reuse bucket `prep-photos` untuk foto.
-- RLS per-owner + GRANT lengkap.
+## File yang disentuh
 
-### D. Halaman Penyiapan Produk baru
-Lokasi: refactor `src/routes/_authenticated.tugas.tsx` (atau buat ulang sebagai entry "Penyiapan Produk") menjadi 2 tab/section:
+### Migration (SQL)
+- Tambah kolom `prep_task_items.updated_at` + trigger `update_updated_at_column`.
+- Buat fungsi `prep_broadcast_change()` + trigger AFTER INSERT/UPDATE/DELETE di `prep_tasks` dan `prep_task_items`.
+- Ubah `prep_submit` agar menerima `_expected_updated_at` dan mengembalikan `item_changed` saat konflik (signature lama tetap kompatibel — parameter default NULL).
+- Tambah policy `anon SELECT` pada `realtime.messages` untuk topic `prep:%`.
 
-**Tab 1 — Siapkan Sendiri**
-- Form: input judul, upload foto (galeri/kamera HP via `<input type="file" accept="image/*">`), input link lokasi (paste), catatan, tombol **Simpan**.
-- List "Siap Dikirim" (status='ready'): kartu dengan thumbnail, judul, link lokasi (clickable), tombol **Kirim WA** (buka `https://wa.me/?text=...`), tombol hapus.
-- Saat **Kirim WA** ditekan: update status → 'sent', isi `sent_at`, item pindah ke section "Riwayat Terkirim".
-- Section "Riwayat Terkirim" (status='sent'): list ringkas, tombol hapus.
+### Front-end
+- `src/routes/t.$token.tsx`
+  - Berlangganan channel broadcast `prep:<token>` setelah authed.
+  - Pasang heartbeat 15 dtk + listener `visibilitychange`.
+  - Tangani `bad_pin` setelah authed → kembali ke layar PIN.
+  - Tangani `not_found` setelah authed → tampilkan layar "Tugas ditutup".
+  - Saat ping menunjukkan item yang sedang diisi telah berubah → set state `staleItemIds` → banner peringatan di `ItemCard`.
+  - Kirim `_expected_updated_at` saat submit, tangani `item_changed`.
+- `src/routes/_authenticated.tugas.tsx`: tidak diubah (sudah realtime). Hanya pastikan setiap `update` item / `prep_reset_pin` / ubah status memicu broadcast lewat trigger baru.
 
-**Tab 2 — Via Pegawai**
-- Daftar kontak pegawai sederhana (CRUD inline: tambah nama+WA, edit, hapus) — pakai `staff_contacts`.
-- Tombol "Buat tugas baru" → form: judul tugas, daftar item (nama, qty, satuan, catatan opsional) — ini reuse RPC `prep_create_task` yang sudah ada (membuat `prep_tasks` + `prep_task_items` + PIN + share_token).
-- Setelah dibuat: tampil kartu tugas dengan link `publicTaskUrl(token, pin)` + PIN, tombol **Kirim via WA** (ke nomor pegawai terpilih) dan **Salin**.
-
-### E. Routing
-- Sidebar: ganti item "Manajemen Pegawai" → tidak ada lagi. "Penyiapan Produk" tetap arah ke `/tugas`.
-- `/link-pegawai` tetap dapat diakses owner sebagai daftar tugas aktif (atau di-embed dalam tab "Via Pegawai"). Untuk MVP biarkan apa adanya.
-
----
-
-## Implementasi (urutan)
-
-1. **Migration** (1 migration):
-   - `DROP TABLE public.employees CASCADE;`
-   - `CREATE TABLE public.staff_contacts (...)` + GRANT + RLS + policy `auth.uid()=user_id`.
-   - `CREATE TABLE public.self_prep_items (...)` + GRANT + RLS + policy `auth.uid()=user_id`.
-
-2. **Hapus & bersihkan**:
-   - Hapus `src/routes/_authenticated.manajemen-pegawai.tsx`.
-   - Edit `AppSidebar.tsx` (hapus 1 item).
-   - Audit `src/routes/_authenticated.audit.tsx`, `_authenticated.index.tsx`, `_authenticated.gudang.tsx`: hapus query/section yang baca `employees`.
-
-3. **Komponen baru**:
-   - `src/components/SiapkanSendiriSection.tsx` — form + list ready + list sent.
-   - `src/components/ViaPegawaiSection.tsx` — CRUD kontak + bridge ke `prep_create_task`.
-   - Refactor `_authenticated.tugas.tsx` menjadi shell 2-tab yang merangkai dua section di atas.
-
-4. **WA helper**: pakai `src/lib/share-wa.ts` yang sudah ada (`waUrl(phone, text)`); fallback ke `https://wa.me/?text=` jika nomor kosong.
-
-5. **Verifikasi**:
-   - Build check otomatis.
-   - Buka `/tugas` via Playwright untuk memastikan tab tampil & form bisa dikirim.
-
----
-
-## Catatan Teknis
-- Data 1 baris di `employees` akan hilang (sesuai persetujuan "hapus total").
-- Tugas existing di `prep_tasks` (3 baris, 39 item) tidak terdampak — RPC dan halaman pegawai (`/t/:token`) tetap berjalan.
-- Tidak menyentuh `auth`, `storage`, atau bucket existing — hanya menambah row di `prep-photos`.
-- Validasi link lokasi: `https://` only, ≤2048 char (konsisten dengan validasi prep_submit yang sudah ada).
+## Tidak termasuk dalam ronde ini
+- Tidak menyentuh alur stok gudang (tidak ada laporan inkonsistensi konkret) — biarkan trigger yang ada bekerja.
+- Tidak mengubah fitur ecer/request submit via task (struktur sama, bisa diperluas terpisah jika perlu).
