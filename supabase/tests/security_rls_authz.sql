@@ -18,7 +18,7 @@ SET LOCAL client_min_messages = notice;
 CREATE OR REPLACE FUNCTION pg_temp.as_user(_uid uuid) RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
-  PERFORM set_config('role', 'authenticated', true);
+  EXECUTE 'SET LOCAL ROLE authenticated';
   PERFORM set_config('request.jwt.claims',
     json_build_object('sub', _uid::text, 'role', 'authenticated')::text, true);
 END $$;
@@ -26,12 +26,35 @@ END $$;
 CREATE OR REPLACE FUNCTION pg_temp.as_anon() RETURNS void
 LANGUAGE plpgsql AS $$
 BEGIN
-  PERFORM set_config('role', 'anon', true);
+  EXECUTE 'SET LOCAL ROLE anon';
   PERFORM set_config('request.jwt.claims', json_build_object('role','anon')::text, true);
 END $$;
 
 CREATE OR REPLACE FUNCTION pg_temp.as_postgres() RETURNS void
-LANGUAGE plpgsql AS $$ BEGIN RESET role; PERFORM set_config('request.jwt.claims','',true); END $$;
+LANGUAGE plpgsql AS $$ BEGIN EXECUTE 'RESET ROLE'; PERFORM set_config('request.jwt.claims','',true); END $$;
+
+-- Detect whether the current session can switch into authenticated/anon roles.
+-- Managed Supabase superuser-light accounts often can't, in which case the
+-- runtime RLS blocks below are skipped (they're covered by the integration test).
+CREATE OR REPLACE FUNCTION pg_temp.can_switch_roles() RETURNS boolean
+LANGUAGE plpgsql AS $$
+BEGIN
+  BEGIN
+    EXECUTE 'SET LOCAL ROLE authenticated';
+    EXECUTE 'RESET ROLE';
+    RETURN true;
+  EXCEPTION WHEN insufficient_privilege THEN
+    RETURN false;
+  END;
+END $$;
+
+DO $$
+BEGIN
+  PERFORM set_config('test.can_switch', pg_temp.can_switch_roles()::text, true);
+  IF NOT current_setting('test.can_switch')::boolean THEN
+    RAISE NOTICE 'SKIP runtime RLS blocks: session cannot SET ROLE authenticated/anon. Run the integration test (npm run test:security:integration) for HTTP-level RLS coverage.';
+  END IF;
+END $$;
 
 -- ---------------------------------------------------------------------
 -- 1) Every public table must have RLS enabled.
@@ -133,7 +156,7 @@ DECLARE v_a uuid := nullif(current_setting('test.user_a', true),'')::uuid;
           'push_subscriptions','staff_contacts'
         ];
 BEGIN
-  IF v_a IS NULL OR v_b IS NULL THEN RETURN; END IF;
+  IF v_a IS NULL OR v_b IS NULL OR NOT current_setting('test.can_switch')::boolean THEN RETURN; END IF;
   PERFORM pg_temp.as_user(v_a);
   FOREACH v_tbl IN ARRAY v_tables LOOP
     EXECUTE format(
@@ -154,7 +177,7 @@ DO $$
 DECLARE v_a uuid := nullif(current_setting('test.user_a', true),'')::uuid;
         v_b uuid := nullif(current_setting('test.user_b', true),'')::uuid;
 BEGIN
-  IF v_a IS NULL OR v_b IS NULL THEN RETURN; END IF;
+  IF v_a IS NULL OR v_b IS NULL OR NOT current_setting('test.can_switch')::boolean THEN RETURN; END IF;
   PERFORM pg_temp.as_user(v_a);
   BEGIN
     INSERT INTO public.customers(user_id, name) VALUES (v_b, 'rls-attack-from-A');
@@ -181,6 +204,7 @@ DECLARE v_tbl text; v_n bigint;
           'email_send_log','user_roles','device_otp_challenges'
         ];
 BEGIN
+  IF NOT current_setting('test.can_switch')::boolean THEN RETURN; END IF;
   PERFORM pg_temp.as_anon();
   FOREACH v_tbl IN ARRAY v_tables LOOP
     BEGIN
@@ -205,7 +229,7 @@ DECLARE v_a uuid := nullif(current_setting('test.user_a', true),'')::uuid;
         v_b uuid := nullif(current_setting('test.user_b', true),'')::uuid;
         v_res boolean;
 BEGIN
-  IF v_a IS NULL OR v_b IS NULL THEN RETURN; END IF;
+  IF v_a IS NULL OR v_b IS NULL OR NOT current_setting('test.can_switch')::boolean THEN RETURN; END IF;
   PERFORM pg_temp.as_user(v_a);
   v_res := public.has_role(v_b, 'admin');
   IF v_res THEN
