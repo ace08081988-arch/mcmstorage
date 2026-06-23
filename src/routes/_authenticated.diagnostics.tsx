@@ -31,6 +31,97 @@ function stripRange(spec: string): string {
 
 type Check = { label: string; ok: boolean; detail: string };
 
+async function runBrowserChecks(): Promise<Check[]> {
+  const out: Check[] = [];
+  if (typeof window === "undefined") return out;
+
+  const isSecure = window.isSecureContext;
+  out.push({
+    label: "Secure context (HTTPS)",
+    ok: isSecure,
+    detail: isSecure
+      ? "Halaman dimuat lewat HTTPS — clipboard & share API tersedia."
+      : "Bukan HTTPS. Banyak browser memblokir clipboard & Web Share di konteks tidak aman.",
+  });
+
+  const inIframe = (() => { try { return window.self !== window.top; } catch { return true; } })();
+  out.push({
+    label: "Konteks iframe",
+    ok: !inIframe,
+    detail: inIframe
+      ? "Berjalan di dalam iframe (mis. pratinjau Lovable). Browser bisa memblokir popup, clipboard, atau Web Share tanpa atribut allow."
+      : "Top-level — tidak ada batasan iframe.",
+  });
+
+  const hasShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
+  out.push({
+    label: "Web Share API (navigator.share)",
+    ok: hasShare,
+    detail: hasShare
+      ? "Tersedia — tombol Bagikan dapat memunculkan share sheet sistem."
+      : "Tidak tersedia. Tombol Bagikan akan fallback ke 'Buka WA Web'.",
+  });
+
+  const hasCanShare = typeof navigator !== "undefined" && typeof navigator.canShare === "function";
+  let canShareFiles = false;
+  if (hasCanShare) {
+    try {
+      const f = new File(["x"], "test.txt", { type: "text/plain" });
+      canShareFiles = navigator.canShare({ files: [f] });
+    } catch { canShareFiles = false; }
+  }
+  out.push({
+    label: "Web Share dengan lampiran file",
+    ok: canShareFiles,
+    detail: canShareFiles
+      ? "Browser mengizinkan share file — foto bisa ikut terkirim."
+      : "Browser tidak mengizinkan share file. Foto perlu dilampirkan manual di WhatsApp.",
+  });
+
+  const hasClipboard = typeof navigator !== "undefined" && !!navigator.clipboard?.writeText;
+  out.push({
+    label: "Clipboard API (navigator.clipboard)",
+    ok: hasClipboard,
+    detail: hasClipboard
+      ? "Tersedia — salin otomatis didukung."
+      : "Tidak tersedia. Akan fallback ke document.execCommand atau salin manual.",
+  });
+
+  let permState = "tak diketahui";
+  let permOk = true;
+  try {
+    const p = navigator.permissions as Permissions | undefined;
+    if (p && typeof p.query === "function") {
+      const r = await p.query({ name: "clipboard-write" as PermissionName });
+      permState = r.state;
+      permOk = r.state !== "denied";
+    }
+  } catch {
+    permState = "tidak didukung";
+  }
+  out.push({
+    label: "Izin clipboard-write",
+    ok: permOk,
+    detail: `Status: ${permState}.` + (permState === "denied" ? " Pengguna perlu mengizinkan clipboard di pengaturan situs." : ""),
+  });
+
+  const hasExec = typeof document !== "undefined" && typeof document.execCommand === "function";
+  out.push({
+    label: "Fallback execCommand('copy')",
+    ok: hasExec,
+    detail: hasExec ? "Tersedia sebagai fallback bila Clipboard API gagal." : "Tidak tersedia — tidak ada fallback salin.",
+  });
+
+  const ua = typeof navigator !== "undefined" ? navigator.userAgent : "";
+  out.push({
+    label: "User agent",
+    ok: true,
+    detail: ua || "(tidak tersedia)",
+  });
+
+  return out;
+}
+
 function runChecks(): Check[] {
   const out: Check[] = [];
   const start = reactStartPkg as Pkg;
