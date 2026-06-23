@@ -246,6 +246,13 @@ function TugasPage() {
             >
               <MessageCircle className="h-4 w-4" />
             </button>
+            <button
+              onClick={() => resetPinAttempts(t.share_token, t.title)}
+              title="Reset percobaan PIN (pemilik / admin)"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-400"
+            >
+              <RotateCcw className="h-4 w-4" />
+            </button>
             <button onClick={() => removeTask(t.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive" title="Hapus tugas"><Trash2 className="h-4 w-4" /></button>
           </div>
         ))}
