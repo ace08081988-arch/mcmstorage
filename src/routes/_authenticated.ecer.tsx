@@ -937,12 +937,17 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" onClick={() => cameraRef.current?.click()}><Camera className="h-4 w-4" /> Kamera</Button>
-              <Button variant="outline" onClick={() => galleryRef.current?.click()}><ImageIcon className="h-4 w-4" /> Galeri</Button>
+              <Button type="button" variant="outline" onClick={() => cameraRef.current?.click()}><Camera className="h-4 w-4" /> Kamera</Button>
+              <Button type="button" variant="outline" onClick={() => galleryRef.current?.click()}><ImageIcon className="h-4 w-4" /> Galeri</Button>
             </div>
           )}
-          <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
-          <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+          {/* Use sr-only positioning instead of display:none — some mobile browsers
+              (notably iOS Safari & in-app webviews) ignore programmatic .click() on
+              hidden inputs, leaving the Kamera/Galeri buttons unresponsive. */}
+          <input ref={cameraRef} type="file" accept="image/*" capture="environment"
+            className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
+          <input ref={galleryRef} type="file" accept="image/*"
+            className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
 
           <div>
             <Label className="text-xs">Berat aktual ({title.unit_label}) <span className="text-destructive">*</span></Label>
