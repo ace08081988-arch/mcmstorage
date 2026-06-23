@@ -293,6 +293,7 @@ function ChatRoomPage() {
       </div>
 
       <form onSubmit={onSubmit} className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur">
+        <ChatProGate />
         <div className="flex items-end gap-2">
           <Textarea
             value={body}
@@ -306,8 +307,9 @@ function ChatRoomPage() {
             placeholder="Tulis pesan…"
             rows={1}
             className="max-h-32 min-h-9 resize-none"
+            disabled={chatBlocked}
           />
-          <Button type="submit" size="icon" disabled={!body.trim() || send.isPending} aria-label="Kirim">
+          <Button type="submit" size="icon" disabled={!body.trim() || send.isPending || chatBlocked} aria-label="Kirim">
             {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
