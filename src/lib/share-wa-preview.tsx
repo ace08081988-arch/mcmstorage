@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Loader2, Send, X, Image as ImageIcon } from "lucide-react";
+import { Loader2, Send, X, Image as ImageIcon, CheckCircle2, AlertTriangle, RefreshCw } from "lucide-react";
 import { shareToWhatsApp, notifyShareResult, type ShareInput, type ShareResult } from "@/lib/share-wa";
 
 export type PreviewShareInput = ShareInput & {
@@ -36,6 +36,7 @@ export function WhatsAppPreviewHost() {
   const [current, setCurrent] = useState<Req | null>(null);
   const [sending, setSending] = useState(false);
   const [filePreviewUrls, setFilePreviewUrls] = useState<string[]>([]);
+  const [lastResult, setLastResult] = useState<ShareResult | null>(null);
 
   useEffect(() => {
     openRequest = (req) => setCurrent(req);
@@ -45,6 +46,9 @@ export function WhatsAppPreviewHost() {
     }
     return () => { openRequest = null; };
   }, []);
+
+  // Reset inline status whenever a new request opens
+  useEffect(() => { setLastResult(null); }, [current]);
 
   // Generate object URLs untuk files yang sudah disediakan upfront
   useEffect(() => {
@@ -86,15 +90,56 @@ export function WhatsAppPreviewHost() {
 
   const confirm = async () => {
     setSending(true);
+    setLastResult(null);
     try {
       let files = input.files;
       if (!files && input.resolveFiles) {
         files = await input.resolveFiles();
       }
       const res = await shareToWhatsApp({ ...input, files });
-      close(res);
+      // Always surface inline status. Auto-close only on confirmed success.
+      notifyShareResult(res);
+      if (res.status === "shared") {
+        const req = current;
+        setCurrent(null);
+        setSending(false);
+        req?.resolve(res);
+        return;
+      }
+      setLastResult(res);
+      setSending(false);
     } catch (e) {
-      close({ status: "failed", error: (e as Error)?.message ?? "Gagal", withFiles: !!input.files });
+      const failed: ShareResult = {
+        status: "failed",
+        error: (e as Error)?.message ?? "Gagal",
+        withFiles: !!input.files,
+      };
+      notifyShareResult(failed);
+      setLastResult(failed);
+      setSending(false);
+    }
+  };
+
+  const statusMessage = (r: ShareResult): { tone: "success" | "warn" | "error"; text: string } => {
+    switch (r.status) {
+      case "shared":
+        return { tone: "success", text: "Terkirim ke WhatsApp." };
+      case "cancelled":
+        return {
+          tone: "warn",
+          text: r.withFiles
+            ? "Dibatalkan — foto belum terkirim. Coba lagi dan pilih WhatsApp dari share sheet."
+            : "Dibatalkan — pesan belum dikirim.",
+        };
+      case "fallback":
+        return {
+          tone: "warn",
+          text: r.withFiles
+            ? "WhatsApp tidak menerima foto otomatis. Teks sudah disalin — tempel di WhatsApp lalu lampirkan foto manual."
+            : "WhatsApp dibuka di tab baru.",
+        };
+      case "failed":
+        return { tone: "error", text: `Gagal: ${r.error}` };
     }
   };
 
@@ -160,6 +205,23 @@ export function WhatsAppPreviewHost() {
           <pre className="max-h-40 overflow-auto whitespace-pre-wrap rounded-md border bg-muted/40 p-2 text-[12px] leading-relaxed">{fullText}</pre>
         </div>
 
+        {lastResult && (() => {
+          const s = statusMessage(lastResult);
+          const toneCls =
+            s.tone === "success"
+              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+              : s.tone === "warn"
+              ? "border-amber-500/30 bg-amber-500/10 text-amber-800 dark:text-amber-200"
+              : "border-destructive/30 bg-destructive/10 text-destructive";
+          const Icon = s.tone === "success" ? CheckCircle2 : AlertTriangle;
+          return (
+            <div className={`mb-3 flex items-start gap-2 rounded-md border px-2.5 py-2 text-[11px] ${toneCls}`} role="status">
+              <Icon className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+              <span className="flex-1 leading-relaxed">{s.text}</span>
+            </div>
+          );
+        })()}
+
         <div className="flex justify-end gap-2">
           <button
             type="button"
@@ -167,7 +229,7 @@ export function WhatsAppPreviewHost() {
             disabled={sending}
             className="inline-flex h-9 items-center rounded-md border px-3 text-xs disabled:opacity-50"
           >
-            Batal
+            {lastResult && lastResult.status !== "shared" ? "Tutup" : "Batal"}
           </button>
           <button
             type="button"
@@ -175,8 +237,20 @@ export function WhatsAppPreviewHost() {
             disabled={sending}
             className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white disabled:opacity-60"
           >
-            {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Send className="h-3.5 w-3.5" />}
-            {sending ? "Menyiapkan…" : hasPhoto ? "Pilih WhatsApp" : "Lanjut Kirim WA"}
+            {sending ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : lastResult ? (
+              <RefreshCw className="h-3.5 w-3.5" />
+            ) : (
+              <Send className="h-3.5 w-3.5" />
+            )}
+            {sending
+              ? "Menyiapkan…"
+              : lastResult
+              ? "Coba lagi"
+              : hasPhoto
+              ? "Pilih WhatsApp"
+              : "Lanjut Kirim WA"}
           </button>
         </div>
       </div>
