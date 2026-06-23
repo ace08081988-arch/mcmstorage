@@ -9,6 +9,7 @@ export const Route = createFileRoute("/_authenticated/audit")({
     meta: [
       { title: "Audit Rute · MCM Storage" },
       { name: "description", content: "Laporan otomatis status tiap menu/rute aplikasi pada Mode Ringkas & Mode Normal." },
+      { name: "robots", content: "noindex,nofollow" },
     ],
   }),
   component: AuditPage,
