@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { toast } from "sonner";
-import { Copy, MessageCircle, X, KeyRound } from "lucide-react";
+import { useEffect, useRef } from "react";
+import { Copy, MessageCircle, X, KeyRound, Eye, EyeOff } from "lucide-react";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 /**
@@ -21,6 +22,43 @@ export function SharePinDialog({
 }) {
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
+  // PIN dimask secara default. Setelah pemilik mengetik PIN ≥ 4 digit,
+  // tombol "Tampilkan" akan membuka PIN selama beberapa detik lalu
+  // otomatis kembali tersembunyi — aman tapi mudah dicek sebelum kirim.
+  const [reveal, setReveal] = useState(false);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const timerRef = useRef<number | null>(null);
+  const REVEAL_SECONDS = 5;
+
+  useEffect(() => {
+    return () => {
+      if (timerRef.current) window.clearInterval(timerRef.current);
+    };
+  }, []);
+
+  function startReveal() {
+    if (pin.length < 4) {
+      toast.error("Isi PIN minimal 4 digit dulu");
+      return;
+    }
+    setReveal(true);
+    setSecondsLeft(REVEAL_SECONDS);
+    if (timerRef.current) window.clearInterval(timerRef.current);
+    timerRef.current = window.setInterval(() => {
+      setSecondsLeft((s) => {
+        if (s <= 1) {
+          if (timerRef.current) window.clearInterval(timerRef.current);
+          timerRef.current = null;
+          setReveal(false);
+          return 0;
+        }
+        return s - 1;
+      });
+    }, 1000);
+  }
+
+  const maskedPin = pin ? "•".repeat(pin.length) : "";
+  const displayPin = reveal ? pin : maskedPin;
 
   const message = [
     `Halo, tolong siapkan barang berikut:`,
@@ -79,16 +117,40 @@ export function SharePinDialog({
             <label className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground">
               <KeyRound className="h-3 w-3" /> PIN tugas (4–8 digit)
             </label>
-            <input
-              autoFocus
-              inputMode="numeric"
-              value={pin}
-              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
-              placeholder="••••"
-              className="h-11 w-full rounded-md border bg-background px-3 text-center text-xl tracking-[0.4em] tabular-nums"
-            />
+            <div className="relative">
+              <input
+                autoFocus
+                inputMode="numeric"
+                type={reveal ? "text" : "password"}
+                value={pin}
+                onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 8))}
+                placeholder="••••"
+                className="h-11 w-full rounded-md border bg-background px-3 pr-20 text-center text-xl tracking-[0.4em] tabular-nums"
+              />
+              <button
+                type="button"
+                onClick={() => (reveal ? setReveal(false) : startReveal())}
+                className="absolute right-1 top-1/2 inline-flex h-9 -translate-y-1/2 items-center gap-1 rounded-md px-2 text-[11px] text-muted-foreground hover:bg-muted"
+                aria-label={reveal ? "Sembunyikan PIN" : "Tampilkan PIN"}
+              >
+                {reveal ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
+                {reveal ? `${secondsLeft}d` : "Lihat"}
+              </button>
+            </div>
+            {pin && (
+              <div className="mt-1 flex items-center justify-between text-[10px]">
+                <span className="font-mono tracking-[0.3em] text-muted-foreground">
+                  {displayPin}
+                </span>
+                {reveal && (
+                  <span className="text-amber-600 dark:text-amber-400">
+                    Tersembunyi otomatis dalam {secondsLeft} detik
+                  </span>
+                )}
+              </div>
+            )}
             <div className="mt-1 text-[10px] text-muted-foreground">
-              PIN tidak disimpan ulang — hanya disertakan dalam pesan yang Anda kirim. Lupa PIN? Pakai menu "Link pegawai" untuk reset.
+              PIN dimask demi keamanan. Tekan "Lihat" untuk memeriksa sebentar sebelum dikirim. PIN tidak disimpan ulang — hanya disertakan dalam pesan yang Anda kirim. Lupa PIN? Pakai menu "Link pegawai" untuk reset.
             </div>
           </div>
 
