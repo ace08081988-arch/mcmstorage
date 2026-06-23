@@ -1472,6 +1472,27 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
   const url = publicTaskUrl(info.token);
   const message = `Tolong siapkan barang berikut. Buka link, masukkan PIN, foto barangnya & kirim:\n\n${info.title}\n${url}\nPIN: ${info.pin}`;
   function copy(t: string) { navigator.clipboard?.writeText(t).then(() => toast.success("Disalin")); }
+  const waUrl = buildWhatsAppUrl(message);
+  async function onShare(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    try {
+      const res = await shareToWhatsApp({ text: message, title: info.title, url });
+      notifyShareResult(res);
+    } catch (err) {
+      toast.error(`Gagal membagikan: ${(err as Error)?.message ?? String(err)}`);
+    }
+  }
+  function onOpenWa(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    const win = window.open(waUrl, "_blank", "noopener,noreferrer");
+    if (!win) {
+      // Popup blocked (mis. dalam iframe pratinjau) — buka di tab teratas.
+      try { window.top!.location.href = waUrl; }
+      catch { window.location.href = waUrl; }
+    }
+  }
   return (
     <Modal title="Bagikan ke pegawai" onClose={onClose}>
       <div className="space-y-3 text-sm">
@@ -1490,11 +1511,11 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2 pt-2">
-          <button onClick={() => shareToWhatsApp({ text: message, title: info.title, url })}
+          <button type="button" onClick={onShare}
             className="inline-flex h-10 items-center justify-center gap-1 rounded-md bg-[#25D366] text-sm font-semibold text-white">
             <MessageCircle className="h-4 w-4" /> Bagikan
           </button>
-          <a href={buildWhatsAppUrl(message)} target="_blank" rel="noreferrer"
+          <a href={waUrl} target="_blank" rel="noreferrer" onClick={onOpenWa}
             className="inline-flex h-10 items-center justify-center gap-1 rounded-md border text-sm">
             <ExternalLink className="h-4 w-4" /> Buka WA Web
           </a>
