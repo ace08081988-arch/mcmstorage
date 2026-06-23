@@ -334,14 +334,54 @@ function Index() {
     const BASE_DELAY = 400; // ms — backoff: 400, 800, 1600 (+jitter)
 
     const loadOnce = async (): Promise<{ ok: boolean; lastError?: unknown }> => {
-      const { data: userRes } = await supabase.auth.getUser();
+      // Per-attempt timeout: tanpa ini, request yang menggantung (mis. WS
+      // putus sesaat, network freeze) bikin Promise tidak pernah resolve dan
+      // UI nyangkut di "Memuat…" tanpa pernah memicu retry.
+      const ATTEMPT_TIMEOUT = 6000;
+      const withTimeout = <T,>(p: Promise<T>, label: string): Promise<T> =>
+        new Promise<T>((resolve, reject) => {
+          const t = setTimeout(
+            () => reject(new Error(`Timeout ${ATTEMPT_TIMEOUT}ms saat ${label}`)),
+            ATTEMPT_TIMEOUT,
+          );
+          Promise.resolve(p).then(
+            (v) => {
+              clearTimeout(t);
+              resolve(v);
+            },
+            (e) => {
+              clearTimeout(t);
+              reject(e);
+            },
+          );
+        });
+
+      let userRes: Awaited<ReturnType<typeof supabase.auth.getUser>>["data"];
+      try {
+        const res = await withTimeout(supabase.auth.getUser(), "auth.getUser");
+        userRes = res.data;
+      } catch (e) {
+        return { ok: false, lastError: e };
+      }
       const uid = userRes.user?.id;
       if (!uid) return { ok: true }; // tidak ada sesi → bukan kegagalan retry
-      const { data, error } = await supabase
-        .from("user_storage")
-        .select("items, categories")
-        .eq("user_id", uid)
-        .maybeSingle();
+      type QueryRes = { data: { items: unknown; categories: unknown } | null; error: unknown };
+      let data: QueryRes["data"] = null;
+      let error: unknown = null;
+      try {
+        const res = (await withTimeout(
+          supabase
+            .from("user_storage")
+            .select("items, categories")
+            .eq("user_id", uid)
+            .maybeSingle() as unknown as Promise<QueryRes>,
+          "user_storage.select",
+        )) as QueryRes;
+        data = res.data;
+        error = res.error;
+      } catch (e) {
+        return { ok: false, lastError: e };
+      }
       if (error) return { ok: false, lastError: error };
       const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
       const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
