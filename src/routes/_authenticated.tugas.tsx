@@ -10,6 +10,7 @@ import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 import { SiapkanSendiriSection } from "@/components/SiapkanSendiriSection";
 import { StaffContactsPanel } from "@/components/StaffContactsPanel";
+import { SharePinDialog } from "@/components/tugas/SharePinDialog";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
