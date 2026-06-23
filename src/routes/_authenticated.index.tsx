@@ -465,8 +465,23 @@ function Index() {
     };
   }, [loadRetryToken]);
 
-  // Watchdog dihapus — alur retry (3x backoff) + state loadFailed sudah
-  // memastikan UI tidak menggantung di "Memuat…" tanpa jalan keluar.
+  useEffect(() => {
+    if (hydrated) return;
+    const t = window.setTimeout(() => {
+      setLoadErrorDetail({
+        message: "Timeout 25 detik saat memuat data. Proses auth atau user_storage tidak selesai.",
+        code: "LOAD_WATCHDOG_TIMEOUT",
+        raw: JSON.stringify({
+          loadAttempt,
+          loadRetryToken,
+          at: new Date().toISOString(),
+        }),
+      });
+      setLoadFailed(true);
+      setHydrated(true);
+    }, 25_000);
+    return () => window.clearTimeout(t);
+  }, [hydrated, loadAttempt, loadRetryToken]);
 
   useEffect(() => {
     if (!hydrated || loadFailed) return;
