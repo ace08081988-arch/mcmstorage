@@ -1,0 +1,1 @@
+DROP POLICY IF EXISTS "prep_topic_anon_read" ON realtime.messages;
