@@ -96,12 +96,21 @@ function main() {
     // Lewati rute dinamis ($param/$splat) — tidak harus per-URL di sitemap;
     // entri dinamis (jika ada) di-generate dari loader.
     const isDynamic = /\$/.test(url);
+    // Rute di bawah layout _authenticated bersifat auth-gated: tidak boleh
+    // terindeks dan tidak masuk sitemap publik.
+    const isAuthGated = /\/_authenticated(\/|$)/.test(id);
     const inSitemap = sitemapPaths.has(url);
     const noindex = hasNoindex(src);
     const allowlisted = ALLOWLIST_NO_SITEMAP.has(url);
 
     let status;
     if (isDynamic) status = "DYNAMIC (skip)";
+    else if (isAuthGated && inSitemap) {
+      status = "CONFLICT";
+      errors.push(
+        `  ${url}  — rute auth-gated tidak boleh masuk sitemap (${relative(ROOT, file)})`,
+      );
+    } else if (isAuthGated) status = "auth-gated";
     else if (inSitemap && noindex) {
       status = "CONFLICT";
       errors.push(
