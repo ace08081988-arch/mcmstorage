@@ -139,12 +139,28 @@ export const Route = createFileRoute("/_authenticated")({
     // Lewati pengecekan device pada halaman verifikasi itu sendiri
     if (location.pathname.startsWith("/device-verify")) return;
     const hash = await getClientDeviceFingerprint();
+    const uid = data.session.user.id;
+    const cacheKey = `mcm_device_trust_check_${uid}_${hash}`;
+    // Cache hasil pengecekan selama 10 menit agar beforeLoad tidak memanggil
+    // server fn pada setiap perubahan navigasi (hash, search params, dll).
     let trusted = false;
+    let cached: { trusted: boolean; at: number } | null = null;
     try {
-      const res = await isDeviceTrusted({ data: { deviceHash: hash } });
-      trusted = !!res?.trusted;
-    } catch {
-      trusted = false;
+      const raw = sessionStorage.getItem(cacheKey);
+      if (raw) cached = JSON.parse(raw);
+    } catch {}
+    if (cached && cached.trusted && Date.now() - cached.at < 10 * 60 * 1000) {
+      trusted = true;
+    } else {
+      try {
+        const res = await isDeviceTrusted({ data: { deviceHash: hash } });
+        trusted = !!res?.trusted;
+      } catch {
+        trusted = false;
+      }
+      try {
+        sessionStorage.setItem(cacheKey, JSON.stringify({ trusted, at: Date.now() }));
+      } catch {}
     }
     if (!trusted) {
       throw redirect({
