@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { PackagePlus, Search, X } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
@@ -79,13 +80,35 @@ export function ReadyRequestSection() {
       )}
 
       {rows === null ? (
-        <div className="rounded-md border bg-card p-4 text-center text-xs text-muted-foreground">Memuat…</div>
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-busy="true" aria-label="Memuat paket request">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex flex-col gap-1.5 rounded-md border bg-card p-2.5">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-4 w-12 rounded" />
+              </div>
+              <Skeleton className="h-2.5 w-4/5" />
+              <Skeleton className="h-2.5 w-3/5" />
+            </div>
+          ))}
+        </div>
       ) : rows.length === 0 ? (
-        <Link to="/request" search={{ title: undefined, highlight: undefined }} className="flex items-center justify-center gap-2 rounded-md border border-dashed bg-card p-4 text-xs text-muted-foreground hover:border-primary/40">
-          <PackagePlus className="h-4 w-4" /> Belum ada judul request. Klik untuk buat.
+        <Link
+          to="/request"
+          search={{ title: undefined, highlight: undefined }}
+          className="flex flex-col items-center gap-1.5 rounded-md border border-dashed bg-card p-5 text-center text-xs text-muted-foreground hover:border-primary/40 hover:bg-accent"
+        >
+          <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary/10">
+            <PackagePlus className="h-4 w-4 text-primary" />
+          </div>
+          <span className="font-medium text-foreground">Belum ada judul request</span>
+          <span>Tap untuk membuat paket request pertama.</span>
         </Link>
       ) : filtered && filtered.length === 0 ? (
-        <div className="rounded-md border bg-card p-3 text-center text-xs text-muted-foreground">Tidak ada hasil.</div>
+        <div className="flex flex-col items-center gap-1 rounded-md border border-dashed bg-card p-4 text-center text-xs text-muted-foreground">
+          <Search className="h-4 w-4 opacity-60" />
+          <span>Tidak ada hasil untuk pencarian itu.</span>
+        </div>
       ) : (
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {(filtered ?? []).map((r) => (
