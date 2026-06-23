@@ -39,6 +39,34 @@ type Tool = "select" | "draw" | "text" | "emoji" | "arrow" | "rect" | "circle";
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
+function WaitingForSize({ onForce }: { onForce: () => void }) {
+  const [showForce, setShowForce] = useState(false);
+  useEffect(() => {
+    const t = setTimeout(() => setShowForce(true), 1500);
+    return () => clearTimeout(t);
+  }, []);
+  return (
+    <div className="flex max-w-xs flex-col items-center gap-2 text-center text-xs text-white/85">
+      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+      <span>Menyiapkan tampilan editor…</span>
+      {showForce && (
+        <>
+          <p className="text-[11px] text-white/70">
+            Tampilan belum siap. Coba muat ulang tampilan editor.
+          </p>
+          <button
+            type="button"
+            onClick={onForce}
+            className="rounded-md border border-white/40 px-3 py-1 text-xs text-white hover:bg-white/10"
+          >
+            Muat ulang tampilan
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
+
 export type PhotoEditorProps = {
   src: string;
   onCancel: () => void;
