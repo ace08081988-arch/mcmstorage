@@ -162,6 +162,13 @@ function PublicPrepPage() {
     // browser tidak membawa sisa percobaan/lock.
     resetAttemptsFully();
     setTask(res.task!); setItems(res.items ?? []); setAuthed(true); pinRef.current = p;
+    toast.success("PIN berhasil — selamat datang", {
+      description: "Percobaan PIN telah di-reset.",
+    });
+    // Pastikan posisi scroll kembali ke atas halaman tugas.
+    if (typeof window !== "undefined") {
+      try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
+    }
     return true;
   }
 
