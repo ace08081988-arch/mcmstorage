@@ -24,7 +24,7 @@ import { ProductEditDrawer } from "@/components/ProductEditDrawer";
 import { confirm } from "@/lib/confirm";
 import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
-import { ReadyEcerSection } from "@/components/ReadyEcerSection";
+import { EcerSection } from "@/components/EcerSection";
 import { ReadyRequestSection } from "@/components/ReadyRequestSection";
 
 export const Route = createFileRoute("/_authenticated/")({
@@ -38,6 +38,14 @@ export const Route = createFileRoute("/_authenticated/")({
       { property: "og:url", content: "https://mcmstorage.lovable.app/" },
     ],
     links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/" }],
+  }),
+  // Section "Penyiapan Ecer" yang sekarang menyatu di Beranda
+  // memakai search params berikut untuk deep-link & sinkron URL.
+  validateSearch: (s: Record<string, unknown>) => ({
+    item: typeof s.item === "string" ? s.item : undefined,
+    title: typeof s.title === "string" ? s.title : undefined,
+    highlight: typeof s.highlight === "string" ? s.highlight : undefined,
+    edit: typeof s.edit === "string" ? s.edit : undefined,
   }),
   component: Index,
 });
