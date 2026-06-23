@@ -30,7 +30,13 @@ function PublicPrepPage() {
   const [items, setItems] = useState<PrepItemRow[]>([]);
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
-  const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found">(null);
+  const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found" | "expired" | "closed">(null);
+  // Pesan error terakhir dari proses verifikasi PIN; ditampilkan inline di kartu PIN.
+  const [lastError, setLastError] = useState<null | {
+    kind: "bad_pin" | "rate_limited" | "not_found" | "expired" | "closed" | "network";
+    message: string;
+    detail?: string;
+  }>(null);
   const [staleItemIds, setStaleItemIds] = useState<Record<string, true>>({});
   const itemsRef = useRef<PrepItemRow[]>([]);
   useEffect(() => { itemsRef.current = items; }, [items]);
@@ -185,14 +191,24 @@ function PublicPrepPage() {
     setLoading(true);
     const { data, error } = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: p });
     setLoading(false);
-    if (error) { toast.error("Gagal: " + error.message); return false; }
-    const res = data as { ok: boolean; error?: string; retry_after?: number; task?: PrepTaskRow; items?: PrepItemRow[] };
+    if (error) {
+      const msg = "Tidak bisa menghubungi server. Periksa koneksi internet lalu coba lagi.";
+      setLastError({ kind: "network", message: msg, detail: error.message });
+      toast.error(msg);
+      return false;
+    }
+    const res = data as { ok: boolean; error?: string; retry_after?: number; expires_at?: string; status?: string; task?: PrepTaskRow; items?: PrepItemRow[] };
     if (!res?.ok) {
       if (res?.error === "rate_limited") {
         const secs = Math.max(1, res.retry_after ?? 600);
-        setLockedUntil(Date.now() + secs * 1000);
-        writeAttemptState({ attempts: MAX_ATTEMPTS, lockedUntil: Date.now() + secs * 1000 });
-        toast.error(`Terlalu banyak percobaan. Coba lagi dalam ${Math.ceil(secs / 60)} menit.`);
+        const until = Date.now() + secs * 1000;
+        setLockedUntil(until);
+        writeAttemptState({ attempts: MAX_ATTEMPTS, lockedUntil: until });
+        const mins = Math.floor(secs / 60);
+        const remain = mins >= 1 ? `${mins} menit ${secs % 60} detik` : `${secs} detik`;
+        const msg = `Akses terkunci oleh server. Coba lagi dalam ${remain}.`;
+        setLastError({ kind: "rate_limited", message: msg });
+        toast.error(msg);
       } else {
         if (res?.error === "bad_pin") {
           const next = attempts + 1;
@@ -201,19 +217,45 @@ function PublicPrepPage() {
             setAttempts(next);
             setLockedUntil(until);
             writeAttemptState({ attempts: next, lockedUntil: until });
-            toast.error(`PIN salah. Input dikunci ${LOCK_SECONDS} detik.`);
+            const msg = `PIN salah. Anda sudah ${MAX_ATTEMPTS} kali keliru — input dikunci ${LOCK_SECONDS} detik.`;
+            setLastError({ kind: "bad_pin", message: msg });
+            toast.error(msg);
           } else {
             setAttempts(next);
             writeAttemptState({ attempts: next, lockedUntil: null });
-            toast.error(`PIN salah. Sisa percobaan: ${MAX_ATTEMPTS - next}`);
+            const left = MAX_ATTEMPTS - next;
+            const msg = `PIN salah. Sisa percobaan: ${left} dari ${MAX_ATTEMPTS}.`;
+            setLastError({ kind: "bad_pin", message: msg });
+            toast.error(msg);
           }
           setPin("");
+        } else if (res?.error === "expired") {
+          const expAt = res.expires_at ? new Date(res.expires_at) : null;
+          const detail = expAt
+            ? `Kedaluwarsa pada ${expAt.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}.`
+            : undefined;
+          const msg = "Link tugas sudah kedaluwarsa. Minta pemilik mengirim link / PIN baru.";
+          setLastError({ kind: "expired", message: msg, detail });
+          toast.error(msg);
+        } else if (res?.error === "closed") {
+          const msg = res.status === "cancelled"
+            ? "Tugas ini sudah dibatalkan pemilik."
+            : "Tugas ini sudah ditutup pemilik (sudah selesai).";
+          setLastError({ kind: "closed", message: msg });
+          toast.error(msg);
+        } else if (res?.error === "not_found") {
+          const msg = "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik.";
+          setLastError({ kind: "not_found", message: msg });
+          toast.error(msg);
         } else {
-          toast.error("Tugas tidak ditemukan / kedaluwarsa");
+          const msg = "Tugas tidak bisa dibuka. Coba lagi atau hubungi pemilik.";
+          setLastError({ kind: "not_found", message: msg, detail: res?.error });
+          toast.error(msg);
         }
       }
       return false;
     }
+    setLastError(null);
     // PIN benar → reset penuh, termasuk localStorage, sehingga refresh
     // browser tidak membawa sisa percobaan/lock.
     resetAttemptsFully();
@@ -262,6 +304,10 @@ function PublicPrepPage() {
     if (!res?.ok) {
       if (res?.error === "bad_pin") {
         setClosedReason("pin_changed");
+      } else if (res?.error === "expired") {
+        setClosedReason("expired");
+      } else if (res?.error === "closed") {
+        setClosedReason("closed");
       } else if (res?.error === "not_found") {
         setClosedReason("not_found");
       }
