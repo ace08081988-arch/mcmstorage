@@ -80,6 +80,7 @@ function HutangPiutangPage() {
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [payFor, setPayFor] = useState<Debt | null>(null);
+  const [editFor, setEditFor] = useState<Debt | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
@@ -310,6 +311,16 @@ function HutangPiutangPage() {
                               Tagih via WA
                             </Button>
                           )}
+                          {d.source === "manual" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditFor(d)}
+                              title="Edit catatan"
+                            >
+                              Edit
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="ghost"
@@ -353,6 +364,15 @@ function HutangPiutangPage() {
             : 0
         }
         onClose={() => setPayFor(null)}
+        onSaved={refresh}
+      />
+
+      <EditDebtDialog
+        debt={editFor}
+        minAmount={
+          editFor ? paidByDebt.get(editFor.id) ?? 0 : 0
+        }
+        onClose={() => setEditFor(null)}
         onSaved={refresh}
       />
     </div>
@@ -709,6 +729,127 @@ function PaymentDialog({
           <div className="space-y-1">
             <Label className="text-xs">Catatan (opsional)</Label>
             <Input value={note} onChange={(e) => setNote(e.target.value)} />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>
+            Batal
+          </Button>
+          <Button onClick={submit} disabled={saving}>
+            {saving ? "Menyimpan…" : "Simpan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function EditDebtDialog({
+  debt,
+  minAmount,
+  onClose,
+  onSaved,
+}: {
+  debt: Debt | null;
+  minAmount: number;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [partyName, setPartyName] = useState("");
+  const [amount, setAmount] = useState("");
+  const [due, setDue] = useState("");
+  const [note, setNote] = useState("");
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (debt) {
+      setPartyName(debt.party_name);
+      setAmount(String(debt.amount));
+      setDue(debt.due_date ?? "");
+      setNote(debt.note ?? "");
+    }
+  }, [debt]);
+
+  const submit = async () => {
+    if (!debt) return;
+    const nm = partyName.trim();
+    if (!nm) return toast.error("Nama pihak wajib diisi");
+    const amt = Number(amount.replace(/[^\d.,]/g, "").replace(",", "."));
+    if (!amt || amt <= 0) return toast.error("Jumlah tidak valid");
+    if (amt < minAmount) {
+      return toast.error(
+        `Jumlah tidak boleh lebih kecil dari total terbayar (${rupiah(minAmount)}). Hapus sebagian pembayaran dulu.`,
+      );
+    }
+    setSaving(true);
+    const { error } = await supabase
+      .from("debts")
+      .update({
+        party_name: nm,
+        amount: amt,
+        due_date: due || null,
+        note: note.trim() || null,
+      })
+      .eq("id", debt.id);
+    setSaving(false);
+    if (error) {
+      toast.error(friendlyError(error));
+      return;
+    }
+    toast.success("Perubahan tersimpan");
+    onSaved();
+    onClose();
+  };
+
+  return (
+    <Dialog open={!!debt} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit catatan</DialogTitle>
+          <DialogDescription>
+            {debt
+              ? `${debt.kind === "hutang" ? "Hutang ke" : "Piutang dari"} ${debt.party_name}`
+              : ""}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Nama pihak</Label>
+            <Input
+              value={partyName}
+              onChange={(e) => setPartyName(e.target.value)}
+              placeholder="cth: Pak Andi"
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Jumlah (Rp)</Label>
+            <Input
+              inputMode="numeric"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="0"
+            />
+            {minAmount > 0 && (
+              <p className="text-[11px] text-muted-foreground">
+                Minimal {rupiah(minAmount)} (sudah terbayar).
+              </p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Jatuh tempo (opsional)</Label>
+            <Input
+              type="date"
+              value={due}
+              onChange={(e) => setDue(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Catatan (opsional)</Label>
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="cth: pinjam modal"
+            />
           </div>
         </div>
         <DialogFooter>
