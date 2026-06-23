@@ -105,12 +105,11 @@ function main() {
 
     let status;
     if (isDynamic) status = "DYNAMIC (skip)";
-    else if (isAuthGated && inSitemap) {
-      status = "CONFLICT";
-      errors.push(
-        `  ${url}  — rute auth-gated tidak boleh masuk sitemap (${relative(ROOT, file)})`,
-      );
-    } else if (isAuthGated) status = "auth-gated";
+    // Lewati file layout pathless tanpa segmen URL sendiri (mis. _authenticated.tsx).
+    else if (id === "/_authenticated") status = "layout (skip)";
+    // URL auth-gated yang juga ada di sitemap (mis. "/" yang ber-dual-render)
+    // tidak dianggap konflik — versi publiknya yang masuk sitemap.
+    else if (isAuthGated) status = "auth-gated";
     else if (inSitemap && noindex) {
       status = "CONFLICT";
       errors.push(
