@@ -401,6 +401,35 @@ function PublicPrepPage() {
   const completedItems = items.filter((i) => (i.submissions?.length ?? 0) > 0).length;
   const progressPct = totalItems > 0 ? Math.round((completedItems / totalItems) * 100) : 0;
 
+  // Tugas ditutup / PIN diubah pemilik → layar khusus
+  if (closedReason) {
+    const isPin = closedReason === "pin_changed";
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
+        <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-8">
+          <div className="w-full rounded-2xl border bg-card p-6 text-center shadow-lg shadow-black/5">
+            <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/30">
+              <AlertTriangle className="h-6 w-6" />
+            </div>
+            <div className="text-base font-semibold">{isPin ? "PIN diperbarui pemilik" : "Tugas sudah ditutup"}</div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
+              {isPin
+                ? "PIN tugas baru saja diubah. Silakan minta PIN terbaru ke pemilik lalu masukkan kembali."
+                : "Tugas ini sudah selesai atau masa berlakunya habis. Hubungi pemilik bila perlu."}
+            </p>
+            <button
+              type="button"
+              onClick={() => { setClosedReason(null); goBackToPin(); }}
+              className="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-semibold transition hover:bg-muted"
+            >
+              <ArrowLeft className="h-4 w-4" /> Kembali ke halaman PIN
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background pb-12">
       <header className="sticky top-0 z-10 border-b bg-background/85 backdrop-blur">
@@ -449,7 +478,16 @@ function PublicPrepPage() {
 
         <div className="space-y-3">
           {items.map((it, idx) => (
-            <ItemCard key={it.id} index={idx + 1} item={it} token={token} pin={pinRef.current} onSubmitted={refresh} />
+            <ItemCard
+              key={it.id}
+              index={idx + 1}
+              item={it}
+              token={token}
+              pin={pinRef.current}
+              isStale={!!staleItemIds[it.id]}
+              onAcknowledgeStale={() => clearStale(it.id)}
+              onSubmitted={refresh}
+            />
           ))}
           {items.length === 0 && <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Belum ada item.</div>}
         </div>
