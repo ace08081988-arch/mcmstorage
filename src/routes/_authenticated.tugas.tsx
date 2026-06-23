@@ -240,6 +240,13 @@ function TugasPage() {
       )}
       {createdInfo && <ShareDialog info={createdInfo} onClose={() => setCreatedInfo(null)} />}
       {openTask && <TaskDetail task={openTask} onClose={() => { setOpenTask(null); void load(); }} />}
+      {sharePinFor && (
+        <SharePinDialog
+          title={sharePinFor.title}
+          url={publicTaskUrl(sharePinFor.share_token)}
+          onClose={() => setSharePinFor(null)}
+        />
+      )}
       {openVariantsHub && (
         <VariantsHub
           warehouse={warehouse}
