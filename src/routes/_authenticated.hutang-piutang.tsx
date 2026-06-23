@@ -373,6 +373,9 @@ function HutangPiutangPage() {
           editFor ? paidByDebt.get(editFor.id) ?? 0 : 0
         }
         onClose={() => setEditFor(null)}
+        onLocalUpdate={(patch) =>
+          setDebts((prev) => prev.map((x) => (x.id === patch.id ? { ...x, ...patch } : x)))
+        }
         onSaved={refresh}
       />
     </div>
@@ -748,11 +751,13 @@ function EditDebtDialog({
   debt,
   minAmount,
   onClose,
+  onLocalUpdate,
   onSaved,
 }: {
   debt: Debt | null;
   minAmount: number;
   onClose: () => void;
+  onLocalUpdate: (patch: Partial<Debt> & { id: string }) => void;
   onSaved: () => void;
 }) {
   const [partyName, setPartyName] = useState("");
@@ -837,8 +842,17 @@ function EditDebtDialog({
       id: toastId,
       description: `${debt.kind === "hutang" ? "Hutang ke" : "Piutang dari"} ${nm} · ${rupiah(amt)}`,
     });
-    onSaved();
+    // Patch list segera agar baris menampilkan nilai baru tanpa menunggu refetch.
+    onLocalUpdate({
+      id: debt.id,
+      party_name: nm,
+      amount: amt,
+      due_date: due || null,
+      note: note.trim() || null,
+    });
     onClose();
+    // Sinkronisasi penuh di latar belakang (mis. nilai turunan dari server).
+    onSaved();
   };
 
   return (
