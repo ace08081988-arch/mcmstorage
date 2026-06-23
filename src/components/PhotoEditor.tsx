@@ -508,9 +508,25 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               ["up", ArrowUp], ["down", ArrowDown], ["left", ArrowLeft], ["right", ArrowRight],
               ["upleft", ArrowUpLeft], ["upright", ArrowUpRight], ["downleft", ArrowDownLeft], ["downright", ArrowDownRight],
             ] as const).map(([d, Ico]) => (
-              <button key={d} onClick={() => {
+              <button key={d} type="button" onClick={() => {
                   setArrowDir(d);
-                  if (selected?.kind === "arrow") { liveBeginIfNeeded(); livePatchSelected({ dir: d } as Partial<Layer>); commitLivePatch(); }
+                  if (selected?.kind === "arrow") {
+                    // Sedang ada panah terpilih → cukup ubah arahnya.
+                    liveBeginIfNeeded();
+                    livePatchSelected({ dir: d } as Partial<Layer>);
+                    commitLivePatch();
+                  } else {
+                    // Tempelkan stiker panah baru di tengah kanvas (seperti stiker).
+                    const v = viewRef.current;
+                    const cx = v.w ? v.w / 2 : 100;
+                    const cy = v.h ? v.h / 2 : 100;
+                    const l: Layer = {
+                      id: uid(), kind: "arrow", x: cx, y: cy,
+                      rotation: 0, scale: 1, color, dir: d, size: 80, thickness,
+                    };
+                    pushHistory({ ...state, layers: [...state.layers, l] });
+                    setSelectedId(l.id);
+                  }
                 }}
                 className={`inline-flex h-8 w-8 items-center justify-center rounded border ${arrowDir === d ? "border-primary bg-primary/10" : ""}`}>
                 <Ico className="h-4 w-4" />
