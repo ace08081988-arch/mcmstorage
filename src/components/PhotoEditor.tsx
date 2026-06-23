@@ -51,6 +51,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [view, setView] = useState({ w: 0, h: 0 });
+  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
 
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
   const [history, setHistory] = useState<EditorState[]>([]);
@@ -105,10 +106,35 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   // Load image
   useEffect(() => {
-    const i = new Image();
-    i.crossOrigin = "anonymous";
-    i.onload = () => { setImg(i); imgRef.current = i; };
-    i.src = src;
+    let cancelled = false;
+    setLoadState("loading");
+    setImg(null);
+
+    const finish = (i: HTMLImageElement) => {
+      if (cancelled) return;
+      imgRef.current = i;
+      setImg(i);
+      setLoadState("ready");
+    };
+
+    // First attempt: request with CORS so the canvas stays exportable.
+    const corsImg = new Image();
+    corsImg.crossOrigin = "anonymous";
+    corsImg.onload = () => finish(corsImg);
+    corsImg.onerror = () => {
+      // Fallback: some hosts (or data: URLs) don't send CORS headers.
+      // Retry without crossOrigin so the editor still shows the photo.
+      // The canvas may become "tainted" — toDataURL/toBlob can fail; we
+      // surface that at export time.
+      if (cancelled) return;
+      const plain = new Image();
+      plain.onload = () => finish(plain);
+      plain.onerror = () => { if (!cancelled) setLoadState("error"); };
+      plain.src = src;
+    };
+    corsImg.src = src;
+
+    return () => { cancelled = true; };
   }, [src]);
 
   // Compute view size based on container width
@@ -519,7 +545,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       </div>
 
       <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-black/80 p-2">
-        {img && view.w > 0 && (
+        {img && view.w > 0 ? (
           <canvas
             ref={canvasRef}
             onPointerDown={onPointerDown}
@@ -527,6 +553,42 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             onPointerUp={onPointerUp}
             className="touch-none rounded shadow-lg"
           />
+        ) : loadState === "error" ? (
+          <div className="flex max-w-xs flex-col items-center gap-2 rounded-md bg-background/95 p-4 text-center text-sm">
+            <X className="h-6 w-6 text-destructive" />
+            <div className="font-medium">Gagal memuat foto</div>
+            <p className="text-xs text-muted-foreground">
+              Periksa koneksi internet lalu coba lagi, atau batalkan dan pilih foto lain.
+            </p>
+            <div className="mt-1 flex gap-2">
+              <button
+                type="button"
+                onClick={() => {
+                  // re-trigger the loader effect by bumping the src cache buster
+                  setLoadState("loading");
+                  const i = new Image();
+                  i.onload = () => { imgRef.current = i; setImg(i); setLoadState("ready"); };
+                  i.onerror = () => setLoadState("error");
+                  i.src = src + (src.includes("?") ? "&" : "?") + "r=" + Date.now();
+                }}
+                className="rounded-md border px-3 py-1 text-xs"
+              >
+                Coba lagi
+              </button>
+              <button
+                type="button"
+                onClick={onCancel}
+                className="rounded-md border px-3 py-1 text-xs"
+              >
+                Batal
+              </button>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-2 text-xs text-white/80">
+            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+            <span>Memuat foto…</span>
+          </div>
         )}
       </div>
 
