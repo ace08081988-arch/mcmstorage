@@ -53,22 +53,39 @@ export function DevConnectionWatcher() {
     const TOAST_ID = "dev-connection-lost";
     let lostAt = 0;
     let reloadTimer: number | null = null;
+    let disconnectGraceTimer: number | null = null;
 
     const onDisconnect = () => {
       lostAt = Date.now();
-      setStatus("disconnected");
-      toast.warning("Koneksi dev server terputus", {
-        id: TOAST_ID,
-        description: "Menunggu koneksi pulih, halaman akan dimuat ulang otomatis.",
-        duration: Number.POSITIVE_INFINITY,
-      });
+      // Beri grace period 3 detik: optimasi ulang dependensi Vite kerap
+      // memicu disconnect singkat lalu reconnect otomatis. Jangan tampilkan
+      // indikator/toast putus untuk kasus normal seperti itu.
+      if (disconnectGraceTimer) window.clearTimeout(disconnectGraceTimer);
+      disconnectGraceTimer = window.setTimeout(() => {
+        setStatus("disconnected");
+        toast.warning("Koneksi dev server terputus", {
+          id: TOAST_ID,
+          description: "Menunggu koneksi pulih, halaman akan dimuat ulang otomatis.",
+          duration: Number.POSITIVE_INFINITY,
+        });
+      }, 3000);
     };
 
     const onConnect = () => {
+      if (disconnectGraceTimer) {
+        window.clearTimeout(disconnectGraceTimer);
+        disconnectGraceTimer = null;
+      }
       setStatus("connected");
       // Abaikan event connect pertama saat halaman pertama dimuat.
       if (!lostAt) return;
       const downMs = Date.now() - lostAt;
+      lostAt = 0;
+      // Reconnect sangat cepat (mis. optimize-deps) — jangan ganggu user.
+      if (downMs < 3000) {
+        toast.dismiss(TOAST_ID);
+        return;
+      }
       toast.success("Koneksi dev server pulih", {
         id: TOAST_ID,
         description: `Memuat ulang halaman… (terputus ${(downMs / 1000).toFixed(1)} dtk)`,
@@ -87,6 +104,7 @@ export function DevConnectionWatcher() {
       hot.off?.("vite:ws:disconnect", onDisconnect);
       hot.off?.("vite:ws:connect", onConnect);
       if (reloadTimer) window.clearTimeout(reloadTimer);
+      if (disconnectGraceTimer) window.clearTimeout(disconnectGraceTimer);
     };
   }, []);
 
