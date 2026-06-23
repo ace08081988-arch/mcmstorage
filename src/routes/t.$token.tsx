@@ -5,7 +5,7 @@ import { PhotoEditor } from "@/components/PhotoEditor";
 import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
-import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw } from "lucide-react";
+import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff } from "lucide-react";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/t/$token")({
@@ -33,6 +33,11 @@ function PublicPrepPage() {
   const [staleItemIds, setStaleItemIds] = useState<Record<string, true>>({});
   const itemsRef = useRef<PrepItemRow[]>([]);
   useEffect(() => { itemsRef.current = items; }, [items]);
+  // Status koneksi realtime: 'connecting' saat awal, 'connected' setelah SUBSCRIBED,
+  // 'error' bila channel gagal/terputus. lastSyncAt diisi setiap silentRefresh sukses.
+  const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
+  const [syncTick, setSyncTick] = useState(0); // memicu re-render label "x dtk lalu"
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
@@ -227,6 +232,7 @@ function PublicPrepPage() {
     setStaleItemIds(nextStale);
     setTask(res.task!);
     setItems(res.items ?? []);
+    setLastSyncAt(Date.now());
   }
 
   function clearStale(itemId: string) {
@@ -239,19 +245,25 @@ function PublicPrepPage() {
   // Realtime broadcast + fallback heartbeat & visibility refresh.
   useEffect(() => {
     if (!authed) return;
+    setRtStatus("connecting");
     const ch = publicSupabase
       .channel(`prep:${token}`, { config: { broadcast: { self: false } } })
       .on("broadcast", { event: "change" }, () => { void silentRefresh(); })
-      .subscribe();
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") setRtStatus("connected");
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") setRtStatus("error");
+      });
     const onVis = () => { if (document.visibilityState === "visible") void silentRefresh(); };
     document.addEventListener("visibilitychange", onVis);
     const hb = window.setInterval(() => {
       if (document.visibilityState === "visible") void silentRefresh();
     }, 15000);
+    const tick = window.setInterval(() => setSyncTick((n) => n + 1), 5000);
     return () => {
       publicSupabase.removeChannel(ch);
       document.removeEventListener("visibilitychange", onVis);
       window.clearInterval(hb);
+      window.clearInterval(tick);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, token]);
@@ -446,9 +458,12 @@ function PublicPrepPage() {
             <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">MCM Storage</div>
             <div className="truncate text-sm font-semibold">Tugas Penyiapan Barang</div>
           </div>
-          <div className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
-            <ShieldCheck className="h-3 w-3" /> Terverifikasi
-          </div>
+          <SyncBadge
+            status={rtStatus}
+            lastSyncAt={lastSyncAt}
+            tick={syncTick}
+            onRefresh={() => { void silentRefresh(); }}
+          />
         </div>
       </header>
 
@@ -712,6 +727,47 @@ function SubmissionThumb({ path }: { path: string | null }) {
   useEffect(() => { signedUrl(path, 60 * 60, publicSupabase).then(setUrl); }, [path]);
   if (!url) return <div className="h-12 w-12 shrink-0 rounded border bg-muted" />;
   return <img src={url} alt="" className="h-12 w-12 shrink-0 rounded border object-cover" />;
+}
+
+// Indikator status sinkron realtime di header halaman pegawai.
+// connected: channel SUBSCRIBED dan data ≤ 30 dtk.
+// lag: channel SUBSCRIBED tapi data 30–90 dtk lalu (heartbeat masih jalan).
+// stale: data > 90 dtk lalu atau channel error/terputus.
+function SyncBadge({
+  status, lastSyncAt, tick, onRefresh,
+}: { status: "connecting" | "connected" | "error"; lastSyncAt: number | null; tick: number; onRefresh: () => void }) {
+  void tick; // memaksa re-render tiap detak
+  const ageSec = lastSyncAt ? Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000)) : null;
+  let kind: "connecting" | "connected" | "lag" | "stale";
+  if (status === "connecting" && lastSyncAt == null) kind = "connecting";
+  else if (status === "error") kind = "stale";
+  else if (ageSec != null && ageSec > 90) kind = "stale";
+  else if (ageSec != null && ageSec > 30) kind = "lag";
+  else kind = "connected";
+
+  const map = {
+    connecting: { cls: "bg-muted text-muted-foreground ring-border", label: "Menyambung…", Icon: Loader2, spin: true },
+    connected:  { cls: "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-400", label: "Sinkron", Icon: Wifi, spin: false },
+    lag:        { cls: "bg-amber-500/10 text-amber-700 ring-amber-500/30 dark:text-amber-400", label: ageSec != null ? `Tertunda ${ageSec}d` : "Tertunda", Icon: Wifi, spin: false },
+    stale:      { cls: "bg-rose-500/10 text-rose-700 ring-rose-500/30 dark:text-rose-400", label: "Tidak sinkron", Icon: WifiOff, spin: false },
+  }[kind];
+
+  const title = lastSyncAt
+    ? `Pembaruan terakhir: ${new Date(lastSyncAt).toLocaleTimeString("id-ID")}`
+    : "Belum ada pembaruan";
+
+  return (
+    <button
+      type="button"
+      onClick={onRefresh}
+      title={title}
+      aria-label={`Status sinkron: ${map.label}. Klik untuk muat ulang.`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium ring-1 transition hover:opacity-80 ${map.cls}`}
+    >
+      <map.Icon className={`h-3 w-3 ${map.spin ? "animate-spin" : ""}`} />
+      <span>{map.label}</span>
+    </button>
+  );
 }
 
 // ------------------------------------------------------------------
