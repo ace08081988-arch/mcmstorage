@@ -274,6 +274,12 @@ function Index() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadRetryToken, setLoadRetryToken] = useState(0);
+  // Detail error terakhir agar bisa ditampilkan di layar "Gagal memuat data".
+  const [loadErrorDetail, setLoadErrorDetail] = useState<{
+    message: string;
+    code?: string;
+    raw?: string;
+  } | null>(null);
   const [filter, setFilter] = useState<"semua" | Status>(() => {
     if (typeof window === "undefined") return "semua";
     const v = window.localStorage.getItem("mcm_filter");
@@ -439,6 +445,19 @@ function Index() {
       });
       setLoadFailed(true);
       setHydrated(true);
+      // Simpan detail error agar ditampilkan di layar gagal.
+      const err = lastError as { message?: string; code?: string } | null | undefined;
+      let raw: string | undefined;
+      try {
+        raw = JSON.stringify(lastError, Object.getOwnPropertyNames(lastError ?? {}));
+      } catch {
+        raw = String(lastError);
+      }
+      setLoadErrorDetail({
+        message: friendlyError(lastError as any) || err?.message || String(lastError),
+        code: err?.code,
+        raw,
+      });
     })();
 
     return () => {
