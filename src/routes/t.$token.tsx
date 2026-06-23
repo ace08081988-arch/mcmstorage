@@ -508,7 +508,17 @@ function PublicPrepPage() {
 
   // Tugas ditutup / PIN diubah pemilik → layar khusus
   if (closedReason) {
-    const isPin = closedReason === "pin_changed";
+    const copy = closedReason === "pin_changed"
+      ? { title: "PIN diperbarui pemilik",
+          body: "PIN tugas baru saja diubah. Silakan minta PIN terbaru ke pemilik lalu masukkan kembali." }
+      : closedReason === "expired"
+      ? { title: "Tugas sudah kedaluwarsa",
+          body: "Masa berlaku link tugas sudah habis. Minta pemilik mengirim link / PIN baru." }
+      : closedReason === "closed"
+      ? { title: "Tugas sudah ditutup pemilik",
+          body: "Tugas ini telah ditandai selesai atau dibatalkan oleh pemilik. Hubungi pemilik bila masih perlu mengisi." }
+      : { title: "Tugas tidak ditemukan",
+          body: "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik." };
     return (
       <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
         <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-8">
@@ -516,12 +526,8 @@ function PublicPrepPage() {
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 ring-1 ring-amber-500/30">
               <AlertTriangle className="h-6 w-6" />
             </div>
-            <div className="text-base font-semibold">{isPin ? "PIN diperbarui pemilik" : "Tugas sudah ditutup"}</div>
-            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">
-              {isPin
-                ? "PIN tugas baru saja diubah. Silakan minta PIN terbaru ke pemilik lalu masukkan kembali."
-                : "Tugas ini sudah selesai atau masa berlakunya habis. Hubungi pemilik bila perlu."}
-            </p>
+            <div className="text-base font-semibold">{copy.title}</div>
+            <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{copy.body}</p>
             <button
               type="button"
               onClick={() => { setClosedReason(null); goBackToPin(); }}
