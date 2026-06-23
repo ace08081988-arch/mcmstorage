@@ -5,7 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl, signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
 import { fmtItemQty } from "@/lib/stock-format";
-import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown } from "lucide-react";
+import { Plus, Trash2, Send, Copy, MessageCircle, Image as ImageIcon, MapPin, ExternalLink, X, Settings2, ShieldCheck, CheckCircle2, AlertTriangle, ShieldAlert, Search, Download, ArrowUpDown, RotateCcw } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 import { SiapkanSendiriSection } from "@/components/SiapkanSendiriSection";
@@ -91,6 +91,29 @@ function TugasPage() {
     if (error) return toast.error(error.message);
     setPinAlerts((prev) => prev.filter((a) => a.id !== alertId));
     toast.success("Peringatan ditandai sudah ditangani");
+  }
+
+  async function resetPinAttempts(token: string, title: string) {
+    const ok = await confirmDialog({
+      title: "Reset percobaan PIN?",
+      description: `Hitungan percobaan PIN salah untuk tugas “${title}” akan dihapus dan pegawai bisa langsung mencoba PIN lagi.`,
+      confirmText: "Reset percobaan",
+    });
+    if (!ok) return;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.rpc as any)("prep_pin_reset", { _token: token });
+    if (error) return toast.error(error.message);
+    const res = data as { ok: boolean; error?: string; deleted_failures?: number; acknowledged_alerts?: number };
+    if (!res?.ok) {
+      if (res?.error === "forbidden") return toast.error("Hanya pemilik tugas atau admin yang boleh me-reset.");
+      if (res?.error === "not_found") return toast.error("Tugas tidak ditemukan.");
+      if (res?.error === "unauthenticated") return toast.error("Anda harus login.");
+      return toast.error("Gagal me-reset percobaan.");
+    }
+    setPinAlerts((prev) => prev.filter((a) => a.share_token !== token));
+    toast.success(
+      `Percobaan PIN di-reset (${res.deleted_failures ?? 0} kegagalan dihapus, ${res.acknowledged_alerts ?? 0} peringatan ditangani).`,
+    );
   }
 
   async function removeTask(id: string) {
@@ -222,6 +245,13 @@ function TugasPage() {
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20"
             >
               <MessageCircle className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => resetPinAttempts(t.share_token, t.title)}
+              title="Reset percobaan PIN (pemilik / admin)"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-amber-500/40 bg-amber-500/10 text-amber-700 hover:bg-amber-500/20 dark:text-amber-400"
+            >
+              <RotateCcw className="h-4 w-4" />
             </button>
             <button onClick={() => removeTask(t.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive" title="Hapus tugas"><Trash2 className="h-4 w-4" /></button>
           </div>
