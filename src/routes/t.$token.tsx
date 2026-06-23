@@ -500,7 +500,7 @@ function PublicPrepPage() {
   );
 }
 
-function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow; index: number; token: string; pin: string; onSubmitted: () => void }) {
+function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubmitted }: { item: PrepItemRow; index: number; token: string; pin: string; isStale?: boolean; onAcknowledgeStale?: () => void; onSubmitted: () => void }) {
   const [photo, setPhoto] = useState<StagedPhoto | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
@@ -553,6 +553,10 @@ function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow;
   }
 
   async function submit() {
+    if (isStale) {
+      toast.error("Item baru saja diubah admin. Tinjau ulang sebelum kirim.");
+      return;
+    }
     if (!photo) {
       toast.error("Wajib lampirkan foto bukti timbangan/barang");
       return;
@@ -573,12 +577,18 @@ function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow;
         _photo_path: photoPath, _location_url: locUrl || null,
         _gps_lat: gps?.lat ?? null, _gps_lng: gps?.lng ?? null,
         _note: note || null, _qty_reported: null,
+        _expected_updated_at: item.updated_at ?? null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (publicSupabase.rpc as any)("prep_submit", args);
       if (error) throw error;
-      const res = data as { ok: boolean; error?: string; available?: number; requested?: number; deducted?: number };
+      const res = data as { ok: boolean; error?: string; available?: number; requested?: number; deducted?: number; current_updated_at?: string };
       if (!res?.ok) {
+        if (res?.error === "item_changed") {
+          toast.error("Item baru saja diubah admin. Periksa kembali sebelum kirim.");
+          onSubmitted(); // muat ulang dari server
+          return;
+        }
         const msg = res?.error === "insufficient_stock"
           ? `Stok gudang tidak cukup (tersedia ${res.available}, diminta ${res.requested})`
           : res?.error === "item_not_found"
@@ -597,7 +607,22 @@ function ItemCard({ item, index, token, pin, onSubmitted }: { item: PrepItemRow;
 
   const isDone = (item.submissions?.length ?? 0) > 0;
   return (
-    <div className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isDone ? "border-emerald-500/30" : ""}`}>
+    <div className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}>
+      {isStale && (
+        <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div className="flex-1">
+            <b>Item ini baru saja diubah admin.</b> Periksa kembali sebelum kirim.
+          </div>
+          <button
+            type="button"
+            onClick={onAcknowledgeStale}
+            className="inline-flex h-7 items-center gap-1 rounded-md border border-amber-500/40 bg-background px-2 text-[10px] font-semibold text-amber-700 hover:bg-amber-500/10 dark:text-amber-300"
+          >
+            <RefreshCw className="h-3 w-3" /> Lanjutkan
+          </button>
+        </div>
+      )}
       <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Item #{index}</div>
         {isDone ? (
