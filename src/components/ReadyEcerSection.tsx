@@ -45,7 +45,7 @@ export function ReadyEcerSection() {
       const selfTitles = ((selfs ?? []) as Array<{ title: string | null }>).map((s) => s.title);
       setRows(list.map((t) => {
         const product = itemMap.get(t.warehouse_item_id) ?? "—";
-        const selfCount = countMatchingSelfPreps(t.name, product, selfTitles);
+        const selfCount = countMatchingSelfPreps(t.name, product, selfTitles, t.target_grams, t.unit_label);
         return {
           ...t,
           prep_count: (countMap.get(t.id) ?? 0) + selfCount,

@@ -417,7 +417,7 @@ function TitleCard({ title, productName, onOpen, onEdit, onDeleted, highlighted 
         sb.from("self_prep_items").select("title"),
       ]);
       const selfTitles = ((selfs ?? []) as Array<{ title: string | null }>).map((s) => s.title);
-      const selfCount = countMatchingSelfPreps(title.name, productName, selfTitles);
+      const selfCount = countMatchingSelfPreps(title.name, productName, selfTitles, title.target_grams, title.unit_label);
       setCount((c ?? 0) + selfCount);
     })();
   }, [title.id, title.name, productName]);
