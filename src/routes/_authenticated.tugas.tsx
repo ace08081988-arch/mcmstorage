@@ -98,7 +98,6 @@ function TugasPage() {
       title: "Reset percobaan PIN?",
       description: `Hitungan percobaan PIN salah untuk tugas “${title}” akan dihapus dan pegawai bisa langsung mencoba PIN lagi.`,
       confirmText: "Reset percobaan",
-      tone: "default",
     });
     if (!ok) return;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
