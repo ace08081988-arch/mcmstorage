@@ -90,6 +90,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [exportBg, setExportBg] = useState<"white" | "transparent">("white");
   const previewScrollRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ x: number; y: number; sx: number; sy: number } | null>(null);
+  const [savePreview, setSavePreview] = useState<{ open: boolean; dataUrl: string; blob: Blob | null; building: boolean }>(
+    { open: false, dataUrl: "", blob: null, building: false },
+  );
 
   function onPreviewPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     const el = previewScrollRef.current; if (!el) return;
@@ -469,9 +472,29 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     // Transparent export must use PNG to preserve alpha; white export keeps smaller JPEG.
     const mime = exportBg === "transparent" ? "image/png" : "image/jpeg";
     const quality = exportBg === "transparent" ? undefined : 0.88;
-    const dataUrl = cvs.toDataURL(mime, quality);
-    const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, mime, quality));
-    if (blob) onSave(blob, dataUrl);
+    let dataUrl = "";
+    let blob: Blob | null = null;
+    try {
+      dataUrl = cvs.toDataURL(mime, quality);
+      blob = await new Promise<Blob | null>((r) => cvs.toBlob(r, mime, quality));
+    } catch {
+      setSavePreview({ open: false, dataUrl: "", blob: null, building: false });
+      alert("Gagal menyiapkan pratinjau. Foto mungkin diblokir oleh kebijakan CORS.");
+      return;
+    }
+    setSavePreview({ open: true, dataUrl, blob, building: false });
+  }
+
+  function openSavePreview() {
+    setSavePreview({ open: true, dataUrl: "", blob: null, building: true });
+    // Defer to next tick so the dialog can show its loading state first.
+    setTimeout(() => { void exportImage(); }, 0);
+  }
+
+  function confirmSave() {
+    if (!savePreview.blob || !savePreview.dataUrl) return;
+    onSave(savePreview.blob, savePreview.dataUrl);
+    setSavePreview({ open: false, dataUrl: "", blob: null, building: false });
   }
 
   const selected = state.layers.find((l) => l.id === selectedId);
@@ -538,7 +561,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               Transparan
             </button>
           </div>
-          <button onClick={exportImage} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
+          <button onClick={openSavePreview} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
             <Check className="h-4 w-4" /> Simpan
           </button>
         </div>
@@ -790,6 +813,58 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               <Button variant="ghost" size="sm" onClick={() => setZoomLevel(1)}>Reset</Button>
             </div>
             <Button onClick={() => setPreviewZoom(false)}>Tutup</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog
+        open={savePreview.open}
+        onOpenChange={(o) => { if (!o) setSavePreview({ open: false, dataUrl: "", blob: null, building: false }); }}
+      >
+        <DialogContent className="max-w-[95vw] p-3 sm:max-w-xl">
+          <DialogHeader>
+            <DialogTitle>Pratinjau Hasil</DialogTitle>
+            <DialogDescription>
+              Periksa hasil edit. Jika sudah benar, tekan Simpan; atau Kembali untuk mengubah.
+            </DialogDescription>
+          </DialogHeader>
+          <div
+            className="relative max-h-[60vh] overflow-auto rounded-md p-2"
+            style={
+              exportBg === "transparent"
+                ? {
+                    backgroundImage:
+                      "linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%)",
+                    backgroundSize: "16px 16px",
+                    backgroundPosition: "0 0,0 8px,8px -8px,-8px 0",
+                  }
+                : { background: "#f3f4f6" }
+            }
+          >
+            {savePreview.building || !savePreview.dataUrl ? (
+              <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
+                <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
+                <span>Menyiapkan pratinjau…</span>
+              </div>
+            ) : (
+              <img
+                src={savePreview.dataUrl}
+                alt="Pratinjau hasil edit"
+                className="mx-auto block max-h-[58vh] w-auto select-none"
+                draggable={false}
+              />
+            )}
+          </div>
+          <DialogFooter className="flex-row justify-end gap-2">
+            <Button
+              variant="outline"
+              onClick={() => setSavePreview({ open: false, dataUrl: "", blob: null, building: false })}
+            >
+              Kembali
+            </Button>
+            <Button onClick={confirmSave} disabled={!savePreview.blob || savePreview.building}>
+              <Check className="mr-1 h-4 w-4" /> Simpan
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
