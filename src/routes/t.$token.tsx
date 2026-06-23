@@ -170,6 +170,46 @@ function PublicPrepPage() {
           <div className="w-full rounded-2xl border bg-card p-6 shadow-lg shadow-black/5">
             <div className="mb-1 flex items-center gap-2 text-base font-semibold"><Lock className="h-4 w-4 text-primary" /> Verifikasi PIN</div>
             <p className="mb-5 text-xs leading-relaxed text-muted-foreground">Masukkan PIN dari pemilik untuk membuka daftar barang yang harus disiapkan.</p>
+            {(isLocked || attempts > 0) && (
+              <div
+                className={
+                  "mb-4 grid grid-cols-2 gap-2 rounded-lg border p-2 text-center " +
+                  (isLocked
+                    ? "border-destructive/40 bg-destructive/5"
+                    : "border-amber-500/40 bg-amber-500/5")
+                }
+              >
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Sisa percobaan</div>
+                  <div
+                    className={
+                      "mt-0.5 text-xl font-bold tabular-nums " +
+                      (isLocked
+                        ? "text-destructive"
+                        : attemptsLeft <= 1
+                          ? "text-destructive"
+                          : "text-amber-700 dark:text-amber-400")
+                    }
+                  >
+                    {attemptsLeft}
+                    <span className="text-xs font-normal text-muted-foreground"> / {MAX_ATTEMPTS}</span>
+                  </div>
+                </div>
+                <div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Tunggu</div>
+                  <div
+                    className={
+                      "mt-0.5 text-xl font-bold tabular-nums " +
+                      (isLocked ? "text-destructive" : "text-muted-foreground/60")
+                    }
+                  >
+                    {isLocked
+                      ? `${Math.floor(lockedSecondsLeft / 60)}:${String(lockedSecondsLeft % 60).padStart(2, "0")}`
+                      : "—"}
+                  </div>
+                </div>
+              </div>
+            )}
             <input
               inputMode="numeric" maxLength={8} value={pin} onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
               placeholder="••••••" disabled={isLocked}
