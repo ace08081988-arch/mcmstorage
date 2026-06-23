@@ -67,16 +67,20 @@ export function AppSidebar() {
           <SidebarGroupLabel>Menu</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.url}>
+              {items.map((item) => {
+                const itemHash = "hash" in item ? (item as { hash?: string }).hash : undefined;
+                const itemKey = item.url + (itemHash ? `#${itemHash}` : "");
+                return (
+                <SidebarMenuItem key={itemKey}>
                   <SidebarMenuButton
                     asChild
-                    isActive={isActive(item.url)}
+                    isActive={itemHash ? false : isActive(item.url)}
                     tooltip={item.title}
                     className="group/3d relative overflow-hidden rounded-lg border border-transparent bg-gradient-to-b from-sidebar-accent/40 to-sidebar/0 shadow-[inset_0_1px_0_0_hsl(0_0%_100%/0.06),0_1px_2px_0_hsl(0_0%_0%/0.25)] transition-all duration-150 hover:-translate-y-px hover:border-sidebar-border/60 hover:from-sidebar-accent/70 hover:shadow-[inset_0_1px_0_0_hsl(0_0%_100%/0.1),0_4px_10px_-2px_hsl(0_0%_0%/0.35)] active:translate-y-px active:shadow-[inset_0_2px_4px_0_hsl(0_0%_0%/0.35)] data-[active=true]:border-primary/40 data-[active=true]:bg-gradient-to-b data-[active=true]:from-primary/25 data-[active=true]:to-primary/5 data-[active=true]:shadow-[inset_0_1px_0_0_hsl(0_0%_100%/0.15),0_6px_14px_-4px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
                   >
                     <Link
                       to={item.url}
+                      hash={itemHash}
                       preload="intent"
                       className="flex items-center gap-2"
                       onPointerDown={(e) => {
@@ -85,8 +89,8 @@ export function AppSidebar() {
                         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
                         e.preventDefault();
                         setOpenMobile(false);
-                        if (pathname !== item.url) {
-                          void navigate({ to: item.url });
+                        if (pathname !== item.url || itemHash) {
+                          void navigate({ to: item.url, hash: itemHash });
                         }
                       }}
                     >
@@ -95,7 +99,8 @@ export function AppSidebar() {
                     </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
-              ))}
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
