@@ -45,7 +45,8 @@ export function EcerSection() {
     },
   });
   const navigate = useNavigate();
-  const router = { navigate } as { navigate: typeof navigate };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const router = { navigate: navigate as unknown as (opts: any) => Promise<void> };
   const [items, setItems] = useState<WarehouseItem[]>([]);
   const [titles, setTitles] = useState<EcerTitle[]>([]);
   const [loading, setLoading] = useState(true);
