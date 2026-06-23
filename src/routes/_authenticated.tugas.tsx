@@ -1459,6 +1459,7 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
   const [subs, setSubs] = useState<Submission[]>([]);
   const [busy, setBusy] = useState(false);
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+  const [sharePinOpen, setSharePinOpen] = useState(false);
 
   async function load() {
     const [{ data: i }, { data: s }] = await Promise.all([
@@ -1486,15 +1487,17 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
   }
 
   const url = publicTaskUrl(task.share_token);
-  const message = `Tugas: ${task.title}\n${url}`;
 
   return (
     <Modal title={task.title} onClose={onClose} wide>
       <div className="mb-3 flex flex-wrap gap-2">
-        <button onClick={() => shareToWhatsApp({ text: message, title: task.title, url })} className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white"><MessageCircle className="h-4 w-4" /> Bagikan ulang</button>
+        <button onClick={() => setSharePinOpen(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white"><MessageCircle className="h-4 w-4" /> Bagikan link + PIN</button>
         <button disabled={busy} onClick={() => setStatus(task.status === "done" ? "active" : "done")} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs">{task.status === "done" ? "Aktifkan lagi" : "Tandai selesai"}</button>
         <a href={url} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs"><ExternalLink className="h-4 w-4" /> Pratinjau link pegawai</a>
       </div>
+      {sharePinOpen && (
+        <SharePinDialog title={task.title} url={url} onClose={() => setSharePinOpen(false)} />
+      )}
       <div className="space-y-3">
         {items.map((it) => {
           const itemSubs = subs.filter((s) => s.task_item_id === it.id);
