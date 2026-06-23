@@ -25,8 +25,15 @@ function hashCode(code: string, salt: string) {
   return createHash("sha256").update(`${salt}:${code}`).digest("hex");
 }
 
-function combinedHash(deviceHash: string, ip: string) {
-  return createHash("sha256").update(`${deviceHash}|${ip}`).digest("hex");
+/**
+ * Identitas device = hash dari sidik jari klien saja.
+ * IP TIDAK dimasukkan ke identitas — IP berubah setiap ganti jaringan
+ * (WiFi → seluler, ISP rotasi), dan jika ikut di-hash, device akan
+ * dianggap "baru" tiap kali dan OTP diminta ulang. IP tetap dicatat
+ * sebagai metadata di `last_ip` untuk audit.
+ */
+function deviceIdentityHash(deviceHash: string) {
+  return createHash("sha256").update(`device:${deviceHash}`).digest("hex");
 }
 
 export const requestDeviceOtp = createServerFn({ method: "POST" })
@@ -41,7 +48,7 @@ export const requestDeviceOtp = createServerFn({ method: "POST" })
     const { userId } = context;
     const ip = clientIp();
     const ua = getRequestHeader("user-agent") || "unknown";
-    const fullHash = combinedHash(data.deviceHash, ip);
+    const fullHash = deviceIdentityHash(data.deviceHash);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -179,7 +186,7 @@ export const verifyDeviceOtp = createServerFn({ method: "POST" })
     const { userId } = context;
     const ip = clientIp();
     const ua = getRequestHeader("user-agent") || "unknown";
-    const fullHash = combinedHash(data.deviceHash, ip);
+    const fullHash = deviceIdentityHash(data.deviceHash);
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
 
@@ -194,8 +201,8 @@ export const verifyDeviceOtp = createServerFn({ method: "POST" })
     if (new Date(ch.expires_at).getTime() < Date.now()) throw new Error("Kode kedaluwarsa");
     if (ch.attempts >= MAX_ATTEMPTS) throw new Error("Terlalu banyak percobaan");
     if (ch.device_hash !== fullHash) {
-      // Jaringan/IP berubah sejak request — minta kirim ulang
-      throw new Error("Konteks device berubah, minta kode baru");
+      // Sidik jari device tidak cocok dengan tantangan ini.
+      throw new Error("Device berbeda dari saat kode dikirim, minta kode baru");
     }
 
     const expected = hashCode(data.code, ch.id);
@@ -251,7 +258,7 @@ export const isDeviceTrusted = createServerFn({ method: "POST" })
     const { userId } = context;
     const ip = clientIp();
     const ua = getRequestHeader("user-agent") || "unknown";
-    const fullHash = combinedHash(data.deviceHash, ip);
+    const fullHash = deviceIdentityHash(data.deviceHash);
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: row } = await supabaseAdmin
       .from("user_devices")
