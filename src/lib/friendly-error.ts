@@ -42,6 +42,17 @@ export function friendlyError(
   }
 
   const msg = (e.message ?? "").toLowerCase();
+  // Pro-tier paywall (thrown by enforce_free_*_cap triggers)
+  if (msg.includes("pro_required:warehouse_items"))
+    return "Batas 30 barang gudang pada paket Free sudah tercapai. Upgrade ke Pro untuk menambah lebih banyak.";
+  if (msg.includes("pro_required:sales"))
+    return "Batas 50 penjualan per 30 hari pada paket Free sudah tercapai. Upgrade ke Pro untuk lanjut menjual.";
+  if (msg.includes("pro_required:staff_contacts"))
+    return "Paket Free hanya mengizinkan 1 kontak pegawai. Upgrade ke Pro untuk menambah pegawai.";
+  if (msg.includes("pro_required:user_devices"))
+    return "Paket Free hanya mengizinkan 1 perangkat tepercaya. Upgrade ke Pro untuk multi-perangkat.";
+  if (msg.includes("pro_required"))
+    return "Fitur ini hanya untuk pelanggan Pro. Buka halaman Langganan untuk upgrade.";
   if (msg.includes("invalid login") || msg.includes("invalid credentials"))
     return "Email atau kata sandi salah.";
   if (msg.includes("email not confirmed"))

@@ -35,6 +35,18 @@ import {
 import { sendMessage } from "@/lib/chat.functions";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
+import { useEntitlement } from "@/hooks/useEntitlement";
+import { ProPaywall } from "@/components/ProPaywall";
+
+function ChatProGate() {
+  const ent = useEntitlement();
+  if (ent.loading || ent.isPro) return null;
+  return (
+    <div className="mb-2">
+      <ProPaywall feature="Kirim pesan chat" compact />
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/chat/$conversationId")({
   component: ChatRoomPage,
@@ -57,6 +69,8 @@ function ChatRoomPage() {
   const deleteAllMine = useDeleteAllMyMessages(conversationId);
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const entitlement = useEntitlement();
+  const chatBlocked = !entitlement.loading && !entitlement.isPro;
 
   const meta = useQuery({
     queryKey: ["chat", "conv-meta", conversationId],
@@ -293,6 +307,7 @@ function ChatRoomPage() {
       </div>
 
       <form onSubmit={onSubmit} className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur">
+        <ChatProGate />
         <div className="flex items-end gap-2">
           <Textarea
             value={body}
@@ -306,8 +321,9 @@ function ChatRoomPage() {
             placeholder="Tulis pesan…"
             rows={1}
             className="max-h-32 min-h-9 resize-none"
+            disabled={chatBlocked}
           />
-          <Button type="submit" size="icon" disabled={!body.trim() || send.isPending} aria-label="Kirim">
+          <Button type="submit" size="icon" disabled={!body.trim() || send.isPending || chatBlocked} aria-label="Kirim">
             {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
           </Button>
         </div>
