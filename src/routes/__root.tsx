@@ -165,7 +165,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "twitter:description", content: "MCM Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       { property: "og:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/856c467e-49d8-4ece-830b-e2130c9812d1" },
       { name: "twitter:image", content: "https://storage.googleapis.com/gpt-engineer-file-uploads/attachments/og-images/856c467e-49d8-4ece-830b-e2130c9812d1" },
-      { name: "google-site-verification", content: "StEYz84rl1qtnbBteGIp64am18nvMhg5C8bd43_SPu4" },
+      { name: "google-site-verification", content: "U9gNbUi1Ly1ya2k-cTFj2H05IsYp3K9gIB6TQsCzOLg" },
     ],
     links: [
       {
