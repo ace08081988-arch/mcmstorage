@@ -35,6 +35,18 @@ import {
 import { sendMessage } from "@/lib/chat.functions";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
+import { useEntitlement } from "@/hooks/useEntitlement";
+import { ProPaywall } from "@/components/ProPaywall";
+
+function ChatProGate() {
+  const ent = useEntitlement();
+  if (ent.loading || ent.isPro) return null;
+  return (
+    <div className="mb-2">
+      <ProPaywall feature="Kirim pesan chat" compact />
+    </div>
+  );
+}
 
 export const Route = createFileRoute("/_authenticated/chat/$conversationId")({
   component: ChatRoomPage,
