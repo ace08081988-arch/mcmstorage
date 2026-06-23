@@ -154,6 +154,21 @@ function AuthPage() {
     setResendCooldown(60);
   };
 
+  const signInWithApple = async () => {
+    setLoading(true);
+    const result = await lovable.auth.signInWithOAuth("apple", {
+      redirect_uri: window.location.origin,
+    });
+    if (result.error) {
+      setLoading(false);
+      toast.error(friendlyError(result.error));
+      return;
+    }
+    if (result.redirected) return;
+    toast.success("Berhasil masuk");
+    navigate({ to: "/", replace: true });
+  };
+
   const signInWithGoogle = async () => {
     setLoading(true);
     const result = await lovable.auth.signInWithOAuth("google", {
