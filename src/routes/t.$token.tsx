@@ -729,6 +729,47 @@ function SubmissionThumb({ path }: { path: string | null }) {
   return <img src={url} alt="" className="h-12 w-12 shrink-0 rounded border object-cover" />;
 }
 
+// Indikator status sinkron realtime di header halaman pegawai.
+// connected: channel SUBSCRIBED dan data ≤ 30 dtk.
+// lag: channel SUBSCRIBED tapi data 30–90 dtk lalu (heartbeat masih jalan).
+// stale: data > 90 dtk lalu atau channel error/terputus.
+function SyncBadge({
+  status, lastSyncAt, tick, onRefresh,
+}: { status: "connecting" | "connected" | "error"; lastSyncAt: number | null; tick: number; onRefresh: () => void }) {
+  void tick; // memaksa re-render tiap detak
+  const ageSec = lastSyncAt ? Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000)) : null;
+  let kind: "connecting" | "connected" | "lag" | "stale";
+  if (status === "connecting" && lastSyncAt == null) kind = "connecting";
+  else if (status === "error") kind = "stale";
+  else if (ageSec != null && ageSec > 90) kind = "stale";
+  else if (ageSec != null && ageSec > 30) kind = "lag";
+  else kind = "connected";
+
+  const map = {
+    connecting: { cls: "bg-muted text-muted-foreground ring-border", label: "Menyambung…", Icon: Loader2, spin: true },
+    connected:  { cls: "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-400", label: "Sinkron", Icon: Wifi, spin: false },
+    lag:        { cls: "bg-amber-500/10 text-amber-700 ring-amber-500/30 dark:text-amber-400", label: ageSec != null ? `Tertunda ${ageSec}d` : "Tertunda", Icon: Wifi, spin: false },
+    stale:      { cls: "bg-rose-500/10 text-rose-700 ring-rose-500/30 dark:text-rose-400", label: "Tidak sinkron", Icon: WifiOff, spin: false },
+  }[kind];
+
+  const title = lastSyncAt
+    ? `Pembaruan terakhir: ${new Date(lastSyncAt).toLocaleTimeString("id-ID")}`
+    : "Belum ada pembaruan";
+
+  return (
+    <button
+      type="button"
+      onClick={onRefresh}
+      title={title}
+      aria-label={`Status sinkron: ${map.label}. Klik untuk muat ulang.`}
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-medium ring-1 transition hover:opacity-80 ${map.cls}`}
+    >
+      <map.Icon className={`h-3 w-3 ${map.spin ? "animate-spin" : ""}`} />
+      <span>{map.label}</span>
+    </button>
+  );
+}
+
 // ------------------------------------------------------------------
 // REQUEST section: paket multi-produk untuk pegawai
 // ------------------------------------------------------------------
