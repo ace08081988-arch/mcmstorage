@@ -23,13 +23,22 @@ export const Route = createFileRoute("/pricing")({
   component: PricingPage,
 });
 
-const features = [
-  "Pengelolaan pesanan harian",
-  "Stok gudang & varian produk",
-  "Hutang–piutang pelanggan & pemasok",
-  "Kirim pesan cepat via WhatsApp & email",
-  "Multi-device dengan sinkronisasi",
-  "Chat internal antar tim",
+const freeFeatures = [
+  "Hingga 30 barang gudang",
+  "Hingga 50 penjualan / 30 hari",
+  "1 kontak pegawai",
+  "1 perangkat tepercaya",
+  "Pesanan, ECER, request, label",
+  "Baca chat (tanpa kirim)",
+];
+
+const proFeatures = [
+  "Barang gudang & penjualan tak terbatas",
+  "Modul Hutang–Piutang lengkap",
+  "Kirim pesan chat internal",
+  "Notifikasi push",
+  "Pegawai & perangkat tak terbatas",
+  "Otomatis berbagi ke seluruh pegawai",
 ];
 
 function PricingPage() {
