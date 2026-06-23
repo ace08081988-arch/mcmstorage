@@ -114,7 +114,7 @@ function RequestPage() {
   useEffect(() => { void loadAll(); }, []);
 
   useEffect(() => {
-    void router.navigate({ to: "/request", search: { title: selectedTitleId }, replace: true });
+    void router.navigate({ to: "/request", search: { title: selectedTitleId, highlight: undefined }, replace: true });
   }, [selectedTitleId, router]);
 
   const selectedTitle = useMemo(

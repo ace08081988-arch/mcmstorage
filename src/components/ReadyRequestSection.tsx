@@ -58,7 +58,7 @@ export function ReadyRequestSection() {
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
           Paket Request Siap Kirim
         </p>
-        <Link to="/request" className="text-[11px] font-medium text-primary hover:underline">Kelola →</Link>
+        <Link to="/request" search={{ title: undefined, highlight: undefined }} className="text-[11px] font-medium text-primary hover:underline">Kelola →</Link>
       </div>
 
       {rows && rows.length > 0 && (
@@ -81,7 +81,7 @@ export function ReadyRequestSection() {
       {rows === null ? (
         <div className="rounded-md border bg-card p-4 text-center text-xs text-muted-foreground">Memuat…</div>
       ) : rows.length === 0 ? (
-        <Link to="/request" className="flex items-center justify-center gap-2 rounded-md border border-dashed bg-card p-4 text-xs text-muted-foreground hover:border-primary/40">
+        <Link to="/request" search={{ title: undefined, highlight: undefined }} className="flex items-center justify-center gap-2 rounded-md border border-dashed bg-card p-4 text-xs text-muted-foreground hover:border-primary/40">
           <PackagePlus className="h-4 w-4" /> Belum ada judul request. Klik untuk buat.
         </Link>
       ) : filtered && filtered.length === 0 ? (
@@ -92,7 +92,7 @@ export function ReadyRequestSection() {
             <Link
               key={r.id}
               to="/request"
-              search={{ highlight: r.id }}
+              search={{ title: undefined, highlight: r.id }}
               className="flex flex-col gap-0.5 rounded-md border bg-card p-2.5 hover:border-primary/40 hover:bg-accent"
             >
               <div className="flex items-center justify-between">

@@ -149,7 +149,7 @@ function EcerPage() {
   useEffect(() => {
     void router.navigate({
       to: "/ecer",
-      search: { item: selectedItemId, title: selectedTitleId },
+      search: { item: selectedItemId, title: selectedTitleId, highlight: undefined },
       replace: true,
     });
   }, [selectedItemId, selectedTitleId, router]);

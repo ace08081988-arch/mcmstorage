@@ -67,7 +67,7 @@ export function ReadyEcerSection() {
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
           Produk Eceran Siap Kirim
         </p>
-        <Link to="/ecer" className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary hover:underline">
+        <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined }} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary hover:underline">
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
@@ -113,6 +113,7 @@ export function ReadyEcerSection() {
       ) : rows.length === 0 ? (
         <Link
           to="/ecer"
+          search={{ item: undefined, title: undefined, highlight: undefined }}
           className="flex items-center gap-2 rounded-md border border-dashed bg-card/50 p-4 text-[11px] text-muted-foreground hover:border-primary/40 hover:bg-accent"
         >
           <Scale className="h-4 w-4 text-primary" />
@@ -138,7 +139,7 @@ export function ReadyEcerSection() {
             <Link
               key={r.id}
               to="/ecer"
-              search={{ item: r.warehouse_item_id, title: r.id }}
+              search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
               className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
             >
               <div className="flex items-center gap-1.5">
