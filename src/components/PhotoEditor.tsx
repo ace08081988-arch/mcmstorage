@@ -597,7 +597,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-black/80 p-2">
         {img && view.w > 0 ? (
           <canvas
-            ref={canvasRef}
+            ref={(el) => {
+              canvasRef.current = el;
+              // The visible canvas just mounted — base may already be ready
+              // from a previous effect; paint immediately so the photo is
+              // visible without waiting for the next state change.
+              if (el && baseCanvasRef.current) scheduleRedraw();
+            }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
