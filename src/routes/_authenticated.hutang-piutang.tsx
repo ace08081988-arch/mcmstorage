@@ -80,6 +80,7 @@ function HutangPiutangPage() {
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
   const [payFor, setPayFor] = useState<Debt | null>(null);
+  const [editFor, setEditFor] = useState<Debt | null>(null);
 
   useEffect(() => {
     supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
@@ -310,6 +311,16 @@ function HutangPiutangPage() {
                               Tagih via WA
                             </Button>
                           )}
+                          {d.source === "manual" && (
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => setEditFor(d)}
+                              title="Edit catatan"
+                            >
+                              Edit
+                            </Button>
+                          )}
                           <Button
                             size="sm"
                             variant="ghost"
@@ -353,6 +364,15 @@ function HutangPiutangPage() {
             : 0
         }
         onClose={() => setPayFor(null)}
+        onSaved={refresh}
+      />
+
+      <EditDebtDialog
+        debt={editFor}
+        minAmount={
+          editFor ? paidByDebt.get(editFor.id) ?? 0 : 0
+        }
+        onClose={() => setEditFor(null)}
         onSaved={refresh}
       />
     </div>
