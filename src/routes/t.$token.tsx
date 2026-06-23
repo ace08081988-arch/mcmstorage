@@ -40,6 +40,7 @@ function PublicPrepPage() {
   const LOCK_SECONDS = 60;
   const STORAGE_KEY = `prep_pin_attempts:${token}`;
   const [attempts, setAttempts] = useState(0);
+  const [justUnlocked, setJustUnlocked] = useState(false);
 
   type AttemptState = { attempts: number; lockedUntil: number | null };
   function readAttemptState(): AttemptState {
@@ -80,6 +81,8 @@ function PublicPrepPage() {
         setLockedUntil(null);
         setAttempts(0);
         writeAttemptState({ attempts: 0, lockedUntil: null });
+        setJustUnlocked(true);
+        setTimeout(() => setJustUnlocked(false), 6000);
       }
     }, 1000);
     return () => clearInterval(id);
@@ -88,6 +91,7 @@ function PublicPrepPage() {
 
   const lockedSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - now) / 1000)) : 0;
   const isLocked = lockedSecondsLeft > 0;
+  const lockedClock = `${String(Math.floor(lockedSecondsLeft / 60)).padStart(2, "0")}:${String(lockedSecondsLeft % 60).padStart(2, "0")}`;
   const attemptsLeft = Math.max(0, MAX_ATTEMPTS - attempts);
 
   async function fetchTask(p: string) {
