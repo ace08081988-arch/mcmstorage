@@ -40,6 +40,7 @@ function PublicPrepPage() {
   const LOCK_SECONDS = 60;
   const STORAGE_KEY = `prep_pin_attempts:${token}`;
   const [attempts, setAttempts] = useState(0);
+  const [justUnlocked, setJustUnlocked] = useState(false);
 
   type AttemptState = { attempts: number; lockedUntil: number | null };
   function readAttemptState(): AttemptState {
@@ -80,6 +81,8 @@ function PublicPrepPage() {
         setLockedUntil(null);
         setAttempts(0);
         writeAttemptState({ attempts: 0, lockedUntil: null });
+        setJustUnlocked(true);
+        setTimeout(() => setJustUnlocked(false), 6000);
       }
     }, 1000);
     return () => clearInterval(id);
@@ -88,6 +91,7 @@ function PublicPrepPage() {
 
   const lockedSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - now) / 1000)) : 0;
   const isLocked = lockedSecondsLeft > 0;
+  const lockedClock = `${String(Math.floor(lockedSecondsLeft / 60)).padStart(2, "0")}:${String(lockedSecondsLeft % 60).padStart(2, "0")}`;
   const attemptsLeft = Math.max(0, MAX_ATTEMPTS - attempts);
 
   async function fetchTask(p: string) {
@@ -217,16 +221,30 @@ function PublicPrepPage() {
             <button disabled={pin.length < 4 || loading || isLocked} onClick={() => fetchTask(pin)}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
-              {isLocked ? `Terkunci · ${Math.floor(lockedSecondsLeft / 60)}:${String(lockedSecondsLeft % 60).padStart(2, "0")}` : "Buka Tugas"}
+              {isLocked ? `Terkunci ${lockedClock} lagi` : "Buka Tugas"}
             </button>
             {isLocked && (
               <div className="mt-3 rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-[11px] leading-relaxed text-destructive">
-                Terlalu banyak PIN salah. Tunggu hingga hitungan mundur selesai, lalu coba lagi.
+                <div className="font-semibold">Terkunci {lockedClock} lagi</div>
+                <div className="mt-0.5 opacity-90">
+                  Terlalu banyak PIN salah. Anda bisa mencoba lagi setelah hitungan mundur selesai.
+                </div>
+              </div>
+            )}
+            {!isLocked && justUnlocked && (
+              <div className="mt-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-400">
+                <div className="font-semibold">Kunci dibuka — silakan coba lagi</div>
+                <div className="mt-0.5 opacity-90">
+                  Pastikan PIN dari pemilik benar. Anda punya {MAX_ATTEMPTS} percobaan baru.
+                </div>
               </div>
             )}
             {!isLocked && attempts > 0 && (
               <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
-                Sisa percobaan: <b>{attemptsLeft}</b> dari {MAX_ATTEMPTS}. Setelah {MAX_ATTEMPTS} kali salah, input akan dikunci {LOCK_SECONDS} detik.
+                <div className="font-semibold">Silakan coba lagi</div>
+                <div className="mt-0.5 opacity-90">
+                  Sisa percobaan: <b>{attemptsLeft}</b> dari {MAX_ATTEMPTS}. Setelah {MAX_ATTEMPTS} kali salah, input akan dikunci {LOCK_SECONDS} detik.
+                </div>
               </div>
             )}
             {(isLocked || attempts > 0) && (
