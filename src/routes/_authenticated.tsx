@@ -164,6 +164,7 @@ export const Route = createFileRoute("/_authenticated")({
         attempts: [],
         retries: 0,
         cacheHit: true,
+        correlationId: `cache-${uid.slice(0, 8)}-${Date.now().toString(36)}`,
       });
     } else {
       // Retry dengan exponential backoff + jitter agar 500 sesekali
@@ -173,16 +174,22 @@ export const Route = createFileRoute("/_authenticated")({
       const baseDelay = 250; // ms
       const attempts: AttemptEvent[] = [];
       const startedAt = performance.now();
+      // Satu correlationId untuk seluruh rantai retry + server log + telemetry.
+      const correlationId =
+        (typeof crypto !== "undefined" && "randomUUID" in crypto
+          ? crypto.randomUUID()
+          : `c-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`);
       let lastErr: unknown = null;
       for (let attempt = 0; attempt < maxAttempts; attempt++) {
         const attemptStart = performance.now();
         try {
-          const res = await isDeviceTrusted({ data: { deviceHash: hash } });
+          const res = await isDeviceTrusted({ data: { deviceHash: hash, correlationId } });
           attempts.push({
             attempt: attempt + 1,
             ok: true,
             status: 200,
             durationMs: Math.round(performance.now() - attemptStart),
+            correlationId,
           });
           trusted = !!res?.trusted;
           lastErr = null;
@@ -195,6 +202,7 @@ export const Route = createFileRoute("/_authenticated")({
             status: extractStatus(err),
             durationMs: Math.round(performance.now() - attemptStart),
             errorMessage: err instanceof Error ? err.message : String(err),
+            correlationId,
           });
           if (attempt === maxAttempts - 1) {
             trusted = false;
@@ -212,10 +220,18 @@ export const Route = createFileRoute("/_authenticated")({
         attempts,
         retries: Math.max(0, attempts.length - 1),
         cacheHit: false,
+        correlationId,
       });
       try {
         sessionStorage.setItem(cacheKey, JSON.stringify({ trusted, at: Date.now() }));
       } catch {}
+      if (lastErr) {
+        // Lampirkan correlationId ke error agar error boundary bisa
+        // menampilkan rantai yang sama dengan log server & telemetry client.
+        try {
+          (lastErr as { correlationId?: string }).correlationId = correlationId;
+        } catch {}
+      }
     }
     if (!trusted) {
       throw redirect({
