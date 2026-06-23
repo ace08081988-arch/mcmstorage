@@ -30,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/ecer")({
     item: typeof s.item === "string" ? s.item : undefined,
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
+    edit: typeof s.edit === "string" ? s.edit : undefined,
   }),
   component: EcerPage,
 });
