@@ -30,6 +30,7 @@ export const Route = createFileRoute("/_authenticated/ecer")({
     item: typeof s.item === "string" ? s.item : undefined,
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
+    edit: typeof s.edit === "string" ? s.edit : undefined,
   }),
   component: EcerPage,
 });
@@ -183,6 +184,16 @@ function EcerPage() {
     const clearId = window.setTimeout(() => setHighlightTitleId(undefined), 2600);
     return () => { window.clearTimeout(scrollId); window.clearTimeout(clearId); };
   }, [highlightTitleId, titles, selectedItemId]);
+
+  // Buka dialog edit langsung saat dideep-link dengan ?edit=1.
+  useEffect(() => {
+    if (search.edit !== "1" || !selectedTitleId || titles.length === 0) return;
+    const t = titles.find((x) => x.id === selectedTitleId);
+    if (!t) return;
+    if (selectedItemId !== t.warehouse_item_id) setSelectedItemId(t.warehouse_item_id);
+    setEditingTitle(t);
+    void router.navigate({ to: "/ecer", search: { item: t.warehouse_item_id, title: undefined }, replace: true });
+  }, [search.edit, selectedTitleId, titles, selectedItemId, router]);
 
   async function refetchTitles() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, Edit3, Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { countMatchingSelfPreps } from "@/lib/ecer-ready-count";
 
 type Row = {
@@ -18,9 +19,9 @@ export function ReadyEcerSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [query, setQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>("all");
+  const [busyId, setBusyId] = useState<string | null>(null);
 
-  useEffect(() => {
-    void (async () => {
+  async function load() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = supabase as any;
       const { data: titles } = await sb
@@ -52,8 +53,23 @@ export function ReadyEcerSection() {
           product_name: product,
         };
       }));
-    })();
-  }, []);
+  }
+
+  useEffect(() => { void load(); }, []);
+
+  async function onDelete(r: Row) {
+    const ok = typeof window !== "undefined" && window.confirm(
+      `Hapus judul ecer "${r.name}"? Semua kotak penyiapan di judul ini juga akan dihapus dan stok yang sudah dikurangi sebelumnya akan dikembalikan.`,
+    );
+    if (!ok) return;
+    setBusyId(r.id);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { error } = await (supabase.from as any)("ecer_titles").delete().eq("id", r.id);
+    setBusyId(null);
+    if (error) { toast.error("Gagal: " + error.message); return; }
+    toast.success("Judul dihapus");
+    setRows((prev) => (prev ?? []).filter((x) => x.id !== r.id));
+  }
 
   const q = query.trim().toLowerCase();
   const products = rows === null
@@ -142,25 +158,50 @@ export function ReadyEcerSection() {
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {(filtered ?? []).map((r) => (
-            <Link
+            <div
               key={r.id}
-              to="/ecer"
-              search={{ item: r.warehouse_item_id, title: r.id }}
-              className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
+              className="group relative flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
             >
-              <div className="flex items-center gap-1.5">
-                <Scale className="h-3.5 w-3.5 text-primary" />
-                <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
-              </div>
-              <span className="truncate text-[10px] leading-tight text-muted-foreground">
-                {r.product_name} · {r.target_grams} {r.unit_label}
-              </span>
-              <span className="text-[10px] leading-tight">
-                <span className={r.prep_count > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
-                  {r.prep_count} kotak siap
+              <Link
+                to="/ecer"
+                search={{ item: r.warehouse_item_id, title: r.id }}
+                className="flex flex-col gap-0.5 pr-12"
+              >
+                <div className="flex items-center gap-1.5">
+                  <Scale className="h-3.5 w-3.5 text-primary" />
+                  <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
+                </div>
+                <span className="truncate text-[10px] leading-tight text-muted-foreground">
+                  {r.product_name} · {r.target_grams} {r.unit_label}
                 </span>
-              </span>
-            </Link>
+                <span className="text-[10px] leading-tight">
+                  <span className={r.prep_count > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+                    {r.prep_count} kotak siap
+                  </span>
+                </span>
+              </Link>
+              <div className="absolute right-1 top-1 flex gap-0.5">
+                <Link
+                  to="/ecer"
+                  search={{ item: r.warehouse_item_id, title: r.id, edit: "1" }}
+                  className="rounded p-1 text-muted-foreground hover:bg-accent hover:text-foreground"
+                  aria-label={`Edit ${r.name}`}
+                  title="Edit judul"
+                >
+                  <Edit3 className="h-3.5 w-3.5" />
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => void onDelete(r)}
+                  disabled={busyId === r.id}
+                  className="rounded p-1 text-destructive hover:bg-destructive/10 disabled:opacity-50"
+                  aria-label={`Hapus ${r.name}`}
+                  title="Hapus judul"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            </div>
           ))}
         </div>
       )}
