@@ -152,8 +152,12 @@ export function EcerSection() {
   // sync URL when selection changes
   useEffect(() => {
     void router.navigate({
-      to: "/ecer",
-      search: { item: selectedItemId, title: selectedTitleId },
+      to: "/",
+      search: (prev: Record<string, unknown> | undefined) => ({
+        ...(prev ?? {}),
+        item: selectedItemId,
+        title: selectedTitleId,
+      }),
       replace: true,
     });
   }, [selectedItemId, selectedTitleId, router]);
@@ -193,7 +197,16 @@ export function EcerSection() {
     if (!t) return;
     if (selectedItemId !== t.warehouse_item_id) setSelectedItemId(t.warehouse_item_id);
     setEditingTitle(t);
-    void router.navigate({ to: "/ecer", search: { item: t.warehouse_item_id, title: undefined }, replace: true });
+    void router.navigate({
+      to: "/",
+      search: (prev: Record<string, unknown> | undefined) => ({
+        ...(prev ?? {}),
+        item: t.warehouse_item_id,
+        title: undefined,
+        edit: undefined,
+      }),
+      replace: true,
+    });
   }, [search.edit, selectedTitleId, titles, selectedItemId, router]);
 
   async function refetchTitles() {
