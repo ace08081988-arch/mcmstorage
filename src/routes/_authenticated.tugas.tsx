@@ -10,6 +10,7 @@ import { confirm as confirmDialog } from "@/lib/confirm";
 import { validateVariantWeight, validateVariantLabel } from "@/lib/variant-validation";
 import { SiapkanSendiriSection } from "@/components/SiapkanSendiriSection";
 import { StaffContactsPanel } from "@/components/StaffContactsPanel";
+import { SharePinDialog } from "@/components/tugas/SharePinDialog";
 
 export const Route = createFileRoute("/_authenticated/tugas")({
   head: () => ({
@@ -46,6 +47,7 @@ function TugasPage() {
   const [manageCategoryFor, setManageCategoryFor] = useState<string | null>(null);
   const [openAudit, setOpenAudit] = useState(false);
   const [pinAlerts, setPinAlerts] = useState<PinAlert[]>([]);
+  const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
@@ -215,13 +217,8 @@ function TugasPage() {
             </div>
             <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs">Buka</button>
             <button
-              onClick={async () => {
-                const url = publicTaskUrl(t.share_token);
-                const message = `Tugas: ${t.title}\n${url}\n(PIN dikirim terpisah)`;
-                const res = await shareToWhatsApp({ text: message, title: t.title, url });
-                notifyShareResult(res);
-              }}
-              title="Bagikan tugas ini via WhatsApp"
+              onClick={() => setSharePinFor(t)}
+              title="Bagikan link + PIN via WhatsApp"
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20"
             >
               <MessageCircle className="h-4 w-4" />
@@ -243,6 +240,13 @@ function TugasPage() {
       )}
       {createdInfo && <ShareDialog info={createdInfo} onClose={() => setCreatedInfo(null)} />}
       {openTask && <TaskDetail task={openTask} onClose={() => { setOpenTask(null); void load(); }} />}
+      {sharePinFor && (
+        <SharePinDialog
+          title={sharePinFor.title}
+          url={publicTaskUrl(sharePinFor.share_token)}
+          onClose={() => setSharePinFor(null)}
+        />
+      )}
       {openVariantsHub && (
         <VariantsHub
           warehouse={warehouse}
@@ -1455,6 +1459,7 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
   const [subs, setSubs] = useState<Submission[]>([]);
   const [busy, setBusy] = useState(false);
   const [openItems, setOpenItems] = useState<Record<string, boolean>>({});
+  const [sharePinOpen, setSharePinOpen] = useState(false);
 
   async function load() {
     const [{ data: i }, { data: s }] = await Promise.all([
@@ -1482,15 +1487,17 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
   }
 
   const url = publicTaskUrl(task.share_token);
-  const message = `Tugas: ${task.title}\n${url}`;
 
   return (
     <Modal title={task.title} onClose={onClose} wide>
       <div className="mb-3 flex flex-wrap gap-2">
-        <button onClick={() => shareToWhatsApp({ text: message, title: task.title, url })} className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white"><MessageCircle className="h-4 w-4" /> Bagikan ulang</button>
+        <button onClick={() => setSharePinOpen(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white"><MessageCircle className="h-4 w-4" /> Bagikan link + PIN</button>
         <button disabled={busy} onClick={() => setStatus(task.status === "done" ? "active" : "done")} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs">{task.status === "done" ? "Aktifkan lagi" : "Tandai selesai"}</button>
         <a href={url} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs"><ExternalLink className="h-4 w-4" /> Pratinjau link pegawai</a>
       </div>
+      {sharePinOpen && (
+        <SharePinDialog title={task.title} url={url} onClose={() => setSharePinOpen(false)} />
+      )}
       <div className="space-y-3">
         {items.map((it) => {
           const itemSubs = subs.filter((s) => s.task_item_id === it.id);
