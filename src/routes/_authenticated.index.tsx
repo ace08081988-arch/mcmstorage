@@ -274,6 +274,12 @@ function Index() {
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [loadFailed, setLoadFailed] = useState(false);
   const [loadRetryToken, setLoadRetryToken] = useState(0);
+  // Detail error terakhir agar bisa ditampilkan di layar "Gagal memuat data".
+  const [loadErrorDetail, setLoadErrorDetail] = useState<{
+    message: string;
+    code?: string;
+    raw?: string;
+  } | null>(null);
   const [filter, setFilter] = useState<"semua" | Status>(() => {
     if (typeof window === "undefined") return "semua";
     const v = window.localStorage.getItem("mcm_filter");
@@ -439,6 +445,19 @@ function Index() {
       });
       setLoadFailed(true);
       setHydrated(true);
+      // Simpan detail error agar ditampilkan di layar gagal.
+      const err = lastError as { message?: string; code?: string } | null | undefined;
+      let raw: string | undefined;
+      try {
+        raw = JSON.stringify(lastError, Object.getOwnPropertyNames(lastError ?? {}));
+      } catch {
+        raw = String(lastError);
+      }
+      setLoadErrorDetail({
+        message: friendlyError(lastError as any) || err?.message || String(lastError),
+        code: err?.code,
+        raw,
+      });
     })();
 
     return () => {
@@ -719,6 +738,50 @@ function Index() {
           Sudah dicoba 3 kali otomatis namun belum berhasil. Periksa koneksi
           lalu coba lagi.
         </span>
+        {loadErrorDetail && (
+          <div className="w-full max-w-md rounded-md border border-destructive/30 bg-destructive/5 p-3 text-left">
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-destructive">
+              Detail error
+            </div>
+            <div className="mt-1 break-words text-xs text-foreground">
+              {loadErrorDetail.message}
+            </div>
+            {loadErrorDetail.code && (
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                Kode: <code className="font-mono">{loadErrorDetail.code}</code>
+              </div>
+            )}
+            {loadErrorDetail.raw && loadErrorDetail.raw !== '"{}"' && (
+              <details className="mt-2">
+                <summary className="cursor-pointer text-[11px] text-muted-foreground hover:text-foreground">
+                  Data mentah
+                </summary>
+                <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded bg-background/60 p-2 text-[10px] leading-snug text-muted-foreground">
+                  {loadErrorDetail.raw}
+                </pre>
+              </details>
+            )}
+            <button
+              type="button"
+              onClick={() => {
+                const text = [
+                  loadErrorDetail.message,
+                  loadErrorDetail.code ? `Kode: ${loadErrorDetail.code}` : null,
+                  loadErrorDetail.raw ? `Raw: ${loadErrorDetail.raw}` : null,
+                ]
+                  .filter(Boolean)
+                  .join("\n");
+                navigator.clipboard?.writeText(text).then(
+                  () => toast.success("Detail error disalin"),
+                  () => toast.error("Gagal menyalin"),
+                );
+              }}
+              className="mt-2 rounded border px-2 py-1 text-[11px] hover:bg-accent"
+            >
+              Salin detail
+            </button>
+          </div>
+        )}
         <div className="flex flex-wrap justify-center gap-2">
           <button
             type="button"
@@ -726,6 +789,7 @@ function Index() {
               setLoadFailed(false);
               setHydrated(false);
               setLoadAttempt(0);
+              setLoadErrorDetail(null);
               setLoadRetryToken((n) => n + 1);
             }}
             className="rounded-md bg-primary px-3 py-1.5 text-xs font-semibold text-primary-foreground hover:opacity-90"
