@@ -39,34 +39,6 @@ type Tool = "select" | "draw" | "text" | "emoji" | "arrow" | "rect" | "circle";
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
-function WaitingForSize({ onForce }: { onForce: () => void }) {
-  const [showForce, setShowForce] = useState(false);
-  useEffect(() => {
-    const t = setTimeout(() => setShowForce(true), 1500);
-    return () => clearTimeout(t);
-  }, []);
-  return (
-    <div className="flex max-w-xs flex-col items-center gap-2 text-center text-xs text-white/85">
-      <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-      <span>Menyiapkan tampilan editor…</span>
-      {showForce && (
-        <>
-          <p className="text-[11px] text-white/70">
-            Tampilan belum siap. Coba muat ulang tampilan editor.
-          </p>
-          <button
-            type="button"
-            onClick={onForce}
-            className="rounded-md border border-white/40 px-3 py-1 text-xs text-white hover:bg-white/10"
-          >
-            Muat ulang tampilan
-          </button>
-        </>
-      )}
-    </div>
-  );
-}
-
 export type PhotoEditorProps = {
   src: string;
   onCancel: () => void;
@@ -79,7 +51,6 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [view, setView] = useState({ w: 0, h: 0 });
-  const [loadState, setLoadState] = useState<"loading" | "ready" | "error">("loading");
 
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
   const [history, setHistory] = useState<EditorState[]>([]);
@@ -115,12 +86,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [previewZoom, setPreviewZoom] = useState(false);
   const [zoomLevel, setZoomLevel] = useState(1);
   const [previewFullscreen, setPreviewFullscreen] = useState(false);
-  const [exportBg, setExportBg] = useState<"white" | "transparent">("white");
   const previewScrollRef = useRef<HTMLDivElement | null>(null);
   const panRef = useRef<{ x: number; y: number; sx: number; sy: number } | null>(null);
-  const [savePreview, setSavePreview] = useState<{ open: boolean; dataUrl: string; blob: Blob | null; building: boolean }>(
-    { open: false, dataUrl: "", blob: null, building: false },
-  );
 
   function onPreviewPointerDown(e: React.PointerEvent<HTMLDivElement>) {
     const el = previewScrollRef.current; if (!el) return;
@@ -137,84 +104,30 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   // Load image
   useEffect(() => {
-    let cancelled = false;
-    setLoadState("loading");
-    setImg(null);
-
-    const finish = (i: HTMLImageElement) => {
-      if (cancelled) return;
-      imgRef.current = i;
-      setImg(i);
-      setLoadState("ready");
-    };
-
-    // First attempt: request with CORS so the canvas stays exportable.
-    const corsImg = new Image();
-    corsImg.crossOrigin = "anonymous";
-    corsImg.onload = () => finish(corsImg);
-    corsImg.onerror = () => {
-      // Fallback: some hosts (or data: URLs) don't send CORS headers.
-      // Retry without crossOrigin so the editor still shows the photo.
-      // The canvas may become "tainted" — toDataURL/toBlob can fail; we
-      // surface that at export time.
-      if (cancelled) return;
-      const plain = new Image();
-      plain.onload = () => finish(plain);
-      plain.onerror = () => { if (!cancelled) setLoadState("error"); };
-      plain.src = src;
-    };
-    corsImg.src = src;
-
-    return () => { cancelled = true; };
+    const i = new Image();
+    i.crossOrigin = "anonymous";
+    i.onload = () => { setImg(i); imgRef.current = i; };
+    i.src = src;
   }, [src]);
 
   // Compute view size based on container width
   useEffect(() => {
     if (!img || !wrapRef.current) return;
-    const el = wrapRef.current;
     const update = () => {
-      // Wrap might briefly report 0 right after portal mount on some
-      // browsers — fall back to the viewport width minus padding so the
-      // canvas never gets stuck at zero (which used to leave the black
-      // background showing instead of the photo).
-      const measuredW = el.clientWidth;
-      const fallbackW = typeof window !== "undefined" ? Math.max(window.innerWidth - 16, 0) : 0;
-      const containerW = measuredW > 0 ? measuredW : fallbackW;
-      const measuredH = el.clientHeight;
-      const viewportH = typeof window !== "undefined" ? window.innerHeight - 240 : 560;
-      const containerH = Math.max(160, Math.min(measuredH > 0 ? measuredH : viewportH, 720));
-      if (containerW <= 0) return false;
+      const containerW = wrapRef.current!.clientWidth;
+      const containerH = Math.min(window.innerHeight - 240, 560);
+      const ratio = img.width / img.height;
       const rotated = state.rotation === 90 || state.rotation === 270;
       const baseW = rotated ? img.height : img.width;
       const baseH = rotated ? img.width : img.height;
       const r = baseW / baseH;
       let w = containerW, h = containerW / r;
       if (h > containerH) { h = containerH; w = h * r; }
-      // Avoid useless setState churn when value is unchanged.
-      setView((prev) => (Math.round(prev.w) === Math.round(w) && Math.round(prev.h) === Math.round(h) ? prev : { w, h }));
-      return true;
+      setView({ w, h });
     };
-    // Try immediately; if the wrap hasn't been measured yet, retry on the
-    // next animation frame and again after a short delay to cover slow
-    // layouts (mobile Safari sometimes needs an extra tick).
-    let raf = 0;
-    let timer: ReturnType<typeof setTimeout> | null = null;
-    if (!update()) {
-      raf = requestAnimationFrame(() => {
-        if (!update()) timer = setTimeout(update, 50);
-      });
-    }
-    const ro = typeof ResizeObserver !== "undefined" ? new ResizeObserver(() => update()) : null;
-    ro?.observe(el);
+    update();
     window.addEventListener("resize", update);
-    window.addEventListener("orientationchange", update);
-    return () => {
-      if (raf) cancelAnimationFrame(raf);
-      if (timer) clearTimeout(timer);
-      ro?.disconnect();
-      window.removeEventListener("resize", update);
-      window.removeEventListener("orientationchange", update);
-    };
+    return () => window.removeEventListener("resize", update);
   }, [img, state.rotation]);
 
   // Build (and re-build) the base canvas only when image / view / rotation changes.
@@ -228,14 +141,6 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const ctx = base.getContext("2d")!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingQuality = "high";
-    // Fill white background for white-bg export so transparent PNGs don't look black.
-    // For transparent export, leave the base canvas clear so the original alpha shows through.
-    if (exportBg === "white") {
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, view.w, view.h);
-    } else {
-      ctx.clearRect(0, 0, view.w, view.h);
-    }
     ctx.save();
     ctx.translate(view.w / 2, view.h / 2);
     ctx.rotate((state.rotation * Math.PI) / 180);
@@ -246,7 +151,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.restore();
     baseCanvasRef.current = base;
     scheduleRedraw();
-  }, [img, view, state.rotation, exportBg]);
+  }, [img, view, state.rotation]);
 
   // Composite layer pass — copies cached base then draws layers + in-progress shape.
   function render() {
@@ -510,11 +415,6 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const cvs = document.createElement("canvas");
     cvs.width = outW; cvs.height = outH;
     const ctx = cvs.getContext("2d")!;
-    if (exportBg === "white") {
-      // Fill white background so transparent PNGs don't export as black on JPEG
-      ctx.fillStyle = "#ffffff";
-      ctx.fillRect(0, 0, outW, outH);
-    }
     ctx.save();
     ctx.translate(outW / 2, outH / 2);
     ctx.rotate((state.rotation * Math.PI) / 180);
@@ -526,32 +426,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.scale(sx, sy);
     for (const layer of state.layers) drawLayer(ctx, layer, false);
     ctx.restore();
-    // Transparent export must use PNG to preserve alpha; white export keeps smaller JPEG.
-    const mime = exportBg === "transparent" ? "image/png" : "image/jpeg";
-    const quality = exportBg === "transparent" ? undefined : 0.88;
-    let dataUrl = "";
-    let blob: Blob | null = null;
-    try {
-      dataUrl = cvs.toDataURL(mime, quality);
-      blob = await new Promise<Blob | null>((r) => cvs.toBlob(r, mime, quality));
-    } catch {
-      setSavePreview({ open: false, dataUrl: "", blob: null, building: false });
-      alert("Gagal menyiapkan pratinjau. Foto mungkin diblokir oleh kebijakan CORS.");
-      return;
-    }
-    setSavePreview({ open: true, dataUrl, blob, building: false });
-  }
-
-  function openSavePreview() {
-    setSavePreview({ open: true, dataUrl: "", blob: null, building: true });
-    // Defer to next tick so the dialog can show its loading state first.
-    setTimeout(() => { void exportImage(); }, 0);
-  }
-
-  function confirmSave() {
-    if (!savePreview.blob || !savePreview.dataUrl) return;
-    onSave(savePreview.blob, savePreview.dataUrl);
-    setSavePreview({ open: false, dataUrl: "", blob: null, building: false });
+    const dataUrl = cvs.toDataURL("image/jpeg", 0.88);
+    const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, "image/jpeg", 0.88));
+    if (blob) onSave(blob, dataUrl);
   }
 
   const selected = state.layers.find((l) => l.id === selectedId);
@@ -581,116 +458,20 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <button onClick={redo} disabled={!future.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:opacity-40"><Redo2 className="h-4 w-4" /></button>
           <button onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border"><RotateCw className="h-4 w-4" /></button>
         </div>
-        <div className="flex items-center gap-2">
-          <div
-            role="radiogroup"
-            aria-label="Latar saat ekspor"
-            className="flex h-9 items-center rounded-md border p-0.5 text-xs"
-          >
-            <button
-              type="button"
-              role="radio"
-              aria-checked={exportBg === "white"}
-              onClick={() => setExportBg("white")}
-              title="Ekspor JPEG dengan latar putih"
-              className={`flex h-8 items-center gap-1 rounded px-2 ${exportBg === "white" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-            >
-              <span className="inline-block h-3 w-3 rounded-sm border bg-white" />
-              Putih
-            </button>
-            <button
-              type="button"
-              role="radio"
-              aria-checked={exportBg === "transparent"}
-              onClick={() => setExportBg("transparent")}
-              title="Ekspor PNG dengan latar transparan"
-              className={`flex h-8 items-center gap-1 rounded px-2 ${exportBg === "transparent" ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
-            >
-              <span
-                className="inline-block h-3 w-3 rounded-sm border"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%)",
-                  backgroundSize: "6px 6px",
-                  backgroundPosition: "0 0,0 3px,3px -3px,-3px 0",
-                }}
-              />
-              Transparan
-            </button>
-          </div>
-          <button onClick={openSavePreview} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
-            <Check className="h-4 w-4" /> Simpan
-          </button>
-        </div>
+        <button onClick={exportImage} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
+          <Check className="h-4 w-4" /> Simpan
+        </button>
       </div>
 
       <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-black/80 p-2">
-        {img && view.w > 0 ? (
+        {img && view.w > 0 && (
           <canvas
-            ref={(el) => {
-              canvasRef.current = el;
-              // The visible canvas just mounted — base may already be ready
-              // from a previous effect; paint immediately so the photo is
-              // visible without waiting for the next state change.
-              if (el && baseCanvasRef.current) scheduleRedraw();
-            }}
+            ref={canvasRef}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
             onPointerUp={onPointerUp}
             className="touch-none rounded shadow-lg"
           />
-        ) : loadState === "error" ? (
-          <div className="flex max-w-xs flex-col items-center gap-2 rounded-md bg-background/95 p-4 text-center text-sm">
-            <X className="h-6 w-6 text-destructive" />
-            <div className="font-medium">Gagal memuat foto</div>
-            <p className="text-xs text-muted-foreground">
-              Periksa koneksi internet lalu coba lagi, atau batalkan dan pilih foto lain.
-            </p>
-            <div className="mt-1 flex gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  // re-trigger the loader effect by bumping the src cache buster
-                  setLoadState("loading");
-                  const i = new Image();
-                  i.onload = () => { imgRef.current = i; setImg(i); setLoadState("ready"); };
-                  i.onerror = () => setLoadState("error");
-                  i.src = src + (src.includes("?") ? "&" : "?") + "r=" + Date.now();
-                }}
-                className="rounded-md border px-3 py-1 text-xs"
-              >
-                Coba lagi
-              </button>
-              <button
-                type="button"
-                onClick={onCancel}
-                className="rounded-md border px-3 py-1 text-xs"
-              >
-                Batal
-              </button>
-            </div>
-          </div>
-        ) : img ? (
-          <WaitingForSize
-            onForce={() => {
-              // Manual fallback: force a view size from the viewport so the
-              // canvas can render even if the container never reports a size.
-              const w = typeof window !== "undefined" ? Math.max(window.innerWidth - 16, 320) : 320;
-              const rotated = state.rotation === 90 || state.rotation === 270;
-              const baseW = rotated ? img.height : img.width;
-              const baseH = rotated ? img.width : img.height;
-              const r = baseW / baseH;
-              const maxH = typeof window !== "undefined" ? Math.max(window.innerHeight - 240, 320) : 520;
-              let vw = w, vh = w / r;
-              if (vh > maxH) { vh = maxH; vw = vh * r; }
-              setView({ w: vw, h: vh });
-            }}
-          />
-        ) : (
-          <div className="flex flex-col items-center gap-2 text-xs text-white/80">
-            <div className="h-8 w-8 animate-spin rounded-full border-2 border-white/30 border-t-white" />
-            <span>Memuat foto…</span>
-          </div>
         )}
       </div>
 
@@ -892,58 +673,6 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               <Button variant="ghost" size="sm" onClick={() => setZoomLevel(1)}>Reset</Button>
             </div>
             <Button onClick={() => setPreviewZoom(false)}>Tutup</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      <Dialog
-        open={savePreview.open}
-        onOpenChange={(o) => { if (!o) setSavePreview({ open: false, dataUrl: "", blob: null, building: false }); }}
-      >
-        <DialogContent className="max-w-[95vw] p-3 sm:max-w-xl">
-          <DialogHeader>
-            <DialogTitle>Pratinjau Hasil</DialogTitle>
-            <DialogDescription>
-              Periksa hasil edit. Jika sudah benar, tekan Simpan; atau Kembali untuk mengubah.
-            </DialogDescription>
-          </DialogHeader>
-          <div
-            className="relative max-h-[60vh] overflow-auto rounded-md p-2"
-            style={
-              exportBg === "transparent"
-                ? {
-                    backgroundImage:
-                      "linear-gradient(45deg,#ccc 25%,transparent 25%),linear-gradient(-45deg,#ccc 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#ccc 75%),linear-gradient(-45deg,transparent 75%,#ccc 75%)",
-                    backgroundSize: "16px 16px",
-                    backgroundPosition: "0 0,0 8px,8px -8px,-8px 0",
-                  }
-                : { background: "#f3f4f6" }
-            }
-          >
-            {savePreview.building || !savePreview.dataUrl ? (
-              <div className="flex h-48 flex-col items-center justify-center gap-2 text-xs text-muted-foreground">
-                <div className="h-6 w-6 animate-spin rounded-full border-2 border-muted-foreground/30 border-t-foreground" />
-                <span>Menyiapkan pratinjau…</span>
-              </div>
-            ) : (
-              <img
-                src={savePreview.dataUrl}
-                alt="Pratinjau hasil edit"
-                className="mx-auto block max-h-[58vh] w-auto select-none"
-                draggable={false}
-              />
-            )}
-          </div>
-          <DialogFooter className="flex-row justify-end gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setSavePreview({ open: false, dataUrl: "", blob: null, building: false })}
-            >
-              Kembali
-            </Button>
-            <Button onClick={confirmSave} disabled={!savePreview.blob || savePreview.building}>
-              <Check className="mr-1 h-4 w-4" /> Simpan
-            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

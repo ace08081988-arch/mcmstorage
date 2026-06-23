@@ -5,7 +5,6 @@ import { friendlyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
 import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
 import { PublicFooter } from "@/components/PublicFooter";
-import { ResetCacheButton } from "@/components/ResetCacheButton";
 
 export const Route = createFileRoute("/auth")({
   ssr: false,
@@ -267,12 +266,6 @@ function AuthPage() {
           </p>
         </form>
       </div>
-      </div>
-      <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-2 px-4 pb-4 text-center">
-        <p className="text-[11px] text-muted-foreground">
-          Halaman gagal muat? Coba bersihkan cache aplikasi.
-        </p>
-        <ResetCacheButton fullWidth />
       </div>
       <PublicFooter />
     </div>

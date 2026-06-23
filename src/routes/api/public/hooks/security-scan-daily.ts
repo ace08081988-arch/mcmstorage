@@ -1,6 +1,5 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { createClient } from '@supabase/supabase-js'
-import { timingSafeEqual, createHash } from 'crypto'
 
 type Finding = {
   id: string
@@ -17,92 +16,26 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
       POST: async ({ request }) => {
         const supabaseUrl = process.env.SUPABASE_URL ?? import.meta.env.VITE_SUPABASE_URL
         const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
-        const hookSecret = process.env.SECURITY_SCAN_HOOK_SECRET
+        const anonKey = process.env.SUPABASE_PUBLISHABLE_KEY ?? import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY
         const slackUrl = process.env.SLACK_SECURITY_WEBHOOK_URL
         const lovableApiKey = process.env.LOVABLE_API_KEY
         const senderDomain = process.env.SENDER_DOMAIN ?? 'notify.mcmstorage.biz'
         const lovableSendUrl = process.env.LOVABLE_SEND_URL
 
-        const ip =
-          request.headers.get('cf-connecting-ip') ??
-          request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
-          null
-        const userAgent = request.headers.get('user-agent')
-        const presentedAuthRaw = request.headers.get('x-hook-secret')
-
-        const auditFailure = async (reason: string) => {
-          // Selalu coba catat ke console agar terlihat di log worker
-          // walaupun DB insert gagal (mis. config_missing).
-          console.warn('[security-scan-daily] auth_failed', {
-            reason,
-            ip,
-            userAgent,
-            hasAuthHeader: Boolean(presentedAuthRaw),
-          })
-          if (!supabaseUrl || !serviceKey) return
-          try {
-            const adminClient = createClient(supabaseUrl, serviceKey, {
-              auth: { persistSession: false, autoRefreshToken: false },
-            })
-            await adminClient.from('security_hook_audit').insert({
-              hook_name: 'security-scan-daily',
-              reason,
-              ip,
-              user_agent: userAgent,
-              presented_auth_hash: presentedAuthRaw
-                ? createHash('sha256').update(presentedAuthRaw).digest('hex')
-                : null,
-              headers: {
-                has_x_hook_secret: Boolean(request.headers.get('x-hook-secret')),
-                has_authorization: Boolean(request.headers.get('Authorization')),
-                has_apikey: Boolean(request.headers.get('apikey')),
-              },
-            })
-          } catch (e) {
-            console.error('[security-scan-daily] audit_insert_failed', e)
-          }
+        // Auth: pg_cron memanggil dengan header apikey=<anon-key>
+        const auth =
+          request.headers.get('apikey') ??
+          request.headers.get('Authorization')?.replace(/^Bearer\s+/i, '')
+        if (!anonKey || auth !== anonKey) {
+          return new Response('Unauthorized', { status: 401 })
         }
-
         if (!supabaseUrl || !serviceKey) {
-          await auditFailure('config_missing')
           return Response.json({ error: 'config_missing' }, { status: 500 })
         }
+
         const supabase = createClient(supabaseUrl, serviceKey, {
           auth: { persistSession: false, autoRefreshToken: false },
         })
-
-        // Auth: shared-secret privat. Anon/publishable key TIDAK boleh dipakai
-        // karena ter-bundle ke klien dan bisa diambil siapa saja. Cron harian
-        // memakai secret yang tersimpan di DB backend; env secret tetap diterima
-        // agar rotasi/rollback tidak memutus pemanggil tepercaya.
-        if (!presentedAuthRaw) {
-          await auditFailure('missing_secret')
-          return new Response('Unauthorized', { status: 401 })
-        }
-        const { data: storedSecretRow, error: storedSecretError } = await supabase
-          .from('security_scan_hook_secrets')
-          .select('hook_secret')
-          .eq('hook_name', 'security-scan-daily')
-          .maybeSingle()
-        if (storedSecretError) {
-          await auditFailure('stored_secret_lookup_failed')
-          return Response.json({ error: 'stored_secret_lookup_failed' }, { status: 500 })
-        }
-        const validSecrets = [hookSecret, storedSecretRow?.hook_secret]
-          .filter((s): s is string => Boolean(s))
-        if (validSecrets.length === 0) {
-          await auditFailure('hook_secret_not_configured')
-          return Response.json({ error: 'hook_secret_not_configured' }, { status: 500 })
-        }
-        const presented = Buffer.from(presentedAuthRaw)
-        const matched = validSecrets.some((secret) => {
-          const expected = Buffer.from(secret)
-          return presented.length === expected.length && timingSafeEqual(presented, expected)
-        })
-        if (!matched) {
-          await auditFailure('wrong_secret')
-          return new Response('Unauthorized', { status: 401 })
-        }
 
         // 1. Jalankan scan
         const { data: scan, error: scanErr } = await supabase.rpc('run_internal_security_scan')
@@ -213,8 +146,7 @@ export const Route = createFileRoute('/api/public/hooks/security-scan-daily')({
                 },
                 { apiKey: lovableApiKey, sendUrl: lovableSendUrl },
               )
-              // Jangan bocorkan alamat email admin di response.
-              channels.email = { sent: true }
+              channels.email = { sent: true, to }
             }
           } catch (e) {
             channels.email = { sent: false, error: e instanceof Error ? e.message : String(e) }

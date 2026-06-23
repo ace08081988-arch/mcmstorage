@@ -4,8 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
-import { urlToFile } from "@/lib/share-wa";
-import { previewAndShareWA } from "@/lib/share-wa-preview";
+import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { fmtBase, fmtItemQty } from "@/lib/stock-format";
 
 type Item = {
@@ -331,12 +330,13 @@ function PackageCard({
       // Jika ada foto: jangan kirim phone agar share sheet sistem muncul
       // (di Android tap "WhatsApp" → foto otomatis terlampir + teks jadi caption).
       // Tanpa foto: pakai wa.me ke nomor langsung.
-      const res = await previewAndShareWA({
+      const res = await shareToWhatsApp({
         text,
         title: item.name,
         files,
         phone: files.length === 0 ? (targetPhone || undefined) : undefined,
       });
+      notifyShareResult(res);
       setPickWA(false);
       if (res.status === "cancelled" || res.status === "failed") {
         // Tidak jadi kirim — paket tetap "ready", tak perlu tanya lanjut.

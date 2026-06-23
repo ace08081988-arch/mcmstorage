@@ -1,154 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2, RefreshCw, X } from "lucide-react";
+import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { previewAndShareWA } from "@/lib/share-wa-preview";
+import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
 
 const BUCKET = "self-prep-photos";
-
-const ALLOWED_MIME = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"] as const;
-const ALLOWED_EXT = ["jpg", "jpeg", "png", "webp", "heic", "heif"] as const;
-const MAX_FILE_BYTES = 8 * 1024 * 1024; // 8 MB
-const COMPRESS_TARGET_BYTES = 7.5 * 1024 * 1024; // sedikit di bawah batas
-
-// Kompres gambar via canvas → JPEG. Mengembalikan File baru, atau null bila gagal
-// (mis. HEIC yang tidak bisa di-decode browser).
-async function compressImage(file: File): Promise<File | null> {
-  try {
-    const bitmap = await createImageBitmap(file).catch(async () => {
-      // Fallback via HTMLImageElement bila createImageBitmap gagal
-      const url = URL.createObjectURL(file);
-      try {
-        const img = await new Promise<HTMLImageElement>((resolve, reject) => {
-          const el = new Image();
-          el.onload = () => resolve(el);
-          el.onerror = () => reject(new Error("decode-failed"));
-          el.src = url;
-        });
-        return img as unknown as ImageBitmap;
-      } finally {
-        URL.revokeObjectURL(url);
-      }
-    });
-    const srcW = (bitmap as ImageBitmap).width || (bitmap as unknown as HTMLImageElement).naturalWidth;
-    const srcH = (bitmap as ImageBitmap).height || (bitmap as unknown as HTMLImageElement).naturalHeight;
-    if (!srcW || !srcH) return null;
-
-    // Iterasi: turunkan dimensi & kualitas sampai <= target
-    const attempts: Array<{ scale: number; quality: number }> = [
-      { scale: 1, quality: 0.85 },
-      { scale: 1, quality: 0.7 },
-      { scale: 0.8, quality: 0.7 },
-      { scale: 0.6, quality: 0.65 },
-      { scale: 0.5, quality: 0.6 },
-      { scale: 0.4, quality: 0.55 },
-    ];
-    for (const { scale, quality } of attempts) {
-      const w = Math.max(1, Math.round(srcW * scale));
-      const h = Math.max(1, Math.round(srcH * scale));
-      const canvas = document.createElement("canvas");
-      canvas.width = w;
-      canvas.height = h;
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return null;
-      ctx.drawImage(bitmap as CanvasImageSource, 0, 0, w, h);
-      const blob: Blob | null = await new Promise((res) =>
-        canvas.toBlob((b) => res(b), "image/jpeg", quality),
-      );
-      if (!blob) continue;
-      if (blob.size <= COMPRESS_TARGET_BYTES) {
-        const base = file.name.replace(/\.[^.]+$/, "") || "foto";
-        return new File([blob], `${base}.jpg`, { type: "image/jpeg" });
-      }
-    }
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-async function pickFile(
-  f: File | null | undefined,
-  setFile: (f: File | null) => void,
-  inputEl?: HTMLInputElement | null,
-  opts: {
-    autoCompress?: boolean;
-    onCompressed?: (info: { originalBytes: number; compressedBytes: number }) => void;
-  } = {},
-) {
-  if (!f) return;
-  const ext = (f.name.split(".").pop() || "").toLowerCase();
-  const mimeOk = ALLOWED_MIME.includes(f.type as (typeof ALLOWED_MIME)[number]);
-  const extOk = ALLOWED_EXT.includes(ext as (typeof ALLOWED_EXT)[number]);
-  const toastId = `pickfile-${Date.now()}`;
-  const retryAction = inputEl
-    ? {
-        label: "Coba Upload Lagi",
-        onClick: () => {
-          toast.dismiss(toastId);
-          inputEl.value = "";
-          // Tunggu satu tick agar toast tertutup dulu, lalu buka dialog file
-          setTimeout(() => inputEl.click(), 0);
-        },
-      }
-    : undefined;
-  const reject = (title: string, description: string, duration: number) => {
-    toast.error(title, { id: toastId, description, duration, action: retryAction });
-    if (inputEl) inputEl.value = "";
-  };
-  if (!mimeOk && !extOk) {
-    return reject(
-      "Format foto tidak didukung",
-      `File "${f.name}" tidak bisa diunggah.\nSaran: konversi foto ke salah satu format JPG, PNG, WEBP, atau HEIC/HEIF, lalu coba unggah ulang (maks 8 MB).`,
-      7000,
-    );
-  }
-  if (f.size > MAX_FILE_BYTES) {
-    if (opts.autoCompress) {
-      const loadingId = toast.loading("Mengompres foto…", {
-        description: `Ukuran asli ${(f.size / 1024 / 1024).toFixed(1)} MB. Menyesuaikan agar di bawah 8 MB.`,
-      });
-      const compressed = await compressImage(f);
-      toast.dismiss(loadingId);
-      if (compressed && compressed.size <= MAX_FILE_BYTES && compressed.size > 0) {
-        const beforeMB = f.size / 1024 / 1024;
-        const afterMB = compressed.size / 1024 / 1024;
-        const savedMB = beforeMB - afterMB;
-        const savedPct = (savedMB / beforeMB) * 100;
-        toast.success("Foto dikompres otomatis", {
-          description:
-            `Sebelum: ${beforeMB.toFixed(2)} MB\n` +
-            `Sesudah: ${afterMB.toFixed(2)} MB (JPEG)\n` +
-            `Hemat: ${savedMB.toFixed(2)} MB (≈ ${savedPct.toFixed(0)}%)`,
-          duration: 7000,
-        });
-        opts.onCompressed?.({ originalBytes: f.size, compressedBytes: compressed.size });
-        if (inputEl) inputEl.value = "";
-        setFile(compressed);
-        return;
-      }
-      return reject(
-        "Kompres otomatis gagal",
-        `File "${f.name}" berukuran ${(f.size / 1024 / 1024).toFixed(1)} MB tidak bisa dikompres otomatis (mungkin format HEIC/HEIF).\nSaran: kompres manual ke JPG/PNG/WEBP di bawah 8 MB, lalu coba lagi.`,
-        8000,
-      );
-    }
-    return reject(
-      "Ukuran foto terlalu besar",
-      `File "${f.name}" berukuran ${(f.size / 1024 / 1024).toFixed(1)} MB (maksimal 8 MB).\nSaran: kompres foto agar di bawah 8 MB (mis. aplikasi 'Photo Compress' / 'Compress Image'), turunkan resolusi, atau ambil ulang dengan resolusi kamera lebih rendah.`,
-      8000,
-    );
-  }
-  if (f.size === 0) {
-    return reject(
-      "File foto kosong atau rusak",
-      "Tidak ada data pada file ini.\nSaran: pilih ulang foto dari galeri, atau ambil foto baru dengan kamera. Pastikan format JPG/PNG/WEBP/HEIC dan ukuran di bawah 8 MB.",
-      7000,
-    );
-  }
-  setFile(f);
-}
 
 type Row = {
   id: string;
@@ -187,13 +44,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [locationUrl, setLocationUrl] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [autoCompress, setAutoCompress] = useState(true);
-  const [compressionInfo, setCompressionInfo] = useState<{
-    originalBytes: number;
-    compressedBytes: number;
-  } | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
-  const cameraRef = useRef<HTMLInputElement>(null);
 
   const load = useCallback(async () => {
     if (!uid) return;
@@ -236,7 +87,6 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   function resetForm() {
     setTitle("");
     setFile(null);
-    setCompressionInfo(null);
     setLocationUrl("");
     setNote("");
     if (fileRef.current) fileRef.current.value = "";
@@ -299,26 +149,23 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
     if (r.note) lines.push(r.note);
     const text = lines.join("\n");
 
-    const photoPath = r.photo_path;
-    const thumbUrl = photoPath ? thumbs[photoPath] : undefined;
-    const result = await previewAndShareWA({
-      text,
-      title: r.title,
-      previewImageUrls: thumbUrl ? [thumbUrl] : undefined,
-      resolveFiles: photoPath
-        ? async () => {
-            const url = thumbUrl ?? (await supabase.storage.from(BUCKET).createSignedUrl(photoPath, 3600)).data?.signedUrl;
-            if (!url) return undefined;
-            try {
-              const res = await fetch(url);
-              if (!res.ok) return undefined;
-              const blob = await res.blob();
-              const name = photoPath.split("/").pop() || "foto.jpg";
-              return [new File([blob], name, { type: blob.type || "image/jpeg" })];
-            } catch { return undefined; }
+    let files: File[] | undefined;
+    if (r.photo_path) {
+      const url = thumbs[r.photo_path];
+      if (url) {
+        try {
+          const res = await fetch(url);
+          if (res.ok) {
+            const blob = await res.blob();
+            const name = r.photo_path.split("/").pop() || "foto.jpg";
+            files = [new File([blob], name, { type: blob.type || "image/jpeg" })];
           }
-        : undefined,
-    });
+        } catch { /* ignore — fallback ke teks saja */ }
+      }
+    }
+
+    const result = await shareToWhatsApp({ text, files });
+    notifyShareResult(result);
     if (result.status === "shared" || result.status === "fallback") {
       const { error } = await table()
         .update({ status: "sent", sent_at: new Date().toISOString() })
@@ -356,133 +203,21 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Foto produk</label>
-            <div className="mt-1 flex flex-wrap items-center gap-2">
+            <div className="mt-1 flex items-center gap-2">
               <input
                 ref={fileRef}
                 type="file"
                 accept="image/*"
-                onChange={(e) => {
-                  setCompressionInfo(null);
-                  void pickFile(e.target.files?.[0], setFile, e.currentTarget, {
-                    autoCompress,
-                    onCompressed: setCompressionInfo,
-                  });
-                }}
-                className="hidden"
-              />
-              <input
-                ref={cameraRef}
-                type="file"
-                accept="image/*"
                 capture="environment"
-                onChange={(e) => {
-                  setCompressionInfo(null);
-                  void pickFile(e.target.files?.[0], setFile, e.currentTarget, {
-                    autoCompress,
-                    onCompressed: setCompressionInfo,
-                  });
-                }}
-                className="hidden"
+                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+                className="block w-full text-xs file:mr-2 file:rounded-md file:border file:bg-muted file:px-2 file:py-1.5 file:text-xs"
               />
-              <button
-                type="button"
-                onClick={() => fileRef.current?.click()}
-                className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1.5 text-xs hover:bg-muted/80"
-              >
-                <ImageIcon className="h-3.5 w-3.5" /> Pilih file
-              </button>
-              <button
-                type="button"
-                onClick={() => cameraRef.current?.click()}
-                className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1.5 text-xs hover:bg-muted/80"
-              >
-                <Camera className="h-3.5 w-3.5" /> Foto langsung
-              </button>
-              {file && (
-                <span className="truncate text-[10px] text-muted-foreground max-w-[140px]">
-                  {file.name}
-                </span>
-              )}
             </div>
-            <div className="mt-1 text-[10px] text-muted-foreground">
-              Format: JPG, PNG, WEBP, HEIC. Ukuran maks 8 MB.
+            <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
+              <Camera className="h-3 w-3" /> kamera HP <span>•</span> <ImageIcon className="h-3 w-3" /> galeri
             </div>
-            <label className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground cursor-pointer select-none">
-              <input
-                type="checkbox"
-                checked={autoCompress}
-                onChange={(e) => setAutoCompress(e.target.checked)}
-                className="h-3.5 w-3.5 accent-primary"
-              />
-              <span>
-                Auto-kompres foto besar (otomatis diturunkan ke &lt; 8 MB, JPG)
-              </span>
-            </label>
-            {previewUrl && file && (
-              <div className="mt-2 rounded-lg border bg-background p-2">
-                <div className="mb-1 flex items-center justify-between gap-2">
-                  <span className="text-[10px] font-medium text-muted-foreground">
-                    Pratinjau foto
-                  </span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {file.size >= 1024 * 1024
-                      ? `${(file.size / 1024 / 1024).toFixed(2)} MB`
-                      : `${(file.size / 1024).toFixed(0)} KB`}
-                  </span>
-                </div>
-                {compressionInfo && (
-                  <div className="mb-1 rounded-md border border-emerald-500/30 bg-emerald-500/10 px-2 py-1 text-[10px] text-emerald-700 dark:text-emerald-300">
-                    Auto-kompres aktif:
-                    {" "}
-                    <strong>{(compressionInfo.originalBytes / 1024 / 1024).toFixed(2)} MB</strong>
-                    {" → "}
-                    <strong>{(compressionInfo.compressedBytes / 1024 / 1024).toFixed(2)} MB</strong>
-                    {" "}
-                    (hemat{" "}
-                    {((compressionInfo.originalBytes - compressionInfo.compressedBytes) / 1024 / 1024).toFixed(2)} MB,
-                    {" ≈ "}
-                    {(
-                      ((compressionInfo.originalBytes - compressionInfo.compressedBytes) /
-                        compressionInfo.originalBytes) *
-                      100
-                    ).toFixed(0)}
-                    %)
-                  </div>
-                )}
-                <img
-                  src={previewUrl}
-                  alt="Pratinjau foto produk"
-                  className="w-full max-h-64 rounded-md border object-contain bg-muted/30"
-                />
-                <div className="mt-2 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => fileRef.current?.click()}
-                    className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1.5 text-xs hover:bg-muted/80"
-                  >
-                    <RefreshCw className="h-3.5 w-3.5" /> Ganti dari file
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => cameraRef.current?.click()}
-                    className="inline-flex items-center gap-1 rounded-md border bg-muted px-2 py-1.5 text-xs hover:bg-muted/80"
-                  >
-                    <Camera className="h-3.5 w-3.5" /> Foto ulang
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setFile(null);
-                      setCompressionInfo(null);
-                      if (fileRef.current) fileRef.current.value = "";
-                      if (cameraRef.current) cameraRef.current.value = "";
-                    }}
-                    className="inline-flex items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-1.5 text-xs text-destructive hover:bg-destructive/20"
-                  >
-                    <X className="h-3.5 w-3.5" /> Hapus
-                  </button>
-                </div>
-              </div>
+            {previewUrl && (
+              <img src={previewUrl} alt="" className="mt-2 h-28 w-28 rounded-md border object-cover" />
             )}
           </div>
 
@@ -628,7 +363,6 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           </ul>
         )}
       </section>
-
     </div>
   );
 }

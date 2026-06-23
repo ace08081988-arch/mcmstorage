@@ -10,8 +10,7 @@ import {
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
-import { urlToFile } from "@/lib/share-wa";
-import { previewAndShareWA } from "@/lib/share-wa-preview";
+import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 
 export type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
 
@@ -75,7 +74,8 @@ export function ProductEditDrawer(props: Props) {
       const f = await urlToFile(photoUrls[i], `produk-${i + 1}.jpg`);
       if (f) files.push(f);
     }
-    const res = await previewAndShareWA({ text, title: d.nama, files, url: d.lokasi || undefined });
+    const res = await shareToWhatsApp({ text, title: d.nama, files, url: d.lokasi || undefined });
+    notifyShareResult(res);
   }
 
   const patch = (p: Partial<Produk>) => setDraft((d) => (d ? { ...d, ...p } : d));

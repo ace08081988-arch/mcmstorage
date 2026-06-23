@@ -33,7 +33,7 @@ import {
   type MessageRow,
 } from "@/lib/chat";
 import { sendMessage } from "@/lib/chat.functions";
-import { previewAndShareWA } from "@/lib/share-wa-preview";
+import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 
 export const Route = createFileRoute("/_authenticated/chat/$conversationId")({
   component: ChatRoomPage,
@@ -236,7 +236,8 @@ function ChatRoomPage() {
                             <DropdownMenuItem
                               onSelect={async () => {
                                 const text = `${senderName}: ${m.body}`;
-                                const res = await previewAndShareWA({ text });
+                                const res = await shareToWhatsApp({ text });
+                                notifyShareResult(res);
                               }}
                             >
                               <Share2 className="mr-2 h-4 w-4" />

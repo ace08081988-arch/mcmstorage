@@ -7,7 +7,7 @@ import {
   HeadContent,
   Scripts,
 } from "@tanstack/react-router";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
@@ -16,8 +16,6 @@ import { AppearanceInit } from "@/components/appearance-settings";
 import { applyCompactMode } from "@/components/CompactModeToggle";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
-import { WhatsAppPreviewHost } from "@/lib/share-wa-preview";
-import { DevConnectionWatcher } from "@/components/DevConnectionWatcher";
 
 function NotFoundComponent() {
   return (
@@ -44,6 +42,9 @@ function NotFoundComponent() {
 function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   console.error(error);
   const router = useRouter();
+  const [attempt, setAttempt] = useState(0);
+  const [autoRetrying, setAutoRetrying] = useState(true);
+  const MAX_AUTO_RETRIES = 3;
   // Chunk-load / dynamic import failures cannot be recovered with reset() —
   // the browser is holding a stale index.html that points at a chunk that
   // no longer exists on the server. A hard reload is the only fix.
@@ -70,11 +71,30 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     window.location.reload();
   }, [isChunkLoadError]);
 
-  // Chunk-load errors: show a spinner while the page hard-reloads.
-  // Other errors are shown to the user immediately — auto-resetting the
-  // boundary silently remounts the route and loses user-entered state
-  // (PIN, form fields), which is worse than showing the error.
-  if (isChunkLoadError) {
+  useEffect(() => {
+    if (attempt >= MAX_AUTO_RETRIES) {
+      setAutoRetrying(false);
+      return;
+    }
+    let cancelled = false;
+    const delay = 500 * Math.pow(2, attempt); // 500ms, 1s, 2s
+    const t = window.setTimeout(() => {
+      if (cancelled) return;
+      setAttempt((n: number) => n + 1);
+      // Defer reset to next tick so we don't unmount mid-setState batch.
+      Promise.resolve().then(() => {
+        if (cancelled) return;
+        router.invalidate();
+        reset();
+      });
+    }, delay);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(t);
+    };
+  }, [attempt, router, reset]);
+
+  if (autoRetrying && attempt < MAX_AUTO_RETRIES) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="max-w-md text-center">
@@ -83,7 +103,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             Memuat ulang halaman…
           </h1>
           <p className="mt-2 text-xs text-muted-foreground">
-            Versi aplikasi diperbarui, sedang menyegarkan…
+            Percobaan otomatis {attempt + 1} dari {MAX_AUTO_RETRIES}
           </p>
         </div>
       </div>
@@ -94,17 +114,16 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
         <h1 className="text-xl font-semibold tracking-tight text-foreground">
-          Halaman gagal dimuat
+          This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Terjadi kesalahan sementara saat memuat halaman ini. Coba muat ulang, atau kembali ke beranda.
+          Sudah dicoba memuat ulang otomatis {MAX_AUTO_RETRIES}× namun belum berhasil. Anda bisa coba lagi atau kembali ke beranda.
         </p>
-        {msg && (
-          <p className="mt-2 text-[11px] text-muted-foreground/80 break-words">{msg}</p>
-        )}
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
+              setAttempt(0);
+              setAutoRetrying(true);
               router.invalidate();
               reset();
             }}
@@ -129,7 +148,6 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
-      { name: "google", content: "notranslate" },
       { title: "MCM Storage — Kelola Pesanan & Kirim WhatsApp" },
       { name: "description", content: "MCM Storage — aplikasi pengelola pesanan harian dengan foto, lokasi, dan kirim cepat ke WhatsApp pelanggan." },
       { name: "author", content: "MCM Storage" },
@@ -200,7 +218,7 @@ function RootShell({ children }: { children: ReactNode }) {
   if(bg) d.dataset.hasBg='1'; else delete d.dataset.hasBg;
 }catch(e){}})();`;
   return (
-    <html lang="id" translate="no" className="dark notranslate" suppressHydrationWarning>
+    <html lang="en" className="dark" suppressHydrationWarning>
       <head>
         <HeadContent />
         <script dangerouslySetInnerHTML={{ __html: themeBootstrap }} />
@@ -230,8 +248,6 @@ function RootComponent() {
       <Outlet />
       <Toaster richColors position="top-center" />
       <ConfirmHost />
-      <WhatsAppPreviewHost />
-      <DevConnectionWatcher />
     </QueryClientProvider>
   );
 }

@@ -1,6 +1,5 @@
 import { createServerFn } from '@tanstack/react-start'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
-import { z } from 'zod'
 
 export type SecurityFinding = {
   id: string
@@ -75,30 +74,9 @@ export const runSecurityScanNow = createServerFn({ method: 'POST' })
 
 export const acknowledgeFindings = createServerFn({ method: 'POST' })
   .middleware([requireSupabaseAuth])
-  .inputValidator((input: { ids: string[] }) =>
-    z.object({ ids: z.array(z.string().uuid()).min(1).max(500) }).parse(input),
-  )
+  .inputValidator((input: { ids: string[] }) => input)
   .handler(async ({ data, context }) => {
-    const { supabase, userId } = context
-    const { data: isAdmin } = await supabase.rpc('has_role', {
-      _user_id: userId,
-      _role: 'admin',
-    })
-    if (!isAdmin) throw new Error('Forbidden')
-    const { data: rl, error: rlErr } = await supabase.rpc('check_acknowledge_rate_limit')
-    if (rlErr) throw new Error(rlErr.message)
-    const rlObj = (rl ?? {}) as {
-      ok?: boolean
-      error?: string
-      retry_after_seconds?: number
-      limit?: number
-    }
-    if (rlObj.ok === false) {
-      const retry = rlObj.retry_after_seconds ?? 60
-      throw new Error(
-        `rate_limited: maksimum ${rlObj.limit ?? 10} acknowledge per 60 detik. Coba lagi dalam ${retry} detik.`,
-      )
-    }
+    const { supabase } = context
     const { data: count, error } = await supabase.rpc('security_findings_acknowledge', {
       _ids: data.ids,
     })

@@ -6,12 +6,12 @@ import { useServerFn } from "@tanstack/react-start";
 import { sendTestPushToContact, sendTestPushToAllContacts } from "@/lib/push.functions";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
-import { previewAndShareWA } from "@/lib/share-wa-preview";
+import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { useStartDm } from "@/lib/chat";
-import { MessageSquare, Loader2, Send, UserPlus } from "lucide-react";
+import { MessageSquare, Loader2 } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -141,7 +141,8 @@ function KontakPage() {
   const sendWa = async (row: Row) => {
     const text = `Halo ${row.name}, ada yang ingin saya sampaikan.`;
     const phone = row.contact?.replace(/\D/g, "") || undefined;
-    const res = await previewAndShareWA({ text, title: row.name, phone });
+    const res = await shareToWhatsApp({ text, title: row.name, phone });
+    notifyShareResult(res);
   };
 
   const handleTest = async (kind: Kind, row: Row) => {
@@ -346,8 +347,6 @@ function LinkAccountDialog({
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Contact[]>([]);
   const [busy, setBusy] = useState(false);
-  const startDm = useStartDm();
-  const navigate = useNavigate();
 
   useEffect(() => {
     if (!target) {
@@ -359,12 +358,9 @@ function LinkAccountDialog({
   useEffect(() => {
     if (!target) return;
     const h = setTimeout(async () => {
-      // Cari di seluruh pengguna terdaftar (bukan hanya kontak yang sudah tertaut),
-      // sehingga pengguna baru bisa diundang/ditautkan untuk pertama kali.
-      const { data, error } = await (supabase.rpc as any)(
-        "search_profiles_for_link",
-        { _q: q || "" },
-      );
+      const { data, error } = await supabase.rpc("search_chat_contacts", {
+        _q: q || "",
+      });
       if (error) {
         toast.error(friendlyError(error));
         return;
@@ -382,44 +378,16 @@ function LinkAccountDialog({
       .from(table)
       .update({ account_user_id: userId })
       .eq("id", target.row.id);
+    setBusy(false);
     if (error) {
-      setBusy(false);
       toast.error(friendlyError(error));
       return;
     }
-    toast.success("Akun ditautkan. Membuka room chat…");
-    try {
-      const conversationId = await startDm.mutateAsync(userId);
-      onSaved();
-      if (conversationId) {
-        navigate({ to: "/chat/$conversationId", params: { conversationId } });
-      }
-    } catch (e) {
-      // Tautan tetap berhasil; chat bisa dibuka manual dari daftar kontak.
-      toast.error(friendlyError(e));
-      onSaved();
-    } finally {
-      setBusy(false);
-    }
+    toast.success("Akun ditautkan");
+    onSaved();
   };
 
   const open = useMemo(() => !!target, [target]);
-
-  const inviteViaWa = () => {
-    const phone = (target?.row.contact ?? "").replace(/\D/g, "");
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : "https://mcmstorage.biz";
-    const text = [
-      `Halo ${target?.row.name ?? ""},`.trim(),
-      "",
-      "Saya mengundang Anda bergabung di aplikasi MCM Storage agar kita bisa saling chat dan menerima notifikasi pesanan langsung di aplikasi.",
-      "",
-      "Silakan daftar/masuk di tautan berikut, lalu beritahu saya agar akunnya saya tautkan:",
-      origin,
-    ].join("\n");
-    void previewAndShareWA({ text, title: target?.row.name, phone: phone || undefined })
-      ;
-  };
 
   return (
     <Dialog open={open} onOpenChange={(v) => (!v ? onClose() : undefined)}>
@@ -427,41 +395,22 @@ function LinkAccountDialog({
         <DialogHeader>
           <DialogTitle>Tautkan akun pengguna</DialogTitle>
           <DialogDescription>
-            Cari pengguna yang sudah terdaftar (berdasarkan nama, email, atau nomor
-            telepon di profil) untuk dihubungkan ke{" "}
-            <span className="font-medium">{target?.row.name}</span>. Setelah tertaut,
-            kalian bisa saling chat dan menerima notifikasi di aplikasi. Bila belum
-            terdaftar, undang lewat WhatsApp dulu.
+            Pilih pengguna yang sudah terdaftar untuk dihubungkan ke{" "}
+            <span className="font-medium">{target?.row.name}</span>. Notifikasi
+            push chat akan dikirim ke akun yang tertaut.
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
           <Input
             autoFocus
-            placeholder="Cari nama, email, atau nomor telepon…"
+            placeholder="Cari nama atau nomor telepon…"
             value={q}
             onChange={(e) => setQ(e.target.value)}
           />
           <ul className="max-h-72 space-y-1 overflow-auto">
             {results.length === 0 ? (
-              <li className="space-y-3 rounded-md border border-dashed p-4 text-center">
-                <div className="mx-auto grid h-10 w-10 place-items-center rounded-full bg-primary/10 text-primary">
-                  <UserPlus className="h-5 w-5" />
-                </div>
-                <div className="text-xs text-muted-foreground">
-                  {q.trim()
-                    ? "Tidak ada pengguna yang cocok dengan pencarian."
-                    : "Ketik nama, email, atau nomor untuk mencari pengguna terdaftar."}
-                  <br />
-                  Belum terdaftar? Undang lewat WhatsApp agar bisa diajak chat.
-                </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  className="gap-1.5"
-                  onClick={inviteViaWa}
-                >
-                  <Send className="h-4 w-4" /> Undang via WhatsApp
-                </Button>
+              <li className="py-6 text-center text-xs text-muted-foreground">
+                Tidak ada hasil.
               </li>
             ) : (
               results.map((c) => (
