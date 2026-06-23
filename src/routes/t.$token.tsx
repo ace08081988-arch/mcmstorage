@@ -39,6 +39,7 @@ function PublicPrepPage() {
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [syncTick, setSyncTick] = useState(0); // memicu re-render label "x dtk lalu"
   const [resyncing, setResyncing] = useState(false);
+  const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
 
   // Paksa muat ulang data sekarang juga (dipakai tombol "Resync sekarang").
   async function manualResync() {
@@ -54,6 +55,35 @@ function PublicPrepPage() {
       setResyncing(false);
     }
   }
+
+  // Auto-resync saat indikator masuk kategori "Tertunda" (>30 dtk) atau
+  // "Tidak sinkron" (>90 dtk / channel error). Dibatasi cooldown agar
+  // tidak membanjiri server saat koneksi memang sedang bermasalah.
+  useEffect(() => {
+    if (!authed || resyncing) return;
+    const age = lastSyncAt ? (Date.now() - lastSyncAt) / 1000 : null;
+    const isStale = rtStatus === "error" || (age != null && age > 90);
+    const isLag = !isStale && age != null && age > 30;
+    if (!isStale && !isLag) {
+      autoResyncRef.current.failCount = 0;
+      return;
+    }
+    // Cooldown backoff: lag 10 dtk; stale mulai 5 dtk, naik hingga 30 dtk.
+    const fc = autoResyncRef.current.failCount;
+    const cooldownMs = isStale ? Math.min(30000, 5000 * Math.pow(2, fc)) : 10000;
+    if (Date.now() - autoResyncRef.current.lastAt < cooldownMs) return;
+    autoResyncRef.current.lastAt = Date.now();
+    const prevSync = lastSyncAt;
+    void (async () => {
+      await silentRefresh();
+      // Bila silentRefresh tidak memperbarui lastSyncAt (gagal/diam), naikkan
+      // counter agar interval coba ulang merenggang.
+      if (lastSyncAt === prevSync) autoResyncRef.current.failCount = fc + 1;
+      else autoResyncRef.current.failCount = 0;
+    })();
+    // syncTick memicu evaluasi ulang tiap 5 dtk.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, rtStatus, lastSyncAt, syncTick, resyncing]);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
