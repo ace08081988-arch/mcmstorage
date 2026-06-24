@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PhotoEditor } from "@/components/PhotoEditor";
 
-export const Route = createFileRoute("/_dev/photoeditor-smoke")({
+export const Route = createFileRoute("/photoeditor-smoke")({
   component: PhotoEditorSmoke,
 });
 
