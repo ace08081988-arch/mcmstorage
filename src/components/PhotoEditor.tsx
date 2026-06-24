@@ -691,6 +691,32 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               className="absolute inset-0 touch-none"
               style={{ width: `${view.w}px`, height: `${view.h}px` }}
             />
+            {!canvasReady && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 text-foreground backdrop-blur-sm"
+              >
+                <Loader2 className="h-7 w-7 animate-spin" />
+                <div className="text-xs font-medium">Menyiapkan kanvas…</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Foto sudah dimuat. Sedang dirasterisasi ke kanvas.
+                </div>
+              </div>
+            )}
+            {exporting && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 text-foreground backdrop-blur-sm"
+              >
+                <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                <div className="text-xs font-medium">Menyimpan foto…</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Menggabungkan coretan ke resolusi asli.
+                </div>
+              </div>
+            )}
           </div>
         )}
         {loadStatus === "loading" && (
@@ -701,7 +727,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           >
             <Loader2 className="h-8 w-8 animate-spin" />
             <div className="text-sm font-medium">Memuat foto…</div>
-            <div className="text-xs text-muted-foreground">Mohon tunggu sebentar.</div>
+            <div className="text-xs text-muted-foreground">
+              {srcKind(src) === "http"
+                ? "Mengunduh dari server. Periksa koneksi bila terasa lama."
+                : srcKind(src) === "blob"
+                  ? "Membaca foto dari memori perangkat…"
+                  : "Mendekode foto. File besar bisa butuh beberapa detik."}
+            </div>
           </div>
         )}
         {loadStatus === "error" && (
