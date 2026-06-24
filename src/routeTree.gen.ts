@@ -15,7 +15,6 @@ import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RefundRouteImport } from './routes/refund'
 import { Route as PricingRouteImport } from './routes/pricing'
-import { Route as PhotoeditorSmokeRouteImport } from './routes/photoeditor-smoke'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -76,11 +75,6 @@ const RefundRoute = RefundRouteImport.update({
 const PricingRoute = PricingRouteImport.update({
   id: '/pricing',
   path: '/pricing',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PhotoeditorSmokeRoute = PhotoeditorSmokeRouteImport.update({
-  id: '/photoeditor-smoke',
-  path: '/photoeditor-smoke',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -257,7 +251,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRoute
   '/error': typeof ErrorRoute
-  '/photoeditor-smoke': typeof PhotoeditorSmokeRoute
   '/pricing': typeof PricingRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -295,7 +288,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRoute
   '/error': typeof ErrorRoute
-  '/photoeditor-smoke': typeof PhotoeditorSmokeRoute
   '/pricing': typeof PricingRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -335,7 +327,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRoute
   '/error': typeof ErrorRoute
-  '/photoeditor-smoke': typeof PhotoeditorSmokeRoute
   '/pricing': typeof PricingRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -377,7 +368,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/download'
     | '/error'
-    | '/photoeditor-smoke'
     | '/pricing'
     | '/refund'
     | '/reset-password'
@@ -415,7 +405,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/download'
     | '/error'
-    | '/photoeditor-smoke'
     | '/pricing'
     | '/refund'
     | '/reset-password'
@@ -454,7 +443,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/download'
     | '/error'
-    | '/photoeditor-smoke'
     | '/pricing'
     | '/refund'
     | '/reset-password'
@@ -495,7 +483,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DownloadRoute: typeof DownloadRoute
   ErrorRoute: typeof ErrorRoute
-  PhotoeditorSmokeRoute: typeof PhotoeditorSmokeRoute
   PricingRoute: typeof PricingRoute
   RefundRoute: typeof RefundRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -552,13 +539,6 @@ declare module '@tanstack/react-router' {
       path: '/pricing'
       fullPath: '/pricing'
       preLoaderRoute: typeof PricingRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/photoeditor-smoke': {
-      id: '/photoeditor-smoke'
-      path: '/photoeditor-smoke'
-      fullPath: '/photoeditor-smoke'
-      preLoaderRoute: typeof PhotoeditorSmokeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -870,7 +850,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DownloadRoute: DownloadRoute,
   ErrorRoute: ErrorRoute,
-  PhotoeditorSmokeRoute: PhotoeditorSmokeRoute,
   PricingRoute: PricingRoute,
   RefundRoute: RefundRoute,
   ResetPasswordRoute: ResetPasswordRoute,
