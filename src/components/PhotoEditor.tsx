@@ -372,6 +372,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       }
     }
     if (drawingRef.current) drawLayer(ctx, drawingRef.current, false);
+    if (base && !canvasReady) setCanvasReady(true);
   }
 
   function scheduleRedraw() {
@@ -607,6 +608,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   async function exportImage() {
     if (!img) return;
+    setExporting(true);
+    try {
     // render at original resolution
     const rotated = state.rotation === 90 || state.rotation === 270;
     const outW = rotated ? img.height : img.width;
@@ -628,6 +631,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const dataUrl = cvs.toDataURL("image/jpeg", 0.88);
     const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, "image/jpeg", 0.88));
     if (blob) onSave(blob, dataUrl);
+    } finally {
+      setExporting(false);
+    }
   }
 
   const selected = state.layers.find((l) => l.id === selectedId);
