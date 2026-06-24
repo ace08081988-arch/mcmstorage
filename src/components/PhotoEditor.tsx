@@ -67,6 +67,52 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [canvasReady, setCanvasReady] = useState(false);
   // True while exportImage is composing the final JPEG.
   const [exporting, setExporting] = useState(false);
+  // Refs for overlay focus management — when a loading/exporting/error overlay
+  // becomes active we move focus into it (so screen readers announce it and
+  // keyboard users aren't stranded) and restore focus to the previously
+  // focused element when the overlay closes.
+  const loadingOverlayRef = useRef<HTMLDivElement | null>(null);
+  const canvasLoadingOverlayRef = useRef<HTMLDivElement | null>(null);
+  const exportingOverlayRef = useRef<HTMLDivElement | null>(null);
+  const errorOverlayRef = useRef<HTMLDivElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
+  // Track which overlay (if any) currently owns focus. When it changes, move
+  // focus into the overlay and remember where it came from so we can restore
+  // it after the overlay disappears.
+  const activeOverlay: "loading" | "canvas" | "exporting" | "error" | null =
+    loadStatus === "error"
+      ? "error"
+      : loadStatus === "loading"
+        ? "loading"
+        : exporting
+          ? "exporting"
+          : !canvasReady && loadStatus === "ready"
+            ? "canvas"
+            : null;
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!activeOverlay) {
+      const prev = previousFocusRef.current;
+      previousFocusRef.current = null;
+      if (prev && document.contains(prev)) {
+        try { prev.focus({ preventScroll: true }); } catch { /* noop */ }
+      }
+      return;
+    }
+    const target =
+      activeOverlay === "loading" ? loadingOverlayRef.current
+      : activeOverlay === "canvas" ? canvasLoadingOverlayRef.current
+      : activeOverlay === "exporting" ? exportingOverlayRef.current
+      : errorOverlayRef.current;
+    if (!target) return;
+    if (!previousFocusRef.current) {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && active !== document.body) previousFocusRef.current = active;
+    }
+    try { target.focus({ preventScroll: true }); } catch { /* noop */ }
+  }, [activeOverlay]);
 
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
   const [history, setHistory] = useState<EditorState[]>([]);
@@ -656,6 +702,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     <div
       className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground"
       onPointerDownCapture={(e) => e.stopPropagation()}
+      aria-busy={activeOverlay !== null && activeOverlay !== "error"}
     >
       <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-2 shadow-sm">
         <button onClick={onCancel} className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-sm transition hover:bg-muted">
@@ -698,9 +745,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             />
             {!canvasReady && (
               <div
+                ref={canvasLoadingOverlayRef}
                 role="status"
                 aria-live="polite"
-                className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 text-foreground backdrop-blur-sm"
+                aria-atomic="true"
+                aria-label="Menyiapkan kanvas"
+                tabIndex={-1}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Loader2 className="h-7 w-7 animate-spin" />
                 <div className="text-xs font-medium">Menyiapkan kanvas…</div>
@@ -711,9 +762,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             )}
             {exporting && (
               <div
+                ref={exportingOverlayRef}
                 role="status"
                 aria-live="polite"
-                className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 text-foreground backdrop-blur-sm"
+                aria-atomic="true"
+                aria-label="Menyimpan foto"
+                tabIndex={-1}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Loader2 className="h-7 w-7 animate-spin text-primary" />
                 <div className="text-xs font-medium">Menyimpan foto…</div>
@@ -726,9 +781,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         )}
         {loadStatus === "loading" && (
           <div
+            ref={loadingOverlayRef}
             role="status"
             aria-live="polite"
-            className="flex flex-col items-center gap-3 text-center text-foreground"
+            aria-atomic="true"
+            aria-label="Memuat foto"
+            tabIndex={-1}
+            className="flex flex-col items-center gap-3 text-center text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md p-2"
           >
             <Loader2 className="h-8 w-8 animate-spin" />
             <div className="text-sm font-medium">Memuat foto…</div>
@@ -743,8 +802,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         )}
         {loadStatus === "error" && (
           <div
+            ref={errorOverlayRef}
             role="alert"
-            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-left shadow-lg"
+            aria-live="assertive"
+            aria-atomic="true"
+            tabIndex={-1}
+            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-left shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <div className="mb-2 flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
