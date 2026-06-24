@@ -702,6 +702,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     <div
       className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground"
       onPointerDownCapture={(e) => e.stopPropagation()}
+      aria-busy={activeOverlay !== null && activeOverlay !== "error"}
     >
       <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-2 shadow-sm">
         <button onClick={onCancel} className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-sm transition hover:bg-muted">
@@ -744,9 +745,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             />
             {!canvasReady && (
               <div
+                ref={canvasLoadingOverlayRef}
                 role="status"
                 aria-live="polite"
-                className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 text-foreground backdrop-blur-sm"
+                aria-atomic="true"
+                aria-label="Menyiapkan kanvas"
+                tabIndex={-1}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Loader2 className="h-7 w-7 animate-spin" />
                 <div className="text-xs font-medium">Menyiapkan kanvas…</div>
@@ -757,9 +762,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             )}
             {exporting && (
               <div
+                ref={exportingOverlayRef}
                 role="status"
                 aria-live="polite"
-                className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 text-foreground backdrop-blur-sm"
+                aria-atomic="true"
+                aria-label="Menyimpan foto"
+                tabIndex={-1}
+                className="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 text-foreground backdrop-blur-sm outline-none focus-visible:ring-2 focus-visible:ring-ring"
               >
                 <Loader2 className="h-7 w-7 animate-spin text-primary" />
                 <div className="text-xs font-medium">Menyimpan foto…</div>
@@ -772,9 +781,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         )}
         {loadStatus === "loading" && (
           <div
+            ref={loadingOverlayRef}
             role="status"
             aria-live="polite"
-            className="flex flex-col items-center gap-3 text-center text-foreground"
+            aria-atomic="true"
+            aria-label="Memuat foto"
+            tabIndex={-1}
+            className="flex flex-col items-center gap-3 text-center text-foreground outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-md p-2"
           >
             <Loader2 className="h-8 w-8 animate-spin" />
             <div className="text-sm font-medium">Memuat foto…</div>
@@ -789,8 +802,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         )}
         {loadStatus === "error" && (
           <div
+            ref={errorOverlayRef}
             role="alert"
-            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-left shadow-lg"
+            aria-live="assertive"
+            aria-atomic="true"
+            tabIndex={-1}
+            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-left shadow-lg outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
             <div className="mb-2 flex items-start gap-2">
               <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
