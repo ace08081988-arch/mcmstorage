@@ -156,6 +156,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setLoadStatus("loading");
     setLoadError(null);
     setImg(null);
+    setCanvasReady(false);
     baseCanvasRef.current = null;
     const i = new Image();
     // Jangan paksa crossOrigin untuk data: / blob: URL — di sebagian browser
