@@ -5,6 +5,7 @@ import {
   ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight,
   Type, Eraser, Undo2, Redo2, RotateCw, Square, Circle, Pencil, Trash2,
   X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon, ZoomIn, ZoomOut, Maximize2, Minimize2,
+  Loader2, AlertTriangle, RefreshCw,
 } from "lucide-react";
 import {
   Dialog,
@@ -51,6 +52,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const wrapRef = useRef<HTMLDivElement | null>(null);
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [view, setView] = useState({ w: 0, h: 0 });
+  const [loadStatus, setLoadStatus] = useState<"loading" | "ready" | "error">("loading");
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadAttempt, setLoadAttempt] = useState(0);
 
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
   const [history, setHistory] = useState<EditorState[]>([]);
@@ -104,18 +108,56 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   // Load image
   useEffect(() => {
+    setLoadStatus("loading");
+    setLoadError(null);
+    setImg(null);
     const i = new Image();
     // Jangan paksa crossOrigin untuk data: / blob: URL — di sebagian browser
     // Android Chrome/WebView ini membuat image gagal load secara senyap
     // sehingga kanvas tidak pernah dirender (terlihat sebagai foto "gelap").
     if (/^https?:\/\//i.test(src)) i.crossOrigin = "anonymous";
-    i.onload = () => { setImg(i); imgRef.current = i; };
-    i.onerror = () => {
-      // Tampilkan error agar user tahu, daripada layar hitam tanpa pesan.
-      console.error("PhotoEditor: gagal memuat gambar", src.slice(0, 64));
+    let cancelled = false;
+    const timeoutId = window.setTimeout(() => {
+      if (cancelled || loadStatus === "ready") return;
+      // Hindari "loading" yang menggantung tanpa batas pada koneksi lambat.
+      setLoadStatus((s) => (s === "loading" ? "error" : s));
+      setLoadError("Memuat foto terlalu lama. Periksa koneksi lalu coba lagi.");
+    }, 20000);
+    i.onload = () => {
+      if (cancelled) return;
+      window.clearTimeout(timeoutId);
+      if (!i.width || !i.height) {
+        setLoadStatus("error");
+        setLoadError("File foto rusak atau tidak dikenali (ukuran 0). Coba pilih foto lain.");
+        return;
+      }
+      imgRef.current = i;
+      setImg(i);
+      setLoadStatus("ready");
     };
-    i.src = src;
-  }, [src]);
+    i.onerror = () => {
+      if (cancelled) return;
+      window.clearTimeout(timeoutId);
+      console.error("PhotoEditor: gagal memuat gambar", src.slice(0, 64));
+      setLoadStatus("error");
+      setLoadError(
+        "Foto gagal dimuat. Bisa karena format tidak didukung, file terlalu besar, atau koneksi terputus.",
+      );
+    };
+    try {
+      i.src = src;
+    } catch (err) {
+      window.clearTimeout(timeoutId);
+      setLoadStatus("error");
+      setLoadError("URL foto tidak valid.");
+    }
+    return () => {
+      cancelled = true;
+      window.clearTimeout(timeoutId);
+      i.onload = null;
+      i.onerror = null;
+    };
+  }, [src, loadAttempt]);
 
   // Compute view size based on container width
   useEffect(() => {
@@ -483,7 +525,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       </div>
 
       <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-black/80 p-2">
-        {img && view.w > 0 && (
+        {img && view.w > 0 && loadStatus === "ready" && (
           <canvas
             ref={canvasRef}
             onPointerDown={onPointerDown}
@@ -491,6 +533,43 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             onPointerUp={onPointerUp}
             className="touch-none rounded shadow-lg"
           />
+        )}
+        {loadStatus === "loading" && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex flex-col items-center gap-3 text-center text-white/90"
+          >
+            <Loader2 className="h-8 w-8 animate-spin" />
+            <div className="text-sm font-medium">Memuat foto…</div>
+            <div className="text-xs text-white/60">Mohon tunggu sebentar.</div>
+          </div>
+        )}
+        {loadStatus === "error" && (
+          <div
+            role="alert"
+            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-center shadow-lg"
+          >
+            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-destructive" />
+            <div className="mb-1 text-sm font-semibold text-foreground">
+              Foto gagal ditampilkan
+            </div>
+            <div className="mb-3 text-xs text-muted-foreground">
+              {loadError ?? "Terjadi kesalahan saat memuat foto."}
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => setLoadAttempt((n) => n + 1)}
+              >
+                <RefreshCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
+              </Button>
+              <Button size="sm" variant="ghost" onClick={onCancel}>
+                Batal
+              </Button>
+            </div>
+          </div>
         )}
       </div>
 
