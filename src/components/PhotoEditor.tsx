@@ -696,6 +696,47 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             <div className="flex items-center justify-end gap-2">
               <Button
                 size="sm"
+                variant="secondary"
+                onClick={async () => {
+                  const lines = [
+                    `Judul: ${loadError?.title ?? "-"}`,
+                    `Penyebab: ${loadError?.reason ?? "-"}`,
+                    loadError?.nextSteps?.length
+                      ? `Langkah berikutnya:\n- ${loadError.nextSteps.join("\n- ")}`
+                      : "",
+                    `Detail teknis: ${loadError?.technical ?? "-"}`,
+                    `User agent: ${typeof navigator !== "undefined" ? navigator.userAgent : "-"}`,
+                    `Waktu: ${new Date().toISOString()}`,
+                  ].filter(Boolean).join("\n");
+                  try {
+                    if (navigator.clipboard?.writeText) {
+                      await navigator.clipboard.writeText(lines);
+                    } else {
+                      const ta = document.createElement("textarea");
+                      ta.value = lines;
+                      ta.style.position = "fixed";
+                      ta.style.opacity = "0";
+                      document.body.appendChild(ta);
+                      ta.select();
+                      document.execCommand("copy");
+                      document.body.removeChild(ta);
+                    }
+                    setCopiedError(true);
+                    toast.success("Detail error disalin ke clipboard");
+                    setTimeout(() => setCopiedError(false), 2000);
+                  } catch {
+                    toast.error("Gagal menyalin. Salin manual dari Detail teknis.");
+                  }
+                }}
+              >
+                {copiedError ? (
+                  <><ClipboardCheck className="mr-1 h-3.5 w-3.5" /> Tersalin</>
+                ) : (
+                  <><ClipboardCopy className="mr-1 h-3.5 w-3.5" /> Salin detail error</>
+                )}
+              </Button>
+              <Button
+                size="sm"
                 variant="outline"
                 onClick={() => setLoadAttempt((n) => n + 1)}
               >
