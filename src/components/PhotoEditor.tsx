@@ -61,6 +61,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   } | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [copiedError, setCopiedError] = useState(false);
+  // True once render() has actually painted the canvas at least once. Lets
+  // us show "Menyiapkan kanvas…" during the brief gap between the image
+  // loading and the first successful rasterisation.
+  const [canvasReady, setCanvasReady] = useState(false);
+  // True while exportImage is composing the final JPEG.
+  const [exporting, setExporting] = useState(false);
 
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
   const [history, setHistory] = useState<EditorState[]>([]);
