@@ -67,6 +67,15 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [canvasReady, setCanvasReady] = useState(false);
   // True while exportImage is composing the final JPEG.
   const [exporting, setExporting] = useState(false);
+  // Refs for overlay focus management — when a loading/exporting/error overlay
+  // becomes active we move focus into it (so screen readers announce it and
+  // keyboard users aren't stranded) and restore focus to the previously
+  // focused element when the overlay closes.
+  const loadingOverlayRef = useRef<HTMLDivElement | null>(null);
+  const canvasLoadingOverlayRef = useRef<HTMLDivElement | null>(null);
+  const exportingOverlayRef = useRef<HTMLDivElement | null>(null);
+  const errorOverlayRef = useRef<HTMLDivElement | null>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
 
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
   const [history, setHistory] = useState<EditorState[]>([]);
