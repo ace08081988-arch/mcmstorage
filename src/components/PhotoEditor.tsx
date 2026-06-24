@@ -5,7 +5,7 @@ import {
   ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight,
   Type, Eraser, Undo2, Redo2, RotateCw, Square, Circle, Pencil, Trash2,
   X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon, ZoomIn, ZoomOut, Maximize2, Minimize2,
-  Loader2, AlertTriangle, RefreshCw,
+  Loader2, AlertTriangle, RefreshCw, ClipboardCopy, ClipboardCheck,
 } from "lucide-react";
 import {
   Dialog,
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string };
 type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
@@ -60,6 +61,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     technical: string;
   } | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [copiedError, setCopiedError] = useState(false);
 
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
   const [history, setHistory] = useState<EditorState[]>([]);
@@ -692,6 +694,47 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               </details>
             )}
             <div className="flex items-center justify-end gap-2">
+              <Button
+                size="sm"
+                variant="secondary"
+                onClick={async () => {
+                  const lines = [
+                    `Judul: ${loadError?.title ?? "-"}`,
+                    `Penyebab: ${loadError?.reason ?? "-"}`,
+                    loadError?.nextSteps?.length
+                      ? `Langkah berikutnya:\n- ${loadError.nextSteps.join("\n- ")}`
+                      : "",
+                    `Detail teknis: ${loadError?.technical ?? "-"}`,
+                    `User agent: ${typeof navigator !== "undefined" ? navigator.userAgent : "-"}`,
+                    `Waktu: ${new Date().toISOString()}`,
+                  ].filter(Boolean).join("\n");
+                  try {
+                    if (navigator.clipboard?.writeText) {
+                      await navigator.clipboard.writeText(lines);
+                    } else {
+                      const ta = document.createElement("textarea");
+                      ta.value = lines;
+                      ta.style.position = "fixed";
+                      ta.style.opacity = "0";
+                      document.body.appendChild(ta);
+                      ta.select();
+                      document.execCommand("copy");
+                      document.body.removeChild(ta);
+                    }
+                    setCopiedError(true);
+                    toast.success("Detail error disalin ke clipboard");
+                    setTimeout(() => setCopiedError(false), 2000);
+                  } catch {
+                    toast.error("Gagal menyalin. Salin manual dari Detail teknis.");
+                  }
+                }}
+              >
+                {copiedError ? (
+                  <><ClipboardCheck className="mr-1 h-3.5 w-3.5" /> Tersalin</>
+                ) : (
+                  <><ClipboardCopy className="mr-1 h-3.5 w-3.5" /> Salin detail error</>
+                )}
+              </Button>
               <Button
                 size="sm"
                 variant="outline"
