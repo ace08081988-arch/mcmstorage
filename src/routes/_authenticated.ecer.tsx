@@ -928,8 +928,13 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   }
 
   return (
-    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
-      <DialogContent className="max-w-md">
+    <Dialog open onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
+      <DialogContent
+        className="max-w-md"
+        onInteractOutside={(event) => {
+          if (editorOpen) event.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Penyiapan baru</DialogTitle>
           <DialogDescription>{title.name}</DialogDescription>
