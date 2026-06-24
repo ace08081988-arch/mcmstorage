@@ -621,22 +621,22 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   if (typeof document === "undefined") return null;
   return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col bg-background">
-      <div className="flex items-center justify-between gap-2 border-b px-3 py-2">
-        <button onClick={onCancel} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-sm">
+    <div className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground">
+      <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-2 shadow-sm">
+        <button onClick={onCancel} className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-sm transition hover:bg-muted">
           <X className="h-4 w-4" /> Batal
         </button>
         <div className="flex items-center gap-1">
-          <button onClick={undo} disabled={!history.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:opacity-40"><Undo2 className="h-4 w-4" /></button>
-          <button onClick={redo} disabled={!future.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border disabled:opacity-40"><Redo2 className="h-4 w-4" /></button>
-          <button onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border"><RotateCw className="h-4 w-4" /></button>
+          <button onClick={undo} disabled={!history.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Undo2 className="h-4 w-4" /></button>
+          <button onClick={redo} disabled={!future.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Redo2 className="h-4 w-4" /></button>
+          <button onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted"><RotateCw className="h-4 w-4" /></button>
         </div>
         <button onClick={exportImage} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
           <Check className="h-4 w-4" /> Simpan
         </button>
       </div>
 
-      <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-black/80 p-2">
+      <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-muted p-2">
         {img && view.w > 0 && loadStatus === "ready" && (
           <canvas
             ref={canvasRef}
@@ -650,11 +650,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <div
             role="status"
             aria-live="polite"
-            className="flex flex-col items-center gap-3 text-center text-white/90"
+            className="flex flex-col items-center gap-3 text-center text-foreground"
           >
             <Loader2 className="h-8 w-8 animate-spin" />
             <div className="text-sm font-medium">Memuat foto…</div>
-            <div className="text-xs text-white/60">Mohon tunggu sebentar.</div>
+            <div className="text-xs text-muted-foreground">Mohon tunggu sebentar.</div>
           </div>
         )}
         {loadStatus === "error" && (
@@ -751,7 +751,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       </div>
 
       {/* Tool options bar */}
-      <div className="border-t bg-card px-2 py-2 text-xs">
+      <div className="border-t bg-card px-2 py-2 text-xs shadow-sm">
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
           {COLORS.map((c) => (
@@ -803,7 +803,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                     setSelectedId(l.id);
                   }
                 }}
-                className={`inline-flex h-8 w-8 items-center justify-center rounded border ${arrowDir === d ? "border-primary bg-primary/10" : ""}`}>
+                className={`inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted ${arrowDir === d ? "border-primary bg-primary/10" : ""}`}>
                 <Ico className="h-4 w-4" />
               </button>
             ))}
@@ -816,7 +816,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                   setEmoji(em);
                   if (selected?.kind === "emoji") { liveBeginIfNeeded(); livePatchSelected({ emoji: em } as Partial<Layer>); commitLivePatch(); }
                 }}
-                className={`h-9 w-9 rounded border text-lg ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
+                className={`h-9 w-9 rounded border bg-background text-lg transition hover:bg-muted ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
             ))}
           </div>
         )}
@@ -849,10 +849,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" />
           {selected && (
             <div className="ml-auto flex items-center gap-1">
-              <button onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border"><MoveDown className="h-4 w-4" /></button>
-              <button onClick={() => moveOrder(1)} title="Naikkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border"><MoveUp className="h-4 w-4" /></button>
-              <button onClick={duplicate} title="Duplikat" className="inline-flex h-8 w-8 items-center justify-center rounded border"><CopyIcon className="h-4 w-4" /></button>
-              <button onClick={removeSelected} title="Hapus" className="inline-flex h-8 w-8 items-center justify-center rounded border text-destructive"><Trash2 className="h-4 w-4" /></button>
+              <button onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><MoveDown className="h-4 w-4" /></button>
+              <button onClick={() => moveOrder(1)} title="Naikkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><MoveUp className="h-4 w-4" /></button>
+              <button onClick={duplicate} title="Duplikat" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><CopyIcon className="h-4 w-4" /></button>
+              <button onClick={removeSelected} title="Hapus" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background text-destructive transition hover:bg-muted"><Trash2 className="h-4 w-4" /></button>
             </div>
           )}
         </div>
@@ -923,8 +923,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <div
             className={
               previewFullscreen
-                ? "relative flex-1 cursor-grab touch-none overflow-auto rounded-md bg-black/80 active:cursor-grabbing"
-                : "relative max-h-[70vh] cursor-grab touch-none overflow-auto rounded-md bg-black/80 active:cursor-grabbing"
+                ? "relative flex-1 cursor-grab touch-none overflow-auto rounded-md bg-muted active:cursor-grabbing"
+                : "relative max-h-[70vh] cursor-grab touch-none overflow-auto rounded-md bg-muted active:cursor-grabbing"
             }
             ref={previewScrollRef}
             onPointerDown={onPreviewPointerDown}
@@ -974,7 +974,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
 function ToolBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
   return (
-    <button onClick={onClick} className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] ${active ? "border-primary bg-primary/10" : ""}`}>
+    <button onClick={onClick} className={`inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted ${active ? "border-primary bg-primary/10" : ""}`}>
       {icon}<span>{label}</span>
     </button>
   );
