@@ -658,16 +658,40 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         {loadStatus === "error" && (
           <div
             role="alert"
-            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-center shadow-lg"
+            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-left shadow-lg"
           >
-            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-destructive" />
-            <div className="mb-1 text-sm font-semibold text-foreground">
-              Foto gagal ditampilkan
+            <div className="mb-2 flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
+              <div className="text-sm font-semibold text-foreground">
+                {loadError?.title ?? "Foto gagal ditampilkan"}
+              </div>
             </div>
-            <div className="mb-3 text-xs text-muted-foreground">
-              {loadError ?? "Terjadi kesalahan saat memuat foto."}
-            </div>
-            <div className="flex items-center justify-center gap-2">
+            <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+              {loadError?.reason ?? "Terjadi kesalahan saat memuat foto."}
+            </p>
+            {loadError?.nextSteps && loadError.nextSteps.length > 0 && (
+              <div className="mb-3">
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/80">
+                  Langkah berikutnya
+                </div>
+                <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                  {loadError.nextSteps.map((step, idx) => (
+                    <li key={idx}>{step}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {loadError?.technical && (
+              <details className="mb-3 rounded border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
+                <summary className="cursor-pointer select-none font-medium">
+                  Detail teknis
+                </summary>
+                <code className="mt-1 block break-all font-mono text-[10px]">
+                  {loadError.technical}
+                </code>
+              </details>
+            )}
+            <div className="flex items-center justify-end gap-2">
               <Button
                 size="sm"
                 variant="outline"
