@@ -338,6 +338,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const cvs = canvasRef.current;
     const base = baseCanvasRef.current;
     const v = viewRef.current;
+    console.log("[PE render]", { hasCvs: !!cvs, hasBase: !!base, vw: v.w, vh: v.h });
     if (!cvs || !v.w) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const W = Math.round(v.w * dpr), H = Math.round(v.h * dpr);
