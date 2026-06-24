@@ -61,6 +61,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     technical: string;
   } | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
+  const [copiedError, setCopiedError] = useState(false);
 
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
   const [history, setHistory] = useState<EditorState[]>([]);
