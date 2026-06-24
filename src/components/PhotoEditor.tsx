@@ -77,6 +77,43 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const errorOverlayRef = useRef<HTMLDivElement | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
 
+  // Track which overlay (if any) currently owns focus. When it changes, move
+  // focus into the overlay and remember where it came from so we can restore
+  // it after the overlay disappears.
+  const activeOverlay: "loading" | "canvas" | "exporting" | "error" | null =
+    loadStatus === "error"
+      ? "error"
+      : loadStatus === "loading"
+        ? "loading"
+        : exporting
+          ? "exporting"
+          : !canvasReady && loadStatus === "ready"
+            ? "canvas"
+            : null;
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (!activeOverlay) {
+      const prev = previousFocusRef.current;
+      previousFocusRef.current = null;
+      if (prev && document.contains(prev)) {
+        try { prev.focus({ preventScroll: true }); } catch { /* noop */ }
+      }
+      return;
+    }
+    const target =
+      activeOverlay === "loading" ? loadingOverlayRef.current
+      : activeOverlay === "canvas" ? canvasLoadingOverlayRef.current
+      : activeOverlay === "exporting" ? exportingOverlayRef.current
+      : errorOverlayRef.current;
+    if (!target) return;
+    if (!previousFocusRef.current) {
+      const active = document.activeElement as HTMLElement | null;
+      if (active && active !== document.body) previousFocusRef.current = active;
+    }
+    try { target.focus({ preventScroll: true }); } catch { /* noop */ }
+  }, [activeOverlay]);
+
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
   const [history, setHistory] = useState<EditorState[]>([]);
   const [future, setFuture] = useState<EditorState[]>([]);
