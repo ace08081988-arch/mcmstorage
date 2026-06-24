@@ -338,7 +338,6 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const cvs = canvasRef.current;
     const base = baseCanvasRef.current;
     const v = viewRef.current;
-    console.log("[PE render]", { hasCvs: !!cvs, hasBase: !!base, vw: v.w, vh: v.h });
     if (!cvs || !v.w) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const W = Math.round(v.w * dpr), H = Math.round(v.h * dpr);
@@ -367,18 +366,26 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   function scheduleRedraw() {
-    console.log("[PE scheduleRedraw] called, queued=", rafIdRef.current);
     if (rafIdRef.current != null) return;
     rafIdRef.current = requestAnimationFrame(() => {
       rafIdRef.current = null;
-      console.log("[PE rAF] firing");
       render();
     });
   }
 
   // Repaint whenever reactive state changes (layers, view, selection)
-  useEffect(() => { console.log("[PE redraw-effect]", view); scheduleRedraw(); }, [state, view, selectedId]);
-  useEffect(() => () => { if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current); }, []);
+  // Call render() synchronously here — this effect only fires on real state
+  // changes (not on every pointermove) so rAF coalescing isn't needed, and
+  // a synchronous call sidesteps a StrictMode bug where the unmount cleanup
+  // cancels the queued rAF but leaves `rafIdRef` pointing at the cancelled
+  // id, which then permanently jams every subsequent `scheduleRedraw()`.
+  useEffect(() => { render(); }, [state, view, selectedId]);
+  useEffect(() => () => {
+    if (rafIdRef.current != null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null; // critical: cancelAnimationFrame does NOT null the id
+    }
+  }, []);
 
   function pushHistory(next: EditorState) {
     setHistory((h) => [...h.slice(-29), state]);
