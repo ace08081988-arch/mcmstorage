@@ -21,6 +21,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
+import { Route as DevPhotoeditorSmokeRouteImport } from './routes/_dev.photoeditor-smoke'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
@@ -104,6 +105,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const TTokenRoute = TTokenRouteImport.update({
   id: '/t/$token',
   path: '/t/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DevPhotoeditorSmokeRoute = DevPhotoeditorSmokeRouteImport.update({
+  id: '/_dev/photoeditor-smoke',
+  path: '/photoeditor-smoke',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedTugasRoute = AuthenticatedTugasRouteImport.update({
@@ -272,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
+  '/photoeditor-smoke': typeof DevPhotoeditorSmokeRoute
   '/t/$token': typeof TTokenRoute
   '/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
@@ -308,6 +315,7 @@ export interface FileRoutesByTo {
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
+  '/photoeditor-smoke': typeof DevPhotoeditorSmokeRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
@@ -348,6 +356,7 @@ export interface FileRoutesById {
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
+  '/_dev/photoeditor-smoke': typeof DevPhotoeditorSmokeRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
@@ -389,6 +398,7 @@ export interface FileRouteTypes {
     | '/profil'
     | '/request'
     | '/tugas'
+    | '/photoeditor-smoke'
     | '/t/$token'
     | '/admin/pembayaran'
     | '/chat/$conversationId'
@@ -425,6 +435,7 @@ export interface FileRouteTypes {
     | '/profil'
     | '/request'
     | '/tugas'
+    | '/photoeditor-smoke'
     | '/t/$token'
     | '/'
     | '/admin/pembayaran'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profil'
     | '/_authenticated/request'
     | '/_authenticated/tugas'
+    | '/_dev/photoeditor-smoke'
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/admin/pembayaran'
@@ -489,6 +501,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   TrustRoute: typeof TrustRoute
+  DevPhotoeditorSmokeRoute: typeof DevPhotoeditorSmokeRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
@@ -581,6 +594,13 @@ declare module '@tanstack/react-router' {
       path: '/t/$token'
       fullPath: '/t/$token'
       preLoaderRoute: typeof TTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/_dev/photoeditor-smoke': {
+      id: '/_dev/photoeditor-smoke'
+      path: '/photoeditor-smoke'
+      fullPath: '/photoeditor-smoke'
+      preLoaderRoute: typeof DevPhotoeditorSmokeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/tugas': {
@@ -856,6 +876,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   TrustRoute: TrustRoute,
+  DevPhotoeditorSmokeRoute: DevPhotoeditorSmokeRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
@@ -866,13 +887,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
