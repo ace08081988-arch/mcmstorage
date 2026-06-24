@@ -844,8 +844,13 @@ function PrepEditorDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-md overflow-y-auto">
+    <Dialog open={open} onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
+      <DialogContent
+        className="max-h-[90vh] max-w-md overflow-y-auto"
+        onInteractOutside={(event) => {
+          if (editorOpen) event.preventDefault();
+        }}
+      >
         <DialogHeader>
           <DialogTitle>Penyiapan Baru — {title.name}</DialogTitle>
           <DialogDescription>Atur jumlah aktual tiap produk, lampirkan 1 foto bukti + lokasi.</DialogDescription>
