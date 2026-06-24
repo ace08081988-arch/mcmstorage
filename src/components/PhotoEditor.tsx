@@ -367,15 +367,17 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   function scheduleRedraw() {
+    console.log("[PE scheduleRedraw] called, queued=", rafIdRef.current);
     if (rafIdRef.current != null) return;
     rafIdRef.current = requestAnimationFrame(() => {
       rafIdRef.current = null;
+      console.log("[PE rAF] firing");
       render();
     });
   }
 
   // Repaint whenever reactive state changes (layers, view, selection)
-  useEffect(() => { scheduleRedraw(); }, [state, view, selectedId]);
+  useEffect(() => { console.log("[PE redraw-effect]", view); scheduleRedraw(); }, [state, view, selectedId]);
   useEffect(() => () => { if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current); }, []);
 
   function pushHistory(next: EditorState) {
