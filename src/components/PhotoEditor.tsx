@@ -5,7 +5,7 @@ import {
   ArrowUpLeft, ArrowUpRight, ArrowDownLeft, ArrowDownRight,
   Type, Eraser, Undo2, Redo2, RotateCw, Square, Circle, Pencil, Trash2,
   X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon, ZoomIn, ZoomOut, Maximize2, Minimize2,
-  Loader2, AlertTriangle, RefreshCw,
+  Loader2, AlertTriangle, RefreshCw, ClipboardCopy, ClipboardCheck,
 } from "lucide-react";
 import {
   Dialog,
@@ -17,6 +17,7 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string };
 type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
