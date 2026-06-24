@@ -330,7 +330,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       console.error("PhotoEditor: gagal merender base canvas", err);
       baseCanvasRef.current = null;
     }
-    scheduleRedraw();
+    // Synchronous render — matches the redraw-effect below and avoids the
+    // StrictMode rAF-jam described there.
+    render();
   }, [img, view, state.rotation]);
 
   // Composite layer pass — copies cached base then draws layers + in-progress shape.
