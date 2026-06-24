@@ -61,6 +61,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   } | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
   const [copiedError, setCopiedError] = useState(false);
+  // True once render() has actually painted the canvas at least once. Lets
+  // us show "Menyiapkan kanvas…" during the brief gap between the image
+  // loading and the first successful rasterisation.
+  const [canvasReady, setCanvasReady] = useState(false);
+  // True while exportImage is composing the final JPEG.
+  const [exporting, setExporting] = useState(false);
 
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
   const [history, setHistory] = useState<EditorState[]>([]);
@@ -150,6 +156,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setLoadStatus("loading");
     setLoadError(null);
     setImg(null);
+    setCanvasReady(false);
     baseCanvasRef.current = null;
     const i = new Image();
     // Jangan paksa crossOrigin untuk data: / blob: URL — di sebagian browser
@@ -365,6 +372,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       }
     }
     if (drawingRef.current) drawLayer(ctx, drawingRef.current, false);
+    if (base && !canvasReady) setCanvasReady(true);
   }
 
   function scheduleRedraw() {
@@ -600,6 +608,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   async function exportImage() {
     if (!img) return;
+    setExporting(true);
+    try {
     // render at original resolution
     const rotated = state.rotation === 90 || state.rotation === 270;
     const outW = rotated ? img.height : img.width;
@@ -621,6 +631,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const dataUrl = cvs.toDataURL("image/jpeg", 0.88);
     const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, "image/jpeg", 0.88));
     if (blob) onSave(blob, dataUrl);
+    } finally {
+      setExporting(false);
+    }
   }
 
   const selected = state.layers.find((l) => l.id === selectedId);
@@ -653,8 +666,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <button onClick={redo} disabled={!future.length} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted disabled:opacity-40"><Redo2 className="h-4 w-4" /></button>
           <button onClick={() => pushHistory({ ...state, rotation: (((state.rotation + 90) % 360) as 0 | 90 | 180 | 270) })} className="inline-flex h-9 w-9 items-center justify-center rounded-md border bg-background transition hover:bg-muted"><RotateCw className="h-4 w-4" /></button>
         </div>
-        <button onClick={exportImage} className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground">
-          <Check className="h-4 w-4" /> Simpan
+        <button
+          onClick={exportImage}
+          disabled={exporting || !canvasReady}
+          className="inline-flex h-9 items-center gap-1 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground transition disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
+          {exporting ? "Menyimpan…" : "Simpan"}
         </button>
       </div>
 
@@ -678,6 +696,32 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               className="absolute inset-0 touch-none"
               style={{ width: `${view.w}px`, height: `${view.h}px` }}
             />
+            {!canvasReady && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/70 text-foreground backdrop-blur-sm"
+              >
+                <Loader2 className="h-7 w-7 animate-spin" />
+                <div className="text-xs font-medium">Menyiapkan kanvas…</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Foto sudah dimuat. Sedang dirasterisasi ke kanvas.
+                </div>
+              </div>
+            )}
+            {exporting && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-background/80 text-foreground backdrop-blur-sm"
+              >
+                <Loader2 className="h-7 w-7 animate-spin text-primary" />
+                <div className="text-xs font-medium">Menyimpan foto…</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Menggabungkan coretan ke resolusi asli.
+                </div>
+              </div>
+            )}
           </div>
         )}
         {loadStatus === "loading" && (
@@ -688,7 +732,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           >
             <Loader2 className="h-8 w-8 animate-spin" />
             <div className="text-sm font-medium">Memuat foto…</div>
-            <div className="text-xs text-muted-foreground">Mohon tunggu sebentar.</div>
+            <div className="text-xs text-muted-foreground">
+              {srcKind(src) === "http"
+                ? "Mengunduh dari server. Periksa koneksi bila terasa lama."
+                : srcKind(src) === "blob"
+                  ? "Membaca foto dari memori perangkat…"
+                  : "Mendekode foto. File besar bisa butuh beberapa detik."}
+            </div>
           </div>
         )}
         {loadStatus === "error" && (
