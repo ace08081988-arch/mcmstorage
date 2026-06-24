@@ -151,6 +151,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setLoadStatus("loading");
     setLoadError(null);
     setImg(null);
+    baseCanvasRef.current = null;
     const i = new Image();
     // Jangan paksa crossOrigin untuk data: / blob: URL — di sebagian browser
     // Android Chrome/WebView ini membuat image gagal load secara senyap
@@ -314,15 +315,22 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const ctx = base.getContext("2d")!;
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     ctx.imageSmoothingQuality = "high";
-    ctx.save();
-    ctx.translate(view.w / 2, view.h / 2);
-    ctx.rotate((state.rotation * Math.PI) / 180);
-    const rotated = state.rotation === 90 || state.rotation === 270;
-    const dw = rotated ? view.h : view.w;
-    const dh = rotated ? view.w : view.h;
-    ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
-    ctx.restore();
-    baseCanvasRef.current = base;
+    try {
+      ctx.save();
+      ctx.translate(view.w / 2, view.h / 2);
+      ctx.rotate((state.rotation * Math.PI) / 180);
+      const rotated = state.rotation === 90 || state.rotation === 270;
+      const dw = rotated ? view.h : view.w;
+      const dh = rotated ? view.w : view.h;
+      ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+      ctx.restore();
+      baseCanvasRef.current = base;
+    } catch (err) {
+      // Some mobile WebViews can decode <img> but fail to rasterise it to canvas.
+      // Keep the editor usable by showing the DOM image fallback behind the canvas.
+      console.error("PhotoEditor: gagal merender base canvas", err);
+      baseCanvasRef.current = null;
+    }
     scheduleRedraw();
   }, [img, view, state.rotation]);
 
@@ -331,7 +339,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const cvs = canvasRef.current;
     const base = baseCanvasRef.current;
     const v = viewRef.current;
-    if (!cvs || !base || !v.w) return;
+    if (!cvs || !v.w) return;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
     const W = Math.round(v.w * dpr), H = Math.round(v.h * dpr);
     if (cvs.width !== W || cvs.height !== H) {
@@ -341,7 +349,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const ctx = cvs.getContext("2d")!;
     ctx.setTransform(1, 0, 0, 1, 0, 0);
     ctx.clearRect(0, 0, W, H);
-    ctx.drawImage(base, 0, 0);
+    if (base) ctx.drawImage(base, 0, 0);
     ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     const drag = dragLiveRef.current;
     for (const l of stateRef.current.layers) {
@@ -638,13 +646,25 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
       <div ref={wrapRef} className="flex flex-1 items-center justify-center overflow-hidden bg-muted p-2">
         {img && view.w > 0 && loadStatus === "ready" && (
-          <canvas
-            ref={canvasRef}
-            onPointerDown={onPointerDown}
-            onPointerMove={onPointerMove}
-            onPointerUp={onPointerUp}
-            className="touch-none rounded shadow-lg"
-          />
+          <div
+            className="relative overflow-hidden rounded shadow-lg"
+            style={{ width: `${view.w}px`, height: `${view.h}px` }}
+          >
+            <img
+              src={src}
+              alt="Foto yang sedang diedit"
+              draggable={false}
+              className="pointer-events-none absolute inset-0 h-full w-full select-none object-fill"
+            />
+            <canvas
+              ref={canvasRef}
+              onPointerDown={onPointerDown}
+              onPointerMove={onPointerMove}
+              onPointerUp={onPointerUp}
+              className="absolute inset-0 touch-none"
+              style={{ width: `${view.w}px`, height: `${view.h}px` }}
+            />
+          </div>
         )}
         {loadStatus === "loading" && (
           <div
