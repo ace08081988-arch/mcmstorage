@@ -53,7 +53,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [img, setImg] = useState<HTMLImageElement | null>(null);
   const [view, setView] = useState({ w: 0, h: 0 });
   const [loadStatus, setLoadStatus] = useState<"loading" | "ready" | "error">("loading");
-  const [loadError, setLoadError] = useState<string | null>(null);
+  const [loadError, setLoadError] = useState<{
+    title: string;
+    reason: string;
+    nextSteps: string[];
+    technical: string;
+  } | null>(null);
   const [loadAttempt, setLoadAttempt] = useState(0);
 
   const [state, setState] = useState<EditorState>({ layers: [], rotation: 0 });
@@ -106,6 +111,39 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
   function onPreviewPointerUp() { panRef.current = null; }
 
+  // Identify the kind of URL we received so the error can name it.
+  function srcKind(s: string): "data" | "blob" | "http" | "file" | "other" {
+    if (/^data:/i.test(s)) return "data";
+    if (/^blob:/i.test(s)) return "blob";
+    if (/^https?:\/\//i.test(s)) return "http";
+    if (/^file:/i.test(s)) return "file";
+    return "other";
+  }
+  function srcSummary(s: string): string {
+    const kind = srcKind(s);
+    if (kind === "data") {
+      const m = s.match(/^data:([^;,]+)(;base64)?,/i);
+      const mime = m?.[1] ?? "unknown";
+      // approx byte length for base64 payload
+      const payload = s.slice(s.indexOf(",") + 1);
+      const bytes = m?.[2]
+        ? Math.floor((payload.length * 3) / 4)
+        : payload.length;
+      const kb = Math.round(bytes / 1024);
+      return `data: URL (${mime}, ~${kb} KB)`;
+    }
+    if (kind === "blob") return `blob: URL (${s.slice(0, 48)}…)`;
+    if (kind === "http") {
+      try {
+        const u = new URL(s);
+        return `${u.protocol}//${u.host}${u.pathname}`;
+      } catch {
+        return s.slice(0, 80);
+      }
+    }
+    return s.slice(0, 80);
+  }
+
   // Load image
   useEffect(() => {
     setLoadStatus("loading");
@@ -117,18 +155,46 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     // sehingga kanvas tidak pernah dirender (terlihat sebagai foto "gelap").
     if (/^https?:\/\//i.test(src)) i.crossOrigin = "anonymous";
     let cancelled = false;
+    const startedAt = Date.now();
+    const kind = srcKind(src);
+    const summary = srcSummary(src);
     const timeoutId = window.setTimeout(() => {
       if (cancelled || loadStatus === "ready") return;
-      // Hindari "loading" yang menggantung tanpa batas pada koneksi lambat.
       setLoadStatus((s) => (s === "loading" ? "error" : s));
-      setLoadError("Memuat foto terlalu lama. Periksa koneksi lalu coba lagi.");
+      setLoadError({
+        title: "Waktu memuat foto habis (timeout)",
+        reason:
+          kind === "http"
+            ? "Foto tidak selesai diunduh dalam 20 detik. Koneksi internet kemungkinan lambat atau server gambar tidak merespons."
+            : kind === "blob"
+              ? "Browser tidak menyelesaikan pembacaan blob foto dalam 20 detik. Blob mungkin sudah dibebaskan (URL.revokeObjectURL) atau memori penuh."
+              : "Browser tidak selesai mendekode foto dalam 20 detik. File mungkin terlalu besar untuk perangkat ini.",
+        nextSteps: [
+          "Periksa koneksi internet, lalu tekan ‘Coba lagi’.",
+          "Coba foto yang ukurannya lebih kecil (< 5 MB).",
+          kind === "blob"
+            ? "Tutup editor, lalu pilih ulang foto dari galeri (blob lama mungkin sudah kedaluwarsa)."
+            : "Restart aplikasi bila masalah berulang.",
+        ],
+        technical: `kind=${kind} • ${summary} • timeout 20s`,
+      });
     }, 20000);
     i.onload = () => {
       if (cancelled) return;
       window.clearTimeout(timeoutId);
       if (!i.width || !i.height) {
         setLoadStatus("error");
-        setLoadError("File foto rusak atau tidak dikenali (ukuran 0). Coba pilih foto lain.");
+        setLoadError({
+          title: "File foto rusak atau kosong",
+          reason:
+            "Foto berhasil diunduh tetapi dimensi gambar 0×0 piksel. File kemungkinan rusak, terpotong, atau formatnya tidak didukung browser.",
+          nextSteps: [
+            "Pilih foto lain dari galeri.",
+            "Pastikan format JPG/PNG/WebP (HEIC tidak didukung di sebagian browser).",
+            "Jika foto baru saja difoto, coba ulangi pengambilan foto.",
+          ],
+          technical: `kind=${kind} • ${summary} • naturalSize=0x0`,
+        });
         return;
       }
       imgRef.current = i;
@@ -138,18 +204,62 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     i.onerror = () => {
       if (cancelled) return;
       window.clearTimeout(timeoutId);
-      console.error("PhotoEditor: gagal memuat gambar", src.slice(0, 64));
+      const elapsed = Date.now() - startedAt;
+      console.error("PhotoEditor: gagal memuat gambar", { kind, summary, elapsed });
       setLoadStatus("error");
-      setLoadError(
-        "Foto gagal dimuat. Bisa karena format tidak didukung, file terlalu besar, atau koneksi terputus.",
-      );
+      setLoadError({
+        title:
+          kind === "blob"
+            ? "Blob foto tidak bisa dibaca"
+            : kind === "data"
+              ? "Data foto tidak bisa didekode"
+              : kind === "http"
+                ? "Foto gagal diunduh dari server"
+                : "Foto gagal dimuat",
+        reason:
+          kind === "blob"
+            ? "URL blob sudah tidak valid — biasanya karena dipanggil URL.revokeObjectURL, halaman direfresh, atau file aslinya sudah dihapus dari memori."
+            : kind === "data"
+              ? "String data: URL tidak bisa didekode browser. File mungkin rusak, base64 terpotong, atau MIME type tidak didukung."
+              : kind === "http"
+                ? "Permintaan ke server gagal: koneksi terputus, foto sudah dihapus, atau diblokir CORS."
+                : "Browser menolak memuat foto. Format mungkin tidak didukung atau file rusak.",
+        nextSteps:
+          kind === "blob"
+            ? [
+                "Tutup editor lalu pilih ulang foto dari galeri.",
+                "Jangan menutup dialog asal foto sebelum editor terbuka.",
+              ]
+            : kind === "data"
+              ? [
+                  "Pilih ulang foto dari galeri.",
+                  "Gunakan format JPG atau PNG yang lebih umum.",
+                ]
+              : kind === "http"
+                ? [
+                    "Periksa koneksi internet, lalu tekan ‘Coba lagi’.",
+                    "Buka URL foto di tab baru untuk memastikan masih ada.",
+                  ]
+                : [
+                    "Pilih foto lain.",
+                    "Pastikan format JPG/PNG/WebP.",
+                  ],
+        technical: `kind=${kind} • ${summary} • elapsed=${elapsed}ms`,
+      });
     };
     try {
       i.src = src;
     } catch (err) {
       window.clearTimeout(timeoutId);
       setLoadStatus("error");
-      setLoadError("URL foto tidak valid.");
+      setLoadError({
+        title: "URL foto tidak valid",
+        reason:
+          "Browser menolak nilai src yang diberikan: " +
+          (err instanceof Error ? err.message : String(err)),
+        nextSteps: ["Tutup editor lalu pilih ulang foto."],
+        technical: `kind=${kind} • ${summary}`,
+      });
     }
     return () => {
       cancelled = true;
@@ -548,16 +658,40 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         {loadStatus === "error" && (
           <div
             role="alert"
-            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-center shadow-lg"
+            className="mx-3 max-w-sm rounded-lg border border-destructive/50 bg-background/95 p-4 text-left shadow-lg"
           >
-            <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-destructive" />
-            <div className="mb-1 text-sm font-semibold text-foreground">
-              Foto gagal ditampilkan
+            <div className="mb-2 flex items-start gap-2">
+              <AlertTriangle className="mt-0.5 h-5 w-5 flex-shrink-0 text-destructive" />
+              <div className="text-sm font-semibold text-foreground">
+                {loadError?.title ?? "Foto gagal ditampilkan"}
+              </div>
             </div>
-            <div className="mb-3 text-xs text-muted-foreground">
-              {loadError ?? "Terjadi kesalahan saat memuat foto."}
-            </div>
-            <div className="flex items-center justify-center gap-2">
+            <p className="mb-3 text-xs leading-relaxed text-muted-foreground">
+              {loadError?.reason ?? "Terjadi kesalahan saat memuat foto."}
+            </p>
+            {loadError?.nextSteps && loadError.nextSteps.length > 0 && (
+              <div className="mb-3">
+                <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-foreground/80">
+                  Langkah berikutnya
+                </div>
+                <ul className="list-disc space-y-0.5 pl-4 text-xs text-muted-foreground">
+                  {loadError.nextSteps.map((step, idx) => (
+                    <li key={idx}>{step}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {loadError?.technical && (
+              <details className="mb-3 rounded border bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground">
+                <summary className="cursor-pointer select-none font-medium">
+                  Detail teknis
+                </summary>
+                <code className="mt-1 block break-all font-mono text-[10px]">
+                  {loadError.technical}
+                </code>
+              </details>
+            )}
+            <div className="flex items-center justify-end gap-2">
               <Button
                 size="sm"
                 variant="outline"
