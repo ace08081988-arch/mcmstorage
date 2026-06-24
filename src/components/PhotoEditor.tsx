@@ -627,8 +627,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   if (typeof document === "undefined") return null;
-  return createPortal(
-    <div className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground">
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground"
+      onPointerDownCapture={(e) => e.stopPropagation()}
+    >
       <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-2 shadow-sm">
         <button onClick={onCancel} className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-sm transition hover:bg-muted">
           <X className="h-4 w-4" /> Batal
@@ -986,8 +989,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>,
-    document.body,
+    </div>
   );
 }
 
