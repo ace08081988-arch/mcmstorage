@@ -330,7 +330,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       console.error("PhotoEditor: gagal merender base canvas", err);
       baseCanvasRef.current = null;
     }
-    scheduleRedraw();
+    // Synchronous render — matches the redraw-effect below and avoids the
+    // StrictMode rAF-jam described there.
+    render();
   }, [img, view, state.rotation]);
 
   // Composite layer pass — copies cached base then draws layers + in-progress shape.
@@ -374,8 +376,18 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   // Repaint whenever reactive state changes (layers, view, selection)
-  useEffect(() => { scheduleRedraw(); }, [state, view, selectedId]);
-  useEffect(() => () => { if (rafIdRef.current != null) cancelAnimationFrame(rafIdRef.current); }, []);
+  // Call render() synchronously here — this effect only fires on real state
+  // changes (not on every pointermove) so rAF coalescing isn't needed, and
+  // a synchronous call sidesteps a StrictMode bug where the unmount cleanup
+  // cancels the queued rAF but leaves `rafIdRef` pointing at the cancelled
+  // id, which then permanently jams every subsequent `scheduleRedraw()`.
+  useEffect(() => { render(); }, [state, view, selectedId]);
+  useEffect(() => () => {
+    if (rafIdRef.current != null) {
+      cancelAnimationFrame(rafIdRef.current);
+      rafIdRef.current = null; // critical: cancelAnimationFrame does NOT null the id
+    }
+  }, []);
 
   function pushHistory(next: EditorState) {
     setHistory((h) => [...h.slice(-29), state]);
