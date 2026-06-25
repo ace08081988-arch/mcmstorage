@@ -12,6 +12,7 @@ type Row = {
   user_id: string;
   title: string;
   photo_path: string | null;
+  photo_paths?: string[] | null;
   location_url: string | null;
   note: string | null;
   status: "ready" | "sent";
@@ -39,8 +40,8 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [thumbs, setThumbs] = useState<Record<string, string>>({});
 
   const [title, setTitle] = useState("");
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [previewUrls, setPreviewUrls] = useState<string[]>([]);
   const [locationUrl, setLocationUrl] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
@@ -60,7 +61,14 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
     const list = (data ?? []) as Row[];
     setRows(list);
     // Pre-sign thumbnails (1 jam)
-    const paths = list.map((r) => r.photo_path).filter((p): p is string => !!p);
+    const paths = Array.from(
+      new Set(
+        list.flatMap((r) => [
+          r.photo_path ?? null,
+          ...((r.photo_paths ?? []) as string[]),
+        ]).filter((p): p is string => !!p),
+      ),
+    );
     if (paths.length) {
       const map: Record<string, string> = {};
       await Promise.all(
@@ -78,15 +86,15 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   useEffect(() => { void load(); }, [load]);
 
   useEffect(() => {
-    if (!file) { setPreviewUrl(null); return; }
-    const url = URL.createObjectURL(file);
-    setPreviewUrl(url);
-    return () => URL.revokeObjectURL(url);
-  }, [file]);
+    if (files.length === 0) { setPreviewUrls([]); return; }
+    const urls = files.map((f) => URL.createObjectURL(f));
+    setPreviewUrls(urls);
+    return () => { urls.forEach((u) => URL.revokeObjectURL(u)); };
+  }, [files]);
 
   function resetForm() {
     setTitle("");
-    setFile(null);
+    setFiles([]);
     setLocationUrl("");
     setNote("");
     if (fileRef.current) fileRef.current.value = "";
@@ -100,26 +108,44 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
     }
     setBusy(true);
     try {
-      let photoPath: string | null = null;
-      if (file) {
-        const ext = (file.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
-        const path = `${uid}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-        const up = await supabase.storage.from(BUCKET).upload(path, file, {
-          contentType: file.type || "image/jpeg",
+      const uploadedPaths: string[] = [];
+      for (let i = 0; i < files.length; i++) {
+        const f = files[i];
+        const ext = (f.name.split(".").pop() || "jpg").toLowerCase().replace(/[^a-z0-9]/g, "") || "jpg";
+        const path = `${uid}/${Date.now()}-${i}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+        const up = await supabase.storage.from(BUCKET).upload(path, f, {
+          contentType: f.type || "image/jpeg",
           upsert: false,
         });
-        if (up.error) { toast.error(`Upload gagal: ${up.error.message}`); setBusy(false); return; }
-        photoPath = path;
+        if (up.error) {
+          // rollback any prior uploads in this batch
+          if (uploadedPaths.length) {
+            await supabase.storage.from(BUCKET).remove(uploadedPaths);
+          }
+          toast.error(`Upload gagal (foto ${i + 1}): ${up.error.message}`);
+          setBusy(false);
+          return;
+        }
+        uploadedPaths.push(path);
       }
+      const photoPath = uploadedPaths[0] ?? null;
       const { error } = await table().insert({
         user_id: uid,
         title: title.trim(),
         photo_path: photoPath,
+        photo_paths: uploadedPaths,
         location_url: locationUrl.trim() || null,
         note: note.trim() || null,
         status: "ready",
       });
-      if (error) { toast.error(error.message); setBusy(false); return; }
+      if (error) {
+        if (uploadedPaths.length) {
+          await supabase.storage.from(BUCKET).remove(uploadedPaths);
+        }
+        toast.error(error.message);
+        setBusy(false);
+        return;
+      }
       toast.success("Tersimpan di Siap Dikirim.");
       resetForm();
       await load();
@@ -134,8 +160,12 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
       description: r.status === "sent" ? "Item riwayat akan dihapus permanen." : "Item siap kirim akan dihapus.",
       confirmText: "Hapus", destructive: true,
     }))) return;
-    if (r.photo_path) {
-      await supabase.storage.from(BUCKET).remove([r.photo_path]);
+    const all = Array.from(new Set([
+      ...(r.photo_path ? [r.photo_path] : []),
+      ...((r.photo_paths ?? []) as string[]),
+    ]));
+    if (all.length) {
+      await supabase.storage.from(BUCKET).remove(all);
     }
     const { error } = await table().delete().eq("id", r.id);
     if (error) return toast.error(error.message);
@@ -204,36 +234,63 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           <div>
             <label className="text-[11px] font-medium text-muted-foreground">Foto produk</label>
             <div className="mt-1 flex items-center gap-2">
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-                className="block w-full text-xs file:mr-2 file:rounded-md file:border file:bg-muted file:px-2 file:py-1.5 file:text-xs"
-              />
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(e) => {
+                const picked = Array.from(e.target.files ?? []);
+                if (picked.length) setFiles((prev) => [...prev, ...picked]);
+              }}
+              className="block w-full text-xs file:mr-2 file:rounded-md file:border file:bg-muted file:px-2 file:py-1.5 file:text-xs"
+            />
             </div>
             <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
-              <Camera className="h-3 w-3" /> kamera HP <span>•</span> <ImageIcon className="h-3 w-3" /> galeri
+              <Camera className="h-3 w-3" /> kamera HP <span>•</span> <ImageIcon className="h-3 w-3" /> galeri <span>•</span> bisa pilih beberapa foto
             </div>
-            {previewUrl && (
-              <div className="mt-2 inline-flex items-start gap-2">
-                <img
-                  src={previewUrl}
-                  alt="Pratinjau foto produk"
-                  className="h-28 w-28 rounded-md border object-cover"
-                />
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFile(null);
-                    if (fileRef.current) fileRef.current.value = "";
-                  }}
-                  className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 bg-background px-2 text-[11px] text-destructive hover:bg-destructive/10"
-                  aria-label="Hapus foto"
-                >
-                  <Trash2 className="h-3 w-3" /> Hapus
-                </button>
+            {previewUrls.length > 0 && (
+              <div className="mt-2 space-y-2">
+                <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                  <span>{previewUrls.length} foto dipilih</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setFiles([]);
+                      if (fileRef.current) fileRef.current.value = "";
+                    }}
+                    className="inline-flex h-6 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10"
+                  >
+                    <Trash2 className="h-3 w-3" /> Hapus semua
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {previewUrls.map((url, idx) => (
+                    <div key={url} className="relative">
+                      <img
+                        src={url}
+                        alt={`Pratinjau foto ${idx + 1}`}
+                        className="h-24 w-24 rounded-md border object-cover"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setFiles((prev) => prev.filter((_, i) => i !== idx));
+                          if (fileRef.current) fileRef.current.value = "";
+                        }}
+                        className="absolute -right-1.5 -top-1.5 grid h-6 w-6 place-items-center rounded-full border border-destructive/50 bg-background text-destructive shadow hover:bg-destructive/10"
+                        aria-label={`Hapus foto ${idx + 1}`}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                      {idx === 0 && (
+                        <span className="absolute bottom-1 left-1 rounded bg-primary/90 px-1 text-[9px] font-semibold text-primary-foreground">
+                          Utama
+                        </span>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
