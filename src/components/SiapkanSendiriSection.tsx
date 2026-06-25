@@ -239,6 +239,53 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
 
   return (
     <div className="space-y-4">
+      {lightboxIdx !== null && previewUrls[lightboxIdx] && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pratinjau foto ukuran penuh"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightboxIdx(null)}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setLightboxIdx(null); }}
+            className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            aria-label="Tutup pratinjau"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          {previewUrls.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => i === null ? i : (i - 1 + previewUrls.length) % previewUrls.length); }}
+                className="absolute left-3 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                aria-label="Foto sebelumnya"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => i === null ? i : (i + 1) % previewUrls.length); }}
+                className="absolute right-3 bottom-1/2 grid h-10 w-10 translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                aria-label="Foto berikutnya"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+          <img
+            src={previewUrls[lightboxIdx]}
+            alt={`Pratinjau foto ${lightboxIdx + 1}`}
+            className="max-h-[90vh] max-w-[92vw] rounded-lg object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+            {lightboxIdx + 1} / {previewUrls.length}
+          </div>
+        </div>
+      )}
       {/* Form */}
       <div className="rounded-xl border bg-card p-3 shadow-sm space-y-3">
         <div className="text-sm font-semibold">Siapkan produk sendiri</div>
