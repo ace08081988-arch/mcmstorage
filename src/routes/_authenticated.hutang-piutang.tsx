@@ -741,7 +741,7 @@ function HutangPiutangPage() {
               payments={payments}
               inPeriod={inPeriod}
               onSendWA={() => void sendFullReportWA()}
-              onRemovePayment={async (id) => {
+              onRemovePayment={async (id: string) => {
                 if (
                   !(await confirm({
                     title: "Hapus pembayaran?",
