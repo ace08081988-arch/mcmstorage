@@ -1621,6 +1621,7 @@ export type Database = {
           location_url: string | null
           note: string | null
           photo_path: string | null
+          photo_paths: string[]
           sent_at: string | null
           status: string
           title: string
@@ -1634,6 +1635,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           sent_at?: string | null
           status?: string
           title: string
@@ -1647,6 +1649,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           sent_at?: string | null
           status?: string
           title?: string
