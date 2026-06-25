@@ -803,6 +803,11 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   const [manualLat, setManualLat] = useState("");
   const [manualLng, setManualLng] = useState("");
   const [manualError, setManualError] = useState<string | null>(null);
+  const [address, setAddress] = useState("");
+  const [addressBusy, setAddressBusy] = useState(false);
+  const [addressError, setAddressError] = useState<string | null>(null);
+  const addressEditedRef = useRef(false);
+  const addressReqIdRef = useRef(0);
   const [progress, setProgress] = useState<{ step: "upload" | "save" | "done" | "error"; message: string } | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
@@ -975,6 +980,10 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     }
     const name = manualName.trim().slice(0, 120);
     setGps({ lat, lng });
+    if (name) {
+      addressEditedRef.current = true;
+      setAddress(name);
+    }
     const url = name
       ? `https://www.google.com/maps?q=${lat},${lng}(${encodeURIComponent(name)})`
       : `https://www.google.com/maps?q=${lat},${lng}`;
@@ -992,6 +1001,45 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
       description: `${lat.toFixed(5)}, ${lng.toFixed(5)}${name ? ` · ${name}` : ""}`,
     });
   }
+
+  // Reverse-geocode setiap kali koordinat berubah, kecuali pengguna sudah
+  // mengedit alamat manual. Pakai Nominatim (OpenStreetMap) — tanpa API key.
+  useEffect(() => {
+    if (!gps) {
+      setAddress("");
+      setAddressError(null);
+      addressEditedRef.current = false;
+      return;
+    }
+    if (addressEditedRef.current) return;
+    const reqId = ++addressReqIdRef.current;
+    const ctrl = new AbortController();
+    const t = setTimeout(async () => {
+      setAddressBusy(true);
+      setAddressError(null);
+      try {
+        const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${gps.lat}&lon=${gps.lng}&accept-language=id&zoom=18`;
+        const res = await fetch(url, { signal: ctrl.signal, headers: { Accept: "application/json" } });
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
+        if (reqId !== addressReqIdRef.current) return;
+        const name = (data?.display_name as string | undefined)?.trim() || "";
+        if (name && !addressEditedRef.current) setAddress(name);
+        else if (!name) setAddressError("Alamat tidak ditemukan untuk koordinat ini.");
+      } catch (err) {
+        if ((err as Error)?.name === "AbortError") return;
+        if (reqId === addressReqIdRef.current) {
+          setAddressError("Gagal mengambil alamat (cek koneksi). Anda tetap bisa ketik manual.");
+        }
+      } finally {
+        if (reqId === addressReqIdRef.current) setAddressBusy(false);
+      }
+    }, 600);
+    return () => {
+      clearTimeout(t);
+      ctrl.abort();
+    };
+  }, [gps]);
 
   async function save() {
     // Kumpulkan semua masalah agar pengguna tahu semua yang harus diperbaiki sekaligus.
@@ -1209,6 +1257,59 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 </div>
               );
             })()}
+            {gps && (
+              <div className="mt-2 rounded-md border bg-muted/30 p-2.5">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <Label className="text-[11px]">Alamat (bisa diedit)</Label>
+                  {addressBusy && (
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Mencari alamat…
+                    </span>
+                  )}
+                </div>
+                <Textarea
+                  rows={2}
+                  value={address}
+                  onChange={(e) => {
+                    addressEditedRef.current = true;
+                    setAddress(e.target.value);
+                  }}
+                  placeholder={addressBusy ? "Mencari alamat dari koordinat…" : "Ketik atau perbaiki alamat di sini"}
+                />
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!address.trim()}
+                    onClick={() => {
+                      const tag = `📍 ${address.trim()}`;
+                      setNote((prev) => (!prev ? tag : prev.includes(tag) ? prev : `${tag}\n${prev}`));
+                      toast.success("Alamat ditambahkan ke catatan");
+                    }}
+                  >
+                    Tambah ke catatan
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={addressBusy}
+                    onClick={() => {
+                      addressEditedRef.current = false;
+                      // trigger refetch by bumping reqId via state nudge
+                      setAddress("");
+                      setGps((g) => (g ? { ...g } : g));
+                    }}
+                  >
+                    <RotateCw className="mr-1 h-3 w-3" /> Ambil ulang
+                  </Button>
+                  {addressError && (
+                    <span className="text-[10px] text-destructive">{addressError}</span>
+                  )}
+                </div>
+              </div>
+            )}
             {locProblem && (
               <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-[11px] leading-relaxed text-destructive">
                 <div className="font-semibold">GPS gagal: {locProblem.message}</div>
