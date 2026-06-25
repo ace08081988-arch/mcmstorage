@@ -1,0 +1,1 @@
+ALTER TABLE public.self_prep_items ADD COLUMN IF NOT EXISTS photo_paths text[] NOT NULL DEFAULT '{}';
