@@ -657,6 +657,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   async function exportImage() {
     if (!img) return;
+    exportCancelledRef.current = false;
     setExporting(true);
     try {
     // render at original resolution
@@ -679,9 +680,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.restore();
     const dataUrl = cvs.toDataURL("image/jpeg", 0.88);
     const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, "image/jpeg", 0.88));
-    if (blob) onSave(blob, dataUrl);
+    if (exportCancelledRef.current) {
+      toast.info("Penyimpanan dibatalkan");
+    } else if (blob) {
+      onSave(blob, dataUrl);
+    }
     } finally {
       setExporting(false);
+      exportCancelledRef.current = false;
     }
   }
 
