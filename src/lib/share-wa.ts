@@ -13,6 +13,7 @@ export type ShareInput = {
 };
 
 import { toast } from "sonner";
+import { Capacitor } from "@capacitor/core";
 
 export function buildWhatsAppUrl(text: string, phone?: string) {
   const base = phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : "https://wa.me/";
@@ -31,13 +32,58 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
 
   const hasFiles = !!(files && files.length > 0);
 
+  // Native Android/iOS: pakai Capacitor Share + Filesystem agar foto benar-benar
+  // terlampir di WhatsApp (Web Share API kerap menjatuhkan files di WebView).
+  if (Capacitor.isNativePlatform()) {
+    try {
+      const fileUris: string[] = [];
+      if (hasFiles) {
+        const { Filesystem, Directory } = await import("@capacitor/filesystem");
+        for (let i = 0; i < files!.length; i++) {
+          const f = files![i];
+          const buf = await f.arrayBuffer();
+          const b64 = arrayBufferToBase64(buf);
+          const safeName = f.name.replace(/[^\w.\-]+/g, "_") || `share-${Date.now()}-${i}.bin`;
+          const written = await Filesystem.writeFile({
+            path: `share/${Date.now()}-${i}-${safeName}`,
+            data: b64,
+            directory: Directory.Cache,
+            recursive: true,
+          });
+          fileUris.push(written.uri);
+        }
+      }
+      const { Share } = await import("@capacitor/share");
+      const fullText = url ? `${text}\n${url}` : text;
+      await Share.share({
+        title,
+        text: fullText,
+        files: fileUris.length ? fileUris : undefined,
+        dialogTitle: "Kirim ke WhatsApp",
+      });
+      return { status: "shared", withFiles: fileUris.length > 0 };
+    } catch (err) {
+      const name = (err as { message?: string })?.message ?? "";
+      if (/cancel/i.test(name)) return { status: "cancelled" };
+      // Lanjut ke Web Share / fallback bila plugin gagal.
+    }
+  }
+
   let shareFailed = false;
   let shareError = "";
   if (nav && typeof nav.share === "function") {
     try {
-      const filesPayload = hasFiles && typeof nav.canShare === "function" && nav.canShare({ files })
-        ? files
-        : undefined;
+      // Uji canShare dengan payload lengkap (files + text + title) — beberapa
+      // browser hanya menerima files saat dikombinasikan dengan field tertentu.
+      let filesPayload: File[] | undefined;
+      if (hasFiles) {
+        const probe: ShareData = { files, text, title };
+        if (typeof nav.canShare === "function" && nav.canShare(probe)) {
+          filesPayload = files;
+        } else if (typeof nav.canShare === "function" && nav.canShare({ files })) {
+          filesPayload = files;
+        }
+      }
       const payload: ShareData = filesPayload
         ? { files: filesPayload, text, title }
         : { text, title, url };
@@ -72,6 +118,16 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
     reason: shareFailed ? "share-failed" : "no-web-share",
     ...(shareFailed ? { _error: shareError } as never : {}),
   };
+}
+
+function arrayBufferToBase64(buf: ArrayBuffer): string {
+  const bytes = new Uint8Array(buf);
+  let s = "";
+  const chunk = 0x8000;
+  for (let i = 0; i < bytes.length; i += chunk) {
+    s += String.fromCharCode(...bytes.subarray(i, i + chunk));
+  }
+  return btoa(s);
 }
 
 /**
