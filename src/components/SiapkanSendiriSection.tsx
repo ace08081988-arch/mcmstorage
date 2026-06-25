@@ -179,20 +179,24 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
     if (r.note) lines.push(r.note);
     const text = lines.join("\n");
 
-    let files: File[] | undefined;
-    if (r.photo_path) {
-      const url = thumbs[r.photo_path];
-      if (url) {
-        try {
-          const res = await fetch(url);
-          if (res.ok) {
-            const blob = await res.blob();
-            const name = r.photo_path.split("/").pop() || "foto.jpg";
-            files = [new File([blob], name, { type: blob.type || "image/jpeg" })];
-          }
-        } catch { /* ignore — fallback ke teks saja */ }
-      }
+    const allPaths = Array.from(new Set([
+      ...(r.photo_path ? [r.photo_path] : []),
+      ...((r.photo_paths ?? []) as string[]),
+    ]));
+    const collected: File[] = [];
+    for (const p of allPaths) {
+      const url = thumbs[p];
+      if (!url) continue;
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          const blob = await res.blob();
+          const name = p.split("/").pop() || "foto.jpg";
+          collected.push(new File([blob], name, { type: blob.type || "image/jpeg" }));
+        }
+      } catch { /* ignore — lanjut foto berikutnya */ }
     }
+    const files = collected.length ? collected : undefined;
 
     const result = await shareToWhatsApp({ text, files });
     notifyShareResult(result);
