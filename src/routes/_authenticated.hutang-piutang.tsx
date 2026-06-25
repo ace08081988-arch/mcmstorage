@@ -75,13 +75,19 @@ const rupiah = (n: number) =>
 function HutangPiutangPage() {
   const ent = useEntitlement();
   const [uid, setUid] = useState<string | null>(null);
-  const [tab, setTab] = useState<Kind>("hutang");
+  const [tab, setTab] = useState<"hutang" | "piutang" | "laporan">("hutang");
   const [debts, setDebts] = useState<Debt[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [suppliers, setSuppliers] = useState<Party[]>([]);
   const [customers, setCustomers] = useState<Party[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [addPrefill, setAddPrefill] = useState<{
+    kind: Kind;
+    name: string;
+    supplierId?: string | null;
+    customerId?: string | null;
+  } | null>(null);
   const [payFor, setPayFor] = useState<Debt | null>(null);
   const [editFor, setEditFor] = useState<Debt | null>(null);
   const [period, setPeriod] = useState<"all" | "week" | "month" | "custom">("all");
@@ -169,7 +175,8 @@ function HutangPiutangPage() {
     [debts, periodRange],
   );
 
-  const filtered = debtsInPeriod.filter((d) => d.kind === tab);
+  const activeKind: Kind = tab === "piutang" ? "piutang" : "hutang";
+  const filtered = debtsInPeriod.filter((d) => d.kind === activeKind);
 
   const totals = useMemo(() => {
     let total = 0;
@@ -219,6 +226,37 @@ function HutangPiutangPage() {
     return digits.length >= 8 ? digits : undefined;
   };
 
+  const groupedByParty = useMemo(() => {
+    const map = new Map<
+      string,
+      { key: string; name: string; supplierId: string | null; customerId: string | null; items: Debt[] }
+    >();
+    for (const d of filtered) {
+      const partyKey =
+        (d.kind === "hutang" ? d.supplier_id : d.customer_id) ??
+        `name:${d.party_name.toLowerCase()}`;
+      const cur = map.get(partyKey);
+      if (cur) cur.items.push(d);
+      else
+        map.set(partyKey, {
+          key: partyKey,
+          name: d.party_name,
+          supplierId: d.supplier_id,
+          customerId: d.customer_id,
+          items: [d],
+        });
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [filtered]);
+
+  const partyPhoneByName = (kind: Kind, name: string, supplierId: string | null, customerId: string | null) => {
+    const list = kind === "hutang" ? suppliers : customers;
+    const id = kind === "hutang" ? supplierId : customerId;
+    const found = id ? list.find((p) => p.id === id) : list.find((p) => p.name === name);
+    const digits = (found?.contact ?? "").replace(/\D/g, "");
+    return digits.length >= 8 ? digits : undefined;
+  };
+
   const sendReminderWA = async (d: Debt) => {
     const paid = paidByDebt.get(d.id) ?? 0;
     const sisa = Math.max(0, Number(d.amount) - paid);
@@ -231,6 +269,103 @@ function HutangPiutangPage() {
       : `Ini pengingat tagihan dari saya sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon segera diselesaikan ya, terima kasih.`;
     const text = `${greet}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
     const res = await shareToWhatsApp({ text, title: d.party_name, phone: partyPhone(d) });
+    notifyShareResult(res);
+  };
+
+  const sendPartyReportWA = async (group: {
+    name: string;
+    supplierId: string | null;
+    customerId: string | null;
+    items: Debt[];
+  }) => {
+    const kind = activeKind;
+    let total = 0;
+    let paid = 0;
+    const lines: string[] = [];
+    for (const d of group.items) {
+      const dPaid = paidByDebt.get(d.id) ?? 0;
+      const sisa = Math.max(0, Number(d.amount) - dPaid);
+      total += Number(d.amount);
+      paid += dPaid;
+      const due = d.due_date
+        ? new Date(d.due_date).toLocaleDateString("id-ID")
+        : "—";
+      lines.push(
+        `• ${new Date(d.created_at).toLocaleDateString("id-ID")} · ${rupiah(Number(d.amount))} (sisa ${rupiah(sisa)}, jt: ${due})${d.note ? ` — ${d.note}` : ""}`,
+      );
+      const pays = payments
+        .filter((p) => p.debt_id === d.id)
+        .sort((a, b) => (a.paid_at < b.paid_at ? -1 : 1));
+      for (const p of pays) {
+        lines.push(
+          `    ↳ Bayar ${new Date(p.paid_at).toLocaleDateString("id-ID")}: ${rupiah(Number(p.amount))}${p.note ? ` (${p.note})` : ""}`,
+        );
+      }
+    }
+    const sisa = Math.max(0, total - paid);
+    const judul =
+      kind === "hutang"
+        ? `Laporan hutang saya kepada ${group.name}`
+        : `Laporan piutang dari ${group.name}`;
+    const text = [
+      `*${judul}*`,
+      "",
+      ...lines,
+      "",
+      `Total: ${rupiah(total)}`,
+      `Terbayar: ${rupiah(paid)}`,
+      `Sisa: *${rupiah(sisa)}*`,
+    ].join("\n");
+    const res = await shareToWhatsApp({
+      text,
+      title: group.name,
+      phone: partyPhoneByName(kind, group.name, group.supplierId, group.customerId),
+    });
+    notifyShareResult(res);
+  };
+
+  const sendFullReportWA = async () => {
+    const periodLabel =
+      period === "all"
+        ? "Semua periode"
+        : period === "week"
+          ? "7 hari terakhir"
+          : period === "month"
+            ? "30 hari terakhir"
+            : `${customFrom || "—"} s/d ${customTo || "—"}`;
+    const paysInPeriod = payments
+      .filter((p) => inPeriod(p.paid_at))
+      .sort((a, b) => (a.paid_at < b.paid_at ? 1 : -1));
+    const debtById = new Map(debts.map((d) => [d.id, d]));
+    let totalIn = 0; // piutang dibayar (uang masuk)
+    let totalOut = 0; // hutang dibayar (uang keluar)
+    const lines: string[] = [];
+    for (const p of paysInPeriod) {
+      const d = debtById.get(p.debt_id);
+      if (!d) continue;
+      const arah = d.kind === "hutang" ? "keluar" : "masuk";
+      if (d.kind === "hutang") totalOut += Number(p.amount);
+      else totalIn += Number(p.amount);
+      lines.push(
+        `• ${new Date(p.paid_at).toLocaleDateString("id-ID")} · ${d.party_name} · ${arah} ${rupiah(Number(p.amount))}${p.note ? ` — ${p.note}` : ""}`,
+      );
+    }
+    const text = [
+      `*Laporan Hutang & Piutang*`,
+      `Periode: ${periodLabel}`,
+      "",
+      `Sisa hutang: ${rupiah(overall.hutangSisa)}`,
+      `Sisa piutang: ${rupiah(overall.piutangSisa)}`,
+      `Selisih bersih: ${overall.net >= 0 ? "+" : "−"}${rupiah(Math.abs(overall.net))}`,
+      "",
+      `*Riwayat pembayaran (${paysInPeriod.length})*`,
+      ...(lines.length > 0 ? lines : ["(tidak ada pembayaran pada periode ini)"]),
+      "",
+      `Uang masuk (piutang dibayar): ${rupiah(totalIn)}`,
+      `Uang keluar (hutang dibayar): ${rupiah(totalOut)}`,
+      `Arus bersih: ${totalIn - totalOut >= 0 ? "+" : "−"}${rupiah(Math.abs(totalIn - totalOut))}`,
+    ].join("\n");
+    const res = await shareToWhatsApp({ text, title: "Laporan Hutang & Piutang" });
     notifyShareResult(res);
   };
 
@@ -248,8 +383,14 @@ function HutangPiutangPage() {
           <h1 className="flex-1 truncate text-base font-semibold">
             Hutang & Piutang
           </h1>
-          <Button size="sm" onClick={() => setAddOpen(true)}>
-            {tab === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
+          <Button
+            size="sm"
+            onClick={() => {
+              setAddPrefill(null);
+              setAddOpen(true);
+            }}
+          >
+            {activeKind === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
           </Button>
         </div>
       </header>
@@ -375,10 +516,11 @@ function HutangPiutangPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Kind)}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="hutang">Hutang saya</TabsTrigger>
             <TabsTrigger value="piutang">Piutang saya</TabsTrigger>
+            <TabsTrigger value="laporan">Laporan</TabsTrigger>
           </TabsList>
 
           {(["hutang", "piutang"] as const).map((k) => (
@@ -412,14 +554,70 @@ function HutangPiutangPage() {
                   <Button
                     size="sm"
                     className="mt-3"
-                    onClick={() => setAddOpen(true)}
+                    onClick={() => {
+                      setAddPrefill(null);
+                      setAddOpen(true);
+                    }}
                   >
                     {k === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
                   </Button>
                 </div>
               ) : (
-                <ul className="space-y-2">
-                  {filtered.map((d) => {
+                <div className="space-y-4">
+                  {groupedByParty.map((group) => {
+                    let gTotal = 0;
+                    let gPaid = 0;
+                    for (const it of group.items) {
+                      gTotal += Number(it.amount);
+                      gPaid += paidByDebt.get(it.id) ?? 0;
+                    }
+                    const gSisa = Math.max(0, gTotal - gPaid);
+                    return (
+                      <section
+                        key={group.key}
+                        className="rounded-lg border bg-card"
+                      >
+                        <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-semibold">
+                              {group.name}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {group.items.length} catatan · sisa{" "}
+                              <span className="font-medium text-amber-600">
+                                {rupiah(gSisa)}
+                              </span>{" "}
+                              dari {rupiah(gTotal)}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setAddPrefill({
+                                kind: k,
+                                name: group.name,
+                                supplierId: group.supplierId,
+                                customerId: group.customerId,
+                              });
+                              setAddOpen(true);
+                            }}
+                            title={`Tambah ${k} untuk ${group.name}`}
+                          >
+                            + Tambah {k}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            onClick={() => void sendPartyReportWA(group)}
+                            title="Kirim laporan via WhatsApp"
+                          >
+                            Kirim laporan WA
+                          </Button>
+                        </header>
+                        <ul className="divide-y">
+                          {group.items.map((d) => {
                     const paid = paidByDebt.get(d.id) ?? 0;
                     const sisa = Number(d.amount) - paid;
                     const lunas = sisa <= 0;
@@ -430,7 +628,7 @@ function HutangPiutangPage() {
                     return (
                       <li
                         key={d.id}
-                        className="rounded-lg border bg-card p-3 text-sm"
+                        className="p-3 text-sm"
                       >
                         <div className="flex items-start gap-2">
                           <div className="min-w-0 flex-1">
@@ -527,18 +725,51 @@ function HutangPiutangPage() {
                         />
                       </li>
                     );
+                          })}
+                        </ul>
+                      </section>
+                    );
                   })}
-                </ul>
+                </div>
               )}
             </TabsContent>
           ))}
+
+          <TabsContent value="laporan" className="mt-3 space-y-3">
+            <PaymentsReport
+              debts={debts}
+              payments={payments}
+              inPeriod={inPeriod}
+              onSendWA={() => void sendFullReportWA()}
+              onRemovePayment={async (id: string) => {
+                if (
+                  !(await confirm({
+                    title: "Hapus pembayaran?",
+                    confirmText: "Hapus",
+                    destructive: true,
+                  }))
+                )
+                  return;
+                const { error } = await supabase
+                  .from("debt_payments")
+                  .delete()
+                  .eq("id", id);
+                if (error) toast.error(friendlyError(error));
+                else {
+                  toast.success("Pembayaran dihapus");
+                  void refresh();
+                }
+              }}
+            />
+          </TabsContent>
         </Tabs>
       </main>
 
       <AddDebtDialog
         open={addOpen}
         onOpenChange={setAddOpen}
-        defaultKind={tab}
+        defaultKind={activeKind}
+        prefill={addPrefill}
         uid={uid}
         suppliers={suppliers}
         customers={customers}
@@ -646,10 +877,172 @@ function PaymentHistory({
   );
 }
 
+function PaymentsReport({
+  debts,
+  payments,
+  inPeriod,
+  onSendWA,
+  onRemovePayment,
+}: {
+  debts: Debt[];
+  payments: Payment[];
+  inPeriod: (iso: string) => boolean;
+  onSendWA: () => void;
+  onRemovePayment: (id: string) => void | Promise<void>;
+}) {
+  const debtById = useMemo(
+    () => new Map(debts.map((d) => [d.id, d])),
+    [debts],
+  );
+
+  const filtered = useMemo(() => {
+    return payments
+      .filter((p) => inPeriod(p.paid_at))
+      .sort((a, b) => (a.paid_at < b.paid_at ? 1 : -1));
+  }, [payments, inPeriod]);
+
+  const totals = useMemo(() => {
+    let masuk = 0;
+    let keluar = 0;
+    for (const p of filtered) {
+      const d = debtById.get(p.debt_id);
+      if (!d) continue;
+      if (d.kind === "hutang") keluar += Number(p.amount);
+      else masuk += Number(p.amount);
+    }
+    return { masuk, keluar, net: masuk - keluar };
+  }, [filtered, debtById]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, Payment[]>();
+    for (const p of filtered) {
+      const day = p.paid_at.slice(0, 10);
+      const cur = map.get(day);
+      if (cur) cur.push(p);
+      else map.set(day, [p]);
+    }
+    return Array.from(map.entries());
+  }, [filtered]);
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border bg-card p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex-1">
+            <div className="text-sm font-semibold">Riwayat pembayaran</div>
+            <div className="text-[11px] text-muted-foreground">
+              {filtered.length} pembayaran sesuai periode
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+            onClick={onSendWA}
+            title="Kirim laporan via WhatsApp"
+          >
+            Kirim laporan WA
+          </Button>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+          <div>
+            <div className="text-muted-foreground">Uang masuk</div>
+            <div className="font-semibold text-emerald-600">
+              {rupiah(totals.masuk)}
+            </div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Uang keluar</div>
+            <div className="font-semibold text-red-600">
+              {rupiah(totals.keluar)}
+            </div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Arus bersih</div>
+            <div
+              className={
+                "font-semibold " +
+                (totals.net >= 0 ? "text-emerald-600" : "text-red-600")
+              }
+            >
+              {(totals.net >= 0 ? "+" : "−") + rupiah(Math.abs(totals.net))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
+          Belum ada pembayaran pada periode ini.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {grouped.map(([day, list]) => (
+            <section key={day} className="rounded-lg border bg-card">
+              <header className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
+                {new Date(day + "T00:00:00").toLocaleDateString("id-ID", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </header>
+              <ul className="divide-y">
+                {list.map((p) => {
+                  const d = debtById.get(p.debt_id);
+                  const isIn = d?.kind === "piutang";
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex items-start gap-2 px-3 py-2 text-sm"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium">
+                          {d?.party_name ?? "—"}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {d
+                            ? d.kind === "hutang"
+                              ? "Bayar hutang"
+                              : "Terima pembayaran piutang"
+                            : "Catatan dihapus"}
+                          {p.note ? ` · ${p.note}` : ""}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div
+                          className={
+                            "font-semibold " +
+                            (isIn ? "text-emerald-600" : "text-red-600")
+                          }
+                        >
+                          {(isIn ? "+" : "−") + rupiah(Number(p.amount))}
+                        </div>
+                        <button
+                          type="button"
+                          className="text-[11px] text-destructive hover:underline"
+                          onClick={() => void onRemovePayment(p.id)}
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AddDebtDialog({
   open,
   onOpenChange,
   defaultKind,
+  prefill,
   uid,
   suppliers,
   customers,
@@ -658,6 +1051,12 @@ function AddDebtDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   defaultKind: Kind;
+  prefill?: {
+    kind: Kind;
+    name: string;
+    supplierId?: string | null;
+    customerId?: string | null;
+  } | null;
   uid: string | null;
   suppliers: Party[];
   customers: Party[];
@@ -674,15 +1073,28 @@ function AddDebtDialog({
 
   useEffect(() => {
     if (open) {
-      setKind(defaultKind);
-      setPartyMode("manual");
-      setPartyId("");
-      setPartyName("");
+      const k = prefill?.kind ?? defaultKind;
+      setKind(k);
+      const linkId =
+        k === "hutang" ? prefill?.supplierId : prefill?.customerId;
+      if (linkId) {
+        setPartyMode("link");
+        setPartyId(linkId);
+        setPartyName("");
+      } else if (prefill?.name) {
+        setPartyMode("manual");
+        setPartyId("");
+        setPartyName(prefill.name);
+      } else {
+        setPartyMode("manual");
+        setPartyId("");
+        setPartyName("");
+      }
       setAmount("");
       setDue("");
       setNote("");
     }
-  }, [open, defaultKind]);
+  }, [open, defaultKind, prefill]);
 
   const partyOptions = kind === "hutang" ? suppliers : customers;
 
