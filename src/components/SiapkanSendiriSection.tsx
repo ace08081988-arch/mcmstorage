@@ -217,7 +217,24 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
               <Camera className="h-3 w-3" /> kamera HP <span>•</span> <ImageIcon className="h-3 w-3" /> galeri
             </div>
             {previewUrl && (
-              <img src={previewUrl} alt="" className="mt-2 h-28 w-28 rounded-md border object-cover" />
+              <div className="mt-2 inline-flex items-start gap-2">
+                <img
+                  src={previewUrl}
+                  alt="Pratinjau foto produk"
+                  className="h-28 w-28 rounded-md border object-cover"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFile(null);
+                    if (fileRef.current) fileRef.current.value = "";
+                  }}
+                  className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 bg-background px-2 text-[11px] text-destructive hover:bg-destructive/10"
+                  aria-label="Hapus foto"
+                >
+                  <Trash2 className="h-3 w-3" /> Hapus
+                </button>
+              </div>
             )}
           </div>
 
