@@ -678,13 +678,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.scale(sx, sy);
     for (const layer of state.layers) drawLayer(ctx, layer, false);
     ctx.restore();
+    if (exportCancelledRef.current) return;
     const dataUrl = cvs.toDataURL("image/jpeg", 0.88);
     const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, "image/jpeg", 0.88));
-    if (exportCancelledRef.current) {
-      toast.info("Penyimpanan dibatalkan");
-    } else if (blob) {
-      onSave(blob, dataUrl);
-    }
+    if (exportCancelledRef.current) return;
+    if (blob) onSave(blob, dataUrl);
     } finally {
       setExporting(false);
       exportCancelledRef.current = false;
@@ -799,6 +797,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                   onClick={() => {
                     exportCancelledRef.current = true;
                     setExporting(false);
+                    toast.info("Penyimpanan dibatalkan. Anda bisa lanjut mengedit.");
                   }}
                 >
                   <X className="mr-1 h-3.5 w-3.5" /> Batal
