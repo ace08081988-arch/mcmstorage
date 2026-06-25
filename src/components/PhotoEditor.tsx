@@ -767,6 +767,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 <div className="text-[11px] text-muted-foreground">
                   Foto sudah dimuat. Sedang dirasterisasi ke kanvas.
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={onCancel}
+                >
+                  <X className="mr-1 h-3.5 w-3.5" /> Batal
+                </Button>
               </div>
             )}
             {exporting && (
@@ -784,6 +792,17 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 <div className="text-[11px] text-muted-foreground">
                   Menggabungkan coretan ke resolusi asli.
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => {
+                    exportCancelledRef.current = true;
+                    setExporting(false);
+                  }}
+                >
+                  <X className="mr-1 h-3.5 w-3.5" /> Batal
+                </Button>
               </div>
             )}
           </div>
@@ -807,6 +826,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                   ? "Membaca foto dari memori perangkat…"
                   : "Mendekode foto. File besar bisa butuh beberapa detik."}
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-1"
+              onClick={onCancel}
+            >
+              <X className="mr-1 h-3.5 w-3.5" /> Batal
+            </Button>
           </div>
         )}
         {loadStatus === "error" && (
