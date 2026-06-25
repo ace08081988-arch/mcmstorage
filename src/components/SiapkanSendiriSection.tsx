@@ -289,11 +289,18 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 <div className="flex flex-wrap gap-2">
                   {previewUrls.map((url, idx) => (
                     <div key={url} className="relative">
-                      <img
-                        src={url}
-                        alt={`Pratinjau foto ${idx + 1}`}
-                        className="h-24 w-24 rounded-md border object-cover"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setLightboxIdx(idx)}
+                        className="block h-24 w-24 overflow-hidden rounded-md border focus:outline-none focus:ring-2 focus:ring-primary"
+                        aria-label={`Lihat foto ${idx + 1} ukuran penuh`}
+                      >
+                        <img
+                          src={url}
+                          alt={`Pratinjau foto ${idx + 1}`}
+                          className="h-full w-full object-cover transition-transform hover:scale-105"
+                        />
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
