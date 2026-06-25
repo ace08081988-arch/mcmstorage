@@ -1186,6 +1186,29 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 ? "Link tersimpan tanpa koordinat presisi (boleh disimpan)."
                 : "Tempel link Maps — koordinat akan otomatis terbaca jika tersedia."}
             </div>
+            {gps && (() => {
+              const d = 0.003;
+              const bbox = `${gps.lng - d},${gps.lat - d},${gps.lng + d},${gps.lat + d}`;
+              const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${gps.lat},${gps.lng}`;
+              const link = `https://www.openstreetmap.org/?mlat=${gps.lat}&mlon=${gps.lng}#map=17/${gps.lat}/${gps.lng}`;
+              return (
+                <div className="mt-2 overflow-hidden rounded-md border">
+                  <iframe
+                    title="Pratinjau peta lokasi"
+                    src={src}
+                    className="block h-40 w-full"
+                    loading="lazy"
+                    referrerPolicy="no-referrer"
+                  />
+                  <div className="flex items-center justify-between gap-2 border-t bg-muted/40 px-2 py-1 text-[10px] text-muted-foreground">
+                    <span>Penanda: {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}</span>
+                    <a href={link} target="_blank" rel="noreferrer" className="font-medium text-primary underline-offset-2 hover:underline">
+                      Buka peta besar
+                    </a>
+                  </div>
+                </div>
+              );
+            })()}
             {locProblem && (
               <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-[11px] leading-relaxed text-destructive">
                 <div className="font-semibold">GPS gagal: {locProblem.message}</div>
