@@ -1257,6 +1257,59 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 </div>
               );
             })()}
+            {gps && (
+              <div className="mt-2 rounded-md border bg-muted/30 p-2.5">
+                <div className="mb-1 flex items-center justify-between gap-2">
+                  <Label className="text-[11px]">Alamat (bisa diedit)</Label>
+                  {addressBusy && (
+                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" /> Mencari alamat…
+                    </span>
+                  )}
+                </div>
+                <Textarea
+                  rows={2}
+                  value={address}
+                  onChange={(e) => {
+                    addressEditedRef.current = true;
+                    setAddress(e.target.value);
+                  }}
+                  placeholder={addressBusy ? "Mencari alamat dari koordinat…" : "Ketik atau perbaiki alamat di sini"}
+                />
+                <div className="mt-1 flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!address.trim()}
+                    onClick={() => {
+                      const tag = `📍 ${address.trim()}`;
+                      setNote((prev) => (!prev ? tag : prev.includes(tag) ? prev : `${tag}\n${prev}`));
+                      toast.success("Alamat ditambahkan ke catatan");
+                    }}
+                  >
+                    Tambah ke catatan
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    disabled={addressBusy}
+                    onClick={() => {
+                      addressEditedRef.current = false;
+                      // trigger refetch by bumping reqId via state nudge
+                      setAddress("");
+                      setGps((g) => (g ? { ...g } : g));
+                    }}
+                  >
+                    <RotateCw className="mr-1 h-3 w-3" /> Ambil ulang
+                  </Button>
+                  {addressError && (
+                    <span className="text-[10px] text-destructive">{addressError}</span>
+                  )}
+                </div>
+              </div>
+            )}
             {locProblem && (
               <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-[11px] leading-relaxed text-destructive">
                 <div className="font-semibold">GPS gagal: {locProblem.message}</div>
