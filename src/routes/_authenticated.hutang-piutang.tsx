@@ -75,13 +75,19 @@ const rupiah = (n: number) =>
 function HutangPiutangPage() {
   const ent = useEntitlement();
   const [uid, setUid] = useState<string | null>(null);
-  const [tab, setTab] = useState<Kind>("hutang");
+  const [tab, setTab] = useState<"hutang" | "piutang" | "laporan">("hutang");
   const [debts, setDebts] = useState<Debt[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [suppliers, setSuppliers] = useState<Party[]>([]);
   const [customers, setCustomers] = useState<Party[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
+  const [addPrefill, setAddPrefill] = useState<{
+    kind: Kind;
+    name: string;
+    supplierId?: string | null;
+    customerId?: string | null;
+  } | null>(null);
   const [payFor, setPayFor] = useState<Debt | null>(null);
   const [editFor, setEditFor] = useState<Debt | null>(null);
   const [period, setPeriod] = useState<"all" | "week" | "month" | "custom">("all");
@@ -169,7 +175,8 @@ function HutangPiutangPage() {
     [debts, periodRange],
   );
 
-  const filtered = debtsInPeriod.filter((d) => d.kind === tab);
+  const activeKind: Kind = tab === "piutang" ? "piutang" : "hutang";
+  const filtered = debtsInPeriod.filter((d) => d.kind === activeKind);
 
   const totals = useMemo(() => {
     let total = 0;
@@ -219,6 +226,37 @@ function HutangPiutangPage() {
     return digits.length >= 8 ? digits : undefined;
   };
 
+  const groupedByParty = useMemo(() => {
+    const map = new Map<
+      string,
+      { key: string; name: string; supplierId: string | null; customerId: string | null; items: Debt[] }
+    >();
+    for (const d of filtered) {
+      const partyKey =
+        (d.kind === "hutang" ? d.supplier_id : d.customer_id) ??
+        `name:${d.party_name.toLowerCase()}`;
+      const cur = map.get(partyKey);
+      if (cur) cur.items.push(d);
+      else
+        map.set(partyKey, {
+          key: partyKey,
+          name: d.party_name,
+          supplierId: d.supplier_id,
+          customerId: d.customer_id,
+          items: [d],
+        });
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [filtered]);
+
+  const partyPhoneByName = (kind: Kind, name: string, supplierId: string | null, customerId: string | null) => {
+    const list = kind === "hutang" ? suppliers : customers;
+    const id = kind === "hutang" ? supplierId : customerId;
+    const found = id ? list.find((p) => p.id === id) : list.find((p) => p.name === name);
+    const digits = (found?.contact ?? "").replace(/\D/g, "");
+    return digits.length >= 8 ? digits : undefined;
+  };
+
   const sendReminderWA = async (d: Debt) => {
     const paid = paidByDebt.get(d.id) ?? 0;
     const sisa = Math.max(0, Number(d.amount) - paid);
@@ -231,6 +269,103 @@ function HutangPiutangPage() {
       : `Ini pengingat tagihan dari saya sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon segera diselesaikan ya, terima kasih.`;
     const text = `${greet}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
     const res = await shareToWhatsApp({ text, title: d.party_name, phone: partyPhone(d) });
+    notifyShareResult(res);
+  };
+
+  const sendPartyReportWA = async (group: {
+    name: string;
+    supplierId: string | null;
+    customerId: string | null;
+    items: Debt[];
+  }) => {
+    const kind = activeKind;
+    let total = 0;
+    let paid = 0;
+    const lines: string[] = [];
+    for (const d of group.items) {
+      const dPaid = paidByDebt.get(d.id) ?? 0;
+      const sisa = Math.max(0, Number(d.amount) - dPaid);
+      total += Number(d.amount);
+      paid += dPaid;
+      const due = d.due_date
+        ? new Date(d.due_date).toLocaleDateString("id-ID")
+        : "—";
+      lines.push(
+        `• ${new Date(d.created_at).toLocaleDateString("id-ID")} · ${rupiah(Number(d.amount))} (sisa ${rupiah(sisa)}, jt: ${due})${d.note ? ` — ${d.note}` : ""}`,
+      );
+      const pays = payments
+        .filter((p) => p.debt_id === d.id)
+        .sort((a, b) => (a.paid_at < b.paid_at ? -1 : 1));
+      for (const p of pays) {
+        lines.push(
+          `    ↳ Bayar ${new Date(p.paid_at).toLocaleDateString("id-ID")}: ${rupiah(Number(p.amount))}${p.note ? ` (${p.note})` : ""}`,
+        );
+      }
+    }
+    const sisa = Math.max(0, total - paid);
+    const judul =
+      kind === "hutang"
+        ? `Laporan hutang saya kepada ${group.name}`
+        : `Laporan piutang dari ${group.name}`;
+    const text = [
+      `*${judul}*`,
+      "",
+      ...lines,
+      "",
+      `Total: ${rupiah(total)}`,
+      `Terbayar: ${rupiah(paid)}`,
+      `Sisa: *${rupiah(sisa)}*`,
+    ].join("\n");
+    const res = await shareToWhatsApp({
+      text,
+      title: group.name,
+      phone: partyPhoneByName(kind, group.name, group.supplierId, group.customerId),
+    });
+    notifyShareResult(res);
+  };
+
+  const sendFullReportWA = async () => {
+    const periodLabel =
+      period === "all"
+        ? "Semua periode"
+        : period === "week"
+          ? "7 hari terakhir"
+          : period === "month"
+            ? "30 hari terakhir"
+            : `${customFrom || "—"} s/d ${customTo || "—"}`;
+    const paysInPeriod = payments
+      .filter((p) => inPeriod(p.paid_at))
+      .sort((a, b) => (a.paid_at < b.paid_at ? 1 : -1));
+    const debtById = new Map(debts.map((d) => [d.id, d]));
+    let totalIn = 0; // piutang dibayar (uang masuk)
+    let totalOut = 0; // hutang dibayar (uang keluar)
+    const lines: string[] = [];
+    for (const p of paysInPeriod) {
+      const d = debtById.get(p.debt_id);
+      if (!d) continue;
+      const arah = d.kind === "hutang" ? "keluar" : "masuk";
+      if (d.kind === "hutang") totalOut += Number(p.amount);
+      else totalIn += Number(p.amount);
+      lines.push(
+        `• ${new Date(p.paid_at).toLocaleDateString("id-ID")} · ${d.party_name} · ${arah} ${rupiah(Number(p.amount))}${p.note ? ` — ${p.note}` : ""}`,
+      );
+    }
+    const text = [
+      `*Laporan Hutang & Piutang*`,
+      `Periode: ${periodLabel}`,
+      "",
+      `Sisa hutang: ${rupiah(overall.hutangSisa)}`,
+      `Sisa piutang: ${rupiah(overall.piutangSisa)}`,
+      `Selisih bersih: ${overall.net >= 0 ? "+" : "−"}${rupiah(Math.abs(overall.net))}`,
+      "",
+      `*Riwayat pembayaran (${paysInPeriod.length})*`,
+      ...(lines.length > 0 ? lines : ["(tidak ada pembayaran pada periode ini)"]),
+      "",
+      `Uang masuk (piutang dibayar): ${rupiah(totalIn)}`,
+      `Uang keluar (hutang dibayar): ${rupiah(totalOut)}`,
+      `Arus bersih: ${totalIn - totalOut >= 0 ? "+" : "−"}${rupiah(Math.abs(totalIn - totalOut))}`,
+    ].join("\n");
+    const res = await shareToWhatsApp({ text, title: "Laporan Hutang & Piutang" });
     notifyShareResult(res);
   };
 
@@ -248,8 +383,14 @@ function HutangPiutangPage() {
           <h1 className="flex-1 truncate text-base font-semibold">
             Hutang & Piutang
           </h1>
-          <Button size="sm" onClick={() => setAddOpen(true)}>
-            {tab === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
+          <Button
+            size="sm"
+            onClick={() => {
+              setAddPrefill(null);
+              setAddOpen(true);
+            }}
+          >
+            {activeKind === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
           </Button>
         </div>
       </header>
