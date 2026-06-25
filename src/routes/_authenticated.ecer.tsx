@@ -959,6 +959,40 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     }
   }
 
+  // Fallback manual: pengguna ketik lat/lng/nama sendiri saat GPS gagal atau
+  // tidak tersedia (mis. di dalam gudang, izin diblokir permanen, dsb).
+  function applyManualLocation() {
+    setManualError(null);
+    const lat = Number(String(manualLat).replace(",", "."));
+    const lng = Number(String(manualLng).replace(",", "."));
+    if (!Number.isFinite(lat) || Math.abs(lat) > 90) {
+      setManualError("Latitude harus angka antara -90 dan 90 (contoh: -6.20088).");
+      return;
+    }
+    if (!Number.isFinite(lng) || Math.abs(lng) > 180) {
+      setManualError("Longitude harus angka antara -180 dan 180 (contoh: 106.81653).");
+      return;
+    }
+    const name = manualName.trim().slice(0, 120);
+    setGps({ lat, lng });
+    const url = name
+      ? `https://www.google.com/maps?q=${lat},${lng}(${encodeURIComponent(name)})`
+      : `https://www.google.com/maps?q=${lat},${lng}`;
+    setLocUrl(url);
+    setLocProblem(null);
+    if (name) {
+      setNote((prev) => {
+        const tag = `📍 ${name}`;
+        if (!prev) return tag;
+        return prev.includes(tag) ? prev : `${tag}\n${prev}`;
+      });
+    }
+    setManualOpen(false);
+    toast.success("Lokasi manual diterapkan", {
+      description: `${lat.toFixed(5)}, ${lng.toFixed(5)}${name ? ` · ${name}` : ""}`,
+    });
+  }
+
   async function save() {
     // Kumpulkan semua masalah agar pengguna tahu semua yang harus diperbaiki sekaligus.
     const issues: string[] = [];
