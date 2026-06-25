@@ -67,6 +67,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [canvasReady, setCanvasReady] = useState(false);
   // True while exportImage is composing the final JPEG.
   const [exporting, setExporting] = useState(false);
+  // Set to true when the user presses "Batal" while exportImage is running so
+  // we can skip onSave once the async toBlob resolves.
+  const exportCancelledRef = useRef(false);
   // Refs for overlay focus management — when a loading/exporting/error overlay
   // becomes active we move focus into it (so screen readers announce it and
   // keyboard users aren't stranded) and restore focus to the previously
@@ -654,6 +657,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   async function exportImage() {
     if (!img) return;
+    exportCancelledRef.current = false;
     setExporting(true);
     try {
     // render at original resolution
@@ -676,9 +680,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.restore();
     const dataUrl = cvs.toDataURL("image/jpeg", 0.88);
     const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, "image/jpeg", 0.88));
-    if (blob) onSave(blob, dataUrl);
+    if (exportCancelledRef.current) {
+      toast.info("Penyimpanan dibatalkan");
+    } else if (blob) {
+      onSave(blob, dataUrl);
+    }
     } finally {
       setExporting(false);
+      exportCancelledRef.current = false;
     }
   }
 
@@ -758,6 +767,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 <div className="text-[11px] text-muted-foreground">
                   Foto sudah dimuat. Sedang dirasterisasi ke kanvas.
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={onCancel}
+                >
+                  <X className="mr-1 h-3.5 w-3.5" /> Batal
+                </Button>
               </div>
             )}
             {exporting && (
@@ -775,6 +792,17 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 <div className="text-[11px] text-muted-foreground">
                   Menggabungkan coretan ke resolusi asli.
                 </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="mt-2"
+                  onClick={() => {
+                    exportCancelledRef.current = true;
+                    setExporting(false);
+                  }}
+                >
+                  <X className="mr-1 h-3.5 w-3.5" /> Batal
+                </Button>
               </div>
             )}
           </div>
@@ -798,6 +826,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                   ? "Membaca foto dari memori perangkat…"
                   : "Mendekode foto. File besar bisa butuh beberapa detik."}
             </div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-1"
+              onClick={onCancel}
+            >
+              <X className="mr-1 h-3.5 w-3.5" /> Batal
+            </Button>
           </div>
         )}
         {loadStatus === "error" && (
