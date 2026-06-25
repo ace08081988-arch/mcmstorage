@@ -881,6 +881,7 @@ function AddDebtDialog({
   open,
   onOpenChange,
   defaultKind,
+  prefill,
   uid,
   suppliers,
   customers,
@@ -889,6 +890,12 @@ function AddDebtDialog({
   open: boolean;
   onOpenChange: (v: boolean) => void;
   defaultKind: Kind;
+  prefill?: {
+    kind: Kind;
+    name: string;
+    supplierId?: string | null;
+    customerId?: string | null;
+  } | null;
   uid: string | null;
   suppliers: Party[];
   customers: Party[];
@@ -905,15 +912,28 @@ function AddDebtDialog({
 
   useEffect(() => {
     if (open) {
-      setKind(defaultKind);
-      setPartyMode("manual");
-      setPartyId("");
-      setPartyName("");
+      const k = prefill?.kind ?? defaultKind;
+      setKind(k);
+      const linkId =
+        k === "hutang" ? prefill?.supplierId : prefill?.customerId;
+      if (linkId) {
+        setPartyMode("link");
+        setPartyId(linkId);
+        setPartyName("");
+      } else if (prefill?.name) {
+        setPartyMode("manual");
+        setPartyId("");
+        setPartyName(prefill.name);
+      } else {
+        setPartyMode("manual");
+        setPartyId("");
+        setPartyName("");
+      }
       setAmount("");
       setDue("");
       setNote("");
     }
-  }, [open, defaultKind]);
+  }, [open, defaultKind, prefill]);
 
   const partyOptions = kind === "hutang" ? suppliers : customers;
 
