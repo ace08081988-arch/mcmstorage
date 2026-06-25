@@ -1025,6 +1025,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     <Dialog open onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
       <DialogContent
         className="max-w-md"
+        onPaste={onDialogPaste}
         onInteractOutside={(event) => {
           if (editorOpen) event.preventDefault();
         }}
@@ -1060,13 +1061,17 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 <Button size="sm" variant="outline" type="button" onClick={() => cameraRef.current?.click()}>
                   <Camera className="h-3 w-3" /> Foto ulang
                 </Button>
+                <Button size="sm" variant="outline" type="button" onClick={() => void pasteFromClipboard()}>
+                  📋 Tempel
+                </Button>
                 <Button size="sm" variant="ghost" onClick={() => setPhoto(null)}>Hapus foto</Button>
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-3 gap-2">
               <Button type="button" variant="outline" onClick={() => cameraRef.current?.click()}><Camera className="h-4 w-4" /> Kamera</Button>
               <Button type="button" variant="outline" onClick={() => galleryRef.current?.click()}><ImageIcon className="h-4 w-4" /> Galeri</Button>
+              <Button type="button" variant="outline" onClick={() => void pasteFromClipboard()}>📋 Tempel</Button>
             </div>
           )}
           {/* Use sr-only positioning instead of display:none — some mobile browsers
@@ -1086,8 +1091,26 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           <div>
             <Label className="text-xs">Link lokasi (GPS) <span className="text-destructive">*</span></Label>
             <div className="flex gap-2">
-              <Input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="https://maps.google.com/…" />
+              <Input
+                value={locUrl}
+                onChange={(e) => onLocUrlChange(e.target.value)}
+                onPaste={(e) => {
+                  const txt = e.clipboardData?.getData("text");
+                  if (txt) {
+                    e.preventDefault();
+                    onLocUrlChange(txt.trim());
+                  }
+                }}
+                placeholder="Tempel link Google Maps atau tekan GPS"
+              />
               <Button variant="outline" onClick={takeLocation}><MapPin className="h-4 w-4" /> GPS</Button>
+            </div>
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              {gps
+                ? `✓ Koordinat: ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}`
+                : locUrl
+                ? "Link tersimpan tanpa koordinat presisi (boleh disimpan)."
+                : "Tempel link Maps — koordinat akan otomatis terbaca jika tersedia."}
             </div>
           </div>
 
