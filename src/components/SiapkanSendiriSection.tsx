@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2 } from "lucide-react";
+import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
@@ -46,6 +46,24 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightboxIdx(null);
+      else if (e.key === "ArrowLeft") setLightboxIdx((i) => (i === null ? i : (i - 1 + previewUrls.length) % previewUrls.length));
+      else if (e.key === "ArrowRight") setLightboxIdx((i) => (i === null ? i : (i + 1) % previewUrls.length));
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxIdx, previewUrls.length]);
+
+  useEffect(() => {
+    if (lightboxIdx !== null && lightboxIdx >= previewUrls.length) {
+      setLightboxIdx(previewUrls.length === 0 ? null : previewUrls.length - 1);
+    }
+  }, [previewUrls.length, lightboxIdx]);
 
   const load = useCallback(async () => {
     if (!uid) return;
