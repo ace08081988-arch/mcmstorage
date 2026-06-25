@@ -67,6 +67,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [canvasReady, setCanvasReady] = useState(false);
   // True while exportImage is composing the final JPEG.
   const [exporting, setExporting] = useState(false);
+  // Set to true when the user presses "Batal" while exportImage is running so
+  // we can skip onSave once the async toBlob resolves.
+  const exportCancelledRef = useRef(false);
   // Refs for overlay focus management — when a loading/exporting/error overlay
   // becomes active we move focus into it (so screen readers announce it and
   // keyboard users aren't stranded) and restore focus to the previously
