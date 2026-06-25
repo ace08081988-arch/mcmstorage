@@ -922,7 +922,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     setLocProblem(null);
     const id = toast.loading("Mengambil lokasi…");
     try {
-      const { getCurrentLocation, getLocationDiagnostics, toGeoError } = await import("@/lib/get-location");
+      const { getCurrentLocation } = await import("@/lib/get-location");
       const { lat, lng } = await getCurrentLocation();
       setGps({ lat, lng });
       setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
