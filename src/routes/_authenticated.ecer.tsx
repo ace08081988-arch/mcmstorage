@@ -798,6 +798,11 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     code?: string;
     diagnostics?: unknown;
   } | null>(null);
+  const [manualOpen, setManualOpen] = useState(false);
+  const [manualName, setManualName] = useState("");
+  const [manualLat, setManualLat] = useState("");
+  const [manualLng, setManualLng] = useState("");
+  const [manualError, setManualError] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ step: "upload" | "save" | "done" | "error"; message: string } | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
@@ -952,6 +957,40 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     } catch {
       toast.message(text, { duration: 10000 });
     }
+  }
+
+  // Fallback manual: pengguna ketik lat/lng/nama sendiri saat GPS gagal atau
+  // tidak tersedia (mis. di dalam gudang, izin diblokir permanen, dsb).
+  function applyManualLocation() {
+    setManualError(null);
+    const lat = Number(String(manualLat).replace(",", "."));
+    const lng = Number(String(manualLng).replace(",", "."));
+    if (!Number.isFinite(lat) || Math.abs(lat) > 90) {
+      setManualError("Latitude harus angka antara -90 dan 90 (contoh: -6.20088).");
+      return;
+    }
+    if (!Number.isFinite(lng) || Math.abs(lng) > 180) {
+      setManualError("Longitude harus angka antara -180 dan 180 (contoh: 106.81653).");
+      return;
+    }
+    const name = manualName.trim().slice(0, 120);
+    setGps({ lat, lng });
+    const url = name
+      ? `https://www.google.com/maps?q=${lat},${lng}(${encodeURIComponent(name)})`
+      : `https://www.google.com/maps?q=${lat},${lng}`;
+    setLocUrl(url);
+    setLocProblem(null);
+    if (name) {
+      setNote((prev) => {
+        const tag = `📍 ${name}`;
+        if (!prev) return tag;
+        return prev.includes(tag) ? prev : `${tag}\n${prev}`;
+      });
+    }
+    setManualOpen(false);
+    toast.success("Lokasi manual diterapkan", {
+      description: `${lat.toFixed(5)}, ${lng.toFixed(5)}${name ? ` · ${name}` : ""}`,
+    });
   }
 
   async function save() {
@@ -1167,6 +1206,75 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 </details>
               </div>
             )}
+
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setManualOpen((v) => !v)}
+                className="text-[11px] font-medium text-primary underline-offset-2 hover:underline"
+                aria-expanded={manualOpen}
+              >
+                {manualOpen ? "Tutup input manual" : "Isi lokasi manual (lat/lng/nama)"}
+              </button>
+              {manualOpen && (
+                <div className="mt-2 space-y-2 rounded-md border bg-muted/40 p-2.5">
+                  <div className="text-[11px] text-muted-foreground">
+                    Gunakan ini jika GPS gagal. Anda bisa salin koordinat dari Google Maps:
+                    tahan titik di peta → muncul lat,lng di kotak pencarian.
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">Nama lokasi (opsional)</Label>
+                    <Input
+                      value={manualName}
+                      onChange={(e) => setManualName(e.target.value)}
+                      placeholder="mis. Gudang Utama, Toko Pasar Baru"
+                      maxLength={120}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[11px]">Latitude *</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={manualLat}
+                        onChange={(e) => setManualLat(e.target.value)}
+                        placeholder="-6.20088"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">Longitude *</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={manualLng}
+                        onChange={(e) => setManualLng(e.target.value)}
+                        placeholder="106.81653"
+                      />
+                    </div>
+                  </div>
+                  {manualError && (
+                    <div className="text-[11px] font-medium text-destructive">{manualError}</div>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" onClick={applyManualLocation}>
+                      Terapkan
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setManualName("");
+                        setManualLat("");
+                        setManualLng("");
+                        setManualError(null);
+                      }}
+                    >
+                      Bersihkan
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
