@@ -959,11 +959,6 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         description: "Tekan tombol GPS untuk mengambil lokasi otomatis, atau tempel link Google Maps.",
       });
       issues.push("gps");
-    } else if (!hasGps) {
-      toast.error("Koordinat GPS belum terambil", {
-        description: "Tekan tombol GPS agar koordinat (latitude/longitude) ikut tersimpan.",
-      });
-      issues.push("gps");
     } else if (locUrl.trim()) {
       if (locUrl.length > 2048) {
         toast.error("Link lokasi terlalu panjang", {
@@ -976,6 +971,14 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         });
         issues.push("gps");
       }
+    }
+
+    // Catatan: jika hanya link (mis. maps.app.goo.gl) tanpa koordinat, tetap
+    // boleh disimpan — koordinat akan null. Tampilkan info agar pengguna tahu.
+    if (!hasGps && locUrl.trim()) {
+      toast.message("Disimpan tanpa koordinat", {
+        description: "Link lokasi disimpan apa adanya. Tekan tombol GPS jika ingin koordinat presisi.",
+      });
     }
 
     if (issues.length) return;
