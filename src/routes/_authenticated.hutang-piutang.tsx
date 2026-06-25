@@ -877,6 +877,167 @@ function PaymentHistory({
   );
 }
 
+function PaymentsReport({
+  debts,
+  payments,
+  inPeriod,
+  onSendWA,
+  onRemovePayment,
+}: {
+  debts: Debt[];
+  payments: Payment[];
+  inPeriod: (iso: string) => boolean;
+  onSendWA: () => void;
+  onRemovePayment: (id: string) => void | Promise<void>;
+}) {
+  const debtById = useMemo(
+    () => new Map(debts.map((d) => [d.id, d])),
+    [debts],
+  );
+
+  const filtered = useMemo(() => {
+    return payments
+      .filter((p) => inPeriod(p.paid_at))
+      .sort((a, b) => (a.paid_at < b.paid_at ? 1 : -1));
+  }, [payments, inPeriod]);
+
+  const totals = useMemo(() => {
+    let masuk = 0;
+    let keluar = 0;
+    for (const p of filtered) {
+      const d = debtById.get(p.debt_id);
+      if (!d) continue;
+      if (d.kind === "hutang") keluar += Number(p.amount);
+      else masuk += Number(p.amount);
+    }
+    return { masuk, keluar, net: masuk - keluar };
+  }, [filtered, debtById]);
+
+  const grouped = useMemo(() => {
+    const map = new Map<string, Payment[]>();
+    for (const p of filtered) {
+      const day = p.paid_at.slice(0, 10);
+      const cur = map.get(day);
+      if (cur) cur.push(p);
+      else map.set(day, [p]);
+    }
+    return Array.from(map.entries());
+  }, [filtered]);
+
+  return (
+    <div className="space-y-3">
+      <div className="rounded-lg border bg-card p-3">
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="flex-1">
+            <div className="text-sm font-semibold">Riwayat pembayaran</div>
+            <div className="text-[11px] text-muted-foreground">
+              {filtered.length} pembayaran sesuai periode
+            </div>
+          </div>
+          <Button
+            size="sm"
+            variant="secondary"
+            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+            onClick={onSendWA}
+            title="Kirim laporan via WhatsApp"
+          >
+            Kirim laporan WA
+          </Button>
+        </div>
+        <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
+          <div>
+            <div className="text-muted-foreground">Uang masuk</div>
+            <div className="font-semibold text-emerald-600">
+              {rupiah(totals.masuk)}
+            </div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Uang keluar</div>
+            <div className="font-semibold text-red-600">
+              {rupiah(totals.keluar)}
+            </div>
+          </div>
+          <div>
+            <div className="text-muted-foreground">Arus bersih</div>
+            <div
+              className={
+                "font-semibold " +
+                (totals.net >= 0 ? "text-emerald-600" : "text-red-600")
+              }
+            >
+              {(totals.net >= 0 ? "+" : "−") + rupiah(Math.abs(totals.net))}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {filtered.length === 0 ? (
+        <div className="rounded-lg border border-dashed py-12 text-center text-sm text-muted-foreground">
+          Belum ada pembayaran pada periode ini.
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {grouped.map(([day, list]) => (
+            <section key={day} className="rounded-lg border bg-card">
+              <header className="border-b px-3 py-2 text-xs font-medium text-muted-foreground">
+                {new Date(day + "T00:00:00").toLocaleDateString("id-ID", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </header>
+              <ul className="divide-y">
+                {list.map((p) => {
+                  const d = debtById.get(p.debt_id);
+                  const isIn = d?.kind === "piutang";
+                  return (
+                    <li
+                      key={p.id}
+                      className="flex items-start gap-2 px-3 py-2 text-sm"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate font-medium">
+                          {d?.party_name ?? "—"}
+                        </div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {d
+                            ? d.kind === "hutang"
+                              ? "Bayar hutang"
+                              : "Terima pembayaran piutang"
+                            : "Catatan dihapus"}
+                          {p.note ? ` · ${p.note}` : ""}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div
+                          className={
+                            "font-semibold " +
+                            (isIn ? "text-emerald-600" : "text-red-600")
+                          }
+                        >
+                          {(isIn ? "+" : "−") + rupiah(Number(p.amount))}
+                        </div>
+                        <button
+                          type="button"
+                          className="text-[11px] text-destructive hover:underline"
+                          onClick={() => void onRemovePayment(p.id)}
+                        >
+                          Hapus
+                        </button>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function AddDebtDialog({
   open,
   onOpenChange,
