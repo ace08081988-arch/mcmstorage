@@ -516,10 +516,11 @@ function HutangPiutangPage() {
           </div>
         </div>
 
-        <Tabs value={tab} onValueChange={(v) => setTab(v as Kind)}>
-          <TabsList className="grid w-full grid-cols-2">
+        <Tabs value={tab} onValueChange={(v) => setTab(v as typeof tab)}>
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="hutang">Hutang saya</TabsTrigger>
             <TabsTrigger value="piutang">Piutang saya</TabsTrigger>
+            <TabsTrigger value="laporan">Laporan</TabsTrigger>
           </TabsList>
 
           {(["hutang", "piutang"] as const).map((k) => (
@@ -553,14 +554,70 @@ function HutangPiutangPage() {
                   <Button
                     size="sm"
                     className="mt-3"
-                    onClick={() => setAddOpen(true)}
+                    onClick={() => {
+                      setAddPrefill(null);
+                      setAddOpen(true);
+                    }}
                   >
                     {k === "hutang" ? "+ Tambah hutang" : "+ Tambah piutang"}
                   </Button>
                 </div>
               ) : (
-                <ul className="space-y-2">
-                  {filtered.map((d) => {
+                <div className="space-y-4">
+                  {groupedByParty.map((group) => {
+                    let gTotal = 0;
+                    let gPaid = 0;
+                    for (const it of group.items) {
+                      gTotal += Number(it.amount);
+                      gPaid += paidByDebt.get(it.id) ?? 0;
+                    }
+                    const gSisa = Math.max(0, gTotal - gPaid);
+                    return (
+                      <section
+                        key={group.key}
+                        className="rounded-lg border bg-card"
+                      >
+                        <header className="flex flex-wrap items-center gap-2 border-b px-3 py-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="truncate text-sm font-semibold">
+                              {group.name}
+                            </div>
+                            <div className="text-[11px] text-muted-foreground">
+                              {group.items.length} catatan · sisa{" "}
+                              <span className="font-medium text-amber-600">
+                                {rupiah(gSisa)}
+                              </span>{" "}
+                              dari {rupiah(gTotal)}
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              setAddPrefill({
+                                kind: k,
+                                name: group.name,
+                                supplierId: group.supplierId,
+                                customerId: group.customerId,
+                              });
+                              setAddOpen(true);
+                            }}
+                            title={`Tambah ${k} untuk ${group.name}`}
+                          >
+                            + Tambah {k}
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
+                            onClick={() => void sendPartyReportWA(group)}
+                            title="Kirim laporan via WhatsApp"
+                          >
+                            Kirim laporan WA
+                          </Button>
+                        </header>
+                        <ul className="divide-y">
+                          {group.items.map((d) => {
                     const paid = paidByDebt.get(d.id) ?? 0;
                     const sisa = Number(d.amount) - paid;
                     const lunas = sisa <= 0;
@@ -571,7 +628,7 @@ function HutangPiutangPage() {
                     return (
                       <li
                         key={d.id}
-                        className="rounded-lg border bg-card p-3 text-sm"
+                        className="p-3 text-sm"
                       >
                         <div className="flex items-start gap-2">
                           <div className="min-w-0 flex-1">
@@ -668,18 +725,51 @@ function HutangPiutangPage() {
                         />
                       </li>
                     );
+                          })}
+                        </ul>
+                      </section>
+                    );
                   })}
-                </ul>
+                </div>
               )}
             </TabsContent>
           ))}
+
+          <TabsContent value="laporan" className="mt-3 space-y-3">
+            <PaymentsReport
+              debts={debts}
+              payments={payments}
+              inPeriod={inPeriod}
+              onSendWA={() => void sendFullReportWA()}
+              onRemovePayment={async (id) => {
+                if (
+                  !(await confirm({
+                    title: "Hapus pembayaran?",
+                    confirmText: "Hapus",
+                    destructive: true,
+                  }))
+                )
+                  return;
+                const { error } = await supabase
+                  .from("debt_payments")
+                  .delete()
+                  .eq("id", id);
+                if (error) toast.error(friendlyError(error));
+                else {
+                  toast.success("Pembayaran dihapus");
+                  void refresh();
+                }
+              }}
+            />
+          </TabsContent>
         </Tabs>
       </main>
 
       <AddDebtDialog
         open={addOpen}
         onOpenChange={setAddOpen}
-        defaultKind={tab}
+        defaultKind={activeKind}
+        prefill={addPrefill}
         uid={uid}
         suppliers={suppliers}
         customers={customers}
