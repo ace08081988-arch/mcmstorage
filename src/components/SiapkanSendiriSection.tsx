@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2 } from "lucide-react";
+import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
@@ -46,6 +46,24 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+
+  useEffect(() => {
+    if (lightboxIdx === null) return;
+    function onKey(e: KeyboardEvent) {
+      if (e.key === "Escape") setLightboxIdx(null);
+      else if (e.key === "ArrowLeft") setLightboxIdx((i) => (i === null ? i : (i - 1 + previewUrls.length) % previewUrls.length));
+      else if (e.key === "ArrowRight") setLightboxIdx((i) => (i === null ? i : (i + 1) % previewUrls.length));
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightboxIdx, previewUrls.length]);
+
+  useEffect(() => {
+    if (lightboxIdx !== null && lightboxIdx >= previewUrls.length) {
+      setLightboxIdx(previewUrls.length === 0 ? null : previewUrls.length - 1);
+    }
+  }, [previewUrls.length, lightboxIdx]);
 
   const load = useCallback(async () => {
     if (!uid) return;
@@ -221,6 +239,53 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
 
   return (
     <div className="space-y-4">
+      {lightboxIdx !== null && previewUrls[lightboxIdx] && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-label="Pratinjau foto ukuran penuh"
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightboxIdx(null)}
+        >
+          <button
+            type="button"
+            onClick={(e) => { e.stopPropagation(); setLightboxIdx(null); }}
+            className="absolute right-3 top-3 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+            aria-label="Tutup pratinjau"
+          >
+            <X className="h-5 w-5" />
+          </button>
+          {previewUrls.length > 1 && (
+            <>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => i === null ? i : (i - 1 + previewUrls.length) % previewUrls.length); }}
+                className="absolute left-3 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                aria-label="Foto sebelumnya"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <button
+                type="button"
+                onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => i === null ? i : (i + 1) % previewUrls.length); }}
+                className="absolute right-3 bottom-1/2 grid h-10 w-10 translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+                aria-label="Foto berikutnya"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </>
+          )}
+          <img
+            src={previewUrls[lightboxIdx]}
+            alt={`Pratinjau foto ${lightboxIdx + 1}`}
+            className="max-h-[90vh] max-w-[92vw] rounded-lg object-contain shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+          <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
+            {lightboxIdx + 1} / {previewUrls.length}
+          </div>
+        </div>
+      )}
       {/* Form */}
       <div className="rounded-xl border bg-card p-3 shadow-sm space-y-3">
         <div className="text-sm font-semibold">Siapkan produk sendiri</div>
@@ -271,11 +336,18 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 <div className="flex flex-wrap gap-2">
                   {previewUrls.map((url, idx) => (
                     <div key={url} className="relative">
-                      <img
-                        src={url}
-                        alt={`Pratinjau foto ${idx + 1}`}
-                        className="h-24 w-24 rounded-md border object-cover"
-                      />
+                      <button
+                        type="button"
+                        onClick={() => setLightboxIdx(idx)}
+                        className="block h-24 w-24 overflow-hidden rounded-md border focus:outline-none focus:ring-2 focus:ring-primary"
+                        aria-label={`Lihat foto ${idx + 1} ukuran penuh`}
+                      >
+                        <img
+                          src={url}
+                          alt={`Pratinjau foto ${idx + 1}`}
+                          className="h-full w-full object-cover transition-transform hover:scale-105"
+                        />
+                      </button>
                       <button
                         type="button"
                         onClick={() => {
