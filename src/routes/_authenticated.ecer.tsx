@@ -1206,6 +1206,75 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 </details>
               </div>
             )}
+
+            <div className="mt-2">
+              <button
+                type="button"
+                onClick={() => setManualOpen((v) => !v)}
+                className="text-[11px] font-medium text-primary underline-offset-2 hover:underline"
+                aria-expanded={manualOpen}
+              >
+                {manualOpen ? "Tutup input manual" : "Isi lokasi manual (lat/lng/nama)"}
+              </button>
+              {manualOpen && (
+                <div className="mt-2 space-y-2 rounded-md border bg-muted/40 p-2.5">
+                  <div className="text-[11px] text-muted-foreground">
+                    Gunakan ini jika GPS gagal. Anda bisa salin koordinat dari Google Maps:
+                    tahan titik di peta → muncul lat,lng di kotak pencarian.
+                  </div>
+                  <div>
+                    <Label className="text-[11px]">Nama lokasi (opsional)</Label>
+                    <Input
+                      value={manualName}
+                      onChange={(e) => setManualName(e.target.value)}
+                      placeholder="mis. Gudang Utama, Toko Pasar Baru"
+                      maxLength={120}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-[11px]">Latitude *</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={manualLat}
+                        onChange={(e) => setManualLat(e.target.value)}
+                        placeholder="-6.20088"
+                      />
+                    </div>
+                    <div>
+                      <Label className="text-[11px]">Longitude *</Label>
+                      <Input
+                        inputMode="decimal"
+                        value={manualLng}
+                        onChange={(e) => setManualLng(e.target.value)}
+                        placeholder="106.81653"
+                      />
+                    </div>
+                  </div>
+                  {manualError && (
+                    <div className="text-[11px] font-medium text-destructive">{manualError}</div>
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" onClick={applyManualLocation}>
+                      Terapkan
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        setManualName("");
+                        setManualLat("");
+                        setManualLng("");
+                        setManualError(null);
+                      }}
+                    >
+                      Bersihkan
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <div>
