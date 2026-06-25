@@ -797,6 +797,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                   onClick={() => {
                     exportCancelledRef.current = true;
                     setExporting(false);
+                    toast.info("Penyimpanan dibatalkan. Anda bisa lanjut mengedit.");
                   }}
                 >
                   <X className="mr-1 h-3.5 w-3.5" /> Batal
