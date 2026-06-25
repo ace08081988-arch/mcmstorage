@@ -791,6 +791,13 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   const [actual, setActual] = useState(String(title.target_grams));
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [locBusy, setLocBusy] = useState(false);
+  const [locProblem, setLocProblem] = useState<{
+    message: string;
+    hint?: string;
+    code?: string;
+    diagnostics?: unknown;
+  } | null>(null);
   const [progress, setProgress] = useState<{ step: "upload" | "save" | "done" | "error"; message: string } | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
@@ -825,6 +832,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
 
   function onLocUrlChange(value: string) {
     setLocUrl(value);
+    setLocProblem(null);
     const parsed = parseLatLngFromUrl(value);
     if (parsed) {
       setGps(parsed);
@@ -833,22 +841,25 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     }
   }
 
+  async function autoFillLocationIfAllowed() {
+    if (gps || locUrl) return;
+    try {
+      const { getCurrentLocationIfAllowed } = await import("@/lib/get-location");
+      const pos = await getCurrentLocationIfAllowed();
+      if (!pos) return;
+      setGps({ lat: pos.lat, lng: pos.lng });
+      setLocUrl(`https://www.google.com/maps?q=${pos.lat},${pos.lng}`);
+    } catch {
+      // Jangan ganggu alur foto; pengguna masih bisa tekan tombol GPS manual.
+    }
+  }
+
   async function loadFromBlob(blob: Blob) {
     const dataUrl = await new Promise<string>((res) => {
       const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(blob);
     });
     setEditorSrc(dataUrl); setEditorOpen(true);
-    if (!gps && !locUrl && navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        (pos) => {
-          const { latitude, longitude } = pos.coords;
-          setGps({ lat: latitude, lng: longitude });
-          setLocUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
-        },
-        () => { /* ignore */ },
-        { enableHighAccuracy: true, timeout: 10000 },
-      );
-    }
+    void autoFillLocationIfAllowed();
   }
 
   async function pasteFromClipboard() {
@@ -906,23 +917,41 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     await loadFromBlob(f);
   }
 
-  function takeLocation() {
+  async function takeLocation() {
+    setLocBusy(true);
+    setLocProblem(null);
     const id = toast.loading("Mengambil lokasi…");
-    import("@/lib/get-location").then(async ({ getCurrentLocation, GeoError }) => {
-      try {
-        const { lat, lng } = await getCurrentLocation();
-        setGps({ lat, lng });
-        setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
-        toast.success("Lokasi terisi", { id });
-      } catch (e) {
-        const err = e as InstanceType<typeof GeoError>;
-        toast.error(err?.message ?? "Gagal mengambil lokasi", {
-          id,
-          description: err?.hint,
-          duration: 8000,
-        });
-      }
-    });
+    try {
+      const { getCurrentLocation } = await import("@/lib/get-location");
+      const { lat, lng } = await getCurrentLocation();
+      setGps({ lat, lng });
+      setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
+      setLocProblem(null);
+      toast.success("Lokasi terisi", { id });
+    } catch (e) {
+      const { getLocationDiagnostics, toGeoError } = await import("@/lib/get-location");
+      const err = toGeoError(e);
+      const diagnostics = await getLocationDiagnostics();
+      setLocProblem({ message: err.message, hint: err.hint, code: err.code, diagnostics });
+      toast.error(err.message, {
+        id,
+        description: err.hint,
+        duration: 10000,
+      });
+    } finally {
+      setLocBusy(false);
+    }
+  }
+
+  async function copyLocationProblem() {
+    if (!locProblem) return;
+    const text = JSON.stringify({ at: new Date().toISOString(), ...locProblem }, null, 2);
+    try {
+      await navigator.clipboard?.writeText(text);
+      toast.success("Detail GPS disalin");
+    } catch {
+      toast.message(text, { duration: 10000 });
+    }
   }
 
   async function save() {
@@ -1107,7 +1136,9 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 }}
                 placeholder="Tempel link Google Maps atau tekan GPS"
               />
-              <Button variant="outline" onClick={takeLocation}><MapPin className="h-4 w-4" /> GPS</Button>
+              <Button variant="outline" onClick={() => void takeLocation()} disabled={locBusy || busy}>
+                {locBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />} GPS
+              </Button>
             </div>
             <div className="mt-1 text-[10px] text-muted-foreground">
               {gps
@@ -1116,6 +1147,26 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 ? "Link tersimpan tanpa koordinat presisi (boleh disimpan)."
                 : "Tempel link Maps — koordinat akan otomatis terbaca jika tersedia."}
             </div>
+            {locProblem && (
+              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-[11px] leading-relaxed text-destructive">
+                <div className="font-semibold">GPS gagal: {locProblem.message}</div>
+                {locProblem.hint && <div className="mt-1 text-destructive/90">{locProblem.hint}</div>}
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="outline" onClick={() => void takeLocation()} disabled={locBusy}>
+                    {locBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RotateCw className="h-3.5 w-3.5" />} Coba lagi
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" onClick={() => void copyLocationProblem()}>
+                    Salin detail GPS
+                  </Button>
+                </div>
+                <details className="mt-2 text-[10px] text-muted-foreground">
+                  <summary className="cursor-pointer">Detail teknis</summary>
+                  <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-words rounded bg-background/70 p-2">
+                    {JSON.stringify(locProblem, null, 2)}
+                  </pre>
+                </details>
+              </div>
+            )}
           </div>
 
           <div>
