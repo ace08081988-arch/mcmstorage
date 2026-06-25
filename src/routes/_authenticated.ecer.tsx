@@ -907,18 +907,22 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   }
 
   function takeLocation() {
-    if (!navigator.geolocation) { toast.error("GPS tidak tersedia"); return; }
     const id = toast.loading("Mengambil lokasi…");
-    navigator.geolocation.getCurrentPosition(
-      (pos) => {
-        const { latitude, longitude } = pos.coords;
-        setGps({ lat: latitude, lng: longitude });
-        setLocUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
+    import("@/lib/get-location").then(async ({ getCurrentLocation, GeoError }) => {
+      try {
+        const { lat, lng } = await getCurrentLocation();
+        setGps({ lat, lng });
+        setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
         toast.success("Lokasi terisi", { id });
-      },
-      (err) => toast.error("Gagal: " + err.message, { id }),
-      { enableHighAccuracy: true, timeout: 10000 },
-    );
+      } catch (e) {
+        const err = e as InstanceType<typeof GeoError>;
+        toast.error(err?.message ?? "Gagal mengambil lokasi", {
+          id,
+          description: err?.hint,
+          duration: 8000,
+        });
+      }
+    });
   }
 
   async function save() {
