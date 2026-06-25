@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2, ChevronLeft, ChevronRight, X } from "lucide-react";
+import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2, ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
@@ -47,6 +47,28 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
+  const [zoom, setZoom] = useState(1);
+  const [pan, setPan] = useState({ x: 0, y: 0 });
+  const dragRef = useRef<{ x: number; y: number; px: number; py: number } | null>(null);
+  const pinchRef = useRef<{ dist: number; zoom: number } | null>(null);
+  const lastTapRef = useRef<number>(0);
+
+  const resetView = useCallback(() => { setZoom(1); setPan({ x: 0, y: 0 }); }, []);
+  useEffect(() => { resetView(); }, [lightboxIdx, resetView]);
+
+  const clampPan = useCallback((z: number, p: { x: number; y: number }) => {
+    if (z <= 1) return { x: 0, y: 0 };
+    const max = 600 * (z - 1);
+    return { x: Math.max(-max, Math.min(max, p.x)), y: Math.max(-max, Math.min(max, p.y)) };
+  }, []);
+
+  const zoomBy = useCallback((factor: number) => {
+    setZoom((z) => {
+      const next = Math.max(1, Math.min(5, z * factor));
+      if (next === 1) setPan({ x: 0, y: 0 });
+      return next;
+    });
+  }, []);
 
   useEffect(() => {
     if (lightboxIdx === null) return;
@@ -246,6 +268,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           aria-label="Pratinjau foto ukuran penuh"
           className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4"
           onClick={() => setLightboxIdx(null)}
+          onWheel={(e) => { e.preventDefault(); zoomBy(e.deltaY < 0 ? 1.1 : 1 / 1.1); }}
         >
           <button
             type="button"
@@ -255,11 +278,20 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           >
             <X className="h-5 w-5" />
           </button>
+          <div
+            className="absolute left-1/2 top-3 z-10 flex -translate-x-1/2 items-center gap-1 rounded-full bg-black/60 px-2 py-1 text-white"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button type="button" onClick={() => zoomBy(1 / 1.25)} className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/10" aria-label="Perkecil"><ZoomOut className="h-4 w-4" /></button>
+            <span className="min-w-[3rem] text-center text-xs tabular-nums">{Math.round(zoom * 100)}%</span>
+            <button type="button" onClick={() => zoomBy(1.25)} className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/10" aria-label="Perbesar"><ZoomIn className="h-4 w-4" /></button>
+            <button type="button" onClick={resetView} className="grid h-8 w-8 place-items-center rounded-full hover:bg-white/10" aria-label="Reset zoom"><RotateCcw className="h-4 w-4" /></button>
+          </div>
           {previewUrls.length > 1 && (
             <>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => i === null ? i : (i - 1 + previewUrls.length) % previewUrls.length); }}
+                onClick={(e) => { e.stopPropagation(); resetView(); setLightboxIdx((i) => i === null ? i : (i - 1 + previewUrls.length) % previewUrls.length); }}
                 className="absolute left-3 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
                 aria-label="Foto sebelumnya"
               >
@@ -267,7 +299,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
               </button>
               <button
                 type="button"
-                onClick={(e) => { e.stopPropagation(); setLightboxIdx((i) => i === null ? i : (i + 1) % previewUrls.length); }}
+                onClick={(e) => { e.stopPropagation(); resetView(); setLightboxIdx((i) => i === null ? i : (i + 1) % previewUrls.length); }}
                 className="absolute right-3 bottom-1/2 grid h-10 w-10 translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
                 aria-label="Foto berikutnya"
               >
@@ -278,8 +310,59 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           <img
             src={previewUrls[lightboxIdx]}
             alt={`Pratinjau foto ${lightboxIdx + 1}`}
-            className="max-h-[90vh] max-w-[92vw] rounded-lg object-contain shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            draggable={false}
+            className="max-h-[90vh] max-w-[92vw] touch-none select-none rounded-lg object-contain shadow-2xl"
+            style={{
+              transform: `translate(${pan.x}px, ${pan.y}px) scale(${zoom})`,
+              transition: dragRef.current || pinchRef.current ? "none" : "transform 120ms ease-out",
+              cursor: zoom > 1 ? (dragRef.current ? "grabbing" : "grab") : "zoom-in",
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              const now = Date.now();
+              if (now - lastTapRef.current < 300) {
+                setZoom((z) => (z > 1 ? 1 : 2));
+                setPan({ x: 0, y: 0 });
+              }
+              lastTapRef.current = now;
+            }}
+            onPointerDown={(e) => {
+              e.stopPropagation();
+              if (zoom <= 1) return;
+              (e.target as HTMLElement).setPointerCapture(e.pointerId);
+              dragRef.current = { x: e.clientX, y: e.clientY, px: pan.x, py: pan.y };
+            }}
+            onPointerMove={(e) => {
+              if (!dragRef.current) return;
+              const d = dragRef.current;
+              setPan(clampPan(zoom, { x: d.px + (e.clientX - d.x), y: d.py + (e.clientY - d.y) }));
+            }}
+            onPointerUp={(e) => {
+              if (dragRef.current) {
+                try { (e.target as HTMLElement).releasePointerCapture(e.pointerId); } catch { /* noop */ }
+                dragRef.current = null;
+              }
+            }}
+            onPointerCancel={() => { dragRef.current = null; }}
+            onTouchStart={(e) => {
+              if (e.touches.length === 2) {
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                pinchRef.current = { dist: Math.hypot(dx, dy), zoom };
+              }
+            }}
+            onTouchMove={(e) => {
+              if (e.touches.length === 2 && pinchRef.current) {
+                e.preventDefault();
+                const dx = e.touches[0].clientX - e.touches[1].clientX;
+                const dy = e.touches[0].clientY - e.touches[1].clientY;
+                const dist = Math.hypot(dx, dy);
+                const next = Math.max(1, Math.min(5, pinchRef.current.zoom * (dist / pinchRef.current.dist)));
+                setZoom(next);
+                if (next === 1) setPan({ x: 0, y: 0 });
+              }
+            }}
+            onTouchEnd={(e) => { if (e.touches.length < 2) pinchRef.current = null; }}
           />
           <div className="absolute bottom-4 left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-3 py-1 text-xs text-white">
             {lightboxIdx + 1} / {previewUrls.length}
