@@ -795,11 +795,47 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]; e.target.value = "";
-    if (!f) return;
+  // Coba ekstrak lat/lng dari berbagai format URL Google Maps yang umum:
+  //   - https://www.google.com/maps?q=-6.2,106.8
+  //   - https://www.google.com/maps/@-6.2,106.8,17z
+  //   - https://maps.google.com/?ll=-6.2,106.8
+  //   - …!3d-6.2!4d106.8
+  // Link pendek (maps.app.goo.gl) tidak bisa diparse di klien (CORS); biarkan
+  // null dan simpan URL apa adanya.
+  function parseLatLngFromUrl(raw: string): { lat: number; lng: number } | null {
+    if (!raw) return null;
+    const patterns = [
+      /[?&](?:q|ll|destination)=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/i,
+      /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+      /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/,
+      /^\s*(-?\d{1,3}(?:\.\d+)?)\s*,\s*(-?\d{1,3}(?:\.\d+)?)\s*$/,
+    ];
+    for (const re of patterns) {
+      const m = raw.match(re);
+      if (m) {
+        const lat = Number(m[1]);
+        const lng = Number(m[2]);
+        if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+          return { lat, lng };
+        }
+      }
+    }
+    return null;
+  }
+
+  function onLocUrlChange(value: string) {
+    setLocUrl(value);
+    const parsed = parseLatLngFromUrl(value);
+    if (parsed) {
+      setGps(parsed);
+    } else if (value.trim() === "") {
+      setGps(null);
+    }
+  }
+
+  async function loadFromBlob(blob: Blob) {
     const dataUrl = await new Promise<string>((res) => {
-      const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f);
+      const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(blob);
     });
     setEditorSrc(dataUrl); setEditorOpen(true);
     if (!gps && !locUrl && navigator.geolocation) {
@@ -813,6 +849,61 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         { enableHighAccuracy: true, timeout: 10000 },
       );
     }
+  }
+
+  async function pasteFromClipboard() {
+    try {
+      if (!navigator.clipboard?.read) {
+        toast.error("Browser tidak mendukung tempel dari clipboard", {
+          description: "Gunakan tombol Galeri atau Kamera, atau Ctrl+V langsung di dialog.",
+        });
+        return;
+      }
+      const items = await navigator.clipboard.read();
+      for (const it of items) {
+        const imgType = it.types.find((t) => t.startsWith("image/"));
+        if (imgType) {
+          const blob = await it.getType(imgType);
+          await loadFromBlob(blob);
+          toast.success("Foto ditempel dari clipboard");
+          return;
+        }
+        const txtType = it.types.find((t) => t === "text/plain");
+        if (txtType && !locUrl) {
+          const txt = (await (await it.getType(txtType)).text()).trim();
+          if (/^https?:\/\//i.test(txt)) {
+            onLocUrlChange(txt);
+            toast.success("Link lokasi ditempel");
+            return;
+          }
+        }
+      }
+      toast.error("Tidak ada foto / link di clipboard");
+    } catch (err) {
+      toast.error("Gagal tempel: " + (err as Error).message);
+    }
+  }
+
+  async function onDialogPaste(e: React.ClipboardEvent) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    for (const it of items) {
+      if (it.kind === "file" && it.type.startsWith("image/")) {
+        const f = it.getAsFile();
+        if (f) {
+          e.preventDefault();
+          await loadFromBlob(f);
+          toast.success("Foto ditempel dari clipboard");
+          return;
+        }
+      }
+    }
+  }
+
+  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; e.target.value = "";
+    if (!f) return;
+    await loadFromBlob(f);
   }
 
   function takeLocation() {
