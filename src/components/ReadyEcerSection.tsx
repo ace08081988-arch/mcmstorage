@@ -72,9 +72,13 @@ export function ReadyEcerSection() {
   const [refreshing, setRefreshing] = useState(false);
   const [realtimeStatus, setRealtimeStatus] = useState<"connecting" | "live" | "offline">("connecting");
   const [syncing, setSyncing] = useState(false);
+  // Cross-tab sync banner: 'pending' while applying, 'synced' briefly after.
+  const [crossTabSync, setCrossTabSync] = useState<null | { status: "pending" | "synced"; id: string | null }>(null);
 
   // Sync productFilter with selection made on /ecer detail page
   useEffect(() => {
+    let syncedTimer: number | undefined;
+    let pendingTimer: number | undefined;
     function applyId(id: string | null) {
       if (id) {
         setProductFilter(id);
@@ -84,12 +88,23 @@ export function ReadyEcerSection() {
         setSyncedFromDetail(false);
       }
     }
+    function flashCrossTab(id: string | null) {
+      window.clearTimeout(syncedTimer);
+      window.clearTimeout(pendingTimer);
+      setCrossTabSync({ status: "pending", id });
+      pendingTimer = window.setTimeout(() => {
+        setCrossTabSync({ status: "synced", id });
+        syncedTimer = window.setTimeout(() => setCrossTabSync(null), 2200);
+      }, 350);
+    }
     function onCustom(e: Event) {
       const id = (e as CustomEvent<string | null>).detail ?? null;
       applyId(id);
     }
     function onStorage(e: StorageEvent) {
       if (e.key !== "ecer:selectedItemId") return;
+      // 'storage' only fires for changes made in OTHER tabs/windows.
+      flashCrossTab(e.newValue);
       applyId(e.newValue);
     }
     window.addEventListener("ecer:selectedItemId", onCustom as EventListener);
@@ -106,6 +121,8 @@ export function ReadyEcerSection() {
       window.removeEventListener("storage", onStorage);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onFocus);
+      window.clearTimeout(syncedTimer);
+      window.clearTimeout(pendingTimer);
     };
   }, []);
 
