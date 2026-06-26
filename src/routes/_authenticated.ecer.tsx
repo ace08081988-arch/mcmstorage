@@ -439,7 +439,7 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: 
     >
       <div className="font-medium leading-tight">{title.name}</div>
       <div className="mt-1 text-xs text-muted-foreground">
-        Target: <b>{title.target_grams} {title.unit_label}</b> · {count ?? "…"} penyiapan
+        Target: <b>{title.target_grams} {displayUnit(itemName, title.unit_label)}</b> · {count ?? "…"} penyiapan
       </div>
       {title.note && <div className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{title.note}</div>}
       <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
