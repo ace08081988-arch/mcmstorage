@@ -84,7 +84,7 @@ class WorkerSectionBoundary extends Component<{
   renderFallback: (error: Error) => ReactNode;
 }, { error: Error | null }> {
   state: { error: Error | null } = { error: null };
-  static getDerivedStateFromError(error: Error) { return { error }; }
+  static getDerivedStateFromError(error: Error): { error: Error } { return { error }; }
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Jangan biarkan 1 kartu / paket request meruntuhkan seluruh portal pegawai
     // dan memantulkan user kembali ke layar PIN.
