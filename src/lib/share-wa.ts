@@ -148,29 +148,46 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
 
   // Tanya target WA (Business / biasa) sebelum membuka aplikasi.
   const previewText = url ? `${text}\n${url}` : text;
+
+  // PRIORITAS: kalau ada foto dan browser bisa share files, pakai Web Share
+  // API langsung. Intent `whatsapp://send?text=` tidak bisa membawa lampiran,
+  // jadi memilih WA Business vs biasa lewat picker akan membuat foto hilang.
+  // Share sheet sistem (Android) sudah menampilkan WA Business & WA biasa
+  // sebagai pilihan target, plus app lain — itu yang user inginkan.
+  let shareFailed = false;
+  let shareError = "";
+  let filesPayload: File[] | undefined;
+  if (hasFiles && nav && typeof nav.share === "function") {
+    const probe: ShareData = { files, text, title };
+    if (typeof nav.canShare === "function" && nav.canShare(probe)) {
+      filesPayload = files;
+    } else if (typeof nav.canShare === "function" && nav.canShare({ files })) {
+      filesPayload = files;
+    }
+    if (filesPayload) {
+      try {
+        await nav.share({ files: filesPayload, text, title });
+        return { status: "shared", withFiles: true };
+      } catch (err) {
+        const name = (err as DOMException)?.name;
+        if (name === "AbortError" || name === "NotAllowedError") {
+          return { status: "cancelled" };
+        }
+        shareFailed = true;
+        shareError = (err as Error)?.message || String(err);
+      }
+    }
+  }
+
+  // Teks-saja (atau browser tidak bisa kirim files): tanya target WA dulu.
   const target = await pickWhatsAppTarget({ text: previewText, phone });
   if (target === null) return { status: "cancelled" };
 
-  let shareFailed = false;
-  let shareError = "";
-  if (nav && typeof nav.share === "function") {
+  // Coba Web Share API teks dulu (tanpa files) sebelum jatuh ke intent URL.
+  if (!hasFiles && nav && typeof nav.share === "function") {
     try {
-      // Uji canShare dengan payload lengkap (files + text + title) — beberapa
-      // browser hanya menerima files saat dikombinasikan dengan field tertentu.
-      let filesPayload: File[] | undefined;
-      if (hasFiles) {
-        const probe: ShareData = { files, text, title };
-        if (typeof nav.canShare === "function" && nav.canShare(probe)) {
-          filesPayload = files;
-        } else if (typeof nav.canShare === "function" && nav.canShare({ files })) {
-          filesPayload = files;
-        }
-      }
-      const payload: ShareData = filesPayload
-        ? { files: filesPayload, text, title }
-        : { text, title, url };
-      await nav.share(payload);
-      return { status: "shared", withFiles: !!filesPayload };
+      await nav.share({ text, title, url });
+      return { status: "shared", withFiles: false };
     } catch (err) {
       const name = (err as DOMException)?.name;
       if (name === "AbortError" || name === "NotAllowedError") {
