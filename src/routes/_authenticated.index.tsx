@@ -637,11 +637,12 @@ function Index() {
             }}
             className="space-y-2 rounded-lg border bg-card p-3"
           >
-            <label className="block text-xs font-medium text-foreground">
+            <label htmlFor="new-category-name" className="block text-xs font-medium text-foreground">
               {categories.length === 0 ? "Buat kategori pertama" : "Tambah kategori baru"}
             </label>
             <div className="flex gap-2">
               <input
+                id="new-category-name"
                 value={newCatName}
                 onChange={(e) => setNewCatName(e.target.value)}
                 placeholder="Contoh: Sembako, Pakaian, 1 gram"
