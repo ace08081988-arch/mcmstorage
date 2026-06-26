@@ -8,6 +8,9 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { buildWhatsAppUrl, buildWhatsAppBusinessIntentUrl } from "./share-wa";
+import { copyText } from "./share-wa";
+import { toast } from "sonner";
 
 export type WaTarget = "business" | "regular";
 export type WaTargetPref = "ask" | WaTarget;
@@ -28,6 +31,8 @@ export function setWaTargetPref(v: WaTargetPref) {
 }
 
 type Request = {
+  text?: string;
+  phone?: string;
   resolve: (v: WaTarget | null) => void;
 };
 
@@ -39,11 +44,11 @@ const queue: Request[] = [];
  * null jika user membatalkan. Jika preferensi sudah disimpan (bukan "ask"),
  * langsung mengembalikan preferensi tanpa membuka dialog.
  */
-export function pickWhatsAppTarget(): Promise<WaTarget | null> {
+export function pickWhatsAppTarget(ctx?: { text?: string; phone?: string }): Promise<WaTarget | null> {
   const pref = getWaTargetPref();
   if (pref !== "ask") return Promise.resolve(pref);
   return new Promise((resolve) => {
-    const req: Request = { resolve };
+    const req: Request = { resolve, text: ctx?.text, phone: ctx?.phone };
     if (openRequest) openRequest(req);
     else queue.push(req);
   });
@@ -76,31 +81,80 @@ export function WhatsAppTargetHost() {
     setTimeout(() => setCurrent(null), 150);
   };
 
+  const text = current?.text ?? "";
+  const phone = current?.phone;
+  const businessUrl = buildWhatsAppBusinessIntentUrl(text, phone);
+  const regularUrl = buildWhatsAppUrl(text, phone);
+
+  const copy = async (url: string) => {
+    const res = await copyText(url);
+    if (res.ok) toast.success("URL disalin");
+    else toast.error("Gagal menyalin URL");
+  };
+
   return (
     <AlertDialog open={open} onOpenChange={(o) => !o && finish(null)}>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Kirim lewat WhatsApp mana?</AlertDialogTitle>
           <AlertDialogDescription>
-            Pilih aplikasi WhatsApp yang ingin dibuka.
+            Pilih aplikasi WhatsApp yang ingin dibuka. Pratinjau URL ditampilkan di bawah tiap opsi.
           </AlertDialogDescription>
         </AlertDialogHeader>
-        <div className="grid gap-2">
-          <Button
-            type="button"
-            onClick={() => finish("business")}
-            className="w-full justify-start"
-          >
-            WhatsApp Business
-          </Button>
-          <Button
-            type="button"
-            variant="secondary"
-            onClick={() => finish("regular")}
-            className="w-full justify-start"
-          >
-            WhatsApp biasa
-          </Button>
+        <div className="grid gap-3">
+          <div className="rounded-md border p-2">
+            <Button
+              type="button"
+              onClick={() => finish("business")}
+              className="w-full justify-start"
+            >
+              WhatsApp Business
+            </Button>
+            <div className="mt-2 text-[11px] font-medium uppercase text-muted-foreground">URL yang dibuka</div>
+            <code className="mt-1 block max-h-24 overflow-auto break-all rounded bg-muted p-2 text-[11px]">
+              {businessUrl}
+            </code>
+            <div className="mt-1 flex gap-2">
+              <Button type="button" size="sm" variant="ghost" onClick={() => copy(businessUrl)}>
+                Salin URL
+              </Button>
+              <a
+                href={businessUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary underline-offset-2 hover:underline self-center"
+              >
+                Buka di tab baru
+              </a>
+            </div>
+          </div>
+          <div className="rounded-md border p-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={() => finish("regular")}
+              className="w-full justify-start"
+            >
+              WhatsApp biasa
+            </Button>
+            <div className="mt-2 text-[11px] font-medium uppercase text-muted-foreground">URL yang dibuka</div>
+            <code className="mt-1 block max-h-24 overflow-auto break-all rounded bg-muted p-2 text-[11px]">
+              {regularUrl}
+            </code>
+            <div className="mt-1 flex gap-2">
+              <Button type="button" size="sm" variant="ghost" onClick={() => copy(regularUrl)}>
+                Salin URL
+              </Button>
+              <a
+                href={regularUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-xs text-primary underline-offset-2 hover:underline self-center"
+              >
+                Buka di tab baru
+              </a>
+            </div>
+          </div>
         </div>
         <label className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
           <Checkbox
