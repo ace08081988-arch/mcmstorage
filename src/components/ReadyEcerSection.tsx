@@ -317,33 +317,59 @@ function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { 
   }
 
   return (
-    <div className="group flex flex-col gap-1.5 rounded-md border bg-card p-2 hover:border-primary/40">
-      <Link
-        to="/ecer"
-        search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
-        className="flex flex-col gap-0.5"
-      >
-        <div className="flex items-center gap-1.5">
-          <Scale className="h-3.5 w-3.5 text-primary" />
-          <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
-        </div>
-        <span className="truncate text-[10px] leading-tight text-muted-foreground">
-          {r.product_name} · {r.target_grams} {unit}
-        </span>
-        <span className="text-[10px] leading-tight">
-          <span className={r.prep_count > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
-            {r.prep_count} kotak siap
+    <div className="group flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md">
+      {shots.length > 0 ? (
+        <Link
+          to="/ecer"
+          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+          className="relative block aspect-[4/3] overflow-hidden bg-muted"
+        >
+          {thumbs[0]?.thumb_url ? (
+            <img src={thumbs[0].thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+          ) : (
+            <div className="flex h-full w-full items-center justify-center text-muted-foreground">…</div>
+          )}
+          <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2">
+            <div className="flex items-center gap-1 text-[9px] font-medium text-white/90">
+              <Scale className="h-2.5 w-2.5" />
+              <span className="truncate">{r.name}</span>
+            </div>
+          </div>
+          <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-sky-500/95 px-1.5 py-0.5 text-[9px] font-semibold text-white shadow-sm">
+            {shots.length} foto
           </span>
-          {shots.length > 0 && (
-            <span className="ml-1.5 font-medium text-sky-600 dark:text-sky-400">
-              · {shots.length} dari pegawai
+          {thumbs[0]?.location_url && (
+            <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-white backdrop-blur-sm">
+              <MapPin className="h-2.5 w-2.5" /> GPS
             </span>
           )}
-        </span>
-      </Link>
+        </Link>
+      ) : null}
 
-      {shots.length === 0 ? (
-        <div className="flex flex-col items-center gap-1 rounded border border-dashed bg-muted/30 px-2 py-2 text-center">
+      <div className="flex flex-col gap-1.5 p-2">
+        <Link
+          to="/ecer"
+          search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+          className="flex flex-col gap-0.5"
+        >
+          {shots.length === 0 && (
+            <div className="flex items-center gap-1.5">
+              <Scale className="h-3.5 w-3.5 text-primary" />
+              <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
+            </div>
+          )}
+          <span className="truncate text-[10px] font-medium leading-tight text-foreground/80">
+            {r.product_name} · {r.target_grams} {unit}
+          </span>
+          <span className="text-[10px] leading-tight">
+            <span className={r.prep_count > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+              {r.prep_count} kotak siap
+            </span>
+          </span>
+        </Link>
+
+        {shots.length === 0 ? (
+          <div className="flex flex-col items-center gap-1 rounded-md border border-dashed bg-muted/40 px-2 py-2.5 text-center">
           {syncing || refreshing ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
           ) : (
@@ -369,40 +395,33 @@ function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { 
             {refreshing ? "Menyegarkan…" : "Segarkan"}
           </button>
         </div>
-      ) : (
-        <>
-          <div className="grid grid-cols-4 gap-1">
-            {thumbs.map((s) => (
-              <div key={s.id} className="relative aspect-square overflow-hidden rounded bg-muted">
+        ) : (
+          <div className="flex items-center gap-1.5">
+            {thumbs.slice(1, 4).map((s) => (
+              <div key={s.id} className="relative h-7 w-7 shrink-0 overflow-hidden rounded border border-card bg-muted ring-1 ring-border">
                 {s.thumb_url ? (
                   <img src={s.thumb_url} alt="" className="h-full w-full object-cover" loading="lazy" />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center text-[8px] text-muted-foreground">…</div>
-                )}
-                {s.location_url && (
-                  <span className="absolute right-0.5 top-0.5 rounded bg-black/60 p-0.5">
-                    <MapPin className="h-2 w-2 text-white" />
-                  </span>
-                )}
+                ) : null}
               </div>
             ))}
             {extra > 0 && (
-              <div className="flex aspect-square items-center justify-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-card bg-muted text-[9px] font-semibold text-muted-foreground ring-1 ring-border">
                 +{extra}
               </div>
             )}
+            <button
+              type="button"
+              onClick={sendWA}
+              disabled={sending}
+              aria-label="Kirim ke WhatsApp"
+              className="ml-auto inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
+            >
+              <MessageCircle className="h-3 w-3" />
+              {sending ? "…" : "WA"}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={sendWA}
-            disabled={sending}
-            className="inline-flex h-7 items-center justify-center gap-1 rounded bg-[#25D366] text-[10px] font-semibold text-white disabled:opacity-50"
-          >
-            <MessageCircle className="h-3 w-3" />
-            {sending ? "Menyiapkan…" : "Kirim WA"}
-          </button>
-        </>
-      )}
+        )}
+      </div>
     </div>
   );
 }
