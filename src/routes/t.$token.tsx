@@ -465,6 +465,35 @@ function PublicPrepPage() {
                     {lastError.detail && (
                       <div className="mt-0.5 break-words opacity-80">{lastError.detail}</div>
                     )}
+                    {(lastError.code || lastError.raw) && (
+                      <details className="mt-1.5">
+                        <summary className="cursor-pointer select-none text-[10px] uppercase tracking-wider opacity-70">
+                          Detail teknis
+                        </summary>
+                        {lastError.code && (
+                          <div className="mt-1 font-mono text-[10px] opacity-80">code: {lastError.code}</div>
+                        )}
+                        {lastError.raw && (
+                          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded bg-background/60 p-1.5 font-mono text-[10px] opacity-80">{lastError.raw}</pre>
+                        )}
+                        <button
+                          type="button"
+                          className="mt-1 rounded border px-2 py-0.5 text-[10px] hover:bg-background/80"
+                          onClick={async () => {
+                            const text = [
+                              `Pesan: ${lastError.message}`,
+                              lastError.detail ? `Detail: ${lastError.detail}` : "",
+                              lastError.code ? `Kode: ${lastError.code}` : "",
+                              lastError.raw ? `Payload:\n${lastError.raw}` : "",
+                            ].filter(Boolean).join("\n");
+                            try { await navigator.clipboard.writeText(text); toast.success("Detail error disalin"); }
+                            catch { toast.error("Gagal menyalin"); }
+                          }}
+                        >
+                          Salin detail error
+                        </button>
+                      </details>
+                    )}
                   </div>
                 </div>
               </div>
