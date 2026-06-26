@@ -1059,7 +1059,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     // Berat aktual
     if (!String(actual).trim()) {
       toast.error("Berat aktual wajib diisi", {
-        description: `Masukkan berat aktual dalam ${title.unit_label}.`,
+        description: `Masukkan berat aktual dalam ${displayUnit(item.name, title.unit_label)}.`,
       });
       issues.push("grams");
     } else if (!Number.isFinite(grams) || grams <= 0) {
@@ -1131,7 +1131,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
       });
       if (error) { if (photoPath) await deleteEcerPhoto(photoPath); throw error; }
       setProgress({ step: "done", message: "Selesai" });
-      toast.success(`Tersimpan. Stok dikurangi ${grams} ${title.unit_label}`);
+      toast.success(`Tersimpan. Stok dikurangi ${grams} ${displayUnit(item.name, title.unit_label)}`);
       onSaved();
     } catch (e) {
       setProgress({ step: "error", message: (e as Error).message });
@@ -1205,7 +1205,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
             className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
 
           <div>
-            <Label className="text-xs">Berat aktual ({title.unit_label}) <span className="text-destructive">*</span></Label>
+            <Label className="text-xs">Berat aktual ({displayUnit(item.name, title.unit_label)}) <span className="text-destructive">*</span></Label>
             <Input inputMode="decimal" value={actual} onChange={(e) => setActual(e.target.value)} />
             <div className="mt-1 text-[10px] text-muted-foreground">Stok produk akan berkurang sebanyak angka ini.</div>
           </div>
