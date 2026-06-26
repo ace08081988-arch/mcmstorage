@@ -20,6 +20,7 @@ import {
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText } from "@/lib/share-wa";
+import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
 
@@ -644,7 +645,17 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
     error?: string;
   };
   const [shareDiag, setShareDiag] = useState<ShareDiag | null>(null);
-  useEffect(() => { void ecerSignedUrl(prep.photo_path).then(setUrl); }, [prep.photo_path]);
+  const resolvePhotoUrl = async (path: string | null | undefined, expiresIn?: number) => {
+    if (!path) return null;
+    // Worker submissions menyimpan foto di bucket `prep-photos`; siapkan-sendiri di `ecer-photos`.
+    // Coba bucket sesuai created_by, lalu fallback ke bucket lain agar lampiran WA tetap berhasil.
+    const primary = prep.created_by === "worker" ? prepSignedUrl : ecerSignedUrl;
+    const secondary = prep.created_by === "worker" ? ecerSignedUrl : prepSignedUrl;
+    const a = await primary(path, expiresIn as number);
+    if (a) return a;
+    return await secondary(path, expiresIn as number);
+  };
+  useEffect(() => { void resolvePhotoUrl(prep.photo_path).then(setUrl); }, [prep.photo_path, prep.created_by]);
 
   async function onShare() {
     const text =
@@ -664,7 +675,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
     let files: File[] | undefined;
     if (prep.photo_path) {
       try {
-        const signed = await ecerSignedUrl(prep.photo_path, 600);
+        const signed = await resolvePhotoUrl(prep.photo_path, 600);
         if (signed) {
           const r = await fetch(signed);
           const blob = r.ok ? await r.blob() : undefined;
