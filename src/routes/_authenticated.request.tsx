@@ -594,6 +594,7 @@ function TitleDetailView({
               prep={p}
               items={prepItems.filter((pi) => pi.preparation_id === p.id)}
               warehouseItems={warehouseItems}
+              titleItems={titleItems}
               onDelete={() => handleDelete(p)}
             />
           ))}
@@ -613,16 +614,22 @@ function TitleDetailView({
 }
 
 function PrepCard({
-  index, prep, items, warehouseItems, onDelete,
+  index, prep, items, warehouseItems, titleItems, onDelete,
 }: {
   index: number;
   prep: RequestPreparation;
   items: Array<{ id: string; warehouse_item_id: string; actual_grams: number }>;
   warehouseItems: WarehouseItem[];
+  titleItems: RequestTitleItem[];
   onDelete: () => void;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
   useEffect(() => { requestSignedUrl(prep.photo_path, 60 * 60).then(setPhoto); }, [prep.photo_path]);
+  const unitFor = (wid: string) => {
+    const w = warehouseItems.find((x) => x.id === wid);
+    const ti = titleItems.find((t) => t.warehouse_item_id === wid);
+    return displayUnit(w?.name, ti?.unit_label ?? w?.base_unit ?? "g");
+  };
   const sendWA = () => {
     const lines: string[] = [];
     lines.push(`*Paket #${index}*`);
@@ -630,7 +637,7 @@ function PrepCard({
       lines.push("Isi:");
       items.forEach((it) => {
         const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
-        lines.push(`• ${w?.name ?? "?"} ${it.actual_grams}${w?.base_unit ?? "g"}`);
+        lines.push(`• ${w?.name ?? "?"} ${it.actual_grams} ${unitFor(it.warehouse_item_id)}`);
       });
     }
     if (prep.note) { lines.push(""); lines.push(`Catatan: ${prep.note}`); }
@@ -675,7 +682,7 @@ function PrepCard({
             const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
             return (
               <span key={it.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                {w?.name ?? "?"} {it.actual_grams}g
+                {w?.name ?? "?"} {it.actual_grams}{unitFor(it.warehouse_item_id)}
               </span>
             );
           })}
