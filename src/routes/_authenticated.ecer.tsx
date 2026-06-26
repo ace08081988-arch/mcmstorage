@@ -581,7 +581,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
               <CardTitle className="truncate text-base">{title.name}</CardTitle>
               <div className="mt-0.5 text-xs text-muted-foreground">
                 <Package className="mr-1 inline h-3 w-3" />
-                {item.name} · target <b>{title.target_grams} {title.unit_label}</b> · stok produk {fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}
+                {item.name} · target <b>{title.target_grams} {displayUnit(item.name, title.unit_label)}</b> · stok produk {fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}
               </div>
               {title.note && <div className="mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap">{title.note}</div>}
             </div>
@@ -610,7 +610,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {preps.map((p, idx) => (
-                <PrepBox key={p.id} prep={p} index={preps.length - idx} title={title} onChanged={load} onTitleUpdated={onTitleUpdated} />
+                <PrepBox key={p.id} prep={p} index={preps.length - idx} title={title} itemName={item.name} onChanged={load} onTitleUpdated={onTitleUpdated} />
               ))}
             </div>
           )}
@@ -629,8 +629,8 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   );
 }
 
-function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
-  prep: EcerPreparation; index: number; title: EcerTitle; onChanged: () => void; onTitleUpdated: () => void;
+function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
+  prep: EcerPreparation; index: number; title: EcerTitle; itemName?: string; onChanged: () => void; onTitleUpdated: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   type ShareDiag = {
@@ -649,7 +649,7 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
   async function onShare() {
     const text =
       `*${title.name}* #${index}\n` +
-      `Berat aktual: ${prep.actual_grams} ${title.unit_label}\n` +
+      `Berat aktual: ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}\n` +
       (prep.location_url ? `Lokasi: ${prep.location_url}\n` : "") +
       (prep.note ? `Catatan: ${prep.note}\n` : "");
     const nav = typeof navigator !== "undefined" ? navigator : undefined;
@@ -711,7 +711,7 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
 
   async function onDelete() {
     const ok = typeof window !== "undefined" && window.confirm(
-      `Hapus penyiapan ini? Stok produk akan dikembalikan sebanyak ${prep.actual_grams} ${title.unit_label}.`
+      `Hapus penyiapan ini? Stok produk akan dikembalikan sebanyak ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}.`
     );
     if (!ok) return;
     if (prep.photo_path) await deleteEcerPhoto(prep.photo_path);
@@ -734,7 +734,7 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
         )}
       </div>
       <div className="space-y-1 p-2">
-        <div className="text-xs font-semibold">{prep.actual_grams} {title.unit_label}</div>
+        <div className="text-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
         {prep.note && <div className="line-clamp-2 text-[10px] text-muted-foreground">{prep.note}</div>}
         <div className="flex items-center justify-between gap-1 pt-1">
           {prep.location_url ? (
