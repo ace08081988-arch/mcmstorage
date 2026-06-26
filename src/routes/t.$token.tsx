@@ -1181,10 +1181,30 @@ type RequestTitleDTO = {
     warehouse_item_id: string;
     product_name: string | null;
     target_grams: number;
-    unit_label: string;
+    unit_label: string | null;
     note: string | null;
   }>;
 };
+
+function normalizeRequestTitles(value: unknown): RequestTitleDTO[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord).map((t, titleIdx) => {
+    const rawItems = Array.isArray(t.items) ? t.items : [];
+    return {
+      id: stringOrFallback(t.id, `request-title-${titleIdx}`),
+      name: stringOrFallback(t.name, "Paket request"),
+      note: stringOrNull(t.note),
+      items: rawItems.filter(isRecord).map((i, itemIdx) => ({
+        id: stringOrFallback(i.id, `request-item-${titleIdx}-${itemIdx}`),
+        warehouse_item_id: stringOrFallback(i.warehouse_item_id, ""),
+        product_name: stringOrNull(i.product_name),
+        target_grams: numberOrFallback(i.target_grams),
+        unit_label: stringOrNull(i.unit_label),
+        note: stringOrNull(i.note),
+      })),
+    };
+  });
+}
 
 function RequestSection({ token, pin }: { token: string; pin: string }) {
   const [titles, setTitles] = useState<RequestTitleDTO[] | null>(null);
@@ -1195,10 +1215,10 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (publicSupabase.rpc as any)("request_list_titles_via_task", { _token: token, _pin: pin });
     if (error) { toast.error("Gagal muat request: " + error.message); return; }
-    const res = data as { ok: boolean; titles?: RequestTitleDTO[]; owner_user_id?: string };
+    const res = data as { ok: boolean; titles?: unknown; owner_user_id?: unknown };
     if (res?.ok) {
-      setTitles(res.titles ?? []);
-      setOwnerUserId(res.owner_user_id ?? null);
+      setTitles(normalizeRequestTitles(res.titles));
+      setOwnerUserId(stringOrNull(res.owner_user_id));
     } else setTitles([]);
   }
   useEffect(() => { void load(); }, [token, pin]);
@@ -1214,7 +1234,9 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{titles.length}</span>
       </div>
       <div className="space-y-2">
-        {titles.map((t) => (
+        {titles.map((t) => {
+          const requestItems = Array.isArray(t.items) ? t.items : [];
+          return (
           <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
             <button
               onClick={() => setOpenId(openId === t.id ? null : t.id)}
@@ -1223,7 +1245,7 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{t.name}</div>
                 <div className="truncate text-[11px] text-muted-foreground">
-                  {t.items.map((i) => `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`).join(" · ")}
+                  {requestItems.map((i) => `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`).join(" · ") || "Tidak ada item"}
                 </div>
               </div>
               <span className="ml-2 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
@@ -1236,7 +1258,7 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
               </div>
             )}
           </div>
-        ))}
+        );})}
       </div>
     </div>
   );
