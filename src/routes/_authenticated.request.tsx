@@ -386,6 +386,10 @@ function TitleEditorDialog({
   async function save() {
     const trimmed = name.trim();
     if (!trimmed) { toast.error("Nama judul wajib diisi"); return; }
+    if (Object.keys(negErrors).length > 0) { toast.error("Perbaiki jumlah yang negatif terlebih dahulu"); return; }
+    if (rows.some((r) => r.target_grams !== "" && Number(r.target_grams) < 0)) {
+      toast.error("Jumlah tidak boleh negatif"); return;
+    }
     const validRows = rows.filter((r) => r.warehouse_item_id && Number(r.target_grams) > 0);
     if (validRows.length === 0) { toast.error("Tambahkan minimal 1 produk"); return; }
     setBusy(true);
