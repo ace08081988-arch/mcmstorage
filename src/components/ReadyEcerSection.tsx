@@ -430,6 +430,31 @@ export function ReadyEcerSection() {
         </div>
       )}
 
+      {crossTabSync && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`flex items-center gap-2 rounded-md border px-2 py-1 text-[11px] transition-colors ${
+            crossTabSync.status === "pending"
+              ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+          }`}
+        >
+          {crossTabSync.status === "pending" ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Check className="h-3 w-3" />
+          )}
+          <span className="truncate">
+            {crossTabSync.status === "pending"
+              ? "Menyinkronkan filter dari tab lain…"
+              : crossTabSync.id
+                ? `Tersinkron: ${(products.find(([id]) => id === crossTabSync.id)?.[1]) ?? "produk terpilih"}`
+                : "Tersinkron: Semua produk"}
+          </span>
+        </div>
+      )}
+
       {syncedFromDetail && productFilter !== "all" && (
         <div className="flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-[11px] text-primary">
           <span className="truncate">
