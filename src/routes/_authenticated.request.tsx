@@ -749,6 +749,27 @@ function PrepEditorDialog({
   const [busy, setBusy] = useState(false);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
+  const [qtyErrors, setQtyErrors] = useState<Record<number, string>>({});
+
+  function sanitizeActual(idx: number, raw: string): string {
+    if (raw === "") {
+      setQtyErrors((e) => { const c = { ...e }; delete c[idx]; return c; });
+      return raw;
+    }
+    if (raw === "-") {
+      setQtyErrors((e) => ({ ...e, [idx]: "Jumlah tidak boleh negatif. Minimum 0." }));
+      toast.error("Jumlah tidak boleh negatif");
+      return "0";
+    }
+    const n = Number(raw);
+    if (Number.isFinite(n) && n < 0) {
+      setQtyErrors((e) => ({ ...e, [idx]: "Jumlah tidak boleh negatif. Minimum 0." }));
+      toast.error("Jumlah tidak boleh negatif");
+      return "0";
+    }
+    setQtyErrors((e) => { const c = { ...e }; delete c[idx]; return c; });
+    return raw;
+  }
 
   /**
    * Normalisasi nomor WA ke format E.164 digit-only (tanpa "+").
