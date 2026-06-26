@@ -21,6 +21,7 @@ import {
 } from "@/lib/ecer";
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText } from "@/lib/share-wa";
 import { fmtItemQty } from "@/lib/stock-format";
+import { displayUnit } from "@/lib/unit-label";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -342,6 +343,7 @@ function EcerPage() {
                   <TitleCard
                     key={t.id}
                     title={t}
+                    itemName={selectedItem.name}
                     onOpen={() => setSelectedTitleId(t.id)}
                     onEdit={() => setEditingTitle(t)}
                     onDeleted={refetchTitles}
@@ -400,8 +402,8 @@ function EcerPage() {
   );
 }
 
-function TitleCard({ title, onOpen, onEdit, onDeleted, highlighted }: {
-  title: EcerTitle; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
+function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: {
+  title: EcerTitle; itemName?: string; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
   highlighted?: boolean;
 }) {
   const [count, setCount] = useState<number | null>(null);
@@ -438,7 +440,7 @@ function TitleCard({ title, onOpen, onEdit, onDeleted, highlighted }: {
     >
       <div className="font-medium leading-tight">{title.name}</div>
       <div className="mt-1 text-xs text-muted-foreground">
-        Target: <b>{title.target_grams} {title.unit_label}</b> · {count ?? "…"} penyiapan
+        Target: <b>{title.target_grams} {displayUnit(itemName, title.unit_label)}</b> · {count ?? "…"} penyiapan
       </div>
       {title.note && <div className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{title.note}</div>}
       <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
@@ -579,7 +581,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
               <CardTitle className="truncate text-base">{title.name}</CardTitle>
               <div className="mt-0.5 text-xs text-muted-foreground">
                 <Package className="mr-1 inline h-3 w-3" />
-                {item.name} · target <b>{title.target_grams} {title.unit_label}</b> · stok produk {fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}
+                {item.name} · target <b>{title.target_grams} {displayUnit(item.name, title.unit_label)}</b> · stok produk {fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}
               </div>
               {title.note && <div className="mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap">{title.note}</div>}
             </div>
@@ -608,7 +610,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
               {preps.map((p, idx) => (
-                <PrepBox key={p.id} prep={p} index={preps.length - idx} title={title} onChanged={load} onTitleUpdated={onTitleUpdated} />
+                <PrepBox key={p.id} prep={p} index={preps.length - idx} title={title} itemName={item.name} onChanged={load} onTitleUpdated={onTitleUpdated} />
               ))}
             </div>
           )}
@@ -627,8 +629,8 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   );
 }
 
-function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
-  prep: EcerPreparation; index: number; title: EcerTitle; onChanged: () => void; onTitleUpdated: () => void;
+function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
+  prep: EcerPreparation; index: number; title: EcerTitle; itemName?: string; onChanged: () => void; onTitleUpdated: () => void;
 }) {
   const [url, setUrl] = useState<string | null>(null);
   type ShareDiag = {
@@ -647,7 +649,7 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
   async function onShare() {
     const text =
       `*${title.name}* #${index}\n` +
-      `Berat aktual: ${prep.actual_grams} ${title.unit_label}\n` +
+      `Berat aktual: ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}\n` +
       (prep.location_url ? `Lokasi: ${prep.location_url}\n` : "") +
       (prep.note ? `Catatan: ${prep.note}\n` : "");
     const nav = typeof navigator !== "undefined" ? navigator : undefined;
@@ -709,7 +711,7 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
 
   async function onDelete() {
     const ok = typeof window !== "undefined" && window.confirm(
-      `Hapus penyiapan ini? Stok produk akan dikembalikan sebanyak ${prep.actual_grams} ${title.unit_label}.`
+      `Hapus penyiapan ini? Stok produk akan dikembalikan sebanyak ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}.`
     );
     if (!ok) return;
     if (prep.photo_path) await deleteEcerPhoto(prep.photo_path);
@@ -732,7 +734,7 @@ function PrepBox({ prep, index, title, onChanged, onTitleUpdated }: {
         )}
       </div>
       <div className="space-y-1 p-2">
-        <div className="text-xs font-semibold">{prep.actual_grams} {title.unit_label}</div>
+        <div className="text-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
         {prep.note && <div className="line-clamp-2 text-[10px] text-muted-foreground">{prep.note}</div>}
         <div className="flex items-center justify-between gap-1 pt-1">
           {prep.location_url ? (
@@ -1057,7 +1059,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
     // Berat aktual
     if (!String(actual).trim()) {
       toast.error("Berat aktual wajib diisi", {
-        description: `Masukkan berat aktual dalam ${title.unit_label}.`,
+        description: `Masukkan berat aktual dalam ${displayUnit(item.name, title.unit_label)}.`,
       });
       issues.push("grams");
     } else if (!Number.isFinite(grams) || grams <= 0) {
@@ -1129,7 +1131,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
       });
       if (error) { if (photoPath) await deleteEcerPhoto(photoPath); throw error; }
       setProgress({ step: "done", message: "Selesai" });
-      toast.success(`Tersimpan. Stok dikurangi ${grams} ${title.unit_label}`);
+      toast.success(`Tersimpan. Stok dikurangi ${grams} ${displayUnit(item.name, title.unit_label)}`);
       onSaved();
     } catch (e) {
       setProgress({ step: "error", message: (e as Error).message });
@@ -1203,7 +1205,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
             className="sr-only absolute -z-10 h-0 w-0 opacity-0" onChange={onFile} />
 
           <div>
-            <Label className="text-xs">Berat aktual ({title.unit_label}) <span className="text-destructive">*</span></Label>
+            <Label className="text-xs">Berat aktual ({displayUnit(item.name, title.unit_label)}) <span className="text-destructive">*</span></Label>
             <Input inputMode="decimal" value={actual} onChange={(e) => setActual(e.target.value)} />
             <div className="mt-1 text-[10px] text-muted-foreground">Stok produk akan berkurang sebanyak angka ini.</div>
           </div>

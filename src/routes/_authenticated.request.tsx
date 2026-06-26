@@ -3,6 +3,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { PhotoEditor } from "@/components/PhotoEditor";
+import { displayUnit } from "@/lib/unit-label";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -225,7 +226,7 @@ function RequestPage() {
                 lines.push("Isi paket:");
                 tItems.forEach((i) => {
                   const w = items.find((wi) => wi.id === i.warehouse_item_id);
-                  lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${i.unit_label}`);
+                  lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
                 });
               }
               void shareToWhatsApp({ text: lines.join("\n"), title: `Request ${t.name}` }).then(notifyShareResult);
@@ -259,7 +260,7 @@ function RequestPage() {
                     ? tItems
                         .map((i) => {
                           const w = items.find((wi) => wi.id === i.warehouse_item_id);
-                          return `${w?.name ?? "?"} ${i.target_grams}${i.unit_label}`;
+                          return `${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`;
                         })
                         .join(" · ")
                     : "Belum ada produk"}
@@ -563,7 +564,7 @@ function TitleDetailView({
                 const w = warehouseItems.find((x) => x.id === i.warehouse_item_id);
                 return (
                   <span key={i.id} className="rounded-md bg-primary/10 px-2 py-0.5 text-[11px] font-medium text-primary">
-                    {w?.name ?? "?"} {i.target_grams}{i.unit_label}
+                    {w?.name ?? "?"} {i.target_grams}{displayUnit(w?.name, i.unit_label)}
                   </span>
                 );
               })}
