@@ -8,7 +8,7 @@ export const Route = createFileRoute("/terms")({
       {
         name: "description",
         content:
-          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh BAROKAH RIZKI. Termasuk pengungkapan Paddle sebagai Merchant of Record.",
+          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh BAROKAH RIZKI. Termasuk ketentuan langganan Pro dan pembayaran via transfer bank.",
       },
       { property: "og:title", content: "Syarat & Ketentuan — MCM Storage" },
       {
@@ -126,41 +126,43 @@ function TermsPage() {
 
           <Section title="7. Pembayaran, langganan, dan pajak">
             <p>
-              Untuk paket berbayar, pembayaran, penagihan, perpanjangan
-              langganan, pajak, mata uang, faktur, pembatalan, dan
-              pengembalian dana diproses oleh <strong>Paddle.com</strong>{" "}
-              sebagai <strong>Merchant of Record</strong> kami. Dengan
-              melakukan pembelian, Anda juga menyetujui{" "}
-              <a
-                href="https://www.paddle.com/legal/checkout-buyer-terms"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Paddle Checkout Buyer Terms
-              </a>
-              . Detail mengenai pengembalian dana ada di{" "}
+              Paket Pro dibayar dengan <strong>transfer bank</strong> ke
+              rekening resmi MCM Storage yang ditampilkan di halaman{" "}
+              <Link to="/langganan" className="underline">
+                Langganan
+              </Link>
+              . Setiap pembayaran dikonfirmasi secara manual oleh admin
+              kami, dan langganan Anda akan diperpanjang setelah pembayaran
+              disetujui. Kami tidak menyimpan data kartu Anda dan{" "}
+              <strong>tidak melakukan tagihan otomatis</strong> — langganan
+              berakhir secara otomatis di tanggal <em>period_end</em>{" "}
+              kecuali Anda melakukan pembayaran berikutnya.
+            </p>
+            <p>
+              Harga, periode tagihan, dan ketentuan pengembalian dana
+              dijelaskan pada halaman{" "}
+              <Link to="/pricing" className="underline">
+                Harga
+              </Link>{" "}
+              dan{" "}
               <Link to="/refund" className="underline">
                 Kebijakan Pengembalian
               </Link>
-              .
+              . Pajak yang timbul atas pembayaran (jika ada) menjadi
+              tanggung jawab masing-masing pihak sesuai peraturan yang
+              berlaku di yurisdiksi Anda.
             </p>
           </Section>
 
-          <Section title="8. Paddle sebagai Merchant of Record">
+          <Section title="8. Konfirmasi manual & bukti transfer">
             <p>
-              <em>
-                Our order process is conducted by our online reseller
-                Paddle.com. Paddle.com is the Merchant of Record for all our
-                orders. Paddle provides all customer service inquiries and
-                handles returns.
-              </em>
-            </p>
-            <p>
-              Proses pemesanan kami dijalankan oleh reseller daring kami,
-              Paddle.com. Paddle.com adalah Merchant of Record untuk semua
-              pesanan kami. Paddle menangani pertanyaan layanan pelanggan
-              terkait pembayaran serta proses pengembalian dana.
+              Saat melakukan pembayaran, Anda diminta mengunggah bukti
+              transfer (screenshot/PDF) melalui halaman Langganan. Bukti
+              tersebut digunakan hanya untuk verifikasi pembayaran dan
+              disimpan secara aman di penyimpanan privat kami. Admin dapat
+              menolak pembayaran yang tidak dapat diverifikasi dan akan
+              memberitahukan alasan penolakannya pada catatan transaksi
+              Anda.
             </p>
           </Section>
 
@@ -239,15 +241,10 @@ function TermsPage() {
                 admin@mcmstorage.biz
               </a>
               . Untuk pertanyaan terkait transaksi atau pengembalian dana,
-              silakan hubungi Paddle melalui{" "}
-              <a
-                href="https://paddle.net"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                paddle.net
-              </a>
+              hubungi admin kami melalui email atau WhatsApp dari halaman{" "}
+              <Link to="/langganan" className="underline">
+                Langganan
+              </Link>
               .
             </p>
           </Section>

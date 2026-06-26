@@ -41,6 +41,7 @@ import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authentica
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
+import { Route as AuthenticatedAdminUsersRouteImport } from './routes/_authenticated.admin.users'
 import { Route as AuthenticatedAdminPembayaranRouteImport } from './routes/_authenticated.admin.pembayaran'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
@@ -217,6 +218,11 @@ const AuthenticatedChatConversationIdRoute =
     path: '/$conversationId',
     getParentRoute: () => AuthenticatedChatRoute,
   } as any)
+const AuthenticatedAdminUsersRoute = AuthenticatedAdminUsersRouteImport.update({
+  id: '/admin/users',
+  path: '/admin/users',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAdminPembayaranRoute =
   AuthenticatedAdminPembayaranRouteImport.update({
     id: '/admin/pembayaran',
@@ -293,6 +299,7 @@ export interface FileRoutesByFullPath {
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
   '/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
@@ -333,6 +340,7 @@ export interface FileRoutesByTo {
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
+  '/admin/users': typeof AuthenticatedAdminUsersRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
@@ -376,6 +384,7 @@ export interface FileRoutesById {
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
+  '/_authenticated/admin/users': typeof AuthenticatedAdminUsersRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
@@ -419,6 +428,7 @@ export interface FileRouteTypes {
     | '/tugas-baru'
     | '/t/$token'
     | '/admin/pembayaran'
+    | '/admin/users'
     | '/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
@@ -459,6 +469,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/'
     | '/admin/pembayaran'
+    | '/admin/users'
     | '/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
@@ -501,6 +512,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/admin/pembayaran'
+    | '/_authenticated/admin/users'
     | '/_authenticated/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
@@ -761,6 +773,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatConversationIdRouteImport
       parentRoute: typeof AuthenticatedChatRoute
     }
+    '/_authenticated/admin/users': {
+      id: '/_authenticated/admin/users'
+      path: '/admin/users'
+      fullPath: '/admin/users'
+      preLoaderRoute: typeof AuthenticatedAdminUsersRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/pembayaran': {
       id: '/_authenticated/admin/pembayaran'
       path: '/admin/pembayaran'
@@ -879,6 +898,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminPembayaranRoute: typeof AuthenticatedAdminPembayaranRoute
+  AuthenticatedAdminUsersRoute: typeof AuthenticatedAdminUsersRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -900,6 +920,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminPembayaranRoute: AuthenticatedAdminPembayaranRoute,
+  AuthenticatedAdminUsersRoute: AuthenticatedAdminUsersRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

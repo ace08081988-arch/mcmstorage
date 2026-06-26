@@ -18,6 +18,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
 import { confirm } from "@/lib/confirm";
 import { ReadyPackagesPanel } from "@/components/ReadyPackagesPanel";
+import { CapBanner } from "@/components/CapBanner";
 import { useMyProfile } from "@/lib/profile";
 import { normalizeWaNumber } from "@/lib/phone";
 
@@ -1699,6 +1700,8 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         <button type="button" onClick={() => setMode("new")} className={`flex-1 rounded border px-2 py-1 ${mode === "new" ? "bg-primary text-primary-foreground border-primary" : ""}`}>Barang baru</button>
         <button type="button" onClick={() => setMode("existing")} className={`flex-1 rounded border px-2 py-1 ${mode === "existing" ? "bg-primary text-primary-foreground border-primary" : ""}`} disabled={items.length === 0}>Barang yang ada</button>
       </div>
+
+      {mode === "new" && <CapBanner kind="warehouseItems" />}
 
       {mode === "new" ? (
         <div className="space-y-2">

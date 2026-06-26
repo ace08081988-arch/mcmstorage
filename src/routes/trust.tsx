@@ -235,18 +235,12 @@ function TrustPage() {
               aplikasi.
             </li>
             <li>
-              <strong>Paddle.com</strong> — Merchant of Record untuk
-              pembayaran paket berbayar; memproses data pembayaran, faktur,
-              pajak, dan permintaan pengembalian dana. Lihat{" "}
-              <a
-                href="https://www.paddle.com/legal/privacy"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Privacy Notice Paddle
-              </a>
-              .
+              <strong>Bank penerima transfer</strong> — pembayaran paket
+              Pro masuk ke rekening resmi MCM Storage yang dikelola oleh
+              BAROKAH RIZKI. Kami tidak menyimpan data kartu Anda dan tidak
+              menggunakan payment processor pihak ketiga. Bukti transfer
+              yang Anda unggah disimpan secara privat di Lovable Cloud
+              hanya untuk verifikasi pembayaran.
             </li>
           </ul>
           <p>
