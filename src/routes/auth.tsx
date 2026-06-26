@@ -268,7 +268,6 @@ function AuthPage() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="alamat@email.com"
-            aria-label="Alamat email"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
           <div className="relative">
@@ -280,7 +279,6 @@ function AuthPage() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder={mode === "signup" ? "Kata sandi (min. 8 karakter)" : "Kata sandi"}
-              aria-label="Kata sandi"
               className="w-full rounded-md border bg-background px-3 py-2 pr-16 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
             <button
@@ -301,7 +299,6 @@ function AuthPage() {
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Konfirmasi kata sandi"
-              aria-label="Konfirmasi kata sandi"
               className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           )}
