@@ -786,8 +786,9 @@ function PrepEditorDialog({
     lines.push("Isi paket:");
     rows.forEach((r) => {
       const w = warehouseItems.find((x) => x.id === r.warehouse_item_id);
+      const ti = titleItems.find((t) => t.warehouse_item_id === r.warehouse_item_id);
       const g = Number(r.actual_grams);
-      if (w && g > 0) lines.push(`• ${w.name}: ${g} ${w.base_unit}`);
+      if (w && g > 0) lines.push(`• ${w.name}: ${g} ${displayUnit(w.name, ti?.unit_label ?? w.base_unit)}`);
     });
     if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
     if (locUrl.trim()) { lines.push(""); lines.push(`Lokasi: ${locUrl.trim()}`); }
