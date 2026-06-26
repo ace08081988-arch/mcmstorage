@@ -283,6 +283,12 @@ export function ReadyEcerSection() {
     return r.name.toLowerCase().includes(q) || r.product_name.toLowerCase().includes(q);
   });
   const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
+  const [syncFilter, setSyncFilter] = useStateSyncFilter();
+  const syncCounts = (rows ?? []).reduce<Record<SyncLevel, number>>((acc, r) => {
+    acc[r.sync.level] = (acc[r.sync.level] ?? 0) + 1;
+    return acc;
+  }, { ok: 0, fallback_grams: 0, fallback_wid: 0, self_only: 0, no_match: 0, no_wid: 0, empty: 0 });
+  const visible = (filtered ?? []).filter((r) => syncFilter === "all" || r.sync.level === syncFilter);
 
   return (
     <div className="space-y-1.5">
@@ -377,13 +383,17 @@ export function ReadyEcerSection() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {(filtered ?? []).map((r) => (
+          {visible.map((r) => (
             <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} />
           ))}
         </div>
       )}
     </div>
   );
+}
+
+function useStateSyncFilter() {
+  return useState<SyncLevel | "all">("all");
 }
 
 function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "offline"; syncing: boolean }) {
