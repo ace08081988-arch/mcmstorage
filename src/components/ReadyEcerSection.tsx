@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
@@ -31,6 +31,17 @@ export function ReadyEcerSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [query, setQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>("all");
+  const [refreshing, setRefreshing] = useState(false);
+
+  async function handleRefresh() {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await load();
+    } finally {
+      setRefreshing(false);
+    }
+  }
 
   async function load() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -212,14 +223,16 @@ export function ReadyEcerSection() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {(filtered ?? []).map((r) => <EcerCard key={r.id} row={r} />)}
+          {(filtered ?? []).map((r) => (
+            <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} />
+          ))}
         </div>
       )}
     </div>
   );
 }
 
-function EcerCard({ row: r }: { row: Row }) {
+function EcerCard({ row: r, onRefresh, refreshing }: { row: Row; onRefresh: () => void; refreshing: boolean }) {
   const [sending, setSending] = useState(false);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
@@ -284,7 +297,26 @@ function EcerCard({ row: r }: { row: Row }) {
         </span>
       </Link>
 
-      {shots.length > 0 && (
+      {shots.length === 0 ? (
+        <div className="flex flex-col items-center gap-1 rounded border border-dashed bg-muted/30 px-2 py-2 text-center">
+          <Inbox className="h-3.5 w-3.5 text-muted-foreground" />
+          <span className="text-[10px] font-medium leading-tight text-muted-foreground">
+            Belum ada kiriman pegawai
+          </span>
+          <span className="text-[9px] leading-tight text-muted-foreground">
+            Foto dari pegawai akan muncul di sini secara realtime.
+          </span>
+          <button
+            type="button"
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRefresh(); }}
+            disabled={refreshing}
+            className="mt-0.5 inline-flex h-6 items-center gap-1 rounded bg-primary/10 px-2 text-[10px] font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
+          >
+            <RefreshCw className={`h-2.5 w-2.5 ${refreshing ? "animate-spin" : ""}`} />
+            {refreshing ? "Menyegarkan…" : "Segarkan"}
+          </button>
+        </div>
+      ) : (
         <>
           <div className="grid grid-cols-4 gap-1">
             {thumbs.map((s) => (
