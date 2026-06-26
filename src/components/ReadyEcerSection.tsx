@@ -161,7 +161,7 @@ export function ReadyEcerSection() {
       const [{ data: items }, { data: preps }, { data: subs }, { data: selfPreps }] = await Promise.all([
         sb.from("warehouse_items").select("id,name").in("id", itemIds),
         sb.from("ecer_preparations")
-          .select("id,title_id,photo_path,photo_paths,location_url,created_at")
+          .select("id,title_id,photo_path,location_url,created_at")
           .in("title_id", titleIds)
           .gte("created_at", sinceIso)
           .order("created_at", { ascending: false })
