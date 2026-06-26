@@ -849,6 +849,9 @@ function PrepEditorDialog({
 
   async function save(opts?: { sendWa?: boolean }) {
     if (!photo) { toast.error("Wajib lampirkan foto"); return; }
+    if (Object.keys(qtyErrors).length > 0 || rows.some((r) => r.actual_grams !== "" && Number(r.actual_grams) < 0)) {
+      toast.error("Jumlah tidak boleh negatif. Perbaiki dulu."); return;
+    }
     const validRows = rows.filter((r) => r.warehouse_item_id && Number(r.actual_grams) > 0);
     if (validRows.length === 0) { toast.error("Minimal 1 produk dengan gram > 0"); return; }
     let normalizedPhone = "";
