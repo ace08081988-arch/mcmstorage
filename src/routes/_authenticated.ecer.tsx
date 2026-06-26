@@ -598,6 +598,21 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                 </Button>
               )}
               <Button size="sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Penyiapan</Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  const el = document.getElementById(`worker-shots-${title.id}`);
+                  if (el) {
+                    el.scrollIntoView({ behavior: "smooth", block: "start" });
+                    el.classList.add("ring-2", "ring-primary");
+                    setTimeout(() => el.classList.remove("ring-2", "ring-primary"), 1500);
+                  }
+                }}
+                title="Lihat kiriman pegawai untuk judul ini"
+              >
+                <Users className="h-4 w-4" /> Penyiapan pegawai
+              </Button>
             </div>
           </div>
         </CardHeader>
