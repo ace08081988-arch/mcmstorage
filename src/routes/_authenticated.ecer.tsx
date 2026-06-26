@@ -401,8 +401,8 @@ function EcerPage() {
   );
 }
 
-function TitleCard({ title, onOpen, onEdit, onDeleted, highlighted }: {
-  title: EcerTitle; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
+function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: {
+  title: EcerTitle; itemName?: string; onOpen: () => void; onEdit: () => void; onDeleted: () => void;
   highlighted?: boolean;
 }) {
   const [count, setCount] = useState<number | null>(null);
