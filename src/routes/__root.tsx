@@ -250,6 +250,7 @@ function RootComponent() {
       <Outlet />
       <Toaster richColors position="top-center" />
       <ConfirmHost />
+      <WhatsAppTargetHost />
     </QueryClientProvider>
   );
 }
