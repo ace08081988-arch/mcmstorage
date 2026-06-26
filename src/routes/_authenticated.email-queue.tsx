@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,10 @@ import {
   AlertTriangle,
   CheckCircle2,
   Clock,
+  Send,
 } from "lucide-react";
-import { getEmailQueueStatus } from "@/lib/email-queue.functions";
+import { getEmailQueueStatus, resendDeviceOtpByMessage } from "@/lib/email-queue.functions";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/email-queue")({
   head: () => ({
@@ -64,6 +67,8 @@ function statusBadge(status: string) {
 
 function EmailQueuePage() {
   const fetchStatus = useServerFn(getEmailQueueStatus);
+  const resendOtp = useServerFn(resendDeviceOtpByMessage);
+  const [busyId, setBusyId] = useState<string | null>(null);
   const q = useQuery({
     queryKey: ["email-queue-status"],
     queryFn: () => fetchStatus(),
@@ -71,6 +76,27 @@ function EmailQueuePage() {
     refetchIntervalInBackground: false,
     staleTime: 5_000,
   });
+
+  async function handleResend(row: { id: string; message_id: string | null; recipient_email: string }) {
+    if (!row.message_id) {
+      toast.error("Tidak ada message_id untuk baris ini");
+      return;
+    }
+    setBusyId(row.id);
+    try {
+      const res = await resendOtp({ data: { messageId: row.message_id } });
+      if (res.ok) {
+        toast.success(`OTP baru dikirim ulang ke ${res.recipient}`);
+        q.refetch();
+      } else {
+        toast.error(`Gagal resend: ${res.error}`);
+      }
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal resend OTP");
+    } finally {
+      setBusyId(null);
+    }
+  }
 
   const data = q.data;
   const h = data?.health ?? null;
@@ -206,6 +232,7 @@ function EmailQueuePage() {
                         <th className="px-4 py-2 text-left">Penerima</th>
                         <th className="px-4 py-2 text-left">Status</th>
                         <th className="px-4 py-2 text-left">Catatan</th>
+                        <th className="px-4 py-2 text-left">Aksi</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -221,6 +248,24 @@ function EmailQueuePage() {
                           <td className="px-4 py-2 align-top">{statusBadge(r.status)}</td>
                           <td className="px-4 py-2 align-top text-xs text-muted-foreground">
                             {r.error_message || "—"}
+                          </td>
+                          <td className="px-4 py-2 align-top">
+                            {(() => {
+                              const s = r.status.toLowerCase();
+                              const canResend = s === "pending" || s === "dlq" || s === "failed" || s === "bounced";
+                              if (!canResend) return <span className="text-xs text-muted-foreground">—</span>;
+                              return (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  disabled={busyId === r.id || !r.message_id}
+                                  onClick={() => handleResend(r)}
+                                >
+                                  <Send className={`h-3.5 w-3.5 ${busyId === r.id ? "animate-pulse" : ""}`} />
+                                  <span className="ml-1.5">Resend</span>
+                                </Button>
+                              );
+                            })()}
                           </td>
                         </tr>
                       ))}
