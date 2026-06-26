@@ -404,6 +404,28 @@ export function ReadyEcerSection() {
         </div>
       )}
 
+      {syncedFromDetail && productFilter !== "all" && (
+        <div className="flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-[11px] text-primary">
+          <span className="truncate">
+            Disinkron dari detail: {(products.find(([id]) => id === productFilter)?.[1]) ?? "produk terpilih"}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setProductFilter("all");
+              setSyncedFromDetail(false);
+              try {
+                localStorage.removeItem("ecer:selectedItemId");
+                window.dispatchEvent(new CustomEvent("ecer:selectedItemId", { detail: null }));
+              } catch { /* ignore */ }
+            }}
+            className="shrink-0 rounded px-1.5 py-0.5 hover:bg-primary/10"
+          >
+            Hapus
+          </button>
+        </div>
+      )}
+
       {rows && rows.length > 0 && (
         <SyncSummary counts={syncCounts} total={rows.length} active={syncFilter} onChange={setSyncFilter} />
       )}
