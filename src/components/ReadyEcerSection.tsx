@@ -733,17 +733,22 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }
     setSending(true);
     try {
       const files: File[] = [];
-      const take = shots.slice(0, 6); // batasi agar WA tidak tolak
+      const take = shots.slice(0, 6); // batasi jumlah kiriman; tiap kiriman bisa berisi banyak foto
       for (const s of take) {
-        // Pastikan signed url tersedia (fallback bucket bila perlu) supaya foto selalu ikut.
-        let url = s.thumb_url ?? null;
-        if (!url && s.photo_path) {
-          url = await resolveShotSignedUrl(s.photo_path, s.source, 600);
-          s.thumb_url = url;
+        const paths = Array.from(new Set([
+          ...((s.photo_paths ?? []) as string[]),
+          ...(s.photo_path ? [s.photo_path] : []),
+        ])).filter(Boolean);
+        if (paths.length === 0) continue;
+        for (let pi = 0; pi < paths.length; pi++) {
+          const p = paths[pi];
+          const url = await resolveShotSignedUrl(p, s.source, 600);
+          if (!url) continue;
+          const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
+          if (f) files.push(f);
+          if (files.length >= 10) break;
         }
-        if (!url) continue;
-        const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}.jpg`);
-        if (f) files.push(f);
+        if (files.length >= 10) break;
       }
       if (files.length === 0) {
         toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan ke WA.");
@@ -751,8 +756,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }
       const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const text = [
         `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
+        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
         ...lines,
+        ...(take.find((s) => s.location_url) ? [`📍 ${take.find((s) => s.location_url)!.location_url}`] : []),
       ].join("\n");
       const res = await shareToWhatsApp({ text, title: r.name, files });
       notifyShareResult(res);
