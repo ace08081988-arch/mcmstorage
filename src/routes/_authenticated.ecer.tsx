@@ -156,6 +156,22 @@ function EcerPage() {
     });
   }, [selectedItemId, selectedTitleId, router]);
 
+  // Persist selected warehouse item so other surfaces (beranda) can sync filter
+  useEffect(() => {
+    try {
+      if (selectedItemId) {
+        localStorage.setItem("ecer:selectedItemId", selectedItemId);
+      } else {
+        localStorage.removeItem("ecer:selectedItemId");
+      }
+      window.dispatchEvent(
+        new CustomEvent("ecer:selectedItemId", { detail: selectedItemId ?? null }),
+      );
+    } catch {
+      // ignore storage errors (private mode, quota)
+    }
+  }, [selectedItemId]);
+
   const selectedItem = useMemo(
     () => items.find((i) => i.id === selectedItemId),
     [items, selectedItemId],
