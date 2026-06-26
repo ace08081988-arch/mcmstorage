@@ -4,6 +4,7 @@ import { Plus, Trash2, MessageCircle, Copy, Users } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
+import { CapBanner } from "@/components/CapBanner";
 
 type Contact = {
   id: string;
@@ -98,6 +99,8 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
           >Simpan</button>
         </div>
       )}
+
+      <div className="mt-3"><CapBanner kind="staffContacts" /></div>
 
       <div className="mt-3 space-y-2">
         {rows.length === 0 ? (
