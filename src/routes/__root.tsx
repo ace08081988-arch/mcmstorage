@@ -16,6 +16,7 @@ import { AppearanceInit } from "@/components/appearance-settings";
 import { applyCompactMode } from "@/components/CompactModeToggle";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
+import { WhatsAppTargetHost } from "@/lib/wa-target";
 
 function NotFoundComponent() {
   return (
@@ -249,6 +250,7 @@ function RootComponent() {
       <Outlet />
       <Toaster richColors position="top-center" />
       <ConfirmHost />
+      <WhatsAppTargetHost />
     </QueryClientProvider>
   );
 }
