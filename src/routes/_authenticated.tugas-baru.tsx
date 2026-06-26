@@ -294,9 +294,27 @@ function TugasBaruPage() {
           <div>
             <div className="mb-1 flex items-center justify-between">
               <div className="text-xs font-medium text-muted-foreground">Daftar barang</div>
-              <button type="button" onClick={() => setRows((s) => [...s, newRow()])} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
-                <Plus className="h-3.5 w-3.5" /> Tambah
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const targets = rows.filter((r) => r.warehouse_item_id);
+                    if (targets.length === 0) {
+                      toast.info("Tidak ada baris terhubung untuk diverifikasi.");
+                      return;
+                    }
+                    targets.forEach((r) => verifyWid(r.key, r.warehouse_item_id));
+                    toast.success(`Memverifikasi ulang ${targets.length} baris…`);
+                  }}
+                  className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                  title="Paksa ulang verifikasi status terhubung untuk semua baris"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" /> Verifikasi ulang
+                </button>
+                <button type="button" onClick={() => setRows((s) => [...s, newRow()])} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
+                  <Plus className="h-3.5 w-3.5" /> Tambah
+                </button>
+              </div>
             </div>
             <div className="space-y-2">
               {rows.map((r, i) => (
