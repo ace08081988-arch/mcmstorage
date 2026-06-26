@@ -19,7 +19,7 @@ import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
-import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult } from "@/lib/share-wa";
+import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText } from "@/lib/share-wa";
 import { fmtItemQty } from "@/lib/stock-format";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
@@ -1289,6 +1289,19 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     }}
                   >
                     Tambah ke catatan
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={!address.trim()}
+                    onClick={async () => {
+                      const res = await copyText(address.trim());
+                      if (res.ok) toast.success("Alamat disalin ke clipboard");
+                      else toast.error("Gagal menyalin alamat");
+                    }}
+                  >
+                    Salin
                   </Button>
                   <Button
                     type="button"
