@@ -342,6 +342,7 @@ function EcerPage() {
                   <TitleCard
                     key={t.id}
                     title={t}
+                    itemName={selectedItem.name}
                     onOpen={() => setSelectedTitleId(t.id)}
                     onEdit={() => setEditingTitle(t)}
                     onDeleted={refetchTitles}
