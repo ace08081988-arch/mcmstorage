@@ -35,9 +35,11 @@ function PublicPrepPage() {
   const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found" | "expired" | "closed">(null);
   // Pesan error terakhir dari proses verifikasi PIN; ditampilkan inline di kartu PIN.
   const [lastError, setLastError] = useState<null | {
-    kind: "bad_pin" | "rate_limited" | "not_found" | "expired" | "closed" | "network";
+    kind: "bad_pin" | "rate_limited" | "not_found" | "expired" | "closed" | "network" | "no_task";
     message: string;
     detail?: string;
+    code?: string;
+    raw?: string;
   }>(null);
   const [staleItemIds, setStaleItemIds] = useState<Record<string, true>>({});
   const itemsRef = useRef<PrepItemRow[]>([]);
@@ -195,7 +197,7 @@ function PublicPrepPage() {
     setLoading(false);
     if (error) {
       const msg = "Tidak bisa menghubungi server. Periksa koneksi internet lalu coba lagi.";
-      setLastError({ kind: "network", message: msg, detail: error.message });
+      setLastError({ kind: "network", message: msg, detail: error.message, code: (error as any).code });
       toast.error(msg);
       return false;
     }
@@ -237,24 +239,44 @@ function PublicPrepPage() {
             ? `Kedaluwarsa pada ${expAt.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}.`
             : undefined;
           const msg = "Link tugas sudah kedaluwarsa. Minta pemilik mengirim link / PIN baru.";
-          setLastError({ kind: "expired", message: msg, detail });
+          setLastError({ kind: "expired", message: msg, detail, code: "expired" });
           toast.error(msg);
         } else if (res?.error === "closed") {
           const msg = res.status === "cancelled"
             ? "Tugas ini sudah dibatalkan pemilik."
             : "Tugas ini sudah ditutup pemilik (sudah selesai).";
-          setLastError({ kind: "closed", message: msg });
+          setLastError({ kind: "closed", message: msg, code: "closed", detail: res.status ? `Status: ${res.status}` : undefined });
           toast.error(msg);
         } else if (res?.error === "not_found") {
           const msg = "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik.";
-          setLastError({ kind: "not_found", message: msg });
+          setLastError({ kind: "not_found", message: msg, code: "not_found" });
           toast.error(msg);
         } else {
-          const msg = "Tugas tidak bisa dibuka. Coba lagi atau hubungi pemilik.";
-          setLastError({ kind: "not_found", message: msg, detail: res?.error });
+          const code = res?.error || "unknown";
+          const msg = `Tugas tidak bisa dibuka (kode: ${code}). Tunjukkan pesan di bawah ke pemilik.`;
+          setLastError({
+            kind: "not_found",
+            message: msg,
+            detail: `Kode error server: ${code}. Status tugas: ${res?.status ?? "-"}.`,
+            code,
+            raw: safeJson(res),
+          });
           toast.error(msg);
         }
       }
+      return false;
+    }
+    // PIN valid (ok=true) tapi payload task hilang → tampilkan detail diagnostik
+    if (!res.task) {
+      const msg = "PIN benar, tetapi data tugas tidak terkirim dari server.";
+      setLastError({
+        kind: "no_task",
+        message: msg,
+        detail: "Server merespon ok=true namun field `task` kosong. Minta pemilik membuka kembali tugas lalu kirim ulang link.",
+        code: "missing_task",
+        raw: safeJson(res),
+      });
+      toast.error(msg);
       return false;
     }
     setLastError(null);
