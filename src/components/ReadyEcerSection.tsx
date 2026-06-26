@@ -503,6 +503,7 @@ function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { 
           <span className="truncate text-[10px] font-medium leading-tight text-foreground/80">
             {r.product_name} · {r.target_grams} {unit}
           </span>
+          <SyncBadge row={r} />
           <Popover>
             <PopoverTrigger asChild>
               <button
