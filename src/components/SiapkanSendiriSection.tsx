@@ -515,6 +515,47 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 <span>GPS</span>
               </button>
             </div>
+            {locationUrl.trim() && (() => {
+              const trimmed = locationUrl.trim();
+              const coords = parseLatLngFromUrl(trimmed);
+              const validUrl = isHttpsUrl(trimmed);
+              if (coords) {
+                const d = 0.005;
+                const bbox = `${coords.lng - d},${coords.lat - d},${coords.lng + d},${coords.lat + d}`;
+                const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat},${coords.lng}`;
+                return (
+                  <div className="mt-2 space-y-1">
+                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                      <span>Pratinjau lokasi</span>
+                      <span className="tabular-nums">{coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}</span>
+                    </div>
+                    <div className="overflow-hidden rounded-md border">
+                      <iframe
+                        title="Pratinjau peta lokasi"
+                        src={src}
+                        className="h-40 w-full"
+                        loading="lazy"
+                      />
+                    </div>
+                    <a
+                      href={validUrl ? trimmed : `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=16/${coords.lat}/${coords.lng}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="inline-flex items-center gap-1 text-[10px] text-primary underline"
+                    >
+                      <ExternalLink className="h-3 w-3" /> Buka di peta
+                    </a>
+                  </div>
+                );
+              }
+              return (
+                <div className="mt-2 rounded-md border border-dashed bg-muted/30 p-2 text-[10px] text-muted-foreground">
+                  {validUrl
+                    ? "Link tersimpan, tapi koordinat tidak terdeteksi otomatis. Pratinjau peta tidak tersedia — pastikan link Google Maps memuat koordinat (mis. /@lat,lng atau ?q=lat,lng)."
+                    : "Tempel link Google Maps yang valid (https://) untuk melihat pratinjau peta."}
+                </div>
+              );
+            })()}
             <label className="mt-2 block text-[11px] font-medium text-muted-foreground">Catatan (opsional)</label>
             <textarea
               value={note}
