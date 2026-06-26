@@ -94,9 +94,18 @@ export function ReadyEcerSection() {
     }
     window.addEventListener("ecer:selectedItemId", onCustom as EventListener);
     window.addEventListener("storage", onStorage);
+    function onVisibility() {
+      if (document.visibilityState !== "visible") return;
+      try { applyId(localStorage.getItem("ecer:selectedItemId")); } catch { /* ignore */ }
+    }
+    function onFocus() { onVisibility(); }
+    document.addEventListener("visibilitychange", onVisibility);
+    window.addEventListener("focus", onFocus);
     return () => {
       window.removeEventListener("ecer:selectedItemId", onCustom as EventListener);
       window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onVisibility);
+      window.removeEventListener("focus", onFocus);
     };
   }, []);
 
