@@ -776,7 +776,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   }
 
   return (
-    <Card>
+    <Card id={`worker-shots-${title.id}`} className="scroll-mt-20 transition-shadow">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
