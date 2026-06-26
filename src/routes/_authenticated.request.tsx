@@ -894,7 +894,7 @@ function PrepEditorDialog({
 
           {(() => {
             const totals = new Map<string, number>();
-            const details: Array<{ name: string; qty: number; unit: string }> = [];
+            const details: Array<{ idx: number; name: string; qty: number; unit: string }> = [];
             rows.forEach((r) => {
               const g = Number(r.actual_grams);
               if (!r.warehouse_item_id || !(g > 0)) return;
@@ -902,7 +902,8 @@ function PrepEditorDialog({
               const ti = titleItems.find((t) => t.warehouse_item_id === r.warehouse_item_id);
               const unit = displayUnit(w?.name, ti?.unit_label ?? w?.base_unit ?? "g");
               totals.set(unit, (totals.get(unit) ?? 0) + g);
-              details.push({ name: w?.name ?? "?", qty: g, unit });
+              const idx = rows.indexOf(r);
+              details.push({ idx, name: w?.name ?? "?", qty: g, unit });
             });
             if (totals.size === 0) return null;
             return (
@@ -915,11 +916,19 @@ function PrepEditorDialog({
                     </span>
                   ))}
                 </div>
-                <ul className="mt-1.5 space-y-0.5 border-t border-primary/20 pt-1.5 text-muted-foreground">
-                  {details.map((d, i) => (
-                    <li key={i} className="flex justify-between gap-2">
+                <ul className="mt-1.5 space-y-1 border-t border-primary/20 pt-1.5 text-muted-foreground">
+                  {details.map((d) => (
+                    <li key={d.idx} className="flex items-center justify-between gap-2">
                       <span className="truncate">{d.name}</span>
-                      <span className="font-mono tabular-nums">{d.qty} {d.unit}</span>
+                      <div className="flex items-center gap-1">
+                        <Input
+                          type="number" inputMode="decimal" step="any" min="0"
+                          value={rows[d.idx]?.actual_grams ?? ""}
+                          onChange={(e) => setRows((rs) => rs.map((x, i) => i === d.idx ? { ...x, actual_grams: e.target.value } : x))}
+                          className="h-7 w-20 px-1.5 text-right text-[11px] font-mono tabular-nums"
+                        />
+                        <span className="w-10 text-left text-[10px]">{d.unit}</span>
+                      </div>
                     </li>
                   ))}
                 </ul>
