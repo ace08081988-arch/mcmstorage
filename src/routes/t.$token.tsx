@@ -566,15 +566,16 @@ function PublicPrepPage() {
                       <div className="mt-0.5 break-words opacity-80">{lastError.detail}</div>
                     )}
                     {(lastError.code || lastError.raw) && (
-                      <details className="mt-1.5">
+                      <details className="mt-1.5" open>
                         <summary className="cursor-pointer select-none text-[10px] uppercase tracking-wider opacity-70">
-                          Detail teknis
+                          Detail respons RPC (prep_get_task)
                         </summary>
+                        <div className="mt-1 font-mono text-[10px] opacity-80">kind: {lastError.kind}</div>
                         {lastError.code && (
                           <div className="mt-1 font-mono text-[10px] opacity-80">code: {lastError.code}</div>
                         )}
                         {lastError.raw && (
-                          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded bg-background/60 p-1.5 font-mono text-[10px] opacity-80">{lastError.raw}</pre>
+                          <pre className="mt-1 max-h-56 overflow-auto whitespace-pre-wrap break-all rounded bg-background/60 p-1.5 font-mono text-[10px] opacity-80">{lastError.raw}</pre>
                         )}
                         <button
                           type="button"
