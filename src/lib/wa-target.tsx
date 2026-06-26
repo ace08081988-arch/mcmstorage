@@ -92,7 +92,21 @@ const queue: Request[] = [];
  */
 export function pickWhatsAppTarget(ctx?: { text?: string; phone?: string }): Promise<WaTarget | null> {
   const pref = getWaTargetPref();
-  if (pref !== "ask" && getWaSkipConfirm()) return Promise.resolve(pref);
+  if (pref !== "ask" && getWaSkipConfirm()) {
+    return detectWhatsAppInstalled().then((s) => {
+      const missing =
+        s.native &&
+        ((pref === "business" && s.business === false) ||
+         (pref === "regular" && s.regular === false));
+      if (!missing) return pref;
+      // Fall through to dialog so user sees the help message.
+      return new Promise<WaTarget | null>((resolve) => {
+        const req: Request = { resolve, text: ctx?.text, phone: ctx?.phone };
+        if (openRequest) openRequest(req);
+        else queue.push(req);
+      });
+    });
+  }
   return new Promise((resolve) => {
     const req: Request = { resolve, text: ctx?.text, phone: ctx?.phone };
     if (openRequest) openRequest(req);
