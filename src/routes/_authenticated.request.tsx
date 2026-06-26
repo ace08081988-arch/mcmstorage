@@ -335,6 +335,27 @@ function TitleEditorDialog({
   const [note, setNote] = useState("");
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }>>([]);
   const [busy, setBusy] = useState(false);
+  const [negErrors, setNegErrors] = useState<Record<number, string>>({});
+
+  function sanitizeQty(idx: number, raw: string): string {
+    if (raw === "" || raw === "-") {
+      if (raw === "-") {
+        setNegErrors((e) => ({ ...e, [idx]: "Jumlah tidak boleh negatif. Minimum 0." }));
+        toast.error("Jumlah tidak boleh negatif");
+        return "0";
+      }
+      setNegErrors((e) => { const c = { ...e }; delete c[idx]; return c; });
+      return raw;
+    }
+    const n = Number(raw);
+    if (Number.isFinite(n) && n < 0) {
+      setNegErrors((e) => ({ ...e, [idx]: "Jumlah tidak boleh negatif. Minimum 0." }));
+      toast.error("Jumlah tidak boleh negatif");
+      return "0";
+    }
+    setNegErrors((e) => { const c = { ...e }; delete c[idx]; return c; });
+    return raw;
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -457,7 +478,7 @@ function TitleEditorDialog({
                   <Input
                     type="number" inputMode="decimal" step="any" min="0"
                     value={r.target_grams}
-                    onChange={(e) => updateRow(idx, { target_grams: e.target.value })}
+                    onChange={(e) => updateRow(idx, { target_grams: sanitizeQty(idx, e.target.value) })}
                     className="col-span-3 h-9 text-xs"
                     placeholder="0"
                   />
