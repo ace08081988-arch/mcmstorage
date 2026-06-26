@@ -164,7 +164,7 @@ export function ReadyEcerSection() {
                 <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
               </div>
               <span className="truncate text-[10px] leading-tight text-muted-foreground">
-                {r.product_name} · {r.target_grams} {r.unit_label}
+                {r.product_name} · {r.target_grams} {r.product_name.trim().toLowerCase() === "gs" ? "botol" : r.unit_label}
               </span>
               <span className="text-[10px] leading-tight">
                 <span className={r.prep_count > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
