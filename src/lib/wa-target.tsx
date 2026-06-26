@@ -16,6 +16,7 @@ export type WaTarget = "business" | "regular";
 export type WaTargetPref = "ask" | WaTarget;
 
 const PREF_KEY = "wa-target-pref";
+const SKIP_CONFIRM_KEY = "wa-skip-confirm";
 
 export function getWaTargetPref(): WaTargetPref {
   if (typeof window === "undefined") return "ask";
@@ -28,6 +29,18 @@ export function getWaTargetPref(): WaTargetPref {
 
 export function setWaTargetPref(v: WaTargetPref) {
   try { window.localStorage.setItem(PREF_KEY, v); } catch { /* ignore */ }
+}
+
+export function getWaSkipConfirm(): boolean {
+  if (typeof window === "undefined") return false;
+  try { return window.localStorage.getItem(SKIP_CONFIRM_KEY) === "1"; } catch { return false; }
+}
+
+export function setWaSkipConfirm(v: boolean) {
+  try {
+    if (v) window.localStorage.setItem(SKIP_CONFIRM_KEY, "1");
+    else window.localStorage.removeItem(SKIP_CONFIRM_KEY);
+  } catch { /* ignore */ }
 }
 
 type Request = {
@@ -46,7 +59,7 @@ const queue: Request[] = [];
  */
 export function pickWhatsAppTarget(ctx?: { text?: string; phone?: string }): Promise<WaTarget | null> {
   const pref = getWaTargetPref();
-  if (pref !== "ask") return Promise.resolve(pref);
+  if (pref !== "ask" && getWaSkipConfirm()) return Promise.resolve(pref);
   return new Promise((resolve) => {
     const req: Request = { resolve, text: ctx?.text, phone: ctx?.phone };
     if (openRequest) openRequest(req);
@@ -59,11 +72,13 @@ export function WhatsAppTargetHost() {
   const [open, setOpen] = useState(false);
   const [remember, setRemember] = useState(false);
   const [confirming, setConfirming] = useState<WaTarget | null>(null);
+  const [skipConfirm, setSkipConfirm] = useState(false);
 
   useEffect(() => {
     openRequest = (req) => {
       setRemember(false);
       setConfirming(null);
+      setSkipConfirm(false);
       setCurrent(req);
       setOpen(true);
     };
@@ -71,6 +86,7 @@ export function WhatsAppTargetHost() {
       const req = queue.shift()!;
       setRemember(false);
       setConfirming(null);
+      setSkipConfirm(false);
       setCurrent(req);
       setOpen(true);
     }
@@ -80,6 +96,7 @@ export function WhatsAppTargetHost() {
   const finish = (v: WaTarget | null) => {
     setOpen(false);
     if (v && remember) setWaTargetPref(v);
+    if (v && skipConfirm) setWaSkipConfirm(true);
     current?.resolve(v);
     setTimeout(() => {
       setCurrent(null);
@@ -136,6 +153,13 @@ export function WhatsAppTargetHost() {
                 onCheckedChange={(c) => setRemember(c === true)}
               />
               Ingat pilihan saya (bisa diubah lagi nanti)
+            </label>
+            <label className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox
+                checked={skipConfirm}
+                onCheckedChange={(c) => setSkipConfirm(c === true)}
+              />
+              Ingat persetujuan saya (lewati konfirmasi pratinjau lain kali)
             </label>
             <div className="mt-2 flex justify-between gap-2">
               <Button type="button" variant="ghost" onClick={() => setConfirming(null)}>
