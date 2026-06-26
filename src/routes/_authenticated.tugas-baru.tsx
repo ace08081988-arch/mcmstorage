@@ -351,15 +351,50 @@ function TugasBaruPage() {
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
-                  {r.title_id && r.warehouse_item_id ? (
-                    <div className="col-span-12 text-[11px] text-emerald-600">
-                      ✓ Terhubung ke produk gudang — foto pegawai akan otomatis muncul di kartu Beranda.
-                    </div>
-                  ) : (
-                    <div className="col-span-12 text-[11px] text-amber-600">
-                      ⚠ Belum terhubung produk — foto pegawai tidak akan tampil di kartu Beranda untuk barang ini.
-                    </div>
-                  )}
+                  <div className="col-span-12 text-[11px]">
+                    {(() => {
+                      const v = verify[r.key];
+                      if (!r.warehouse_item_id) {
+                        return (
+                          <span className="text-amber-600">
+                            ⚠ Belum terhubung produk — foto pegawai tidak akan tampil di kartu Beranda untuk barang ini.
+                          </span>
+                        );
+                      }
+                      if (!v || v.status === "checking") {
+                        return <span className="text-muted-foreground">⏳ Memverifikasi tautan ke gudang…</span>;
+                      }
+                      if (v.status === "ok") {
+                        return (
+                          <span className="text-emerald-600">
+                            ✓ Terhubung ke produk gudang <strong>{v.productName}</strong> — foto pegawai akan otomatis muncul di Beranda.
+                          </span>
+                        );
+                      }
+                      if (v.status === "missing") {
+                        return (
+                          <span className="text-destructive">
+                            ✗ Produk gudang tidak ditemukan (mungkin sudah dihapus). Pilih produk lain atau pakai mode bebas.
+                          </span>
+                        );
+                      }
+                      if (v.status === "error") {
+                        return (
+                          <span className="text-destructive">
+                            ✗ Gagal verifikasi: {v.error}{" "}
+                            <button
+                              type="button"
+                              className="underline"
+                              onClick={() => verifyWid(r.key, r.warehouse_item_id)}
+                            >
+                              Coba lagi
+                            </button>
+                          </span>
+                        );
+                      }
+                      return null;
+                    })()}
+                  </div>
                 </div>
               ))}
             </div>
