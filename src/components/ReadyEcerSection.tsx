@@ -218,3 +218,106 @@ export function ReadyEcerSection() {
     </div>
   );
 }
+
+function EcerCard({ row: r }: { row: Row }) {
+  const [sending, setSending] = useState(false);
+  const shots = r.worker_shots;
+  const thumbs = shots.slice(0, 4);
+  const extra = Math.max(0, shots.length - thumbs.length);
+  const unit = r.product_name.trim().toLowerCase() === "gs" ? "botol" : r.unit_label;
+
+  async function sendWA(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (sending) return;
+    if (shots.length === 0) {
+      toast.info("Belum ada kiriman pegawai untuk judul ini.");
+      return;
+    }
+    setSending(true);
+    try {
+      const files: File[] = [];
+      const take = shots.slice(0, 6); // batasi agar WA tidak tolak
+      for (const s of take) {
+        if (!s.thumb_url) continue;
+        const f = await urlToFile(s.thumb_url, `${r.name}-${s.id.slice(0, 6)}.jpg`);
+        if (f) files.push(f);
+      }
+      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const text = [
+        `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
+        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
+        ...lines,
+      ].join("\n");
+      const res = await shareToWhatsApp({ text, title: r.name, files });
+      notifyShareResult(res);
+    } catch (err) {
+      toast.error(`Gagal kirim WA: ${(err as Error).message}`);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="group flex flex-col gap-1.5 rounded-md border bg-card p-2 hover:border-primary/40">
+      <Link
+        to="/ecer"
+        search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+        className="flex flex-col gap-0.5"
+      >
+        <div className="flex items-center gap-1.5">
+          <Scale className="h-3.5 w-3.5 text-primary" />
+          <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
+        </div>
+        <span className="truncate text-[10px] leading-tight text-muted-foreground">
+          {r.product_name} · {r.target_grams} {unit}
+        </span>
+        <span className="text-[10px] leading-tight">
+          <span className={r.prep_count > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+            {r.prep_count} kotak siap
+          </span>
+          {shots.length > 0 && (
+            <span className="ml-1.5 font-medium text-sky-600 dark:text-sky-400">
+              · {shots.length} dari pegawai
+            </span>
+          )}
+        </span>
+      </Link>
+
+      {shots.length > 0 && (
+        <>
+          <div className="grid grid-cols-4 gap-1">
+            {thumbs.map((s) => (
+              <div key={s.id} className="relative aspect-square overflow-hidden rounded bg-muted">
+                {s.thumb_url ? (
+                  <img src={s.thumb_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[8px] text-muted-foreground">…</div>
+                )}
+                {s.location_url && (
+                  <span className="absolute right-0.5 top-0.5 rounded bg-black/60 p-0.5">
+                    <MapPin className="h-2 w-2 text-white" />
+                  </span>
+                )}
+              </div>
+            ))}
+            {extra > 0 && (
+              <div className="flex aspect-square items-center justify-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">
+                +{extra}
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={sendWA}
+            disabled={sending}
+            className="inline-flex h-7 items-center justify-center gap-1 rounded bg-[#25D366] text-[10px] font-semibold text-white disabled:opacity-50"
+          >
+            <MessageCircle className="h-3 w-3" />
+            {sending ? "Menyiapkan…" : "Kirim WA"}
+          </button>
+        </>
+      )}
+    </div>
+  );
+}
