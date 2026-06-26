@@ -8,6 +8,7 @@ import { publicSupabase } from "@/lib/public-supabase";
 import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff, Inbox } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { displayUnit } from "@/lib/unit-label";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -784,7 +785,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
           : (res?.error || "submit_failed");
         throw new Error(msg);
       }
-      toast.success(`Terkirim. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${item.unit_label ?? ""}`);
+      toast.success(`Terkirim. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${displayUnit(item.name, item.unit_label)}`);
       setPhoto(null); setLocUrl(""); setGps(null); setNote("");
       onSubmitted();
     } catch (e) {
@@ -833,7 +834,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
           <div className="truncate text-sm font-semibold leading-tight">{item.name}</div>
           <div className="text-[11px] text-muted-foreground">{item.category ?? "—"}</div>
           <div className="mt-1.5 flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">Target {item.qty_requested} {item.unit_label ?? ""}</span>
+            <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">Target {item.qty_requested} {displayUnit(item.name, item.unit_label)}</span>
             <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">Disiapkan {item.qty_prepared ?? 0}</span>
           </div>
           {item.note && <div className="mt-1 text-[11px] text-muted-foreground">Catatan: {item.note}</div>}
@@ -858,7 +859,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
 
       <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
-        Siapkan <b>{item.qty_requested} {item.unit_label ?? ""}</b> sesuai instruksi pemilik. Setelah foto + lokasi terkirim, stok gudang otomatis berkurang sebanyak itu — Anda tidak perlu mengisi angka apa pun.
+        Siapkan <b>{item.qty_requested} {displayUnit(item.name, item.unit_label)}</b> sesuai instruksi pemilik. Setelah foto + lokasi terkirim, stok gudang otomatis berkurang sebanyak itu — Anda tidak perlu mengisi angka apa pun.
       </div>
 
       <div className="mt-3 grid grid-cols-1 gap-2">
@@ -996,7 +997,7 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{t.name}</div>
                 <div className="truncate text-[11px] text-muted-foreground">
-                  {t.items.map((i) => `${i.product_name ?? "?"} ${i.target_grams}${i.unit_label}`).join(" · ")}
+                  {t.items.map((i) => `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`).join(" · ")}
                 </div>
               </div>
               <span className="ml-2 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
@@ -1113,7 +1114,7 @@ function RequestForm({
               onChange={(e) => setRows((rs) => rs.map((x, i) => i === idx ? { ...x, actual_grams: e.target.value } : x))}
               className="col-span-3 h-9 rounded-md border bg-background px-2 text-xs"
             />
-            <div className="col-span-1 flex items-center text-[10px] text-muted-foreground">{r.unit_label}</div>
+            <div className="col-span-1 flex items-center text-[10px] text-muted-foreground">{displayUnit(r.product_name, r.unit_label)}</div>
           </div>
         ))}
       </div>
