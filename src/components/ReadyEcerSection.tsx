@@ -74,25 +74,67 @@ export function ReadyEcerSection() {
         countMap.set(p.title_id, (countMap.get(p.title_id) ?? 0) + 1);
       }
 
-      // Map prep_submissions → task_item name, then bucket by lowercased name.
+      // Map prep_submissions → task_item attributes, then bucket by product+size.
       const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; location_url: string | null; submitted_at: string; task_item_id: string }>;
       const taskItemIds = Array.from(new Set(subRows.map((s) => s.task_item_id))).filter(Boolean);
-      let nameByItemId = new Map<string, string>();
+      type TaskItemMeta = { name: string; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null };
+      let metaByItemId = new Map<string, TaskItemMeta>();
       if (taskItemIds.length > 0) {
         const { data: tItems } = await sb
           .from("prep_task_items")
-          .select("id,name_snapshot")
+          .select("id,name_snapshot,warehouse_item_id,qty_requested,unit_label")
           .in("id", taskItemIds);
-        nameByItemId = new Map(((tItems ?? []) as Array<{ id: string; name_snapshot: string }>).map((i) => [i.id, i.name_snapshot ?? ""]));
+        metaByItemId = new Map(
+          ((tItems ?? []) as Array<{ id: string; name_snapshot: string | null; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null }>).map((i) => [
+            i.id,
+            {
+              name: (i.name_snapshot ?? "").trim().toLowerCase(),
+              warehouse_item_id: i.warehouse_item_id,
+              qty_requested: i.qty_requested,
+              unit_label: (i.unit_label ?? "").trim().toLowerCase(),
+            } as TaskItemMeta,
+          ])
+        );
       }
-      const shotsByName = new Map<string, WorkerShot[]>();
+
+      // Build lookup keys per title: strict (wid+grams+unit), medium (wid+grams), loose (wid).
+      const normUnit = (u: string | null | undefined) => (u ?? "").trim().toLowerCase();
+      const titleStrict = new Map<string, string>(); // key → title.id
+      const titleByWidGrams = new Map<string, string[]>();
+      const titleByWid = new Map<string, string[]>();
+      for (const t of list) {
+        const wid = t.warehouse_item_id;
+        const g = Number(t.target_grams) || 0;
+        const u = normUnit(t.unit_label);
+        if (wid) {
+          titleStrict.set(`${wid}|${g}|${u}`, t.id);
+          const a = titleByWidGrams.get(`${wid}|${g}`) ?? [];
+          a.push(t.id); titleByWidGrams.set(`${wid}|${g}`, a);
+          const b = titleByWid.get(wid) ?? [];
+          b.push(t.id); titleByWid.set(wid, b);
+        }
+      }
+
+      const shotsByTitleId = new Map<string, WorkerShot[]>();
       for (const s of subRows) {
-        const nm = (nameByItemId.get(s.task_item_id) ?? "").trim().toLowerCase();
-        if (!nm) continue;
-        const arr = shotsByName.get(nm) ?? [];
-        arr.push({ id: s.id, photo_path: s.photo_path, location_url: s.location_url, submitted_at: s.submitted_at, item_name: nm });
-        shotsByName.set(nm, arr);
+        const meta = metaByItemId.get(s.task_item_id);
+        if (!meta) continue;
+        const wid = meta.warehouse_item_id;
+        const g = Number(meta.qty_requested) || 0;
+        const u = normUnit(meta.unit_label);
+        let titleId: string | undefined;
+        if (wid) {
+          titleId = titleStrict.get(`${wid}|${g}|${u}`)
+            ?? titleByWidGrams.get(`${wid}|${g}`)?.[0]
+            ?? titleByWid.get(wid)?.[0];
+        }
+        if (!titleId) continue; // require warehouse match — name-only is unreliable
+        const arr = shotsByTitleId.get(titleId) ?? [];
+        arr.push({ id: s.id, photo_path: s.photo_path, location_url: s.location_url, submitted_at: s.submitted_at, item_name: meta.name });
+        shotsByTitleId.set(titleId, arr);
       }
+
+      const shotsByName = shotsByTitleId; // reuse name below
       // Resolve signed URLs for at most 4 thumbs per title.
       const thumbJobs: Promise<void>[] = [];
       for (const arr of shotsByName.values()) {
@@ -109,7 +151,7 @@ export function ReadyEcerSection() {
         ...t,
         prep_count: countMap.get(t.id) ?? 0,
         product_name: itemMap.get(t.warehouse_item_id) ?? "—",
-        worker_shots: shotsByName.get(t.name.trim().toLowerCase()) ?? [],
+        worker_shots: shotsByName.get(t.id) ?? [],
       })));
   }
 
