@@ -340,6 +340,10 @@ export function ReadyEcerSection() {
         </div>
       )}
 
+      {rows && rows.length > 0 && (
+        <SyncSummary counts={syncCounts} total={rows.length} active={syncFilter} onChange={setSyncFilter} />
+      )}
+
       {rows === null ? (
         <div className="grid grid-cols-2 gap-2" aria-busy="true" aria-label="Memuat produk eceran">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -394,6 +398,48 @@ export function ReadyEcerSection() {
 
 function useStateSyncFilter() {
   return useState<SyncLevel | "all">("all");
+}
+
+function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncLevel, number>; total: number; active: SyncLevel | "all"; onChange: (v: SyncLevel | "all") => void }) {
+  const order: SyncLevel[] = ["ok", "fallback_grams", "fallback_wid", "self_only", "no_match", "no_wid", "empty"];
+  const failing = counts.no_match + counts.no_wid;
+  return (
+    <div className="rounded-md border bg-card/50 p-1.5">
+      <div className="mb-1 flex items-center justify-between px-0.5">
+        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Status sinkron</span>
+        {failing > 0 && (
+          <span className="text-[9px] font-semibold text-destructive">{failing} gagal</span>
+        )}
+      </div>
+      <div className="flex flex-wrap gap-1">
+        <button
+          type="button"
+          onClick={() => onChange("all")}
+          className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${active === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
+        >
+          Semua <span className="font-mono">{total}</span>
+        </button>
+        {order.map((lvl) => {
+          const n = counts[lvl];
+          if (n === 0) return null;
+          const meta = SYNC_META[lvl];
+          const isActive = active === lvl;
+          return (
+            <button
+              key={lvl}
+              type="button"
+              onClick={() => onChange(isActive ? "all" : lvl)}
+              className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${meta.cls} ${isActive ? "ring-2 ring-primary/40" : ""}`}
+              aria-pressed={isActive}
+            >
+              <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
+              {meta.label} <span className="font-mono">{n}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
 }
 
 function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "offline"; syncing: boolean }) {
