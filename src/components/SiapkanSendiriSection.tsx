@@ -490,7 +490,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 className="inline-flex h-9 shrink-0 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 text-xs font-medium text-primary hover:bg-primary/20 disabled:opacity-60"
               >
                 {gpsBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crosshair className="h-3.5 w-3.5" />}
-                <span className="hidden xs:inline">GPS</span>
+                <span>GPS</span>
               </button>
             </div>
             <label className="mt-2 block text-[11px] font-medium text-muted-foreground">Catatan (opsional)</label>
