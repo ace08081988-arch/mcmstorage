@@ -317,7 +317,7 @@ export function ReadyEcerSection() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari judul ecer…"
+              placeholder="Cari judul, produk, atau warehouse_item_id…"
               className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-xs outline-none placeholder:text-muted-foreground focus:border-primary/40"
             />
             {query && (
