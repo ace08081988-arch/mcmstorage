@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
@@ -32,6 +32,8 @@ export function ReadyEcerSection() {
   const [query, setQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>("all");
   const [refreshing, setRefreshing] = useState(false);
+  const [realtimeStatus, setRealtimeStatus] = useState<"connecting" | "live" | "offline">("connecting");
+  const [syncing, setSyncing] = useState(false);
 
   async function handleRefresh() {
     if (refreshing) return;
@@ -115,8 +117,15 @@ export function ReadyEcerSection() {
     void load();
     const ch = supabase
       .channel("ready-ecer:prep_submissions")
-      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => { void load(); })
-      .subscribe();
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, async () => {
+        setSyncing(true);
+        try { await load(); } finally { setSyncing(false); }
+      })
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") setRealtimeStatus("live");
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") setRealtimeStatus("offline");
+        else setRealtimeStatus("connecting");
+      });
     return () => { supabase.removeChannel(ch); };
   }, []);
 
@@ -136,9 +145,12 @@ export function ReadyEcerSection() {
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
-        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
-          Produk Eceran Siap Kirim
-        </p>
+        <div className="flex items-center gap-1.5">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Produk Eceran Siap Kirim
+          </p>
+          <RealtimeBadge status={realtimeStatus} syncing={syncing || refreshing} />
+        </div>
         <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined }} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary hover:underline">
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
@@ -224,7 +236,7 @@ export function ReadyEcerSection() {
       ) : (
         <div className="grid grid-cols-2 gap-2">
           {(filtered ?? []).map((r) => (
-            <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} />
+            <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} />
           ))}
         </div>
       )}
@@ -232,7 +244,40 @@ export function ReadyEcerSection() {
   );
 }
 
-function EcerCard({ row: r, onRefresh, refreshing }: { row: Row; onRefresh: () => void; refreshing: boolean }) {
+function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "offline"; syncing: boolean }) {
+  if (syncing) {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+        <Loader2 className="h-2.5 w-2.5 animate-spin" /> Memperbarui…
+      </span>
+    );
+  }
+  if (status === "live") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
+        <span className="relative flex h-1.5 w-1.5">
+          <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+          <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        </span>
+        Live
+      </span>
+    );
+  }
+  if (status === "offline") {
+    return (
+      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[9px] font-medium text-destructive">
+        <Radio className="h-2.5 w-2.5" /> Offline
+      </span>
+    );
+  }
+  return (
+    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+      <Loader2 className="h-2.5 w-2.5 animate-spin" /> Menyambung…
+    </span>
+  );
+}
+
+function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline" }) {
   const [sending, setSending] = useState(false);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
@@ -299,12 +344,20 @@ function EcerCard({ row: r, onRefresh, refreshing }: { row: Row; onRefresh: () =
 
       {shots.length === 0 ? (
         <div className="flex flex-col items-center gap-1 rounded border border-dashed bg-muted/30 px-2 py-2 text-center">
-          <Inbox className="h-3.5 w-3.5 text-muted-foreground" />
+          {syncing || refreshing ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+          ) : (
+            <Inbox className="h-3.5 w-3.5 text-muted-foreground" />
+          )}
           <span className="text-[10px] font-medium leading-tight text-muted-foreground">
-            Belum ada kiriman pegawai
+            {syncing || refreshing ? "Memuat kiriman…" : "Belum ada kiriman pegawai"}
           </span>
           <span className="text-[9px] leading-tight text-muted-foreground">
-            Foto dari pegawai akan muncul di sini secara realtime.
+            {realtimeStatus === "live"
+              ? "Menunggu foto pegawai — akan muncul otomatis."
+              : realtimeStatus === "offline"
+              ? "Realtime terputus. Tap Segarkan untuk memuat ulang."
+              : "Menyambung ke realtime…"}
           </span>
           <button
             type="button"
