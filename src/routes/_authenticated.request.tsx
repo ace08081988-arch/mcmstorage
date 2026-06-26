@@ -991,7 +991,10 @@ function PrepEditorDialog({
                         <Input
                           type="number" inputMode="decimal" step="any" min="0"
                           value={rows[d.idx]?.actual_grams ?? ""}
-                          onChange={(e) => setRows((rs) => rs.map((x, i) => i === d.idx ? { ...x, actual_grams: e.target.value } : x))}
+                          onChange={(e) => {
+                            const v = sanitizeActual(d.idx, e.target.value);
+                            setRows((rs) => rs.map((x, i) => i === d.idx ? { ...x, actual_grams: v } : x));
+                          }}
                           className="h-7 w-20 px-1.5 text-right text-[11px] font-mono tabular-nums"
                         />
                         <span className="w-10 text-left text-[10px]">{d.unit}</span>
@@ -999,6 +1002,11 @@ function PrepEditorDialog({
                     </li>
                   ))}
                 </ul>
+                {Object.keys(qtyErrors).length > 0 ? (
+                  <p className="mt-1.5 rounded border border-destructive/40 bg-destructive/10 px-1.5 py-1 text-[10px] font-medium text-destructive">
+                    Jumlah tidak boleh negatif. Minimum 0.
+                  </p>
+                ) : null}
               </div>
             );
           })()}
