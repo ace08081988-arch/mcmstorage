@@ -1,5 +1,4 @@
 import { useEffect, useState } from "react";
-import QRCode from "qrcode";
 import {
   AlertDialog,
   AlertDialogContent,
@@ -177,14 +176,6 @@ export function WhatsAppTargetHost() {
     const label = isBiz ? "WhatsApp Business" : "WhatsApp";
     const pkg = isBiz ? "com.whatsapp.w4b" : "com.whatsapp";
     const url = isBiz ? PLAY_BUSINESS : PLAY_REGULAR;
-    const [qr, setQr] = useState<string>("");
-    useEffect(() => {
-      let cancelled = false;
-      QRCode.toDataURL(url, { width: 140, margin: 1 })
-        .then((d) => { if (!cancelled) setQr(d); })
-        .catch(() => { if (!cancelled) setQr(""); });
-      return () => { cancelled = true; };
-    }, [url]);
     return (
       <div className="rounded-md border border-amber-300/60 bg-amber-50 p-2 text-[11px] text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-100">
         <div className="font-semibold">Cara memasang {label}:</div>
@@ -195,15 +186,6 @@ export function WhatsAppTargetHost() {
           <li>Buka aplikasi dan selesaikan verifikasi nomor.</li>
           <li>Kembali ke sini dan tekan <span className="font-semibold">Verifikasi ulang</span>.</li>
         </ol>
-        {qr && (
-          <div className="mt-2 flex items-center gap-2 rounded border border-amber-300/60 bg-white p-2 dark:bg-amber-950/10">
-            <img src={qr} alt={`QR code halaman unduhan ${label}`} className="h-24 w-24 rounded bg-white" />
-            <div className="text-[11px] text-amber-900 dark:text-amber-100">
-              Pindai QR ini dengan HP lain untuk membuka halaman unduhan {label} di Play Store.
-              <div className="mt-1 break-all font-mono text-[10px] opacity-80">{url}</div>
-            </div>
-          </div>
-        )}
         <div className="mt-2 flex flex-wrap gap-2">
           <a
             href={url}
