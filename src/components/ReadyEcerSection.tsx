@@ -280,7 +280,12 @@ export function ReadyEcerSection() {
   const filtered = rows === null ? null : rows.filter((r) => {
     if (productFilter !== "all" && r.warehouse_item_id !== productFilter) return false;
     if (q === "") return true;
-    return r.name.toLowerCase().includes(q) || r.product_name.toLowerCase().includes(q);
+    return (
+      r.name.toLowerCase().includes(q)
+      || r.product_name.toLowerCase().includes(q)
+      || (r.warehouse_item_id ?? "").toLowerCase().includes(q)
+      || r.id.toLowerCase().includes(q)
+    );
   });
   const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
