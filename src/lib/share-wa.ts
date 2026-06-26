@@ -14,6 +14,7 @@ export type ShareInput = {
 
 import { toast } from "sonner";
 import { Capacitor } from "@capacitor/core";
+import { pickWhatsAppTarget, type WaTarget } from "./wa-target";
 
 export function buildWhatsAppUrl(text: string, phone?: string) {
   const base = phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : "https://wa.me/";
@@ -49,10 +50,25 @@ function isAndroidWeb(): boolean {
  *   Business tidak terpasang, Android otomatis fallback ke wa.me.
  * - Selain itu: buka wa.me biasa (browser/iOS akan pakai app yang terpasang).
  */
-export function openWhatsAppPreferBusiness(text: string, phone?: string): Window | null {
-  const url = isAndroidWeb()
-    ? buildWhatsAppBusinessIntentUrl(text, phone)
-    : buildWhatsAppUrl(text, phone);
+export function openWhatsAppPreferBusiness(
+  text: string,
+  phone?: string,
+  target: WaTarget | "auto" = "auto",
+): Window | null {
+  let url: string;
+  if (target === "business") {
+    // Pakai intent:// di Android; di luar Android tidak ada cara memaksa,
+    // jadi fallback ke wa.me (browser/iOS akan pakai WA terpasang).
+    url = isAndroidWeb()
+      ? buildWhatsAppBusinessIntentUrl(text, phone)
+      : buildWhatsAppUrl(text, phone);
+  } else if (target === "regular") {
+    url = buildWhatsAppUrl(text, phone);
+  } else {
+    url = isAndroidWeb()
+      ? buildWhatsAppBusinessIntentUrl(text, phone)
+      : buildWhatsAppUrl(text, phone);
+  }
   return window.open(url, "_blank", "noopener,noreferrer");
 }
 
@@ -105,6 +121,10 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
     }
   }
 
+  // Tanya target WA (Business / biasa) sebelum membuka aplikasi.
+  const target = await pickWhatsAppTarget();
+  if (target === null) return { status: "cancelled" };
+
   let shareFailed = false;
   let shareError = "";
   if (nav && typeof nav.share === "function") {
@@ -140,7 +160,7 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
     for (const f of files!) downloadFile(f, f.name);
     try { await navigator.clipboard?.writeText(fullText); } catch { /* ignore */ }
   }
-  const win = openWhatsAppPreferBusiness(fullText, phone);
+  const win = openWhatsAppPreferBusiness(fullText, phone, target);
   if (!win) {
     return {
       status: "failed",
