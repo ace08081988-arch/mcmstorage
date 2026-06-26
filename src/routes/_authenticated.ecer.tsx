@@ -19,7 +19,7 @@ import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
-import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText } from "@/lib/share-wa";
+import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFile } from "@/lib/share-wa";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
