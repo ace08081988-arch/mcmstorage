@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl } from "@/lib/prep";
 import { copyText, shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck, ArrowLeft } from "lucide-react";
+import { TaskQrCode } from "@/components/TaskQrCode";
 
 export const Route = createFileRoute("/_authenticated/tugas-baru")({
   head: () => ({
@@ -130,6 +131,7 @@ function TugasBaruPage() {
               </div>
             </Field>
           </div>
+          <TaskQrCode url={created.url} pin={created.pin} title={created.title} />
           <Field label="Kirim ke WhatsApp (opsional)">
             <div className="flex items-center gap-2">
               <input

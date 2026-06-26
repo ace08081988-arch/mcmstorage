@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { Copy, MessageCircle, X, KeyRound, Eye, EyeOff } from "lucide-react";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { supabase } from "@/integrations/supabase/client";
+import { TaskQrCode } from "@/components/TaskQrCode";
 
 /**
  * Dialog kecil untuk membagikan link tugas + PIN dalam satu pesan.
@@ -149,6 +150,8 @@ export function SharePinDialog({
             <div className="mb-1 text-[11px] text-muted-foreground">Link pegawai</div>
             <div className="truncate rounded-md border bg-muted/40 px-2 py-1.5 text-xs font-mono">{url}</div>
           </div>
+
+          <TaskQrCode url={url} pin={pin || undefined} title={title} />
 
           <div>
             <label className="mb-1 flex items-center gap-1 text-[11px] text-muted-foreground">
