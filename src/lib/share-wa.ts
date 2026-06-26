@@ -56,18 +56,43 @@ export function openWhatsAppPreferBusiness(
   target: WaTarget | "auto" = "auto",
 ): Window | null {
   let url: string;
+  let isIntent = false;
   if (target === "business") {
     // Pakai intent:// di Android; di luar Android tidak ada cara memaksa,
     // jadi fallback ke wa.me (browser/iOS akan pakai WA terpasang).
-    url = isAndroidWeb()
-      ? buildWhatsAppBusinessIntentUrl(text, phone)
-      : buildWhatsAppUrl(text, phone);
+    if (isAndroidWeb()) {
+      url = buildWhatsAppBusinessIntentUrl(text, phone);
+      isIntent = true;
+    } else {
+      url = buildWhatsAppUrl(text, phone);
+    }
   } else if (target === "regular") {
     url = buildWhatsAppUrl(text, phone);
   } else {
-    url = isAndroidWeb()
-      ? buildWhatsAppBusinessIntentUrl(text, phone)
-      : buildWhatsAppUrl(text, phone);
+    if (isAndroidWeb()) {
+      url = buildWhatsAppBusinessIntentUrl(text, phone);
+      isIntent = true;
+    } else {
+      url = buildWhatsAppUrl(text, phone);
+    }
+  }
+  // Chrome Android hanya memproses `intent://` kalau navigasi terjadi di tab
+  // saat ini (atau lewat <a> click). `window.open(intent://..., "_blank")`
+  // sering hanya membuka tab kosong dan WA tidak pernah ter-trigger.
+  if (isIntent) {
+    try {
+      const a = document.createElement("a");
+      a.href = url;
+      a.rel = "noopener";
+      // Tidak set target=_blank — biarkan Chrome menangani intent di tab ini.
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch {
+      window.location.href = url;
+    }
+    // Kembalikan window saat ini sebagai indikator "berhasil dibuka".
+    return window;
   }
   return window.open(url, "_blank", "noopener,noreferrer");
 }
