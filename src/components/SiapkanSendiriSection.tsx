@@ -1,9 +1,10 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2, ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
+import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2, ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCcw, Crosshair } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
+import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 
 const BUCKET = "self-prep-photos";
 
