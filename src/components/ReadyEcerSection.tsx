@@ -61,10 +61,44 @@ type SyncStatus = {
 export function ReadyEcerSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [query, setQuery] = useState("");
-  const [productFilter, setProductFilter] = useState<string>("all");
+  const [productFilter, setProductFilter] = useState<string>(() => {
+    if (typeof window === "undefined") return "all";
+    try { return localStorage.getItem("ecer:selectedItemId") || "all"; } catch { return "all"; }
+  });
+  const [syncedFromDetail, setSyncedFromDetail] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return !!localStorage.getItem("ecer:selectedItemId"); } catch { return false; }
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [realtimeStatus, setRealtimeStatus] = useState<"connecting" | "live" | "offline">("connecting");
   const [syncing, setSyncing] = useState(false);
+
+  // Sync productFilter with selection made on /ecer detail page
+  useEffect(() => {
+    function applyId(id: string | null) {
+      if (id) {
+        setProductFilter(id);
+        setSyncedFromDetail(true);
+      } else {
+        setProductFilter("all");
+        setSyncedFromDetail(false);
+      }
+    }
+    function onCustom(e: Event) {
+      const id = (e as CustomEvent<string | null>).detail ?? null;
+      applyId(id);
+    }
+    function onStorage(e: StorageEvent) {
+      if (e.key !== "ecer:selectedItemId") return;
+      applyId(e.newValue);
+    }
+    window.addEventListener("ecer:selectedItemId", onCustom as EventListener);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("ecer:selectedItemId", onCustom as EventListener);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   async function handleRefresh() {
     if (refreshing) return;
