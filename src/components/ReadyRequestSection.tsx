@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { PackagePlus, Search, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { displayUnit } from "@/lib/unit-label";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
@@ -37,7 +38,10 @@ export function ReadyRequestSection() {
         return {
           id: t.id,
           name: t.name,
-          items_summary: tItems.map((i) => `${wMap.get(i.warehouse_item_id) ?? "?"} ${i.target_grams}${i.unit_label}`).join(" · "),
+          items_summary: tItems.map((i) => {
+            const name = wMap.get(i.warehouse_item_id);
+            return `${name ?? "?"} ${i.target_grams}${displayUnit(name, i.unit_label)}`;
+          }).join(" · "),
           product_count: tItems.length,
           prep_count: preps.filter((p) => p.title_id === t.id).length,
         };
