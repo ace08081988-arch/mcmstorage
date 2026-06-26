@@ -626,6 +626,8 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           onSaved={() => { setAdding(false); void load(); onTitleUpdated(); }}
         />
       )}
+
+      <WorkerSubmissionsCard title={title} itemName={item.name} />
     </div>
   );
 }
