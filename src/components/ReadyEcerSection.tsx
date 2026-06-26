@@ -27,6 +27,7 @@ async function resolveShotSignedUrl(
 type WorkerShot = {
   id: string;
   photo_path: string | null;
+  photo_paths?: string[] | null;
   location_url: string | null;
   submitted_at: string;
   item_name: string;
@@ -167,7 +168,7 @@ export function ReadyEcerSection() {
           .limit(200),
         sb
           .from("prep_submissions")
-          .select("id,photo_path,location_url,submitted_at,task_item_id")
+          .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id")
           .gte("submitted_at", sinceIso)
           .order("submitted_at", { ascending: false })
           .limit(200),
@@ -181,7 +182,7 @@ export function ReadyEcerSection() {
       void selfPreps;
 
       // Map prep_submissions → task_item attributes, then bucket by product+size.
-      const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; location_url: string | null; submitted_at: string; task_item_id: string }>;
+      const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string }>;
       const taskItemIds = Array.from(new Set(subRows.map((s) => s.task_item_id))).filter(Boolean);
       type TaskItemMeta = { name: string; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null };
       let metaByItemId = new Map<string, TaskItemMeta>();
@@ -253,17 +254,18 @@ export function ReadyEcerSection() {
           if (st) st[matchKind] += 1;
         }
         const arr = shotsByTitleId.get(titleId) ?? [];
-        arr.push({ id: s.id, photo_path: s.photo_path, location_url: s.location_url, submitted_at: s.submitted_at, item_name: meta.name, source: "worker" });
+        arr.push({ id: s.id, photo_path: s.photo_path, photo_paths: s.photo_paths, location_url: s.location_url, submitted_at: s.submitted_at, item_name: meta.name, source: "worker" });
         shotsByTitleId.set(titleId, arr);
       }
 
       // Merge "siapkan sendiri" (ecer_preparations) — already keyed by title_id.
-      for (const p of ((preps ?? []) as Array<{ id: string; title_id: string; photo_path: string | null; location_url: string | null; created_at: string }>)) {
-        if (!p.photo_path) continue;
+      for (const p of ((preps ?? []) as Array<{ id: string; title_id: string; photo_path: string | null; photo_paths?: string[] | null; location_url: string | null; created_at: string }>)) {
+        if (!p.photo_path && !(p.photo_paths && p.photo_paths.length)) continue;
         const arr = shotsByTitleId.get(p.title_id) ?? [];
         arr.push({
           id: `self:${p.id}`,
-          photo_path: p.photo_path,
+          photo_path: p.photo_path ?? (p.photo_paths?.[0] ?? null),
+          photo_paths: p.photo_paths ?? null,
           location_url: p.location_url,
           submitted_at: p.created_at,
           item_name: "",
