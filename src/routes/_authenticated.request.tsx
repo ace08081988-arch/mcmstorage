@@ -911,7 +911,22 @@ function PrepEditorDialog({
             if (totals.size === 0) return null;
             return (
               <div className="rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px]">
-                <div className="mb-1 font-semibold text-primary">Preview total</div>
+                <div className="mb-1 flex items-center justify-between">
+                  <span className="font-semibold text-primary">Preview total</span>
+                  {(() => {
+                    const changed = rows.some((r, i) => (initialRows[i]?.actual_grams ?? "") !== r.actual_grams);
+                    return (
+                      <button
+                        type="button"
+                        onClick={() => setRows(initialRows.map((r) => ({ ...r })))}
+                        disabled={!changed}
+                        className="rounded border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground hover:bg-muted disabled:opacity-40"
+                      >
+                        Reset ke awal
+                      </button>
+                    );
+                  })()}
+                </div>
                 <div className="flex flex-wrap gap-1.5">
                   {Array.from(totals.entries()).map(([unit, sum]) => (
                     <span key={unit} className="rounded bg-background px-1.5 py-0.5 font-medium">
