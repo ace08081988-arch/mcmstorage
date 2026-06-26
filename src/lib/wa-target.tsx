@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import {
-  AlertDialog,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { buildWhatsAppUrl, buildWhatsAppBusinessIntentUrl } from "./share-wa";
@@ -13,6 +13,20 @@ import { copyText } from "./share-wa";
 import { toast } from "sonner";
 import { Capacitor } from "@capacitor/core";
 import { AppLauncher } from "@capacitor/app-launcher";
+import {
+  MessageCircle,
+  Briefcase,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
+  Copy,
+  ExternalLink,
+  ShieldCheck,
+  Download,
+  RefreshCw,
+} from "lucide-react";
 
 export type WaInstallStatus = {
   business: boolean | null;
