@@ -8,7 +8,7 @@ export const Route = createFileRoute("/terms")({
       {
         name: "description",
         content:
-          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh BAROKAH RIZKI. Termasuk pengungkapan Paddle sebagai Merchant of Record.",
+          "Syarat dan Ketentuan penggunaan MCM Storage, dioperasikan oleh BAROKAH RIZKI. Termasuk ketentuan langganan Pro dan pembayaran via transfer bank.",
       },
       { property: "og:title", content: "Syarat & Ketentuan — MCM Storage" },
       {
