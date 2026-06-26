@@ -13,13 +13,13 @@ import {
 } from "@/components/ui/dialog";
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
-  Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw,
+  Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, MessageCircle, RefreshCw,
 } from "lucide-react";
 import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
-import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText } from "@/lib/share-wa";
+import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFile } from "@/lib/share-wa";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
@@ -626,7 +626,212 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           onSaved={() => { setAdding(false); void load(); onTitleUpdated(); }}
         />
       )}
+
+      <WorkerSubmissionsCard title={title} itemName={item.name} />
     </div>
+  );
+}
+
+// ---- Worker submissions card (kiriman pegawai untuk judul ini) ----
+type WorkerShot = {
+  id: string;
+  photo_path: string | null;
+  location_url: string | null;
+  submitted_at: string;
+  thumb_url?: string | null;
+  match: "strict" | "fallback_grams" | "fallback_wid";
+};
+
+async function resolvePrepUrl(path: string, expires = 60 * 60): Promise<string | null> {
+  const a = await prepSignedUrl(path, expires);
+  if (a) return a;
+  return await ecerSignedUrl(path, expires);
+}
+
+function normUnitStr(u: string | null | undefined) {
+  return (u ?? "").trim().toLowerCase();
+}
+
+function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName: string }) {
+  const [shots, setShots] = useState<WorkerShot[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const targetUnit = normUnitStr(title.unit_label);
+  const targetGrams = Number(title.target_grams) || 0;
+  const displayUnitStr = itemName.trim().toLowerCase() === "gs" ? "botol" : (title.unit_label ?? "");
+
+  async function load() {
+    setError(null);
+    if (!title.warehouse_item_id) {
+      setShots([]);
+      setLoading(false);
+      return;
+    }
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: tItems, error: e1 } = await (supabase.from as any)("prep_task_items")
+        .select("id,qty_requested,unit_label")
+        .eq("warehouse_item_id", title.warehouse_item_id);
+      if (e1) throw new Error(e1.message);
+      const items = (tItems ?? []) as Array<{ id: string; qty_requested: number | null; unit_label: string | null }>;
+      if (items.length === 0) { setShots([]); return; }
+
+      const matchKindByItem = new Map<string, "strict" | "fallback_grams" | "fallback_wid">();
+      for (const it of items) {
+        const g = Number(it.qty_requested) || 0;
+        const u = normUnitStr(it.unit_label);
+        let kind: "strict" | "fallback_grams" | "fallback_wid" = "fallback_wid";
+        if (g === targetGrams && u === targetUnit) kind = "strict";
+        else if (g === targetGrams) kind = "fallback_grams";
+        matchKindByItem.set(it.id, kind);
+      }
+      const ids = Array.from(matchKindByItem.keys());
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data: subs, error: e2 } = await (supabase.from as any)("prep_submissions")
+        .select("id,photo_path,location_url,submitted_at,task_item_id")
+        .in("task_item_id", ids)
+        .order("submitted_at", { ascending: false })
+        .limit(60);
+      if (e2) throw new Error(e2.message);
+      const rows = ((subs ?? []) as Array<{ id: string; photo_path: string | null; location_url: string | null; submitted_at: string; task_item_id: string }>)
+        .map((s) => ({
+          id: s.id,
+          photo_path: s.photo_path,
+          location_url: s.location_url,
+          submitted_at: s.submitted_at,
+          match: matchKindByItem.get(s.task_item_id) ?? "fallback_wid",
+        }) as WorkerShot);
+      // Resolve thumb URLs in parallel
+      await Promise.all(rows.map(async (r) => {
+        if (r.photo_path) r.thumb_url = await resolvePrepUrl(r.photo_path);
+      }));
+      setShots(rows);
+    } catch (err) {
+      setError((err as Error).message);
+      setShots([]);
+    }
+  }
+
+  useEffect(() => {
+    setLoading(true);
+    void load().finally(() => setLoading(false));
+    const ch = supabase.channel(`worker_subs_${title.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => void load())
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [title.id, title.warehouse_item_id, targetGrams, targetUnit]);
+
+  async function refresh() {
+    setRefreshing(true);
+    await load();
+    setRefreshing(false);
+  }
+
+  async function sendWA() {
+    if (sending || shots.length === 0) return;
+    setSending(true);
+    try {
+      const take = shots.slice(0, 6);
+      const files: File[] = [];
+      for (const s of take) {
+        let url = s.thumb_url ?? null;
+        if (!url && s.photo_path) url = await resolvePrepUrl(s.photo_path, 600);
+        if (!url) continue;
+        const f = await urlToFile(url, `${title.name}-${s.id.slice(0, 6)}.jpg`);
+        if (f) files.push(f);
+      }
+      if (files.length === 0) toast.warning("Foto pegawai tidak bisa diunduh.");
+      const lines = take.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const text = [
+        `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
+        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""}:`,
+        ...lines,
+      ].join("\n");
+      const res = await shareToWhatsApp({ text, title: title.name, files });
+      notifyShareResult(res);
+    } catch (err) {
+      toast.error(`Gagal kirim WA: ${(err as Error).message}`);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="min-w-0">
+            <CardTitle className="flex items-center gap-1.5 text-sm">
+              <Users className="h-4 w-4 text-primary" /> Kiriman pegawai
+              {!loading && (
+                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                  {shots.length}
+                </span>
+              )}
+            </CardTitle>
+            <div className="mt-0.5 text-[11px] text-muted-foreground">
+              Cocok via warehouse_item_id + {title.target_grams}{displayUnitStr} (fallback ukuran/unit).
+            </div>
+          </div>
+          <div className="flex items-center gap-1.5">
+            <Button size="sm" variant="outline" onClick={refresh} disabled={refreshing || loading}>
+              <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> Segarkan
+            </Button>
+            <Button size="sm" onClick={sendWA} disabled={sending || shots.length === 0} className="bg-emerald-600 hover:bg-emerald-700">
+              <MessageCircle className="h-3.5 w-3.5" /> Kirim WA
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent>
+        {!title.warehouse_item_id ? (
+          <div className="rounded-md border border-dashed border-amber-500/40 bg-amber-500/5 p-4 text-center text-xs text-amber-700 dark:text-amber-300">
+            Judul ini belum terhubung ke produk gudang (<code>warehouse_item_id</code> kosong), jadi tidak bisa mencocokkan kiriman pegawai. Set produk gudang pada judul ini terlebih dahulu.
+          </div>
+        ) : loading ? (
+          <div className="py-6 text-center text-xs text-muted-foreground"><Loader2 className="inline h-4 w-4 animate-spin" /> Memuat kiriman pegawai…</div>
+        ) : error ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+            Gagal memuat: {error}
+          </div>
+        ) : shots.length === 0 ? (
+          <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
+            Belum ada kiriman pegawai untuk judul ini. Bagikan link tugas ke pegawai dari halaman Tugas.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
+            {shots.map((s) => (
+              <div key={s.id} className="group relative overflow-hidden rounded-md border bg-muted">
+                <div className="aspect-square">
+                  {s.thumb_url ? (
+                    <img src={s.thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
+                  ) : (
+                    <div className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">no img</div>
+                  )}
+                </div>
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[10px] text-white">
+                  <span className="truncate">{new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
+                  {s.location_url && (
+                    <a href={s.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 rounded bg-black/50 px-1 py-0.5 backdrop-blur-sm">
+                      <MapPin className="h-2.5 w-2.5" /> GPS
+                    </a>
+                  )}
+                </div>
+                {s.match !== "strict" && (
+                  <span className="absolute left-1 top-1 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-semibold text-white" title={s.match === "fallback_grams" ? "Ukuran cocok, unit berbeda" : "Hanya produk yang cocok"}>
+                    {s.match === "fallback_grams" ? "unit≠" : "ukuran≠"}
+                  </span>
+                )}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
