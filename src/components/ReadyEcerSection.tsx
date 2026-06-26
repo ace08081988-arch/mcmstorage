@@ -6,6 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { toast } from "sonner";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { ExternalLink } from "lucide-react";
 
 type WorkerShot = {
   id: string;
@@ -403,13 +405,47 @@ function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { 
           <span className="truncate text-[10px] font-medium leading-tight text-foreground/80">
             {r.product_name} · {r.target_grams} {unit}
           </span>
-          <span
-            className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground"
-            title={`Aturan cocok foto:\n• warehouse_item_id: ${r.warehouse_item_id}\n• ukuran: ${r.target_grams}\n• unit: ${unit}\n\nFallback: warehouse_item_id + ukuran (unit apa pun), lalu warehouse_item_id saja.\n\nTitle ID: ${r.id}`}
-          >
-            <span className="h-1 w-1 rounded-full bg-primary" />
-            Cocok: produk + {r.target_grams}{unit}
-          </span>
+          <Popover>
+            <PopoverTrigger asChild>
+              <button
+                type="button"
+                onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hover:bg-accent"
+              >
+                <span className="h-1 w-1 rounded-full bg-primary" />
+                Cocok: produk + {r.target_grams}{unit}
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="start"
+              className="w-64 space-y-2 p-2.5 text-[10px]"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="font-semibold text-foreground">Aturan cocok foto</div>
+              <dl className="space-y-1 text-muted-foreground">
+                <div className="flex gap-1">
+                  <dt className="shrink-0">warehouse_item_id:</dt>
+                  <dd className="break-all font-mono text-foreground/90">{r.warehouse_item_id}</dd>
+                </div>
+                <div className="flex gap-1"><dt>ukuran:</dt><dd className="text-foreground/90">{r.target_grams}</dd></div>
+                <div className="flex gap-1"><dt>unit:</dt><dd className="text-foreground/90">{unit}</dd></div>
+                <div className="flex gap-1">
+                  <dt className="shrink-0">title_id:</dt>
+                  <dd className="break-all font-mono text-foreground/90">{r.id}</dd>
+                </div>
+              </dl>
+              <p className="text-muted-foreground">
+                Fallback: warehouse_item_id + ukuran (unit apa pun), lalu warehouse_item_id saja.
+              </p>
+              <Link
+                to="/ecer"
+                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+                className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20"
+              >
+                <ExternalLink className="h-2.5 w-2.5" /> Buka detail item di Ecer
+              </Link>
+            </PopoverContent>
+          </Popover>
           <span className="text-[10px] leading-tight">
             <span className={r.prep_count > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
               {r.prep_count} kotak siap
