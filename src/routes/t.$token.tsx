@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { toast } from "sonner";
 import { PhotoEditor } from "@/components/PhotoEditor";
-import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
+import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepSubmissionRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
 import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff, Inbox } from "lucide-react";
@@ -21,6 +21,81 @@ export const Route = createFileRoute("/t/$token")({
 });
 
 type StagedPhoto = { dataUrl: string; blob: Blob };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function stringOrNull(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function stringOrFallback(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function numberOrFallback(value: unknown, fallback = 0): number {
+  const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizeSubmissions(value: unknown): PrepSubmissionRow[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord).map((s, idx) => ({
+    id: stringOrFallback(s.id, `submission-${idx}`),
+    photo_path: stringOrNull(s.photo_path),
+    location_url: stringOrNull(s.location_url),
+    note: stringOrNull(s.note),
+    submitted_at: stringOrFallback(s.submitted_at, new Date(0).toISOString()),
+  }));
+}
+
+function normalizePrepItems(value: unknown): PrepItemRow[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord).map((i, idx) => ({
+    id: stringOrFallback(i.id, `item-${idx}`),
+    name: stringOrFallback(i.name, "Item tanpa nama"),
+    category: stringOrNull(i.category),
+    qty_requested: numberOrFallback(i.qty_requested),
+    qty_prepared: numberOrFallback(i.qty_prepared),
+    unit_label: stringOrNull(i.unit_label),
+    ref_photo_path: stringOrNull(i.ref_photo_path),
+    note: stringOrNull(i.note),
+    updated_at: stringOrNull(i.updated_at),
+    submissions: normalizeSubmissions(i.submissions),
+  }));
+}
+
+function normalizePrepTask(value: unknown): PrepTaskRow | null {
+  if (!isRecord(value)) return null;
+  const id = stringOrNull(value.id);
+  if (!id) return null;
+  return {
+    id,
+    title: stringOrFallback(value.title, "Tugas siapkan barang"),
+    note: stringOrNull(value.note),
+    status: stringOrFallback(value.status, "active"),
+    expires_at: stringOrFallback(value.expires_at, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
+  };
+}
+
+class WorkerSectionBoundary extends Component<{
+  children: ReactNode;
+  renderFallback: (error: Error) => ReactNode;
+}, { error: Error | null }> {
+  state = { error: null };
+  static getDerivedStateFromError(error: Error) { return { error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // Jangan biarkan 1 kartu / paket request meruntuhkan seluruh portal pegawai
+    // dan memantulkan user kembali ke layar PIN.
+    // eslint-disable-next-line no-console
+    console.error("[t.$token] worker section render failed", error, info.componentStack);
+  }
+  render() {
+    if (this.state.error) return this.props.renderFallback(this.state.error);
+    return this.props.children;
+  }
+}
 
 function PublicPrepPage() {
   const { token } = Route.useParams();
