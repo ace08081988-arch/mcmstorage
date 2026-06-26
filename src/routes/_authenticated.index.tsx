@@ -26,7 +26,6 @@ import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
 import { ReadyEcerSection } from "@/components/ReadyEcerSection";
 import { ReadyRequestSection } from "@/components/ReadyRequestSection";
-import { RecentSubmissionsSection } from "@/components/RecentSubmissionsSection";
 
 export const Route = createFileRoute("/_authenticated/")({
   head: () => ({
@@ -739,7 +738,6 @@ function Index() {
 
           <ReadyEcerSection />
           <ReadyRequestSection />
-          <RecentSubmissionsSection />
         </main>
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
       </div>
