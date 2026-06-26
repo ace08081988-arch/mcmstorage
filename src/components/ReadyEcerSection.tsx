@@ -1,8 +1,20 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { signedUrl } from "@/lib/prep";
+import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
+import { toast } from "sonner";
+
+type WorkerShot = {
+  id: string;
+  photo_path: string | null;
+  location_url: string | null;
+  submitted_at: string;
+  item_name: string;
+  thumb_url?: string | null;
+};
 
 type Row = {
   id: string;
@@ -12,6 +24,7 @@ type Row = {
   warehouse_item_id: string;
   prep_count: number;
   product_name: string;
+  worker_shots: WorkerShot[];
 };
 
 export function ReadyEcerSection() {
@@ -19,8 +32,7 @@ export function ReadyEcerSection() {
   const [query, setQuery] = useState("");
   const [productFilter, setProductFilter] = useState<string>("all");
 
-  useEffect(() => {
-    void (async () => {
+  async function load() {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const sb = supabase as any;
       const { data: titles } = await sb
@@ -32,21 +44,69 @@ export function ReadyEcerSection() {
       if (list.length === 0) { setRows([]); return; }
       const itemIds = Array.from(new Set(list.map((t) => t.warehouse_item_id)));
       const titleIds = list.map((t) => t.id);
-      const [{ data: items }, { data: preps }] = await Promise.all([
+      const sinceIso = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString();
+      const [{ data: items }, { data: preps }, { data: subs }] = await Promise.all([
         sb.from("warehouse_items").select("id,name").in("id", itemIds),
         sb.from("ecer_preparations").select("title_id").in("title_id", titleIds),
+        sb
+          .from("prep_submissions")
+          .select("id,photo_path,location_url,submitted_at,task_item_id")
+          .gte("submitted_at", sinceIso)
+          .order("submitted_at", { ascending: false })
+          .limit(200),
       ]);
       const itemMap = new Map<string, string>(((items ?? []) as Array<{ id: string; name: string }>).map((i) => [i.id, i.name]));
       const countMap = new Map<string, number>();
       for (const p of ((preps ?? []) as Array<{ title_id: string }>)) {
         countMap.set(p.title_id, (countMap.get(p.title_id) ?? 0) + 1);
       }
+
+      // Map prep_submissions → task_item name, then bucket by lowercased name.
+      const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; location_url: string | null; submitted_at: string; task_item_id: string }>;
+      const taskItemIds = Array.from(new Set(subRows.map((s) => s.task_item_id))).filter(Boolean);
+      let nameByItemId = new Map<string, string>();
+      if (taskItemIds.length > 0) {
+        const { data: tItems } = await sb
+          .from("prep_task_items")
+          .select("id,name_snapshot")
+          .in("id", taskItemIds);
+        nameByItemId = new Map(((tItems ?? []) as Array<{ id: string; name_snapshot: string }>).map((i) => [i.id, i.name_snapshot ?? ""]));
+      }
+      const shotsByName = new Map<string, WorkerShot[]>();
+      for (const s of subRows) {
+        const nm = (nameByItemId.get(s.task_item_id) ?? "").trim().toLowerCase();
+        if (!nm) continue;
+        const arr = shotsByName.get(nm) ?? [];
+        arr.push({ id: s.id, photo_path: s.photo_path, location_url: s.location_url, submitted_at: s.submitted_at, item_name: nm });
+        shotsByName.set(nm, arr);
+      }
+      // Resolve signed URLs for at most 4 thumbs per title.
+      const thumbJobs: Promise<void>[] = [];
+      for (const arr of shotsByName.values()) {
+        for (const shot of arr.slice(0, 4)) {
+          if (!shot.photo_path) continue;
+          thumbJobs.push(
+            signedUrl(shot.photo_path, 60 * 60).then((u) => { shot.thumb_url = u; })
+          );
+        }
+      }
+      await Promise.all(thumbJobs);
+
       setRows(list.map((t) => ({
         ...t,
         prep_count: countMap.get(t.id) ?? 0,
         product_name: itemMap.get(t.warehouse_item_id) ?? "—",
+        worker_shots: shotsByName.get(t.name.trim().toLowerCase()) ?? [],
       })));
-    })();
+  }
+
+  useEffect(() => {
+    void load();
+    const ch = supabase
+      .channel("ready-ecer:prep_submissions")
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => { void load(); })
+      .subscribe();
+    return () => { supabase.removeChannel(ch); };
   }, []);
 
   const q = query.trim().toLowerCase();
@@ -152,28 +212,111 @@ export function ReadyEcerSection() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {(filtered ?? []).map((r) => (
-            <Link
-              key={r.id}
-              to="/ecer"
-              search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
-              className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
-            >
-              <div className="flex items-center gap-1.5">
-                <Scale className="h-3.5 w-3.5 text-primary" />
-                <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
-              </div>
-              <span className="truncate text-[10px] leading-tight text-muted-foreground">
-                {r.product_name} · {r.target_grams} {r.product_name.trim().toLowerCase() === "gs" ? "botol" : r.unit_label}
-              </span>
-              <span className="text-[10px] leading-tight">
-                <span className={r.prep_count > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
-                  {r.prep_count} kotak siap
-                </span>
-              </span>
-            </Link>
-          ))}
+          {(filtered ?? []).map((r) => <EcerCard key={r.id} row={r} />)}
         </div>
+      )}
+    </div>
+  );
+}
+
+function EcerCard({ row: r }: { row: Row }) {
+  const [sending, setSending] = useState(false);
+  const shots = r.worker_shots;
+  const thumbs = shots.slice(0, 4);
+  const extra = Math.max(0, shots.length - thumbs.length);
+  const unit = r.product_name.trim().toLowerCase() === "gs" ? "botol" : r.unit_label;
+
+  async function sendWA(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (sending) return;
+    if (shots.length === 0) {
+      toast.info("Belum ada kiriman pegawai untuk judul ini.");
+      return;
+    }
+    setSending(true);
+    try {
+      const files: File[] = [];
+      const take = shots.slice(0, 6); // batasi agar WA tidak tolak
+      for (const s of take) {
+        if (!s.thumb_url) continue;
+        const f = await urlToFile(s.thumb_url, `${r.name}-${s.id.slice(0, 6)}.jpg`);
+        if (f) files.push(f);
+      }
+      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const text = [
+        `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
+        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
+        ...lines,
+      ].join("\n");
+      const res = await shareToWhatsApp({ text, title: r.name, files });
+      notifyShareResult(res);
+    } catch (err) {
+      toast.error(`Gagal kirim WA: ${(err as Error).message}`);
+    } finally {
+      setSending(false);
+    }
+  }
+
+  return (
+    <div className="group flex flex-col gap-1.5 rounded-md border bg-card p-2 hover:border-primary/40">
+      <Link
+        to="/ecer"
+        search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+        className="flex flex-col gap-0.5"
+      >
+        <div className="flex items-center gap-1.5">
+          <Scale className="h-3.5 w-3.5 text-primary" />
+          <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
+        </div>
+        <span className="truncate text-[10px] leading-tight text-muted-foreground">
+          {r.product_name} · {r.target_grams} {unit}
+        </span>
+        <span className="text-[10px] leading-tight">
+          <span className={r.prep_count > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+            {r.prep_count} kotak siap
+          </span>
+          {shots.length > 0 && (
+            <span className="ml-1.5 font-medium text-sky-600 dark:text-sky-400">
+              · {shots.length} dari pegawai
+            </span>
+          )}
+        </span>
+      </Link>
+
+      {shots.length > 0 && (
+        <>
+          <div className="grid grid-cols-4 gap-1">
+            {thumbs.map((s) => (
+              <div key={s.id} className="relative aspect-square overflow-hidden rounded bg-muted">
+                {s.thumb_url ? (
+                  <img src={s.thumb_url} alt="" className="h-full w-full object-cover" loading="lazy" />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-[8px] text-muted-foreground">…</div>
+                )}
+                {s.location_url && (
+                  <span className="absolute right-0.5 top-0.5 rounded bg-black/60 p-0.5">
+                    <MapPin className="h-2 w-2 text-white" />
+                  </span>
+                )}
+              </div>
+            ))}
+            {extra > 0 && (
+              <div className="flex aspect-square items-center justify-center rounded bg-muted text-[10px] font-semibold text-muted-foreground">
+                +{extra}
+              </div>
+            )}
+          </div>
+          <button
+            type="button"
+            onClick={sendWA}
+            disabled={sending}
+            className="inline-flex h-7 items-center justify-center gap-1 rounded bg-[#25D366] text-[10px] font-semibold text-white disabled:opacity-50"
+          >
+            <MessageCircle className="h-3 w-3" />
+            {sending ? "Menyiapkan…" : "Kirim WA"}
+          </button>
+        </>
       )}
     </div>
   );
