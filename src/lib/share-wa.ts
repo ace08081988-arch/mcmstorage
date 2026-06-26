@@ -15,6 +15,7 @@ export type ShareInput = {
 import { toast } from "sonner";
 import { Capacitor } from "@capacitor/core";
 import { pickWhatsAppTarget, type WaTarget } from "./wa-target";
+import { confirmWaShare } from "./wa-preview";
 
 export function buildWhatsAppUrl(text: string, phone?: string) {
   const base = phone ? `https://wa.me/${phone.replace(/\D/g, "")}` : "https://wa.me/";
@@ -108,6 +109,10 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
   const hasFiles = !!(files && files.length > 0);
+
+  // Pratinjau pesan + daftar foto sebelum benar-benar membuka WA.
+  const approved = await confirmWaShare({ text, url, files });
+  if (!approved) return { status: "cancelled" };
 
   // Native Android/iOS: pakai Capacitor Share + Filesystem agar foto benar-benar
   // terlampir di WhatsApp (Web Share API kerap menjatuhkan files di WebView).

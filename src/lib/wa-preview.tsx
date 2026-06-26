@@ -1,0 +1,214 @@
+import { useEffect, useMemo, useState } from "react";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
+import { MessageCircle, Image as ImageIcon, Link2, FileText, Send } from "lucide-react";
+
+const SKIP_PREVIEW_KEY = "wa-skip-preview";
+
+export function getWaSkipPreview(): boolean {
+  if (typeof window === "undefined") return false;
+  try { return window.localStorage.getItem(SKIP_PREVIEW_KEY) === "1"; } catch { return false; }
+}
+
+export function setWaSkipPreview(v: boolean) {
+  try {
+    if (v) window.localStorage.setItem(SKIP_PREVIEW_KEY, "1");
+    else window.localStorage.removeItem(SKIP_PREVIEW_KEY);
+  } catch { /* ignore */ }
+}
+
+type Request = {
+  text: string;
+  url?: string;
+  files?: File[];
+  resolve: (ok: boolean) => void;
+};
+
+let openRequest: ((req: Request) => void) | null = null;
+const queue: Request[] = [];
+
+/**
+ * Tampilkan pratinjau pesan WA + daftar foto sebelum benar-benar membuka WA.
+ * Mengembalikan true jika user menekan "Kirim", false jika dibatalkan.
+ * Akan dilewati jika user pernah mencentang "Jangan tampilkan lagi".
+ */
+export function confirmWaShare(input: { text: string; url?: string; files?: File[] }): Promise<boolean> {
+  if (getWaSkipPreview()) return Promise.resolve(true);
+  return new Promise((resolve) => {
+    const req: Request = { ...input, resolve };
+    if (openRequest) openRequest(req);
+    else queue.push(req);
+  });
+}
+
+export function WaPreviewHost() {
+  const [current, setCurrent] = useState<Request | null>(null);
+  const [open, setOpen] = useState(false);
+  const [skip, setSkip] = useState(false);
+
+  useEffect(() => {
+    openRequest = (req) => {
+      setSkip(false);
+      setCurrent(req);
+      setOpen(true);
+    };
+    while (queue.length) {
+      const req = queue.shift()!;
+      setSkip(false);
+      setCurrent(req);
+      setOpen(true);
+    }
+    return () => { openRequest = null; };
+  }, []);
+
+  const previews = useMemo(() => {
+    if (!current?.files?.length) return [] as { name: string; size: number; url: string; isImage: boolean }[];
+    return current.files.map((f) => ({
+      name: f.name,
+      size: f.size,
+      url: URL.createObjectURL(f),
+      isImage: /^image\//.test(f.type),
+    }));
+  }, [current]);
+
+  useEffect(() => {
+    return () => {
+      previews.forEach((p) => { try { URL.revokeObjectURL(p.url); } catch { /* ignore */ } });
+    };
+  }, [previews]);
+
+  const finish = (ok: boolean) => {
+    setOpen(false);
+    if (ok && skip) setWaSkipPreview(true);
+    current?.resolve(ok);
+    setTimeout(() => setCurrent(null), 150);
+  };
+
+  const text = current?.text ?? "";
+  const url = current?.url;
+  const photoCount = previews.length;
+
+  const fmtSize = (n: number) => {
+    if (n < 1024) return `${n} B`;
+    if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+    return `${(n / 1024 / 1024).toFixed(2)} MB`;
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && finish(false)}>
+      <DialogContent className="max-w-md gap-0 overflow-hidden p-0 sm:max-w-md">
+        <DialogHeader className="border-b bg-muted/30 px-5 pb-4 pt-5">
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+              <MessageCircle className="h-5 w-5" />
+            </div>
+            <div className="min-w-0 flex-1 text-left">
+              <DialogTitle className="text-base">Pratinjau pesan WhatsApp</DialogTitle>
+              <DialogDescription className="mt-0.5 text-xs">
+                Tinjau teks dan foto yang akan dikirim sebelum membuka WhatsApp.
+              </DialogDescription>
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-4">
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <div className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+              <FileText className="h-3 w-3" /> Teks pesan
+            </div>
+            <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md bg-background p-2 font-sans text-xs leading-relaxed text-foreground">
+{text || <span className="italic text-muted-foreground">(kosong)</span>}
+            </pre>
+          </div>
+
+          {url ? (
+            <div className="rounded-lg border bg-muted/30 p-3">
+              <div className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <Link2 className="h-3 w-3" /> Link tambahan
+              </div>
+              <a
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="block break-all rounded-md bg-background p-2 font-mono text-[11px] text-primary underline-offset-2 hover:underline"
+              >
+                {url}
+              </a>
+            </div>
+          ) : null}
+
+          <div className="rounded-lg border bg-muted/30 p-3">
+            <div className="mb-2 flex items-center justify-between">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <ImageIcon className="h-3 w-3" /> Foto / lampiran
+              </div>
+              <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                {photoCount} berkas
+              </span>
+            </div>
+            {photoCount === 0 ? (
+              <div className="rounded-md border border-dashed bg-background/60 p-4 text-center text-xs text-muted-foreground">
+                Tidak ada foto — hanya teks{url ? " + link" : ""} yang akan dikirim.
+              </div>
+            ) : (
+              <div className="grid grid-cols-3 gap-2">
+                {previews.map((p, i) => (
+                  <div key={i} className="overflow-hidden rounded-md border bg-background">
+                    {p.isImage ? (
+                      <img
+                        src={p.url}
+                        alt={p.name}
+                        className="aspect-square w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="flex aspect-square w-full items-center justify-center bg-muted text-muted-foreground">
+                        <FileText className="h-6 w-6" />
+                      </div>
+                    )}
+                    <div className="px-1.5 py-1">
+                      <div className="truncate text-[10px] font-medium" title={p.name}>{p.name}</div>
+                      <div className="text-[9.5px] text-muted-foreground">{fmtSize(p.size)}</div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <label className="flex items-start gap-2 rounded-lg border p-3 text-xs text-muted-foreground">
+            <Checkbox checked={skip} onCheckedChange={(c) => setSkip(c === true)} className="mt-0.5" />
+            <span>Jangan tampilkan pratinjau ini lagi (bisa diaktifkan kembali dari Pengaturan)</span>
+          </label>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-5 py-3">
+          <span className="text-[11px] text-muted-foreground">
+            {photoCount > 0 ? `${photoCount} foto + teks` : "Teks saja"}
+          </span>
+          <div className="flex gap-2">
+            <Button type="button" variant="outline" size="sm" onClick={() => finish(false)}>
+              Batal
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              onClick={() => finish(true)}
+              className="bg-emerald-600 text-white hover:bg-emerald-700"
+            >
+              <Send className="mr-1.5 h-3.5 w-3.5" />
+              Kirim WA
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
