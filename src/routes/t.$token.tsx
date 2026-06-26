@@ -26,6 +26,7 @@ function PublicPrepPage() {
   const { token } = Route.useParams();
   const [pin, setPin] = useState("");
   const [authed, setAuthed] = useState(false);
+  const [successFlash, setSuccessFlash] = useState(false);
   const [loading, setLoading] = useState(false);
   const [task, setTask] = useState<PrepTaskRow | null>(null);
   const [items, setItems] = useState<PrepItemRow[]>([]);
@@ -260,15 +261,14 @@ function PublicPrepPage() {
     // PIN benar → reset penuh, termasuk localStorage, sehingga refresh
     // browser tidak membawa sisa percobaan/lock.
     resetAttemptsFully();
-    setTask(res.task!); setItems(res.items ?? []); setAuthed(true); pinRef.current = p;
-    toast.success("PIN berhasil — selamat datang", {
-      description: "Percobaan PIN telah di-reset.",
-      action: {
-        label: "Kembali",
-        onClick: () => goBackToPin(),
-      },
-      duration: 6000,
-    });
+    setTask(res.task!); setItems(res.items ?? []); pinRef.current = p;
+    // Tampilkan layar sukses inline sebelum berpindah ke daftar tugas,
+    // supaya pengguna melihat konfirmasi yang jelas di layar PIN.
+    setSuccessFlash(true);
+    setTimeout(() => {
+      setSuccessFlash(false);
+      setAuthed(true);
+    }, 1200);
     // Pastikan posisi scroll kembali ke atas halaman tugas.
     if (typeof window !== "undefined") {
       try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
@@ -385,6 +385,23 @@ function PublicPrepPage() {
     return (
       <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
         <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-8">
+          {successFlash && (
+            <div
+              className="mb-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-emerald-700 shadow-lg shadow-emerald-500/10 dark:text-emerald-300"
+              role="status"
+              aria-live="polite"
+            >
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/40">
+                  <CheckCircle2 className="h-5 w-5" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-sm font-semibold">Masuk pegawai berhasil</div>
+                  <div className="text-[11px] opacity-80">Memuat daftar tugas…</div>
+                </div>
+              </div>
+            </div>
+          )}
           <div className="mb-6 flex flex-col items-center text-center">
             <div className="mb-3 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 ring-1 ring-primary/20">
               <Package className="h-7 w-7 text-primary" />
