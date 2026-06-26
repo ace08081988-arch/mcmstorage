@@ -2109,25 +2109,9 @@ export type Database = {
         Args: { _note?: string; _payment_id: string }
         Returns: Json
       }
-      admin_list_users: {
-        Args: { _limit?: number; _query?: string }
-        Returns: {
-          created_at: string
-          email: string
-          is_admin: boolean
-          period_end: string
-          plan: string
-          status: string
-          user_id: string
-        }[]
-      }
       admin_reject_payment: {
         Args: { _note: string; _payment_id: string }
         Returns: Json
-      }
-      admin_set_admin_role: {
-        Args: { _grant: boolean; _target: string }
-        Returns: boolean
       }
       can_chat: { Args: { _a: string; _b: string }; Returns: boolean }
       check_acknowledge_rate_limit: { Args: never; Returns: Json }

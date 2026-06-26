@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Check, X, Loader2, Save, RefreshCw } from "lucide-react";
@@ -169,17 +169,9 @@ function AdminPaymentsPage() {
             Verifikasi bukti transfer dan perpanjang langganan pelanggan.
           </p>
         </div>
-        <div className="flex items-center gap-2">
-          <Link
-            to="/admin/users"
-            className="rounded-md border px-3 py-1.5 text-xs hover:bg-muted"
-          >
-            Kelola pengguna →
-          </Link>
-          <Button variant="outline" size="sm" onClick={load}>
-            <RefreshCw className="mr-2 h-4 w-4" /> Muat ulang
-          </Button>
-        </div>
+        <Button variant="outline" size="sm" onClick={load}>
+          <RefreshCw className="mr-2 h-4 w-4" /> Muat ulang
+        </Button>
       </header>
 
       <div className="flex gap-2">

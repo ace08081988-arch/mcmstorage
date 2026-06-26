@@ -20,7 +20,7 @@ export const Route = createFileRoute("/auth")({
     ],
     links: [
       { rel: "canonical", href: "https://mcmstorage.lovable.app/auth" },
-      { rel: "preload", as: "image", href: "/icon-512.png", fetchPriority: "high" },
+      { rel: "preload", as: "image", href: "/icon-512.png", fetchpriority: "high" },
     ],
   }),
   component: AuthPage,

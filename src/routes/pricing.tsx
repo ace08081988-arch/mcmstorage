@@ -1,8 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Check } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
 import { PublicFooter } from "@/components/PublicFooter";
-import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/pricing")({
   head: () => ({
@@ -43,44 +41,7 @@ const proFeatures = [
   "Otomatis berbagi ke seluruh pegawai",
 ];
 
-const FALLBACK = {
-  pro_price_monthly_idr: 99000,
-  pro_price_yearly_idr: 990000,
-  trial_days: 14,
-};
-
-function formatIDR(n: number) {
-  return new Intl.NumberFormat("id-ID").format(n);
-}
-
-function yearlySavingsPct(monthly: number, yearly: number) {
-  if (!monthly || !yearly) return 0;
-  const full = monthly * 12;
-  if (full <= 0) return 0;
-  const pct = Math.round(((full - yearly) / full) * 100);
-  return Math.max(0, pct);
-}
-
 function PricingPage() {
-  const { data: settings } = useQuery({
-    queryKey: ["app_settings", "pricing"],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from("app_settings")
-        .select("pro_price_monthly_idr, pro_price_yearly_idr, trial_days")
-        .eq("id", true)
-        .maybeSingle();
-      if (error) return FALLBACK;
-      return data ?? FALLBACK;
-    },
-    staleTime: 5 * 60 * 1000,
-  });
-
-  const monthly = settings?.pro_price_monthly_idr ?? FALLBACK.pro_price_monthly_idr;
-  const yearly = settings?.pro_price_yearly_idr ?? FALLBACK.pro_price_yearly_idr;
-  const trialDays = settings?.trial_days ?? FALLBACK.trial_days;
-  const savings = yearlySavingsPct(monthly, yearly);
-
   return (
     <div className="min-h-screen bg-background">
       <main className="mx-auto max-w-3xl px-4 py-12">
@@ -130,21 +91,20 @@ function PricingPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold text-foreground">Pro</h2>
               <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                Uji coba {trialDays} hari gratis
+                Uji coba 14 hari gratis
               </span>
             </div>
             <p className="mt-1 text-sm text-muted-foreground">
               Buka modul keuangan, chat, dan kapasitas tanpa batas.
             </p>
             <p className="mt-4 text-3xl font-bold text-foreground">
-              Rp {formatIDR(monthly)}
+              Rp 99.000
               <span className="text-base font-normal text-muted-foreground">
                 /bulan
               </span>
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              atau Rp {formatIDR(yearly)}/tahun
-              {savings > 0 ? ` (hemat ~${savings}%)` : ""}
+              atau Rp 990.000/tahun (hemat ~17%)
             </p>
             <ul className="mt-6 space-y-2 text-sm text-foreground">
               {proFeatures.map((f) => (
@@ -157,7 +117,7 @@ function PricingPage() {
               to="/langganan"
               className="mt-6 inline-flex w-full items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
             >
-              Mulai uji coba {trialDays} hari
+              Mulai uji coba 14 hari
             </Link>
           </div>
         </div>

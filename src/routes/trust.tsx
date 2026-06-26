@@ -16,9 +16,7 @@ export const Route = createFileRoute("/trust")({
         content:
           "Bagaimana MCM Storage menjaga data pesanan, pemasok, dan akun pengguna.",
       },
-      { property: "og:url", content: "https://mcmstorage.biz/trust" },
     ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.biz/trust" }],
   }),
   component: TrustPage,
 });
@@ -235,12 +233,18 @@ function TrustPage() {
               aplikasi.
             </li>
             <li>
-              <strong>Bank penerima transfer</strong> — pembayaran paket
-              Pro masuk ke rekening resmi MCM Storage yang dikelola oleh
-              BAROKAH RIZKI. Kami tidak menyimpan data kartu Anda dan tidak
-              menggunakan payment processor pihak ketiga. Bukti transfer
-              yang Anda unggah disimpan secara privat di Lovable Cloud
-              hanya untuk verifikasi pembayaran.
+              <strong>Paddle.com</strong> — Merchant of Record untuk
+              pembayaran paket berbayar; memproses data pembayaran, faktur,
+              pajak, dan permintaan pengembalian dana. Lihat{" "}
+              <a
+                href="https://www.paddle.com/legal/privacy"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Privacy Notice Paddle
+              </a>
+              .
             </li>
           </ul>
           <p>

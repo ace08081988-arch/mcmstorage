@@ -19,24 +19,6 @@ export const Route = createFileRoute("/download")({
         content:
           "Unduh aplikasi Android MCM Storage untuk mengelola gudang dari ponsel.",
       },
-      { property: "og:url", content: "https://mcmstorage.biz/download" },
-    ],
-    links: [{ rel: "canonical", href: "https://mcmstorage.biz/download" }],
-    scripts: [
-      {
-        type: "application/ld+json",
-        children: JSON.stringify({
-          "@context": "https://schema.org",
-          "@type": "SoftwareApplication",
-          name: "MCM Storage",
-          operatingSystem: "Android",
-          applicationCategory: "BusinessApplication",
-          downloadUrl: "https://mcmstorage.biz/download",
-          url: "https://mcmstorage.biz/download",
-          publisher: { "@type": "Organization", name: "MCM Storage" },
-          offers: { "@type": "Offer", price: "0", priceCurrency: "IDR" },
-        }),
-      },
     ],
   }),
   component: DownloadPage,

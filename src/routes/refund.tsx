@@ -8,13 +8,13 @@ export const Route = createFileRoute("/refund")({
       {
         name: "description",
         content:
-          "MCM Storage menawarkan jaminan uang kembali 14 hari untuk pembayaran Pro via transfer bank.",
+          "MCM Storage menawarkan jaminan uang kembali 30 hari. Pengembalian dana diproses melalui Paddle (paddle.net).",
       },
       { property: "og:title", content: "Kebijakan Pengembalian Dana — MCM Storage" },
       {
         property: "og:description",
         content:
-          "Pengembalian dana paket Pro MCM Storage dilakukan via transfer bank dalam 14 hari setelah pembayaran disetujui.",
+          "Jaminan uang kembali 30 hari untuk pembelian MCM Storage, diproses oleh Paddle.",
       },
     ],
     links: [{ rel: "canonical", href: "https://mcmstorage.lovable.app/refund" }],
@@ -22,7 +22,7 @@ export const Route = createFileRoute("/refund")({
   component: RefundPage,
 });
 
-const UPDATED_AT = "26 Juni 2026";
+const UPDATED_AT = "21 Juni 2026";
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
@@ -48,63 +48,64 @@ function RefundPage() {
         </header>
 
         <div className="space-y-4">
-          <Section title="Jaminan uang kembali 14 hari">
+          <Section title="Jaminan uang kembali 30 hari">
             <p>
-              Kami menawarkan <strong>jaminan uang kembali 14 hari</strong>{" "}
-              untuk setiap pembayaran paket Pro MCM Storage. Jika Anda tidak
-              puas dengan layanan, Anda dapat meminta pengembalian dana penuh
-              dalam waktu 14 hari sejak pembayaran Anda kami setujui, tanpa
-              perlu menjelaskan alasan secara rinci.
+              Kami menawarkan <strong>jaminan uang kembali 30 hari</strong>{" "}
+              untuk setiap pembelian paket berbayar MCM Storage. Jika Anda
+              tidak puas dengan layanan, Anda dapat meminta pengembalian dana
+              penuh dalam waktu 30 hari sejak tanggal pembelian, tanpa perlu
+              menjelaskan alasan secara rinci.
             </p>
           </Section>
 
           <Section title="Cara meminta pengembalian dana">
             <p>
-              Pembayaran Pro saat ini dilakukan melalui <strong>transfer
-              bank ke rekening kami</strong> dan dikonfirmasi secara manual
-              oleh admin. Untuk meminta pengembalian dana:
+              Semua transaksi diproses oleh <strong>Paddle.com</strong>{" "}
+              sebagai Merchant of Record kami. Permintaan pengembalian dana
+              dilakukan melalui Paddle:
             </p>
             <ol className="list-decimal space-y-1 pl-5">
               <li>
-                Kirim email ke{" "}
+                Buka{" "}
+                <a
+                  href="https://paddle.net"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline"
+                >
+                  paddle.net
+                </a>{" "}
+                dan masukkan email yang Anda gunakan saat membayar.
+              </li>
+              <li>
+                Pilih transaksi MCM Storage yang ingin Anda batalkan, lalu
+                ajukan permintaan pengembalian dana.
+              </li>
+              <li>
+                Sebagai alternatif, Anda juga dapat menghubungi kami di{" "}
                 <a href="mailto:admin@mcmstorage.biz" className="underline">
                   admin@mcmstorage.biz
                 </a>{" "}
-                dari alamat email yang terdaftar pada akun Anda, atau hubungi
-                admin kami via WhatsApp dari halaman{" "}
-                <Link to="/langganan" className="underline">
-                  Langganan
-                </Link>
-                .
-              </li>
-              <li>
-                Sertakan tanggal pembayaran, nominal, dan nama bank pengirim
-                supaya kami dapat memverifikasi transaksi dengan cepat.
-              </li>
-              <li>
-                Sebutkan rekening tujuan pengembalian (nama bank, nomor
-                rekening, dan nama pemilik) — disarankan sama dengan
-                rekening pengirim untuk menghindari penundaan.
+                dan kami akan meneruskan permintaan Anda ke Paddle.
               </li>
             </ol>
           </Section>
 
           <Section title="Waktu pemrosesan">
             <p>
-              Setelah permintaan kami setujui, dana akan ditransfer kembali
-              ke rekening yang Anda berikan dalam waktu paling lama{" "}
-              <strong>7 hari kerja</strong>. Biaya transfer antar bank (jika
-              ada) ditanggung oleh penerima.
+              Setelah permintaan disetujui, Paddle umumnya memproses
+              pengembalian dana dalam waktu 3–10 hari kerja, tergantung
+              metode pembayaran dan bank penerbit. Dana akan dikembalikan ke
+              metode pembayaran asli.
             </p>
           </Section>
 
           <Section title="Pembatalan langganan">
             <p>
-              Anda dapat berhenti memperpanjang langganan kapan saja —
-              cukup tidak melakukan pembayaran berikutnya. Karena kami tidak
-              menyimpan data kartu Anda dan tidak melakukan tagihan otomatis,
-              langganan Pro berakhir secara otomatis pada tanggal{" "}
-              <em>period_end</em> yang ditampilkan di halaman Langganan.
+              Anda dapat membatalkan langganan kapan saja melalui portal
+              pelanggan Paddle. Setelah dibatalkan, langganan tetap aktif
+              hingga akhir periode tagihan yang sudah dibayarkan, dan tidak
+              akan diperpanjang otomatis pada periode berikutnya.
             </p>
           </Section>
 
