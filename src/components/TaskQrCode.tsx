@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import QRCode from "qrcode";
 import { toast } from "sonner";
 import { Download, QrCode as QrIcon } from "lucide-react";
 
@@ -17,7 +16,14 @@ export function TaskQrCode({ url, pin, title }: { url: string; pin?: string; tit
     let cancelled = false;
     const el = canvasRef.current;
     if (!el || !url) return;
-    QRCode.toCanvas(el, url, { width: 220, margin: 1, errorCorrectionLevel: "M" })
+    // Lazy-load `qrcode` so its Node-flavored stream deps never reach the
+    // SSR/Workerd bundle (top-level qrcode import triggers a
+    // `util.inherits superCtor.prototype` crash on workerd, white-screening
+    // every page that shares its route chunk).
+    import("qrcode")
+      .then(({ default: QRCode }) =>
+        QRCode.toCanvas(el, url, { width: 220, margin: 1, errorCorrectionLevel: "M" }),
+      )
       .then(() => {
         if (cancelled) return;
         setErr("");
