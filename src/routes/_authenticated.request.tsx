@@ -335,6 +335,27 @@ function TitleEditorDialog({
   const [note, setNote] = useState("");
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }>>([]);
   const [busy, setBusy] = useState(false);
+  const [negErrors, setNegErrors] = useState<Record<number, string>>({});
+
+  function sanitizeQty(idx: number, raw: string): string {
+    if (raw === "" || raw === "-") {
+      if (raw === "-") {
+        setNegErrors((e) => ({ ...e, [idx]: "Jumlah tidak boleh negatif. Minimum 0." }));
+        toast.error("Jumlah tidak boleh negatif");
+        return "0";
+      }
+      setNegErrors((e) => { const c = { ...e }; delete c[idx]; return c; });
+      return raw;
+    }
+    const n = Number(raw);
+    if (Number.isFinite(n) && n < 0) {
+      setNegErrors((e) => ({ ...e, [idx]: "Jumlah tidak boleh negatif. Minimum 0." }));
+      toast.error("Jumlah tidak boleh negatif");
+      return "0";
+    }
+    setNegErrors((e) => { const c = { ...e }; delete c[idx]; return c; });
+    return raw;
+  }
 
   useEffect(() => {
     if (!open) return;
@@ -365,6 +386,10 @@ function TitleEditorDialog({
   async function save() {
     const trimmed = name.trim();
     if (!trimmed) { toast.error("Nama judul wajib diisi"); return; }
+    if (Object.keys(negErrors).length > 0) { toast.error("Perbaiki jumlah yang negatif terlebih dahulu"); return; }
+    if (rows.some((r) => r.target_grams !== "" && Number(r.target_grams) < 0)) {
+      toast.error("Jumlah tidak boleh negatif"); return;
+    }
     const validRows = rows.filter((r) => r.warehouse_item_id && Number(r.target_grams) > 0);
     if (validRows.length === 0) { toast.error("Tambahkan minimal 1 produk"); return; }
     setBusy(true);
@@ -457,7 +482,7 @@ function TitleEditorDialog({
                   <Input
                     type="number" inputMode="decimal" step="any" min="0"
                     value={r.target_grams}
-                    onChange={(e) => updateRow(idx, { target_grams: e.target.value })}
+                    onChange={(e) => updateRow(idx, { target_grams: sanitizeQty(idx, e.target.value) })}
                     className="col-span-3 h-9 text-xs"
                     placeholder="0"
                   />
@@ -480,6 +505,9 @@ function TitleEditorDialog({
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
+                  {negErrors[idx] ? (
+                    <p className="col-span-12 text-[10px] font-medium text-destructive">{negErrors[idx]}</p>
+                  ) : null}
                 </div>
               ))}
             </div>
@@ -721,6 +749,27 @@ function PrepEditorDialog({
   const [busy, setBusy] = useState(false);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
+  const [qtyErrors, setQtyErrors] = useState<Record<number, string>>({});
+
+  function sanitizeActual(idx: number, raw: string): string {
+    if (raw === "") {
+      setQtyErrors((e) => { const c = { ...e }; delete c[idx]; return c; });
+      return raw;
+    }
+    if (raw === "-") {
+      setQtyErrors((e) => ({ ...e, [idx]: "Jumlah tidak boleh negatif. Minimum 0." }));
+      toast.error("Jumlah tidak boleh negatif");
+      return "0";
+    }
+    const n = Number(raw);
+    if (Number.isFinite(n) && n < 0) {
+      setQtyErrors((e) => ({ ...e, [idx]: "Jumlah tidak boleh negatif. Minimum 0." }));
+      toast.error("Jumlah tidak boleh negatif");
+      return "0";
+    }
+    setQtyErrors((e) => { const c = { ...e }; delete c[idx]; return c; });
+    return raw;
+  }
 
   /**
    * Normalisasi nomor WA ke format E.164 digit-only (tanpa "+").
@@ -800,6 +849,9 @@ function PrepEditorDialog({
 
   async function save(opts?: { sendWa?: boolean }) {
     if (!photo) { toast.error("Wajib lampirkan foto"); return; }
+    if (Object.keys(qtyErrors).length > 0 || rows.some((r) => r.actual_grams !== "" && Number(r.actual_grams) < 0)) {
+      toast.error("Jumlah tidak boleh negatif. Perbaiki dulu."); return;
+    }
     const validRows = rows.filter((r) => r.warehouse_item_id && Number(r.actual_grams) > 0);
     if (validRows.length === 0) { toast.error("Minimal 1 produk dengan gram > 0"); return; }
     let normalizedPhone = "";
@@ -942,7 +994,10 @@ function PrepEditorDialog({
                         <Input
                           type="number" inputMode="decimal" step="any" min="0"
                           value={rows[d.idx]?.actual_grams ?? ""}
-                          onChange={(e) => setRows((rs) => rs.map((x, i) => i === d.idx ? { ...x, actual_grams: e.target.value } : x))}
+                          onChange={(e) => {
+                            const v = sanitizeActual(d.idx, e.target.value);
+                            setRows((rs) => rs.map((x, i) => i === d.idx ? { ...x, actual_grams: v } : x));
+                          }}
                           className="h-7 w-20 px-1.5 text-right text-[11px] font-mono tabular-nums"
                         />
                         <span className="w-10 text-left text-[10px]">{d.unit}</span>
@@ -950,6 +1005,11 @@ function PrepEditorDialog({
                     </li>
                   ))}
                 </ul>
+                {Object.keys(qtyErrors).length > 0 ? (
+                  <p className="mt-1.5 rounded border border-destructive/40 bg-destructive/10 px-1.5 py-1 text-[10px] font-medium text-destructive">
+                    Jumlah tidak boleh negatif. Minimum 0.
+                  </p>
+                ) : null}
               </div>
             );
           })()}
