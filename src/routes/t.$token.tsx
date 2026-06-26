@@ -1,8 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { toast } from "sonner";
 import { PhotoEditor } from "@/components/PhotoEditor";
-import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepTaskRow } from "@/lib/prep";
+import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepSubmissionRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
 import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff, Inbox } from "lucide-react";
@@ -21,6 +21,81 @@ export const Route = createFileRoute("/t/$token")({
 });
 
 type StagedPhoto = { dataUrl: string; blob: Blob };
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+
+function stringOrNull(value: unknown): string | null {
+  return typeof value === "string" && value.trim() ? value : null;
+}
+
+function stringOrFallback(value: unknown, fallback: string): string {
+  return typeof value === "string" && value.trim() ? value : fallback;
+}
+
+function numberOrFallback(value: unknown, fallback = 0): number {
+  const n = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function normalizeSubmissions(value: unknown): PrepSubmissionRow[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord).map((s, idx) => ({
+    id: stringOrFallback(s.id, `submission-${idx}`),
+    photo_path: stringOrNull(s.photo_path),
+    location_url: stringOrNull(s.location_url),
+    note: stringOrNull(s.note),
+    submitted_at: stringOrFallback(s.submitted_at, new Date(0).toISOString()),
+  }));
+}
+
+function normalizePrepItems(value: unknown): PrepItemRow[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord).map((i, idx) => ({
+    id: stringOrFallback(i.id, `item-${idx}`),
+    name: stringOrFallback(i.name, "Item tanpa nama"),
+    category: stringOrNull(i.category),
+    qty_requested: numberOrFallback(i.qty_requested),
+    qty_prepared: numberOrFallback(i.qty_prepared),
+    unit_label: stringOrNull(i.unit_label),
+    ref_photo_path: stringOrNull(i.ref_photo_path),
+    note: stringOrNull(i.note),
+    updated_at: stringOrNull(i.updated_at),
+    submissions: normalizeSubmissions(i.submissions),
+  }));
+}
+
+function normalizePrepTask(value: unknown): PrepTaskRow | null {
+  if (!isRecord(value)) return null;
+  const id = stringOrNull(value.id);
+  if (!id) return null;
+  return {
+    id,
+    title: stringOrFallback(value.title, "Tugas siapkan barang"),
+    note: stringOrNull(value.note),
+    status: stringOrFallback(value.status, "active"),
+    expires_at: stringOrFallback(value.expires_at, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
+  };
+}
+
+class WorkerSectionBoundary extends Component<{
+  children: ReactNode;
+  renderFallback: (error: Error) => ReactNode;
+}, { error: Error | null }> {
+  state: { error: Error | null } = { error: null };
+  static getDerivedStateFromError(error: Error): { error: Error } { return { error }; }
+  componentDidCatch(error: Error, info: ErrorInfo) {
+    // Jangan biarkan 1 kartu / paket request meruntuhkan seluruh portal pegawai
+    // dan memantulkan user kembali ke layar PIN.
+    // eslint-disable-next-line no-console
+    console.error("[t.$token] worker section render failed", error, info.componentStack);
+  }
+  render() {
+    if (this.state.error) return this.props.renderFallback(this.state.error);
+    return this.props.children;
+  }
+}
 
 function PublicPrepPage() {
   const { token } = Route.useParams();
@@ -209,7 +284,7 @@ function PublicPrepPage() {
       toast.error(msg);
       return false;
     }
-    const res = data as { ok: boolean; error?: string; retry_after?: number; expires_at?: string; status?: string; task?: PrepTaskRow; items?: PrepItemRow[] };
+    const res = data as { ok: boolean; error?: string; retry_after?: number; expires_at?: string; status?: string; task?: unknown; items?: unknown };
     if (!res?.ok) {
       if (res?.error === "rate_limited") {
         const secs = Math.max(1, res.retry_after ?? 600);
@@ -275,18 +350,20 @@ function PublicPrepPage() {
       return false;
     }
     // PIN valid (ok=true) tapi payload task hilang → tampilkan detail diagnostik
-    if (!res.task) {
+    const normalizedTask = normalizePrepTask(res.task);
+    if (!normalizedTask) {
       const msg = "PIN benar, tetapi data tugas tidak terkirim dari server.";
       setLastError({
         kind: "no_task",
         message: msg,
-        detail: "Server merespon ok=true namun field `task` kosong. Minta pemilik membuka kembali tugas lalu kirim ulang link.",
+        detail: "Server merespon ok=true namun field `task` kosong / rusak. Minta pemilik membuka kembali tugas lalu kirim ulang link.",
         code: "missing_task",
         raw: safeJson(res),
       });
       toast.error(msg);
       return false;
     }
+    const normalizedItems = normalizePrepItems(res.items);
     setLastError(null);
     // Defensif: pastikan tidak ada layar "tugas ditutup" yang tersisa dari
     // silentRefresh sebelumnya, agar setelah authed=true tidak langsung
@@ -295,12 +372,12 @@ function PublicPrepPage() {
     // PIN benar → reset penuh, termasuk localStorage, sehingga refresh
     // browser tidak membawa sisa percobaan/lock.
     resetAttemptsFully();
-    setTask(res.task!); setItems(res.items ?? []); pinRef.current = p;
+    setTask(normalizedTask); setItems(normalizedItems); pinRef.current = p;
     // eslint-disable-next-line no-console
     console.log("[t.$token] PIN ok", {
-      taskId: res.task?.id,
-      itemsCount: res.items?.length ?? 0,
-      status: res.task?.status,
+      taskId: normalizedTask.id,
+      itemsCount: normalizedItems.length,
+      status: normalizedTask.status,
     });
     // Tampilkan layar sukses inline sebelum berpindah ke daftar tugas,
     // supaya pengguna melihat konfirmasi yang jelas di layar PIN.
@@ -343,7 +420,7 @@ function PublicPrepPage() {
   async function silentRefresh() {
     if (!pinRef.current || !authed) return;
     const { data } = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
-    const res = data as { ok: boolean; error?: string; task?: PrepTaskRow; items?: PrepItemRow[] };
+    const res = data as { ok: boolean; error?: string; task?: unknown; items?: unknown };
     if (!res?.ok) {
       if (res?.error === "bad_pin") {
         setClosedReason("pin_changed");
@@ -359,17 +436,26 @@ function PublicPrepPage() {
       return;
     }
     // Deteksi item yang sedang dilihat pegawai tapi sudah berubah versinya.
+    const normalizedTask = normalizePrepTask(res.task);
+    if (!normalizedTask) {
+      // Payload kosong / malformed pada refresh berkala tidak boleh memantulkan
+      // user ke PIN; pertahankan data terakhir yang masih valid.
+      // eslint-disable-next-line no-console
+      console.warn("[t.$token] silentRefresh missing/malformed task", res);
+      return;
+    }
+    const normalizedItems = normalizePrepItems(res.items);
     const prev = new Map(itemsRef.current.map((i) => [i.id, i.updated_at ?? null]));
     const nextStale: Record<string, true> = { ...staleItemIds };
-    for (const it of res.items ?? []) {
+    for (const it of normalizedItems) {
       const before = prev.get(it.id);
       if (before && it.updated_at && before !== it.updated_at) {
         nextStale[it.id] = true;
       }
     }
     setStaleItemIds(nextStale);
-    setTask(res.task!);
-    setItems(res.items ?? []);
+    setTask(normalizedTask);
+    setItems(normalizedItems);
     setLastSyncAt(Date.now());
   }
 
@@ -734,16 +820,38 @@ function PublicPrepPage() {
 
         <div className="space-y-3">
           {items.map((it, idx) => (
-            <ItemCard
+            <WorkerSectionBoundary
               key={it.id}
-              index={idx + 1}
-              item={it}
-              token={token}
-              pin={pinRef.current}
-              isStale={!!staleItemIds[it.id]}
-              onAcknowledgeStale={() => clearStale(it.id)}
-              onSubmitted={refresh}
-            />
+              renderFallback={(error) => (
+                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-semibold">Item #{idx + 1} gagal ditampilkan</div>
+                      <div className="mt-1 text-xs leading-relaxed opacity-90">
+                        PIN sudah benar dan tugas berhasil dibuka, tetapi ada data item yang tidak valid. Item lain tetap bisa dibuka.
+                      </div>
+                      <details className="mt-2 text-[11px]">
+                        <summary className="cursor-pointer">Detail teknis</summary>
+                        <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 font-mono">
+                          {error.message}
+                        </pre>
+                      </details>
+                    </div>
+                  </div>
+                </div>
+              )}
+            >
+              <ItemCard
+                index={idx + 1}
+                item={it}
+                token={token}
+                pin={pinRef.current}
+                isStale={!!staleItemIds[it.id]}
+                onAcknowledgeStale={() => clearStale(it.id)}
+                onSubmitted={refresh}
+              />
+            </WorkerSectionBoundary>
           ))}
           {items.length === 0 && (
             loading ? (
@@ -776,7 +884,29 @@ function PublicPrepPage() {
           )}
         </div>
 
-        <RequestSection token={token} pin={pinRef.current} />
+        <WorkerSectionBoundary
+          renderFallback={(error) => (
+            <div className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-300">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="min-w-0">
+                  <div className="font-semibold">Paket request gagal ditampilkan</div>
+                  <div className="mt-1 text-xs leading-relaxed opacity-90">
+                    Daftar tugas utama tetap bisa dipakai. Detail error disiapkan agar masalah data paket bisa diperbaiki.
+                  </div>
+                  <details className="mt-2 text-[11px]">
+                    <summary className="cursor-pointer">Detail teknis</summary>
+                    <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 font-mono">
+                      {error.message}
+                    </pre>
+                  </details>
+                </div>
+              </div>
+            </div>
+          )}
+        >
+          <RequestSection token={token} pin={pinRef.current} />
+        </WorkerSectionBoundary>
 
         <div className="mt-6 text-center text-[10px] text-muted-foreground">Tetap aman · Jangan bagikan PIN ke siapa pun</div>
       </div>
@@ -1051,10 +1181,30 @@ type RequestTitleDTO = {
     warehouse_item_id: string;
     product_name: string | null;
     target_grams: number;
-    unit_label: string;
+    unit_label: string | null;
     note: string | null;
   }>;
 };
+
+function normalizeRequestTitles(value: unknown): RequestTitleDTO[] {
+  if (!Array.isArray(value)) return [];
+  return value.filter(isRecord).map((t, titleIdx) => {
+    const rawItems = Array.isArray(t.items) ? t.items : [];
+    return {
+      id: stringOrFallback(t.id, `request-title-${titleIdx}`),
+      name: stringOrFallback(t.name, "Paket request"),
+      note: stringOrNull(t.note),
+      items: rawItems.filter(isRecord).map((i, itemIdx) => ({
+        id: stringOrFallback(i.id, `request-item-${titleIdx}-${itemIdx}`),
+        warehouse_item_id: stringOrFallback(i.warehouse_item_id, ""),
+        product_name: stringOrNull(i.product_name),
+        target_grams: numberOrFallback(i.target_grams),
+        unit_label: stringOrNull(i.unit_label),
+        note: stringOrNull(i.note),
+      })),
+    };
+  });
+}
 
 function RequestSection({ token, pin }: { token: string; pin: string }) {
   const [titles, setTitles] = useState<RequestTitleDTO[] | null>(null);
@@ -1065,10 +1215,10 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data, error } = await (publicSupabase.rpc as any)("request_list_titles_via_task", { _token: token, _pin: pin });
     if (error) { toast.error("Gagal muat request: " + error.message); return; }
-    const res = data as { ok: boolean; titles?: RequestTitleDTO[]; owner_user_id?: string };
+    const res = data as { ok: boolean; titles?: unknown; owner_user_id?: unknown };
     if (res?.ok) {
-      setTitles(res.titles ?? []);
-      setOwnerUserId(res.owner_user_id ?? null);
+      setTitles(normalizeRequestTitles(res.titles));
+      setOwnerUserId(stringOrNull(res.owner_user_id));
     } else setTitles([]);
   }
   useEffect(() => { void load(); }, [token, pin]);
@@ -1084,7 +1234,9 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
         <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{titles.length}</span>
       </div>
       <div className="space-y-2">
-        {titles.map((t) => (
+        {titles.map((t) => {
+          const requestItems = Array.isArray(t.items) ? t.items : [];
+          return (
           <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
             <button
               onClick={() => setOpenId(openId === t.id ? null : t.id)}
@@ -1093,7 +1245,7 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{t.name}</div>
                 <div className="truncate text-[11px] text-muted-foreground">
-                  {t.items.map((i) => `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`).join(" · ")}
+                  {requestItems.map((i) => `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`).join(" · ") || "Tidak ada item"}
                 </div>
               </div>
               <span className="ml-2 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
@@ -1106,7 +1258,7 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
               </div>
             )}
           </div>
-        ))}
+        );})}
       </div>
     </div>
   );
