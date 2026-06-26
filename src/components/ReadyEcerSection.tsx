@@ -388,6 +388,21 @@ export function ReadyEcerSection() {
   }, { ok: 0, fallback_grams: 0, fallback_wid: 0, self_only: 0, no_match: 0, no_wid: 0, empty: 0 });
   const visible = (filtered ?? []).filter((r) => syncFilter === "all" || r.sync.level === syncFilter);
 
+  function formatRelative(ts: number, now: number): string {
+    const diff = Math.max(0, now - ts);
+    const sec = Math.floor(diff / 1000);
+    if (sec < 10) return "baru saja";
+    if (sec < 60) return `${sec} dtk lalu`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} mnt lalu`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr} jam lalu`;
+    return new Date(ts).toLocaleString();
+  }
+  function formatAbsolute(ts: number): string {
+    return new Date(ts).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit", second: "2-digit" });
+  }
+
   return (
     <div className="space-y-1.5">
       <div className="flex items-center justify-between">
@@ -442,32 +457,54 @@ export function ReadyEcerSection() {
         <div
           role="status"
           aria-live="polite"
-          className={`flex items-center gap-2 rounded-md border px-2 py-1 text-[11px] transition-colors ${
+          className={`flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-[11px] transition-colors ${
             crossTabSync.status === "pending"
               ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
               : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
           }`}
         >
-          {crossTabSync.status === "pending" ? (
-            <Loader2 className="h-3 w-3 animate-spin" />
-          ) : (
-            <Check className="h-3 w-3" />
+          <div className="flex min-w-0 items-center gap-2">
+            {crossTabSync.status === "pending" ? (
+              <Loader2 className="h-3 w-3 shrink-0 animate-spin" />
+            ) : (
+              <Check className="h-3 w-3 shrink-0" />
+            )}
+            <span className="truncate">
+              {crossTabSync.status === "pending"
+                ? "Menyinkronkan filter dari tab lain…"
+                : crossTabSync.id
+                  ? `Tersinkron: ${(products.find(([id]) => id === crossTabSync.id)?.[1]) ?? "produk terpilih"}`
+                  : "Tersinkron: Semua produk"}
+            </span>
+          </div>
+          {crossTabSync.status === "synced" && lastSyncedAt && (
+            <time
+              dateTime={new Date(lastSyncedAt).toISOString()}
+              title={new Date(lastSyncedAt).toLocaleString()}
+              className="shrink-0 tabular-nums opacity-80"
+            >
+              {formatAbsolute(lastSyncedAt)}
+            </time>
           )}
-          <span className="truncate">
-            {crossTabSync.status === "pending"
-              ? "Menyinkronkan filter dari tab lain…"
-              : crossTabSync.id
-                ? `Tersinkron: ${(products.find(([id]) => id === crossTabSync.id)?.[1]) ?? "produk terpilih"}`
-                : "Tersinkron: Semua produk"}
-          </span>
         </div>
       )}
 
       {syncedFromDetail && productFilter !== "all" && (
         <div className="flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-[11px] text-primary">
-          <span className="truncate">
-            Disinkron dari detail: {(products.find(([id]) => id === productFilter)?.[1]) ?? "produk terpilih"}
-          </span>
+          <div className="flex min-w-0 flex-1 items-center gap-2">
+            <span className="truncate">
+              Disinkron dari detail: {(products.find(([id]) => id === productFilter)?.[1]) ?? "produk terpilih"}
+            </span>
+            {lastSyncedAt && (
+              <time
+                dateTime={new Date(lastSyncedAt).toISOString()}
+                title={new Date(lastSyncedAt).toLocaleString()}
+                className="shrink-0 tabular-nums opacity-70"
+              >
+                · {formatRelative(lastSyncedAt, nowTick)}
+              </time>
+            )}
+          </div>
           <button
             type="button"
             onClick={() => {
