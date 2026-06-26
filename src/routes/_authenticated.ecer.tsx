@@ -25,7 +25,24 @@ import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
-  head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
+  head: () => ({
+    meta: [
+      { title: "Penyiapan Ecer · MCM Storage" },
+      {
+        name: "description",
+        content:
+          "Siapkan pesanan ecer (1g, ST, SPR, GS) lengkap dengan foto, GPS lokasi, dan kirim cepat ke WhatsApp pelanggan.",
+      },
+      { property: "og:title", content: "Penyiapan Ecer · MCM Storage" },
+      {
+        property: "og:description",
+        content:
+          "Kelola penyiapan ecer per produk dan kirim hasilnya ke WhatsApp dalam hitungan detik.",
+      },
+      { property: "og:url", content: "https://mcmstorage.biz/ecer" },
+    ],
+    links: [{ rel: "canonical", href: "https://mcmstorage.biz/ecer" }],
+  }),
   validateSearch: (s: Record<string, unknown>) => ({
     item: typeof s.item === "string" ? s.item : undefined,
     title: typeof s.title === "string" ? s.title : undefined,

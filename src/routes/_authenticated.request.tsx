@@ -25,7 +25,24 @@ import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { publicTaskUrl } from "@/lib/prep";
 
 export const Route = createFileRoute("/_authenticated/request")({
-  head: () => ({ meta: [{ title: "Penyiapan Request · MCM Storage" }] }),
+  head: () => ({
+    meta: [
+      { title: "Penyiapan Request · MCM Storage" },
+      {
+        name: "description",
+        content:
+          "Catat dan siapkan request pelanggan dengan rincian per item (gram/botol), foto produk, dan kirim langsung ke WhatsApp.",
+      },
+      { property: "og:title", content: "Penyiapan Request · MCM Storage" },
+      {
+        property: "og:description",
+        content:
+          "Kelola request pelanggan MCM Storage dari satu halaman: rincian item, foto, dan share WhatsApp.",
+      },
+      { property: "og:url", content: "https://mcmstorage.biz/request" },
+    ],
+    links: [{ rel: "canonical", href: "https://mcmstorage.biz/request" }],
+  }),
   validateSearch: (s: Record<string, unknown>) => ({
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,

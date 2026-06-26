@@ -19,7 +19,9 @@ export const Route = createFileRoute("/download")({
         content:
           "Unduh aplikasi Android MCM Storage untuk mengelola gudang dari ponsel.",
       },
+      { property: "og:url", content: "https://mcmstorage.biz/download" },
     ],
+    links: [{ rel: "canonical", href: "https://mcmstorage.biz/download" }],
     scripts: [
       {
         type: "application/ld+json",
