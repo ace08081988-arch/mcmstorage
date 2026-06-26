@@ -820,16 +820,38 @@ function PublicPrepPage() {
 
         <div className="space-y-3">
           {items.map((it, idx) => (
-            <ItemCard
+            <WorkerSectionBoundary
               key={it.id}
-              index={idx + 1}
-              item={it}
-              token={token}
-              pin={pinRef.current}
-              isStale={!!staleItemIds[it.id]}
-              onAcknowledgeStale={() => clearStale(it.id)}
-              onSubmitted={refresh}
-            />
+              renderFallback={(error) => (
+                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                  <div className="flex items-start gap-2">
+                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                    <div className="min-w-0">
+                      <div className="font-semibold">Item #{idx + 1} gagal ditampilkan</div>
+                      <div className="mt-1 text-xs leading-relaxed opacity-90">
+                        PIN sudah benar dan tugas berhasil dibuka, tetapi ada data item yang tidak valid. Item lain tetap bisa dibuka.
+                      </div>
+                      <details className="mt-2 text-[11px]">
+                        <summary className="cursor-pointer">Detail teknis</summary>
+                        <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 font-mono">
+                          {error.message}
+                        </pre>
+                      </details>
+                    </div>
+                  </div>
+                </div>
+              )}
+            >
+              <ItemCard
+                index={idx + 1}
+                item={it}
+                token={token}
+                pin={pinRef.current}
+                isStale={!!staleItemIds[it.id]}
+                onAcknowledgeStale={() => clearStale(it.id)}
+                onSubmitted={refresh}
+              />
+            </WorkerSectionBoundary>
           ))}
           {items.length === 0 && (
             loading ? (
@@ -862,7 +884,29 @@ function PublicPrepPage() {
           )}
         </div>
 
-        <RequestSection token={token} pin={pinRef.current} />
+        <WorkerSectionBoundary
+          renderFallback={(error) => (
+            <div className="mt-6 rounded-xl border border-amber-500/40 bg-amber-500/5 p-4 text-sm text-amber-800 dark:text-amber-300">
+              <div className="flex items-start gap-2">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="min-w-0">
+                  <div className="font-semibold">Paket request gagal ditampilkan</div>
+                  <div className="mt-1 text-xs leading-relaxed opacity-90">
+                    Daftar tugas utama tetap bisa dipakai. Detail error disiapkan agar masalah data paket bisa diperbaiki.
+                  </div>
+                  <details className="mt-2 text-[11px]">
+                    <summary className="cursor-pointer">Detail teknis</summary>
+                    <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 font-mono">
+                      {error.message}
+                    </pre>
+                  </details>
+                </div>
+              </div>
+            </div>
+          )}
+        >
+          <RequestSection token={token} pin={pinRef.current} />
+        </WorkerSectionBoundary>
 
         <div className="mt-6 text-center text-[10px] text-muted-foreground">Tetap aman · Jangan bagikan PIN ke siapa pun</div>
       </div>
