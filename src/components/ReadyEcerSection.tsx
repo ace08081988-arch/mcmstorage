@@ -195,13 +195,14 @@ export function ReadyEcerSection() {
       }
 
       const shotsByName = shotsByTitleId; // reuse name below
-      // Resolve signed URLs for at most 4 thumbs per title.
+      // Resolve signed URLs for ALL shots so WA share can attach every photo,
+      // memilih bucket sesuai source (worker→prep-photos, self→ecer-photos) dengan fallback.
       const thumbJobs: Promise<void>[] = [];
       for (const arr of shotsByName.values()) {
-        for (const shot of arr.slice(0, 4)) {
+        for (const shot of arr) {
           if (!shot.photo_path) continue;
           thumbJobs.push(
-            signedUrl(shot.photo_path, 60 * 60).then((u) => { shot.thumb_url = u; })
+            resolveShotSignedUrl(shot.photo_path, shot.source).then((u) => { shot.thumb_url = u; })
           );
         }
       }
