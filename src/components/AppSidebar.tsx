@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail } from "lucide-react";
 import {
   Sidebar,
   SidebarContent,
@@ -30,6 +30,7 @@ const items = [
   { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },
   { title: "Audit Rute", url: "/audit", icon: ClipboardCheck },
   { title: "Diagnostik", url: "/diagnostics", icon: Activity },
+  { title: "Antrian Email", url: "/email-queue", icon: Mail },
 ] as const;
 
 export function AppSidebar() {
