@@ -280,7 +280,12 @@ export function ReadyEcerSection() {
   const filtered = rows === null ? null : rows.filter((r) => {
     if (productFilter !== "all" && r.warehouse_item_id !== productFilter) return false;
     if (q === "") return true;
-    return r.name.toLowerCase().includes(q) || r.product_name.toLowerCase().includes(q);
+    return (
+      r.name.toLowerCase().includes(q)
+      || r.product_name.toLowerCase().includes(q)
+      || (r.warehouse_item_id ?? "").toLowerCase().includes(q)
+      || r.id.toLowerCase().includes(q)
+    );
   });
   const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
@@ -312,7 +317,7 @@ export function ReadyEcerSection() {
               type="search"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Cari judul ecer…"
+              placeholder="Cari judul, produk, atau warehouse_item_id…"
               className="h-8 w-full rounded-md border bg-card pl-7 pr-7 text-xs outline-none placeholder:text-muted-foreground focus:border-primary/40"
             />
             {query && (
