@@ -403,6 +403,13 @@ function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { 
           <span className="truncate text-[10px] font-medium leading-tight text-foreground/80">
             {r.product_name} · {r.target_grams} {unit}
           </span>
+          <span
+            className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground"
+            title={`Foto dicocokkan ke kartu ini berdasarkan warehouse_item_id (${r.warehouse_item_id.slice(0, 8)}…) + ukuran ${r.target_grams} ${unit}. Fallback: ukuran sama, lalu produk sama.`}
+          >
+            <span className="h-1 w-1 rounded-full bg-primary" />
+            Cocok: produk + {r.target_grams}{unit}
+          </span>
           <span className="text-[10px] leading-tight">
             <span className={r.prep_count > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
               {r.prep_count} kotak siap
