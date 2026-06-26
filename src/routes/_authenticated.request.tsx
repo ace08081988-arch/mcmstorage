@@ -710,6 +710,7 @@ function PrepEditorDialog({
   onSaved: () => void;
 }) {
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; actual_grams: string }>>([]);
+  const [initialRows, setInitialRows] = useState<Array<{ warehouse_item_id: string; actual_grams: string }>>([]);
   const [photo, setPhoto] = useState<{ blob: Blob; dataUrl: string } | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
@@ -744,7 +745,9 @@ function PrepEditorDialog({
 
   useEffect(() => {
     if (!open) return;
-    setRows(titleItems.map((i) => ({ warehouse_item_id: i.warehouse_item_id, actual_grams: String(i.target_grams) })));
+    const init = titleItems.map((i) => ({ warehouse_item_id: i.warehouse_item_id, actual_grams: String(i.target_grams) }));
+    setRows(init);
+    setInitialRows(init);
     setPhoto(null); setLocUrl(""); setGps(null); setNote(""); setWaPhone("");
   }, [open, titleItems]);
 
