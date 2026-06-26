@@ -28,6 +28,19 @@ type Row = {
   prep_count: number;
   product_name: string;
   worker_shots: WorkerShot[];
+  sync: SyncStatus;
+};
+
+type SyncLevel = "ok" | "fallback_grams" | "fallback_wid" | "self_only" | "no_match" | "no_wid" | "empty";
+type SyncStatus = {
+  level: SyncLevel;
+  worker_total: number;
+  self_total: number;
+  strict: number;
+  fallback_grams: number;
+  fallback_wid: number;
+  product_submission_count: number; // worker subs that reference same warehouse_item_id (any size)
+  reason: string;
 };
 
 export function ReadyEcerSection() {
@@ -126,19 +139,36 @@ export function ReadyEcerSection() {
       }
 
       const shotsByTitleId = new Map<string, WorkerShot[]>();
+      // Track per-title match quality + per-product submission counts
+      const matchStats = new Map<string, { strict: number; fallback_grams: number; fallback_wid: number }>();
+      const subsPerWid = new Map<string, number>();
+      for (const t of list) matchStats.set(t.id, { strict: 0, fallback_grams: 0, fallback_wid: 0 });
       for (const s of subRows) {
         const meta = metaByItemId.get(s.task_item_id);
         if (!meta) continue;
         const wid = meta.warehouse_item_id;
         const g = Number(meta.qty_requested) || 0;
         const u = normUnit(meta.unit_label);
+        if (wid) subsPerWid.set(wid, (subsPerWid.get(wid) ?? 0) + 1);
         let titleId: string | undefined;
+        let matchKind: "strict" | "fallback_grams" | "fallback_wid" | null = null;
         if (wid) {
-          titleId = titleStrict.get(`${wid}|${g}|${u}`)
-            ?? titleByWidGrams.get(`${wid}|${g}`)?.[0]
-            ?? titleByWid.get(wid)?.[0];
+          const strictId = titleStrict.get(`${wid}|${g}|${u}`);
+          if (strictId) { titleId = strictId; matchKind = "strict"; }
+          else {
+            const gId = titleByWidGrams.get(`${wid}|${g}`)?.[0];
+            if (gId) { titleId = gId; matchKind = "fallback_grams"; }
+            else {
+              const wId = titleByWid.get(wid)?.[0];
+              if (wId) { titleId = wId; matchKind = "fallback_wid"; }
+            }
+          }
         }
         if (!titleId) continue; // require warehouse match — name-only is unreliable
+        if (matchKind) {
+          const st = matchStats.get(titleId);
+          if (st) st[matchKind] += 1;
+        }
         const arr = shotsByTitleId.get(titleId) ?? [];
         arr.push({ id: s.id, photo_path: s.photo_path, location_url: s.location_url, submitted_at: s.submitted_at, item_name: meta.name, source: "worker" });
         shotsByTitleId.set(titleId, arr);
@@ -176,12 +206,53 @@ export function ReadyEcerSection() {
       }
       await Promise.all(thumbJobs);
 
-      setRows(list.map((t) => ({
-        ...t,
-        prep_count: countMap.get(t.id) ?? 0,
-        product_name: itemMap.get(t.warehouse_item_id) ?? "—",
-        worker_shots: shotsByName.get(t.id) ?? [],
-      })));
+      setRows(list.map((t) => {
+        const shots = shotsByName.get(t.id) ?? [];
+        const workerTotal = shots.filter((s) => s.source === "worker").length;
+        const selfTotal = shots.filter((s) => s.source === "self").length;
+        const st = matchStats.get(t.id) ?? { strict: 0, fallback_grams: 0, fallback_wid: 0 };
+        const productSubs = t.warehouse_item_id ? (subsPerWid.get(t.warehouse_item_id) ?? 0) : 0;
+        let level: SyncLevel;
+        let reason: string;
+        if (!t.warehouse_item_id) {
+          level = "no_wid";
+          reason = "Judul ini belum punya warehouse_item_id, jadi tidak bisa dicocokkan dengan kiriman pegawai.";
+        } else if (st.strict > 0) {
+          level = "ok";
+          reason = `${st.strict} kiriman pegawai cocok persis (produk + ${t.target_grams}${normUnit(t.unit_label)}).`;
+        } else if (st.fallback_grams > 0) {
+          level = "fallback_grams";
+          reason = `Cocok lewat fallback: produk + ukuran ${t.target_grams}, tapi unit di tugas pegawai berbeda.`;
+        } else if (st.fallback_wid > 0) {
+          level = "fallback_wid";
+          reason = `Cocok lewat fallback longgar: hanya warehouse_item_id (ukuran/unit beda).`;
+        } else if (productSubs > 0) {
+          level = "no_match";
+          reason = `Ada ${productSubs} kiriman pegawai untuk produk ini, tapi ukuran/unit tidak cocok dan tidak ada judul lain yang lebih dekat untuk diisi fallback.`;
+        } else if (selfTotal > 0) {
+          level = "self_only";
+          reason = "Hanya dari 'siapkan sendiri'. Pegawai belum mengirim untuk produk ini.";
+        } else {
+          level = "empty";
+          reason = "Belum ada kiriman pegawai maupun siapkan sendiri untuk produk ini (30 hari terakhir).";
+        }
+        return {
+          ...t,
+          prep_count: countMap.get(t.id) ?? 0,
+          product_name: itemMap.get(t.warehouse_item_id) ?? "—",
+          worker_shots: shots,
+          sync: {
+            level,
+            worker_total: workerTotal,
+            self_total: selfTotal,
+            strict: st.strict,
+            fallback_grams: st.fallback_grams,
+            fallback_wid: st.fallback_wid,
+            product_submission_count: productSubs,
+            reason,
+          },
+        };
+      }));
   }
 
   useEffect(() => {
@@ -349,6 +420,62 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
 }
 
 function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline" }) {
+  void 0;
+  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} />;
+}
+
+const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> = {
+  ok:              { label: "Tersinkron",        cls: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400", dot: "bg-emerald-500" },
+  fallback_grams:  { label: "Cocok ukuran",      cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400",       dot: "bg-amber-500" },
+  fallback_wid:    { label: "Cocok produk",      cls: "bg-amber-500/10 text-amber-600 dark:text-amber-400",       dot: "bg-amber-500" },
+  self_only:       { label: "Mandiri saja",      cls: "bg-sky-500/10 text-sky-600 dark:text-sky-400",             dot: "bg-sky-500" },
+  no_match:        { label: "Tidak cocok",       cls: "bg-destructive/10 text-destructive",                       dot: "bg-destructive" },
+  no_wid:          { label: "Tanpa produk",      cls: "bg-destructive/10 text-destructive",                       dot: "bg-destructive" },
+  empty:           { label: "Belum ada data",    cls: "bg-muted text-muted-foreground",                           dot: "bg-muted-foreground" },
+};
+
+function SyncBadge({ row: r }: { row: Row }) {
+  const meta = SYNC_META[r.sync.level];
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
+          className={`inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${meta.cls}`}
+          aria-label={`Status sinkron: ${meta.label}`}
+        >
+          <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
+          {meta.label}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        align="start"
+        className="w-64 space-y-2 p-2.5 text-[10px]"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="font-semibold text-foreground">Status sinkron foto pegawai</div>
+        <p className="text-muted-foreground">{r.sync.reason}</p>
+        <dl className="space-y-0.5 text-muted-foreground">
+          <div className="flex justify-between"><dt>Cocok persis (produk + ukuran + unit):</dt><dd className="font-mono text-foreground/90">{r.sync.strict}</dd></div>
+          <div className="flex justify-between"><dt>Cocok ukuran (unit beda):</dt><dd className="font-mono text-foreground/90">{r.sync.fallback_grams}</dd></div>
+          <div className="flex justify-between"><dt>Cocok produk saja:</dt><dd className="font-mono text-foreground/90">{r.sync.fallback_wid}</dd></div>
+          <div className="flex justify-between"><dt>Total kiriman pegawai (judul ini):</dt><dd className="font-mono text-foreground/90">{r.sync.worker_total}</dd></div>
+          <div className="flex justify-between"><dt>Kiriman pegawai untuk produk (semua ukuran):</dt><dd className="font-mono text-foreground/90">{r.sync.product_submission_count}</dd></div>
+          <div className="flex justify-between"><dt>Siapkan sendiri:</dt><dd className="font-mono text-foreground/90">{r.sync.self_total}</dd></div>
+        </dl>
+        {r.sync.level === "no_wid" && (
+          <p className="text-destructive">Set warehouse_item_id pada judul ini di halaman Ecer agar bisa dicocokkan.</p>
+        )}
+        {r.sync.level === "no_match" && (
+          <p>Periksa apakah ukuran/unit di tugas pegawai sama persis dengan judul ini ({r.target_grams} {r.unit_label}).</p>
+        )}
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline" }) {
   const [sending, setSending] = useState(false);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
@@ -432,6 +559,7 @@ function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { 
           <span className="truncate text-[10px] font-medium leading-tight text-foreground/80">
             {r.product_name} · {r.target_grams} {unit}
           </span>
+          <SyncBadge row={r} />
           <Popover>
             <PopoverTrigger asChild>
               <button
