@@ -280,7 +280,7 @@ function PublicPrepPage() {
     setLoading(false);
     if (error) {
       const msg = "Tidak bisa menghubungi server. Periksa koneksi internet lalu coba lagi.";
-      setLastError({ kind: "network", message: msg, detail: error.message, code: (error as any).code });
+      setLastError({ kind: "network", message: msg, detail: error.message, code: (error as any).code, raw: safeJson({ error, data }) });
       toast.error(msg);
       return false;
     }
@@ -294,7 +294,7 @@ function PublicPrepPage() {
         const mins = Math.floor(secs / 60);
         const remain = mins >= 1 ? `${mins} menit ${secs % 60} detik` : `${secs} detik`;
         const msg = `Akses terkunci oleh server. Coba lagi dalam ${remain}.`;
-        setLastError({ kind: "rate_limited", message: msg });
+        setLastError({ kind: "rate_limited", message: msg, code: "rate_limited", detail: `retry_after: ${secs} detik`, raw: safeJson(res) });
         toast.error(msg);
       } else {
         if (res?.error === "bad_pin") {
@@ -305,14 +305,14 @@ function PublicPrepPage() {
             setLockedUntil(until);
             writeAttemptState({ attempts: next, lockedUntil: until });
             const msg = `PIN salah. Anda sudah ${MAX_ATTEMPTS} kali keliru — input dikunci ${LOCK_SECONDS} detik.`;
-            setLastError({ kind: "bad_pin", message: msg });
+            setLastError({ kind: "bad_pin", message: msg, code: "bad_pin", raw: safeJson(res) });
             toast.error(msg);
           } else {
             setAttempts(next);
             writeAttemptState({ attempts: next, lockedUntil: null });
             const left = MAX_ATTEMPTS - next;
             const msg = `PIN salah. Sisa percobaan: ${left} dari ${MAX_ATTEMPTS}.`;
-            setLastError({ kind: "bad_pin", message: msg });
+            setLastError({ kind: "bad_pin", message: msg, code: "bad_pin", raw: safeJson(res) });
             toast.error(msg);
           }
           setPin("");
@@ -322,17 +322,17 @@ function PublicPrepPage() {
             ? `Kedaluwarsa pada ${expAt.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}.`
             : undefined;
           const msg = "Link tugas sudah kedaluwarsa. Minta pemilik mengirim link / PIN baru.";
-          setLastError({ kind: "expired", message: msg, detail, code: "expired" });
+          setLastError({ kind: "expired", message: msg, detail, code: "expired", raw: safeJson(res) });
           toast.error(msg);
         } else if (res?.error === "closed") {
           const msg = res.status === "cancelled"
             ? "Tugas ini sudah dibatalkan pemilik."
             : "Tugas ini sudah ditutup pemilik (sudah selesai).";
-          setLastError({ kind: "closed", message: msg, code: "closed", detail: res.status ? `Status: ${res.status}` : undefined });
+          setLastError({ kind: "closed", message: msg, code: "closed", detail: res.status ? `Status: ${res.status}` : undefined, raw: safeJson(res) });
           toast.error(msg);
         } else if (res?.error === "not_found") {
           const msg = "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik.";
-          setLastError({ kind: "not_found", message: msg, code: "not_found" });
+          setLastError({ kind: "not_found", message: msg, code: "not_found", raw: safeJson(res) });
           toast.error(msg);
         } else {
           const code = res?.error || "unknown";
@@ -566,15 +566,16 @@ function PublicPrepPage() {
                       <div className="mt-0.5 break-words opacity-80">{lastError.detail}</div>
                     )}
                     {(lastError.code || lastError.raw) && (
-                      <details className="mt-1.5">
+                      <details className="mt-1.5" open>
                         <summary className="cursor-pointer select-none text-[10px] uppercase tracking-wider opacity-70">
-                          Detail teknis
+                          Detail respons RPC (prep_get_task)
                         </summary>
+                        <div className="mt-1 font-mono text-[10px] opacity-80">kind: {lastError.kind}</div>
                         {lastError.code && (
                           <div className="mt-1 font-mono text-[10px] opacity-80">code: {lastError.code}</div>
                         )}
                         {lastError.raw && (
-                          <pre className="mt-1 max-h-40 overflow-auto whitespace-pre-wrap break-all rounded bg-background/60 p-1.5 font-mono text-[10px] opacity-80">{lastError.raw}</pre>
+                          <pre className="mt-1 max-h-56 overflow-auto whitespace-pre-wrap break-all rounded bg-background/60 p-1.5 font-mono text-[10px] opacity-80">{lastError.raw}</pre>
                         )}
                         <button
                           type="button"
