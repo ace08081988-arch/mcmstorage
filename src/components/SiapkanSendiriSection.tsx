@@ -464,9 +464,34 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 value={locationUrl}
                 onChange={(e) => setLocationUrl(e.target.value)}
                 placeholder="https://maps.app.goo.gl/…"
-                className="h-9 w-full rounded-md border bg-background px-2 text-sm"
+                className="h-9 w-full min-w-0 rounded-md border bg-background px-2 text-sm"
                 inputMode="url"
               />
+              <button
+                type="button"
+                onClick={async () => {
+                  if (gpsBusy) return;
+                  setGpsBusy(true);
+                  try {
+                    const loc = await getCurrentLocation();
+                    const url = `https://www.google.com/maps?q=${loc.lat},${loc.lng}`;
+                    setLocationUrl(url);
+                    toast.success(`Lokasi diisi (±${Math.round(loc.accuracy ?? 0)} m)`);
+                  } catch (e) {
+                    const ge = toGeoError(e);
+                    toast.error(ge.message || "Gagal mengambil GPS");
+                  } finally {
+                    setGpsBusy(false);
+                  }
+                }}
+                disabled={gpsBusy}
+                title="Ambil lokasi GPS saat ini"
+                aria-label="Ambil lokasi GPS saat ini"
+                className="inline-flex h-9 shrink-0 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 text-xs font-medium text-primary hover:bg-primary/20 disabled:opacity-60"
+              >
+                {gpsBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Crosshair className="h-3.5 w-3.5" />}
+                <span className="hidden xs:inline">GPS</span>
+              </button>
             </div>
             <label className="mt-2 block text-[11px] font-medium text-muted-foreground">Catatan (opsional)</label>
             <textarea
