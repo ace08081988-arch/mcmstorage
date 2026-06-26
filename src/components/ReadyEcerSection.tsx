@@ -581,9 +581,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }
       const files: File[] = [];
       const take = shots.slice(0, 6); // batasi agar WA tidak tolak
       for (const s of take) {
-        if (!s.thumb_url) continue;
-        const f = await urlToFile(s.thumb_url, `${r.name}-${s.id.slice(0, 6)}.jpg`);
+        // Pastikan signed url tersedia (fallback bucket bila perlu) supaya foto selalu ikut.
+        let url = s.thumb_url ?? null;
+        if (!url && s.photo_path) {
+          url = await resolveShotSignedUrl(s.photo_path, s.source, 600);
+          s.thumb_url = url;
+        }
+        if (!url) continue;
+        const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}.jpg`);
         if (f) files.push(f);
+      }
+      if (files.length === 0) {
+        toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan ke WA.");
       }
       const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const text = [
