@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
+import { ecerSignedUrl } from "@/lib/ecer";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
