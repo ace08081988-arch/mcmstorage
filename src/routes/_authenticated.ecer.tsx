@@ -667,6 +667,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
 type WorkerShot = {
   id: string;
   photo_path: string | null;
+  photo_paths?: string[] | null;
   location_url: string | null;
   submitted_at: string;
   thumb_url?: string | null;
@@ -722,15 +723,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const ids = Array.from(matchKindByItem.keys());
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: subs, error: e2 } = await (supabase.from as any)("prep_submissions")
-        .select("id,photo_path,location_url,submitted_at,task_item_id")
+        .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id")
         .in("task_item_id", ids)
         .order("submitted_at", { ascending: false })
         .limit(60);
       if (e2) throw new Error(e2.message);
-      const rows = ((subs ?? []) as Array<{ id: string; photo_path: string | null; location_url: string | null; submitted_at: string; task_item_id: string }>)
+      const rows = ((subs ?? []) as Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string }>)
         .map((s) => ({
           id: s.id,
           photo_path: s.photo_path,
+          photo_paths: s.photo_paths,
           location_url: s.location_url,
           submitted_at: s.submitted_at,
           match: matchKindByItem.get(s.task_item_id) ?? "fallback_wid",
@@ -769,18 +771,27 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const take = shots.slice(0, 6);
       const files: File[] = [];
       for (const s of take) {
-        let url = s.thumb_url ?? null;
-        if (!url && s.photo_path) url = await resolvePrepUrl(s.photo_path, 600);
-        if (!url) continue;
-        const f = await urlToFile(url, `${title.name}-${s.id.slice(0, 6)}.jpg`);
-        if (f) files.push(f);
+        const paths = Array.from(new Set([
+          ...((s.photo_paths ?? []) as string[]),
+          ...(s.photo_path ? [s.photo_path] : []),
+        ])).filter(Boolean);
+        for (let pi = 0; pi < paths.length; pi++) {
+          const url = await resolvePrepUrl(paths[pi], 600);
+          if (!url) continue;
+          const f = await urlToFile(url, `${title.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
+          if (f) files.push(f);
+          if (files.length >= 10) break;
+        }
+        if (files.length >= 10) break;
       }
       if (files.length === 0) toast.warning("Foto pegawai tidak bisa diunduh.");
       const lines = take.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const firstLoc = take.find((s) => s.location_url);
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""}:`,
+        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
         ...lines,
+        ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
       ].join("\n");
       const res = await shareToWhatsApp({ text, title: title.name, files });
       notifyShareResult(res);

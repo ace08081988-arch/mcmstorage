@@ -1,129 +1,100 @@
+# Samakan Semua Penyiapan dengan Pola "Siapkan Sendiri"
 
-# Rencana — Berlangganan Pro (transfer bank manual)
+Tujuan: tiga alur penyiapan (Request, Ecer manual, Tugas pegawai) bisa pilih banyak foto, dan tombol Kirim WA otomatis melampirkan **semua foto** + link lokasi — sama persis dengan tab Siapkan Sendiri di /tugas.
 
-## Ringkasan singkat
+## 1. Database (1 migration)
 
-Saat ini MCM Storage 100% gratis dan tidak ada sistem pembayaran sama sekali. Kita akan menambahkan paket **Pro** yang diaktifkan **pemilik akun** lewat **transfer bank manual** dengan **persetujuan admin**. Pegawai yang sudah dihubungkan otomatis ikut menikmati Pro karena semua data dan akses pegawai sudah berjalan di bawah akun pemilik (lewat share token + PIN, bukan akun terpisah) — jadi tidak perlu plumbing tambahan.
+Tambah kolom `photo_paths text[]` (nullable, default '{}') ke:
 
-## Default yang saya pakai (silakan ubah nanti)
+- `public.request_preparations`  — untuk multi-foto penyiapan request.
+- `public.prep_submissions`       — untuk multi-foto kiriman pegawai.
 
-Karena Anda mempersilakan saya memutuskan:
+Backfill: `photo_paths = ARRAY[photo_path]` jika `photo_path` ada dan `photo_paths` kosong.
+GRANT/RLS tidak berubah (kolom baru ikut policy kolom existing).
 
-- **Harga Pro:** Rp 99.000 / bulan, atau Rp 990.000 / tahun (hemat ~17%).
-- **Uji coba gratis:** 14 hari, tanpa bayar di muka. Otomatis turun ke Free saat habis.
-- **Batas paket Free:**
-  - Maks. **30** barang gudang.
-  - Maks. **50** penjualan per 30 hari terakhir.
-  - Maks. **1** kontak pegawai (`staff_contacts`).
-  - Maks. **1** perangkat tepercaya (`user_devices`).
-  - Modul **Hutang–Piutang**, **kirim chat internal**, dan **notifikasi push** terkunci.
-  - Modul Free (gudang, pesanan, pelanggan, supplier, tugas siapkan barang, ECER, request) tetap utuh.
-- **Akun lama:** setiap user_id yang sudah ada otomatis dapat masa **30 hari Pro gratis** ("Promo peluncuran") lewat migrasi — jadi tidak ada yang rusak di hari pertama.
-- **Rekening bank:** ditaruh di tabel `app_settings` agar Anda edit sendiri lewat halaman admin (default placeholder dulu).
+## 2. /request — PrepEditorDialog & PrepCard
 
-## Arsitektur
+`src/routes/_authenticated.request.tsx`
 
-```text
-┌─────────────────────────────┐    transfer manual + upload bukti
-│ /_authenticated/langganan   │ ───────────────────────────────────┐
-│ (paket, kuota, upgrade)     │                                    ▼
-└────────────┬────────────────┘                          subscription_payments
-             │                                              (status=pending)
-             │ getMyEntitlement / startProTrial                   │
-             ▼                                                    │ admin approve
-┌─────────────────────────────┐                                   ▼
-│ subscriptions (per user)    │ ◄────────────── extend period ─── /_authenticated/admin/pembayaran
-│ plan, status, period_end    │
-└────────────┬────────────────┘
-             │ has_active_pro()
-             ▼
-   trigger BEFORE INSERT  ─── caps di warehouse_items, sales, staff_contacts, user_devices
-   route gate            ─── /hutang-piutang, push, kirim chat
+- **PrepEditorDialog** (form penyiapan baru):
+  - Ganti single-file input + image editor jadi multi-file picker (kamera HP + galeri + multi-select), pola sama dengan `SiapkanSendiriSection`.
+  - Preview grid + tombol "Hapus" per foto + "Hapus semua".
+  - Upload semua foto ke bucket `request-photos` (path: `{uid}/{title_id}/{ts}-{i}.{ext}`); rollback jika salah satu gagal.
+  - Simpan `photo_paths` (array) + `photo_path` = foto pertama (kompat).
+- **PrepCard** (kartu paket tersimpan):
+  - Tampilkan strip thumbnail semua foto + lightbox tap untuk perbesar.
+  - `sendWA`: fetch semua signed URL → `File[]` → `shareToWhatsApp({ text, files, url: location_url })` (location ikut sebagai URL share + tetap di teks).
+- **Title-level "Kirim WA"** (kartu judul): tetap text-only (ringkasan); tidak ada foto di level judul.
+
+## 3. /ecer — entri manual
+
+`src/routes/_authenticated.ecer.tsx`
+
+- Verifikasi entri manual (sudah multi-foto sejak update sebelumnya) menggunakan pola yang sama: input multi + Kirim WA melampirkan semua foto. Selaraskan UI (label, tombol "Hapus semua") agar identik dengan SiapkanSendiri.
+- Pastikan tombol "Kirim WA" pada kartu kiriman pegawai juga membaca `photo_paths` (lihat §4) dan melampirkannya.
+
+## 4. /t/$token — submit pegawai
+
+`src/routes/t.$token.tsx`
+
+- Form upload pegawai: izinkan multi-file (kamera + galeri), preview + hapus per foto.
+- Upload semua foto ke bucket `prep-photos`; insert `prep_submissions` dengan `photo_path` (foto utama) + `photo_paths` (semua).
+- UX dan teks tombol disamakan dengan SiapkanSendiri.
+
+## 5. Konsumen kiriman pegawai (Beranda)
+
+`src/components/ReadyEcerSection.tsx` (dan `RecentSubmissionsSection` jika masih dipakai)
+
+- Saat menggabungkan submission, baca `photo_paths` (fallback ke `photo_path`).
+- Pre-sign semua path, tampilkan strip foto kecil di kartu.
+- `Kirim WA` per kiriman: lampirkan semua foto + sertakan `location_url`.
+
+## 6. Verifikasi
+
+- `tsgo --noEmit` hijau.
+- Smoke via Playwright headless:
+  - `/request` → buat penyiapan multi-foto → kartu menampilkan thumbnail → Kirim WA → preview Web Share dipanggil dengan ≥2 file.
+  - `/t/{token}` (preview sandbox) → upload 2 foto → submit OK.
+  - Beranda → kartu pegawai menampilkan multi-foto + Kirim WA berisi foto.
+
+## Detail teknis
+
+- Storage buckets:
+  - `request-photos` (existing) — tetap; tambahkan path bersarang per-title.
+  - `prep-photos` (existing) — tetap.
+  - `self-prep-photos` — tidak berubah.
+- Util baru di `src/lib/share-wa.ts`: tidak ada (pakai API existing `shareToWhatsApp({ files, text, url })`).
+- Format pesan WA standar:
+  ```
+  *<Nama paket>*
+  Isi:
+  • <produk> <qty><unit>
+  
+  Catatan: <opsional>
+  Lokasi: <url>
+  ```
+- `shareToWhatsApp` sudah otomatis pakai Web Share API saat ada files (multi-attach), dan fallback ke wa.me text-only saat tidak didukung.
+
+## Migration ringkas
+
+```sql
+alter table public.request_preparations
+  add column if not exists photo_paths text[] not null default '{}';
+
+update public.request_preparations
+  set photo_paths = array[photo_path]
+  where photo_path is not null and coalesce(array_length(photo_paths,1),0) = 0;
+
+alter table public.prep_submissions
+  add column if not exists photo_paths text[] not null default '{}';
+
+update public.prep_submissions
+  set photo_paths = array[photo_path]
+  where photo_path is not null and coalesce(array_length(photo_paths,1),0) = 0;
 ```
 
-## Yang akan dibangun
+## Tidak diubah
 
-### 1. Database (1 migrasi)
-
-- `public.subscriptions` — `user_id` (unik), `plan` (`free|pro`), `status` (`trialing|active|expired|grace|none`), `billing_cycle` (`monthly|yearly|trial|promo`), `period_start`, `period_end`, `trial_used_at`.
-- `public.subscription_payments` — `user_id`, `amount_idr`, `billing_cycle`, `sender_name`, `sender_bank`, `transfer_date`, `proof_path`, `status` (`pending|approved|rejected`), `reviewed_by`, `reviewed_at`, `admin_note`.
-- `public.app_settings` (singleton) — `bank_name`, `bank_account_number`, `bank_account_holder`, `whatsapp_admin`, `pro_price_monthly_idr`, `pro_price_yearly_idr`.
-- Storage bucket `payment-proofs` (privat) + policy: pemilik upload sendiri, admin baca semua.
-- Fungsi SECURITY DEFINER:
-  - `has_active_pro(uid)` — `status in ('trialing','active','grace') AND period_end > now()`.
-  - `get_owner_plan(uid)` — kembalikan plan + period_end (untuk UI).
-  - `start_pro_trial()` — bikin baris trialing 14 hari sekali per user.
-  - `expire_subscriptions()` — set `status='expired'` kalau `period_end < now()`. Dipanggil pg_cron tiap jam.
-  - `admin_approve_payment(_id, _cycle)` — extend `period_end` 30 atau 365 hari, set `status='active'`.
-- Trigger `BEFORE INSERT` di `warehouse_items`, `sales`, `staff_contacts`, `user_devices` — kalau bukan Pro dan sudah lewat batas, `RAISE EXCEPTION 'pro_required:<resource>'`.
-- Backfill: insert baris promo 30 hari untuk semua user_id yang sudah punya data.
-- RLS: user baca subs/payment miliknya; admin (`has_role('admin')`) baca dan update semua.
-- GRANT untuk authenticated + service_role di semua tabel baru.
-
-### 2. Server functions (TanStack Start)
-
-- `src/lib/subscription.functions.ts`
-  - `getMyEntitlement` (auth) — plan, status, periodEnd, daftar pemakaian vs batas (counts dari DB).
-  - `startProTrial` (auth) — panggil `start_pro_trial`.
-  - `submitPaymentProof` (auth) — terima `billing_cycle` + path bukti yang sudah di-upload.
-  - `adminListPayments` / `adminApprovePayment` / `adminRejectPayment` — cek `has_role('admin')` dulu.
-- Hook client `src/hooks/useEntitlement.ts` — bungkus query, expose `isPro`, `caps`, `usage`, `daysLeft`.
-
-### 3. Halaman
-
-- **/pricing** (publik) — ganti card "Pro segera hadir" jadi harga sungguhan + tombol "Mulai uji coba 14 hari" yang mendarat ke `/langganan`.
-- **/_authenticated/langganan** — baru:
-  - Status paket saat ini, sisa hari, kuota terpakai vs batas.
-  - Kalau Free: tombol "Mulai uji coba 14 hari" + bagian "Upgrade Pro": instruksi transfer bank dari `app_settings` + form upload bukti.
-  - Riwayat pembayaran.
-- **/_authenticated/admin/pembayaran** — baru, gated `has_role('admin')`:
-  - Antrian pending, preview bukti, tombol Setujui (pilih siklus) / Tolak (dengan catatan).
-  - Form edit `app_settings` (rekening dan harga).
-
-### 4. Gating UI
-
-- `/hutang-piutang` route: kalau `!isPro` → render `<ProPaywall feature="Hutang–Piutang" />` (CTA ke `/langganan`). Yang membayar bisa baca dan tulis seperti biasa.
-- Composer chat (`src/components/chat/...`): kalau `!isPro`, tombol kirim disabled + tooltip "Upgrade Pro untuk kirim pesan". Membaca tetap.
-- Toggle push notif: dibungkus paywall.
-- `/link-pegawai` "Tambah pegawai": jika sudah 1 baris dan `!isPro`, sembunyikan tombol + tampilkan paywall inline.
-- Form trust device di `/device-verify`: kalau sudah 1 device dan `!isPro`, tampilkan paywall + tetap izinkan satu sesi non-persisted.
-- Form tambah barang gudang dan input sale: cek count sebelum submit (UX cepat). Trigger DB tetap jadi safety net.
-
-### 5. Renewal & expiry
-
-- `pg_cron` tiap jam panggil `expire_subscriptions()`. Saat habis, status → `expired`, plan otomatis dianggap Free.
-- Banner di seluruh halaman 7 hari sebelum habis: "Pro berakhir DD MMM. Perpanjang sekarang."
-- Tidak ada auto-charge — pengguna harus transfer ulang dan admin setujui lagi.
-
-### 6. Kebersihan
-
-- Hapus copy "Pro segera hadir" yang sekarang.
-- `/refund` dan `/terms` ditinjau singkat agar konsisten dengan model bayar manual (refund per kebijakan Anda, default 7 hari setelah transfer kalau belum dipakai — Anda bisa ubah).
-
-## Detail teknis (untuk referensi)
-
-- Sumber kebenaran entitlement: **DB** (`has_active_pro`). Hook client hanya untuk UX.
-- Trigger DB pakai `RAISE EXCEPTION 'pro_required:warehouse_items'` dan client-side `friendlyError` memetakan ke pesan ramah Indonesia + ajak upgrade.
-- Bucket `payment-proofs` privat; URL preview lewat signed URL 5 menit.
-- Tidak ada integrasi Paddle/Stripe/Shopify yang diaktifkan — model bayar manual tidak butuh.
-- Semua kueri yang sudah ada tetap dipakai apa adanya; gating dilakukan di layer terpisah (trigger + paywall component) supaya rollback gampang.
-
-## Cara menguji di preview
-
-Karena ini transfer manual, **tidak ada test card**. Alurnya:
-
-1. **Lihat status awal.** Buka `/langganan`. Akun lama langsung Pro 30 hari ("Promo peluncuran"). Untuk simulasi Free, jalankan satu SQL di Lovable Cloud → SQL Editor: `update public.subscriptions set status='expired', period_end=now() - interval '1 day' where user_id = '<uid>';`
-2. **Cek paywall.** Refresh `/hutang-piutang` — harus muncul paywall. Coba kirim chat — tombol disabled. Coba tambah barang ke-31 — tertolak dengan pesan upgrade.
-3. **Mulai uji coba.** Di `/langganan` klik "Mulai uji coba 14 hari" → semua fitur Pro membuka. Buka `/hutang-piutang` lagi — bisa.
-4. **Submit transfer manual.** Di `/langganan` pilih "Bulanan", isi nama pengirim + tanggal transfer, upload bukti apa saja. Status pembayaran jadi *Menunggu konfirmasi*.
-5. **Approve sebagai admin.** Buka `/admin/pembayaran` (akun dengan role admin — kalau belum ada, jalankan `insert into public.user_roles (user_id, role) values ('<uid>', 'admin');`). Setujui pembayaran. `period_end` di `subscriptions` mundur 30 hari ke depan, status `active`.
-6. **Cek banner perpanjang.** SQL: `update public.subscriptions set period_end = now() + interval '5 days' where user_id='<uid>';` → banner kuning muncul.
-7. **Cek expiry.** SQL: `update public.subscriptions set period_end = now() - interval '1 minute' where user_id='<uid>'; select public.expire_subscriptions();` → status `expired`, paywall kembali.
-8. **Cek pewarisan pegawai.** Buka link pegawai via `/t/<token>` dengan PIN — semua fitur tugas siapkan barang jalan persis seperti sebelumnya (tidak ada gating di sisi pegawai karena mereka selalu beroperasi sebagai pemilik via SECURITY DEFINER).
-
-## Yang TIDAK termasuk
-
-- Integrasi gateway pembayaran (Paddle / Stripe / Shopify) — sesuai pilihan Anda.
-- Faktur PDF otomatis (bisa dijadikan iterasi berikut).
-- Refund otomatis — admin proses manual sesuai kebijakan.
-- Notifikasi WhatsApp otomatis ke admin saat ada bukti baru (bisa ditambahkan via WA share link nanti).
+- Tab "Via Pegawai" (manajemen tugas) — flow create/edit tugas tidak butuh foto.
+- Tombol Kirim WA di level ringkasan/laporan tetap text-only.
+- Skema RLS/grants — tidak berubah, hanya tambah kolom.

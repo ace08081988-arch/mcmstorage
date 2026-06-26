@@ -27,6 +27,7 @@ async function resolveShotSignedUrl(
 type WorkerShot = {
   id: string;
   photo_path: string | null;
+  photo_paths?: string[] | null;
   location_url: string | null;
   submitted_at: string;
   item_name: string;
@@ -167,7 +168,7 @@ export function ReadyEcerSection() {
           .limit(200),
         sb
           .from("prep_submissions")
-          .select("id,photo_path,location_url,submitted_at,task_item_id")
+          .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id")
           .gte("submitted_at", sinceIso)
           .order("submitted_at", { ascending: false })
           .limit(200),
@@ -181,7 +182,7 @@ export function ReadyEcerSection() {
       void selfPreps;
 
       // Map prep_submissions → task_item attributes, then bucket by product+size.
-      const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; location_url: string | null; submitted_at: string; task_item_id: string }>;
+      const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string }>;
       const taskItemIds = Array.from(new Set(subRows.map((s) => s.task_item_id))).filter(Boolean);
       type TaskItemMeta = { name: string; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null };
       let metaByItemId = new Map<string, TaskItemMeta>();
@@ -253,17 +254,18 @@ export function ReadyEcerSection() {
           if (st) st[matchKind] += 1;
         }
         const arr = shotsByTitleId.get(titleId) ?? [];
-        arr.push({ id: s.id, photo_path: s.photo_path, location_url: s.location_url, submitted_at: s.submitted_at, item_name: meta.name, source: "worker" });
+        arr.push({ id: s.id, photo_path: s.photo_path, photo_paths: s.photo_paths, location_url: s.location_url, submitted_at: s.submitted_at, item_name: meta.name, source: "worker" });
         shotsByTitleId.set(titleId, arr);
       }
 
       // Merge "siapkan sendiri" (ecer_preparations) — already keyed by title_id.
-      for (const p of ((preps ?? []) as Array<{ id: string; title_id: string; photo_path: string | null; location_url: string | null; created_at: string }>)) {
-        if (!p.photo_path) continue;
+      for (const p of ((preps ?? []) as Array<{ id: string; title_id: string; photo_path: string | null; photo_paths?: string[] | null; location_url: string | null; created_at: string }>)) {
+        if (!p.photo_path && !(p.photo_paths && p.photo_paths.length)) continue;
         const arr = shotsByTitleId.get(p.title_id) ?? [];
         arr.push({
           id: `self:${p.id}`,
-          photo_path: p.photo_path,
+          photo_path: p.photo_path ?? (p.photo_paths?.[0] ?? null),
+          photo_paths: p.photo_paths ?? null,
           location_url: p.location_url,
           submitted_at: p.created_at,
           item_name: "",
@@ -731,17 +733,22 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }
     setSending(true);
     try {
       const files: File[] = [];
-      const take = shots.slice(0, 6); // batasi agar WA tidak tolak
+      const take = shots.slice(0, 6); // batasi jumlah kiriman; tiap kiriman bisa berisi banyak foto
       for (const s of take) {
-        // Pastikan signed url tersedia (fallback bucket bila perlu) supaya foto selalu ikut.
-        let url = s.thumb_url ?? null;
-        if (!url && s.photo_path) {
-          url = await resolveShotSignedUrl(s.photo_path, s.source, 600);
-          s.thumb_url = url;
+        const paths = Array.from(new Set([
+          ...((s.photo_paths ?? []) as string[]),
+          ...(s.photo_path ? [s.photo_path] : []),
+        ])).filter(Boolean);
+        if (paths.length === 0) continue;
+        for (let pi = 0; pi < paths.length; pi++) {
+          const p = paths[pi];
+          const url = await resolveShotSignedUrl(p, s.source, 600);
+          if (!url) continue;
+          const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
+          if (f) files.push(f);
+          if (files.length >= 10) break;
         }
-        if (!url) continue;
-        const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}.jpg`);
-        if (f) files.push(f);
+        if (files.length >= 10) break;
       }
       if (files.length === 0) {
         toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan ke WA.");
@@ -749,8 +756,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }
       const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const text = [
         `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
+        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
         ...lines,
+        ...(take.find((s) => s.location_url) ? [`📍 ${take.find((s) => s.location_url)!.location_url}`] : []),
       ].join("\n");
       const res = await shareToWhatsApp({ text, title: r.name, files });
       notifyShareResult(res);

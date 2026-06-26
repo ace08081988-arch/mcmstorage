@@ -850,6 +850,7 @@ export type Database = {
           location_url: string | null
           note: string | null
           photo_path: string | null
+          photo_paths: string[]
           qty_reported: number | null
           submitted_at: string
           task_id: string
@@ -862,6 +863,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           qty_reported?: number | null
           submitted_at?: string
           task_id: string
@@ -874,6 +876,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           qty_reported?: number | null
           submitted_at?: string
           task_id?: string
@@ -1281,6 +1284,7 @@ export type Database = {
           location_url: string | null
           note: string | null
           photo_path: string | null
+          photo_paths: string[]
           prep_task_item_id: string | null
           title_id: string
           user_id: string
@@ -1295,6 +1299,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           prep_task_item_id?: string | null
           title_id: string
           user_id: string
@@ -1309,6 +1314,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           prep_task_item_id?: string | null
           title_id?: string
           user_id?: string
@@ -2238,6 +2244,22 @@ export type Database = {
             }
             Returns: Json
           }
+        | {
+            Args: {
+              _expected_updated_at?: string
+              _gps_lat: number
+              _gps_lng: number
+              _location_url: string
+              _note: string
+              _photo_path: string
+              _photo_paths?: string[]
+              _pin: string
+              _qty_reported: number
+              _task_item_id: string
+              _token: string
+            }
+            Returns: Json
+          }
       prep_upload_allowed: { Args: { _share_token: string }; Returns: boolean }
       prep_worker_upload_allowed: {
         Args: { _owner_user_id: string; _share_token: string }
@@ -2256,21 +2278,38 @@ export type Database = {
         Args: { _pin: string; _token: string }
         Returns: Json
       }
-      request_submit_via_task: {
-        Args: {
-          _gps_lat: number
-          _gps_lng: number
-          _items: Json
-          _location_url: string
-          _note: string
-          _photo_path: string
-          _pin: string
-          _prep_task_item_id: string
-          _title_id: string
-          _token: string
-        }
-        Returns: Json
-      }
+      request_submit_via_task:
+        | {
+            Args: {
+              _gps_lat: number
+              _gps_lng: number
+              _items: Json
+              _location_url: string
+              _note: string
+              _photo_path: string
+              _pin: string
+              _prep_task_item_id: string
+              _title_id: string
+              _token: string
+            }
+            Returns: Json
+          }
+        | {
+            Args: {
+              _gps_lat: number
+              _gps_lng: number
+              _items: Json
+              _location_url: string
+              _note: string
+              _photo_path: string
+              _photo_paths?: string[]
+              _pin: string
+              _prep_task_item_id: string
+              _title_id: string
+              _token: string
+            }
+            Returns: Json
+          }
       run_internal_security_scan: { Args: never; Returns: Json }
       search_chat_contacts: {
         Args: { _q: string }
