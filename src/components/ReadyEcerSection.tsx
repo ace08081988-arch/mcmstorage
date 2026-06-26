@@ -74,6 +74,13 @@ export function ReadyEcerSection() {
   const [syncing, setSyncing] = useState(false);
   // Cross-tab sync banner: 'pending' while applying, 'synced' briefly after.
   const [crossTabSync, setCrossTabSync] = useState<null | { status: "pending" | "synced"; id: string | null }>(null);
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  // Tick once a minute so relative time stays current.
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   // Sync productFilter with selection made on /ecer detail page
   useEffect(() => {
@@ -94,6 +101,7 @@ export function ReadyEcerSection() {
       setCrossTabSync({ status: "pending", id });
       pendingTimer = window.setTimeout(() => {
         setCrossTabSync({ status: "synced", id });
+        setLastSyncedAt(Date.now());
         syncedTimer = window.setTimeout(() => setCrossTabSync(null), 2200);
       }, 350);
     }
