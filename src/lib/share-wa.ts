@@ -20,6 +20,42 @@ export function buildWhatsAppUrl(text: string, phone?: string) {
   return `${base}?text=${encodeURIComponent(text)}`;
 }
 
+/**
+ * Build an Android intent:// URL that targets the WhatsApp Business package
+ * (`com.whatsapp.w4b`). If WA Business isn't installed, Android automatically
+ * falls back to the `S.browser_fallback_url` (wa.me) which then opens regular
+ * WhatsApp or the browser.
+ */
+export function buildWhatsAppBusinessIntentUrl(text: string, phone?: string) {
+  const digits = (phone ?? "").replace(/\D/g, "");
+  const fallback = buildWhatsAppUrl(text, phone);
+  const encodedText = encodeURIComponent(text);
+  const phonePart = digits ? `phone=${digits}&` : "";
+  return (
+    `intent://send?${phonePart}text=${encodedText}` +
+    `#Intent;scheme=whatsapp;package=com.whatsapp.w4b;` +
+    `S.browser_fallback_url=${encodeURIComponent(fallback)};end`
+  );
+}
+
+function isAndroidWeb(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android/i.test(navigator.userAgent);
+}
+
+/**
+ * Open WhatsApp dengan preferensi WA Business (auto-deteksi):
+ * - Android web: pakai intent:// dengan package `com.whatsapp.w4b`; jika WA
+ *   Business tidak terpasang, Android otomatis fallback ke wa.me.
+ * - Selain itu: buka wa.me biasa (browser/iOS akan pakai app yang terpasang).
+ */
+export function openWhatsAppPreferBusiness(text: string, phone?: string): Window | null {
+  const url = isAndroidWeb()
+    ? buildWhatsAppBusinessIntentUrl(text, phone)
+    : buildWhatsAppUrl(text, phone);
+  return window.open(url, "_blank", "noopener,noreferrer");
+}
+
 export type ShareResult =
   | { status: "shared"; withFiles: boolean }
   | { status: "cancelled" }
@@ -104,7 +140,7 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
     for (const f of files!) downloadFile(f, f.name);
     try { await navigator.clipboard?.writeText(fullText); } catch { /* ignore */ }
   }
-  const win = window.open(buildWhatsAppUrl(fullText, phone), "_blank", "noopener,noreferrer");
+  const win = openWhatsAppPreferBusiness(fullText, phone);
   if (!win) {
     return {
       status: "failed",
