@@ -892,6 +892,31 @@ function PrepEditorDialog({
             </div>
           </div>
 
+          {(() => {
+            const totals = new Map<string, number>();
+            rows.forEach((r) => {
+              const g = Number(r.actual_grams);
+              if (!r.warehouse_item_id || !(g > 0)) return;
+              const w = warehouseItems.find((x) => x.id === r.warehouse_item_id);
+              const ti = titleItems.find((t) => t.warehouse_item_id === r.warehouse_item_id);
+              const unit = displayUnit(w?.name, ti?.unit_label ?? w?.base_unit ?? "g");
+              totals.set(unit, (totals.get(unit) ?? 0) + g);
+            });
+            if (totals.size === 0) return null;
+            return (
+              <div className="rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px]">
+                <div className="mb-1 font-semibold text-primary">Preview total</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {Array.from(totals.entries()).map(([unit, sum]) => (
+                    <span key={unit} className="rounded bg-background px-1.5 py-0.5 font-medium">
+                      {sum} {unit}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            );
+          })()}
+
           {photo ? (
             <div>
               <img src={photo.dataUrl} alt="" className="w-full rounded-lg border object-cover" />
