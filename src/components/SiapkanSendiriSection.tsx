@@ -47,6 +47,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [gpsBusy, setGpsBusy] = useState(false);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
