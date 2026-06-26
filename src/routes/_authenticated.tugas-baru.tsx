@@ -262,6 +262,27 @@ function TugasBaruPage() {
               {rows.map((r, i) => (
                 <div key={r.key} className="grid grid-cols-12 items-center gap-2 rounded-md border p-2">
                   <div className="col-span-12 text-[11px] text-muted-foreground sm:hidden">Barang #{i + 1}</div>
+                  <div className="col-span-12">
+                    <label className="block space-y-1">
+                      <div className="text-[11px] font-medium text-muted-foreground">
+                        Pilih dari daftar produk (agar foto pegawai otomatis muncul di Beranda & tombol Kirim WA aktif)
+                      </div>
+                      <select
+                        value={r.title_id}
+                        onChange={(e) => pickTitle(r.key, e.target.value)}
+                        className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                      >
+                        <option value="">— Bebas / manual —</option>
+                        {titles.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                            {t.target_grams != null ? ` · ${t.target_grams}${t.unit_label ?? ""}` : ""}
+                            {t.warehouse_item_id ? "" : " (belum terhubung gudang)"}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
                   <input
                     value={r.name}
                     onChange={(e) => updateRow(r.key, { name: e.target.value })}
@@ -290,6 +311,15 @@ function TugasBaruPage() {
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
+                  {r.title_id && r.warehouse_item_id ? (
+                    <div className="col-span-12 text-[11px] text-emerald-600">
+                      ✓ Terhubung ke produk gudang — foto pegawai akan otomatis muncul di kartu Beranda.
+                    </div>
+                  ) : (
+                    <div className="col-span-12 text-[11px] text-amber-600">
+                      ⚠ Belum terhubung produk — foto pegawai tidak akan tampil di kartu Beranda untuk barang ini.
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
