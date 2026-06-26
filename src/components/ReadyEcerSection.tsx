@@ -10,6 +10,20 @@ import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink } from "lucide-react";
 
+// Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
+// Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
+async function resolveShotSignedUrl(
+  path: string,
+  source: "worker" | "self",
+  expiresIn = 60 * 60,
+): Promise<string | null> {
+  const primary = source === "worker" ? signedUrl : ecerSignedUrl;
+  const secondary = source === "worker" ? ecerSignedUrl : signedUrl;
+  const a = await primary(path, expiresIn);
+  if (a) return a;
+  return await secondary(path, expiresIn);
+}
+
 type WorkerShot = {
   id: string;
   photo_path: string | null;
