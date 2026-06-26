@@ -65,21 +65,17 @@ export class InvalidShareTokenError extends Error {
   }
 }
 
-// Daftar host produksi yang sah untuk membuka halaman pegawai (/t/:token).
-// Selain ini dianggap pratinjau / sandbox / origin tidak valid dan akan
-// otomatis di-fallback ke PRODUCTION_BASE.
+// Link pegawai HARUS memakai origin tempat tugas dibuat.
+// Saat owner membuat tugas dari preview/sandbox Lovable, datanya tersimpan pada
+// backend preview tersebut. Jika link dipaksa ke mcmstorage.biz, halaman pegawai
+// dapat membaca backend/domain berbeda dan RPC prep_get_task akan mengembalikan
+// not_found meskipun PIN benar. Di production, current origin tetap mcmstorage.biz.
 // Fallback berlapis untuk QR / link halaman pegawai (/t/:token):
-//   1) Base URL saat ini (origin) — hanya jika host termasuk produksi yang sah.
-//   2) Domain produksi utama (https://mcmstorage.biz).
-//   3) URL pegawai default (mirror lovable.app) sebagai cadangan terakhir
-//      jika base utama tidak bisa diparse.
+//   1) Base URL saat ini (origin browser yang membuat tugas).
+//   2) Domain produksi utama (https://mcmstorage.biz) untuk SSR / non-browser.
+//   3) URL pegawai default (mirror lovable.app) sebagai cadangan terakhir.
 const PRODUCTION_BASE = "https://mcmstorage.biz";
 const PRODUCTION_BASE_FALLBACK = "https://mcmstorage.lovable.app";
-const PRODUCTION_HOSTS = new Set<string>([
-  "mcmstorage.biz",
-  "www.mcmstorage.biz",
-  "mcmstorage.lovable.app",
-]);
 
 function isValidHttpBase(url: string): boolean {
   try {
@@ -90,19 +86,12 @@ function isValidHttpBase(url: string): boolean {
   }
 }
 
-function currentOriginIfProduction(): string | null {
+function currentOrigin(): string | null {
   if (typeof window === "undefined") return null;
   try {
     const { protocol, hostname, origin } = window.location;
     if (protocol !== "http:" && protocol !== "https:") return null;
-    const isPreviewSandbox =
-      hostname.endsWith("lovableproject.com") ||
-      hostname.startsWith("id-preview--") ||
-      /--[a-z0-9-]+\.lovable\.app$/i.test(hostname) ||
-      hostname === "localhost" ||
-      hostname === "127.0.0.1";
-    if (isPreviewSandbox) return null;
-    if (!PRODUCTION_HOSTS.has(hostname)) return null;
+    if (!hostname) return null;
     return isValidHttpBase(origin) ? origin : null;
   } catch {
     return null;
@@ -112,7 +101,7 @@ function currentOriginIfProduction(): string | null {
 /** Daftar kandidat base URL berurutan dari yang paling diutamakan. */
 export function taskBaseUrlCandidates(): string[] {
   const list = [
-    currentOriginIfProduction(),
+    currentOrigin(),
     isValidHttpBase(PRODUCTION_BASE) ? PRODUCTION_BASE : null,
     isValidHttpBase(PRODUCTION_BASE_FALLBACK) ? PRODUCTION_BASE_FALLBACK : null,
   ].filter((v): v is string => !!v);
