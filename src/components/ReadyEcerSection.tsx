@@ -61,10 +61,44 @@ type SyncStatus = {
 export function ReadyEcerSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [query, setQuery] = useState("");
-  const [productFilter, setProductFilter] = useState<string>("all");
+  const [productFilter, setProductFilter] = useState<string>(() => {
+    if (typeof window === "undefined") return "all";
+    try { return localStorage.getItem("ecer:selectedItemId") || "all"; } catch { return "all"; }
+  });
+  const [syncedFromDetail, setSyncedFromDetail] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try { return !!localStorage.getItem("ecer:selectedItemId"); } catch { return false; }
+  });
   const [refreshing, setRefreshing] = useState(false);
   const [realtimeStatus, setRealtimeStatus] = useState<"connecting" | "live" | "offline">("connecting");
   const [syncing, setSyncing] = useState(false);
+
+  // Sync productFilter with selection made on /ecer detail page
+  useEffect(() => {
+    function applyId(id: string | null) {
+      if (id) {
+        setProductFilter(id);
+        setSyncedFromDetail(true);
+      } else {
+        setProductFilter("all");
+        setSyncedFromDetail(false);
+      }
+    }
+    function onCustom(e: Event) {
+      const id = (e as CustomEvent<string | null>).detail ?? null;
+      applyId(id);
+    }
+    function onStorage(e: StorageEvent) {
+      if (e.key !== "ecer:selectedItemId") return;
+      applyId(e.newValue);
+    }
+    window.addEventListener("ecer:selectedItemId", onCustom as EventListener);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("ecer:selectedItemId", onCustom as EventListener);
+      window.removeEventListener("storage", onStorage);
+    };
+  }, []);
 
   async function handleRefresh() {
     if (refreshing) return;
@@ -367,6 +401,28 @@ export function ReadyEcerSection() {
               <option key={id} value={id}>{name}</option>
             ))}
           </select>
+        </div>
+      )}
+
+      {syncedFromDetail && productFilter !== "all" && (
+        <div className="flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-2 py-1 text-[11px] text-primary">
+          <span className="truncate">
+            Disinkron dari detail: {(products.find(([id]) => id === productFilter)?.[1]) ?? "produk terpilih"}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setProductFilter("all");
+              setSyncedFromDetail(false);
+              try {
+                localStorage.removeItem("ecer:selectedItemId");
+                window.dispatchEvent(new CustomEvent("ecer:selectedItemId", { detail: null }));
+              } catch { /* ignore */ }
+            }}
+            className="shrink-0 rounded px-1.5 py-0.5 hover:bg-primary/10"
+          >
+            Hapus
+          </button>
         </div>
       )}
 
