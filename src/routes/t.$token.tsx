@@ -387,17 +387,21 @@ function PublicPrepPage() {
         <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-8">
           {successFlash && (
             <div
-              className="success-banner mb-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-emerald-700 shadow-lg shadow-emerald-500/10 dark:text-emerald-300"
+              className="success-banner mb-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3.5 text-emerald-700 shadow-lg shadow-emerald-500/10 sm:p-5 dark:text-emerald-300"
               role="status"
               aria-live="polite"
             >
-              <div className="flex items-center gap-3">
-                <div className="success-check-badge flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/40">
-                  <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
+              <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 sm:gap-4">
+                <div className="success-check-badge flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/40 sm:h-12 sm:w-12">
+                  <CheckCircle2 className="h-6 w-6 sm:h-7 sm:w-7" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-sm font-semibold">Masuk pegawai berhasil</div>
-                  <div className="text-[11px] opacity-80">Memuat daftar tugas…</div>
+                  <div className="truncate text-sm font-semibold leading-snug sm:text-base">
+                    Masuk pegawai berhasil
+                  </div>
+                  <div className="truncate text-xs opacity-80 sm:text-sm">
+                    Memuat daftar tugas…
+                  </div>
                 </div>
               </div>
             </div>
