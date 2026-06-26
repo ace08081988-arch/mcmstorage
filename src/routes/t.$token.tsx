@@ -1314,7 +1314,8 @@ function RequestForm({
       actual_grams: String(i.target_grams),
     })),
   );
-  const [photo, setPhoto] = useState<StagedPhoto | null>(null);
+  const [photos, setPhotos] = useState<StagedPhoto[]>([]);
+  const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
   const [locUrl, setLocUrl] = useState("");
@@ -1324,11 +1325,7 @@ function RequestForm({
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
 
-  async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]; e.target.value = "";
-    if (!f) return;
-    const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
-    setEditorSrc(dataUrl); setEditorOpen(true);
+  function triggerAutoGps() {
     if (!gps && !locUrl && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
@@ -1339,6 +1336,25 @@ function RequestForm({
         { enableHighAccuracy: true, timeout: 10000 },
       );
     }
+  }
+  async function fileToStaged(f: File): Promise<StagedPhoto> {
+    const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
+    return { dataUrl, blob: f };
+  }
+  async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const f = e.target.files?.[0]; e.target.value = "";
+    if (!f) return;
+    const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
+    setEditingIdx(null);
+    setEditorSrc(dataUrl); setEditorOpen(true);
+    triggerAutoGps();
+  }
+  async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = Array.from(e.target.files ?? []); e.target.value = "";
+    if (files.length === 0) return;
+    const staged = await Promise.all(files.map((f) => fileToStaged(f)));
+    setPhotos((prev) => [...prev, ...staged]);
+    triggerAutoGps();
   }
 
   function takeLocation() {
@@ -1356,14 +1372,18 @@ function RequestForm({
   }
 
   async function submit() {
-    if (!photo) { toast.error("Wajib lampirkan foto bukti"); return; }
+    if (photos.length === 0) { toast.error("Wajib lampirkan foto bukti"); return; }
     const validRows = rows.filter((r) => Number(r.actual_grams) > 0);
     if (validRows.length === 0) { toast.error("Minimal 1 item dengan jumlah > 0"); return; }
     setBusy(true);
     try {
       if (!ownerUserId) { toast.error("Sesi belum siap, coba muat ulang"); setBusy(false); return; }
-      const photoPath = await uploadRequestPhotoViaToken(ownerUserId, token, photo.blob, "jpg", publicSupabase);
-      if (!photoPath) throw new Error("Upload foto gagal");
+      const uploaded: string[] = [];
+      for (let i = 0; i < photos.length; i++) {
+        const p = await uploadRequestPhotoViaToken(ownerUserId, token, photos[i].blob, "jpg", publicSupabase);
+        if (!p) throw new Error(`Upload foto ${i + 1} gagal`);
+        uploaded.push(p);
+      }
       const itemsPayload = validRows.map((r) => ({
         warehouse_item_id: r.warehouse_item_id,
         actual_grams: Number(r.actual_grams),
@@ -1371,7 +1391,8 @@ function RequestForm({
       const args = {
         _token: token, _pin: pin, _title_id: title.id,
         _items: itemsPayload,
-        _photo_path: photoPath, _location_url: locUrl || null,
+        _photo_path: uploaded[0], _photo_paths: uploaded,
+        _location_url: locUrl || null,
         _gps_lat: gps?.lat ?? null, _gps_lng: gps?.lng ?? null,
         _note: note || null, _prep_task_item_id: null,
       };
@@ -1380,7 +1401,7 @@ function RequestForm({
       if (error) throw error;
       const res = data as { ok: boolean; error?: string };
       if (!res?.ok) throw new Error(res?.error || "submit_failed");
-      toast.success("Paket request terkirim, stok dikurangi");
+      toast.success(`Paket request terkirim (${uploaded.length} foto), stok dikurangi`);
       onDone();
     } catch (e) {
       toast.error("Gagal: " + (e as Error).message);
@@ -1406,22 +1427,32 @@ function RequestForm({
         ))}
       </div>
 
-      {photo ? (
-        <div>
-          <img src={photo.dataUrl} alt="" className="w-full rounded-lg border object-cover" />
-          <div className="mt-1 flex gap-2">
-            <button onClick={() => { setEditorSrc(photo.dataUrl); setEditorOpen(true); }} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs"><Edit3 className="h-3 w-3" /> Edit</button>
-            <button onClick={() => setPhoto(null)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs text-destructive">Hapus</button>
+      {photos.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+            <span>{photos.length} foto dipilih</span>
+            <button type="button" onClick={() => setPhotos([])} className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10">Hapus semua</button>
+          </div>
+          <div className="grid grid-cols-3 gap-1.5">
+            {photos.map((p, i) => (
+              <div key={i} className="group relative aspect-square overflow-hidden rounded-md border bg-muted">
+                <img src={p.dataUrl} alt="" className="h-full w-full object-cover" />
+                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
+                  <button type="button" onClick={() => { setEditingIdx(i); setEditorSrc(p.dataUrl); setEditorOpen(true); }} className="rounded bg-black/50 px-1.5 py-0.5">Edit</button>
+                  <button type="button" onClick={() => setPhotos((prev) => prev.filter((_, j) => j !== i))} className="rounded bg-destructive/80 px-1.5 py-0.5">Hapus</button>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-2">
-          <button onClick={() => cameraRef.current?.click()} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><Camera className="h-4 w-4" /> Kamera</button>
-          <button onClick={() => galleryRef.current?.click()} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><ImageIcon className="h-4 w-4" /> Galeri</button>
-        </div>
       )}
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
-      <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
+      <div className="grid grid-cols-2 gap-2">
+        <button onClick={() => cameraRef.current?.click()} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}</button>
+        <button onClick={() => galleryRef.current?.click()} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}</button>
+      </div>
+      <p className="-mt-1 text-[10px] text-muted-foreground">Bisa pilih beberapa foto sekaligus dari galeri.</p>
+      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onCameraFile} />
+      <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={onGalleryFiles} />
 
       <div className="flex gap-2">
         <input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="Link Google Maps (opsional)" className="h-10 flex-1 rounded-lg border bg-background px-3 text-xs" />
@@ -1437,7 +1468,18 @@ function RequestForm({
         <PhotoEditor
           src={editorSrc}
           onCancel={() => setEditorOpen(false)}
-          onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }}
+          onSave={(blob, dataUrl) => {
+            setPhotos((prev) => {
+              if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
+                const next = prev.slice();
+                next[editingIdx] = { blob, dataUrl };
+                return next;
+              }
+              return [...prev, { blob, dataUrl }];
+            });
+            setEditingIdx(null);
+            setEditorOpen(false);
+          }}
         />
       )}
     </div>
