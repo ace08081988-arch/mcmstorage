@@ -8,6 +8,28 @@ import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 
 const BUCKET = "self-prep-photos";
 
+function parseLatLngFromUrl(s: string): { lat: number; lng: number } | null {
+  if (!s) return null;
+  const patterns = [
+    /[?&]q=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /[?&]ll=(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/,
+    /!3d(-?\d+(?:\.\d+)?)!4d(-?\d+(?:\.\d+)?)/,
+    /^\s*(-?\d+(?:\.\d+)?),\s*(-?\d+(?:\.\d+)?)\s*$/,
+  ];
+  for (const re of patterns) {
+    const m = s.match(re);
+    if (m) {
+      const lat = parseFloat(m[1]);
+      const lng = parseFloat(m[2]);
+      if (Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180) {
+        return { lat, lng };
+      }
+    }
+  }
+  return null;
+}
+
 type Row = {
   id: string;
   user_id: string;
