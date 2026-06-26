@@ -58,16 +58,19 @@ export function WhatsAppTargetHost() {
   const [current, setCurrent] = useState<Request | null>(null);
   const [open, setOpen] = useState(false);
   const [remember, setRemember] = useState(false);
+  const [confirming, setConfirming] = useState<WaTarget | null>(null);
 
   useEffect(() => {
     openRequest = (req) => {
       setRemember(false);
+      setConfirming(null);
       setCurrent(req);
       setOpen(true);
     };
     while (queue.length) {
       const req = queue.shift()!;
       setRemember(false);
+      setConfirming(null);
       setCurrent(req);
       setOpen(true);
     }
@@ -78,13 +81,18 @@ export function WhatsAppTargetHost() {
     setOpen(false);
     if (v && remember) setWaTargetPref(v);
     current?.resolve(v);
-    setTimeout(() => setCurrent(null), 150);
+    setTimeout(() => {
+      setCurrent(null);
+      setConfirming(null);
+    }, 150);
   };
 
   const text = current?.text ?? "";
   const phone = current?.phone;
   const businessUrl = buildWhatsAppBusinessIntentUrl(text, phone);
   const regularUrl = buildWhatsAppUrl(text, phone);
+  const confirmUrl = confirming === "business" ? businessUrl : confirming === "regular" ? regularUrl : "";
+  const confirmLabel = confirming === "business" ? "WhatsApp Business" : "WhatsApp biasa";
 
   const copy = async (url: string) => {
     const res = await copyText(url);
@@ -95,6 +103,56 @@ export function WhatsAppTargetHost() {
   return (
     <AlertDialog open={open} onOpenChange={(o) => !o && finish(null)}>
       <AlertDialogContent>
+        {confirming ? (
+          <>
+            <AlertDialogHeader>
+              <AlertDialogTitle>Buka {confirmLabel}?</AlertDialogTitle>
+              <AlertDialogDescription>
+                Periksa pratinjau URL di bawah. Aplikasi WhatsApp akan dibuka setelah Anda menyetujui.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="rounded-md border p-2">
+              <div className="text-[11px] font-medium uppercase text-muted-foreground">URL yang akan dibuka</div>
+              <code className="mt-1 block max-h-32 overflow-auto break-all rounded bg-muted p-2 text-[11px]">
+                {confirmUrl}
+              </code>
+              <div className="mt-1 flex gap-2">
+                <Button type="button" size="sm" variant="ghost" onClick={() => copy(confirmUrl)}>
+                  Salin URL
+                </Button>
+                <a
+                  href={confirmUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-xs text-primary underline-offset-2 hover:underline self-center"
+                >
+                  Buka di tab baru
+                </a>
+              </div>
+            </div>
+            <label className="mt-2 flex items-center gap-2 text-sm text-muted-foreground">
+              <Checkbox
+                checked={remember}
+                onCheckedChange={(c) => setRemember(c === true)}
+              />
+              Ingat pilihan saya (bisa diubah lagi nanti)
+            </label>
+            <div className="mt-2 flex justify-between gap-2">
+              <Button type="button" variant="ghost" onClick={() => setConfirming(null)}>
+                Kembali
+              </Button>
+              <div className="flex gap-2">
+                <Button type="button" variant="outline" onClick={() => finish(null)}>
+                  Batal
+                </Button>
+                <Button type="button" onClick={() => finish(confirming)}>
+                  Ya, buka {confirmLabel}
+                </Button>
+              </div>
+            </div>
+          </>
+        ) : (
+        <>
         <AlertDialogHeader>
           <AlertDialogTitle>Kirim lewat WhatsApp mana?</AlertDialogTitle>
           <AlertDialogDescription>
@@ -105,7 +163,7 @@ export function WhatsAppTargetHost() {
           <div className="rounded-md border p-2">
             <Button
               type="button"
-              onClick={() => finish("business")}
+              onClick={() => setConfirming("business")}
               className="w-full justify-start"
             >
               WhatsApp Business
@@ -132,7 +190,7 @@ export function WhatsAppTargetHost() {
             <Button
               type="button"
               variant="secondary"
-              onClick={() => finish("regular")}
+              onClick={() => setConfirming("regular")}
               className="w-full justify-start"
             >
               WhatsApp biasa
@@ -168,6 +226,8 @@ export function WhatsAppTargetHost() {
             Batal
           </Button>
         </div>
+        </>
+        )}
       </AlertDialogContent>
     </AlertDialog>
   );
