@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2 } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
 import { ecerSignedUrl } from "@/lib/ecer";
@@ -72,9 +72,13 @@ export function ReadyEcerSection() {
   const [refreshing, setRefreshing] = useState(false);
   const [realtimeStatus, setRealtimeStatus] = useState<"connecting" | "live" | "offline">("connecting");
   const [syncing, setSyncing] = useState(false);
+  // Cross-tab sync banner: 'pending' while applying, 'synced' briefly after.
+  const [crossTabSync, setCrossTabSync] = useState<null | { status: "pending" | "synced"; id: string | null }>(null);
 
   // Sync productFilter with selection made on /ecer detail page
   useEffect(() => {
+    let syncedTimer: number | undefined;
+    let pendingTimer: number | undefined;
     function applyId(id: string | null) {
       if (id) {
         setProductFilter(id);
@@ -84,12 +88,23 @@ export function ReadyEcerSection() {
         setSyncedFromDetail(false);
       }
     }
+    function flashCrossTab(id: string | null) {
+      window.clearTimeout(syncedTimer);
+      window.clearTimeout(pendingTimer);
+      setCrossTabSync({ status: "pending", id });
+      pendingTimer = window.setTimeout(() => {
+        setCrossTabSync({ status: "synced", id });
+        syncedTimer = window.setTimeout(() => setCrossTabSync(null), 2200);
+      }, 350);
+    }
     function onCustom(e: Event) {
       const id = (e as CustomEvent<string | null>).detail ?? null;
       applyId(id);
     }
     function onStorage(e: StorageEvent) {
       if (e.key !== "ecer:selectedItemId") return;
+      // 'storage' only fires for changes made in OTHER tabs/windows.
+      flashCrossTab(e.newValue);
       applyId(e.newValue);
     }
     window.addEventListener("ecer:selectedItemId", onCustom as EventListener);
@@ -106,6 +121,8 @@ export function ReadyEcerSection() {
       window.removeEventListener("storage", onStorage);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("focus", onFocus);
+      window.clearTimeout(syncedTimer);
+      window.clearTimeout(pendingTimer);
     };
   }, []);
 
@@ -410,6 +427,31 @@ export function ReadyEcerSection() {
               <option key={id} value={id}>{name}</option>
             ))}
           </select>
+        </div>
+      )}
+
+      {crossTabSync && (
+        <div
+          role="status"
+          aria-live="polite"
+          className={`flex items-center gap-2 rounded-md border px-2 py-1 text-[11px] transition-colors ${
+            crossTabSync.status === "pending"
+              ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+              : "border-emerald-500/30 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+          }`}
+        >
+          {crossTabSync.status === "pending" ? (
+            <Loader2 className="h-3 w-3 animate-spin" />
+          ) : (
+            <Check className="h-3 w-3" />
+          )}
+          <span className="truncate">
+            {crossTabSync.status === "pending"
+              ? "Menyinkronkan filter dari tab lain…"
+              : crossTabSync.id
+                ? `Tersinkron: ${(products.find(([id]) => id === crossTabSync.id)?.[1]) ?? "produk terpilih"}`
+                : "Tersinkron: Semua produk"}
+          </span>
         </div>
       )}
 
