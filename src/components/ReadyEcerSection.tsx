@@ -4,10 +4,25 @@ import { supabase } from "@/integrations/supabase/client";
 import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
+import { ecerSignedUrl } from "@/lib/ecer";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink } from "lucide-react";
+
+// Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
+// Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
+async function resolveShotSignedUrl(
+  path: string,
+  source: "worker" | "self",
+  expiresIn = 60 * 60,
+): Promise<string | null> {
+  const primary = source === "worker" ? signedUrl : ecerSignedUrl;
+  const secondary = source === "worker" ? ecerSignedUrl : signedUrl;
+  const a = await primary(path, expiresIn);
+  if (a) return a;
+  return await secondary(path, expiresIn);
+}
 
 type WorkerShot = {
   id: string;
@@ -194,13 +209,14 @@ export function ReadyEcerSection() {
       }
 
       const shotsByName = shotsByTitleId; // reuse name below
-      // Resolve signed URLs for at most 4 thumbs per title.
+      // Resolve signed URLs for ALL shots so WA share can attach every photo,
+      // memilih bucket sesuai source (worker→prep-photos, self→ecer-photos) dengan fallback.
       const thumbJobs: Promise<void>[] = [];
       for (const arr of shotsByName.values()) {
-        for (const shot of arr.slice(0, 4)) {
+        for (const shot of arr) {
           if (!shot.photo_path) continue;
           thumbJobs.push(
-            signedUrl(shot.photo_path, 60 * 60).then((u) => { shot.thumb_url = u; })
+            resolveShotSignedUrl(shot.photo_path, shot.source).then((u) => { shot.thumb_url = u; })
           );
         }
       }
@@ -565,9 +581,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }
       const files: File[] = [];
       const take = shots.slice(0, 6); // batasi agar WA tidak tolak
       for (const s of take) {
-        if (!s.thumb_url) continue;
-        const f = await urlToFile(s.thumb_url, `${r.name}-${s.id.slice(0, 6)}.jpg`);
+        // Pastikan signed url tersedia (fallback bucket bila perlu) supaya foto selalu ikut.
+        let url = s.thumb_url ?? null;
+        if (!url && s.photo_path) {
+          url = await resolveShotSignedUrl(s.photo_path, s.source, 600);
+          s.thumb_url = url;
+        }
+        if (!url) continue;
+        const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}.jpg`);
         if (f) files.push(f);
+      }
+      if (files.length === 0) {
+        toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan ke WA.");
       }
       const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const text = [
