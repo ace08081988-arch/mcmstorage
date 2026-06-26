@@ -212,27 +212,7 @@ export function ReadyEcerSection() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {(filtered ?? []).map((r) => (
-            <Link
-              key={r.id}
-              to="/ecer"
-              search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
-              className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent"
-            >
-              <div className="flex items-center gap-1.5">
-                <Scale className="h-3.5 w-3.5 text-primary" />
-                <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
-              </div>
-              <span className="truncate text-[10px] leading-tight text-muted-foreground">
-                {r.product_name} · {r.target_grams} {r.product_name.trim().toLowerCase() === "gs" ? "botol" : r.unit_label}
-              </span>
-              <span className="text-[10px] leading-tight">
-                <span className={r.prep_count > 0 ? "font-medium text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
-                  {r.prep_count} kotak siap
-                </span>
-              </span>
-            </Link>
-          ))}
+          {(filtered ?? []).map((r) => <EcerCard key={r.id} row={r} />)}
         </div>
       )}
     </div>
