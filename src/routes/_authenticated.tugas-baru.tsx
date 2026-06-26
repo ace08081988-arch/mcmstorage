@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl } from "@/lib/prep";
@@ -17,10 +17,25 @@ export const Route = createFileRoute("/_authenticated/tugas-baru")({
   component: TugasBaruPage,
 });
 
-type Row = { key: string; name: string; qty: string; unit: string };
+type TitleOpt = {
+  id: string;
+  name: string;
+  target_grams: number | null;
+  unit_label: string | null;
+  warehouse_item_id: string | null;
+};
+
+type Row = {
+  key: string;
+  title_id: string; // "" = bebas (manual)
+  name: string;
+  qty: string;
+  unit: string;
+  warehouse_item_id: string | null;
+};
 
 function newRow(): Row {
-  return { key: crypto.randomUUID(), name: "", qty: "1", unit: "" };
+  return { key: crypto.randomUUID(), title_id: "", name: "", qty: "1", unit: "", warehouse_item_id: null };
 }
 
 function TugasBaruPage() {
@@ -31,9 +46,44 @@ function TugasBaruPage() {
   const [phone, setPhone] = useState("");
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ token: string; pin: string; title: string; url: string } | null>(null);
+  const [titles, setTitles] = useState<TitleOpt[]>([]);
+
+  useEffect(() => {
+    let on = true;
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.from as any)("ecer_titles")
+        .select("id,name,target_grams,unit_label,warehouse_item_id")
+        .order("position")
+        .order("created_at");
+      if (!on) return;
+      if (error) {
+        toast.error("Gagal memuat daftar produk: " + error.message);
+        return;
+      }
+      setTitles((data ?? []) as TitleOpt[]);
+    })();
+    return () => {
+      on = false;
+    };
+  }, []);
 
   function updateRow(key: string, patch: Partial<Row>) {
     setRows((s) => s.map((r) => (r.key === key ? { ...r, ...patch } : r)));
+  }
+  function pickTitle(key: string, titleId: string) {
+    const t = titles.find((x) => x.id === titleId);
+    if (!t) {
+      updateRow(key, { title_id: "", warehouse_item_id: null });
+      return;
+    }
+    updateRow(key, {
+      title_id: t.id,
+      name: t.name,
+      qty: t.target_grams != null ? String(t.target_grams) : "1",
+      unit: t.unit_label ?? "",
+      warehouse_item_id: t.warehouse_item_id,
+    });
   }
   function removeRow(key: string) {
     setRows((s) => (s.length <= 1 ? s : s.filter((r) => r.key !== key)));
@@ -44,10 +94,22 @@ function TugasBaruPage() {
     if (!t) return toast.error("Judul tugas wajib diisi");
     if (!/^\d{4,8}$/.test(pin)) return toast.error("PIN harus 4–8 digit angka");
     const items = rows
-      .map((r) => ({ name: r.name.trim(), qty: Number(r.qty), unit: r.unit.trim() || null }))
+      .map((r) => ({
+        name: r.name.trim(),
+        qty: Number(r.qty),
+        unit: r.unit.trim() || null,
+        warehouse_item_id: r.warehouse_item_id,
+      }))
       .filter((r) => r.name.length > 0);
     if (items.length === 0) return toast.error("Tambahkan minimal 1 barang");
     if (items.some((r) => !Number.isFinite(r.qty) || r.qty <= 0)) return toast.error("Jumlah setiap barang harus > 0");
+    const missingWid = items.filter((r) => !r.warehouse_item_id).length;
+    if (missingWid > 0) {
+      const ok = window.confirm(
+        `${missingWid} barang belum dipilih dari daftar produk. Tugas tetap bisa dibuat, tetapi foto pegawai tidak akan otomatis muncul di kartu Beranda (1g/ST/SPR/GS) dan tombol Kirim WA hanya aktif untuk barang yang cocok.\n\nLanjutkan tanpa cocokkan?`,
+      );
+      if (!ok) return;
+    }
 
     setBusy(true);
     const token = genShareToken();
@@ -57,6 +119,7 @@ function TugasBaruPage() {
       qty_requested: r.qty,
       unit_label: r.unit,
       ref_photo_path: null,
+      warehouse_item_id: r.warehouse_item_id,
     }));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.rpc as any)("prep_create_task", {
@@ -199,6 +262,27 @@ function TugasBaruPage() {
               {rows.map((r, i) => (
                 <div key={r.key} className="grid grid-cols-12 items-center gap-2 rounded-md border p-2">
                   <div className="col-span-12 text-[11px] text-muted-foreground sm:hidden">Barang #{i + 1}</div>
+                  <div className="col-span-12">
+                    <label className="block space-y-1">
+                      <div className="text-[11px] font-medium text-muted-foreground">
+                        Pilih dari daftar produk (agar foto pegawai otomatis muncul di Beranda & tombol Kirim WA aktif)
+                      </div>
+                      <select
+                        value={r.title_id}
+                        onChange={(e) => pickTitle(r.key, e.target.value)}
+                        className="w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                      >
+                        <option value="">— Bebas / manual —</option>
+                        {titles.map((t) => (
+                          <option key={t.id} value={t.id}>
+                            {t.name}
+                            {t.target_grams != null ? ` · ${t.target_grams}${t.unit_label ?? ""}` : ""}
+                            {t.warehouse_item_id ? "" : " (belum terhubung gudang)"}
+                          </option>
+                        ))}
+                      </select>
+                    </label>
+                  </div>
                   <input
                     value={r.name}
                     onChange={(e) => updateRow(r.key, { name: e.target.value })}
@@ -227,6 +311,15 @@ function TugasBaruPage() {
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
+                  {r.title_id && r.warehouse_item_id ? (
+                    <div className="col-span-12 text-[11px] text-emerald-600">
+                      ✓ Terhubung ke produk gudang — foto pegawai akan otomatis muncul di kartu Beranda.
+                    </div>
+                  ) : (
+                    <div className="col-span-12 text-[11px] text-amber-600">
+                      ⚠ Belum terhubung produk — foto pegawai tidak akan tampil di kartu Beranda untuk barang ini.
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
