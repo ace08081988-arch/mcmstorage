@@ -288,14 +288,26 @@ function PublicPrepPage() {
       return false;
     }
     setLastError(null);
+    // Defensif: pastikan tidak ada layar "tugas ditutup" yang tersisa dari
+    // silentRefresh sebelumnya, agar setelah authed=true tidak langsung
+    // melompat balik ke screen closedReason.
+    setClosedReason(null);
     // PIN benar → reset penuh, termasuk localStorage, sehingga refresh
     // browser tidak membawa sisa percobaan/lock.
     resetAttemptsFully();
     setTask(res.task!); setItems(res.items ?? []); pinRef.current = p;
+    // eslint-disable-next-line no-console
+    console.log("[t.$token] PIN ok", {
+      taskId: res.task?.id,
+      itemsCount: res.items?.length ?? 0,
+      status: res.task?.status,
+    });
     // Tampilkan layar sukses inline sebelum berpindah ke daftar tugas,
     // supaya pengguna melihat konfirmasi yang jelas di layar PIN.
     setSuccessFlash(true);
     setTimeout(() => {
+      // eslint-disable-next-line no-console
+      console.log("[t.$token] setAuthed(true) fired after success flash");
       setSuccessFlash(false);
       setAuthed(true);
     }, 1200);
@@ -342,6 +354,8 @@ function PublicPrepPage() {
       } else if (res?.error === "not_found") {
         setClosedReason("not_found");
       }
+      // eslint-disable-next-line no-console
+      console.warn("[t.$token] silentRefresh non-ok", res);
       return;
     }
     // Deteksi item yang sedang dilihat pegawai tapi sudah berubah versinya.
