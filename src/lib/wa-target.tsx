@@ -11,6 +11,39 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { buildWhatsAppUrl, buildWhatsAppBusinessIntentUrl } from "./share-wa";
 import { copyText } from "./share-wa";
 import { toast } from "sonner";
+import { Capacitor } from "@capacitor/core";
+import { AppLauncher } from "@capacitor/app-launcher";
+
+export type WaInstallStatus = {
+  business: boolean | null;
+  regular: boolean | null;
+  native: boolean;
+};
+
+let _installCache: WaInstallStatus | null = null;
+
+export async function detectWhatsAppInstalled(force = false): Promise<WaInstallStatus> {
+  if (_installCache && !force) return _installCache;
+  const native = typeof Capacitor !== "undefined" && Capacitor.isNativePlatform?.() === true;
+  if (!native) {
+    _installCache = { business: null, regular: null, native: false };
+    return _installCache;
+  }
+  const check = async (url: string) => {
+    try {
+      const res = await AppLauncher.canOpenUrl({ url });
+      return !!res.value;
+    } catch {
+      return false;
+    }
+  };
+  const [business, regular] = await Promise.all([
+    check("com.whatsapp.w4b://"),
+    check("com.whatsapp://"),
+  ]);
+  _installCache = { business, regular, native: true };
+  return _installCache;
+}
 
 export type WaTarget = "business" | "regular";
 export type WaTargetPref = "ask" | WaTarget;
@@ -73,6 +106,7 @@ export function WhatsAppTargetHost() {
   const [remember, setRemember] = useState(false);
   const [confirming, setConfirming] = useState<WaTarget | null>(null);
   const [skipConfirm, setSkipConfirm] = useState(false);
+  const [install, setInstall] = useState<WaInstallStatus>({ business: null, regular: null, native: false });
 
   useEffect(() => {
     openRequest = (req) => {
@@ -81,6 +115,7 @@ export function WhatsAppTargetHost() {
       setSkipConfirm(false);
       setCurrent(req);
       setOpen(true);
+      detectWhatsAppInstalled(true).then(setInstall);
     };
     while (queue.length) {
       const req = queue.shift()!;
@@ -89,7 +124,9 @@ export function WhatsAppTargetHost() {
       setSkipConfirm(false);
       setCurrent(req);
       setOpen(true);
+      detectWhatsAppInstalled(true).then(setInstall);
     }
+    detectWhatsAppInstalled().then(setInstall);
     return () => { openRequest = null; };
   }, []);
 
@@ -110,6 +147,12 @@ export function WhatsAppTargetHost() {
   const regularUrl = buildWhatsAppUrl(text, phone);
   const confirmUrl = confirming === "business" ? businessUrl : confirming === "regular" ? regularUrl : "";
   const confirmLabel = confirming === "business" ? "WhatsApp Business" : "WhatsApp biasa";
+  const businessMissing = install.native && install.business === false;
+  const regularMissing = install.native && install.regular === false;
+  const bothMissing = businessMissing && regularMissing;
+  const confirmMissing =
+    (confirming === "business" && businessMissing) ||
+    (confirming === "regular" && regularMissing);
 
   const copy = async (url: string) => {
     const res = await copyText(url);
@@ -128,6 +171,11 @@ export function WhatsAppTargetHost() {
                 Periksa pratinjau URL di bawah. Aplikasi WhatsApp akan dibuka setelah Anda menyetujui.
               </AlertDialogDescription>
             </AlertDialogHeader>
+            {confirmMissing && (
+              <div className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs text-destructive">
+                {confirmLabel} sepertinya belum terpasang di perangkat ini. Pasang aplikasinya dari Play Store atau pilih opsi WhatsApp lain.
+              </div>
+            )}
             <div className="rounded-md border p-2">
               <div className="text-[11px] font-medium uppercase text-muted-foreground">URL yang akan dibuka</div>
               <code className="mt-1 block max-h-32 overflow-auto break-all rounded bg-muted p-2 text-[11px]">
@@ -183,15 +231,31 @@ export function WhatsAppTargetHost() {
             Pilih aplikasi WhatsApp yang ingin dibuka. Pratinjau URL ditampilkan di bawah tiap opsi.
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {bothMissing && (
+          <div className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs text-destructive">
+            Tidak ada aplikasi WhatsApp yang terdeteksi. Pasang WhatsApp atau WhatsApp Business dari Play Store terlebih dahulu, lalu coba lagi.
+          </div>
+        )}
+        {!install.native && (
+          <div className="rounded-md border bg-muted/40 p-2 text-[11px] text-muted-foreground">
+            Catatan: di browser, ketersediaan aplikasi WhatsApp tidak bisa dideteksi. Jika tombol tidak membuka aplikasi, pastikan WhatsApp / WhatsApp Business sudah terpasang.
+          </div>
+        )}
         <div className="grid gap-3">
           <div className="rounded-md border p-2">
             <Button
               type="button"
               onClick={() => setConfirming("business")}
               className="w-full justify-start"
+              disabled={businessMissing}
             >
-              WhatsApp Business
+              WhatsApp Business{businessMissing ? " (belum terpasang)" : ""}
             </Button>
+            {businessMissing && (
+              <div className="mt-1 text-[11px] text-destructive">
+                Aplikasi WhatsApp Business tidak ditemukan di perangkat ini.
+              </div>
+            )}
             <div className="mt-2 text-[11px] font-medium uppercase text-muted-foreground">URL yang dibuka</div>
             <code className="mt-1 block max-h-24 overflow-auto break-all rounded bg-muted p-2 text-[11px]">
               {businessUrl}
@@ -216,9 +280,15 @@ export function WhatsAppTargetHost() {
               variant="secondary"
               onClick={() => setConfirming("regular")}
               className="w-full justify-start"
+              disabled={regularMissing}
             >
-              WhatsApp biasa
+              WhatsApp biasa{regularMissing ? " (belum terpasang)" : ""}
             </Button>
+            {regularMissing && (
+              <div className="mt-1 text-[11px] text-destructive">
+                Aplikasi WhatsApp tidak ditemukan di perangkat ini.
+              </div>
+            )}
             <div className="mt-2 text-[11px] font-medium uppercase text-muted-foreground">URL yang dibuka</div>
             <code className="mt-1 block max-h-24 overflow-auto break-all rounded bg-muted p-2 text-[11px]">
               {regularUrl}
