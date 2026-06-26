@@ -168,6 +168,46 @@ export function WhatsAppTargetHost() {
     (confirming === "business" && businessMissing) ||
     (confirming === "regular" && regularMissing);
 
+  const PLAY_BUSINESS = "https://play.google.com/store/apps/details?id=com.whatsapp.w4b";
+  const PLAY_REGULAR = "https://play.google.com/store/apps/details?id=com.whatsapp";
+
+  const InstallHelp = ({ kind }: { kind: WaTarget }) => {
+    const isBiz = kind === "business";
+    const label = isBiz ? "WhatsApp Business" : "WhatsApp";
+    const pkg = isBiz ? "com.whatsapp.w4b" : "com.whatsapp";
+    const url = isBiz ? PLAY_BUSINESS : PLAY_REGULAR;
+    return (
+      <div className="rounded-md border border-amber-300/60 bg-amber-50 p-2 text-[11px] text-amber-900 dark:border-amber-500/40 dark:bg-amber-950/30 dark:text-amber-100">
+        <div className="font-semibold">Cara memasang {label}:</div>
+        <ol className="mt-1 list-decimal space-y-0.5 pl-4">
+          <li>Buka Google Play Store di HP Anda.</li>
+          <li>Cari <span className="font-mono">{pkg}</span> atau gunakan tombol di bawah.</li>
+          <li>Tekan <span className="font-semibold">Install</span> lalu tunggu selesai.</li>
+          <li>Buka aplikasi dan selesaikan verifikasi nomor.</li>
+          <li>Kembali ke sini dan tekan <span className="font-semibold">Verifikasi ulang</span>.</li>
+        </ol>
+        <div className="mt-2 flex flex-wrap gap-2">
+          <a
+            href={url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center rounded bg-amber-600 px-2 py-1 text-[11px] font-semibold text-white hover:bg-amber-700"
+          >
+            Buka Play Store ({label})
+          </a>
+          <Button
+            type="button"
+            size="sm"
+            variant="ghost"
+            onClick={() => detectWhatsAppInstalled(true).then(setInstall)}
+          >
+            Verifikasi ulang
+          </Button>
+        </div>
+      </div>
+    );
+  };
+
   const copy = async (url: string) => {
     const res = await copyText(url);
     if (res.ok) toast.success("URL disalin");
@@ -186,9 +226,12 @@ export function WhatsAppTargetHost() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             {confirmMissing && (
-              <div className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs text-destructive">
-                {confirmLabel} sepertinya belum terpasang di perangkat ini. Pasang aplikasinya dari Play Store atau pilih opsi WhatsApp lain.
-              </div>
+              <>
+                <div className="rounded-md border border-destructive/50 bg-destructive/10 p-2 text-xs text-destructive">
+                  {confirmLabel} sepertinya belum terpasang di perangkat ini. Pasang aplikasinya dari Play Store atau pilih opsi WhatsApp lain.
+                </div>
+                <InstallHelp kind={confirming!} />
+              </>
             )}
             <div className="rounded-md border p-2">
               <div className="text-[11px] font-medium uppercase text-muted-foreground">URL yang akan dibuka</div>
@@ -266,9 +309,12 @@ export function WhatsAppTargetHost() {
               WhatsApp Business{businessMissing ? " (belum terpasang)" : ""}
             </Button>
             {businessMissing && (
-              <div className="mt-1 text-[11px] text-destructive">
-                Aplikasi WhatsApp Business tidak ditemukan di perangkat ini.
-              </div>
+              <>
+                <div className="mt-1 text-[11px] text-destructive">
+                  Aplikasi WhatsApp Business tidak ditemukan di perangkat ini.
+                </div>
+                <div className="mt-2"><InstallHelp kind="business" /></div>
+              </>
             )}
             <div className="mt-2 text-[11px] font-medium uppercase text-muted-foreground">URL yang dibuka</div>
             <code className="mt-1 block max-h-24 overflow-auto break-all rounded bg-muted p-2 text-[11px]">
@@ -299,9 +345,12 @@ export function WhatsAppTargetHost() {
               WhatsApp biasa{regularMissing ? " (belum terpasang)" : ""}
             </Button>
             {regularMissing && (
-              <div className="mt-1 text-[11px] text-destructive">
-                Aplikasi WhatsApp tidak ditemukan di perangkat ini.
-              </div>
+              <>
+                <div className="mt-1 text-[11px] text-destructive">
+                  Aplikasi WhatsApp tidak ditemukan di perangkat ini.
+                </div>
+                <div className="mt-2"><InstallHelp kind="regular" /></div>
+              </>
             )}
             <div className="mt-2 text-[11px] font-medium uppercase text-muted-foreground">URL yang dibuka</div>
             <code className="mt-1 block max-h-24 overflow-auto break-all rounded bg-muted p-2 text-[11px]">
