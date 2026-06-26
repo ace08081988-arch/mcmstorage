@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl } from "@/lib/prep";
@@ -47,6 +47,39 @@ function TugasBaruPage() {
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ token: string; pin: string; title: string; url: string } | null>(null);
   const [titles, setTitles] = useState<TitleOpt[]>([]);
+  type VerifyState = {
+    status: "idle" | "checking" | "ok" | "missing" | "error";
+    productName?: string;
+    error?: string;
+    wid?: string | null;
+  };
+  const [verify, setVerify] = useState<Record<string, VerifyState>>({});
+  const verifySeq = useRef<Record<string, number>>({});
+
+  async function verifyWid(key: string, wid: string | null) {
+    const seq = (verifySeq.current[key] ?? 0) + 1;
+    verifySeq.current[key] = seq;
+    if (!wid) {
+      setVerify((v) => ({ ...v, [key]: { status: "idle", wid: null } }));
+      return;
+    }
+    setVerify((v) => ({ ...v, [key]: { status: "checking", wid } }));
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const { data, error } = await (supabase.from as any)("warehouse_items")
+      .select("id,name")
+      .eq("id", wid)
+      .maybeSingle();
+    if (verifySeq.current[key] !== seq) return; // stale
+    if (error) {
+      setVerify((v) => ({ ...v, [key]: { status: "error", error: error.message, wid } }));
+      return;
+    }
+    if (!data) {
+      setVerify((v) => ({ ...v, [key]: { status: "missing", wid } }));
+      return;
+    }
+    setVerify((v) => ({ ...v, [key]: { status: "ok", productName: (data as { name: string }).name, wid } }));
+  }
 
   useEffect(() => {
     let on = true;
@@ -75,6 +108,7 @@ function TugasBaruPage() {
     const t = titles.find((x) => x.id === titleId);
     if (!t) {
       updateRow(key, { title_id: "", warehouse_item_id: null });
+      verifyWid(key, null);
       return;
     }
     updateRow(key, {
@@ -84,9 +118,15 @@ function TugasBaruPage() {
       unit: t.unit_label ?? "",
       warehouse_item_id: t.warehouse_item_id,
     });
+    verifyWid(key, t.warehouse_item_id);
   }
   function removeRow(key: string) {
     setRows((s) => (s.length <= 1 ? s : s.filter((r) => r.key !== key)));
+    setVerify((v) => {
+      const { [key]: _drop, ...rest } = v;
+      return rest;
+    });
+    delete verifySeq.current[key];
   }
 
   async function submit() {
