@@ -284,7 +284,7 @@ function PublicPrepPage() {
       toast.error(msg);
       return false;
     }
-    const res = data as { ok: boolean; error?: string; retry_after?: number; expires_at?: string; status?: string; task?: PrepTaskRow; items?: PrepItemRow[] };
+    const res = data as { ok: boolean; error?: string; retry_after?: number; expires_at?: string; status?: string; task?: unknown; items?: unknown };
     if (!res?.ok) {
       if (res?.error === "rate_limited") {
         const secs = Math.max(1, res.retry_after ?? 600);
@@ -350,18 +350,20 @@ function PublicPrepPage() {
       return false;
     }
     // PIN valid (ok=true) tapi payload task hilang → tampilkan detail diagnostik
-    if (!res.task) {
+    const normalizedTask = normalizePrepTask(res.task);
+    if (!normalizedTask) {
       const msg = "PIN benar, tetapi data tugas tidak terkirim dari server.";
       setLastError({
         kind: "no_task",
         message: msg,
-        detail: "Server merespon ok=true namun field `task` kosong. Minta pemilik membuka kembali tugas lalu kirim ulang link.",
+        detail: "Server merespon ok=true namun field `task` kosong / rusak. Minta pemilik membuka kembali tugas lalu kirim ulang link.",
         code: "missing_task",
         raw: safeJson(res),
       });
       toast.error(msg);
       return false;
     }
+    const normalizedItems = normalizePrepItems(res.items);
     setLastError(null);
     // Defensif: pastikan tidak ada layar "tugas ditutup" yang tersisa dari
     // silentRefresh sebelumnya, agar setelah authed=true tidak langsung
@@ -370,12 +372,12 @@ function PublicPrepPage() {
     // PIN benar → reset penuh, termasuk localStorage, sehingga refresh
     // browser tidak membawa sisa percobaan/lock.
     resetAttemptsFully();
-    setTask(res.task!); setItems(res.items ?? []); pinRef.current = p;
+    setTask(normalizedTask); setItems(normalizedItems); pinRef.current = p;
     // eslint-disable-next-line no-console
     console.log("[t.$token] PIN ok", {
-      taskId: res.task?.id,
-      itemsCount: res.items?.length ?? 0,
-      status: res.task?.status,
+      taskId: normalizedTask.id,
+      itemsCount: normalizedItems.length,
+      status: normalizedTask.status,
     });
     // Tampilkan layar sukses inline sebelum berpindah ke daftar tugas,
     // supaya pengguna melihat konfirmasi yang jelas di layar PIN.
@@ -418,7 +420,7 @@ function PublicPrepPage() {
   async function silentRefresh() {
     if (!pinRef.current || !authed) return;
     const { data } = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
-    const res = data as { ok: boolean; error?: string; task?: PrepTaskRow; items?: PrepItemRow[] };
+    const res = data as { ok: boolean; error?: string; task?: unknown; items?: unknown };
     if (!res?.ok) {
       if (res?.error === "bad_pin") {
         setClosedReason("pin_changed");
@@ -434,17 +436,26 @@ function PublicPrepPage() {
       return;
     }
     // Deteksi item yang sedang dilihat pegawai tapi sudah berubah versinya.
+    const normalizedTask = normalizePrepTask(res.task);
+    if (!normalizedTask) {
+      // Payload kosong / malformed pada refresh berkala tidak boleh memantulkan
+      // user ke PIN; pertahankan data terakhir yang masih valid.
+      // eslint-disable-next-line no-console
+      console.warn("[t.$token] silentRefresh missing/malformed task", res);
+      return;
+    }
+    const normalizedItems = normalizePrepItems(res.items);
     const prev = new Map(itemsRef.current.map((i) => [i.id, i.updated_at ?? null]));
     const nextStale: Record<string, true> = { ...staleItemIds };
-    for (const it of res.items ?? []) {
+    for (const it of normalizedItems) {
       const before = prev.get(it.id);
       if (before && it.updated_at && before !== it.updated_at) {
         nextStale[it.id] = true;
       }
     }
     setStaleItemIds(nextStale);
-    setTask(res.task!);
-    setItems(res.items ?? []);
+    setTask(normalizedTask);
+    setItems(normalizedItems);
     setLastSyncAt(Date.now());
   }
 
