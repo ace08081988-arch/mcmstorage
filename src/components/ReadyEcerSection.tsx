@@ -405,7 +405,7 @@ function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { 
           </span>
           <span
             className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground"
-            title={`Foto dicocokkan ke kartu ini berdasarkan warehouse_item_id (${r.warehouse_item_id.slice(0, 8)}…) + ukuran ${r.target_grams} ${unit}. Fallback: ukuran sama, lalu produk sama.`}
+            title={`Aturan cocok foto:\n• warehouse_item_id: ${r.warehouse_item_id}\n• ukuran: ${r.target_grams}\n• unit: ${unit}\n\nFallback: warehouse_item_id + ukuran (unit apa pun), lalu warehouse_item_id saja.\n\nTitle ID: ${r.id}`}
           >
             <span className="h-1 w-1 rounded-full bg-primary" />
             Cocok: produk + {r.target_grams}{unit}
