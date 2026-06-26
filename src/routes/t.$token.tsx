@@ -517,9 +517,11 @@ function PublicPrepPage() {
                 <MessageCircle className="h-4 w-4" /> Minta PIN baru ke pemilik
               </button>
             )}
-            <p className="mt-2 text-center text-[10px] leading-relaxed text-muted-foreground">
-              Tombol ini hanya membuka WhatsApp dengan pesan siap kirim — pembatasan percobaan tetap berlaku sampai hitungan mundur selesai.
-            </p>
+            {(isLocked || attempts > 0) && (
+              <p className="mt-2 text-center text-[10px] leading-relaxed text-muted-foreground">
+                Tombol ini hanya membuka WhatsApp dengan pesan siap kirim — pembatasan percobaan tetap berlaku sampai hitungan mundur selesai.
+              </p>
+            )}
             <div className="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
               <ShieldCheck className="h-3 w-3" /> Koneksi terenkripsi · Sesi terbatas waktu
             </div>
