@@ -17,6 +17,7 @@ import { applyCompactMode } from "@/components/CompactModeToggle";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
 import { WhatsAppTargetHost } from "@/lib/wa-target";
+import { installChunkReloadGuard } from "@/lib/chunk-reload";
 
 function NotFoundComponent() {
   return (
@@ -267,6 +268,7 @@ function RootComponent() {
       console.warn("[perm-bootstrap]", e),
     );
     applyCompactMode();
+    installChunkReloadGuard();
   }, []);
 
   return (
