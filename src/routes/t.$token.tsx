@@ -387,13 +387,13 @@ function PublicPrepPage() {
         <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-8">
           {successFlash && (
             <div
-              className="mb-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-emerald-700 shadow-lg shadow-emerald-500/10 dark:text-emerald-300"
+              className="success-banner mb-4 w-full rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-4 text-emerald-700 shadow-lg shadow-emerald-500/10 dark:text-emerald-300"
               role="status"
               aria-live="polite"
             >
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/40">
-                  <CheckCircle2 className="h-5 w-5" />
+                <div className="success-check-badge flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-emerald-500/20 ring-1 ring-emerald-500/40">
+                  <CheckCircle2 className="h-5 w-5" aria-hidden="true" />
                 </div>
                 <div className="min-w-0">
                   <div className="text-sm font-semibold">Masuk pegawai berhasil</div>
