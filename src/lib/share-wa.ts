@@ -122,7 +122,8 @@ export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   }
 
   // Tanya target WA (Business / biasa) sebelum membuka aplikasi.
-  const target = await pickWhatsAppTarget();
+  const previewText = url ? `${text}\n${url}` : text;
+  const target = await pickWhatsAppTarget({ text: previewText, phone });
   if (target === null) return { status: "cancelled" };
 
   let shareFailed = false;
