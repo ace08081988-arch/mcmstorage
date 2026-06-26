@@ -501,6 +501,9 @@ function TitleEditorDialog({
                   >
                     <Trash2 className="h-3.5 w-3.5" />
                   </button>
+                  {negErrors[idx] ? (
+                    <p className="col-span-12 text-[10px] font-medium text-destructive">{negErrors[idx]}</p>
+                  ) : null}
                 </div>
               ))}
             </div>
