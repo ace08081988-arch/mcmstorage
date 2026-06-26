@@ -83,7 +83,7 @@ class WorkerSectionBoundary extends Component<{
   children: ReactNode;
   renderFallback: (error: Error) => ReactNode;
 }, { error: Error | null }> {
-  state = { error: null };
+  state: { error: Error | null } = { error: null };
   static getDerivedStateFromError(error: Error) { return { error }; }
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Jangan biarkan 1 kartu / paket request meruntuhkan seluruh portal pegawai
