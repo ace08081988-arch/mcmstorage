@@ -21,6 +21,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
+import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
@@ -105,6 +106,11 @@ const TTokenRoute = TTokenRouteImport.update({
   id: '/t/$token',
   path: '/t/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedTugasBaruRoute = AuthenticatedTugasBaruRouteImport.update({
+  id: '/tugas-baru',
+  path: '/tugas-baru',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedTugasRoute = AuthenticatedTugasRouteImport.update({
   id: '/tugas',
@@ -272,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
+  '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
   '/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
@@ -308,6 +315,7 @@ export interface FileRoutesByTo {
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
   '/tugas': typeof AuthenticatedTugasRoute
+  '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
@@ -348,6 +356,7 @@ export interface FileRoutesById {
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
+  '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
@@ -389,6 +398,7 @@ export interface FileRouteTypes {
     | '/profil'
     | '/request'
     | '/tugas'
+    | '/tugas-baru'
     | '/t/$token'
     | '/admin/pembayaran'
     | '/chat/$conversationId'
@@ -425,6 +435,7 @@ export interface FileRouteTypes {
     | '/profil'
     | '/request'
     | '/tugas'
+    | '/tugas-baru'
     | '/t/$token'
     | '/'
     | '/admin/pembayaran'
@@ -464,6 +475,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profil'
     | '/_authenticated/request'
     | '/_authenticated/tugas'
+    | '/_authenticated/tugas-baru'
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/admin/pembayaran'
@@ -582,6 +594,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/t/$token'
       preLoaderRoute: typeof TTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/tugas-baru': {
+      id: '/_authenticated/tugas-baru'
+      path: '/tugas-baru'
+      fullPath: '/tugas-baru'
+      preLoaderRoute: typeof AuthenticatedTugasBaruRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tugas': {
       id: '/_authenticated/tugas'
@@ -817,6 +836,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
+  AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminPembayaranRoute: typeof AuthenticatedAdminPembayaranRoute
 }
@@ -837,6 +857,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
+  AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminPembayaranRoute: AuthenticatedAdminPembayaranRoute,
 }
@@ -866,13 +887,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

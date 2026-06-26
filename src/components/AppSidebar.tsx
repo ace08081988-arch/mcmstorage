@@ -21,6 +21,7 @@ const items = [
   { title: "Penyiapan Ecer", url: "/ecer", icon: Scale },
   { title: "Penyiapan Request", url: "/request", icon: PackagePlus },
   { title: "Penyiapan Produk", url: "/tugas", icon: ClipboardList },
+  { title: "Buat Tugas Manual", url: "/tugas-baru", icon: ClipboardCheck },
   { title: "Chat", url: "/chat", icon: MessageCircle },
   { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
   { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
