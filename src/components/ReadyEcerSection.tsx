@@ -16,6 +16,7 @@ type WorkerShot = {
   submitted_at: string;
   item_name: string;
   thumb_url?: string | null;
+  source: "worker" | "self";
 };
 
 type Row = {
@@ -60,21 +61,28 @@ export function ReadyEcerSection() {
       const itemIds = Array.from(new Set(list.map((t) => t.warehouse_item_id)));
       const titleIds = list.map((t) => t.id);
       const sinceIso = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString();
-      const [{ data: items }, { data: preps }, { data: subs }] = await Promise.all([
+      const [{ data: items }, { data: preps }, { data: subs }, { data: selfPreps }] = await Promise.all([
         sb.from("warehouse_items").select("id,name").in("id", itemIds),
-        sb.from("ecer_preparations").select("title_id").in("title_id", titleIds),
+        sb.from("ecer_preparations")
+          .select("id,title_id,photo_path,location_url,created_at")
+          .in("title_id", titleIds)
+          .gte("created_at", sinceIso)
+          .order("created_at", { ascending: false })
+          .limit(200),
         sb
           .from("prep_submissions")
           .select("id,photo_path,location_url,submitted_at,task_item_id")
           .gte("submitted_at", sinceIso)
           .order("submitted_at", { ascending: false })
           .limit(200),
+        Promise.resolve({ data: null }),
       ]);
       const itemMap = new Map<string, string>(((items ?? []) as Array<{ id: string; name: string }>).map((i) => [i.id, i.name]));
       const countMap = new Map<string, number>();
       for (const p of ((preps ?? []) as Array<{ title_id: string }>)) {
         countMap.set(p.title_id, (countMap.get(p.title_id) ?? 0) + 1);
       }
+      void selfPreps;
 
       // Map prep_submissions → task_item attributes, then bucket by product+size.
       const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; location_url: string | null; submitted_at: string; task_item_id: string }>;
@@ -132,8 +140,27 @@ export function ReadyEcerSection() {
         }
         if (!titleId) continue; // require warehouse match — name-only is unreliable
         const arr = shotsByTitleId.get(titleId) ?? [];
-        arr.push({ id: s.id, photo_path: s.photo_path, location_url: s.location_url, submitted_at: s.submitted_at, item_name: meta.name });
+        arr.push({ id: s.id, photo_path: s.photo_path, location_url: s.location_url, submitted_at: s.submitted_at, item_name: meta.name, source: "worker" });
         shotsByTitleId.set(titleId, arr);
+      }
+
+      // Merge "siapkan sendiri" (ecer_preparations) — already keyed by title_id.
+      for (const p of ((preps ?? []) as Array<{ id: string; title_id: string; photo_path: string | null; location_url: string | null; created_at: string }>)) {
+        if (!p.photo_path) continue;
+        const arr = shotsByTitleId.get(p.title_id) ?? [];
+        arr.push({
+          id: `self:${p.id}`,
+          photo_path: p.photo_path,
+          location_url: p.location_url,
+          submitted_at: p.created_at,
+          item_name: "",
+          source: "self",
+        });
+        shotsByTitleId.set(p.title_id, arr);
+      }
+      // Sort merged shots by recency per title.
+      for (const [, arr] of shotsByTitleId) {
+        arr.sort((a, b) => (a.submitted_at < b.submitted_at ? 1 : -1));
       }
 
       const shotsByName = shotsByTitleId; // reuse name below
