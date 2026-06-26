@@ -241,15 +241,10 @@ function TermsPage() {
                 admin@mcmstorage.biz
               </a>
               . Untuk pertanyaan terkait transaksi atau pengembalian dana,
-              silakan hubungi Paddle melalui{" "}
-              <a
-                href="https://paddle.net"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                paddle.net
-              </a>
+              hubungi admin kami melalui email atau WhatsApp dari halaman{" "}
+              <Link to="/langganan" className="underline">
+                Langganan
+              </Link>
               .
             </p>
           </Section>
