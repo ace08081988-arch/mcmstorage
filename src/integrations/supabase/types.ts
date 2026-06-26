@@ -850,6 +850,7 @@ export type Database = {
           location_url: string | null
           note: string | null
           photo_path: string | null
+          photo_paths: string[]
           qty_reported: number | null
           submitted_at: string
           task_id: string
@@ -862,6 +863,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           qty_reported?: number | null
           submitted_at?: string
           task_id: string
@@ -874,6 +876,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           qty_reported?: number | null
           submitted_at?: string
           task_id?: string
@@ -1281,6 +1284,7 @@ export type Database = {
           location_url: string | null
           note: string | null
           photo_path: string | null
+          photo_paths: string[]
           prep_task_item_id: string | null
           title_id: string
           user_id: string
@@ -1295,6 +1299,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           prep_task_item_id?: string | null
           title_id: string
           user_id: string
@@ -1309,6 +1314,7 @@ export type Database = {
           location_url?: string | null
           note?: string | null
           photo_path?: string | null
+          photo_paths?: string[]
           prep_task_item_id?: string | null
           title_id?: string
           user_id?: string
