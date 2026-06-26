@@ -20,6 +20,22 @@ export const Route = createFileRoute("/download")({
           "Unduh aplikasi Android MCM Storage untuk mengelola gudang dari ponsel.",
       },
     ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "SoftwareApplication",
+          name: "MCM Storage",
+          operatingSystem: "Android",
+          applicationCategory: "BusinessApplication",
+          downloadUrl: "https://mcmstorage.biz/download",
+          url: "https://mcmstorage.biz/download",
+          publisher: { "@type": "Organization", name: "MCM Storage" },
+          offers: { "@type": "Offer", price: "0", priceCurrency: "IDR" },
+        }),
+      },
+    ],
   }),
   component: DownloadPage,
   errorComponent: () => (
