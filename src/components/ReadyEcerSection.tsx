@@ -706,9 +706,9 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   );
 }
 
-function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline" }) {
+function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent" }) {
   void 0;
-  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} />;
+  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} />;
 }
 
 const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> = {
@@ -762,7 +762,7 @@ function SyncBadge({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline" }) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent" }) {
   const [sending, setSending] = useState(false);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
