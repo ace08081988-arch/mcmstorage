@@ -541,6 +541,27 @@ export function ReadyEcerSection() {
         <SyncSummary counts={syncCounts} total={rows.length} active={syncFilter} onChange={setSyncFilter} />
       )}
 
+      {rows && rows.length > 0 && (
+        <div className="flex items-center gap-1 rounded-md border bg-card/50 p-0.5">
+          <button
+            type="button"
+            onClick={() => setView("active")}
+            className={`flex-1 rounded px-2 py-1 text-[10.5px] font-semibold transition ${view === "active" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
+            aria-pressed={view === "active"}
+          >
+            Aktif <span className="ml-1 font-mono opacity-80">{totalActive}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("sent")}
+            className={`flex-1 inline-flex items-center justify-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold transition ${view === "sent" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
+            aria-pressed={view === "sent"}
+          >
+            <History className="h-3 w-3" /> Riwayat terkirim <span className="ml-0.5 font-mono opacity-80">{totalSent}</span>
+          </button>
+        </div>
+      )}
+
       {rows === null ? (
         <div className="grid grid-cols-2 gap-2" aria-busy="true" aria-label="Memuat produk eceran">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -584,9 +605,22 @@ export function ReadyEcerSection() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {visible.map((r) => (
-            <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} />
-          ))}
+          {visible.length === 0 ? (
+            <div className="col-span-2 flex flex-col items-center gap-1 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground">
+              {view === "sent" ? (
+                <>
+                  <History className="h-4 w-4" />
+                  <span>Belum ada riwayat terkirim. Tekan tombol WA pada kartu aktif — kiriman akan pindah ke sini.</span>
+                </>
+              ) : (
+                <span>Semua kartu sudah dipindah ke Riwayat terkirim.</span>
+              )}
+            </div>
+          ) : (
+            visible.map((r) => (
+              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} />
+            ))
+          )}
         </div>
       )}
     </div>
