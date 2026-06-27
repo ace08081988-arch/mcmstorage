@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
 import { ecerSignedUrl } from "@/lib/ecer";
@@ -392,7 +392,15 @@ export function ReadyEcerSection() {
     const active: WorkerShot[] = [];
     const sent: WorkerShot[] = [];
     for (const s of r.worker_shots) (sentMap.has(s.id) ? sent : active).push(s);
-    return { ...r, worker_shots: view === "sent" ? sent : active, _sentCount: sent.length, _activeCount: active.length };
+    const sentTimes = sent.map((s) => sentMap.get(s.id) ?? 0).filter((n) => n > 0);
+    const lastSentAt = sentTimes.length ? Math.max(...sentTimes) : null;
+    return {
+      ...r,
+      worker_shots: view === "sent" ? sent : active,
+      _sentCount: sent.length,
+      _activeCount: active.length,
+      _lastSentAt: lastSentAt,
+    };
   });
   const totalActive = rowsForView.reduce((a, r) => a + r._activeCount, 0);
   const totalSent = rowsForView.reduce((a, r) => a + r._sentCount, 0);
@@ -618,7 +626,7 @@ export function ReadyEcerSection() {
             </div>
           ) : (
             visible.map((r) => (
-              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} />
+              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={r._lastSentAt} />
             ))
           )}
         </div>
@@ -706,9 +714,9 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   );
 }
 
-function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent" }) {
+function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null }) {
   void 0;
-  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} />;
+  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={lastSentAt} />;
 }
 
 const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> = {
@@ -720,6 +728,75 @@ const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> 
   no_wid:          { label: "Tanpa produk",      cls: "bg-destructive/10 text-destructive",                       dot: "bg-destructive" },
   empty:           { label: "Belum ada data",    cls: "bg-muted text-muted-foreground",                           dot: "bg-muted-foreground" },
 };
+
+function fmtAgo(ts: number, now = Date.now()): string {
+  const diff = Math.max(0, now - ts);
+  const sec = Math.floor(diff / 1000);
+  if (sec < 10) return "baru saja";
+  if (sec < 60) return `${sec} dtk lalu`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} mnt lalu`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} jam lalu`;
+  const day = Math.floor(hr / 24);
+  return `${day} hari lalu`;
+}
+
+function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
+  status: "idle" | "sending" | "success" | "failed" | "cancelled";
+  error: string | null;
+  view: "active" | "sent";
+  lastSentAt: number | null;
+  sentCount: number;
+}) {
+  const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
+  if (status === "sending") {
+    return (
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+        <Loader2 className="h-2.5 w-2.5 animate-spin" /> Mengirim…
+      </span>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button type="button" onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[9px] font-semibold text-destructive">
+            <XCircle className="h-2.5 w-2.5" /> Gagal kirim
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-64 space-y-1 p-2.5 text-[10px]" onClick={stop}>
+          <div className="font-semibold text-foreground">Gagal mengirim ke WhatsApp</div>
+          <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
+          <p className="text-muted-foreground">Tekan tombol WA lagi untuk mencoba ulang.</p>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+  if (status === "cancelled") {
+    return (
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">
+        <CircleSlash className="h-2.5 w-2.5" /> Dibatalkan
+      </span>
+    );
+  }
+  if (status === "success" || (view === "sent" && lastSentAt)) {
+    const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!)}`;
+    return (
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
+        <CheckCircle2 className="h-2.5 w-2.5" /> {label}
+      </span>
+    );
+  }
+  if (view === "active" && sentCount === 0) {
+    return (
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+        <span className="h-1 w-1 rounded-full bg-muted-foreground/60" /> Belum dikirim
+      </span>
+    );
+  }
+  return null;
+}
 
 function SyncBadge({ row: r }: { row: Row }) {
   const meta = SYNC_META[r.sync.level];
@@ -762,8 +839,11 @@ function SyncBadge({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent" }) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null }) {
   const [sending, setSending] = useState(false);
+  type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
+  const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
+  const [sendError, setSendError] = useState<string | null>(null);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
   const extra = Math.max(0, shots.length - thumbs.length);
@@ -778,6 +858,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       return;
     }
     setSending(true);
+    setSendStatus("sending");
+    setSendError(null);
     try {
       const files: File[] = [];
       const take = shots.slice(0, 6); // batasi jumlah kiriman; tiap kiriman bisa berisi banyak foto
@@ -811,9 +893,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       notifyShareResult(res);
       if (res.status === "shared" || res.status === "fallback") {
         markSent(take.map((s) => s.id));
+        setSendStatus("success");
+      } else if (res.status === "cancelled") {
+        setSendStatus("cancelled");
+      } else {
+        setSendStatus("failed");
+        setSendError(res.error);
       }
     } catch (err) {
-      toast.error(`Gagal kirim WA: ${(err as Error).message}`);
+      const msg = (err as Error).message;
+      toast.error(`Gagal kirim WA: ${msg}`);
+      setSendStatus("failed");
+      setSendError(msg);
     } finally {
       setSending(false);
     }
@@ -872,6 +963,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             {r.product_name} · {r.target_grams} {unit}
           </span>
           <SyncBadge row={r} />
+          <SendStatusBadge
+            status={sendStatus}
+            error={sendError}
+            view={view}
+            lastSentAt={lastSentAt}
+            sentCount={view === "sent" ? shots.length : 0}
+          />
           <Popover>
             <PopoverTrigger asChild>
               <button
