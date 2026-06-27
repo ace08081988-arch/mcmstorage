@@ -376,6 +376,7 @@ function LinkAccountDialog({
   const [results, setResults] = useState<Contact[]>([]);
   const [busy, setBusy] = useState(false);
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!target) {
