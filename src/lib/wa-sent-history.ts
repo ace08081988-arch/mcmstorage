@@ -1,0 +1,81 @@
+import { useEffect, useState, useCallback } from "react";
+
+/**
+ * Local-only registry of kiriman pegawai (prep_submissions IDs) yang sudah
+ * dikirim ke WA. Disimpan di localStorage agar tetap ada antar reload dan
+ * bersinkron antar tab via `storage` event + custom event.
+ */
+const KEY = "wa-sent-shots:v1";
+const EVENT = "wa-sent-shots:changed";
+const MAX_ENTRIES = 500;
+const RETAIN_MS = 1000 * 60 * 60 * 24 * 30; // 30 hari
+
+type Entry = { id: string; at: number };
+
+function readRaw(): Entry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(KEY);
+    if (!raw) return [];
+    const data = JSON.parse(raw);
+    if (!Array.isArray(data)) return [];
+    return data.filter((e): e is Entry => e && typeof e.id === "string" && typeof e.at === "number");
+  } catch {
+    return [];
+  }
+}
+
+function writeRaw(entries: Entry[]) {
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(entries));
+    window.dispatchEvent(new CustomEvent(EVENT));
+  } catch { /* ignore quota */ }
+}
+
+function prune(entries: Entry[]): Entry[] {
+  const cutoff = Date.now() - RETAIN_MS;
+  const fresh = entries.filter((e) => e.at >= cutoff);
+  if (fresh.length <= MAX_ENTRIES) return fresh;
+  // newest first, then keep MAX_ENTRIES
+  return [...fresh].sort((a, b) => b.at - a.at).slice(0, MAX_ENTRIES);
+}
+
+export function getSentMap(): Map<string, number> {
+  const m = new Map<string, number>();
+  for (const e of readRaw()) m.set(e.id, e.at);
+  return m;
+}
+
+export function markSent(ids: string[]) {
+  if (!ids || ids.length === 0) return;
+  const map = getSentMap();
+  const at = Date.now();
+  for (const id of ids) if (id) map.set(id, at);
+  const entries = prune(Array.from(map, ([id, at]) => ({ id, at })));
+  writeRaw(entries);
+}
+
+export function unmarkSent(ids: string[]) {
+  if (!ids || ids.length === 0) return;
+  const map = getSentMap();
+  for (const id of ids) map.delete(id);
+  writeRaw(Array.from(map, ([id, at]) => ({ id, at })));
+}
+
+export function clearSent() { writeRaw([]); }
+
+export function useSentShots() {
+  const [map, setMap] = useState<Map<string, number>>(() => getSentMap());
+  const refresh = useCallback(() => setMap(getSentMap()), []);
+  useEffect(() => {
+    const onStorage = (e: StorageEvent) => { if (e.key === KEY) refresh(); };
+    const onLocal = () => refresh();
+    window.addEventListener("storage", onStorage);
+    window.addEventListener(EVENT, onLocal);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      window.removeEventListener(EVENT, onLocal);
+    };
+  }, [refresh]);
+  return map;
+}
