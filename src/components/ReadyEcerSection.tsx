@@ -8,7 +8,8 @@ import { ecerSignedUrl } from "@/lib/ecer";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { ExternalLink } from "lucide-react";
+import { ExternalLink, History, Undo2 } from "lucide-react";
+import { markSent, unmarkSent, useSentShots } from "@/lib/wa-sent-history";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
 // Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
@@ -384,11 +385,23 @@ export function ReadyEcerSection() {
   });
   const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
+  const [view, setView] = useState<"active" | "sent">("active");
+  const sentMap = useSentShots();
+  // Split each row's shots into active vs sent based on local history.
+  const rowsForView = (filtered ?? []).map((r) => {
+    const active: WorkerShot[] = [];
+    const sent: WorkerShot[] = [];
+    for (const s of r.worker_shots) (sentMap.has(s.id) ? sent : active).push(s);
+    return { ...r, worker_shots: view === "sent" ? sent : active, _sentCount: sent.length, _activeCount: active.length };
+  });
+  const totalActive = rowsForView.reduce((a, r) => a + r._activeCount, 0);
+  const totalSent = rowsForView.reduce((a, r) => a + r._sentCount, 0);
+  const rowsAfterView = rowsForView.filter((r) => (view === "sent" ? r._sentCount > 0 : true));
   const syncCounts = (rows ?? []).reduce<Record<SyncLevel, number>>((acc, r) => {
     acc[r.sync.level] = (acc[r.sync.level] ?? 0) + 1;
     return acc;
   }, { ok: 0, fallback_grams: 0, fallback_wid: 0, self_only: 0, no_match: 0, no_wid: 0, empty: 0 });
-  const visible = (filtered ?? []).filter((r) => syncFilter === "all" || r.sync.level === syncFilter);
+  const visible = rowsAfterView.filter((r) => syncFilter === "all" || r.sync.level === syncFilter);
 
   function formatRelative(ts: number, now: number): string {
     const diff = Math.max(0, now - ts);
@@ -528,6 +541,27 @@ export function ReadyEcerSection() {
         <SyncSummary counts={syncCounts} total={rows.length} active={syncFilter} onChange={setSyncFilter} />
       )}
 
+      {rows && rows.length > 0 && (
+        <div className="flex items-center gap-1 rounded-md border bg-card/50 p-0.5">
+          <button
+            type="button"
+            onClick={() => setView("active")}
+            className={`flex-1 rounded px-2 py-1 text-[10.5px] font-semibold transition ${view === "active" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
+            aria-pressed={view === "active"}
+          >
+            Aktif <span className="ml-1 font-mono opacity-80">{totalActive}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setView("sent")}
+            className={`flex-1 inline-flex items-center justify-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold transition ${view === "sent" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
+            aria-pressed={view === "sent"}
+          >
+            <History className="h-3 w-3" /> Riwayat terkirim <span className="ml-0.5 font-mono opacity-80">{totalSent}</span>
+          </button>
+        </div>
+      )}
+
       {rows === null ? (
         <div className="grid grid-cols-2 gap-2" aria-busy="true" aria-label="Memuat produk eceran">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -571,9 +605,22 @@ export function ReadyEcerSection() {
         </div>
       ) : (
         <div className="grid grid-cols-2 gap-2">
-          {visible.map((r) => (
-            <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} />
-          ))}
+          {visible.length === 0 ? (
+            <div className="col-span-2 flex flex-col items-center gap-1 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground">
+              {view === "sent" ? (
+                <>
+                  <History className="h-4 w-4" />
+                  <span>Belum ada riwayat terkirim. Tekan tombol WA pada kartu aktif — kiriman akan pindah ke sini.</span>
+                </>
+              ) : (
+                <span>Semua kartu sudah dipindah ke Riwayat terkirim.</span>
+              )}
+            </div>
+          ) : (
+            visible.map((r) => (
+              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} />
+            ))
+          )}
         </div>
       )}
     </div>
@@ -659,9 +706,9 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   );
 }
 
-function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline" }) {
+function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent" }) {
   void 0;
-  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} />;
+  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} />;
 }
 
 const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> = {
@@ -715,7 +762,7 @@ function SyncBadge({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline" }) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent" }) {
   const [sending, setSending] = useState(false);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
@@ -762,11 +809,21 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }
       ].join("\n");
       const res = await shareToWhatsApp({ text, title: r.name, files });
       notifyShareResult(res);
+      if (res.status === "shared" || res.status === "fallback") {
+        markSent(take.map((s) => s.id));
+      }
     } catch (err) {
       toast.error(`Gagal kirim WA: ${(err as Error).message}`);
     } finally {
       setSending(false);
     }
+  }
+
+  function undoSent(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    unmarkSent(shots.map((s) => s.id));
+    toast.message("Dikembalikan ke daftar aktif.");
   }
 
   return (
@@ -912,8 +969,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus }
               className="ml-auto inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
             >
               <MessageCircle className="h-3 w-3" />
-              {sending ? "…" : "WA"}
+              {sending ? "…" : view === "sent" ? "Kirim ulang" : "WA"}
             </button>
+            {view === "sent" && (
+              <button
+                type="button"
+                onClick={undoSent}
+                aria-label="Kembalikan ke aktif"
+                className="inline-flex h-7 items-center justify-center gap-1 rounded-md border bg-card px-2 text-[10px] font-semibold text-muted-foreground hover:bg-accent"
+              >
+                <Undo2 className="h-3 w-3" /> Aktif
+              </button>
+            )}
           </div>
         )}
       </div>
