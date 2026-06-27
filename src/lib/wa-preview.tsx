@@ -8,7 +8,8 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
-import { MessageCircle, Image as ImageIcon, Link2, FileText, Send } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, RotateCcw } from "lucide-react";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
@@ -28,7 +29,7 @@ type Request = {
   text: string;
   url?: string;
   files?: File[];
-  resolve: (ok: boolean) => void;
+  resolve: (result: { ok: boolean; text?: string }) => void;
 };
 
 let openRequest: ((req: Request) => void) | null = null;
@@ -39,8 +40,8 @@ const queue: Request[] = [];
  * Mengembalikan true jika user menekan "Kirim", false jika dibatalkan.
  * Akan dilewati jika user pernah mencentang "Jangan tampilkan lagi".
  */
-export function confirmWaShare(input: { text: string; url?: string; files?: File[] }): Promise<boolean> {
-  if (getWaSkipPreview()) return Promise.resolve(true);
+export function confirmWaShare(input: { text: string; url?: string; files?: File[] }): Promise<{ ok: boolean; text?: string }> {
+  if (getWaSkipPreview()) return Promise.resolve({ ok: true, text: input.text });
   return new Promise((resolve) => {
     const req: Request = { ...input, resolve };
     if (openRequest) openRequest(req);
@@ -52,16 +53,22 @@ export function WaPreviewHost() {
   const [current, setCurrent] = useState<Request | null>(null);
   const [open, setOpen] = useState(false);
   const [skip, setSkip] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
 
   useEffect(() => {
     openRequest = (req) => {
       setSkip(false);
+      setEditing(false);
+      setDraft(req.text);
       setCurrent(req);
       setOpen(true);
     };
     while (queue.length) {
       const req = queue.shift()!;
       setSkip(false);
+      setEditing(false);
+      setDraft(req.text);
       setCurrent(req);
       setOpen(true);
     }
@@ -87,13 +94,14 @@ export function WaPreviewHost() {
   const finish = (ok: boolean) => {
     setOpen(false);
     if (ok && skip) setWaSkipPreview(true);
-    current?.resolve(ok);
+    current?.resolve({ ok, text: ok ? draft : undefined });
     setTimeout(() => setCurrent(null), 150);
   };
 
-  const text = current?.text ?? "";
   const url = current?.url;
   const photoCount = previews.length;
+  const original = current?.text ?? "";
+  const edited = draft !== original;
 
   const fmtSize = (n: number) => {
     if (n < 1024) return `${n} B`;
@@ -120,12 +128,39 @@ export function WaPreviewHost() {
 
         <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-4">
           <div className="rounded-lg border bg-muted/30 p-3">
-            <div className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
-              <FileText className="h-3 w-3" /> Teks pesan
+            <div className="mb-1.5 flex items-center justify-between gap-2">
+              <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
+                <FileText className="h-3 w-3" /> Teks pesan {edited ? <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-300">diubah</span> : null}
+              </div>
+              <div className="flex items-center gap-1">
+                {edited ? (
+                  <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10.5px]" onClick={() => setDraft(original)}>
+                    <RotateCcw className="mr-1 h-3 w-3" /> Reset
+                  </Button>
+                ) : null}
+                <Button type="button" variant="ghost" size="sm" className="h-6 px-2 text-[10.5px]" onClick={() => setEditing((v) => !v)}>
+                  <Pencil className="mr-1 h-3 w-3" /> {editing ? "Selesai" : "Edit"}
+                </Button>
+              </div>
             </div>
-            <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md bg-background p-2 font-sans text-xs leading-relaxed text-foreground">
-{text || <span className="italic text-muted-foreground">(kosong)</span>}
-            </pre>
+            {editing ? (
+              <Textarea
+                value={draft}
+                onChange={(e) => setDraft(e.target.value)}
+                rows={8}
+                className="min-h-[8rem] resize-y bg-background font-sans text-xs leading-relaxed"
+                placeholder="Tulis pesan untuk WhatsApp…"
+                autoFocus
+              />
+            ) : (
+              <pre
+                className="max-h-48 cursor-text overflow-auto whitespace-pre-wrap break-words rounded-md bg-background p-2 font-sans text-xs leading-relaxed text-foreground"
+                onClick={() => setEditing(true)}
+                title="Klik untuk mengedit"
+              >
+{draft || <span className="italic text-muted-foreground">(kosong — klik untuk mengetik)</span>}
+              </pre>
+            )}
           </div>
 
           {url ? (
