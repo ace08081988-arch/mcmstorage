@@ -76,8 +76,9 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
           )
         }
 
-        // Verify the caller is the backend cron job using a private bearer token
-        // stored in Supabase Vault (read via get_email_cron_secret RPC; service role only).
+        // Verify the caller is the backend cron job. The managed queue cron
+        // sends the backend service token as a Bearer token; older installs may
+        // send a dedicated cron secret, so keep that as a compatibility fallback.
         const authHeader = request.headers.get('authorization') ?? ''
         const presented = authHeader.toLowerCase().startsWith('bearer ')
           ? authHeader.slice(7).trim()
@@ -88,17 +89,21 @@ export const Route = createFileRoute("/lovable/email/queue/process")({
 
         const supabase: SupabaseClient<any, any> = createClient(supabaseUrl, supabaseServiceKey)
 
-        const { data: secretData, error: secretErr } = await supabase.rpc('get_email_cron_secret')
-        const expected = typeof secretData === 'string' ? secretData : ''
-        if (secretErr || !expected) {
-          console.error('Cron secret not configured', { error: secretErr })
-          return Response.json({ error: 'Server configuration error' }, { status: 500 })
-        }
-        // Timing-safe compare on equal-length strings.
-        const a = Buffer.from(presented)
-        const b = Buffer.from(expected)
         const { timingSafeEqual } = await import('crypto')
-        if (a.length !== b.length || !timingSafeEqual(a, b)) {
+        const timingSafeMatches = (expected: string | null | undefined) => {
+          if (!expected) return false
+          const a = Buffer.from(presented)
+          const b = Buffer.from(expected)
+          return a.length === b.length && timingSafeEqual(a, b)
+        }
+
+        let cronSecret: string | null = null
+        const { data: secretData, error: secretErr } = await supabase.rpc('get_email_cron_secret')
+        if (!secretErr && typeof secretData === 'string') {
+          cronSecret = secretData
+        }
+
+        if (!timingSafeMatches(supabaseServiceKey) && !timingSafeMatches(cronSecret)) {
           return Response.json({ error: 'Forbidden' }, { status: 403 })
         }
 
