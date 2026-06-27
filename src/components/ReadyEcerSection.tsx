@@ -894,6 +894,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             {r.product_name} · {r.target_grams} {unit}
           </span>
           <SyncBadge row={r} />
+          <SendStatusBadge
+            status={sendStatus}
+            error={sendError}
+            view={view}
+            lastSentAt={lastSentAt}
+            sentCount={view === "sent" ? shots.length : 0}
+          />
           <Popover>
             <PopoverTrigger asChild>
               <button
