@@ -809,11 +809,21 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       ].join("\n");
       const res = await shareToWhatsApp({ text, title: r.name, files });
       notifyShareResult(res);
+      if (res.status === "shared" || res.status === "fallback") {
+        markSent(take.map((s) => s.id));
+      }
     } catch (err) {
       toast.error(`Gagal kirim WA: ${(err as Error).message}`);
     } finally {
       setSending(false);
     }
+  }
+
+  function undoSent(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    unmarkSent(shots.map((s) => s.id));
+    toast.message("Dikembalikan ke daftar aktif.");
   }
 
   return (
@@ -959,8 +969,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               className="ml-auto inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
             >
               <MessageCircle className="h-3 w-3" />
-              {sending ? "…" : "WA"}
+              {sending ? "…" : view === "sent" ? "Kirim ulang" : "WA"}
             </button>
+            {view === "sent" && (
+              <button
+                type="button"
+                onClick={undoSent}
+                aria-label="Kembalikan ke aktif"
+                className="inline-flex h-7 items-center justify-center gap-1 rounded-md border bg-card px-2 text-[10px] font-semibold text-muted-foreground hover:bg-accent"
+              >
+                <Undo2 className="h-3 w-3" /> Aktif
+              </button>
+            )}
           </div>
         )}
       </div>
