@@ -15,6 +15,9 @@ export type ConversationListItem = ConversationRow & {
   display_title: string;
   last_body: string | null;
   last_at: string | null;
+  last_sender_id: string | null;
+  last_delivered: boolean;
+  last_read: boolean;
   unread: number;
   member_ids: string[];
 };
@@ -114,17 +117,25 @@ export function useConversations() {
         .order("last_message_at", { ascending: false, nullsFirst: false });
       if (cErr) throw cErr;
 
-      // All members for these conversations (for DM titles)
+      // All members + their last_read_at (for DM titles & read receipts)
       const { data: allMembers } = await supabase
         .from("conversation_members")
-        .select("conversation_id, user_id")
+        .select("conversation_id, user_id, last_read_at")
         .in("conversation_id", ids);
 
       const memberMap = new Map<string, string[]>();
+      // per conversation: min(last_read_at) across other members (for ticks)
+      const othersMinReadMap = new Map<string, number | null>();
       for (const r of allMembers ?? []) {
         const arr = memberMap.get(r.conversation_id) ?? [];
         arr.push(r.user_id);
         memberMap.set(r.conversation_id, arr);
+        if (r.user_id !== myId) {
+          const cur = othersMinReadMap.get(r.conversation_id);
+          const t = r.last_read_at ? new Date(r.last_read_at).getTime() : 0;
+          if (cur === undefined) othersMinReadMap.set(r.conversation_id, t);
+          else if (cur !== null && t < cur) othersMinReadMap.set(r.conversation_id, t);
+        }
       }
 
       // Profiles for naming DMs
@@ -135,13 +146,16 @@ export function useConversations() {
           for (const uid of m) if (uid !== myId) otherIds.add(uid);
         }
       }
-      let profileMap = new Map<string, { display_name: string | null; phone: string | null }>();
+      let profileMap = new Map<string, { display_name: string | null; phone: string | null; email: string | null }>();
       if (otherIds.size > 0) {
-        const { data: profs } = await supabase
-          .from("profiles")
-          .select("id, display_name, phone")
-          .in("id", Array.from(otherIds));
-        profileMap = new Map((profs ?? []).map((p) => [p.id, { display_name: p.display_name, phone: p.phone }]));
+        const { data: profs } = await supabase.rpc("get_chat_member_profiles", {
+          _user_ids: Array.from(otherIds),
+        });
+        profileMap = new Map(
+          ((profs ?? []) as Array<{ id: string; display_name: string | null; phone: string | null; email: string | null }>).map(
+            (p) => [p.id, { display_name: p.display_name, phone: p.phone, email: p.email }],
+          ),
+        );
       }
 
       // Last messages
@@ -151,13 +165,14 @@ export function useConversations() {
         .in("conversation_id", ids)
         .order("created_at", { ascending: false })
         .limit(500);
-      const lastByConv = new Map<string, { body: string | null; created_at: string }>();
+      const lastByConv = new Map<string, { body: string | null; created_at: string; sender_id: string }>();
       const unreadByConv = new Map<string, number>();
       for (const m of lastMsgs ?? []) {
         if (!lastByConv.has(m.conversation_id)) {
           lastByConv.set(m.conversation_id, {
             body: m.deleted_at ? "(pesan dihapus)" : (m.body ?? (m.attachment_name ? `📎 ${m.attachment_name}` : "Lampiran")),
             created_at: m.created_at,
+            sender_id: m.sender_id,
           });
         }
         const lr = lastReadMap.get(m.conversation_id);
@@ -173,16 +188,28 @@ export function useConversations() {
           const m = memberMap.get(c.id) ?? [];
           const other = m.find((u) => u !== myId);
           const p = other ? profileMap.get(other) : null;
-          display = p?.display_name || p?.phone || "Percakapan";
+          display = p?.display_name || p?.phone || p?.email || "Kontak";
         } else if (!display) {
           display = c.kind === "order" ? "Diskusi pesanan" : "Grup";
         }
         const last = lastByConv.get(c.id);
+        const othersMinRead = othersMinReadMap.get(c.id);
+        const lastSentMs = last ? new Date(last.created_at).getTime() : 0;
+        const isMine = !!last && last.sender_id === myId;
+        const delivered = isMine; // inserted in DB
+        const read =
+          isMine &&
+          othersMinRead !== undefined &&
+          othersMinRead !== null &&
+          othersMinRead >= lastSentMs;
         return {
           ...(c as ConversationRow),
           display_title: display,
           last_body: last?.body ?? null,
           last_at: last?.created_at ?? c.last_message_at,
+          last_sender_id: last?.sender_id ?? null,
+          last_delivered: delivered,
+          last_read: read,
           unread: unreadByConv.get(c.id) ?? 0,
           member_ids: memberMap.get(c.id) ?? [],
         };
