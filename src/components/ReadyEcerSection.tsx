@@ -729,6 +729,75 @@ const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> 
   empty:           { label: "Belum ada data",    cls: "bg-muted text-muted-foreground",                           dot: "bg-muted-foreground" },
 };
 
+function fmtAgo(ts: number, now = Date.now()): string {
+  const diff = Math.max(0, now - ts);
+  const sec = Math.floor(diff / 1000);
+  if (sec < 10) return "baru saja";
+  if (sec < 60) return `${sec} dtk lalu`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} mnt lalu`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} jam lalu`;
+  const day = Math.floor(hr / 24);
+  return `${day} hari lalu`;
+}
+
+function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
+  status: "idle" | "sending" | "success" | "failed" | "cancelled";
+  error: string | null;
+  view: "active" | "sent";
+  lastSentAt: number | null;
+  sentCount: number;
+}) {
+  const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
+  if (status === "sending") {
+    return (
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+        <Loader2 className="h-2.5 w-2.5 animate-spin" /> Mengirim…
+      </span>
+    );
+  }
+  if (status === "failed") {
+    return (
+      <Popover>
+        <PopoverTrigger asChild>
+          <button type="button" onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[9px] font-semibold text-destructive">
+            <XCircle className="h-2.5 w-2.5" /> Gagal kirim
+          </button>
+        </PopoverTrigger>
+        <PopoverContent align="start" className="w-64 space-y-1 p-2.5 text-[10px]" onClick={stop}>
+          <div className="font-semibold text-foreground">Gagal mengirim ke WhatsApp</div>
+          <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
+          <p className="text-muted-foreground">Tekan tombol WA lagi untuk mencoba ulang.</p>
+        </PopoverContent>
+      </Popover>
+    );
+  }
+  if (status === "cancelled") {
+    return (
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">
+        <CircleSlash className="h-2.5 w-2.5" /> Dibatalkan
+      </span>
+    );
+  }
+  if (status === "success" || (view === "sent" && lastSentAt)) {
+    const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!)}`;
+    return (
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
+        <CheckCircle2 className="h-2.5 w-2.5" /> {label}
+      </span>
+    );
+  }
+  if (view === "active" && sentCount === 0) {
+    return (
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+        <span className="h-1 w-1 rounded-full bg-muted-foreground/60" /> Belum dikirim
+      </span>
+    );
+  }
+  return null;
+}
+
 function SyncBadge({ row: r }: { row: Row }) {
   const meta = SYNC_META[r.sync.level];
   return (
