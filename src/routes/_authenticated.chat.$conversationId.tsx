@@ -1,8 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users, CheckCheck } from "lucide-react";
+import {
+  ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
+  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -197,22 +200,78 @@ function ChatRoomPage() {
   }, [messages?.length]);
 
   const [body, setBody] = useState("");
-  const send = useMutation({
-    mutationFn: async (text: string) =>
-      sendMessage({ data: { conversationId, body: text } }),
-    onSuccess: () => {
-      setBody("");
-      void othersRead.refetch();
+
+  // ---- Outbox (optimistic send + retry on failure / reconnect) ----
+  type OutboxItem = {
+    tempId: string;
+    body: string;
+    status: "sending" | "failed";
+    error?: string;
+    createdAt: string;
+  };
+  const [outbox, setOutbox] = useState<OutboxItem[]>([]);
+  const [online, setOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+
+  const doSend = useCallback(
+    async (item: OutboxItem) => {
+      setOutbox((prev) =>
+        prev.map((o) => (o.tempId === item.tempId ? { ...o, status: "sending", error: undefined } : o)),
+      );
+      try {
+        await sendMessage({ data: { conversationId, body: item.body } });
+        // Drop from outbox; realtime INSERT will surface the row.
+        setOutbox((prev) => prev.filter((o) => o.tempId !== item.tempId));
+        void othersRead.refetch();
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "Gagal mengirim";
+        setOutbox((prev) =>
+          prev.map((o) => (o.tempId === item.tempId ? { ...o, status: "failed", error: msg } : o)),
+        );
+        toast.error(msg);
+      }
     },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal mengirim"),
-  });
+    [conversationId, othersRead],
+  );
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const t = body.trim();
-    if (!t || send.isPending) return;
-    send.mutate(t);
+    if (!t) return;
+    const item: OutboxItem = {
+      tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+      body: t,
+      status: "sending",
+      createdAt: new Date().toISOString(),
+    };
+    setOutbox((prev) => [...prev, item]);
+    setBody("");
+    void doSend(item);
   };
+
+  // Auto-retry failed messages once the browser is back online.
+  const prevOnlineRef = useRef(online);
+  useEffect(() => {
+    if (!prevOnlineRef.current && online) {
+      outbox
+        .filter((o) => o.status === "failed")
+        .forEach((o) => {
+          void doSend(o);
+        });
+    }
+    prevOnlineRef.current = online;
+  }, [online, outbox, doSend]);
 
   // Group messages by day
   const grouped = useMemo(() => {
@@ -225,6 +284,12 @@ function ChatRoomPage() {
     }
     return out;
   }, [messages]);
+
+  // Re-scroll when outbox changes too.
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [outbox.length]);
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col">
@@ -248,6 +313,10 @@ function ChatRoomPage() {
                 {meta.data?.kind === "dm"
                   ? "sedang menulis pesan…"
                   : `${typingNames.join(", ")} sedang menulis…`}
+              </span>
+            ) : !online ? (
+              <span className="inline-flex items-center gap-1 text-amber-600">
+                <WifiOff className="h-3 w-3" /> Offline · pesan akan dikirim saat online
               </span>
             ) : meta.data?.kind === "dm" ? (
               "Percakapan pribadi"
@@ -397,6 +466,61 @@ function ChatRoomPage() {
             </div>
           ))
         )}
+
+        {outbox.length > 0 ? (
+          <div className="space-y-2">
+            {outbox.map((o) => (
+              <div key={o.tempId} className="flex justify-end">
+                <div className="flex max-w-[80%] flex-row-reverse items-start gap-1">
+                  <div
+                    className={`rounded-2xl rounded-br-sm px-3 py-1.5 text-sm leading-snug shadow-sm ${
+                      o.status === "failed"
+                        ? "bg-destructive/15 text-foreground ring-1 ring-destructive/40"
+                        : "bg-primary/80 text-primary-foreground"
+                    }`}
+                  >
+                    <div className="whitespace-pre-wrap break-words">{o.body}</div>
+                    <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] opacity-90">
+                      <span>{fmtTime(o.createdAt)}</span>
+                      {o.status === "sending" ? (
+                        <Check className="h-3.5 w-3.5 opacity-80" aria-label="Belum terkirim" />
+                      ) : (
+                        <span className="inline-flex items-center gap-1 text-destructive">
+                          <AlertCircle className="h-3.5 w-3.5" aria-label="Gagal" />
+                          Gagal
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  {o.status === "failed" ? (
+                    <div className="flex flex-col gap-1 self-center">
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6"
+                        aria-label="Kirim ulang"
+                        onClick={() => void doSend(o)}
+                      >
+                        <RefreshCw className="h-3.5 w-3.5" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="icon"
+                        variant="ghost"
+                        className="h-6 w-6 text-destructive"
+                        aria-label="Buang pesan"
+                        onClick={() => setOutbox((prev) => prev.filter((x) => x.tempId !== o.tempId))}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : null}
       </div>
 
       <form onSubmit={onSubmit} className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur">
@@ -419,8 +543,8 @@ function ChatRoomPage() {
             className="max-h-32 min-h-9 resize-none"
             disabled={chatBlocked}
           />
-          <Button type="submit" size="icon" disabled={!body.trim() || send.isPending || chatBlocked} aria-label="Kirim">
-            {send.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          <Button type="submit" size="icon" disabled={!body.trim() || chatBlocked} aria-label="Kirim">
+            <Send className="h-4 w-4" />
           </Button>
         </div>
         <p className="mt-1 px-1 text-[10px] text-muted-foreground">
