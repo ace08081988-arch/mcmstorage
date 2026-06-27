@@ -376,6 +376,7 @@ function LinkAccountDialog({
   const [results, setResults] = useState<Contact[]>([]);
   const [busy, setBusy] = useState(false);
   const qc = useQueryClient();
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!target) {
@@ -416,10 +417,18 @@ function LinkAccountDialog({
       toast.error(friendlyError(error));
       return;
     }
-    toast.success("Akun ditautkan");
     // Refresh chat contact list so the + DM dialog finds the newly linked
     // account immediately, without requiring a page refresh or re-login.
     await qc.invalidateQueries({ queryKey: ["chat", "contacts"] });
+    const contactName = target.row.name;
+    toast.success(`${contactName} berhasil ditautkan`, {
+      description: "Kontak siap dipakai di tombol + DM pada halaman Chat.",
+      duration: 6000,
+      action: {
+        label: "Buka Chat",
+        onClick: () => navigate({ to: "/chat" }),
+      },
+    });
     onSaved();
   };
 
