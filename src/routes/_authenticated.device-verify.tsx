@@ -251,15 +251,22 @@ function DeviceVerifyPage() {
             >
               {busy ? "Memverifikasi…" : "Verifikasi"}
             </button>
-            <div className="flex items-center justify-between text-[11px]">
-              <button
-                type="button"
-                onClick={resend}
-                disabled={busy || cooldown > 0}
-                className="text-muted-foreground hover:underline disabled:opacity-50"
-              >
-                {cooldown > 0 ? `Kirim ulang (${cooldown}s)` : "Kirim ulang kode"}
-              </button>
+            <button
+              type="button"
+              onClick={resend}
+              disabled={busy || cooldown > 0}
+              className="w-full rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-accent disabled:opacity-50"
+              aria-label="Kirim ulang OTP"
+            >
+              {cooldown > 0
+                ? `Kirim ulang OTP (${cooldown}s)`
+                : "Kirim ulang OTP"}
+            </button>
+            <p className="text-center text-[11px] text-muted-foreground">
+              Tidak menerima kode? Periksa folder Spam/Promosi, lalu klik
+              kirim ulang.
+            </p>
+            <div className="flex items-center justify-end text-[11px]">
               <button
                 type="button"
                 onClick={signOut}
