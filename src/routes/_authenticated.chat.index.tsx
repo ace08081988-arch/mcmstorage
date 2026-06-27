@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MessageCircle, Loader2, Link2, Check, CheckCheck } from "lucide-react";
+import { MessageCircle, Loader2, Link2, CheckCheck } from "lucide-react";
 
 import { useConversations } from "@/lib/chat";
 import { NewDmDialog } from "@/components/chat/NewDmDialog";
