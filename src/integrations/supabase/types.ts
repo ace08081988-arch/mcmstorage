@@ -2171,6 +2171,15 @@ export type Database = {
       }
       ensure_order_conversation: { Args: { _order: string }; Returns: string }
       expire_subscriptions: { Args: never; Returns: number }
+      get_chat_member_profiles: {
+        Args: { _user_ids: string[] }
+        Returns: {
+          display_name: string
+          email: string
+          id: string
+          phone: string
+        }[]
+      }
       get_email_cron_secret: { Args: never; Returns: string }
       has_active_pro: { Args: { _uid: string }; Returns: boolean }
       has_role: {
