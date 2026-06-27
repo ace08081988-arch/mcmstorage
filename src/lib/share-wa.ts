@@ -105,14 +105,16 @@ export type ShareResult =
   | { status: "fallback"; withFiles: boolean; reason: "no-web-share" | "share-failed" };
 
 export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
-  const { text, title, url, files, phone } = input;
+  let { text } = input;
+  const { title, url, files, phone } = input;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
   const hasFiles = !!(files && files.length > 0);
 
   // Pratinjau pesan + daftar foto sebelum benar-benar membuka WA.
   const approved = await confirmWaShare({ text, url, files });
-  if (!approved) return { status: "cancelled" };
+  if (!approved.ok) return { status: "cancelled" };
+  if (typeof approved.text === "string") text = approved.text;
 
   // Native Android/iOS: pakai Capacitor Share + Filesystem agar foto benar-benar
   // terlampir di WhatsApp (Web Share API kerap menjatuhkan files di WebView).
