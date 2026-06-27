@@ -789,6 +789,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       return;
     }
     setSending(true);
+    setSendStatus("sending");
+    setSendError(null);
     try {
       const files: File[] = [];
       const take = shots.slice(0, 6); // batasi jumlah kiriman; tiap kiriman bisa berisi banyak foto
@@ -822,9 +824,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       notifyShareResult(res);
       if (res.status === "shared" || res.status === "fallback") {
         markSent(take.map((s) => s.id));
+        setSendStatus("success");
+      } else if (res.status === "cancelled") {
+        setSendStatus("cancelled");
+      } else {
+        setSendStatus("failed");
+        setSendError(res.error);
       }
     } catch (err) {
-      toast.error(`Gagal kirim WA: ${(err as Error).message}`);
+      const msg = (err as Error).message;
+      toast.error(`Gagal kirim WA: ${msg}`);
+      setSendStatus("failed");
+      setSendError(msg);
     } finally {
       setSending(false);
     }
