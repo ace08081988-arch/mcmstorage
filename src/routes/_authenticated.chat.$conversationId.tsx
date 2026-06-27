@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users } from "lucide-react";
+import { ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users, Check, CheckCheck } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -95,12 +95,15 @@ function ChatRoomPage() {
     queryKey: ["chat", "conv-profiles", conversationId, profileIds.join(",")],
     enabled: profileIds.length > 0,
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, display_name, email")
-        .in("id", profileIds);
+      const { data, error } = await supabase.rpc("get_chat_member_profiles", {
+        _user_ids: profileIds,
+      });
       if (error) throw error;
-      return new Map((data ?? []).map((p) => [p.id, p as { id: string; display_name: string | null; email: string | null }]));
+      return new Map(
+        ((data ?? []) as Array<{ id: string; display_name: string | null; email: string | null; phone: string | null }>).map(
+          (p) => [p.id, p],
+        ),
+      );
     },
   });
 
@@ -109,10 +112,76 @@ function ChatRoomPage() {
     if (meta.data.kind === "dm" && myId && profiles.data) {
       const other = (members.data ?? []).find((u) => u !== myId);
       const p = other ? profiles.data.get(other) : null;
-      return p?.display_name || p?.email || "Percakapan";
+      return p?.display_name || p?.phone || p?.email || "Kontak";
     }
     return meta.data.title || (meta.data.kind === "order" ? "Diskusi pesanan" : "Grup");
   }, [meta.data, profiles.data, members.data, myId]);
+
+  // Other members' last_read_at — for per-message read receipts
+  const othersRead = useQuery({
+    queryKey: ["chat", "conv-others-read", conversationId, myId ?? "_"],
+    enabled: !!myId,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("conversation_members")
+        .select("user_id, last_read_at")
+        .eq("conversation_id", conversationId);
+      if (error) throw error;
+      let minMs: number | null = null;
+      for (const r of data ?? []) {
+        if (r.user_id === myId) continue;
+        const t = r.last_read_at ? new Date(r.last_read_at).getTime() : 0;
+        if (minMs === null || t < minMs) minMs = t;
+      }
+      return minMs;
+    },
+    refetchInterval: 5000,
+  });
+
+  // Typing indicator via Realtime broadcast
+  const [typingNames, setTypingNames] = useState<string[]>([]);
+  const typingTimers = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map());
+  const typingChannelRef = useRef<ReturnType<typeof supabase.channel> | null>(null);
+  useEffect(() => {
+    if (!myId) return;
+    const ch = supabase.channel(`chat-typing:${conversationId}`, {
+      config: { broadcast: { self: false } },
+    });
+    ch.on("broadcast", { event: "typing" }, (msg) => {
+      const uid = (msg.payload as { userId?: string } | undefined)?.userId;
+      if (!uid || uid === myId) return;
+      const p = profiles.data?.get(uid);
+      const name = p?.display_name || p?.phone || p?.email || "Seseorang";
+      setTypingNames((prev) => (prev.includes(name) ? prev : [...prev, name]));
+      const prevT = typingTimers.current.get(uid);
+      if (prevT) clearTimeout(prevT);
+      const t = setTimeout(() => {
+        setTypingNames((prev) => prev.filter((n) => n !== name));
+        typingTimers.current.delete(uid);
+      }, 3500);
+      typingTimers.current.set(uid, t);
+    });
+    ch.subscribe();
+    typingChannelRef.current = ch;
+    return () => {
+      typingTimers.current.forEach((t) => clearTimeout(t));
+      typingTimers.current.clear();
+      supabase.removeChannel(ch);
+      typingChannelRef.current = null;
+    };
+  }, [conversationId, myId, profiles.data]);
+
+  const lastTypingSentRef = useRef(0);
+  const emitTyping = () => {
+    const now = Date.now();
+    if (now - lastTypingSentRef.current < 1500) return;
+    lastTypingSentRef.current = now;
+    typingChannelRef.current?.send({
+      type: "broadcast",
+      event: "typing",
+      payload: { userId: myId },
+    });
+  };
 
   // Mark read on mount + when new messages arrive
   useEffect(() => {
@@ -131,7 +200,10 @@ function ChatRoomPage() {
   const send = useMutation({
     mutationFn: async (text: string) =>
       sendMessage({ data: { conversationId, body: text } }),
-    onSuccess: () => setBody(""),
+    onSuccess: () => {
+      setBody("");
+      void othersRead.refetch();
+    },
     onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal mengirim"),
   });
 
@@ -171,9 +243,19 @@ function ChatRoomPage() {
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold">{headerTitle}</div>
           <div className="truncate text-[11px] text-muted-foreground">
-            {meta.data?.kind === "dm" ? "Percakapan pribadi" :
-              meta.data?.kind === "order" ? "Diskusi pesanan" :
-              `Grup · ${members.data?.length ?? 0} anggota`}
+            {typingNames.length > 0 ? (
+              <span className="italic text-primary">
+                {meta.data?.kind === "dm"
+                  ? "sedang menulis pesan…"
+                  : `${typingNames.join(", ")} sedang menulis…`}
+              </span>
+            ) : meta.data?.kind === "dm" ? (
+              "Percakapan pribadi"
+            ) : meta.data?.kind === "order" ? (
+              "Diskusi pesanan"
+            ) : (
+              `Grup · ${members.data?.length ?? 0} anggota`
+            )}
           </div>
         </div>
         <DropdownMenu>
@@ -238,8 +320,19 @@ function ChatRoomPage() {
                         ) : (
                           <div className="whitespace-pre-wrap break-words">{m.body}</div>
                         )}
-                        <div className={`mt-0.5 text-right text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
-                          {fmtTime(m.created_at)}
+                        <div className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                          <span>{fmtTime(m.created_at)}</span>
+                          {mine && !m.deleted_at ? (
+                            (() => {
+                              const sentMs = new Date(m.created_at).getTime();
+                              const read = othersRead.data !== null && othersRead.data !== undefined && othersRead.data >= sentMs;
+                              return read ? (
+                                <CheckCheck className="h-3.5 w-3.5 text-sky-300" aria-label="Dibaca" />
+                              ) : (
+                                <CheckCheck className="h-3.5 w-3.5 opacity-80" aria-label="Terkirim" />
+                              );
+                            })()
+                          ) : null}
                         </div>
                       </div>
                       {!m.deleted_at ? (
@@ -311,7 +404,10 @@ function ChatRoomPage() {
         <div className="flex items-end gap-2">
           <Textarea
             value={body}
-            onChange={(e) => setBody(e.target.value)}
+            onChange={(e) => {
+              setBody(e.target.value);
+              if (e.target.value.length > 0) emitTyping();
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
                 e.preventDefault();
