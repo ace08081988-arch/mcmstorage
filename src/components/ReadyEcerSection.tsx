@@ -385,11 +385,23 @@ export function ReadyEcerSection() {
   });
   const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
+  const [view, setView] = useState<"active" | "sent">("active");
+  const sentMap = useSentShots();
+  // Split each row's shots into active vs sent based on local history.
+  const rowsForView = (filtered ?? []).map((r) => {
+    const active: WorkerShot[] = [];
+    const sent: WorkerShot[] = [];
+    for (const s of r.worker_shots) (sentMap.has(s.id) ? sent : active).push(s);
+    return { ...r, worker_shots: view === "sent" ? sent : active, _sentCount: sent.length, _activeCount: active.length };
+  });
+  const totalActive = rowsForView.reduce((a, r) => a + r._activeCount, 0);
+  const totalSent = rowsForView.reduce((a, r) => a + r._sentCount, 0);
+  const rowsAfterView = rowsForView.filter((r) => (view === "sent" ? r._sentCount > 0 : true));
   const syncCounts = (rows ?? []).reduce<Record<SyncLevel, number>>((acc, r) => {
     acc[r.sync.level] = (acc[r.sync.level] ?? 0) + 1;
     return acc;
   }, { ok: 0, fallback_grams: 0, fallback_wid: 0, self_only: 0, no_match: 0, no_wid: 0, empty: 0 });
-  const visible = (filtered ?? []).filter((r) => syncFilter === "all" || r.sync.level === syncFilter);
+  const visible = rowsAfterView.filter((r) => syncFilter === "all" || r.sync.level === syncFilter);
 
   function formatRelative(ts: number, now: number): string {
     const diff = Math.max(0, now - ts);
