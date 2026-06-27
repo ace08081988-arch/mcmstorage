@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { MessageCircle, Loader2, Link2 } from "lucide-react";
+import { MessageCircle, Loader2, Link2, Check, CheckCheck } from "lucide-react";
 
 import { useConversations } from "@/lib/chat";
 import { NewDmDialog } from "@/components/chat/NewDmDialog";
@@ -80,8 +80,22 @@ function ChatListPage() {
                       <span className="shrink-0 text-[10px] text-muted-foreground">{timeShort(c.last_at)}</span>
                     </div>
                     <div className="flex items-center justify-between gap-2">
-                      <span className="truncate text-xs text-muted-foreground">
-                        {c.last_body ?? <em className="text-muted-foreground/70">Belum ada pesan</em>}
+                      <span className="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
+                        {c.last_sender_id && c.last_sender_id === c.owner_user_id /* placeholder unused */ ? null : null}
+                        {c.last_body ? (
+                          <>
+                            {c.last_delivered ? (
+                              c.last_read ? (
+                                <CheckCheck className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="Dibaca" />
+                              ) : (
+                                <CheckCheck className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" aria-label="Terkirim" />
+                              )
+                            ) : null}
+                            <span className="truncate">{c.last_body}</span>
+                          </>
+                        ) : (
+                          <em className="text-muted-foreground/70">Belum ada pesan</em>
+                        )}
                       </span>
                       {c.unread > 0 ? (
                         <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
