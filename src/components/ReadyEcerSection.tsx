@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
 import { ecerSignedUrl } from "@/lib/ecer";
@@ -392,7 +392,15 @@ export function ReadyEcerSection() {
     const active: WorkerShot[] = [];
     const sent: WorkerShot[] = [];
     for (const s of r.worker_shots) (sentMap.has(s.id) ? sent : active).push(s);
-    return { ...r, worker_shots: view === "sent" ? sent : active, _sentCount: sent.length, _activeCount: active.length };
+    const sentTimes = sent.map((s) => sentMap.get(s.id) ?? 0).filter((n) => n > 0);
+    const lastSentAt = sentTimes.length ? Math.max(...sentTimes) : null;
+    return {
+      ...r,
+      worker_shots: view === "sent" ? sent : active,
+      _sentCount: sent.length,
+      _activeCount: active.length,
+      _lastSentAt: lastSentAt,
+    };
   });
   const totalActive = rowsForView.reduce((a, r) => a + r._activeCount, 0);
   const totalSent = rowsForView.reduce((a, r) => a + r._sentCount, 0);
@@ -618,7 +626,7 @@ export function ReadyEcerSection() {
             </div>
           ) : (
             visible.map((r) => (
-              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} />
+              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={r._lastSentAt} />
             ))
           )}
         </div>
