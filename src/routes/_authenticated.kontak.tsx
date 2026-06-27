@@ -385,14 +385,18 @@ function LinkAccountDialog({
   useEffect(() => {
     if (!target) return;
     const h = setTimeout(async () => {
-      const { data, error } = await supabase.rpc("search_chat_contacts", {
+      const { data, error } = await supabase.rpc("search_profiles_for_link", {
         _q: q || "",
       });
       if (error) {
         toast.error(friendlyError(error));
         return;
       }
-      setResults((data ?? []) as Contact[]);
+      setResults(
+        ((data ?? []) as Array<{ user_id: string; display_name: string | null; phone: string | null }>).map(
+          (r) => ({ user_id: r.user_id, display_name: r.display_name, phone: r.phone }),
+        ),
+      );
     }, 200);
     return () => clearTimeout(h);
   }, [q, target]);
