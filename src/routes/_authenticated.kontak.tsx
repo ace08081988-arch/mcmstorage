@@ -1,5 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
@@ -374,6 +375,7 @@ function LinkAccountDialog({
   const [q, setQ] = useState("");
   const [results, setResults] = useState<Contact[]>([]);
   const [busy, setBusy] = useState(false);
+  const qc = useQueryClient();
 
   useEffect(() => {
     if (!target) {
@@ -415,6 +417,9 @@ function LinkAccountDialog({
       return;
     }
     toast.success("Akun ditautkan");
+    // Refresh chat contact list so the + DM dialog finds the newly linked
+    // account immediately, without requiring a page refresh or re-login.
+    await qc.invalidateQueries({ queryKey: ["chat", "contacts"] });
     onSaved();
   };
 
