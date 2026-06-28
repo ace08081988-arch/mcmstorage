@@ -288,6 +288,7 @@ function ChatRoomPage() {
     status: "sending" | "failed";
     error?: string;
     createdAt: string;
+    replyToId?: string;
   };
   const [outbox, setOutbox] = useState<OutboxItem[]>([]);
   const [online, setOnline] = useState(() =>
