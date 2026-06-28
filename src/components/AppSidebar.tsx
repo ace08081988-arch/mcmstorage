@@ -46,6 +46,16 @@ export function AppSidebar() {
   const [online, setOnline] = useState(() =>
     typeof navigator === "undefined" ? true : navigator.onLine,
   );
+  const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
+  const [nowTick, setNowTick] = useState(() => Date.now());
+  useEffect(() => {
+    // Tandai waktu sinkron tiap kali fetch chat selesai
+    if (chatFetching === 0) setLastSyncAt(Date.now());
+  }, [chatFetching]);
+  useEffect(() => {
+    const id = window.setInterval(() => setNowTick(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
   useEffect(() => {
     const on = () => setOnline(true);
     const off = () => setOnline(false);
@@ -61,6 +71,22 @@ export function AppSidebar() {
     : chatFetching > 0
       ? "syncing"
       : "online";
+  const fmtAgo = (ts: number | null) => {
+    if (!ts) return "belum pernah";
+    const sec = Math.max(0, Math.floor((nowTick - ts) / 1000));
+    if (sec < 5) return "baru saja";
+    if (sec < 60) return `${sec} dtk lalu`;
+    const min = Math.floor(sec / 60);
+    if (min < 60) return `${min} mnt lalu`;
+    const hr = Math.floor(min / 60);
+    if (hr < 24) return `${hr} jam lalu`;
+    const day = Math.floor(hr / 24);
+    return `${day} hari lalu`;
+  };
+  const lastSyncLabel = fmtAgo(lastSyncAt);
+  const lastSyncTitle = lastSyncAt
+    ? `Terakhir sinkron: ${new Date(lastSyncAt).toLocaleString()}`
+    : "Belum ada sinkronisasi";
   const syncMeta = {
     offline: { label: "Offline", Icon: WifiOff, cls: "bg-destructive/15 text-destructive border-destructive/30" },
     syncing: { label: "Syncing…", Icon: RefreshCw, cls: "bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400" },
@@ -153,13 +179,18 @@ export function AppSidebar() {
             syncState === "syncing"
               ? "Menyegarkan badge Aktif/Arsip…"
               : syncState === "offline"
-                ? "Tidak ada koneksi — badge mungkin tertinggal"
-                : "Tersinkron dengan server"
+                ? `Tidak ada koneksi — badge mungkin tertinggal. ${lastSyncTitle}`
+                : lastSyncTitle
           }
-          className={`mb-2 flex items-center gap-2 rounded-md border px-2 py-1 text-[11px] font-medium ${syncMeta.cls}`}
+          className={`mb-2 flex items-center justify-between gap-2 rounded-md border px-2 py-1 text-[11px] font-medium ${syncMeta.cls}`}
         >
-          <syncMeta.Icon className={`h-3.5 w-3.5 ${syncState === "syncing" ? "animate-spin" : ""}`} />
-          <span>{syncMeta.label}</span>
+          <span className="flex items-center gap-2">
+            <syncMeta.Icon className={`h-3.5 w-3.5 ${syncState === "syncing" ? "animate-spin" : ""}`} />
+            <span>{syncMeta.label}</span>
+          </span>
+          <span className="opacity-80">
+            {syncState === "syncing" ? "…" : lastSyncLabel}
+          </span>
         </div>
         <CompactModeToggle />
       </SidebarFooter>
