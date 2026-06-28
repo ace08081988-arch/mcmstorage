@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff,
-  Search, MoreVertical, ArchiveRestore, BellRing, X,
+  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff,
 } from "lucide-react";
 
 import {
@@ -37,7 +37,7 @@ function timeShort(iso: string | null): string {
 
 function ChatListPage() {
   useChatHeartbeat();
-  const { data: conversations, isLoading } = useConversations();
+  const { data: conversations, isLoading, isError, error, isFetching, refetch } = useConversations();
   const [q, setQ] = useState("");
   const search = useChatSearch(q);
   const navigate = useNavigate();
@@ -76,6 +76,21 @@ function ChatListPage() {
           <NewDmDialog />
         </div>
       </header>
+
+      {isError && (conversations?.length ?? 0) > 0 ? (
+        <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
+          <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <p className="font-medium">Menampilkan data offline</p>
+            <p className="opacity-80">
+              Tidak bisa menyegarkan daftar chat: {error instanceof Error ? error.message : "jaringan bermasalah"}.
+            </p>
+          </div>
+          <Button size="sm" variant="outline" className="h-7 px-2 text-[11px]" disabled={isFetching} onClick={() => refetch()}>
+            {isFetching ? <Loader2 className="h-3 w-3 animate-spin" /> : "Coba lagi"}
+          </Button>
+        </div>
+      ) : null}
 
       <div className="relative">
         <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
