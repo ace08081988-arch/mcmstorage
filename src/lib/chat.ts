@@ -20,6 +20,9 @@ export type ConversationListItem = ConversationRow & {
   last_read: boolean;
   unread: number;
   member_ids: string[];
+  pinned_at: string | null;
+  archived_at: string | null;
+  muted_until: string | null;
 };
 
 export type MessageRow = {
