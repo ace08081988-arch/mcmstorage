@@ -102,9 +102,24 @@ export function useConversations() {
   const qc = useQueryClient();
   const { data: myId } = useMyUserId();
 
+  const cacheKey = myId ? `chat:conversations:${myId}` : null;
+  const cached = useMemo<ConversationListItem[] | undefined>(() => {
+    if (!cacheKey || typeof window === "undefined") return undefined;
+    try {
+      const raw = window.localStorage.getItem(cacheKey);
+      if (!raw) return undefined;
+      const parsed = JSON.parse(raw) as { data?: ConversationListItem[] };
+      return Array.isArray(parsed?.data) ? parsed.data : undefined;
+    } catch {
+      return undefined;
+    }
+  }, [cacheKey]);
+
   const query = useQuery({
     queryKey: ["chat", "conversations", myId ?? "_"],
     enabled: !!myId,
+    initialData: cached,
+    initialDataUpdatedAt: cached ? 0 : undefined,
     retry: (failureCount, error) => {
       // Don't retry on auth/permission errors — those won't fix themselves.
       const code = (error as { code?: string } | null)?.code;
@@ -250,6 +265,21 @@ export function useConversations() {
       });
     },
   });
+
+  // Persist successful results so the chat list can be shown from cache when
+  // the RPC fails (offline / poor network).
+  useEffect(() => {
+    if (!cacheKey || typeof window === "undefined") return;
+    if (!query.isSuccess || !query.data) return;
+    try {
+      window.localStorage.setItem(
+        cacheKey,
+        JSON.stringify({ data: query.data, savedAt: Date.now() }),
+      );
+    } catch {
+      /* ignore quota errors */
+    }
+  }, [cacheKey, query.isSuccess, query.data, query.dataUpdatedAt]);
 
   // Realtime: refresh on any message or membership change
   useEffect(() => {
