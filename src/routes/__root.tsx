@@ -243,10 +243,14 @@ function RootComponent() {
       console.warn("[perm-bootstrap]", e),
     );
     applyCompactMode();
-    // Kirim preferensi notifikasi ke service worker setiap kali app dibuka
-    import("@/lib/notif-prefs").then(({ loadPrefs, broadcastPrefs }) => {
+    // Kirim preferensi notifikasi ke service worker + tarik versi terbaru dari cloud
+    let unsub: (() => void) | null = null;
+    import("@/lib/notif-prefs").then(({ loadPrefs, broadcastPrefs, pullPrefsFromCloud, subscribeRemotePrefs }) => {
       broadcastPrefs(loadPrefs());
+      pullPrefsFromCloud().catch(() => {});
+      unsub = subscribeRemotePrefs(() => {});
     }).catch(() => {});
+    return () => { if (unsub) unsub(); };
   }, []);
 
   // Tangani pesan dari service worker push (klik notifikasi / aksi cepat)
