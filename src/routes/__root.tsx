@@ -243,6 +243,10 @@ function RootComponent() {
       console.warn("[perm-bootstrap]", e),
     );
     applyCompactMode();
+    // Kirim preferensi notifikasi ke service worker setiap kali app dibuka
+    import("@/lib/notif-prefs").then(({ loadPrefs, broadcastPrefs }) => {
+      broadcastPrefs(loadPrefs());
+    }).catch(() => {});
   }, []);
 
   // Tangani pesan dari service worker push (klik notifikasi / aksi cepat)

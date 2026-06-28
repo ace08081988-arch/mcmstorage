@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -31,6 +31,7 @@ const items = [
   { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
   { title: "Langganan", url: "/langganan", icon: Sparkles },
   { title: "Profil Akun", url: "/profil", icon: User },
+  { title: "Notifikasi", url: "/notifikasi", icon: BellRing },
   { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },
   { title: "Audit Rute", url: "/audit", icon: ClipboardCheck },
   { title: "Diagnostik", url: "/diagnostics", icon: Activity },
