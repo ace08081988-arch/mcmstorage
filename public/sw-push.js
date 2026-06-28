@@ -104,15 +104,19 @@ self.addEventListener("notificationclick", (event) => {
   if (event.action === "mark-read" && d.conversationId) {
     event.waitUntil(
       (async () => {
-        try {
-          await fetch("/api/public/push/mark-read", {
-            method: "POST",
-            headers: { "content-type": "application/json" },
-            body: JSON.stringify({ conversationId: d.conversationId, messageId: d.messageId }),
-            credentials: "include",
-          });
-        } catch (_) {}
-        // Tidak buka jendela — aksi cepat saja
+        // Minta klien aktif menandai dibaca; bila tidak ada, buka chat agar app menandai otomatis
+        const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
+        if (clients.length > 0) {
+          for (const c of clients) {
+            c.postMessage({
+              type: "mark-read",
+              conversationId: d.conversationId,
+              messageId: d.messageId,
+            });
+          }
+          return;
+        }
+        await self.clients.openWindow(`/chat/${d.conversationId}?markRead=1`);
       })(),
     );
     return;
