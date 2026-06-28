@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/reac
 import { useEffect, useState } from "react";
 import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
@@ -43,6 +44,7 @@ export function AppSidebar() {
   const matchRoute = useMatchRoute();
   const { data: conversations } = useConversations();
   const chatFetching = useIsFetching({ queryKey: ["chat", "conversations"] });
+  const queryClient = useQueryClient();
   const [online, setOnline] = useState(() =>
     typeof navigator === "undefined" ? true : navigator.onLine,
   );
@@ -188,8 +190,28 @@ export function AppSidebar() {
             <syncMeta.Icon className={`h-3.5 w-3.5 ${syncState === "syncing" ? "animate-spin" : ""}`} />
             <span>{syncMeta.label}</span>
           </span>
-          <span className="opacity-80">
-            {syncState === "syncing" ? "…" : lastSyncLabel}
+          <span className="flex items-center gap-1.5">
+            <span className="opacity-80">
+              {syncState === "syncing" ? "…" : lastSyncLabel}
+            </span>
+            <button
+              type="button"
+              onClick={() => {
+                void queryClient.invalidateQueries({ queryKey: ["chat", "conversations"] });
+              }}
+              disabled={syncState !== "online"}
+              title={
+                syncState === "offline"
+                  ? "Tidak ada koneksi"
+                  : syncState === "syncing"
+                    ? "Sedang sinkronisasi…"
+                    : "Sinkronkan ulang percakapan"
+              }
+              aria-label="Sinkronkan ulang percakapan"
+              className="inline-flex h-5 w-5 items-center justify-center rounded-sm border border-current/20 bg-background/40 hover:bg-background/70 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <RefreshCw className={`h-3 w-3 ${syncState === "syncing" ? "animate-spin" : ""}`} />
+            </button>
           </span>
         </div>
         <CompactModeToggle />
