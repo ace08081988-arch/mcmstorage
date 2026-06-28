@@ -163,14 +163,20 @@ export function useConversations() {
       }
       let profileMap = new Map<string, { display_name: string | null; phone: string | null; email: string | null }>();
       if (otherIds.size > 0) {
-        const { data: profs } = await supabase.rpc("get_chat_member_profiles", {
-          _user_ids: Array.from(otherIds),
-        });
-        profileMap = new Map(
-          ((profs ?? []) as Array<{ id: string; display_name: string | null; phone: string | null; email: string | null }>).map(
-            (p) => [p.id, { display_name: p.display_name, phone: p.phone, email: p.email }],
-          ),
-        );
+        try {
+          const { data: profs, error: pErr } = await supabase.rpc("get_chat_member_profiles", {
+            _user_ids: Array.from(otherIds),
+          });
+          if (pErr) throw pErr;
+          profileMap = new Map(
+            ((profs ?? []) as Array<{ id: string; display_name: string | null; phone: string | null; email: string | null }>).map(
+              (p) => [p.id, { display_name: p.display_name, phone: p.phone, email: p.email }],
+            ),
+          );
+        } catch (err) {
+          // Non-fatal: fall back to generic DM titles so the list still renders.
+          console.warn("[chat] get_chat_member_profiles failed:", err);
+        }
       }
 
       // Last messages
