@@ -463,3 +463,184 @@ export function useRenameConversation(conversationId: string) {
     },
   });
 }
+
+// ---------------- Reactions ----------------
+export type Reaction = { message_id: string; user_id: string; emoji: string };
+
+export function useMessageReactions(conversationId: string | undefined, messageIds: string[]) {
+  const qc = useQueryClient();
+  const ids = messageIds.slice().sort().join(",");
+  const query = useQuery({
+    queryKey: ["chat", "reactions", conversationId, ids],
+    enabled: !!conversationId && messageIds.length > 0,
+    queryFn: async (): Promise<Reaction[]> => {
+      const { data, error } = await supabase
+        .from("message_reactions")
+        .select("message_id, user_id, emoji")
+        .in("message_id", messageIds);
+      if (error) throw error;
+      return (data ?? []) as Reaction[];
+    },
+    staleTime: 5_000,
+  });
+  useEffect(() => {
+    if (!conversationId) return;
+    const ch = supabase
+      .channel(`chat-reactions:${conversationId}`)
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "message_reactions" },
+        () => qc.invalidateQueries({ queryKey: ["chat", "reactions", conversationId] }),
+      )
+      .subscribe();
+    return () => {
+      supabase.removeChannel(ch);
+    };
+  }, [conversationId, qc]);
+  return query;
+}
+
+export function useReact(conversationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { messageId: string; emoji: string; on: boolean }) => {
+      const { error } = await supabase.rpc("message_react", {
+        _msg: v.messageId,
+        _emoji: v.emoji,
+        _on: v.on,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chat", "reactions", conversationId] }),
+  });
+}
+
+// ---------------- Edit / Hide-for-me ----------------
+export function useEditMessage(conversationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { messageId: string; body: string }) => {
+      const { error } = await supabase.rpc("message_edit", { _msg: v.messageId, _body: v.body });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] }),
+  });
+}
+
+export function useHideMessageForMe(conversationId: string) {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (messageId: string) => {
+      const { error } = await supabase.rpc("message_hide_for_me", { _msg: messageId });
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
+      qc.invalidateQueries({ queryKey: ["chat", "hidden"] });
+    },
+  });
+}
+
+export function useHiddenMessageIds() {
+  return useQuery({
+    queryKey: ["chat", "hidden"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("message_hidden")
+        .select("message_id");
+      if (error) throw error;
+      return new Set((data ?? []).map((r) => r.message_id as string));
+    },
+    staleTime: 30_000,
+  });
+}
+
+// ---------------- Pin / Archive / Mute ----------------
+export function usePinConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { conversationId: string; pin: boolean }) => {
+      const { error } = await supabase.rpc("chat_set_pin", { _conv: v.conversationId, _pin: v.pin });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
+  });
+}
+
+export function useArchiveConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { conversationId: string; archive: boolean }) => {
+      const { error } = await supabase.rpc("chat_set_archive", {
+        _conv: v.conversationId,
+        _arch: v.archive,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
+  });
+}
+
+export function useMuteConversation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (v: { conversationId: string; until: Date | null }) => {
+      const { error } = await supabase.rpc("chat_mute", {
+        _conv: v.conversationId,
+        _until: v.until ? v.until.toISOString() : null,
+      });
+      if (error) throw error;
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
+  });
+}
+
+// ---------------- Search ----------------
+export function useChatSearch(q: string) {
+  return useQuery({
+    queryKey: ["chat", "search", q],
+    enabled: q.trim().length >= 2,
+    queryFn: async () => {
+      const { data, error } = await supabase.rpc("chat_search_messages", {
+        _q: q.trim(),
+        _limit: 30,
+      });
+      if (error) throw error;
+      return (data ?? []) as Array<{
+        id: string;
+        conversation_id: string;
+        sender_id: string;
+        body: string | null;
+        created_at: string;
+      }>;
+    },
+    staleTime: 10_000,
+  });
+}
+
+// ---------------- Heartbeat (last seen) ----------------
+export function useChatHeartbeat() {
+  const { data: myId } = useMyUserId();
+  useEffect(() => {
+    if (!myId) return;
+    let stopped = false;
+    const beat = () => {
+      if (stopped) return;
+      void supabase.rpc("chat_heartbeat");
+    };
+    beat();
+    const onVis = () => {
+      if (!document.hidden) beat();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    const id = window.setInterval(beat, 60_000);
+    const onBeforeUnload = () => beat();
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      stopped = true;
+      window.clearInterval(id);
+      document.removeEventListener("visibilitychange", onVis);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
+  }, [myId]);
+}
