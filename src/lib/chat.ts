@@ -34,6 +34,8 @@ export type MessageRow = {
   created_at: string;
   edited_at: string | null;
   deleted_at: string | null;
+  reply_to_id?: string | null;
+  attachment_duration_sec?: number | null;
 };
 
 export function useMyUserId() {
