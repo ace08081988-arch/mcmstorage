@@ -236,6 +236,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  const router = useRouter();
 
   useEffect(() => {
     bootstrapNativePermissions().catch((e) =>
@@ -243,6 +244,31 @@ function RootComponent() {
     );
     applyCompactMode();
   }, []);
+
+  // Tangani pesan dari service worker push (klik notifikasi / aksi cepat)
+  useEffect(() => {
+    if (typeof navigator === "undefined" || !("serviceWorker" in navigator)) return;
+    const onMsg = (event: MessageEvent) => {
+      const d = event.data as { type?: string; url?: string; conversationId?: string } | undefined;
+      if (!d || typeof d.type !== "string") return;
+      if (d.type === "navigate" && d.url) {
+        try { router.navigate({ to: d.url }); } catch { window.location.href = d.url; }
+      } else if (d.type === "mark-read" && d.conversationId) {
+        import("@/integrations/supabase/client").then(async ({ supabase }) => {
+          const { data: u } = await supabase.auth.getUser();
+          if (!u.user) return;
+          await supabase
+            .from("conversation_members")
+            .update({ last_read_at: new Date().toISOString() })
+            .eq("conversation_id", d.conversationId!)
+            .eq("user_id", u.user.id);
+          queryClient.invalidateQueries({ queryKey: ["chat"] });
+        }).catch(() => {});
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", onMsg);
+    return () => navigator.serviceWorker.removeEventListener("message", onMsg);
+  }, [router, queryClient]);
 
   return (
     <QueryClientProvider client={queryClient}>
