@@ -105,6 +105,15 @@ export function useConversations() {
   const query = useQuery({
     queryKey: ["chat", "conversations", myId ?? "_"],
     enabled: !!myId,
+    retry: (failureCount, error) => {
+      // Don't retry on auth/permission errors — those won't fix themselves.
+      const code = (error as { code?: string } | null)?.code;
+      const status = (error as { status?: number } | null)?.status;
+      if (code === "PGRST301" || status === 401 || status === 403) return false;
+      return failureCount < 4;
+    },
+    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 15_000),
+    refetchOnReconnect: true,
     queryFn: async (): Promise<ConversationListItem[]> => {
       const { data: members, error: mErr } = await supabase
         .from("conversation_members")
