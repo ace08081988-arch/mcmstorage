@@ -27,6 +27,16 @@ export type PushPayload = {
   url?: string;
   tag?: string;
   conversationId?: string;
+  messageId?: string;
+  icon?: string;
+  badge?: string;
+  image?: string;
+  kind?: "chat" | "generic" | "security" | "system";
+  requireInteraction?: boolean;
+  silent?: boolean;
+  vibrate?: number[];
+  timestamp?: number;
+  actions?: { action: string; title: string; icon?: string }[];
 };
 
 export async function sendWebPush(sub: PushSubRow, payload: PushPayload) {

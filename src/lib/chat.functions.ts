@@ -54,7 +54,7 @@ export const sendMessage = createServerFn({ method: "POST" })
           .single(),
         supabaseAdmin
           .from("profiles")
-          .select("display_name, email")
+          .select("display_name, email, avatar_url")
           .eq("id", userId)
           .single(),
       ]);
@@ -86,6 +86,16 @@ export const sendMessage = createServerFn({ method: "POST" })
           url: `/chat/${data.conversationId}`,
           tag: `conv:${data.conversationId}`,
           conversationId: data.conversationId,
+          messageId: msg.id,
+          icon: prof?.avatar_url || undefined,
+          kind: "chat",
+          requireInteraction: false,
+          vibrate: [80, 40, 80],
+          timestamp: Date.now(),
+          actions: [
+            { action: "open", title: "Buka" },
+            { action: "mark-read", title: "Tandai dibaca" },
+          ],
         },
       });
     } catch (e) {
