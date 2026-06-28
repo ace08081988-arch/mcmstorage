@@ -15,6 +15,9 @@ import {
   isInDndWindow,
   loadPrefs,
   savePrefs,
+  pullPrefsFromCloud,
+  subscribeRemotePrefs,
+  getLastSyncedAt,
   type NotifKind,
   type NotifPrefs,
 } from "@/lib/notif-prefs";
@@ -46,12 +49,23 @@ function NotifikasiPage() {
   const [prefs, setPrefs] = useState<NotifPrefs>(DEFAULT_PREFS);
   const [permission, setPermission] = useState<NotificationPermission>("default");
   const [now, setNow] = useState(() => new Date());
+  const [syncedAt, setSyncedAt] = useState<string | null>(null);
+  const [syncing, setSyncing] = useState(false);
 
   useEffect(() => {
     setPrefs(loadPrefs());
     if (typeof Notification !== "undefined") setPermission(Notification.permission);
     const t = window.setInterval(() => setNow(new Date()), 30_000);
-    return () => window.clearInterval(t);
+    setSyncing(true);
+    pullPrefsFromCloud()
+      .then((p) => { setPrefs(p); setSyncedAt(getLastSyncedAt()); })
+      .finally(() => setSyncing(false));
+    const unsub = subscribeRemotePrefs((p) => {
+      setPrefs(p);
+      setSyncedAt(getLastSyncedAt());
+      toast.info("Preferensi notifikasi disinkronkan dari perangkat lain");
+    });
+    return () => { window.clearInterval(t); unsub(); };
   }, []);
 
   const dndActive =
@@ -63,11 +77,13 @@ function NotifikasiPage() {
     const next = { ...prefs, ...patch };
     setPrefs(next);
     savePrefs(next);
+    setSyncedAt(new Date().toISOString());
   }
   function updateDnd(patch: Partial<NotifPrefs["dnd"]>) {
     const next = { ...prefs, dnd: { ...prefs.dnd, ...patch } };
     setPrefs(next);
     savePrefs(next);
+    setSyncedAt(new Date().toISOString());
   }
   function toggleKind(k: NotifKind, value: boolean) {
     update({ enabledKinds: { ...prefs.enabledKinds, [k]: value } });
