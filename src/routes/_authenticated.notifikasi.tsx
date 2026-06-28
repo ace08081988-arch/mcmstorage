@@ -145,6 +145,13 @@ function NotifikasiPage() {
         <p className="text-sm text-muted-foreground">
           Pilih jenis notifikasi yang ingin Anda terima, atur getaran, dan jadwalkan jangan ganggu.
         </p>
+        <p className="text-xs text-muted-foreground">
+          {syncing
+            ? "Menyinkronkan preferensi…"
+            : syncedAt
+              ? `Disinkronkan ke akun · ${new Date(syncedAt).toLocaleString("id-ID")}`
+              : "Preferensi akan otomatis disinkronkan ke perangkat lain saat Anda login."}
+        </p>
       </header>
 
       <Card>
