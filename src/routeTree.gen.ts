@@ -26,6 +26,7 @@ import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
+import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
 import { Route as AuthenticatedLanggananRouteImport } from './routes/_authenticated.langganan'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
@@ -134,6 +135,11 @@ const AuthenticatedPengaturanKunciRoute =
     path: '/pengaturan-kunci',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedNotifikasiRoute = AuthenticatedNotifikasiRouteImport.update({
+  id: '/notifikasi',
+  path: '/notifikasi',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedLinkPegawaiRoute =
   AuthenticatedLinkPegawaiRouteImport.update({
     id: '/link-pegawai',
@@ -281,6 +287,7 @@ export interface FileRoutesByFullPath {
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/langganan': typeof AuthenticatedLanggananRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
+  '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
@@ -319,6 +326,7 @@ export interface FileRoutesByTo {
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/langganan': typeof AuthenticatedLanggananRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
+  '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
@@ -361,6 +369,7 @@ export interface FileRoutesById {
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/langganan': typeof AuthenticatedLanggananRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
+  '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
@@ -404,6 +413,7 @@ export interface FileRouteTypes {
     | '/label-preview'
     | '/langganan'
     | '/link-pegawai'
+    | '/notifikasi'
     | '/pengaturan-kunci'
     | '/profil'
     | '/request'
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/label-preview'
     | '/langganan'
     | '/link-pegawai'
+    | '/notifikasi'
     | '/pengaturan-kunci'
     | '/profil'
     | '/request'
@@ -483,6 +494,7 @@ export interface FileRouteTypes {
     | '/_authenticated/label-preview'
     | '/_authenticated/langganan'
     | '/_authenticated/link-pegawai'
+    | '/_authenticated/notifikasi'
     | '/_authenticated/pengaturan-kunci'
     | '/_authenticated/profil'
     | '/_authenticated/request'
@@ -640,6 +652,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-kunci'
       fullPath: '/pengaturan-kunci'
       preLoaderRoute: typeof AuthenticatedPengaturanKunciRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/notifikasi': {
+      id: '/_authenticated/notifikasi'
+      path: '/notifikasi'
+      fullPath: '/notifikasi'
+      preLoaderRoute: typeof AuthenticatedNotifikasiRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/link-pegawai': {
@@ -852,6 +871,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedLanggananRoute: typeof AuthenticatedLanggananRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
+  AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
@@ -874,6 +894,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedLanggananRoute: AuthenticatedLanggananRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
+  AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
