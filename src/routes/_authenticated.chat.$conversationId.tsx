@@ -310,7 +310,13 @@ function ChatRoomPage() {
         prev.map((o) => (o.tempId === item.tempId ? { ...o, status: "sending", error: undefined } : o)),
       );
       try {
-        await sendMessage({ data: { conversationId, body: item.body } });
+        await sendMessage({
+          data: {
+            conversationId,
+            body: item.body,
+            ...(item.replyToId ? { replyToId: item.replyToId } : {}),
+          },
+        });
         // Drop from outbox; realtime INSERT will surface the row.
         setOutbox((prev) => prev.filter((o) => o.tempId !== item.tempId));
         void othersRead.refetch();
@@ -323,6 +329,15 @@ function ChatRoomPage() {
       }
     },
     [conversationId, othersRead],
+  );
+
+  const doSendWith = useCallback(
+    (item: OutboxItem, replyToId: string | null) => {
+      const it = { ...item, replyToId: replyToId ?? undefined };
+      setOutbox((prev) => prev.map((o) => (o.tempId === item.tempId ? it : o)));
+      void doSend(it);
+    },
+    [doSend],
   );
 
   const onSubmit = (e: React.FormEvent) => {
