@@ -55,24 +55,36 @@ export type Database = {
       }
       conversation_members: {
         Row: {
+          archived_at: string | null
           conversation_id: string
           joined_at: string
           last_read_at: string | null
+          notifications_muted_until: string | null
+          pinned_at: string | null
           role: string
+          sound_enabled: boolean
           user_id: string
         }
         Insert: {
+          archived_at?: string | null
           conversation_id: string
           joined_at?: string
           last_read_at?: string | null
+          notifications_muted_until?: string | null
+          pinned_at?: string | null
           role?: string
+          sound_enabled?: boolean
           user_id: string
         }
         Update: {
+          archived_at?: string | null
           conversation_id?: string
           joined_at?: string
           last_read_at?: string | null
+          notifications_muted_until?: string | null
+          pinned_at?: string | null
           role?: string
+          sound_enabled?: boolean
           user_id?: string
         }
         Relationships: [
@@ -635,8 +647,64 @@ export type Database = {
         }
         Relationships: []
       }
+      message_hidden: {
+        Row: {
+          hidden_at: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          hidden_at?: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          hidden_at?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_hidden_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
+          attachment_duration_sec: number | null
           attachment_mime: string | null
           attachment_name: string | null
           attachment_path: string | null
@@ -647,9 +715,11 @@ export type Database = {
           deleted_at: string | null
           edited_at: string | null
           id: string
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
+          attachment_duration_sec?: number | null
           attachment_mime?: string | null
           attachment_name?: string | null
           attachment_path?: string | null
@@ -660,9 +730,11 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
+          attachment_duration_sec?: number | null
           attachment_mime?: string | null
           attachment_name?: string | null
           attachment_path?: string | null
@@ -673,6 +745,7 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          reply_to_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -681,6 +754,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
         ]
@@ -1033,7 +1113,9 @@ export type Database = {
           email: string | null
           id: string
           language: string
+          last_seen_at: string | null
           phone: string | null
+          show_last_seen: boolean
           updated_at: string
         }
         Insert: {
@@ -1046,7 +1128,9 @@ export type Database = {
           email?: string | null
           id: string
           language?: string
+          last_seen_at?: string | null
           phone?: string | null
+          show_last_seen?: boolean
           updated_at?: string
         }
         Update: {
@@ -1059,7 +1143,9 @@ export type Database = {
           email?: string | null
           id?: string
           language?: string
+          last_seen_at?: string | null
           phone?: string | null
+          show_last_seen?: boolean
           updated_at?: string
         }
         Relationships: []
@@ -2136,6 +2222,26 @@ export type Database = {
         Returns: boolean
       }
       can_chat: { Args: { _a: string; _b: string }; Returns: boolean }
+      chat_heartbeat: { Args: never; Returns: undefined }
+      chat_mute: { Args: { _conv: string; _until: string }; Returns: undefined }
+      chat_search_messages: {
+        Args: { _limit?: number; _q: string }
+        Returns: {
+          body: string
+          conversation_id: string
+          created_at: string
+          id: string
+          sender_id: string
+        }[]
+      }
+      chat_set_archive: {
+        Args: { _arch: boolean; _conv: string }
+        Returns: undefined
+      }
+      chat_set_pin: {
+        Args: { _conv: string; _pin: boolean }
+        Returns: undefined
+      }
       check_acknowledge_rate_limit: { Args: never; Returns: Json }
       create_group: {
         Args: { _member_ids: string[]; _title: string }
@@ -2177,7 +2283,9 @@ export type Database = {
           display_name: string
           email: string
           id: string
+          last_seen_at: string
           phone: string
+          show_last_seen: boolean
         }[]
       }
       get_email_cron_secret: { Args: never; Returns: string }
@@ -2196,6 +2304,15 @@ export type Database = {
       is_conversation_owner: {
         Args: { _conv: string; _user: string }
         Returns: boolean
+      }
+      message_edit: {
+        Args: { _body: string; _msg: string }
+        Returns: undefined
+      }
+      message_hide_for_me: { Args: { _msg: string }; Returns: undefined }
+      message_react: {
+        Args: { _emoji: string; _msg: string; _on: boolean }
+        Returns: undefined
       }
       move_to_dlq: {
         Args: {
@@ -2342,6 +2459,8 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: number
       }
+      show_limit: { Args: never; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       start_dm: { Args: { _partner: string }; Returns: string }
       start_pro_trial: { Args: never; Returns: Json }
     }

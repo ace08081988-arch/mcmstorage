@@ -9,6 +9,8 @@ const sendSchema = z.object({
   attachmentMime: z.string().max(120).optional(),
   attachmentName: z.string().max(255).optional(),
   attachmentSize: z.number().int().min(0).max(50 * 1024 * 1024).optional(),
+  attachmentDurationSec: z.number().int().min(0).max(60 * 60).optional(),
+  replyToId: z.string().uuid().optional(),
 }).refine((d) => !!d.body || !!d.attachmentPath, { message: "Pesan kosong" });
 
 export const sendMessage = createServerFn({ method: "POST" })
@@ -28,6 +30,8 @@ export const sendMessage = createServerFn({ method: "POST" })
         attachment_mime: data.attachmentMime ?? null,
         attachment_name: data.attachmentName ?? null,
         attachment_size: data.attachmentSize ?? null,
+        attachment_duration_sec: data.attachmentDurationSec ?? null,
+        reply_to_id: data.replyToId ?? null,
       })
       .select("id, conversation_id, sender_id, body, attachment_name, created_at")
       .single();
@@ -41,7 +45,7 @@ export const sendMessage = createServerFn({ method: "POST" })
       const [{ data: members }, { data: conv }, { data: prof }] = await Promise.all([
         supabaseAdmin
           .from("conversation_members")
-          .select("user_id")
+          .select("user_id, notifications_muted_until")
           .eq("conversation_id", data.conversationId),
         supabaseAdmin
           .from("conversations")
@@ -55,7 +59,14 @@ export const sendMessage = createServerFn({ method: "POST" })
           .single(),
       ]);
 
-      const userIds = (members ?? []).map((m) => m.user_id).filter(Boolean) as string[];
+      const nowMs = Date.now();
+      const userIds = (members ?? [])
+        .filter((m) => {
+          const until = (m as { notifications_muted_until?: string | null }).notifications_muted_until;
+          return !until || new Date(until).getTime() < nowMs;
+        })
+        .map((m) => m.user_id)
+        .filter(Boolean) as string[];
       const senderName = prof?.display_name || prof?.email || "Pengguna";
       const isGroup = conv?.kind === "group" || conv?.kind === "order";
       const title = isGroup
