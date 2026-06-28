@@ -1,5 +1,7 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw } from "lucide-react";
+import { useIsFetching } from "@tanstack/react-query";
 import {
   Sidebar,
   SidebarContent,
@@ -40,6 +42,30 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const matchRoute = useMatchRoute();
   const { data: conversations } = useConversations();
+  const chatFetching = useIsFetching({ queryKey: ["chat", "conversations"] });
+  const [online, setOnline] = useState(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine,
+  );
+  useEffect(() => {
+    const on = () => setOnline(true);
+    const off = () => setOnline(false);
+    window.addEventListener("online", on);
+    window.addEventListener("offline", off);
+    return () => {
+      window.removeEventListener("online", on);
+      window.removeEventListener("offline", off);
+    };
+  }, []);
+  const syncState: "offline" | "syncing" | "online" = !online
+    ? "offline"
+    : chatFetching > 0
+      ? "syncing"
+      : "online";
+  const syncMeta = {
+    offline: { label: "Offline", Icon: WifiOff, cls: "bg-destructive/15 text-destructive border-destructive/30" },
+    syncing: { label: "Syncing…", Icon: RefreshCw, cls: "bg-amber-500/15 text-amber-600 border-amber-500/30 dark:text-amber-400" },
+    online:  { label: "Online", Icon: Wifi, cls: "bg-emerald-500/15 text-emerald-600 border-emerald-500/30 dark:text-emerald-400" },
+  }[syncState];
   const chatCounts = (() => {
     const list = conversations ?? [];
     let active = 0;
@@ -122,6 +148,19 @@ export function AppSidebar() {
         </SidebarGroup>
       </SidebarContent>
       <SidebarFooter className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
+        <div
+          title={
+            syncState === "syncing"
+              ? "Menyegarkan badge Aktif/Arsip…"
+              : syncState === "offline"
+                ? "Tidak ada koneksi — badge mungkin tertinggal"
+                : "Tersinkron dengan server"
+          }
+          className={`mb-2 flex items-center gap-2 rounded-md border px-2 py-1 text-[11px] font-medium ${syncMeta.cls}`}
+        >
+          <syncMeta.Icon className={`h-3.5 w-3.5 ${syncState === "syncing" ? "animate-spin" : ""}`} />
+          <span>{syncMeta.label}</span>
+        </div>
         <CompactModeToggle />
       </SidebarFooter>
     </Sidebar>
