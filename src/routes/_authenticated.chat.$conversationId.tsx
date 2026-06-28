@@ -759,6 +759,50 @@ function ChatRoomPage() {
 
       <form onSubmit={onSubmit} className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur">
         <ChatProGate />
+        {editing ? (
+          <div className="mb-2 flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs">
+            <Pencil className="mt-0.5 h-3.5 w-3.5 text-primary" />
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold text-primary">Edit pesan</div>
+              <div className="line-clamp-2 text-muted-foreground">{editing.body || "(kosong)"}</div>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              aria-label="Batal edit"
+              onClick={() => {
+                setEditing(null);
+                setBody("");
+              }}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ) : replyTo ? (
+          <div className="mb-2 flex items-start gap-2 rounded-md border-l-2 border-primary bg-muted/60 px-2 py-1 text-xs">
+            <Reply className="mt-0.5 h-3.5 w-3.5 text-primary" />
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">
+                Balas {replyTo.sender_id === myId ? "Anda" : (profiles.data?.get(replyTo.sender_id)?.display_name || "Pengguna")}
+              </div>
+              <div className="line-clamp-2 text-muted-foreground">
+                {replyTo.deleted_at ? <em>(pesan dihapus)</em> : (replyTo.body ?? "(lampiran)")}
+              </div>
+            </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-6 w-6"
+              aria-label="Batal balas"
+              onClick={() => setReplyTo(null)}
+            >
+              <X className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        ) : null}
         <div className="flex items-end gap-2">
           <Textarea
             value={body}
