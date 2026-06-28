@@ -125,6 +125,8 @@ async function focusOrOpen(url) {
 }
 
 self.addEventListener("notificationclick", (event) => {
+  // (handler tetap di bawah)
+});
   const n = event.notification;
   n.close();
   const d = n.data || {};
