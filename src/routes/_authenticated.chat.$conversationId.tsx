@@ -389,14 +389,14 @@ function ChatRoomPage() {
   // Group messages by day
   const grouped = useMemo(() => {
     const out: { day: string; items: MessageRow[] }[] = [];
-    for (const m of messages ?? []) {
+    for (const m of visibleMessages) {
       const day = fmtDay(m.created_at);
       const last = out[out.length - 1];
       if (last && last.day === day) last.items.push(m);
       else out.push({ day, items: [m] });
     }
     return out;
-  }, [messages]);
+  }, [visibleMessages]);
 
   // Re-scroll when outbox changes too.
   useEffect(() => {
@@ -432,7 +432,7 @@ function ChatRoomPage() {
                 <WifiOff className="h-3 w-3" /> Offline · pesan akan dikirim saat online
               </span>
             ) : meta.data?.kind === "dm" ? (
-              "Percakapan pribadi"
+              dmPresence ?? "Percakapan pribadi"
             ) : meta.data?.kind === "order" ? (
               "Diskusi pesanan"
             ) : (
