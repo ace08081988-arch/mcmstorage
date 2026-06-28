@@ -585,10 +585,11 @@ export function useMuteConversation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (v: { conversationId: string; until: Date | null }) => {
-      const { error } = await supabase.rpc("chat_mute", {
+      const args = {
         _conv: v.conversationId,
         _until: v.until ? v.until.toISOString() : null,
-      });
+      } as unknown as { _conv: string; _until: string };
+      const { error } = await supabase.rpc("chat_mute", args);
       if (error) throw error;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),
