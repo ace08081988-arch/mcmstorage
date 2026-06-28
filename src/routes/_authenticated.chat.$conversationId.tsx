@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
-  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff,
+  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,16 @@ import {
   useConversationMessages,
   useMyUserId,
   type MessageRow,
+  useChatHeartbeat,
+  useMessageReactions,
+  useReact,
+  useEditMessage,
+  useHideMessageForMe,
+  useHiddenMessageIds,
 } from "@/lib/chat";
+import {
+  Popover, PopoverContent, PopoverTrigger,
+} from "@/components/ui/popover";
 import { sendMessage } from "@/lib/chat.functions";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
@@ -64,14 +73,21 @@ function fmtDay(iso: string) {
 }
 
 function ChatRoomPage() {
+  useChatHeartbeat();
   const { conversationId } = Route.useParams();
   const navigate = useNavigate();
   const { data: myId } = useMyUserId();
   const { data: messages, isLoading } = useConversationMessages(conversationId);
   const deleteMsg = useDeleteMessage(conversationId);
   const deleteAllMine = useDeleteAllMyMessages(conversationId);
+  const editMsg = useEditMessage(conversationId);
+  const hideMsg = useHideMessageForMe(conversationId);
+  const react = useReact(conversationId);
+  const hiddenIds = useHiddenMessageIds();
   const [confirmAllOpen, setConfirmAllOpen] = useState(false);
   const [manageOpen, setManageOpen] = useState(false);
+  const [replyTo, setReplyTo] = useState<MessageRow | null>(null);
+  const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
   const entitlement = useEntitlement();
   const chatBlocked = !entitlement.loading && !entitlement.isPro;
 
@@ -103,12 +119,53 @@ function ChatRoomPage() {
       });
       if (error) throw error;
       return new Map(
-        ((data ?? []) as Array<{ id: string; display_name: string | null; email: string | null; phone: string | null }>).map(
+        ((data ?? []) as Array<{
+          id: string;
+          display_name: string | null;
+          email: string | null;
+          phone: string | null;
+          last_seen_at?: string | null;
+          show_last_seen?: boolean | null;
+        }>).map(
           (p) => [p.id, p],
         ),
       );
     },
   });
+
+  // Visible messages (apply per-user hide list)
+  const visibleMessages = useMemo(() => {
+    const hide = hiddenIds.data;
+    if (!hide || hide.size === 0) return messages ?? [];
+    return (messages ?? []).filter((m) => !hide.has(m.id));
+  }, [messages, hiddenIds.data]);
+
+  // Reactions for visible messages
+  const visibleIds = useMemo(() => visibleMessages.map((m) => m.id), [visibleMessages]);
+  const reactionsQ = useMessageReactions(conversationId, visibleIds);
+  const reactionMap = useMemo(() => {
+    const out = new Map<string, Map<string, Set<string>>>(); // msg -> emoji -> user set
+    for (const r of reactionsQ.data ?? []) {
+      let m = out.get(r.message_id);
+      if (!m) {
+        m = new Map();
+        out.set(r.message_id, m);
+      }
+      let s = m.get(r.emoji);
+      if (!s) {
+        s = new Set();
+        m.set(r.emoji, s);
+      }
+      s.add(r.user_id);
+    }
+    return out;
+  }, [reactionsQ.data]);
+
+  const messageById = useMemo(() => {
+    const m = new Map<string, MessageRow>();
+    for (const x of messages ?? []) m.set(x.id, x);
+    return m;
+  }, [messages]);
 
   const headerTitle = useMemo(() => {
     if (!meta.data) return "Memuat…";
@@ -118,6 +175,17 @@ function ChatRoomPage() {
       return p?.display_name || p?.phone || p?.email || "Kontak";
     }
     return meta.data.title || (meta.data.kind === "order" ? "Diskusi pesanan" : "Grup");
+  }, [meta.data, profiles.data, members.data, myId]);
+
+  const dmPresence = useMemo(() => {
+    if (!meta.data || meta.data.kind !== "dm" || !myId || !profiles.data) return null;
+    const other = (members.data ?? []).find((u) => u !== myId);
+    if (!other) return null;
+    const p = profiles.data.get(other);
+    if (!p || p.show_last_seen === false || !p.last_seen_at) return null;
+    const ms = new Date(p.last_seen_at).getTime();
+    if (Date.now() - ms < 60_000) return "Online";
+    return `Terakhir dilihat ${fmtRelative(p.last_seen_at)}`;
   }, [meta.data, profiles.data, members.data, myId]);
 
   // Other members' last_read_at — for per-message read receipts
@@ -249,15 +317,32 @@ function ChatRoomPage() {
     e.preventDefault();
     const t = body.trim();
     if (!t) return;
+    // Edit mode -> commit edit instead of sending new
+    if (editing) {
+      editMsg.mutate(
+        { messageId: editing.id, body: t },
+        {
+          onSuccess: () => {
+            setEditing(null);
+            setBody("");
+            toast.success("Pesan diperbarui");
+          },
+          onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal mengedit"),
+        },
+      );
+      return;
+    }
     const item: OutboxItem = {
       tempId: `tmp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       body: t,
       status: "sending",
       createdAt: new Date().toISOString(),
     };
+    const replyId = replyTo?.id ?? null;
     setOutbox((prev) => [...prev, item]);
     setBody("");
-    void doSend(item);
+    setReplyTo(null);
+    void doSendWith(item, replyId);
   };
 
   // Auto-retry failed messages once the browser is back online.
