@@ -108,12 +108,22 @@ export function useConversations() {
     queryFn: async (): Promise<ConversationListItem[]> => {
       const { data: members, error: mErr } = await supabase
         .from("conversation_members")
-        .select("conversation_id, last_read_at")
+        .select("conversation_id, last_read_at, pinned_at, archived_at, notifications_muted_until")
         .eq("user_id", myId!);
       if (mErr) throw mErr;
       const ids = (members ?? []).map((m) => m.conversation_id);
       if (ids.length === 0) return [];
       const lastReadMap = new Map((members ?? []).map((m) => [m.conversation_id, m.last_read_at]));
+      const mineMemberMap = new Map(
+        (members ?? []).map((m) => [
+          m.conversation_id,
+          {
+            pinned_at: (m as { pinned_at?: string | null }).pinned_at ?? null,
+            archived_at: (m as { archived_at?: string | null }).archived_at ?? null,
+            muted_until: (m as { notifications_muted_until?: string | null }).notifications_muted_until ?? null,
+          },
+        ]),
+      );
 
       const { data: convs, error: cErr } = await supabase
         .from("conversations")
@@ -207,6 +217,7 @@ export function useConversations() {
           othersMinRead !== undefined &&
           othersMinRead !== null &&
           othersMinRead >= lastSentMs;
+        const mine = mineMemberMap.get(c.id);
         return {
           ...(c as ConversationRow),
           display_title: display,
@@ -217,6 +228,9 @@ export function useConversations() {
           last_read: read,
           unread: unreadByConv.get(c.id) ?? 0,
           member_ids: memberMap.get(c.id) ?? [],
+          pinned_at: mine?.pinned_at ?? null,
+          archived_at: mine?.archived_at ?? null,
+          muted_until: mine?.muted_until ?? null,
         };
       });
     },
