@@ -254,6 +254,27 @@ export function useConversations() {
     };
   }, [myId, qc]);
 
+  // Re-sync on network/visibility changes so badge counts stay accurate
+  // after offline → online or tab refocus (realtime may have missed events).
+  useEffect(() => {
+    if (!myId) return;
+    const resync = () => {
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+      qc.invalidateQueries({ queryKey: ["chat", "unread-total"] });
+    };
+    const onVisible = () => {
+      if (document.visibilityState === "visible") resync();
+    };
+    window.addEventListener("online", resync);
+    window.addEventListener("focus", resync);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("online", resync);
+      window.removeEventListener("focus", resync);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [myId, qc]);
+
   return query;
 }
 
