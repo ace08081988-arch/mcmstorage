@@ -13,6 +13,7 @@ export type NotifPrefs = {
 };
 
 const STORAGE_KEY = "mcm.notif.prefs.v1";
+const SYNC_META_KEY = "mcm.notif.prefs.synced_at";
 
 export const DEFAULT_PREFS: NotifPrefs = {
   enabledKinds: { chat: true, tugas: true, order: true, system: true },
@@ -46,6 +47,8 @@ export function savePrefs(prefs: NotifPrefs) {
   try {
     window.dispatchEvent(new CustomEvent("notif-prefs-changed", { detail: prefs }));
   } catch {}
+  // Sinkronkan ke cloud (best-effort) supaya perangkat lain ikut update.
+  pushPrefsToCloud(prefs).catch(() => {});
 }
 
 export function broadcastPrefs(prefs: NotifPrefs) {
@@ -70,4 +73,115 @@ export function isInDndWindow(now: Date, start: string, end: string): boolean {
   if (s < e) return cur >= s && cur < e;
   // Melewati tengah malam
   return cur >= s || cur < e;
+}
+
+// ===== Sinkronisasi lintas perangkat via Supabase =====
+
+async function pushPrefsToCloud(prefs: NotifPrefs): Promise<void> {
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return;
+    await supabase
+      .from("user_notif_prefs")
+      .upsert(
+        { user_id: u.user.id, prefs: prefs as unknown as Record<string, unknown>, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" },
+      );
+    try { window.localStorage.setItem(SYNC_META_KEY, new Date().toISOString()); } catch {}
+  } catch {
+    // diamkan; perubahan lokal tetap tersimpan dan akan disinkronkan saat online berikutnya
+  }
+}
+
+/**
+ * Tarik preferensi terbaru dari cloud lalu terapkan ke lokal + broadcast ke SW.
+ * Aman dipanggil berkali-kali; mengembalikan prefs aktif setelah merge.
+ */
+export async function pullPrefsFromCloud(): Promise<NotifPrefs> {
+  const local = loadPrefs();
+  if (typeof window === "undefined") return local;
+  try {
+    const { supabase } = await import("@/integrations/supabase/client");
+    const { data: u } = await supabase.auth.getUser();
+    if (!u.user) return local;
+    const { data, error } = await supabase
+      .from("user_notif_prefs")
+      .select("prefs, updated_at")
+      .eq("user_id", u.user.id)
+      .maybeSingle();
+    if (error || !data) {
+      // Baris belum ada → dorong default/lokal ke cloud sebagai baseline
+      await pushPrefsToCloud(local);
+      return local;
+    }
+    const remote = data.prefs as Partial<NotifPrefs> | null;
+    const merged: NotifPrefs = {
+      ...DEFAULT_PREFS,
+      ...(remote || {}),
+      enabledKinds: { ...DEFAULT_PREFS.enabledKinds, ...((remote && remote.enabledKinds) || {}) },
+      dnd: { ...DEFAULT_PREFS.dnd, ...((remote && remote.dnd) || {}) },
+    };
+    try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch {}
+    try { window.localStorage.setItem(SYNC_META_KEY, new Date().toISOString()); } catch {}
+    broadcastPrefs(merged);
+    try {
+      window.dispatchEvent(new CustomEvent("notif-prefs-changed", { detail: merged }));
+    } catch {}
+    return merged;
+  } catch {
+    return local;
+  }
+}
+
+/**
+ * Berlangganan perubahan preferensi dari perangkat lain (realtime).
+ * Mengembalikan fungsi unsubscribe.
+ */
+export function subscribeRemotePrefs(onChange: (p: NotifPrefs) => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  let cancelled = false;
+  let cleanup: (() => void) | null = null;
+  (async () => {
+    try {
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: u } = await supabase.auth.getUser();
+      if (!u.user || cancelled) return;
+      const channel = supabase
+        .channel(`notif-prefs:${u.user.id}`)
+        .on(
+          "postgres_changes",
+          { event: "*", schema: "public", table: "user_notif_prefs", filter: `user_id=eq.${u.user.id}` },
+          (payload) => {
+            const remote = (payload.new as { prefs?: Partial<NotifPrefs> } | null)?.prefs;
+            if (!remote) return;
+            const merged: NotifPrefs = {
+              ...DEFAULT_PREFS,
+              ...remote,
+              enabledKinds: { ...DEFAULT_PREFS.enabledKinds, ...(remote.enabledKinds || {}) },
+              dnd: { ...DEFAULT_PREFS.dnd, ...(remote.dnd || {}) },
+            };
+            try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch {}
+            broadcastPrefs(merged);
+            try {
+              window.dispatchEvent(new CustomEvent("notif-prefs-changed", { detail: merged }));
+            } catch {}
+            onChange(merged);
+          },
+        )
+        .subscribe();
+      cleanup = () => {
+        try { supabase.removeChannel(channel); } catch {}
+      };
+    } catch {}
+  })();
+  return () => {
+    cancelled = true;
+    if (cleanup) cleanup();
+  };
+}
+
+export function getLastSyncedAt(): string | null {
+  if (typeof window === "undefined") return null;
+  try { return window.localStorage.getItem(SYNC_META_KEY); } catch { return null; }
 }
