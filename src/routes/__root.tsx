@@ -121,6 +121,25 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
         <p className="mt-2 text-sm text-muted-foreground">
           Sudah dicoba memuat ulang otomatis {MAX_AUTO_RETRIES}× namun belum berhasil. Anda bisa coba lagi atau kembali ke beranda.
         </p>
+        <details className="mx-auto mt-4 max-w-full rounded-md border bg-muted/30 p-3 text-left text-xs" open>
+          <summary className="cursor-pointer select-none font-medium text-foreground">
+            Detail error
+          </summary>
+          <pre className="mt-2 max-h-48 overflow-auto whitespace-pre-wrap break-words text-[11px] leading-snug text-muted-foreground">
+{String(error?.name ?? "Error")}: {msg || "(tanpa pesan)"}
+{error?.stack ? "\n\n" + String(error.stack).split("\n").slice(0, 8).join("\n") : ""}
+          </pre>
+          <button
+            type="button"
+            onClick={() => {
+              const text = `${error?.name ?? "Error"}: ${msg}\n${error?.stack ?? ""}`;
+              try { void navigator.clipboard?.writeText(text); } catch { /* ignore */ }
+            }}
+            className="mt-2 inline-flex items-center justify-center rounded border border-input bg-background px-2 py-1 text-[11px] font-medium hover:bg-accent"
+          >
+            Salin detail error
+          </button>
+        </details>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
             onClick={() => {
