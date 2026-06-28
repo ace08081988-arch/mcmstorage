@@ -85,7 +85,8 @@ async function pushPrefsToCloud(prefs: NotifPrefs): Promise<void> {
     await supabase
       .from("user_notif_prefs")
       .upsert(
-        { user_id: u.user.id, prefs: prefs as unknown as Record<string, unknown>, updated_at: new Date().toISOString() },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        { user_id: u.user.id, prefs: prefs as any, updated_at: new Date().toISOString() },
         { onConflict: "user_id" },
       );
     try { window.localStorage.setItem(SYNC_META_KEY, new Date().toISOString()); } catch {}
