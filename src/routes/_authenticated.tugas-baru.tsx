@@ -696,9 +696,20 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
   const savedStamp = savedAt ? formatSavedStamp(savedAt) : null;
   const content =
     state === "pending" ? (
-      <span className="inline-flex items-center gap-1">
-        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-        Menyimpan draft…
+      <span
+        className="inline-flex items-center gap-1 rounded-sm bg-amber-500/15 px-1.5 py-px text-amber-700 dark:text-amber-300"
+        title={savedAt ? `Terakhir tersimpan ${formatSavedStamp(savedAt)}` : "Belum pernah tersimpan"}
+      >
+        <svg
+          className="h-2.5 w-2.5 animate-spin"
+          viewBox="0 0 24 24"
+          fill="none"
+          aria-hidden="true"
+        >
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+          <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+        <span className="font-medium">Menyimpan…</span>
       </span>
     ) : state === "saved" ? (
       <span
