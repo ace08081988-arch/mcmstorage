@@ -146,6 +146,7 @@ function TugasBaruPage() {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [savedVisible, setSavedVisible] = useState(false);
   const [savedReason, setSavedReason] = useState<"auto" | "navigation" | "manual">("auto");
+  const [tooltipMode, setTooltipMode] = useTooltipMode();
   const [, forceTick] = useState(0);
   const lastSavedRef = useRef<string>("");
   const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone });
