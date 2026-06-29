@@ -100,9 +100,44 @@ function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
       setMode(v);
     };
     window.addEventListener("storage", onStorage);
+    // Fallback: beberapa kondisi tidak memicu `storage` event — mis. WebView
+    // Android lama, mode incognito tertentu, atau ketika tab di-suspend lalu
+    // dibangunkan. Kita re-sync ketika tab kembali fokus/visible, dan
+    // polling ringan setiap 5 dtk hanya saat tab terlihat agar tidak
+    // menguras baterai.
+    const resync = () => {
+      const stored = loadTooltipMode();
+      setMode((prev) => (prev === stored ? prev : stored));
+    };
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") resync();
+    };
+    window.addEventListener("focus", resync);
+    document.addEventListener("visibilitychange", onVisibility);
+    let pollId: ReturnType<typeof setInterval> | null = null;
+    const startPoll = () => {
+      if (pollId != null) return;
+      pollId = setInterval(resync, 5000);
+    };
+    const stopPoll = () => {
+      if (pollId != null) {
+        clearInterval(pollId);
+        pollId = null;
+      }
+    };
+    const onVisibilityPoll = () => {
+      if (document.visibilityState === "visible") startPoll();
+      else stopPoll();
+    };
+    document.addEventListener("visibilitychange", onVisibilityPoll);
+    if (document.visibilityState === "visible") startPoll();
     return () => {
       window.removeEventListener("autosave-tooltip-mode", onChange);
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener("focus", resync);
+      document.removeEventListener("visibilitychange", onVisibility);
+      document.removeEventListener("visibilitychange", onVisibilityPoll);
+      stopPoll();
     };
   }, []);
   return [mode, update];
