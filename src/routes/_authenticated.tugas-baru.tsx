@@ -74,11 +74,37 @@ function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
   // `window` undefined; effect di bawah resync setelah hydrate jika nilai
   // berbeda (mis. ditulis tab lain saat halaman ini sedang mount).
   const [mode, setMode] = useState<TooltipMode>(() => loadTooltipMode());
+  // Debounce re-render ketika `storage`/CustomEvent/polling memicu beberapa
+  // perubahan dalam waktu singkat. Tanpa ini, klik toggle cepat di banyak tab
+  // bisa membuat indikator autosave berkedip karena React render berkali-kali
+  // untuk nilai akhir yang sama. Setter LOKAL (`update`) tetap sinkron agar
+  // toggle yang ditekan user terasa instan; debounce hanya dipakai untuk
+  // sinyal eksternal.
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const lastExternalRef = useRef<TooltipMode | null>(null);
+  const scheduleExternal = useCallback((next: TooltipMode) => {
+    lastExternalRef.current = next;
+    if (debounceRef.current != null) return;
+    debounceRef.current = setTimeout(() => {
+      debounceRef.current = null;
+      const target = lastExternalRef.current;
+      lastExternalRef.current = null;
+      if (target == null) return;
+      setMode((prev) => (prev === target ? prev : target));
+    }, 120);
+  }, []);
   useEffect(() => {
     const stored = loadTooltipMode();
     setMode((prev) => (prev === stored ? prev : stored));
   }, []);
   const update = useCallback((m: TooltipMode) => {
+    // User-initiated → terapkan instan, batalkan debounce eksternal yang
+    // mungkin sedang menunggu dengan nilai lama.
+    if (debounceRef.current != null) {
+      clearTimeout(debounceRef.current);
+      debounceRef.current = null;
+      lastExternalRef.current = null;
+    }
     setMode(m);
     saveTooltipMode(m);
     try {
@@ -88,7 +114,7 @@ function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
   useEffect(() => {
     const onChange = (e: Event) => {
       const detail = (e as CustomEvent).detail as TooltipMode | undefined;
-      if (detail === "ringkas" || detail === "lengkap") setMode(detail);
+      if (detail === "ringkas" || detail === "lengkap") scheduleExternal(detail);
     };
     window.addEventListener("autosave-tooltip-mode", onChange);
     // Sinkronisasi lintas-tab: `storage` event hanya menyala di tab LAIN
@@ -97,7 +123,7 @@ function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
     const onStorage = (e: StorageEvent) => {
       if (e.key !== TOOLTIP_MODE_KEY) return;
       const v = e.newValue === "lengkap" ? "lengkap" : "ringkas";
-      setMode(v);
+      scheduleExternal(v);
     };
     window.addEventListener("storage", onStorage);
     // Fallback: beberapa kondisi tidak memicu `storage` event — mis. WebView
@@ -107,7 +133,7 @@ function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
     // menguras baterai.
     const resync = () => {
       const stored = loadTooltipMode();
-      setMode((prev) => (prev === stored ? prev : stored));
+      scheduleExternal(stored);
     };
     const onVisibility = () => {
       if (document.visibilityState === "visible") resync();
@@ -138,8 +164,13 @@ function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
       document.removeEventListener("visibilitychange", onVisibility);
       document.removeEventListener("visibilitychange", onVisibilityPoll);
       stopPoll();
+      if (debounceRef.current != null) {
+        clearTimeout(debounceRef.current);
+        debounceRef.current = null;
+        lastExternalRef.current = null;
+      }
     };
-  }, []);
+  }, [scheduleExternal]);
   return [mode, update];
 }
 type Draft = { title: string; note: string; pin: string; rows: Row[]; phone: string };
