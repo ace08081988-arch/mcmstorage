@@ -426,6 +426,7 @@ function TugasBaruPage() {
       ) : (
         <div className="space-y-3 rounded-lg border bg-card p-4 text-sm">
           <SaveIndicator state={saveState} savedAt={savedAt} visible={savedVisible} reason={savedReason} />
+          <LastSavedSummary savedAt={savedAt} reason={savedReason} />
           {restored ? (
             <div className="flex items-start justify-between gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
               <span>
