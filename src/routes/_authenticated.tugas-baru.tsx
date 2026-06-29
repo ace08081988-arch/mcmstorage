@@ -116,11 +116,20 @@ function TugasBaruPage() {
   }, []);
 
   // Fade out the "saved" badge ~4s after the last save, unless a new
-  // edit re-triggers "pending".
+  // edit re-triggers "pending". After the fade animation completes,
+  // reset state→idle and clear savedAt so no stale content lingers
+  // behind a transparent layer (avoids a kedip on the next edit).
   useEffect(() => {
     if (saveState !== "saved") return;
-    const t = window.setTimeout(() => setSavedVisible(false), 4000);
-    return () => window.clearTimeout(t);
+    const hideT = window.setTimeout(() => setSavedVisible(false), 4000);
+    const resetT = window.setTimeout(() => {
+      setSaveState((s) => (s === "saved" ? "idle" : s));
+      setSavedAt(null);
+    }, 4000 + 750);
+    return () => {
+      window.clearTimeout(hideT);
+      window.clearTimeout(resetT);
+    };
   }, [saveState, savedAt]);
 
   // Re-render every 20s so the relative time stays fresh while visible.
@@ -613,22 +622,31 @@ function fmtAgo(ts: number): string {
 
 function SaveIndicator({ state, savedAt, visible }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean }) {
   const show = state === "pending" || (state === "saved" && visible);
+  // Keep the last non-idle content mounted during the fade-out so the
+  // text doesn't blank out before the opacity transition finishes.
+  const lastContentRef = useRef<React.ReactNode>(null);
+  const content =
+    state === "pending" ? (
+      <span className="inline-flex items-center gap-1">
+        <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+        Menyimpan draft…
+      </span>
+    ) : state === "saved" ? (
+      <span className="inline-flex items-center gap-1">
+        <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+        Tersimpan{savedAt ? ` · ${fmtAgo(savedAt)}` : ""}
+      </span>
+    ) : null;
+  if (content) lastContentRef.current = content;
   return (
     <div
-      className={`flex justify-end text-[10px] text-muted-foreground transition-opacity duration-700 ease-out ${show ? "opacity-100" : "opacity-0"}`}
+      className={`pointer-events-none flex h-4 justify-end text-[10px] text-muted-foreground transition-opacity duration-700 ease-out ${
+        show ? "opacity-100" : "opacity-0"
+      }`}
       aria-live="polite"
+      aria-hidden={!show}
     >
-      {state === "pending" ? (
-        <span className="inline-flex items-center gap-1">
-          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
-          Menyimpan draft…
-        </span>
-      ) : state === "saved" ? (
-        <span className="inline-flex items-center gap-1">
-          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          Tersimpan{savedAt ? ` · ${fmtAgo(savedAt)}` : ""}
-        </span>
-      ) : null}
+      {content ?? lastContentRef.current}
     </div>
   );
 }
