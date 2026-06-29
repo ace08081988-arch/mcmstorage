@@ -138,14 +138,26 @@ function TugasBaruPage() {
     const t = window.setTimeout(flushDraft, 600);
     const onHide = () => { if (document.visibilityState === "hidden") flushDraft(); };
     const onBeforeUnload = () => { flushDraft(); };
+    const onPageHide = () => { flushDraft(); };
+    const onPopState = () => { flushDraft(); };
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("beforeunload", onBeforeUnload);
+    window.addEventListener("pagehide", onPageHide);
+    window.addEventListener("popstate", onPopState);
     return () => {
       window.clearTimeout(t);
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("beforeunload", onBeforeUnload);
+      window.removeEventListener("pagehide", onPageHide);
+      window.removeEventListener("popstate", onPopState);
     };
   }, [title, note, pin, rows, phone, created, flushDraft]);
+
+  // Flush draft when this route unmounts (any SPA navigation away,
+  // including programmatic <Link> clicks and router.history.back()).
+  useEffect(() => {
+    return () => { flushDraft(); };
+  }, [flushDraft]);
 
   async function verifyWid(key: string, wid: string | null) {
     const seq = (verifySeq.current[key] ?? 0) + 1;
