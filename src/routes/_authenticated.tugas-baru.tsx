@@ -1111,7 +1111,7 @@ function TooltipModeToggle({ mode, onChange }: { mode: TooltipMode; onChange: (m
             type="button"
             onClick={() => onChange(m)}
             aria-pressed={active}
-            className={`rounded-sm border px-1.5 py-px capitalize transition ${
+            className={`rounded-sm border px-1.5 py-px capitalize transition-colors duration-300 ease-out ${
               active
                 ? "border-foreground/30 bg-foreground/10 text-foreground"
                 : "border-transparent hover:bg-muted"
