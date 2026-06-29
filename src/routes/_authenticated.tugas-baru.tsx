@@ -329,6 +329,20 @@ function TugasBaruPage() {
         </div>
       ) : (
         <div className="space-y-3 rounded-lg border bg-card p-4 text-sm">
+          {restored ? (
+            <div className="flex items-start justify-between gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
+              <span>
+                Draft sebelumnya dipulihkan otomatis — lanjutkan dari yang terakhir Anda isi.
+              </span>
+              <button
+                type="button"
+                onClick={clearForm}
+                className="shrink-0 rounded border border-emerald-600/40 px-2 py-0.5 text-[10px] hover:bg-emerald-600/10"
+              >
+                Bersihkan draft
+              </button>
+            </div>
+          ) : null}
           <Field label="Judul tugas">
             <input
               value={title}
