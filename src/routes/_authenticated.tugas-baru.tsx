@@ -614,6 +614,38 @@ function TugasBaruPage() {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={blocker.status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && blocker.status === "blocked") blocker.reset();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Draft belum tersimpan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Perubahan terakhir masih dalam antrian autosave. Simpan dulu sebelum
+              meninggalkan halaman, atau tetap lanjutkan jika ingin keluar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => { if (blocker.status === "blocked") blocker.reset(); }}
+            >
+              Tetap di sini
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                flushDraft();
+                if (blocker.status === "blocked") blocker.proceed();
+              }}
+            >
+              Simpan & keluar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
