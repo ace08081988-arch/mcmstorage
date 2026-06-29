@@ -91,11 +91,38 @@ function TugasBaruPage() {
   const [verify, setVerify] = useState<Record<string, VerifyState>>({});
   const verifySeq = useRef<Record<string, number>>({});
 
-  // Persist draft on every meaningful change so the form survives any remount.
-  // Skip while the success card is showing so we don't re-save a stale draft.
+  // Debounced autosave so rapid edits (mengetik, memilih banyak item)
+  // tidak menulis ke localStorage di setiap keystroke. Tetap simpan
+  // segera saat tab disembunyikan / sebelum unload agar tidak hilang.
+  const [saveState, setSaveState] = useState<"idle" | "pending" | "saved">("idle");
+  const lastSavedRef = useRef<string>("");
+  const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone });
+  useEffect(() => {
+    latestDraftRef.current = { title, note, pin, rows, phone };
+  }, [title, note, pin, rows, phone]);
+
   useEffect(() => {
     if (created) return;
-    saveDraft({ title, note, pin, rows, phone });
+    const snapshot = JSON.stringify(latestDraftRef.current);
+    if (snapshot === lastSavedRef.current) return;
+    setSaveState("pending");
+    const flush = () => {
+      const cur = JSON.stringify(latestDraftRef.current);
+      if (cur === lastSavedRef.current) { setSaveState("saved"); return; }
+      saveDraft(latestDraftRef.current);
+      lastSavedRef.current = cur;
+      setSaveState("saved");
+    };
+    const t = window.setTimeout(flush, 600);
+    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
+    const onBeforeUnload = () => flush();
+    document.addEventListener("visibilitychange", onHide);
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => {
+      window.clearTimeout(t);
+      document.removeEventListener("visibilitychange", onHide);
+      window.removeEventListener("beforeunload", onBeforeUnload);
+    };
   }, [title, note, pin, rows, phone, created]);
 
   async function verifyWid(key: string, wid: string | null) {
