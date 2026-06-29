@@ -824,8 +824,8 @@ function describeSaved(
   };
 }
 
-function LastSavedSummary({ savedAt, reason }: { savedAt: number | null; reason: "auto" | "navigation" | "manual" }) {
-  const info = describeSaved(savedAt, reason);
+function LastSavedSummary({ savedAt, reason, tooltipMode }: { savedAt: number | null; reason: "auto" | "navigation" | "manual"; tooltipMode: TooltipMode }) {
+  const info = describeSaved(savedAt, reason, tooltipMode);
   return (
     <div
       className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground"
@@ -908,6 +908,41 @@ function SavedDetailsPopover({ info }: { info: ReturnType<typeof describeSaved> 
         ) : null}
       </PopoverContent>
     </Popover>
+  );
+}
+
+function TooltipModeToggle({ mode, onChange }: { mode: TooltipMode; onChange: (m: TooltipMode) => void }) {
+  return (
+    <div
+      className="flex items-center gap-1 text-[10px] text-muted-foreground"
+      role="group"
+      aria-label="Mode tooltip autosave"
+    >
+      <span className="mr-1">Tooltip:</span>
+      {(["ringkas", "lengkap"] as const).map((m) => {
+        const active = mode === m;
+        return (
+          <button
+            key={m}
+            type="button"
+            onClick={() => onChange(m)}
+            aria-pressed={active}
+            className={`rounded-sm border px-1.5 py-px capitalize transition ${
+              active
+                ? "border-foreground/30 bg-foreground/10 text-foreground"
+                : "border-transparent hover:bg-muted"
+            }`}
+            title={
+              m === "ringkas"
+                ? "Tooltip ringkas: stamp · zona waktu · alasan"
+                : "Tooltip lengkap: tampilkan semua detail di tooltip"
+            }
+          >
+            {m}
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
