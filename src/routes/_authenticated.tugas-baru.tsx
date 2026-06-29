@@ -678,6 +678,12 @@ function fmtAgo(ts: number): string {
   return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 }
 
+function formatSavedStamp(ts: number): string {
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean; reason: "auto" | "navigation" | "manual" }) {
   const show = state === "pending" || (state === "saved" && visible);
   // Keep the last non-idle content mounted during the fade-out so the
