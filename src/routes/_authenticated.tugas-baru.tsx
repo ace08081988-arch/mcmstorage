@@ -178,6 +178,15 @@ function TugasBaruPage() {
     return () => { flushDraft(); };
   }, [flushDraft]);
 
+  // Confirm before leaving the page while a save is still pending.
+  // Also wires the native beforeunload prompt for tab close / reload.
+  const isPending = saveState === "pending" && !created;
+  const blocker = useBlocker({
+    shouldBlockFn: () => isPending,
+    enableBeforeUnload: () => isPending,
+    withResolver: true,
+  });
+
   async function verifyWid(key: string, wid: string | null) {
     const seq = (verifySeq.current[key] ?? 0) + 1;
     verifySeq.current[key] = seq;
