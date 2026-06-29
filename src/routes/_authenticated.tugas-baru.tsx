@@ -95,6 +95,9 @@ function TugasBaruPage() {
   // tidak menulis ke localStorage di setiap keystroke. Tetap simpan
   // segera saat tab disembunyikan / sebelum unload agar tidak hilang.
   const [saveState, setSaveState] = useState<"idle" | "pending" | "saved">("idle");
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [savedVisible, setSavedVisible] = useState(false);
+  const [, forceTick] = useState(0);
   const lastSavedRef = useRef<string>("");
   const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone });
   useEffect(() => {
@@ -103,12 +106,29 @@ function TugasBaruPage() {
 
   const flushDraft = useCallback(() => {
     const cur = JSON.stringify(latestDraftRef.current);
-    if (cur === lastSavedRef.current) { setSaveState("saved"); return false; }
+    if (cur === lastSavedRef.current) { setSaveState("saved"); setSavedVisible(true); return false; }
     saveDraft(latestDraftRef.current);
     lastSavedRef.current = cur;
     setSaveState("saved");
+    setSavedAt(Date.now());
+    setSavedVisible(true);
     return true;
   }, []);
+
+  // Fade out the "saved" badge ~4s after the last save, unless a new
+  // edit re-triggers "pending".
+  useEffect(() => {
+    if (saveState !== "saved") return;
+    const t = window.setTimeout(() => setSavedVisible(false), 4000);
+    return () => window.clearTimeout(t);
+  }, [saveState, savedAt]);
+
+  // Re-render every 20s so the relative time stays fresh while visible.
+  useEffect(() => {
+    if (!savedVisible || !savedAt) return;
+    const id = window.setInterval(() => forceTick((n) => n + 1), 20_000);
+    return () => window.clearInterval(id);
+  }, [savedVisible, savedAt]);
 
   useEffect(() => {
     if (created) return;
@@ -358,9 +378,7 @@ function TugasBaruPage() {
         </div>
       ) : (
         <div className="space-y-3 rounded-lg border bg-card p-4 text-sm">
-          <div className="flex justify-end text-[10px] text-muted-foreground" aria-live="polite">
-            {saveState === "pending" ? "Menyimpan draft…" : saveState === "saved" ? "Draft tersimpan otomatis" : ""}
-          </div>
+          <SaveIndicator state={saveState} savedAt={savedAt} visible={savedVisible} />
           {restored ? (
             <div className="flex items-start justify-between gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
               <span>
@@ -566,5 +584,39 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <div className="text-xs font-medium text-muted-foreground">{label}</div>
       {children}
     </label>
+  );
+}
+
+function fmtAgo(ts: number): string {
+  const diff = Math.max(0, Date.now() - ts);
+  const s = Math.round(diff / 1000);
+  if (s < 5) return "baru saja";
+  if (s < 60) return `${s} dtk lalu`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m} mnt lalu`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} jam lalu`;
+  return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
+
+function SaveIndicator({ state, savedAt, visible }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean }) {
+  const show = state === "pending" || (state === "saved" && visible);
+  return (
+    <div
+      className={`flex justify-end text-[10px] text-muted-foreground transition-opacity duration-700 ease-out ${show ? "opacity-100" : "opacity-0"}`}
+      aria-live="polite"
+    >
+      {state === "pending" ? (
+        <span className="inline-flex items-center gap-1">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+          Menyimpan draft…
+        </span>
+      ) : state === "saved" ? (
+        <span className="inline-flex items-center gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          Tersimpan{savedAt ? ` · ${fmtAgo(savedAt)}` : ""}
+        </span>
+      ) : null}
+    </div>
   );
 }
