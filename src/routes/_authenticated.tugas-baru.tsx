@@ -1127,8 +1127,8 @@ function TooltipModeToggle({ mode, onChange }: { mode: TooltipMode; onChange: (m
             aria-pressed={active}
             className={`rounded-sm border px-1.5 py-px capitalize transition-colors duration-300 ease-out ${
               active
-                ? "border-foreground/30 bg-foreground/10 text-foreground"
-                : "border-transparent hover:bg-muted"
+                ? "border-foreground/30 bg-foreground/10 text-foreground dark:border-foreground/40 dark:bg-foreground/15"
+                : "border-transparent text-muted-foreground hover:bg-muted dark:hover:bg-muted/60"
             } motion-reduce:transition-none`}
             title={
               m === "ringkas"
@@ -1222,7 +1222,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
           </span>
         )}
         {reasonLabel ? (
-          <span className="ml-1 rounded-sm bg-emerald-500/15 px-1 py-px text-[9px] font-medium text-emerald-700 dark:text-emerald-300">
+          <span className="ml-1 rounded-sm bg-emerald-500/15 px-1 py-px text-[9px] font-medium text-emerald-700 dark:bg-emerald-400/25 dark:text-emerald-200">
             {reasonLabel}
           </span>
         ) : null}
