@@ -95,6 +95,9 @@ function TugasBaruPage() {
   // tidak menulis ke localStorage di setiap keystroke. Tetap simpan
   // segera saat tab disembunyikan / sebelum unload agar tidak hilang.
   const [saveState, setSaveState] = useState<"idle" | "pending" | "saved">("idle");
+  const [savedAt, setSavedAt] = useState<number | null>(null);
+  const [savedVisible, setSavedVisible] = useState(false);
+  const [, forceTick] = useState(0);
   const lastSavedRef = useRef<string>("");
   const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone });
   useEffect(() => {
@@ -103,12 +106,29 @@ function TugasBaruPage() {
 
   const flushDraft = useCallback(() => {
     const cur = JSON.stringify(latestDraftRef.current);
-    if (cur === lastSavedRef.current) { setSaveState("saved"); return false; }
+    if (cur === lastSavedRef.current) { setSaveState("saved"); setSavedVisible(true); return false; }
     saveDraft(latestDraftRef.current);
     lastSavedRef.current = cur;
     setSaveState("saved");
+    setSavedAt(Date.now());
+    setSavedVisible(true);
     return true;
   }, []);
+
+  // Fade out the "saved" badge ~4s after the last save, unless a new
+  // edit re-triggers "pending".
+  useEffect(() => {
+    if (saveState !== "saved") return;
+    const t = window.setTimeout(() => setSavedVisible(false), 4000);
+    return () => window.clearTimeout(t);
+  }, [saveState, savedAt]);
+
+  // Re-render every 20s so the relative time stays fresh while visible.
+  useEffect(() => {
+    if (!savedVisible || !savedAt) return;
+    const id = window.setInterval(() => forceTick((n) => n + 1), 20_000);
+    return () => window.clearInterval(id);
+  }, [savedVisible, savedAt]);
 
   useEffect(() => {
     if (created) return;
