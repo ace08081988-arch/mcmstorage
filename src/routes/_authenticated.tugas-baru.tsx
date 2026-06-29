@@ -68,8 +68,16 @@ function saveTooltipMode(m: TooltipMode) {
   } catch { /* ignore */ }
 }
 function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
-  const [mode, setMode] = useState<TooltipMode>("ringkas");
-  useEffect(() => { setMode(loadTooltipMode()); }, []);
+  // Lazy initializer membaca localStorage sebelum render pertama sehingga
+  // tidak ada flash dari "ringkas" → mode tersimpan saat halaman dibuka.
+  // SSR aman karena loadTooltipMode() mengembalikan default ketika
+  // `window` undefined; effect di bawah resync setelah hydrate jika nilai
+  // berbeda (mis. ditulis tab lain saat halaman ini sedang mount).
+  const [mode, setMode] = useState<TooltipMode>(() => loadTooltipMode());
+  useEffect(() => {
+    const stored = loadTooltipMode();
+    setMode((prev) => (prev === stored ? prev : stored));
+  }, []);
   const update = useCallback((m: TooltipMode) => {
     setMode(m);
     saveTooltipMode(m);
