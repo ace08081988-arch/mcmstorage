@@ -107,6 +107,7 @@ function TugasBaruPage() {
   const [saveState, setSaveState] = useState<"idle" | "pending" | "saved">("idle");
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [savedVisible, setSavedVisible] = useState(false);
+  const [savedReason, setSavedReason] = useState<"auto" | "navigation" | "manual">("auto");
   const [, forceTick] = useState(0);
   const lastSavedRef = useRef<string>("");
   const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone });
@@ -114,14 +115,20 @@ function TugasBaruPage() {
     latestDraftRef.current = { title, note, pin, rows, phone };
   }, [title, note, pin, rows, phone]);
 
-  const flushDraft = useCallback(() => {
+  const flushDraft = useCallback((reason: "auto" | "navigation" | "manual" = "auto") => {
     const cur = JSON.stringify(latestDraftRef.current);
-    if (cur === lastSavedRef.current) { setSaveState("saved"); setSavedVisible(true); return false; }
+    if (cur === lastSavedRef.current) {
+      setSaveState("saved");
+      setSavedVisible(true);
+      setSavedReason(reason);
+      return false;
+    }
     saveDraft(latestDraftRef.current);
     lastSavedRef.current = cur;
     setSaveState("saved");
     setSavedAt(Date.now());
     setSavedVisible(true);
+    setSavedReason(reason);
     return true;
   }, []);
 
@@ -154,11 +161,11 @@ function TugasBaruPage() {
     const snapshot = JSON.stringify(latestDraftRef.current);
     if (snapshot === lastSavedRef.current) return;
     setSaveState("pending");
-    const t = window.setTimeout(flushDraft, 600);
-    const onHide = () => { if (document.visibilityState === "hidden") flushDraft(); };
-    const onBeforeUnload = () => { flushDraft(); };
-    const onPageHide = () => { flushDraft(); };
-    const onPopState = () => { flushDraft(); };
+    const t = window.setTimeout(() => flushDraft("auto"), 600);
+    const onHide = () => { if (document.visibilityState === "hidden") flushDraft("navigation"); };
+    const onBeforeUnload = () => { flushDraft("navigation"); };
+    const onPageHide = () => { flushDraft("navigation"); };
+    const onPopState = () => { flushDraft("navigation"); };
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("beforeunload", onBeforeUnload);
     window.addEventListener("pagehide", onPageHide);
@@ -175,7 +182,7 @@ function TugasBaruPage() {
   // Flush draft when this route unmounts (any SPA navigation away,
   // including programmatic <Link> clicks and router.history.back()).
   useEffect(() => {
-    return () => { flushDraft(); };
+    return () => { flushDraft("navigation"); };
   }, [flushDraft]);
 
   // Confirm before leaving the page while a save is still pending.
@@ -418,7 +425,7 @@ function TugasBaruPage() {
         </div>
       ) : (
         <div className="space-y-3 rounded-lg border bg-card p-4 text-sm">
-          <SaveIndicator state={saveState} savedAt={savedAt} visible={savedVisible} />
+          <SaveIndicator state={saveState} savedAt={savedAt} visible={savedVisible} reason={savedReason} />
           {restored ? (
             <div className="flex items-start justify-between gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
               <span>
@@ -595,7 +602,7 @@ function TugasBaruPage() {
             <button
               type="button"
               onClick={() => {
-                const changed = flushDraft();
+                const changed = flushDraft("manual");
                 toast.success(changed ? "Draft disimpan" : "Draft sudah tersimpan");
               }}
               disabled={busy}
@@ -637,7 +644,7 @@ function TugasBaruPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                flushDraft();
+                flushDraft("navigation");
                 if (blocker.status === "blocked") blocker.proceed();
               }}
             >
@@ -671,11 +678,15 @@ function fmtAgo(ts: number): string {
   return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 }
 
-function SaveIndicator({ state, savedAt, visible }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean }) {
+function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean; reason: "auto" | "navigation" | "manual" }) {
   const show = state === "pending" || (state === "saved" && visible);
   // Keep the last non-idle content mounted during the fade-out so the
   // text doesn't blank out before the opacity transition finishes.
   const lastContentRef = useRef<React.ReactNode>(null);
+  const reasonLabel =
+    reason === "navigation" ? "Disimpan karena navigasi"
+    : reason === "manual" ? "Disimpan manual"
+    : null;
   const content =
     state === "pending" ? (
       <span className="inline-flex items-center gap-1">
@@ -686,6 +697,11 @@ function SaveIndicator({ state, savedAt, visible }: { state: "idle" | "pending" 
       <span className="inline-flex items-center gap-1">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
         Tersimpan{savedAt ? ` · ${fmtAgo(savedAt)}` : ""}
+        {reasonLabel ? (
+          <span className="ml-1 rounded-sm bg-emerald-500/15 px-1 py-px text-[9px] font-medium text-emerald-700 dark:text-emerald-300">
+            {reasonLabel}
+          </span>
+        ) : null}
       </span>
     ) : null;
   if (content) lastContentRef.current = content;
