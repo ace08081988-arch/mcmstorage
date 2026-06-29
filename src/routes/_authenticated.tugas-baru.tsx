@@ -975,7 +975,7 @@ function AutosaveAnnouncer({
   );
 }
 
-function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean; reason: "auto" | "navigation" | "manual" }) {
+function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean; reason: "auto" | "navigation" | "manual"; tooltipMode: TooltipMode }) {
   const show = state === "pending" || (state === "saved" && visible);
   // Keep the last non-idle content mounted during the fade-out so the
   // text doesn't blank out before the opacity transition finishes.
@@ -984,7 +984,7 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
     reason === "navigation" ? "Disimpan karena navigasi"
     : reason === "manual" ? "Disimpan manual"
     : null;
-  const info = describeSaved(savedAt, reason);
+  const info = describeSaved(savedAt, reason, tooltipMode);
   const savedStamp = info.stamp;
   const content =
     state === "pending" ? (
