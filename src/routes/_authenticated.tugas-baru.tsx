@@ -708,7 +708,11 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
             </span>
             <span className="text-muted-foreground/70"> ({fmtAgo(savedAt)})</span>
           </>
-        ) : null}
+        ) : (
+          <span className="ml-1 rounded-sm bg-muted px-1 py-px text-[9px] font-medium text-muted-foreground">
+            Belum tersimpan
+          </span>
+        )}
         {reasonLabel ? (
           <span className="ml-1 rounded-sm bg-emerald-500/15 px-1 py-px text-[9px] font-medium text-emerald-700 dark:text-emerald-300">
             {reasonLabel}
