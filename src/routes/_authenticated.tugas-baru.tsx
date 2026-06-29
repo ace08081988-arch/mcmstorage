@@ -678,11 +678,15 @@ function fmtAgo(ts: number): string {
   return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 }
 
-function SaveIndicator({ state, savedAt, visible }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean }) {
+function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean; reason: "auto" | "navigation" | "manual" }) {
   const show = state === "pending" || (state === "saved" && visible);
   // Keep the last non-idle content mounted during the fade-out so the
   // text doesn't blank out before the opacity transition finishes.
   const lastContentRef = useRef<React.ReactNode>(null);
+  const reasonLabel =
+    reason === "navigation" ? "Disimpan karena navigasi"
+    : reason === "manual" ? "Disimpan manual"
+    : null;
   const content =
     state === "pending" ? (
       <span className="inline-flex items-center gap-1">
@@ -693,6 +697,11 @@ function SaveIndicator({ state, savedAt, visible }: { state: "idle" | "pending" 
       <span className="inline-flex items-center gap-1">
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
         Tersimpan{savedAt ? ` · ${fmtAgo(savedAt)}` : ""}
+        {reasonLabel ? (
+          <span className="ml-1 rounded-sm bg-emerald-500/15 px-1 py-px text-[9px] font-medium text-emerald-700 dark:text-emerald-300">
+            {reasonLabel}
+          </span>
+        ) : null}
       </span>
     ) : null;
   if (content) lastContentRef.current = content;
