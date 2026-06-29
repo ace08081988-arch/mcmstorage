@@ -426,6 +426,7 @@ function TugasBaruPage() {
       ) : (
         <div className="space-y-3 rounded-lg border bg-card p-4 text-sm">
           <SaveIndicator state={saveState} savedAt={savedAt} visible={savedVisible} reason={savedReason} />
+          <LastSavedSummary savedAt={savedAt} reason={savedReason} />
           {restored ? (
             <div className="flex items-start justify-between gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
               <span>
@@ -682,6 +683,38 @@ function formatSavedStamp(ts: number): string {
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
   return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function reasonMeta(reason: "auto" | "navigation" | "manual") {
+  if (reason === "manual") return { label: "Manual", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300" };
+  if (reason === "navigation") return { label: "Navigasi", cls: "bg-violet-500/15 text-violet-700 dark:text-violet-300" };
+  return { label: "Otomatis", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" };
+}
+
+function LastSavedSummary({ savedAt, reason }: { savedAt: number | null; reason: "auto" | "navigation" | "manual" }) {
+  const meta = reasonMeta(reason);
+  return (
+    <div
+      className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground"
+      aria-live="polite"
+      title={savedAt ? `Tersimpan terakhir ${formatSavedStamp(savedAt)} · ${meta.label}` : "Belum ada draft tersimpan"}
+    >
+      <span className="font-medium text-foreground/80">Tersimpan terakhir:</span>
+      {savedAt ? (
+        <>
+          <span className="tabular-nums">{formatSavedStamp(savedAt)}</span>
+          <span className="text-muted-foreground/70">({fmtAgo(savedAt)})</span>
+          <span className={`rounded-sm px-1.5 py-px text-[10px] font-medium ${meta.cls}`}>
+            {meta.label}
+          </span>
+        </>
+      ) : (
+        <span className="rounded-sm bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground">
+          Belum ada
+        </span>
+      )}
+    </div>
+  );
 }
 
 function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean; reason: "auto" | "navigation" | "manual" }) {
