@@ -586,3 +586,37 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </label>
   );
 }
+
+function fmtAgo(ts: number): string {
+  const diff = Math.max(0, Date.now() - ts);
+  const s = Math.round(diff / 1000);
+  if (s < 5) return "baru saja";
+  if (s < 60) return `${s} dtk lalu`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m} mnt lalu`;
+  const h = Math.round(m / 60);
+  if (h < 24) return `${h} jam lalu`;
+  return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
+
+function SaveIndicator({ state, savedAt, visible }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean }) {
+  const show = state === "pending" || (state === "saved" && visible);
+  return (
+    <div
+      className={`flex justify-end text-[10px] text-muted-foreground transition-opacity duration-700 ease-out ${show ? "opacity-100" : "opacity-0"}`}
+      aria-live="polite"
+    >
+      {state === "pending" ? (
+        <span className="inline-flex items-center gap-1">
+          <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-amber-500" />
+          Menyimpan draft…
+        </span>
+      ) : state === "saved" ? (
+        <span className="inline-flex items-center gap-1">
+          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+          Tersimpan{savedAt ? ` · ${fmtAgo(savedAt)}` : ""}
+        </span>
+      ) : null}
+    </div>
+  );
+}
