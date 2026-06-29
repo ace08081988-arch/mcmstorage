@@ -936,14 +936,14 @@ function LastSavedSummary({ savedAt, reason, tooltipMode }: { savedAt: number | 
           via animate-fade-in instead of snapping in place. */}
       <span
         key={`mode-${tooltipMode}`}
-        className="inline-flex flex-wrap items-center gap-1.5 animate-fade-in [animation-duration:220ms]"
+        className="inline-flex flex-wrap items-center gap-1.5 animate-fade-in [animation-duration:220ms] motion-reduce:animate-none motion-reduce:[animation-duration:0ms]"
       >
         {info.stamp ? (
           <>
             <span className="tabular-nums" aria-hidden="true">{info.stamp}</span>
             <span className="text-muted-foreground/70" aria-hidden="true">({info.ago})</span>
             <span
-              className={`rounded-sm px-1.5 py-px text-[10px] font-medium transition-colors duration-300 ${info.meta.cls}`}
+              className={`rounded-sm px-1.5 py-px text-[10px] font-medium transition-colors duration-300 motion-reduce:transition-none ${info.meta.cls}`}
               aria-hidden="true"
             >
               {info.meta.label}
@@ -1115,7 +1115,7 @@ function TooltipModeToggle({ mode, onChange }: { mode: TooltipMode; onChange: (m
               active
                 ? "border-foreground/30 bg-foreground/10 text-foreground"
                 : "border-transparent hover:bg-muted"
-            }`}
+            } motion-reduce:transition-none`}
             title={
               m === "ringkas"
                 ? "Tooltip ringkas: stamp · zona waktu · alasan"
@@ -1217,7 +1217,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
   if (content) lastContentRef.current = content;
   return (
     <div
-      className={`pointer-events-none flex h-4 justify-end text-[10px] text-muted-foreground transition-opacity duration-700 ease-out ${
+      className={`pointer-events-none flex h-4 justify-end text-[10px] text-muted-foreground transition-opacity duration-700 ease-out motion-reduce:transition-none motion-reduce:duration-0 ${
         show ? "opacity-100" : "opacity-0"
       }`}
       aria-live="polite"
@@ -1228,7 +1228,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
           terlihat sama. */}
       <span
         key={`mode-${tooltipMode}`}
-        className="inline-flex animate-fade-in [animation-duration:220ms]"
+        className="inline-flex animate-fade-in [animation-duration:220ms] motion-reduce:animate-none motion-reduce:[animation-duration:0ms]"
       >
         {content ?? lastContentRef.current}
       </span>
