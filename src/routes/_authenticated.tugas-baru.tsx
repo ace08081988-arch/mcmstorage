@@ -694,9 +694,21 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
         Menyimpan draft…
       </span>
     ) : state === "saved" ? (
-      <span className="inline-flex items-center gap-1">
+      <span
+        className="inline-flex items-center gap-1"
+        title={savedAt ? `Tersimpan pada ${new Date(savedAt).toLocaleString("id-ID")}` : undefined}
+      >
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-        Tersimpan{savedAt ? ` · ${fmtAgo(savedAt)}` : ""}
+        Tersimpan
+        {savedAt ? (
+          <>
+            <span className="tabular-nums">
+              {" "}
+              · {new Date(savedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+            </span>
+            <span className="text-muted-foreground/70"> ({fmtAgo(savedAt)})</span>
+          </>
+        ) : null}
         {reasonLabel ? (
           <span className="ml-1 rounded-sm bg-emerald-500/15 px-1 py-px text-[9px] font-medium text-emerald-700 dark:text-emerald-300">
             {reasonLabel}
