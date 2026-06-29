@@ -705,22 +705,53 @@ function reasonMeta(reason: "auto" | "navigation" | "manual") {
   return { label: "Otomatis", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" };
 }
 
-function LastSavedSummary({ savedAt, reason }: { savedAt: number | null; reason: "auto" | "navigation" | "manual" }) {
+/**
+ * Single source of truth for rendering `savedAt` across the autosave UI.
+ * Every indicator, tooltip, ringkasan, and aria-live message reads from here
+ * so the absolute stamp, relative time, timezone label, and reason copy stay
+ * in lockstep.
+ */
+function describeSaved(savedAt: number | null, reason: "auto" | "navigation" | "manual") {
   const meta = reasonMeta(reason);
+  if (!savedAt) {
+    return {
+      meta,
+      stamp: null as string | null,
+      ago: null as string | null,
+      tooltip: "Belum ada draft tersimpan",
+      summary: "Belum tersimpan",
+      announcement: "Belum tersimpan",
+    };
+  }
+  const stamp = formatSavedStamp(savedAt);
+  const ago = fmtAgo(savedAt);
+  const summary = `Tersimpan terakhir ${stamp} (${ago}) · ${meta.label}`;
+  return {
+    meta,
+    stamp,
+    ago,
+    tooltip: summary,
+    summary,
+    announcement: `Draft tersimpan ${meta.label.toLowerCase()} pukul ${stamp}`,
+  };
+}
+
+function LastSavedSummary({ savedAt, reason }: { savedAt: number | null; reason: "auto" | "navigation" | "manual" }) {
+  const info = describeSaved(savedAt, reason);
   return (
     <div
       className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground"
       aria-live="polite"
       aria-atomic="true"
-      title={savedAt ? `Tersimpan terakhir ${formatSavedStamp(savedAt)} · ${meta.label}` : "Belum ada draft tersimpan"}
+      title={info.tooltip}
     >
       <span className="font-medium text-foreground/80">Tersimpan terakhir:</span>
-      {savedAt ? (
+      {info.stamp ? (
         <>
-          <span className="tabular-nums">{formatSavedStamp(savedAt)}</span>
-          <span className="text-muted-foreground/70">({fmtAgo(savedAt)})</span>
-          <span className={`rounded-sm px-1.5 py-px text-[10px] font-medium ${meta.cls}`}>
-            {meta.label}
+          <span className="tabular-nums">{info.stamp}</span>
+          <span className="text-muted-foreground/70">({info.ago})</span>
+          <span className={`rounded-sm px-1.5 py-px text-[10px] font-medium ${info.meta.cls}`}>
+            {info.meta.label}
           </span>
         </>
       ) : (
@@ -747,16 +778,12 @@ function AutosaveAnnouncer({
       setMessage("Menyimpan draft…");
       return;
     }
+    const info = describeSaved(savedAt, reason);
     if (state === "saved") {
-      if (!savedAt) {
-        setMessage("Belum tersimpan");
-        return;
-      }
-      const meta = reasonMeta(reason);
-      setMessage(`Draft tersimpan ${meta.label.toLowerCase()} pukul ${formatSavedStamp(savedAt)}`);
+      setMessage(info.announcement);
       return;
     }
-    if (!savedAt) setMessage("Belum tersimpan");
+    if (!savedAt) setMessage(info.announcement);
   }, [state, savedAt, reason]);
   return (
     <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
@@ -774,12 +801,13 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
     reason === "navigation" ? "Disimpan karena navigasi"
     : reason === "manual" ? "Disimpan manual"
     : null;
-  const savedStamp = savedAt ? formatSavedStamp(savedAt) : null;
+  const info = describeSaved(savedAt, reason);
+  const savedStamp = info.stamp;
   const content =
     state === "pending" ? (
       <span
         className="inline-flex items-center gap-1 rounded-sm bg-amber-500/15 px-1.5 py-px text-amber-700 dark:text-amber-300"
-        title={savedAt ? `Terakhir tersimpan ${formatSavedStamp(savedAt)}` : "Belum pernah tersimpan"}
+        title={info.tooltip}
       >
         <svg
           className="h-2.5 w-2.5 animate-spin"
@@ -795,7 +823,7 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
     ) : state === "saved" ? (
       <span
         className="inline-flex items-center gap-1"
-        title={savedStamp ? `Tersimpan pada ${savedStamp}` : undefined}
+        title={info.tooltip}
       >
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
         Tersimpan
@@ -805,7 +833,7 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
               {" "}
               · {savedStamp}
             </span>
-            <span className="text-muted-foreground/70"> ({fmtAgo(savedAt!)})</span>
+            <span className="text-muted-foreground/70"> ({info.ago})</span>
           </>
         ) : (
           <span className="ml-1 rounded-sm bg-muted px-1 py-px text-[9px] font-medium text-muted-foreground">
