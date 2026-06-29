@@ -759,7 +759,11 @@ function reasonMeta(reason: "auto" | "navigation" | "manual") {
  * so the absolute stamp, relative time, timezone label, and reason copy stay
  * in lockstep.
  */
-function describeSaved(savedAt: number | null, reason: "auto" | "navigation" | "manual") {
+function describeSaved(
+  savedAt: number | null,
+  reason: "auto" | "navigation" | "manual",
+  tooltipMode: TooltipMode = "ringkas",
+) {
   const meta = reasonMeta(reason);
   if (!savedAt) {
     return {
@@ -783,10 +787,19 @@ function describeSaved(savedAt: number | null, reason: "auto" | "navigation" | "
     tz.source === "locale" ? "locale id-ID"
     : tz.source === "browser" ? "browser default"
     : "fallback offset UTC";
-  // Tooltip ringkas: hanya stamp + zona waktu + alasan.
-  // Detail lengkap (IANA, offset, sumber label, ISO, epoch) dipindah ke
-  // popover info `SavedDetailsPopover` agar tooltip tidak penuh.
-  const tooltip = `${stamp} · ${tz.label} · ${meta.label}`;
+  // Mode ringkas: stamp · zona waktu · alasan (satu baris).
+  // Mode lengkap: tampilkan semua detail langsung di tooltip native tanpa
+  // perlu membuka popover. Detail penuh tetap tersedia di SavedDetailsPopover.
+  const tooltip =
+    tooltipMode === "lengkap"
+      ? [
+          `Tersimpan terakhir ${stamp}`,
+          `Relatif: ${ago}`,
+          `Alasan: ${meta.label}`,
+          `Zona waktu: ${tz.label} (${tz.iana}, ${tz.offset})`,
+          `Sumber label: ${sourceLabel}`,
+        ].join("\n")
+      : `${stamp} · ${tz.label} · ${meta.label}`;
   const copyText = [
     `Tersimpan terakhir: ${stamp}`,
     `Relatif: ${ago}`,
