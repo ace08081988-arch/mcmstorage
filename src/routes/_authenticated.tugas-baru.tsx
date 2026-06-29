@@ -1187,8 +1187,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
   const content =
     state === "pending" ? (
       <span
-        className="inline-flex items-center gap-1 rounded-sm bg-amber-500/15 px-1.5 py-px text-amber-700 dark:text-amber-300"
-        // bg sedikit lebih tebal di dark agar spinner & label tetap terbaca.
+        className="inline-flex items-center gap-1 rounded-sm bg-amber-500/15 px-1.5 py-px text-amber-700 dark:bg-amber-400/25 dark:text-amber-200"
         title={info.tooltip}
       >
         <svg
