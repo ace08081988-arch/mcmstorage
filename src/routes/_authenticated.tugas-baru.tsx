@@ -602,7 +602,7 @@ function TugasBaruPage() {
             <button
               type="button"
               onClick={() => {
-                const changed = flushDraft();
+                const changed = flushDraft("manual");
                 toast.success(changed ? "Draft disimpan" : "Draft sudah tersimpan");
               }}
               disabled={busy}
@@ -644,7 +644,7 @@ function TugasBaruPage() {
             </AlertDialogCancel>
             <AlertDialogAction
               onClick={() => {
-                flushDraft();
+                flushDraft("navigation");
                 if (blocker.status === "blocked") blocker.proceed();
               }}
             >
