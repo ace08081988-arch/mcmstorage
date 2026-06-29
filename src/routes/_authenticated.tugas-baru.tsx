@@ -533,7 +533,18 @@ function TugasBaruPage() {
             </div>
           </div>
 
-          <div className="flex justify-end pt-2">
+          <div className="flex flex-wrap justify-end gap-2 pt-2">
+            <button
+              type="button"
+              onClick={() => {
+                const changed = flushDraft();
+                toast.success(changed ? "Draft disimpan" : "Draft sudah tersimpan");
+              }}
+              disabled={busy}
+              className="inline-flex items-center gap-1 rounded-md border px-3 py-2 text-xs hover:bg-accent disabled:opacity-50"
+            >
+              Simpan draft
+            </button>
             <button
               type="button"
               onClick={submit}
