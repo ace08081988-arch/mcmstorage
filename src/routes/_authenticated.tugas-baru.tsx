@@ -427,6 +427,7 @@ function TugasBaruPage() {
         <div className="space-y-3 rounded-lg border bg-card p-4 text-sm">
           <SaveIndicator state={saveState} savedAt={savedAt} visible={savedVisible} reason={savedReason} />
           <LastSavedSummary savedAt={savedAt} reason={savedReason} />
+          <AutosaveAnnouncer state={saveState} savedAt={savedAt} reason={savedReason} />
           {restored ? (
             <div className="flex items-start justify-between gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
               <span>
@@ -697,6 +698,7 @@ function LastSavedSummary({ savedAt, reason }: { savedAt: number | null; reason:
     <div
       className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground"
       aria-live="polite"
+      aria-atomic="true"
       title={savedAt ? `Tersimpan terakhir ${formatSavedStamp(savedAt)} · ${meta.label}` : "Belum ada draft tersimpan"}
     >
       <span className="font-medium text-foreground/80">Tersimpan terakhir:</span>
@@ -713,6 +715,39 @@ function LastSavedSummary({ savedAt, reason }: { savedAt: number | null; reason:
           Belum ada
         </span>
       )}
+    </div>
+  );
+}
+
+function AutosaveAnnouncer({
+  state,
+  savedAt,
+  reason,
+}: {
+  state: "idle" | "pending" | "saved";
+  savedAt: number | null;
+  reason: "auto" | "navigation" | "manual";
+}) {
+  const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (state === "pending") {
+      setMessage("Menyimpan draft…");
+      return;
+    }
+    if (state === "saved") {
+      if (!savedAt) {
+        setMessage("Belum tersimpan");
+        return;
+      }
+      const meta = reasonMeta(reason);
+      setMessage(`Draft tersimpan ${meta.label.toLowerCase()} pukul ${formatSavedStamp(savedAt)}`);
+      return;
+    }
+    if (!savedAt) setMessage("Belum tersimpan");
+  }, [state, savedAt, reason]);
+  return (
+    <div role="status" aria-live="polite" aria-atomic="true" className="sr-only">
+      {message}
     </div>
   );
 }
