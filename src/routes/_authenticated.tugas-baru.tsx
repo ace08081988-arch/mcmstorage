@@ -678,6 +678,12 @@ function fmtAgo(ts: number): string {
   return new Date(ts).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
 }
 
+function formatSavedStamp(ts: number): string {
+  const d = new Date(ts);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
 function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean; reason: "auto" | "navigation" | "manual" }) {
   const show = state === "pending" || (state === "saved" && visible);
   // Keep the last non-idle content mounted during the fade-out so the
@@ -687,6 +693,7 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
     reason === "navigation" ? "Disimpan karena navigasi"
     : reason === "manual" ? "Disimpan manual"
     : null;
+  const savedStamp = savedAt ? formatSavedStamp(savedAt) : null;
   const content =
     state === "pending" ? (
       <span className="inline-flex items-center gap-1">
@@ -696,17 +703,17 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
     ) : state === "saved" ? (
       <span
         className="inline-flex items-center gap-1"
-        title={savedAt ? `Tersimpan pada ${new Date(savedAt).toLocaleString("id-ID")}` : undefined}
+        title={savedStamp ? `Tersimpan pada ${savedStamp}` : undefined}
       >
         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
         Tersimpan
-        {savedAt ? (
+        {savedStamp ? (
           <>
             <span className="tabular-nums">
               {" "}
-              · {new Date(savedAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+              · {savedStamp}
             </span>
-            <span className="text-muted-foreground/70"> ({fmtAgo(savedAt)})</span>
+            <span className="text-muted-foreground/70"> ({fmtAgo(savedAt!)})</span>
           </>
         ) : (
           <span className="ml-1 rounded-sm bg-muted px-1 py-px text-[9px] font-medium text-muted-foreground">
