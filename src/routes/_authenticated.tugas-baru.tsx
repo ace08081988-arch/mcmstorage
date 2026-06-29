@@ -912,7 +912,7 @@ function SavedDetailsPopover({ info, tooltipMode }: { info: ReturnType<typeof de
       <PopoverContent
         align="start"
         aria-label={dialogTitle}
-        className="w-[280px] space-y-2 p-3 text-[11px]"
+        className="w-[320px] space-y-3 p-3 text-[11px]"
       >
         <div className="flex items-center justify-between">
           <span className="text-xs font-semibold" id="autosave-detail-heading">
@@ -929,28 +929,75 @@ function SavedDetailsPopover({ info, tooltipMode }: { info: ReturnType<typeof de
             {copied ? "Tersalin" : copyLabel}
           </button>
         </div>
-        <textarea
-          readOnly
-          value={textToCopy}
-          onFocus={(e) => e.currentTarget.select()}
-          className={`${isShort ? "h-12" : "h-44"} w-full resize-none rounded-md border bg-muted/40 p-2 font-mono text-[10px] leading-snug tabular-nums`}
-          aria-label={textareaLabel}
-          aria-describedby="autosave-detail-heading"
-        />
-        {info.tz ? (
-          <p className="text-[10px] text-muted-foreground">
-            Sumber label zona waktu:{" "}
-            <span className="font-medium text-foreground/80">
-              {info.tz.source === "locale"
-                ? "Intl id-ID (locale)"
-                : info.tz.source === "browser"
-                ? "Intl default (browser)"
-                : "Fallback offset UTC"}
-            </span>
-          </p>
-        ) : null}
+        {info.stamp && info.tz ? (
+          <>
+            <DetailGrid
+              rows={
+                isShort
+                  ? [
+                      { label: "Stamp", value: info.stamp, mono: true },
+                      { label: "Zona", value: info.tz.label },
+                      { label: "Alasan", value: info.meta.label },
+                    ]
+                  : [
+                      { label: "Stamp", value: info.stamp, mono: true },
+                      { label: "Relatif", value: info.ago ?? "-" },
+                      { label: "Alasan", value: info.meta.label },
+                      { label: "Zona", value: info.tz.label },
+                      { label: "IANA", value: info.tz.iana, mono: true },
+                      { label: "Offset", value: info.tz.offset, mono: true },
+                      {
+                        label: "Sumber",
+                        value:
+                          info.tz.source === "locale"
+                            ? "Intl id-ID (locale)"
+                            : info.tz.source === "browser"
+                            ? "Intl default (browser)"
+                            : "Fallback offset UTC",
+                      },
+                      { label: "ISO", value: info.iso ?? "-", mono: true, wrap: true },
+                    ]
+              }
+            />
+            <details className="group rounded-md border bg-muted/30">
+              <summary className="cursor-pointer list-none px-2 py-1 text-[10px] font-medium text-muted-foreground hover:text-foreground">
+                Teks siap-salin ▾
+              </summary>
+              <textarea
+                readOnly
+                value={textToCopy}
+                onFocus={(e) => e.currentTarget.select()}
+                className={`${isShort ? "h-12" : "h-40"} w-full resize-none rounded-b-md border-0 border-t bg-background p-2 font-mono text-[10px] leading-snug tabular-nums`}
+                aria-label={textareaLabel}
+                aria-describedby="autosave-detail-heading"
+              />
+            </details>
+          </>
+        ) : (
+          <p className="text-[11px] text-muted-foreground">Belum ada draft tersimpan.</p>
+        )}
       </PopoverContent>
     </Popover>
+  );
+}
+
+function DetailGrid({ rows }: { rows: { label: string; value: string; mono?: boolean; wrap?: boolean }[] }) {
+  return (
+    <dl className="grid grid-cols-[72px_1fr] gap-x-3 gap-y-1 text-[11px]">
+      {rows.map((r) => (
+        <div key={r.label} className="contents">
+          <dt className="text-muted-foreground">{r.label}</dt>
+          <dd
+            className={`select-all text-foreground ${r.mono ? "font-mono tabular-nums" : ""} ${
+              r.wrap ? "break-all" : "truncate"
+            }`}
+            title={r.value}
+          >
+            {r.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 
