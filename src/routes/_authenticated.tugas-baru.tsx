@@ -4,8 +4,9 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl } from "@/lib/prep";
 import { copyText, shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
-import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck, ArrowLeft, Info, Check } from "lucide-react";
 import { TaskQrCode } from "@/components/TaskQrCode";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -683,20 +684,30 @@ function fmtAgo(ts: number): string {
 function formatSavedStamp(ts: number): string {
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${getTzLabel(d)}`;
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${getTzInfo(d).label}`;
 }
 
-function getTzLabel(d: Date): string {
-  try {
-    const parts = new Intl.DateTimeFormat("id-ID", { timeZoneName: "short" }).formatToParts(d);
-    const tz = parts.find((p) => p.type === "timeZoneName")?.value;
-    if (tz) return tz;
-  } catch {}
+function getTzInfo(d: Date): { label: string; source: "locale" | "browser" | "fallback"; iana: string; offset: string } {
   const off = -d.getTimezoneOffset();
   const sign = off >= 0 ? "+" : "-";
   const hh = String(Math.floor(Math.abs(off) / 60)).padStart(2, "0");
   const mm = String(Math.abs(off) % 60).padStart(2, "0");
-  return `UTC${sign}${hh}:${mm}`;
+  const offset = `UTC${sign}${hh}:${mm}`;
+  let iana = "—";
+  try {
+    iana = Intl.DateTimeFormat().resolvedOptions().timeZone || "—";
+  } catch {}
+  try {
+    const parts = new Intl.DateTimeFormat("id-ID", { timeZoneName: "short" }).formatToParts(d);
+    const tz = parts.find((p) => p.type === "timeZoneName")?.value;
+    if (tz) return { label: tz, source: "locale", iana, offset };
+  } catch {}
+  try {
+    const parts = new Intl.DateTimeFormat(undefined, { timeZoneName: "short" }).formatToParts(d);
+    const tz = parts.find((p) => p.type === "timeZoneName")?.value;
+    if (tz) return { label: tz, source: "browser", iana, offset };
+  } catch {}
+  return { label: offset, source: "fallback", iana, offset };
 }
 
 function reasonMeta(reason: "auto" | "navigation" | "manual") {
@@ -718,21 +729,50 @@ function describeSaved(savedAt: number | null, reason: "auto" | "navigation" | "
       meta,
       stamp: null as string | null,
       ago: null as string | null,
+      tz: null as ReturnType<typeof getTzInfo> | null,
+      iso: null as string | null,
       tooltip: "Belum ada draft tersimpan",
       summary: "Belum tersimpan",
       announcement: "Belum tersimpan",
+      copyText: "Belum ada draft tersimpan",
     };
   }
+  const d = new Date(savedAt);
+  const tz = getTzInfo(d);
   const stamp = formatSavedStamp(savedAt);
   const ago = fmtAgo(savedAt);
   const summary = `Tersimpan terakhir ${stamp} (${ago}) · ${meta.label}`;
+  const sourceLabel =
+    tz.source === "locale" ? "locale id-ID"
+    : tz.source === "browser" ? "browser default"
+    : "fallback offset UTC";
+  const tooltip = [
+    `Tersimpan terakhir ${stamp}`,
+    `Relatif: ${ago}`,
+    `Alasan: ${meta.label}`,
+    `Zona waktu: ${tz.label} (${tz.iana}, ${tz.offset}) — sumber: ${sourceLabel}`,
+  ].join("\n");
+  const copyText = [
+    `Tersimpan terakhir: ${stamp}`,
+    `Relatif: ${ago}`,
+    `Alasan: ${meta.label}`,
+    `Zona waktu: ${tz.label}`,
+    `IANA: ${tz.iana}`,
+    `Offset: ${tz.offset}`,
+    `Sumber label: ${sourceLabel}`,
+    `ISO: ${d.toISOString()}`,
+    `Epoch (ms): ${savedAt}`,
+  ].join("\n");
   return {
     meta,
     stamp,
     ago,
-    tooltip: summary,
+    tz,
+    iso: d.toISOString(),
+    tooltip,
     summary,
     announcement: `Draft tersimpan ${meta.label.toLowerCase()} pukul ${stamp}`,
+    copyText,
   };
 }
 
@@ -759,7 +799,67 @@ function LastSavedSummary({ savedAt, reason }: { savedAt: number | null; reason:
           Belum ada
         </span>
       )}
+      <SavedDetailsPopover info={info} />
     </div>
+  );
+}
+
+function SavedDetailsPopover({ info }: { info: ReturnType<typeof describeSaved> }) {
+  const [copied, setCopied] = useState(false);
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(info.copyText);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      // ignore — text is still selectable in the popover
+    }
+  };
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-label="Detail waktu autosave"
+          className="inline-flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+        >
+          <Info className="h-3 w-3" aria-hidden="true" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent align="start" className="w-[280px] space-y-2 p-3 text-[11px]">
+        <div className="flex items-center justify-between">
+          <span className="text-xs font-semibold">Detail waktu autosave</span>
+          <button
+            type="button"
+            onClick={onCopy}
+            className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] hover:bg-accent"
+            aria-label="Salin detail waktu autosave"
+          >
+            {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
+            {copied ? "Tersalin" : "Salin"}
+          </button>
+        </div>
+        <textarea
+          readOnly
+          value={info.copyText}
+          onFocus={(e) => e.currentTarget.select()}
+          className="h-44 w-full resize-none rounded-md border bg-muted/40 p-2 font-mono text-[10px] leading-snug tabular-nums"
+          aria-label="Teks detail waktu autosave (siap disalin)"
+        />
+        {info.tz ? (
+          <p className="text-[10px] text-muted-foreground">
+            Sumber label zona waktu:{" "}
+            <span className="font-medium text-foreground/80">
+              {info.tz.source === "locale"
+                ? "Intl id-ID (locale)"
+                : info.tz.source === "browser"
+                ? "Intl default (browser)"
+                : "Fallback offset UTC"}
+            </span>
+          </p>
+        ) : null}
+      </PopoverContent>
+    </Popover>
   );
 }
 
