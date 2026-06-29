@@ -1223,7 +1223,15 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
       aria-live="polite"
       aria-hidden={!show}
     >
-      {content ?? lastContentRef.current}
+      {/* Crossfade ringan saat tooltipMode berubah supaya perubahan
+          isi title/aria tidak terasa seperti flicker, sekalipun konten
+          terlihat sama. */}
+      <span
+        key={`mode-${tooltipMode}`}
+        className="inline-flex animate-fade-in [animation-duration:220ms]"
+      >
+        {content ?? lastContentRef.current}
+      </span>
     </div>
   );
 }
