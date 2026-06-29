@@ -38,12 +38,47 @@ function newRow(): Row {
   return { key: crypto.randomUUID(), title_id: "", name: "", qty: "1", unit: "", warehouse_item_id: null };
 }
 
+const DRAFT_KEY = "tugas-baru:draft:v1";
+type Draft = { title: string; note: string; pin: string; rows: Row[]; phone: string };
+function loadDraft(): Draft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Draft;
+    if (!d || !Array.isArray(d.rows) || d.rows.length === 0) return null;
+    return d;
+  } catch {
+    return null;
+  }
+}
+function saveDraft(d: Draft) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+function clearDraft() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 function TugasBaruPage() {
-  const [title, setTitle] = useState("");
-  const [note, setNote] = useState("");
-  const [pin, setPin] = useState(() => genPin());
-  const [rows, setRows] = useState<Row[]>([newRow()]);
-  const [phone, setPhone] = useState("");
+  // Restore draft on first render so a remount (e.g. router invalidation
+  // triggered by realtime/sidebar refetch) doesn't wipe what was typed.
+  const initialRef = useRef<Draft | null>(loadDraft());
+  const [title, setTitle] = useState(() => initialRef.current?.title ?? "");
+  const [note, setNote] = useState(() => initialRef.current?.note ?? "");
+  const [pin, setPin] = useState(() => initialRef.current?.pin ?? genPin());
+  const [rows, setRows] = useState<Row[]>(() => initialRef.current?.rows ?? [newRow()]);
+  const [phone, setPhone] = useState(() => initialRef.current?.phone ?? "");
+  const [restored] = useState(() => !!initialRef.current);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ token: string; pin: string; title: string; url: string } | null>(null);
   const [titles, setTitles] = useState<TitleOpt[]>([]);
