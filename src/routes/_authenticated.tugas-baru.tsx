@@ -50,6 +50,43 @@ function newRow(): Row {
 }
 
 const DRAFT_KEY = "tugas-baru:draft:v1";
+const TOOLTIP_MODE_KEY = "autosave:tooltip-mode:v1";
+type TooltipMode = "ringkas" | "lengkap";
+function loadTooltipMode(): TooltipMode {
+  if (typeof window === "undefined") return "ringkas";
+  try {
+    const v = window.localStorage.getItem(TOOLTIP_MODE_KEY);
+    return v === "lengkap" ? "lengkap" : "ringkas";
+  } catch {
+    return "ringkas";
+  }
+}
+function saveTooltipMode(m: TooltipMode) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(TOOLTIP_MODE_KEY, m);
+  } catch { /* ignore */ }
+}
+function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
+  const [mode, setMode] = useState<TooltipMode>("ringkas");
+  useEffect(() => { setMode(loadTooltipMode()); }, []);
+  const update = useCallback((m: TooltipMode) => {
+    setMode(m);
+    saveTooltipMode(m);
+    try {
+      window.dispatchEvent(new CustomEvent("autosave-tooltip-mode", { detail: m }));
+    } catch {}
+  }, []);
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail as TooltipMode | undefined;
+      if (detail === "ringkas" || detail === "lengkap") setMode(detail);
+    };
+    window.addEventListener("autosave-tooltip-mode", onChange);
+    return () => window.removeEventListener("autosave-tooltip-mode", onChange);
+  }, []);
+  return [mode, update];
+}
 type Draft = { title: string; note: string; pin: string; rows: Row[]; phone: string };
 function loadDraft(): Draft | null {
   if (typeof window === "undefined") return null;
