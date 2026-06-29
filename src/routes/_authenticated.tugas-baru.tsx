@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useBlocker } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -6,6 +6,16 @@ import { genPin, genShareToken, publicTaskUrl } from "@/lib/prep";
 import { copyText, shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck, ArrowLeft } from "lucide-react";
 import { TaskQrCode } from "@/components/TaskQrCode";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/tugas-baru")({
   head: () => ({
@@ -167,6 +177,15 @@ function TugasBaruPage() {
   useEffect(() => {
     return () => { flushDraft(); };
   }, [flushDraft]);
+
+  // Confirm before leaving the page while a save is still pending.
+  // Also wires the native beforeunload prompt for tab close / reload.
+  const isPending = saveState === "pending" && !created;
+  const blocker = useBlocker({
+    shouldBlockFn: () => isPending,
+    enableBeforeUnload: () => isPending,
+    withResolver: true,
+  });
 
   async function verifyWid(key: string, wid: string | null) {
     const seq = (verifySeq.current[key] ?? 0) + 1;
@@ -595,6 +614,38 @@ function TugasBaruPage() {
           </div>
         </div>
       )}
+
+      <AlertDialog
+        open={blocker.status === "blocked"}
+        onOpenChange={(open) => {
+          if (!open && blocker.status === "blocked") blocker.reset();
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Draft belum tersimpan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Perubahan terakhir masih dalam antrian autosave. Simpan dulu sebelum
+              meninggalkan halaman, atau tetap lanjutkan jika ingin keluar.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel
+              onClick={() => { if (blocker.status === "blocked") blocker.reset(); }}
+            >
+              Tetap di sini
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                flushDraft();
+                if (blocker.status === "blocked") blocker.proceed();
+              }}
+            >
+              Simpan & keluar
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
