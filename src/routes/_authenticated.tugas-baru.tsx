@@ -830,24 +830,37 @@ function describeSaved(
 
 function LastSavedSummary({ savedAt, reason, tooltipMode }: { savedAt: number | null; reason: "auto" | "navigation" | "manual"; tooltipMode: TooltipMode }) {
   const info = describeSaved(savedAt, reason, tooltipMode);
+  // Label SR menjelaskan isi tooltip ringkas/lengkap apa adanya, sehingga
+  // pembaca layar tidak hanya mendengar "Tersimpan terakhir 12.34" tetapi
+  // juga zona waktu + alasan (ringkas) atau seluruh detail (lengkap).
+  const modeLabel = tooltipMode === "lengkap" ? "tooltip lengkap" : "tooltip ringkas";
+  const ariaLabel = info.stamp
+    ? `Tersimpan terakhir — ${modeLabel}: ${info.tooltip.replace(/\n/g, ", ")}`
+    : "Belum ada draft tersimpan";
   return (
     <div
       className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground"
-      aria-live="polite"
-      aria-atomic="true"
+      role="group"
+      aria-label={ariaLabel}
       title={info.tooltip}
     >
-      <span className="font-medium text-foreground/80">Tersimpan terakhir:</span>
+      <span className="font-medium text-foreground/80" aria-hidden="true">Tersimpan terakhir:</span>
       {info.stamp ? (
         <>
-          <span className="tabular-nums">{info.stamp}</span>
-          <span className="text-muted-foreground/70">({info.ago})</span>
-          <span className={`rounded-sm px-1.5 py-px text-[10px] font-medium ${info.meta.cls}`}>
+          <span className="tabular-nums" aria-hidden="true">{info.stamp}</span>
+          <span className="text-muted-foreground/70" aria-hidden="true">({info.ago})</span>
+          <span
+            className={`rounded-sm px-1.5 py-px text-[10px] font-medium ${info.meta.cls}`}
+            aria-hidden="true"
+          >
             {info.meta.label}
           </span>
         </>
       ) : (
-        <span className="rounded-sm bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground">
+        <span
+          className="rounded-sm bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground"
+          aria-hidden="true"
+        >
           Belum ada
         </span>
       )}
@@ -865,6 +878,15 @@ function SavedDetailsPopover({ info, tooltipMode }: { info: ReturnType<typeof de
     ? `${info.stamp} · ${info.tz.label} · ${info.meta.label}`
     : info.copyText;
   const copyLabel = isShort ? "Salin ringkas" : "Salin lengkap";
+  const triggerLabel = isShort
+    ? "Buka detail lengkap waktu autosave (saat ini tooltip ringkas)"
+    : "Buka detail lengkap waktu autosave (saat ini tooltip lengkap)";
+  const dialogTitle = isShort
+    ? "Detail waktu autosave — mode ringkas"
+    : "Detail waktu autosave — mode lengkap";
+  const textareaLabel = isShort
+    ? "Teks detail ringkas (stamp, zona waktu, alasan) — siap disalin"
+    : "Teks detail lengkap (IANA, offset, sumber label, ISO, epoch) — siap disalin";
   const onCopy = async () => {
     try {
       await navigator.clipboard.writeText(textToCopy);
@@ -880,20 +902,28 @@ function SavedDetailsPopover({ info, tooltipMode }: { info: ReturnType<typeof de
       <PopoverTrigger asChild>
         <button
           type="button"
-          aria-label="Detail waktu autosave"
+          aria-label={triggerLabel}
+          aria-haspopup="dialog"
           className="inline-flex h-4 w-4 items-center justify-center rounded-sm text-muted-foreground hover:text-foreground focus:outline-none focus:ring-1 focus:ring-ring"
         >
           <Info className="h-3 w-3" aria-hidden="true" />
         </button>
       </PopoverTrigger>
-      <PopoverContent align="start" className="w-[280px] space-y-2 p-3 text-[11px]">
+      <PopoverContent
+        align="start"
+        aria-label={dialogTitle}
+        className="w-[280px] space-y-2 p-3 text-[11px]"
+      >
         <div className="flex items-center justify-between">
-          <span className="text-xs font-semibold">Detail waktu autosave</span>
+          <span className="text-xs font-semibold" id="autosave-detail-heading">
+            {dialogTitle}
+          </span>
           <button
             type="button"
             onClick={onCopy}
             className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] hover:bg-accent"
             aria-label={copyLabel}
+            aria-live="polite"
           >
             {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
             {copied ? "Tersalin" : copyLabel}
@@ -904,7 +934,8 @@ function SavedDetailsPopover({ info, tooltipMode }: { info: ReturnType<typeof de
           value={textToCopy}
           onFocus={(e) => e.currentTarget.select()}
           className={`${isShort ? "h-12" : "h-44"} w-full resize-none rounded-md border bg-muted/40 p-2 font-mono text-[10px] leading-snug tabular-nums`}
-          aria-label="Teks detail waktu autosave (siap disalin)"
+          aria-label={textareaLabel}
+          aria-describedby="autosave-detail-heading"
         />
         {info.tz ? (
           <p className="text-[10px] text-muted-foreground">
