@@ -931,26 +931,34 @@ function LastSavedSummary({ savedAt, reason, tooltipMode }: { savedAt: number | 
       title={info.tooltip}
     >
       <span className="font-medium text-foreground/80" aria-hidden="true">Tersimpan terakhir:</span>
-      {info.stamp ? (
-        <>
-          <span className="tabular-nums" aria-hidden="true">{info.stamp}</span>
-          <span className="text-muted-foreground/70" aria-hidden="true">({info.ago})</span>
+      {/* Re-mount inner content on tooltip-mode change so the visual
+          difference (badge tone, popover label) crossfades smoothly
+          via animate-fade-in instead of snapping in place. */}
+      <span
+        key={`mode-${tooltipMode}`}
+        className="inline-flex flex-wrap items-center gap-1.5 animate-fade-in [animation-duration:220ms]"
+      >
+        {info.stamp ? (
+          <>
+            <span className="tabular-nums" aria-hidden="true">{info.stamp}</span>
+            <span className="text-muted-foreground/70" aria-hidden="true">({info.ago})</span>
+            <span
+              className={`rounded-sm px-1.5 py-px text-[10px] font-medium transition-colors duration-300 ${info.meta.cls}`}
+              aria-hidden="true"
+            >
+              {info.meta.label}
+            </span>
+          </>
+        ) : (
           <span
-            className={`rounded-sm px-1.5 py-px text-[10px] font-medium ${info.meta.cls}`}
+            className="rounded-sm bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground"
             aria-hidden="true"
           >
-            {info.meta.label}
+            Belum ada
           </span>
-        </>
-      ) : (
-        <span
-          className="rounded-sm bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground"
-          aria-hidden="true"
-        >
-          Belum ada
-        </span>
-      )}
-      <SavedDetailsPopover info={info} tooltipMode={tooltipMode} />
+        )}
+        <SavedDetailsPopover info={info} tooltipMode={tooltipMode} />
+      </span>
     </div>
   );
 }
@@ -1103,7 +1111,7 @@ function TooltipModeToggle({ mode, onChange }: { mode: TooltipMode; onChange: (m
             type="button"
             onClick={() => onChange(m)}
             aria-pressed={active}
-            className={`rounded-sm border px-1.5 py-px capitalize transition ${
+            className={`rounded-sm border px-1.5 py-px capitalize transition-colors duration-300 ease-out ${
               active
                 ? "border-foreground/30 bg-foreground/10 text-foreground"
                 : "border-transparent hover:bg-muted"
@@ -1215,7 +1223,15 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
       aria-live="polite"
       aria-hidden={!show}
     >
-      {content ?? lastContentRef.current}
+      {/* Crossfade ringan saat tooltipMode berubah supaya perubahan
+          isi title/aria tidak terasa seperti flicker, sekalipun konten
+          terlihat sama. */}
+      <span
+        key={`mode-${tooltipMode}`}
+        className="inline-flex animate-fade-in [animation-duration:220ms]"
+      >
+        {content ?? lastContentRef.current}
+      </span>
     </div>
   );
 }
