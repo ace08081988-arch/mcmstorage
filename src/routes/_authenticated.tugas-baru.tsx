@@ -683,7 +683,20 @@ function fmtAgo(ts: number): string {
 function formatSavedStamp(ts: number): string {
   const d = new Date(ts);
   const pad = (n: number) => String(n).padStart(2, "0");
-  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+  return `${pad(d.getDate())}/${pad(d.getMonth() + 1)}/${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())} ${getTzLabel(d)}`;
+}
+
+function getTzLabel(d: Date): string {
+  try {
+    const parts = new Intl.DateTimeFormat("id-ID", { timeZoneName: "short" }).formatToParts(d);
+    const tz = parts.find((p) => p.type === "timeZoneName")?.value;
+    if (tz) return tz;
+  } catch {}
+  const off = -d.getTimezoneOffset();
+  const sign = off >= 0 ? "+" : "-";
+  const hh = String(Math.floor(Math.abs(off) / 60)).padStart(2, "0");
+  const mm = String(Math.abs(off) % 60).padStart(2, "0");
+  return `UTC${sign}${hh}:${mm}`;
 }
 
 function reasonMeta(reason: "auto" | "navigation" | "manual") {
