@@ -851,20 +851,28 @@ function LastSavedSummary({ savedAt, reason, tooltipMode }: { savedAt: number | 
           Belum ada
         </span>
       )}
-      <SavedDetailsPopover info={info} />
+      <SavedDetailsPopover info={info} tooltipMode={tooltipMode} />
     </div>
   );
 }
 
-function SavedDetailsPopover({ info }: { info: ReturnType<typeof describeSaved> }) {
+function SavedDetailsPopover({ info, tooltipMode }: { info: ReturnType<typeof describeSaved>; tooltipMode: TooltipMode }) {
   const [copied, setCopied] = useState(false);
+  // Mode ringkas → hanya stamp · zona waktu · alasan (sebaris dengan tooltip).
+  // Mode lengkap → semua detail (IANA, offset, sumber label, ISO, epoch).
+  const isShort = tooltipMode === "ringkas";
+  const textToCopy = isShort && info.stamp && info.tz
+    ? `${info.stamp} · ${info.tz.label} · ${info.meta.label}`
+    : info.copyText;
+  const copyLabel = isShort ? "Salin ringkas" : "Salin lengkap";
   const onCopy = async () => {
     try {
-      await navigator.clipboard.writeText(info.copyText);
+      await navigator.clipboard.writeText(textToCopy);
       setCopied(true);
+      toast.success(isShort ? "Detail ringkas tersalin" : "Detail lengkap tersalin");
       setTimeout(() => setCopied(false), 1600);
     } catch {
-      // ignore — text is still selectable in the popover
+      toast.error("Gagal menyalin — silakan pilih dan salin manual");
     }
   };
   return (
@@ -885,17 +893,17 @@ function SavedDetailsPopover({ info }: { info: ReturnType<typeof describeSaved> 
             type="button"
             onClick={onCopy}
             className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] hover:bg-accent"
-            aria-label="Salin detail waktu autosave"
+            aria-label={copyLabel}
           >
             {copied ? <Check className="h-3 w-3" /> : <Copy className="h-3 w-3" />}
-            {copied ? "Tersalin" : "Salin"}
+            {copied ? "Tersalin" : copyLabel}
           </button>
         </div>
         <textarea
           readOnly
-          value={info.copyText}
+          value={textToCopy}
           onFocus={(e) => e.currentTarget.select()}
-          className="h-44 w-full resize-none rounded-md border bg-muted/40 p-2 font-mono text-[10px] leading-snug tabular-nums"
+          className={`${isShort ? "h-12" : "h-44"} w-full resize-none rounded-md border bg-muted/40 p-2 font-mono text-[10px] leading-snug tabular-nums`}
           aria-label="Teks detail waktu autosave (siap disalin)"
         />
         {info.tz ? (
