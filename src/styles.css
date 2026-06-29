@@ -220,6 +220,23 @@ html.compact .gap-4 { gap: 0.5rem; }
 html.compact .space-y-6 > * + * { margin-top: 0.75rem; }
 html.compact .space-y-4 > * + * { margin-top: 0.5rem; }
 
+/* === Kurangi animasi (manual override prefers-reduced-motion) ===
+   Diaktifkan via class `reduce-motion` di <html>, ditulis oleh
+   ReduceMotionToggle. Memaksa animasi & transisi mendekati nol
+   sehingga juga mencakup elemen yang hanya memakai utility tailwind
+   non-`motion-reduce:` (variant tailwind motion-reduce tidak bisa
+   dipicu oleh class — hanya media query). */
+html.reduce-motion *,
+html.reduce-motion *::before,
+html.reduce-motion *::after {
+  animation-duration: 0.001ms !important;
+  animation-delay: 0ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  transition-delay: 0ms !important;
+  scroll-behavior: auto !important;
+}
+
 /* === Success banner animations (worker portal PIN screen) === */
 @keyframes success-banner-in {
   0%   { opacity: 0; transform: translateY(-8px) scale(0.97); }

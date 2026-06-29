@@ -14,6 +14,7 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "sonner";
 import { AppearanceInit } from "@/components/appearance-settings";
 import { applyCompactMode } from "@/components/CompactModeToggle";
+import { applyReduceMotion } from "@/components/ReduceMotionToggle";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
 import { WhatsAppTargetHost } from "@/lib/wa-target";
@@ -262,6 +263,7 @@ function RootComponent() {
       console.warn("[perm-bootstrap]", e),
     );
     applyCompactMode();
+    applyReduceMotion();
     // Kirim preferensi notifikasi ke service worker + tarik versi terbaru dari cloud
     let unsub: (() => void) | null = null;
     import("@/lib/notif-prefs").then(({ loadPrefs, broadcastPrefs, pullPrefsFromCloud, subscribeRemotePrefs }) => {
