@@ -224,6 +224,7 @@ function TugasBaruPage() {
     setBusy(false);
     if (error) return toast.error(error.message);
     const url = publicTaskUrl(token);
+    clearDraft();
     setCreated({ token, pin, title: t, url });
     toast.success("Tugas berhasil dibuat");
   }
@@ -242,6 +243,22 @@ function TugasBaruPage() {
     setNote("");
     setPin(genPin());
     setRows([newRow()]);
+    setPhone("");
+    setVerify({});
+    verifySeq.current = {};
+    clearDraft();
+  }
+
+  function clearForm() {
+    if (!window.confirm("Bersihkan formulir? Draft yang tersimpan akan dihapus.")) return;
+    setTitle("");
+    setNote("");
+    setPin(genPin());
+    setRows([newRow()]);
+    setPhone("");
+    setVerify({});
+    verifySeq.current = {};
+    clearDraft();
   }
 
   return (
