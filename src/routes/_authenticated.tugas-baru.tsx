@@ -838,9 +838,23 @@ function getTzInfo(d: Date): { label: string; source: "locale" | "browser" | "fa
 }
 
 function reasonMeta(reason: "auto" | "navigation" | "manual") {
-  if (reason === "manual") return { label: "Manual", cls: "bg-sky-500/15 text-sky-700 dark:text-sky-300" };
-  if (reason === "navigation") return { label: "Navigasi", cls: "bg-violet-500/15 text-violet-700 dark:text-violet-300" };
-  return { label: "Otomatis", cls: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" };
+  // Kontras dijaga di kedua tema:
+  // - Light: bg lembut 15% + teks gelap 700.
+  // - Dark: bg lebih tebal 25% + teks terang 200 untuk rasio ≥ 4.5:1.
+  if (reason === "manual")
+    return {
+      label: "Manual",
+      cls: "bg-sky-500/15 text-sky-700 dark:bg-sky-400/25 dark:text-sky-200",
+    };
+  if (reason === "navigation")
+    return {
+      label: "Navigasi",
+      cls: "bg-violet-500/15 text-violet-700 dark:bg-violet-400/25 dark:text-violet-200",
+    };
+  return {
+    label: "Otomatis",
+    cls: "bg-emerald-500/15 text-emerald-700 dark:bg-emerald-400/25 dark:text-emerald-200",
+  };
 }
 
 /**
@@ -1174,6 +1188,7 @@ function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state
     state === "pending" ? (
       <span
         className="inline-flex items-center gap-1 rounded-sm bg-amber-500/15 px-1.5 py-px text-amber-700 dark:text-amber-300"
+        // bg sedikit lebih tebal di dark agar spinner & label tetap terbaca.
         title={info.tooltip}
       >
         <svg
