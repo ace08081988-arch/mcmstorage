@@ -1,5 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 
 export type ConversationRow = {
@@ -101,6 +101,7 @@ export function useCreateGroup() {
 export function useConversations() {
   const qc = useQueryClient();
   const { data: myId } = useMyUserId();
+  const channelInstanceRef = useRef(`chat-list-${Math.random().toString(36).slice(2)}`);
 
   const cacheKey = myId ? `chat:conversations:${myId}` : null;
   const cached = useMemo<ConversationListItem[] | undefined>(() => {
@@ -285,7 +286,7 @@ export function useConversations() {
   useEffect(() => {
     if (!myId) return;
     const ch = supabase
-      .channel(`chat-list:${myId}`)
+      .channel(`chat-list:${myId}:${channelInstanceRef.current}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
         qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
         qc.invalidateQueries({ queryKey: ["chat", "unread-total"] });
