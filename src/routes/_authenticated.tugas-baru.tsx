@@ -91,6 +91,13 @@ function TugasBaruPage() {
   const [verify, setVerify] = useState<Record<string, VerifyState>>({});
   const verifySeq = useRef<Record<string, number>>({});
 
+  // Persist draft on every meaningful change so the form survives any remount.
+  // Skip while the success card is showing so we don't re-save a stale draft.
+  useEffect(() => {
+    if (created) return;
+    saveDraft({ title, note, pin, rows, phone });
+  }, [title, note, pin, rows, phone, created]);
+
   async function verifyWid(key: string, wid: string | null) {
     const seq = (verifySeq.current[key] ?? 0) + 1;
     verifySeq.current[key] = seq;
@@ -134,6 +141,16 @@ function TugasBaruPage() {
     return () => {
       on = false;
     };
+  }, []);
+
+  // Re-verify warehouse links for restored rows so the green/red status badges
+  // re-appear after a remount without forcing the user to re-pick each product.
+  useEffect(() => {
+    if (!initialRef.current) return;
+    for (const r of initialRef.current.rows) {
+      if (r.warehouse_item_id) verifyWid(r.key, r.warehouse_item_id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function updateRow(key: string, patch: Partial<Row>) {
