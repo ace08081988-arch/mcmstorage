@@ -83,7 +83,19 @@ function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
       if (detail === "ringkas" || detail === "lengkap") setMode(detail);
     };
     window.addEventListener("autosave-tooltip-mode", onChange);
-    return () => window.removeEventListener("autosave-tooltip-mode", onChange);
+    // Sinkronisasi lintas-tab: `storage` event hanya menyala di tab LAIN
+    // ketika localStorage di-update, jadi aman dipakai bersamaan dengan
+    // CustomEvent in-tab di atas tanpa loop.
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== TOOLTIP_MODE_KEY) return;
+      const v = e.newValue === "lengkap" ? "lengkap" : "ringkas";
+      setMode(v);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener("autosave-tooltip-mode", onChange);
+      window.removeEventListener("storage", onStorage);
+    };
   }, []);
   return [mode, update];
 }
