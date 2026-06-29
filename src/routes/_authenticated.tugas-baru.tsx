@@ -713,7 +713,7 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
               {" "}
               · {savedStamp}
             </span>
-            <span className="text-muted-foreground/70"> ({fmtAgo(savedAt)})</span>
+            <span className="text-muted-foreground/70"> ({fmtAgo(savedAt!)})</span>
           </>
         ) : (
           <span className="ml-1 rounded-sm bg-muted px-1 py-px text-[9px] font-medium text-muted-foreground">
