@@ -17,6 +17,7 @@ import {
   useSidebar,
 } from "@/components/ui/sidebar";
 import { CompactModeToggle } from "@/components/CompactModeToggle";
+import { ReduceMotionToggle } from "@/components/ReduceMotionToggle";
 import { useConversations } from "@/lib/chat";
 
 const items = [
@@ -216,6 +217,7 @@ export function AppSidebar() {
           </span>
         </div>
         <CompactModeToggle />
+        <ReduceMotionToggle />
       </SidebarFooter>
     </Sidebar>
   );
