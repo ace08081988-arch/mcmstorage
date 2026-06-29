@@ -38,12 +38,47 @@ function newRow(): Row {
   return { key: crypto.randomUUID(), title_id: "", name: "", qty: "1", unit: "", warehouse_item_id: null };
 }
 
+const DRAFT_KEY = "tugas-baru:draft:v1";
+type Draft = { title: string; note: string; pin: string; rows: Row[]; phone: string };
+function loadDraft(): Draft | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(DRAFT_KEY);
+    if (!raw) return null;
+    const d = JSON.parse(raw) as Draft;
+    if (!d || !Array.isArray(d.rows) || d.rows.length === 0) return null;
+    return d;
+  } catch {
+    return null;
+  }
+}
+function saveDraft(d: Draft) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(DRAFT_KEY, JSON.stringify(d));
+  } catch {
+    /* ignore quota / private mode */
+  }
+}
+function clearDraft() {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.removeItem(DRAFT_KEY);
+  } catch {
+    /* ignore */
+  }
+}
+
 function TugasBaruPage() {
-  const [title, setTitle] = useState("");
-  const [note, setNote] = useState("");
-  const [pin, setPin] = useState(() => genPin());
-  const [rows, setRows] = useState<Row[]>([newRow()]);
-  const [phone, setPhone] = useState("");
+  // Restore draft on first render so a remount (e.g. router invalidation
+  // triggered by realtime/sidebar refetch) doesn't wipe what was typed.
+  const initialRef = useRef<Draft | null>(loadDraft());
+  const [title, setTitle] = useState(() => initialRef.current?.title ?? "");
+  const [note, setNote] = useState(() => initialRef.current?.note ?? "");
+  const [pin, setPin] = useState(() => initialRef.current?.pin ?? genPin());
+  const [rows, setRows] = useState<Row[]>(() => initialRef.current?.rows ?? [newRow()]);
+  const [phone, setPhone] = useState(() => initialRef.current?.phone ?? "");
+  const [restored] = useState(() => !!initialRef.current);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ token: string; pin: string; title: string; url: string } | null>(null);
   const [titles, setTitles] = useState<TitleOpt[]>([]);
@@ -55,6 +90,13 @@ function TugasBaruPage() {
   };
   const [verify, setVerify] = useState<Record<string, VerifyState>>({});
   const verifySeq = useRef<Record<string, number>>({});
+
+  // Persist draft on every meaningful change so the form survives any remount.
+  // Skip while the success card is showing so we don't re-save a stale draft.
+  useEffect(() => {
+    if (created) return;
+    saveDraft({ title, note, pin, rows, phone });
+  }, [title, note, pin, rows, phone, created]);
 
   async function verifyWid(key: string, wid: string | null) {
     const seq = (verifySeq.current[key] ?? 0) + 1;
@@ -99,6 +141,16 @@ function TugasBaruPage() {
     return () => {
       on = false;
     };
+  }, []);
+
+  // Re-verify warehouse links for restored rows so the green/red status badges
+  // re-appear after a remount without forcing the user to re-pick each product.
+  useEffect(() => {
+    if (!initialRef.current) return;
+    for (const r of initialRef.current.rows) {
+      if (r.warehouse_item_id) verifyWid(r.key, r.warehouse_item_id);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   function updateRow(key: string, patch: Partial<Row>) {
@@ -172,6 +224,7 @@ function TugasBaruPage() {
     setBusy(false);
     if (error) return toast.error(error.message);
     const url = publicTaskUrl(token);
+    clearDraft();
     setCreated({ token, pin, title: t, url });
     toast.success("Tugas berhasil dibuat");
   }
@@ -190,6 +243,22 @@ function TugasBaruPage() {
     setNote("");
     setPin(genPin());
     setRows([newRow()]);
+    setPhone("");
+    setVerify({});
+    verifySeq.current = {};
+    clearDraft();
+  }
+
+  function clearForm() {
+    if (!window.confirm("Bersihkan formulir? Draft yang tersimpan akan dihapus.")) return;
+    setTitle("");
+    setNote("");
+    setPin(genPin());
+    setRows([newRow()]);
+    setPhone("");
+    setVerify({});
+    verifySeq.current = {};
+    clearDraft();
   }
 
   return (
@@ -260,6 +329,20 @@ function TugasBaruPage() {
         </div>
       ) : (
         <div className="space-y-3 rounded-lg border bg-card p-4 text-sm">
+          {restored ? (
+            <div className="flex items-start justify-between gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
+              <span>
+                Draft sebelumnya dipulihkan otomatis — lanjutkan dari yang terakhir Anda isi.
+              </span>
+              <button
+                type="button"
+                onClick={clearForm}
+                className="shrink-0 rounded border border-emerald-600/40 px-2 py-0.5 text-[10px] hover:bg-emerald-600/10"
+              >
+                Bersihkan draft
+              </button>
+            </div>
+          ) : null}
           <Field label="Judul tugas">
             <input
               value={title}
