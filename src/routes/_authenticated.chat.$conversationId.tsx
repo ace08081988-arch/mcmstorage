@@ -525,7 +525,7 @@ function ChatRoomPage() {
                               {replyMsg.sender_id === myId ? "Anda" : replySenderName}
                             </div>
                             <div className="line-clamp-2 opacity-80">
-                              {replyMsg.deleted_at ? <em>(pesan dihapus)</em> : (replyMsg.body ?? "(lampiran)")}
+                              {replyMsg.deleted_at ? <em>(pesan dihapus)</em> : (previewText(replyMsg.body) ?? "(lampiran)")}
                             </div>
                           </div>
                         ) : null}
@@ -810,7 +810,7 @@ function ChatRoomPage() {
                 Balas {replyTo.sender_id === myId ? "Anda" : (profiles.data?.get(replyTo.sender_id)?.display_name || "Pengguna")}
               </div>
               <div className="line-clamp-2 text-muted-foreground">
-                {replyTo.deleted_at ? <em>(pesan dihapus)</em> : (replyTo.body ?? "(lampiran)")}
+                {replyTo.deleted_at ? <em>(pesan dihapus)</em> : (previewText(replyTo.body) ?? "(lampiran)")}
               </div>
             </div>
             <Button
