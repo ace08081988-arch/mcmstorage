@@ -107,6 +107,7 @@ function TugasBaruPage() {
   const [saveState, setSaveState] = useState<"idle" | "pending" | "saved">("idle");
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [savedVisible, setSavedVisible] = useState(false);
+  const [savedReason, setSavedReason] = useState<"auto" | "navigation" | "manual">("auto");
   const [, forceTick] = useState(0);
   const lastSavedRef = useRef<string>("");
   const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone });
@@ -114,14 +115,20 @@ function TugasBaruPage() {
     latestDraftRef.current = { title, note, pin, rows, phone };
   }, [title, note, pin, rows, phone]);
 
-  const flushDraft = useCallback(() => {
+  const flushDraft = useCallback((reason: "auto" | "navigation" | "manual" = "auto") => {
     const cur = JSON.stringify(latestDraftRef.current);
-    if (cur === lastSavedRef.current) { setSaveState("saved"); setSavedVisible(true); return false; }
+    if (cur === lastSavedRef.current) {
+      setSaveState("saved");
+      setSavedVisible(true);
+      setSavedReason(reason);
+      return false;
+    }
     saveDraft(latestDraftRef.current);
     lastSavedRef.current = cur;
     setSaveState("saved");
     setSavedAt(Date.now());
     setSavedVisible(true);
+    setSavedReason(reason);
     return true;
   }, []);
 
@@ -154,11 +161,11 @@ function TugasBaruPage() {
     const snapshot = JSON.stringify(latestDraftRef.current);
     if (snapshot === lastSavedRef.current) return;
     setSaveState("pending");
-    const t = window.setTimeout(flushDraft, 600);
-    const onHide = () => { if (document.visibilityState === "hidden") flushDraft(); };
-    const onBeforeUnload = () => { flushDraft(); };
-    const onPageHide = () => { flushDraft(); };
-    const onPopState = () => { flushDraft(); };
+    const t = window.setTimeout(() => flushDraft("auto"), 600);
+    const onHide = () => { if (document.visibilityState === "hidden") flushDraft("navigation"); };
+    const onBeforeUnload = () => { flushDraft("navigation"); };
+    const onPageHide = () => { flushDraft("navigation"); };
+    const onPopState = () => { flushDraft("navigation"); };
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("beforeunload", onBeforeUnload);
     window.addEventListener("pagehide", onPageHide);
@@ -175,7 +182,7 @@ function TugasBaruPage() {
   // Flush draft when this route unmounts (any SPA navigation away,
   // including programmatic <Link> clicks and router.history.back()).
   useEffect(() => {
-    return () => { flushDraft(); };
+    return () => { flushDraft("navigation"); };
   }, [flushDraft]);
 
   // Confirm before leaving the page while a save is still pending.
