@@ -101,21 +101,23 @@ function TugasBaruPage() {
     latestDraftRef.current = { title, note, pin, rows, phone };
   }, [title, note, pin, rows, phone]);
 
+  const flushDraft = useCallback(() => {
+    const cur = JSON.stringify(latestDraftRef.current);
+    if (cur === lastSavedRef.current) { setSaveState("saved"); return false; }
+    saveDraft(latestDraftRef.current);
+    lastSavedRef.current = cur;
+    setSaveState("saved");
+    return true;
+  }, []);
+
   useEffect(() => {
     if (created) return;
     const snapshot = JSON.stringify(latestDraftRef.current);
     if (snapshot === lastSavedRef.current) return;
     setSaveState("pending");
-    const flush = () => {
-      const cur = JSON.stringify(latestDraftRef.current);
-      if (cur === lastSavedRef.current) { setSaveState("saved"); return; }
-      saveDraft(latestDraftRef.current);
-      lastSavedRef.current = cur;
-      setSaveState("saved");
-    };
-    const t = window.setTimeout(flush, 600);
-    const onHide = () => { if (document.visibilityState === "hidden") flush(); };
-    const onBeforeUnload = () => flush();
+    const t = window.setTimeout(flushDraft, 600);
+    const onHide = () => { if (document.visibilityState === "hidden") flushDraft(); };
+    const onBeforeUnload = () => { flushDraft(); };
     document.addEventListener("visibilitychange", onHide);
     window.addEventListener("beforeunload", onBeforeUnload);
     return () => {
@@ -123,7 +125,7 @@ function TugasBaruPage() {
       document.removeEventListener("visibilitychange", onHide);
       window.removeEventListener("beforeunload", onBeforeUnload);
     };
-  }, [title, note, pin, rows, phone, created]);
+  }, [title, note, pin, rows, phone, created, flushDraft]);
 
   async function verifyWid(key: string, wid: string | null) {
     const seq = (verifySeq.current[key] ?? 0) + 1;
