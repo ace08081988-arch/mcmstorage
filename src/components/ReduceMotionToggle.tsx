@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Gauge, Sparkles, MonitorCog } from "lucide-react";
+import { Gauge, Sparkles, MonitorCog, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 const LS_KEY = "app-reduce-motion";
@@ -103,16 +103,30 @@ export function ReduceMotionToggle() {
   const Icon = mode === "on" ? Gauge : mode === "off" ? Sparkles : MonitorCog;
 
   return (
-    <Button
-      variant="ghost"
-      size="sm"
-      className="h-7 w-full justify-start gap-2 px-2 text-xs"
-      onClick={() => setMode((m) => NEXT[m])}
-      title={meta.title}
-      aria-label={meta.title}
-    >
-      <Icon className="h-3.5 w-3.5" />
-      <span>{meta.label}</span>
-    </Button>
+    <div className="flex w-full items-center gap-1">
+      <Button
+        variant="ghost"
+        size="sm"
+        className="h-7 flex-1 justify-start gap-2 px-2 text-xs"
+        onClick={() => setMode((m) => NEXT[m])}
+        title={meta.title}
+        aria-label={meta.title}
+      >
+        <Icon className="h-3.5 w-3.5" />
+        <span className="truncate">{meta.label}</span>
+      </Button>
+      {mode !== "system" && (
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-7 w-7 shrink-0 p-0"
+          onClick={() => setMode("system")}
+          title="Reset ke sistem (ikuti prefers-reduced-motion)"
+          aria-label="Reset animasi ke pengaturan sistem"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+        </Button>
+      )}
+    </div>
   );
 }
