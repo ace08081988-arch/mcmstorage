@@ -49,6 +49,9 @@ import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
 import { useEntitlement } from "@/hooks/useEntitlement";
 import { ProPaywall } from "@/components/ProPaywall";
+import { AttachMenu } from "@/components/chat/AttachMenu";
+import { MessageAttachment, CardBlock, decodeCard } from "@/components/chat/MessageAttachment";
+import { previewText } from "@/lib/chat-cards";
 
 function ChatProGate() {
   const ent = useEntitlement();
@@ -529,7 +532,26 @@ function ChatRoomPage() {
                         {m.deleted_at ? (
                           <em className="opacity-70">(pesan dihapus)</em>
                         ) : (
-                          <div className="whitespace-pre-wrap break-words">{m.body}</div>
+                          (() => {
+                            const card = decodeCard(m.body);
+                            return (
+                              <div className="space-y-1">
+                                {m.attachment_path ? (
+                                  <MessageAttachment
+                                    path={m.attachment_path}
+                                    mime={m.attachment_mime}
+                                    name={m.attachment_name}
+                                    size={m.attachment_size}
+                                    mine={mine}
+                                  />
+                                ) : null}
+                                {card ? <CardBlock card={card} mine={mine} /> : null}
+                                {!card && m.body ? (
+                                  <div className="whitespace-pre-wrap break-words">{m.body}</div>
+                                ) : null}
+                              </div>
+                            );
+                          })()
                         )}
                         <div className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                           {m.edited_at && !m.deleted_at ? <span className="italic">diedit</span> : null}
@@ -623,7 +645,7 @@ function ChatRoomPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={async () => {
-                                const text = `${senderName}: ${m.body}`;
+                                const text = `${senderName}: ${previewText(m.body) ?? "(lampiran)"}`;
                                 const res = await shareToWhatsApp({ text });
                                 notifyShareResult(res);
                               }}
@@ -804,6 +826,7 @@ function ChatRoomPage() {
           </div>
         ) : null}
         <div className="flex items-end gap-2">
+          <AttachMenu conversationId={conversationId} disabled={chatBlocked} onSent={() => { void othersRead.refetch(); }} />
           <Textarea
             value={body}
             onChange={(e) => {
