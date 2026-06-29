@@ -237,6 +237,16 @@ html.reduce-motion *::after {
   scroll-behavior: auto !important;
 }
 
+/* SVG SMIL (<animate>, <animateTransform>, <animateMotion>) tidak terpengaruh
+   oleh properti CSS di atas. Sembunyikan agar tag SMIL pihak ketiga tidak
+   memutar animasi saat mode "kurangi" aktif. */
+html.reduce-motion animate,
+html.reduce-motion animateTransform,
+html.reduce-motion animateMotion,
+html.reduce-motion set {
+  display: none !important;
+}
+
 /* === Success banner animations (worker portal PIN screen) === */
 @keyframes success-banner-in {
   0%   { opacity: 0; transform: translateY(-8px) scale(0.97); }
