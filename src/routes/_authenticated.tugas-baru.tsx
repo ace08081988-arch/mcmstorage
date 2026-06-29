@@ -50,6 +50,43 @@ function newRow(): Row {
 }
 
 const DRAFT_KEY = "tugas-baru:draft:v1";
+const TOOLTIP_MODE_KEY = "autosave:tooltip-mode:v1";
+type TooltipMode = "ringkas" | "lengkap";
+function loadTooltipMode(): TooltipMode {
+  if (typeof window === "undefined") return "ringkas";
+  try {
+    const v = window.localStorage.getItem(TOOLTIP_MODE_KEY);
+    return v === "lengkap" ? "lengkap" : "ringkas";
+  } catch {
+    return "ringkas";
+  }
+}
+function saveTooltipMode(m: TooltipMode) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(TOOLTIP_MODE_KEY, m);
+  } catch { /* ignore */ }
+}
+function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
+  const [mode, setMode] = useState<TooltipMode>("ringkas");
+  useEffect(() => { setMode(loadTooltipMode()); }, []);
+  const update = useCallback((m: TooltipMode) => {
+    setMode(m);
+    saveTooltipMode(m);
+    try {
+      window.dispatchEvent(new CustomEvent("autosave-tooltip-mode", { detail: m }));
+    } catch {}
+  }, []);
+  useEffect(() => {
+    const onChange = (e: Event) => {
+      const detail = (e as CustomEvent).detail as TooltipMode | undefined;
+      if (detail === "ringkas" || detail === "lengkap") setMode(detail);
+    };
+    window.addEventListener("autosave-tooltip-mode", onChange);
+    return () => window.removeEventListener("autosave-tooltip-mode", onChange);
+  }, []);
+  return [mode, update];
+}
 type Draft = { title: string; note: string; pin: string; rows: Row[]; phone: string };
 function loadDraft(): Draft | null {
   if (typeof window === "undefined") return null;
@@ -109,6 +146,7 @@ function TugasBaruPage() {
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [savedVisible, setSavedVisible] = useState(false);
   const [savedReason, setSavedReason] = useState<"auto" | "navigation" | "manual">("auto");
+  const [tooltipMode, setTooltipMode] = useTooltipMode();
   const [, forceTick] = useState(0);
   const lastSavedRef = useRef<string>("");
   const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone });
@@ -426,8 +464,11 @@ function TugasBaruPage() {
         </div>
       ) : (
         <div className="space-y-3 rounded-lg border bg-card p-4 text-sm">
-          <SaveIndicator state={saveState} savedAt={savedAt} visible={savedVisible} reason={savedReason} />
-          <LastSavedSummary savedAt={savedAt} reason={savedReason} />
+          <div className="flex items-start justify-between gap-2">
+            <SaveIndicator state={saveState} savedAt={savedAt} visible={savedVisible} reason={savedReason} tooltipMode={tooltipMode} />
+            <TooltipModeToggle mode={tooltipMode} onChange={setTooltipMode} />
+          </div>
+          <LastSavedSummary savedAt={savedAt} reason={savedReason} tooltipMode={tooltipMode} />
           <AutosaveAnnouncer state={saveState} savedAt={savedAt} reason={savedReason} />
           {restored ? (
             <div className="flex items-start justify-between gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-3 py-2 text-[11px] text-emerald-900 dark:text-emerald-200">
@@ -722,7 +763,11 @@ function reasonMeta(reason: "auto" | "navigation" | "manual") {
  * so the absolute stamp, relative time, timezone label, and reason copy stay
  * in lockstep.
  */
-function describeSaved(savedAt: number | null, reason: "auto" | "navigation" | "manual") {
+function describeSaved(
+  savedAt: number | null,
+  reason: "auto" | "navigation" | "manual",
+  tooltipMode: TooltipMode = "ringkas",
+) {
   const meta = reasonMeta(reason);
   if (!savedAt) {
     return {
@@ -746,10 +791,19 @@ function describeSaved(savedAt: number | null, reason: "auto" | "navigation" | "
     tz.source === "locale" ? "locale id-ID"
     : tz.source === "browser" ? "browser default"
     : "fallback offset UTC";
-  // Tooltip ringkas: hanya stamp + zona waktu + alasan.
-  // Detail lengkap (IANA, offset, sumber label, ISO, epoch) dipindah ke
-  // popover info `SavedDetailsPopover` agar tooltip tidak penuh.
-  const tooltip = `${stamp} · ${tz.label} · ${meta.label}`;
+  // Mode ringkas: stamp · zona waktu · alasan (satu baris).
+  // Mode lengkap: tampilkan semua detail langsung di tooltip native tanpa
+  // perlu membuka popover. Detail penuh tetap tersedia di SavedDetailsPopover.
+  const tooltip =
+    tooltipMode === "lengkap"
+      ? [
+          `Tersimpan terakhir ${stamp}`,
+          `Relatif: ${ago}`,
+          `Alasan: ${meta.label}`,
+          `Zona waktu: ${tz.label} (${tz.iana}, ${tz.offset})`,
+          `Sumber label: ${sourceLabel}`,
+        ].join("\n")
+      : `${stamp} · ${tz.label} · ${meta.label}`;
   const copyText = [
     `Tersimpan terakhir: ${stamp}`,
     `Relatif: ${ago}`,
@@ -774,8 +828,8 @@ function describeSaved(savedAt: number | null, reason: "auto" | "navigation" | "
   };
 }
 
-function LastSavedSummary({ savedAt, reason }: { savedAt: number | null; reason: "auto" | "navigation" | "manual" }) {
-  const info = describeSaved(savedAt, reason);
+function LastSavedSummary({ savedAt, reason, tooltipMode }: { savedAt: number | null; reason: "auto" | "navigation" | "manual"; tooltipMode: TooltipMode }) {
+  const info = describeSaved(savedAt, reason, tooltipMode);
   return (
     <div
       className="flex flex-wrap items-center gap-1.5 text-[11px] text-muted-foreground"
@@ -861,6 +915,41 @@ function SavedDetailsPopover({ info }: { info: ReturnType<typeof describeSaved> 
   );
 }
 
+function TooltipModeToggle({ mode, onChange }: { mode: TooltipMode; onChange: (m: TooltipMode) => void }) {
+  return (
+    <div
+      className="flex items-center gap-1 text-[10px] text-muted-foreground"
+      role="group"
+      aria-label="Mode tooltip autosave"
+    >
+      <span className="mr-1">Tooltip:</span>
+      {(["ringkas", "lengkap"] as const).map((m) => {
+        const active = mode === m;
+        return (
+          <button
+            key={m}
+            type="button"
+            onClick={() => onChange(m)}
+            aria-pressed={active}
+            className={`rounded-sm border px-1.5 py-px capitalize transition ${
+              active
+                ? "border-foreground/30 bg-foreground/10 text-foreground"
+                : "border-transparent hover:bg-muted"
+            }`}
+            title={
+              m === "ringkas"
+                ? "Tooltip ringkas: stamp · zona waktu · alasan"
+                : "Tooltip lengkap: tampilkan semua detail di tooltip"
+            }
+          >
+            {m}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
 function AutosaveAnnouncer({
   state,
   savedAt,
@@ -890,7 +979,7 @@ function AutosaveAnnouncer({
   );
 }
 
-function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean; reason: "auto" | "navigation" | "manual" }) {
+function SaveIndicator({ state, savedAt, visible, reason, tooltipMode }: { state: "idle" | "pending" | "saved"; savedAt: number | null; visible: boolean; reason: "auto" | "navigation" | "manual"; tooltipMode: TooltipMode }) {
   const show = state === "pending" || (state === "saved" && visible);
   // Keep the last non-idle content mounted during the fade-out so the
   // text doesn't blank out before the opacity transition finishes.
@@ -899,7 +988,7 @@ function SaveIndicator({ state, savedAt, visible, reason }: { state: "idle" | "p
     reason === "navigation" ? "Disimpan karena navigasi"
     : reason === "manual" ? "Disimpan manual"
     : null;
-  const info = describeSaved(savedAt, reason);
+  const info = describeSaved(savedAt, reason, tooltipMode);
   const savedStamp = info.stamp;
   const content =
     state === "pending" ? (
