@@ -285,18 +285,26 @@ export function useConversations() {
   // Realtime: refresh on any message or membership change
   useEffect(() => {
     if (!myId) return;
-    const ch = supabase
-      .channel(`chat-list:${myId}:${channelInstanceRef.current}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
-        qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
-        qc.invalidateQueries({ queryKey: ["chat", "unread-total"] });
-      })
-      .on("postgres_changes", { event: "*", schema: "public", table: "conversation_members", filter: `user_id=eq.${myId}` }, () => {
-        qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
-      })
-      .subscribe();
+    const refreshChat = () => {
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+      qc.invalidateQueries({ queryKey: ["chat", "unread-total"] });
+    };
+    const topic = `chat-list:${myId}:${channelInstanceRef.current}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+    let ch: ReturnType<typeof supabase.channel> | null = null;
+    try {
+      ch = supabase
+        .channel(topic)
+        .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, refreshChat)
+        .on("postgres_changes", { event: "*", schema: "public", table: "conversation_members", filter: `user_id=eq.${myId}` }, refreshChat)
+        .subscribe();
+    } catch (err) {
+      // Realtime should never break opening the chat page. The query still
+      // refetches on focus/online and manual refresh if live subscription fails.
+      console.warn("[chat] realtime chat-list subscription skipped:", err);
+      return;
+    }
     return () => {
-      supabase.removeChannel(ch);
+      if (ch) void supabase.removeChannel(ch);
     };
   }, [myId, qc]);
 
