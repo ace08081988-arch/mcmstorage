@@ -27,12 +27,14 @@ function isInDndWindow(now, start, end) {
 }
 
 async function appAlreadyFocusedFor(conversationId) {
+  // Hanya tekan notifikasi bila percakapan yang SAMA sedang difokuskan.
+  // Untuk notif non-chat (atau chat tanpa conversationId), selalu tampilkan.
+  if (!conversationId) return false;
   const clients = await self.clients.matchAll({ type: "window", includeUncontrolled: true });
   for (const c of clients) {
     if (!c.focused) continue;
     try {
       const u = new URL(c.url);
-      if (!conversationId) return true;
       if (u.pathname === `/chat/${conversationId}`) return true;
     } catch (_) {}
   }
