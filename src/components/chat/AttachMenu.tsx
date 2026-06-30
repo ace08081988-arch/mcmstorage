@@ -602,13 +602,13 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
               <X className="mr-1 h-4 w-4" /> Batal
             </Button>
             {selectMode && selected.size > 0 && !busy ? (
-              <Button variant="destructive" onClick={removeSelectedPending}>
+              <Button variant="destructive" onClick={() => setConfirmDelete("selected")}>
                 <Trash2 className="mr-1 h-4 w-4" />
                 Hapus terpilih ({selected.size})
               </Button>
             ) : null}
             {!selectMode && (pending?.length ?? 0) > 1 && !busy ? (
-              <Button variant="outline" onClick={removeAllPending} aria-label="Hapus semua lampiran">
+              <Button variant="outline" onClick={() => setConfirmDelete("all")} aria-label="Hapus semua lampiran">
                 <Trash2 className="mr-1 h-4 w-4" />
                 Hapus semua
               </Button>
