@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { StatusBadge } from "@/components/StatusBadge";
 import {
   Dialog,
   DialogContent,
@@ -618,25 +619,23 @@ function HutangPiutangPage() {
                       >
                         <div className="flex items-start gap-2">
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="truncate font-medium">
+                            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1">
+                              <span className="min-w-0 max-w-full truncate font-medium">
                                 {d.party_name}
                               </span>
                               {d.source !== "manual" && (
-                                <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase text-muted-foreground">
-                                  {d.source === "purchase"
-                                    ? "pembelian"
-                                    : "penjualan"}
-                                </span>
+                                <StatusBadge
+                                  size="xs"
+                                  variant="info"
+                                  className="max-w-[7rem]"
+                                >
+                                  {d.source === "purchase" ? "Pembelian" : "Penjualan"}
+                                </StatusBadge>
                               )}
                               {lunas ? (
-                                <span className="rounded bg-emerald-100 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
-                                  Lunas
-                                </span>
+                                <StatusBadge size="xs" variant="lunas">Lunas</StatusBadge>
                               ) : overdue ? (
-                                <span className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-medium text-red-700 dark:bg-red-900/40 dark:text-red-300">
-                                  Telat
-                                </span>
+                                <StatusBadge size="xs" variant="danger">Telat</StatusBadge>
                               ) : null}
                             </div>
                             {d.note && (
