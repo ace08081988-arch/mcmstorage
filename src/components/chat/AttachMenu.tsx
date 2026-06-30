@@ -794,7 +794,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 </AlertDialogHeader>
                 {targets.length > 0 ? (
                   <ul className={`${showAllDelete ? "max-h-64" : "max-h-44"} overflow-y-auto rounded-md border bg-muted/30 p-2 text-[12px]`}>
-                    {(showAllDelete ? targets : targets.slice(0, previewLimit)).map((p) => {
+                    {shown.map((p) => {
                       const st = statuses[p.id]?.state ?? "idle";
                       const preflight = statuses[p.id]?.preflight;
                       const isLocked = st === "uploading";
