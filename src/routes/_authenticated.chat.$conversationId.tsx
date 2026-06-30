@@ -1189,6 +1189,102 @@ function ChatRoomPage() {
           onLeft={() => navigate({ to: "/chat" })}
         />
       ) : null}
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedMessages.length} pesan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Pilih cara penghapusan. “Hapus untuk semua orang” hanya berlaku untuk pesan yang Anda kirim.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              disabled={hideMsg.isPending}
+              onClick={async () => {
+                for (const m of selectedMessages) {
+                  await new Promise<void>((resolve) =>
+                    hideMsg.mutate(m.id, { onSuccess: () => resolve(), onError: () => resolve() }),
+                  );
+                }
+                toast.success(`${selectedMessages.length} pesan disembunyikan`);
+                setBulkDeleteOpen(false);
+                clearSelection();
+              }}
+            >
+              <EyeOff className="mr-2 h-4 w-4" /> Hapus untuk saya
+            </Button>
+            {allMineSelected ? (
+              <Button
+                variant="destructive"
+                className="w-full justify-start"
+                disabled={deleteMsg.isPending}
+                onClick={async () => {
+                  for (const m of selectedMessages) {
+                    await new Promise<void>((resolve) =>
+                      deleteMsg.mutate(
+                        { id: m.id, attachment_path: m.attachment_path },
+                        { onSuccess: () => resolve(), onError: () => resolve() },
+                      ),
+                    );
+                  }
+                  toast.success(`${selectedMessages.length} pesan dihapus`);
+                  setBulkDeleteOpen(false);
+                  clearSelection();
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Hapus untuk semua orang
+              </Button>
+            ) : null}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <MessageInfoDialog
+        open={infoOpen}
+        onOpenChange={setInfoOpen}
+        message={onlyOne}
+        senderName={(() => {
+          if (!onlyOne) return "";
+          const sp = profiles.data?.get(onlyOne.sender_id);
+          return onlyOne.sender_id === myId
+            ? "Anda"
+            : (sp?.display_name || sp?.email || "Pengguna");
+        })()}
+        readAtMs={othersRead.data}
+      />
+
+      <SecurityCodeDialog
+        open={securityOpen}
+        onOpenChange={setSecurityOpen}
+        conversationId={conversationId}
+        memberIds={members.data ?? []}
+      />
+
+      <TranslateDialog
+        open={translateSource !== null}
+        onOpenChange={(v) => { if (!v) setTranslateSource(null); }}
+        source={translateSource ?? ""}
+      />
+
+      <SaveAsNoteDialog
+        open={noteSource !== null}
+        onOpenChange={(v) => { if (!v) setNoteSource(null); }}
+        defaultBody={previewText(noteSource?.body ?? null) ?? ""}
+        conversationId={conversationId}
+        sourceMessageId={noteSource?.id}
+      />
+
+      <SaveAsQuickReplyDialog
+        open={qrSource !== null}
+        onOpenChange={(v) => { if (!v) setQrSource(null); }}
+        defaultBody={qrSource ?? ""}
+      />
     </div>
   );
 }
