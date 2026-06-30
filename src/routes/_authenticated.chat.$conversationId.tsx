@@ -1140,7 +1140,10 @@ function ChatRoomPage() {
                   label: "Semua pesan Anda akan dihapus",
                   onCommit: () =>
                     deleteAllMine.mutate(undefined, {
-                      onSuccess: (n) => toast.success(`${n} pesan dihapus`),
+                      onSuccess: (n) => {
+                        toast.success(`${n} pesan dihapus`);
+                        void logChatDelete({ conversationId, action: "all_mine", count: n });
+                      },
                       onError: (err) =>
                         toast.error(err instanceof Error ? err.message : "Gagal menghapus"),
                     }),
@@ -1181,7 +1184,10 @@ function ChatRoomPage() {
                   label: "Pesan akan disembunyikan",
                   onCommit: () =>
                     hideMsg.mutate(target.id, {
-                      onSuccess: () => toast.success("Pesan disembunyikan untuk Anda"),
+                      onSuccess: () => {
+                        toast.success("Pesan disembunyikan untuk Anda");
+                        void logChatDelete({ conversationId, action: "for_me", messageId: target.id });
+                      },
                       onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
                     }),
                 });
@@ -1205,7 +1211,10 @@ function ChatRoomPage() {
                       deleteMsg.mutate(
                         { id: target.id, attachment_path: target.attachment_path },
                         {
-                          onSuccess: () => toast.success("Pesan dihapus untuk semua"),
+                          onSuccess: () => {
+                            toast.success("Pesan dihapus untuk semua");
+                            void logChatDelete({ conversationId, action: "for_all", messageId: target.id });
+                          },
                           onError: (e) =>
                             toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
                         },
@@ -1265,6 +1274,11 @@ function ChatRoomPage() {
                       );
                     }
                     toast.success(`${items.length} pesan disembunyikan`);
+                    void logChatDelete({
+                      conversationId,
+                      action: "for_me_bulk",
+                      messageIds: items.map((m) => m.id),
+                    });
                   },
                 });
               }}
@@ -1292,6 +1306,11 @@ function ChatRoomPage() {
                         );
                       }
                       toast.success(`${items.length} pesan dihapus`);
+                      void logChatDelete({
+                        conversationId,
+                        action: "for_all_bulk",
+                        messageIds: items.map((m) => m.id),
+                      });
                     },
                   });
                 }}
