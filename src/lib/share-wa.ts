@@ -10,6 +10,13 @@ export type ShareInput = {
   files?: File[];
   /** Optional phone in international format (without +), used only in fallback. */
   phone?: string;
+  /** Total foto yang diharapkan dilampirkan (>= files.length). Selisihnya muncul
+   *  di pratinjau sebagai "X foto gagal diunduh" beserta tombol retry. */
+  expectedCount?: number;
+  /** Dipanggil saat user menekan "Coba ambil ulang" di pratinjau. Caller wajib
+   *  mengembalikan File[] tambahan yang berhasil diambil pada percobaan ini —
+   *  helper akan menambahkannya ke array `files`. */
+  retryMissing?: () => Promise<File[]>;
 };
 
 import { toast } from "sonner";
@@ -106,15 +113,16 @@ export type ShareResult =
 
 export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   let { text } = input;
-  const { title, url, files, phone } = input;
+  const { title, url, files, phone, expectedCount, retryMissing } = input;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
-  const hasFiles = !!(files && files.length > 0);
-
-  // Pratinjau pesan + daftar foto sebelum benar-benar membuka WA.
-  const approved = await confirmWaShare({ text, url, files });
+  // Pratinjau pesan + daftar foto sebelum benar-benar membuka WA. Pratinjau
+  // dapat menambah file via retryMissing (memutasi array `files`), jadi cek
+  // `hasFiles` SETELAH konfirmasi.
+  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing });
   if (!approved.ok) return { status: "cancelled" };
   if (typeof approved.text === "string") text = approved.text;
+  const hasFiles = !!(files && files.length > 0);
 
   // Native Android/iOS: pakai Capacitor Share + Filesystem agar foto benar-benar
   // terlampir di WhatsApp (Web Share API kerap menjatuhkan files di WebView).
