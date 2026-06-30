@@ -617,6 +617,14 @@ function ChatRoomPage() {
               </DropdownMenuItem>
             ) : null}
             <DropdownMenuItem
+              onSelect={() =>
+                navigate({ to: "/chat-audit", search: { c: conversationId } })
+              }
+            >
+              <History className="mr-2 h-4 w-4" />
+              Log hapus pesan
+            </DropdownMenuItem>
+            <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onSelect={() => setConfirmAllOpen(true)}
             >
