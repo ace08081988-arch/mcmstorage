@@ -3,6 +3,8 @@ import { CheckCircle2, Loader2, MapPin, Send, XCircle, AlertTriangle, RefreshCw,
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
 import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
+import type { SendPayloadSummary } from "@/lib/idempotency";
+import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 
 export type ChatSharePreviewData = {
   conversationTitle: string;
@@ -27,6 +29,9 @@ export type ChatShareDuplicateInfo = {
    *  dengan payload saat ini agar tombol "Kirim ulang (paksa)" hanya aktif
    *  saat konten benar-benar sama. */
   fingerprint?: string;
+  /** Ringkasan payload kiriman sebelumnya — dipakai untuk menampilkan
+   *  detail PERBEDAAN field saat fingerprint tidak cocok. */
+  summary?: SendPayloadSummary;
 };
 
 /** Status hidup pengiriman ke chat — dipakai untuk menampilkan progres di dialog. */
@@ -78,6 +83,7 @@ export function ChatSharePreviewDialog({
   onForceSend,
   previousLog,
   currentFingerprint,
+  currentSummary,
   idemIdsKey,
 }: {
   open: boolean;
@@ -92,6 +98,8 @@ export function ChatSharePreviewDialog({
   previousLog?: SendLogEntry[];
   /** Fingerprint payload yang akan dikirim sekarang. */
   currentFingerprint?: string;
+  /** Ringkasan payload yang akan dikirim sekarang — untuk diff payload. */
+  currentSummary?: SendPayloadSummary;
   /** Daftar shot ID (ter-sort, koma) yang dipakai untuk melacak idempotency
    *  lintas channel — bila WA/Chat untuk shot yang sama sedang in-flight,
    *  banner dan tombol dialog ini ikut tersinkron secara real-time. */
@@ -116,6 +124,7 @@ export function ChatSharePreviewDialog({
         status: live.status,
         destination: duplicate?.destination,
         fingerprint: live.fingerprint,
+        summary: live.summary ?? duplicate?.summary,
       }
     : duplicate) ?? null;
   const crossChannel = !!live && liveChannel === "wa";
@@ -185,6 +194,9 @@ export function ChatSharePreviewDialog({
                       ? "Payload identik dengan kiriman sebelumnya — aman untuk dikirim ulang bila perlu."
                       : forceDisabledReason}
                   </div>
+                ) : null}
+                {effectiveDup.status !== "in-flight" && !payloadMatches ? (
+                  <SendPayloadDiff previous={effectiveDup.summary} current={currentSummary} />
                 ) : null}
                 </div>
               </div>
