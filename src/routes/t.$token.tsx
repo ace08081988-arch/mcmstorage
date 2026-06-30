@@ -207,15 +207,17 @@ function PublicPrepPage() {
   useEffect(() => {
     if (!authed || resyncing) return;
     const age = lastSyncAt ? (Date.now() - lastSyncAt) / 1000 : null;
-    const isStale = rtStatus === "error" || (age != null && age > 90);
-    const isLag = !isStale && age != null && age > 30;
+    const isStale = rtStatus === "error" || (age != null && age > cfg.staleThresholdSec);
+    const isLag = !isStale && age != null && age > cfg.lagThresholdSec;
     if (!isStale && !isLag) {
       autoResyncRef.current.failCount = 0;
       return;
     }
     // Cooldown backoff: lag 10 dtk; stale mulai 5 dtk, naik hingga 30 dtk.
     const fc = autoResyncRef.current.failCount;
-    const cooldownMs = isStale ? Math.min(30000, 5000 * Math.pow(2, fc)) : 10000;
+    const cooldownMs = isStale
+      ? Math.min(cfg.staleCooldownMaxMs, cfg.staleCooldownBaseMs * Math.pow(2, fc))
+      : cfg.lagCooldownMs;
     if (Date.now() - autoResyncRef.current.lastAt < cooldownMs) return;
     autoResyncRef.current.lastAt = Date.now();
     const prevSync = lastSyncAt;
