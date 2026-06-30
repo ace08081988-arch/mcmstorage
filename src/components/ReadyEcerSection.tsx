@@ -915,6 +915,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     conversationId: string;
     conversationTitle: string;
     idemKey: string;
+    idemIdsKey: string;
     caption: string;
     locationUrl: string | null;
     chatShots: { id: string; file: File; caption?: string }[];
@@ -940,6 +941,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       return;
     }
     const take = shots.slice(0, 6);
+    const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
     const idemKey = buildSendKey({ channel: "wa", ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
     const duplicateRec: IdemRecord | null = existing && existing.status !== "failed" ? existing : null;
@@ -1016,6 +1018,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             duplicate,
             previousLog,
             currentFingerprint: waFingerprint,
+            idemIdsKey,
           });
       // Saat duplikat aktif: bypass withIdempotency agar pratinjau (yang sekarang
       // memuat peringatan "Klik ganda terdeteksi") selalu tampil. Jika operator
@@ -1089,6 +1092,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       return;
     }
     const take = shots.slice(0, 6);
+    const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
     const idemKey = buildSendKey({ channel: "chat", conversationId, ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
     const duplicate: ChatShareDuplicateInfo | null =
@@ -1156,6 +1160,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         conversationId,
         conversationTitle: convTitle,
         idemKey,
+        idemIdsKey,
         caption,
         locationUrl: firstLocation,
         chatShots,
@@ -1478,6 +1483,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         onForceSend={() => { void confirmChatSend({ force: true }); }}
         previousLog={chatPreview?.previousLog ?? []}
         currentFingerprint={chatPreview?.fingerprint}
+        idemIdsKey={chatPreview?.idemIdsKey}
       />
     </div>
   );

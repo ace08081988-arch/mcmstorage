@@ -34,6 +34,8 @@ export type ShareInput = {
   currentFingerprint?: string;
   /** Log langkah dari kiriman sebelumnya untuk tombol "Lihat log" di pratinjau. */
   previousLog?: import("./send-log").SendLogEntry[];
+  /** Daftar shot ID (sorted, koma) untuk sinkronisasi idempotency lintas channel. */
+  idemIdsKey?: string;
 };
 
 import { toast } from "sonner";
@@ -130,13 +132,13 @@ export type ShareResult =
 
 export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   let { text } = input;
-  const { title, url, files, phone, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint } = input;
+  const { title, url, files, phone, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, idemIdsKey } = input;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
   // Pratinjau pesan + daftar foto sebelum benar-benar membuka WA. Pratinjau
   // dapat menambah file via retryMissing (memutasi array `files`), jadi cek
   // `hasFiles` SETELAH konfirmasi.
-  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint });
+  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, idemIdsKey });
   if (!approved.ok) return { status: "cancelled" };
   if (typeof approved.text === "string") text = approved.text;
   const hasFiles = !!(files && files.length > 0);

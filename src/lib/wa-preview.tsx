@@ -13,6 +13,7 @@ import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, Rotat
 import { toast } from "sonner";
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
+import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
@@ -44,6 +45,8 @@ type Request = {
    *  jika payload-nya benar-benar sama. */
   currentFingerprint?: string;
   previousLog?: SendLogEntry[];
+  /** Daftar shot ID (sorted, koma) untuk sinkronisasi idempotency lintas channel. */
+  idemIdsKey?: string;
   resolve: (result: { ok: boolean; text?: string; force?: boolean }) => void;
 };
 
@@ -64,6 +67,7 @@ export function confirmWaShare(input: {
   duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string; fingerprint?: string } | null;
   currentFingerprint?: string;
   previousLog?: SendLogEntry[];
+  idemIdsKey?: string;
 }): Promise<{ ok: boolean; text?: string; force?: boolean }> {
   // Tampilkan pratinjau saat klik ganda terdeteksi, meski user pernah meminta "jangan
   // tampilkan lagi" — operator perlu lihat peringatan duplikat & tombol force.
@@ -139,7 +143,13 @@ export function WaPreviewHost() {
   const expected = current?.expectedCount ?? photoCount;
   const missing = Math.max(0, expected - photoCount);
   const canRetry = !!current?.retryMissing && missing > 0;
-  const dup = current?.duplicate ?? null;
+  const live = useLiveIdemByIds(current?.idemIdsKey);
+  const liveChannel = live ? channelFromKey(live.key) : "unknown";
+  const crossChannel = !!live && liveChannel === "chat";
+  const snapshotDup = current?.duplicate ?? null;
+  const dup = live
+    ? { at: live.at, status: live.status, destination: snapshotDup?.destination, fingerprint: live.fingerprint }
+    : snapshotDup;
   const dupActive = !!dup && dup.status !== "failed";
   // Tombol "Kirim ulang (paksa)" hanya boleh aktif jika fingerprint payload
   // saat ini sama dengan fingerprint payload kiriman sebelumnya. Bila salah
@@ -212,20 +222,22 @@ export function WaPreviewHost() {
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">
                   {dup!.status === "in-flight"
-                    ? "Klik ganda terdeteksi — kiriman WA sebelumnya masih berjalan."
+                    ? (crossChannel
+                        ? "Kiriman Chat untuk paket ini sedang berjalan."
+                        : "Klik ganda terdeteksi — kiriman WA sebelumnya masih berjalan.")
                     : "Klik ganda terdeteksi — paket ini baru saja dikirim ke WA."}
                 </div>
                 <div className="mt-0.5 opacity-90">
                   {dup!.status === "in-flight"
-                    ? `Dimulai ${dupAgoLabel}. Tunggu hingga selesai agar tidak terkirim dua kali.`
+                    ? `Dimulai ${dupAgoLabel}. Tombol "Kirim WA" dinonaktifkan hingga ${crossChannel ? "kiriman Chat" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
                     : `Dikirim ${dupAgoLabel}. Tombol "Kirim WA" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
                 </div>
                 <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
                   <dt className="font-medium opacity-80">Waktu</dt>
                   <dd className="break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
-                  {dup!.destination ? (<>
+                  {dup!.destination || crossChannel ? (<>
                     <dt className="font-medium opacity-80">Tujuan</dt>
-                    <dd className="break-words">{dup!.destination}</dd>
+                    <dd className="break-words">{dup!.destination ?? "—"}{crossChannel ? " · via Chat" : ""}</dd>
                   </>) : null}
                   <dt className="font-medium opacity-80">Status</dt>
                   <dd className="break-words">{dupStatusLabel}</dd>
@@ -394,7 +406,7 @@ export function WaPreviewHost() {
                 disabled={dup!.status === "in-flight" || !payloadMatches}
                 title={
                   dup!.status === "in-flight"
-                    ? "Kiriman sebelumnya masih berjalan"
+                    ? (crossChannel ? "Kiriman Chat untuk paket ini masih berjalan" : "Kiriman sebelumnya masih berjalan")
                     : !payloadMatches
                       ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                       : "Kirim ulang meski klik ganda terdeteksi"
@@ -409,10 +421,12 @@ export function WaPreviewHost() {
                 type="button"
                 size="sm"
                 onClick={() => finish(true)}
+                disabled={live?.status === "in-flight"}
+                title={live?.status === "in-flight" ? (crossChannel ? "Kiriman Chat untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
                 className="bg-emerald-600 text-white hover:bg-emerald-700"
               >
                 <Send className="mr-1.5 h-3.5 w-3.5" />
-                Kirim WA
+                {live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim WA"}
               </Button>
             )}
           </div>

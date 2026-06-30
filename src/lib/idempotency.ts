@@ -9,6 +9,7 @@
  * dipotong oleh trigger DB saat foto/penyiapan dibuat. Guard ini fokus pada
  * sisi kirim agar tidak ada double-write.
  */
+import { useSyncExternalStore } from "react";
 const KEY = "send-idempotency:v1";
 const EVENT = "send-idempotency:changed";
 const TTL_MS = 5 * 60 * 1000;       // 5 menit
@@ -16,6 +17,75 @@ const MAX_ENTRIES = 200;
 
 export type IdemStatus = "in-flight" | "done" | "failed";
 export type IdemRecord = { key: string; at: number; status: IdemStatus; note?: string; fingerprint?: string };
+
+/** Channel turunan dari `key` (`wa:` atau `chat:<convId>:`). */
+export function channelFromKey(key: string): "wa" | "chat" | "unknown" {
+  if (key.startsWith("wa:")) return "wa";
+  if (key.startsWith("chat:")) return "chat";
+  return "unknown";
+}
+
+/** Ambil suffix daftar ID dari key (bagian setelah `:` terakhir). */
+function idsSuffix(key: string): string {
+  const i = key.lastIndexOf(":");
+  return i >= 0 ? key.slice(i + 1) : key;
+}
+
+/**
+ * Cari record idempotency aktif (status apapun) untuk daftar ID yang sama
+ * — lintas channel (WA atau Chat) — sehingga dialog pratinjau di salah satu
+ * channel bisa mengetahui bila channel lain sedang in-flight untuk shot yang
+ * sama. Prioritas: in-flight > done > failed, lalu paling baru.
+ */
+export function findIdemByIds(idsKey: string): IdemRecord | null {
+  if (!idsKey) return null;
+  const m = readAll();
+  let best: IdemRecord | null = null;
+  const rank = (s: IdemStatus) => (s === "in-flight" ? 2 : s === "done" ? 1 : 0);
+  const now = Date.now();
+  for (const rec of m.values()) {
+    if (now - rec.at > TTL_MS) continue;
+    if (idsSuffix(rec.key) !== idsKey) continue;
+    if (!best) { best = rec; continue; }
+    const a = rank(rec.status), b = rank(best.status);
+    if (a > b || (a === b && rec.at > best.at)) best = rec;
+  }
+  return best;
+}
+
+function subscribeIdem(cb: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const onEvt = () => cb();
+  const onStorage = (e: StorageEvent) => { if (e.key === KEY) cb(); };
+  window.addEventListener(EVENT, onEvt);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(EVENT, onEvt);
+    window.removeEventListener("storage", onStorage);
+  };
+}
+
+/**
+ * React hook: lacak record idempotency lintas channel untuk `idsKey`
+ * (string ID ter-sort & ter-dedup, dipisah koma). Berubah otomatis saat
+ * ada `setIdem`/`clearIdem` dari mana pun dalam tab yang sama maupun tab
+ * lain — dipakai dialog pratinjau Chat/WA agar status in-flight di salah
+ * satu channel langsung menonaktifkan tombol kirim di channel lainnya.
+ */
+export function useLiveIdemByIds(idsKey: string | undefined | null): IdemRecord | null {
+  const key = idsKey ?? "";
+  const subscribe = (cb: () => void) => subscribeIdem(cb);
+  const getSnapshot = () => {
+    const r = findIdemByIds(key);
+    // Stabilkan referensi snapshot untuk useSyncExternalStore: kembalikan
+    // string serialisasi sederhana untuk perbandingan, lalu rebuild object.
+    return r ? `${r.key}|${r.at}|${r.status}|${r.fingerprint ?? ""}` : "";
+  };
+  const snap = useSyncExternalStore(subscribe, getSnapshot, () => "");
+  if (!snap) return null;
+  // Rebuild dari readAll (data lengkap), bukan dari string snapshot.
+  return findIdemByIds(key);
+}
 
 function readAll(): Map<string, IdemRecord> {
   if (typeof window === "undefined") return new Map();

@@ -2,6 +2,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { CheckCircle2, Loader2, MapPin, Send, XCircle, AlertTriangle, RefreshCw, ShieldAlert } from "lucide-react";
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
+import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
 
 export type ChatSharePreviewData = {
   conversationTitle: string;
@@ -77,6 +78,7 @@ export function ChatSharePreviewDialog({
   onForceSend,
   previousLog,
   currentFingerprint,
+  idemIdsKey,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -90,6 +92,10 @@ export function ChatSharePreviewDialog({
   previousLog?: SendLogEntry[];
   /** Fingerprint payload yang akan dikirim sekarang. */
   currentFingerprint?: string;
+  /** Daftar shot ID (ter-sort, koma) yang dipakai untuk melacak idempotency
+   *  lintas channel — bila WA/Chat untuk shot yang sama sedang in-flight,
+   *  banner dan tombol dialog ini ikut tersinkron secara real-time. */
+  idemIdsKey?: string;
 }) {
   const progressActive = !!status && (sending || !!status.outcome);
   const totalSteps = (status?.captionStep ? 1 : 0) + (status?.photosTotal ?? 0) + (status?.locationStep ? 1 : 0);
@@ -98,16 +104,31 @@ export function ChatSharePreviewDialog({
     + (status?.locationStatus === "ok" || status?.locationStatus === "fail" ? 1 : 0);
   const pct = totalSteps > 0 ? Math.min(100, Math.round((doneSteps / totalSteps) * 100)) : 0;
   const outcome = status?.outcome ?? null;
-  const dupActive = !!duplicate && duplicate.status !== "failed" && !progressActive && !outcome;
-  const dupAgoSec = duplicate ? Math.max(0, Math.round((Date.now() - duplicate.at) / 1000)) : 0;
+  // Live: pantau record idempotency untuk shot yang sama lintas channel.
+  const live = useLiveIdemByIds(idemIdsKey);
+  const liveChannel = live ? channelFromKey(live.key) : "unknown";
+  // Gabungkan dengan snapshot `duplicate` dari caller. Live lebih diutamakan
+  // saat statusnya in-flight (channel manapun) atau saat status snapshot
+  // sudah usang (mis. snapshot "in-flight" lalu live menjadi "done").
+  const effectiveDup = (live
+    ? {
+        at: live.at,
+        status: live.status,
+        destination: duplicate?.destination,
+        fingerprint: live.fingerprint,
+      }
+    : duplicate) ?? null;
+  const crossChannel = !!live && liveChannel === "wa";
+  const dupActive = !!effectiveDup && effectiveDup.status !== "failed" && !progressActive && !outcome;
+  const dupAgoSec = effectiveDup ? Math.max(0, Math.round((Date.now() - effectiveDup.at) / 1000)) : 0;
   const dupAgoLabel = dupAgoSec < 60 ? `${dupAgoSec} detik lalu` : `${Math.round(dupAgoSec / 60)} menit lalu`;
-  const dupAbsLabel = duplicate ? new Date(duplicate.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
-  const dupStatusLabel = duplicate ? (duplicate.status === "in-flight" ? "Masih berjalan" : duplicate.status === "done" ? "Sudah terkirim" : "Gagal") : "";
+  const dupAbsLabel = effectiveDup ? new Date(effectiveDup.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
+  const dupStatusLabel = effectiveDup ? (effectiveDup.status === "in-flight" ? "Masih berjalan" : effectiveDup.status === "done" ? "Sudah terkirim" : "Gagal") : "";
   // Hanya izinkan "Kirim ulang (paksa)" jika fingerprint payload saat ini
   // sama dengan fingerprint kiriman sebelumnya yang dicatat oleh idempotency.
   // Mencegah operator mengirim konten berbeda (caption/foto/lokasi berubah)
   // di bawah idempotency key yang sama secara tidak sengaja.
-  const dupFp = duplicate?.fingerprint;
+  const dupFp = effectiveDup?.fingerprint;
   const payloadMatches = !!dupFp && !!currentFingerprint && dupFp === currentFingerprint;
   const forceDisabledReason = !payloadMatches
     ? (!dupFp
@@ -127,29 +148,31 @@ export function ChatSharePreviewDialog({
 
         {data && (
           <div className="space-y-3 text-sm">
-            {duplicate && !progressActive && !outcome ? (
+            {effectiveDup && !progressActive && !outcome ? (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2.5 text-[12px] text-amber-900 dark:text-amber-200">
                 <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold">
-                    {duplicate.status === "in-flight"
-                      ? "Klik ganda terdeteksi — kiriman sebelumnya masih berjalan."
+                    {effectiveDup.status === "in-flight"
+                      ? (crossChannel
+                          ? "Kiriman WhatsApp untuk paket ini sedang berjalan."
+                          : "Klik ganda terdeteksi — kiriman sebelumnya masih berjalan.")
                       : "Klik ganda terdeteksi — paket ini baru saja terkirim."}
                   </div>
                   <div className="mt-0.5 opacity-90">
-                    {duplicate.status === "in-flight"
-                      ? `Dimulai ${dupAgoLabel}. Tunggu hingga selesai agar tidak terkirim dua kali.`
+                    {effectiveDup.status === "in-flight"
+                      ? `Dimulai ${dupAgoLabel}. Tombol "Kirim sekarang" dinonaktifkan hingga ${crossChannel ? "kiriman WA" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
                       : `Dikirim ${dupAgoLabel}. Tombol "Kirim sekarang" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
                   </div>
                   <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
                     <dt className="font-medium opacity-80">Waktu</dt>
                     <dd className="break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
                     <dt className="font-medium opacity-80">Tujuan</dt>
-                    <dd className="break-words">{duplicate.destination ?? data.conversationTitle}</dd>
+                    <dd className="break-words">{effectiveDup.destination ?? data.conversationTitle}{crossChannel ? " · via WhatsApp" : ""}</dd>
                     <dt className="font-medium opacity-80">Status</dt>
                     <dd className="break-words">{dupStatusLabel}</dd>
                   </dl>
-                {duplicate.status !== "in-flight" ? (
+                {effectiveDup.status !== "in-flight" ? (
                   <div
                     className={
                       "mt-2 rounded-md border px-2 py-1.5 text-[11px] " +
@@ -320,10 +343,10 @@ export function ChatSharePreviewDialog({
                 <button
                   type="button"
                   onClick={onForceSend}
-                  disabled={sending || !data || !onForceSend || duplicate?.status === "in-flight" || !payloadMatches}
+                  disabled={sending || !data || !onForceSend || effectiveDup?.status === "in-flight" || !payloadMatches}
                   title={
-                    duplicate?.status === "in-flight"
-                      ? "Kiriman sebelumnya masih berjalan"
+                    effectiveDup?.status === "in-flight"
+                      ? (crossChannel ? "Kiriman WhatsApp untuk paket ini masih berjalan" : "Kiriman sebelumnya masih berjalan")
                       : !payloadMatches
                         ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                         : "Kirim ulang meski klik ganda terdeteksi"
@@ -337,11 +360,12 @@ export function ChatSharePreviewDialog({
                 <button
                   type="button"
                   onClick={onConfirm}
-                  disabled={sending || !data}
+                  disabled={sending || !data || live?.status === "in-flight"}
+                  title={live?.status === "in-flight" ? (crossChannel ? "Kiriman WhatsApp untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
                   className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
                 >
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  {sending ? "Mengirim…" : "Kirim sekarang"}
+                  {sending ? "Mengirim…" : live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim sekarang"}
                 </button>
               )}
             </>
