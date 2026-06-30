@@ -588,11 +588,11 @@ function DetailHero({
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-primary-foreground/40 to-emerald-400" />
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase leading-none tracking-[0.18em] text-primary-foreground/80">
               <Scale className="h-3 w-3 shrink-0" />
               <span className="truncate">Detail penyiapan ecer</span>
             </div>
-            <h2 className="mt-2 break-words text-base font-bold leading-tight sm:text-xl">{title.name}</h2>
+            <h2 className="mt-2 break-words text-base font-bold leading-snug sm:text-xl sm:leading-tight">{title.name}</h2>
             <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[11px] leading-none text-primary-foreground/85">
               <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-white/15 px-2 py-1 backdrop-blur-sm">
                 <Package className="h-3 w-3 shrink-0" />
@@ -610,8 +610,8 @@ function DetailHero({
             </div>
           </div>
           <div className="hidden shrink-0 text-right sm:block">
-            <div className="text-[11px] uppercase tracking-wider text-primary-foreground/70">No. Referensi</div>
-            <div className="font-mono text-[11px] text-primary-foreground/95">{ref}</div>
+            <div className="text-[11px] uppercase leading-snug tracking-wider text-primary-foreground/70">No. Referensi</div>
+            <div className="font-mono text-[11px] leading-snug text-primary-foreground/95">{ref}</div>
           </div>
         </div>
       </div>
@@ -801,7 +801,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
       />
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-1.5 text-sm">
+          <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
             <Boxes className="h-4 w-4 text-primary" /> Daftar penyiapan
             <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
               {preps.length}
@@ -1029,7 +1029,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       <CardHeader className="pb-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
-            <CardTitle className="flex items-center gap-1.5 text-sm">
+            <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
               <Users className="h-4 w-4 text-primary" /> Kiriman pegawai
               {!loading && (
                 <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
@@ -1037,7 +1037,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                 </span>
               )}
             </CardTitle>
-            <div className="mt-0.5 text-[11px] text-muted-foreground">
+            <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
               Cocok via warehouse_item_id + {title.target_grams}{displayUnitStr} (fallback ukuran/unit).
             </div>
           </div>
