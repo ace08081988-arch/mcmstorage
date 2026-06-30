@@ -268,8 +268,27 @@ function NotifikasiPage() {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Jenis Notifikasi</CardTitle>
-          <CardDescription>Pilih kategori mana saja yang boleh muncul.</CardDescription>
+          <div className="flex items-start justify-between gap-3">
+            <div className="min-w-0">
+              <CardTitle className="text-base">Jenis Notifikasi</CardTitle>
+              <CardDescription>Pilih kategori mana saja yang boleh muncul.</CardDescription>
+            </div>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={
+                JSON.stringify(prefs.enabledKinds) ===
+                JSON.stringify(DEFAULT_PREFS.enabledKinds)
+              }
+              onClick={() => {
+                update({ enabledKinds: { ...DEFAULT_PREFS.enabledKinds } });
+                toast.success("Jenis Notifikasi direset ke default");
+              }}
+            >
+              Reset ke default
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-2">
           {KINDS.map(({ key, label, desc, Icon }, idx) => (
