@@ -157,6 +157,8 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Lacak id yang sedang dalam proses "Coba lagi" supaya tombol bisa menunjukkan spinner.
+  const [retryingIds, setRetryingIds] = useState<Set<string>>(new Set());
 
   // Ref agar loop upload selalu baca pending terbaru (penghapusan saat upload tetap konsisten).
   const pendingRef = useRef<PendingItem[] | null>(null);
@@ -405,6 +407,15 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       toast.error("Tidak ada lampiran valid untuk dikirim", { description: "Buang berkas yang ditolak terlebih dahulu." });
       return;
     }
+    // Item yang merupakan retry (sebelumnya sudah pernah error) → tandai supaya tombolnya menunjukkan spinner.
+    const retrySet = new Set(queueIds.filter((id) => statuses[id]?.state === "error"));
+    if (retrySet.size > 0) {
+      setRetryingIds((prev) => {
+        const next = new Set(prev);
+        retrySet.forEach((id) => next.add(id));
+        return next;
+      });
+    }
     let total = queueIds.length;
     let done = 0;
     setProgress({ done, total });
@@ -448,9 +459,26 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       }
       done += 1;
       setProgress({ done, total });
+      if (retrySet.has(id)) {
+        setRetryingIds((prev) => {
+          if (!prev.has(id)) return prev;
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
     }
     setBusy(null);
     setProgress(null);
+    // Safety: bersihkan sisa retry flag bila ada item yang dilewati di loop.
+    if (retrySet.size > 0) {
+      setRetryingIds((prev) => {
+        if (prev.size === 0) return prev;
+        const next = new Set(prev);
+        retrySet.forEach((id) => next.delete(id));
+        return next;
+      });
+    }
     if (!anyError && okCount > 0) {
       toast.success(
         okCount > 1 ? `${okCount} lampiran terkirim` : "Lampiran terkirim",
