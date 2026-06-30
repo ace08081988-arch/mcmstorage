@@ -600,6 +600,7 @@ function RecentNotificationsCard({
       toast.info("Tidak ada notifikasi yang perlu ditandai");
       return;
     }
+    setMarkingAll(true);
     const nextLocal = new Set(localRead);
     for (const it of allItems) {
       if (enabledKinds[it.kind]) nextLocal.add(it.id);
@@ -610,11 +611,14 @@ function RecentNotificationsCard({
       toast.success(`${affected} notifikasi ditandai dibaca`);
     } catch {
       toast.error("Gagal menandai semua dibaca");
+    } finally {
+      setMarkingAll(false);
     }
     qc.invalidateQueries({ queryKey: ["notif-feed"] });
   }
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
   const pendingAffected = useMemo(
     () =>
       allItems.filter(
