@@ -113,17 +113,47 @@ export async function importDeviceContacts(
 
   if (rows.length === 0) return { inserted: 0, skipped: 0 };
 
-  // Use upsert on (user_id, device_contact_id). The DB unique index uses a
-  // partial filter; pg accepts the index name via onConflict columns.
-  const { data, error } = await supabase
+  // Postgres tidak menerima partial unique index sebagai ON CONFLICT target
+  // lewat PostgREST upsert. Lakukan dedup di client: ambil device_contact_id
+  // yang sudah ada, lalu insert hanya yang baru dan update yang berubah.
+  const ids = rows.map((r) => r.device_contact_id);
+  const { data: existing, error: exErr } = await supabase
     .from("address_book")
-    .upsert(rows, {
-      onConflict: "user_id,device_contact_id",
-      ignoreDuplicates: false,
-    })
-    .select("id");
-  if (error) throw error;
-  return { inserted: data?.length ?? rows.length, skipped: 0 };
+    .select("id,device_contact_id,name,phone,email,note")
+    .eq("user_id", uid)
+    .in("device_contact_id", ids);
+  if (exErr) throw exErr;
+  const byId = new Map(
+    (existing ?? []).map((r: any) => [r.device_contact_id as string, r]),
+  );
+  const toInsert = rows.filter((r) => !byId.has(r.device_contact_id));
+  const toUpdate = rows
+    .filter((r) => byId.has(r.device_contact_id))
+    .map((r) => ({ existing: byId.get(r.device_contact_id)!, next: r }))
+    .filter(({ existing: ex, next }) =>
+      ex.name !== next.name ||
+      ex.phone !== next.phone ||
+      ex.email !== next.email ||
+      ex.note !== next.note,
+    );
+
+  if (toInsert.length > 0) {
+    const { error } = await supabase.from("address_book").insert(toInsert);
+    if (error) throw error;
+  }
+  for (const u of toUpdate) {
+    const { error } = await supabase
+      .from("address_book")
+      .update({
+        name: u.next.name,
+        phone: u.next.phone,
+        email: u.next.email,
+        note: u.next.note,
+      })
+      .eq("id", (u.existing as any).id);
+    if (error) throw error;
+  }
+  return { inserted: toInsert.length, skipped: rows.length - toInsert.length - toUpdate.length };
 }
 
 export async function matchAgainstProfiles(rows: AddressBookRow[]): Promise<ProfileMatch[]> {
