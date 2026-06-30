@@ -237,3 +237,114 @@ describe("applyPreviewOverrideFromHash · variasi format #wpcfg", () => {
     expect(g.window!.__WORKER_PORTAL_CONFIG__).toEqual({ lockSeconds: 60 });
   });
 });
+
+describe("applyPreviewOverrideFromHash · telemetry", () => {
+  function captureEvents() {
+    const events: PreviewOverrideTelemetryEvent[] = [];
+    setPreviewOverrideTelemetry((e) => events.push(e));
+    return events;
+  }
+
+  function b64(json: string) {
+    return Buffer.from(json, "utf8")
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+  }
+
+  it("emit `sanitized` dengan accepted + dropped (out_of_range)", () => {
+    const events = captureEvents();
+    g.window!.location.hash = `#wpcfg=${b64(
+      JSON.stringify({ maxAttempts: 999, lockSeconds: 60 }),
+    )}`;
+    applyPreviewOverrideFromHash();
+
+    const last = events[events.length - 1];
+    expect(last.kind).toBe("sanitized");
+    if (last.kind !== "sanitized") throw new Error("unreachable");
+    expect(last.accepted).toEqual(["lockSeconds"]);
+    expect(last.dropped).toEqual([
+      { key: "maxAttempts", reason: "out_of_range", value: 999, min: 1, max: 10 },
+    ]);
+  });
+
+  it("emit `sanitized` dropped non_number untuk NaN / string", () => {
+    const events = captureEvents();
+    g.window!.location.hash = `#wpcfg=${b64(
+      JSON.stringify({ sessionTtlMs: "30m", lockSeconds: 30 }),
+    )}`;
+    applyPreviewOverrideFromHash();
+    const last = events.at(-1)!;
+    if (last.kind !== "sanitized") throw new Error("unexpected");
+    expect(last.accepted).toEqual(["lockSeconds"]);
+    expect(last.dropped).toContainEqual({
+      key: "sessionTtlMs",
+      reason: "non_number",
+      value: "30m",
+    });
+  });
+
+  it("emit `sanitized` dropped unknown_field untuk key tak dikenal", () => {
+    const events = captureEvents();
+    g.window!.location.hash = `#wpcfg=${b64(
+      JSON.stringify({ lockSeconds: 60, secretFlag: true }),
+    )}`;
+    applyPreviewOverrideFromHash();
+    const last = events.at(-1)!;
+    if (last.kind !== "sanitized") throw new Error("unexpected");
+    expect(last.dropped).toContainEqual({
+      key: "secretFlag",
+      reason: "unknown_field",
+      value: true,
+    });
+  });
+
+  it("emit `decode_failed` reason=json untuk base64 valid tapi bukan JSON", () => {
+    const events = captureEvents();
+    g.window!.location.hash = `#wpcfg=${b64("bukan json")}`;
+    applyPreviewOverrideFromHash();
+    const last = events.at(-1)!;
+    expect(last.kind).toBe("decode_failed");
+    if (last.kind === "decode_failed") expect(last.reason).toBe("json");
+  });
+
+  it("emit `not_object` untuk JSON array", () => {
+    const events = captureEvents();
+    g.window!.location.hash = `#wpcfg=${b64("[1,2,3]")}`;
+    applyPreviewOverrideFromHash();
+    const last = events.at(-1)!;
+    expect(last.kind).toBe("not_object");
+    if (last.kind === "not_object") expect(last.type).toBe("array");
+  });
+
+  it("emit `decode_failed` reason=base64 untuk karakter di luar alfabet", () => {
+    const events = captureEvents();
+    // Override stub atob agar strict seperti browser
+    g.atob = (s: string) => {
+      if (/[^A-Za-z0-9+/=]/.test(s)) throw new Error("InvalidCharacterError");
+      return Buffer.from(s, "base64").toString("utf8");
+    };
+    g.window!.location.hash = `#wpcfg=!!!@@@`;
+    applyPreviewOverrideFromHash();
+    const last = events.at(-1)!;
+    expect(last.kind).toBe("decode_failed");
+    if (last.kind === "decode_failed") expect(last.reason).toBe("base64");
+  });
+
+  it("tidak emit untuk jalur normal (no_hash) saat default telemetry aktif", () => {
+    // Default sink akan skip no_hash; sini cukup verifikasi tidak melempar.
+    setPreviewOverrideTelemetry(null);
+    g.window!.location.hash = "";
+    expect(() => applyPreviewOverrideFromHash()).not.toThrow();
+  });
+
+  it("setPreviewOverrideTelemetry(null) mengembalikan default sink", () => {
+    const events = captureEvents();
+    setPreviewOverrideTelemetry(null);
+    g.window!.location.hash = `#wpcfg=${b64(JSON.stringify({ maxAttempts: 999 }))}`;
+    expect(() => applyPreviewOverrideFromHash()).not.toThrow();
+    // Custom sink sudah dilepas → events tidak bertambah
+    expect(events.length).toBe(0);
+  });
+});
