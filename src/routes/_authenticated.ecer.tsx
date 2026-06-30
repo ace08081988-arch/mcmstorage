@@ -457,7 +457,7 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: 
       data-title-id={title.id}
       className={`cursor-pointer rounded-lg border bg-card p-3 transition hover:border-primary/40 hover:bg-accent/30 active:bg-accent/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${highlighted ? "ring-2 ring-primary border-primary animate-pulse" : ""}`}
     >
-      <div className="font-medium leading-tight">{title.name}</div>
+      <div className="text-sm font-semibold leading-snug [overflow-wrap:anywhere]">{title.name}</div>
       <div className="mt-1 text-xs text-muted-foreground">
         Target: <b>{title.target_grams} {displayUnit(itemName, title.unit_label)}</b> · {count ?? "…"} penyiapan
       </div>
@@ -592,7 +592,7 @@ function DetailHero({
               <Scale className="h-3 w-3 shrink-0" />
               <span className="truncate">Detail penyiapan ecer</span>
             </div>
-            <h2 className="mt-2 break-words text-base font-bold leading-snug sm:text-xl sm:leading-tight">{title.name}</h2>
+            <h2 className="mt-2 break-words text-base font-bold leading-snug sm:text-xl">{title.name}</h2>
             <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[11px] leading-snug text-primary-foreground/85">
               <span className="inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-2 py-1 backdrop-blur-sm">
                 <Package className="h-3 w-3 shrink-0" />
