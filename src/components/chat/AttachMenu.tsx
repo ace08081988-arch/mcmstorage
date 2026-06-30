@@ -558,13 +558,13 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
               </div>
               <div className="grid max-h-72 grid-cols-3 gap-2 overflow-y-auto">
                 {pending.map((p, i) => {
-                  const st = statuses[i]?.state ?? "idle";
-                  const isSelected = selected.has(i);
+                  const st = statuses[p.id]?.state ?? "idle";
+                  const isSelected = selected.has(p.id);
                   return (
                   <div
-                    key={i}
+                    key={p.id}
                     role={selectMode ? "button" : undefined}
-                    onClick={selectMode && !busy ? () => toggleSelected(i) : undefined}
+                    onClick={selectMode && !busy ? () => toggleSelected(p.id) : undefined}
                     className={`relative aspect-square overflow-hidden rounded-lg border bg-muted/30 ${selectMode ? "cursor-pointer" : ""} ${isSelected ? "ring-2 ring-primary" : st === "error" ? "ring-2 ring-destructive" : st === "sent" ? "ring-2 ring-emerald-500/70" : ""}`}
                   >
                     {p.previewUrl && p.file.type.startsWith("image/") ? (
@@ -603,7 +603,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         <CheckCircle2 className="h-3.5 w-3.5" />
                       </div>
                     ) : st === "error" && !selectMode ? (
-                      <div className="absolute right-7 top-1 rounded-full bg-destructive/95 p-0.5 text-destructive-foreground shadow" title={statuses[i]?.error}>
+                      <div className="absolute right-7 top-1 rounded-full bg-destructive/95 p-0.5 text-destructive-foreground shadow" title={statuses[p.id]?.error}>
                         <AlertCircle className="h-3.5 w-3.5" />
                       </div>
                     ) : null}
@@ -615,14 +615,14 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 })}
               </div>
               {/* Daftar error rinci agar pesan tidak terpotong di chip */}
-              {statuses.some((s) => s?.state === "error") ? (
+              {Object.values(statuses).some((s) => s?.state === "error") ? (
                 <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px]">
                   <div className="mb-1 flex items-center gap-1 font-medium text-destructive">
                     <AlertCircle className="h-3.5 w-3.5" /> Sebagian lampiran gagal
                   </div>
                   <ul className="space-y-0.5 text-destructive/90">
-                    {pending.map((p, i) => statuses[i]?.state === "error" ? (
-                      <li key={i} className="truncate">• <span className="font-medium">{p.file.name}:</span> {statuses[i]?.error}</li>
+                    {pending.map((p) => statuses[p.id]?.state === "error" ? (
+                      <li key={p.id} className="truncate">• <span className="font-medium">{p.file.name}:</span> {statuses[p.id]?.error}</li>
                     ) : null)}
                   </ul>
                 </div>
@@ -648,7 +648,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             </div>
           ) : null}
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="ghost" onClick={() => { setPending(null); setStatuses([]); }} disabled={!!busy}>
+            <Button variant="ghost" onClick={() => { setPending(null); setStatuses({}); }} disabled={!!busy}>
               <X className="mr-1 h-4 w-4" /> Batal
             </Button>
             {selectMode && selected.size > 0 && !busy ? (
@@ -663,19 +663,19 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 Hapus semua
               </Button>
             ) : null}
-            {statuses.some((s) => s?.preflight) && !busy ? (
+            {Object.values(statuses).some((s) => s?.preflight) && !busy ? (
               <Button variant="outline" onClick={removeInvalidPending}>
                 <X className="mr-1 h-4 w-4" />
-                Buang yang ditolak ({statuses.filter((s) => s?.preflight).length})
+                Buang yang ditolak ({Object.values(statuses).filter((s) => s?.preflight).length})
               </Button>
             ) : null}
-            {statuses.some((s) => s?.state === "error" && !s?.preflight) && !busy ? (
+            {Object.values(statuses).some((s) => s?.state === "error" && !s?.preflight) && !busy ? (
               <Button variant="secondary" onClick={() => confirmSendPending(true)}>
                 <RotateCcw className="mr-1 h-4 w-4" />
-                Coba lagi ({statuses.filter((s) => s?.state === "error" && !s?.preflight).length})
+                Coba lagi ({Object.values(statuses).filter((s) => s?.state === "error" && !s?.preflight).length})
               </Button>
             ) : null}
-            <Button onClick={() => confirmSendPending(false)} disabled={!!busy || (pending?.length ?? 0) === 0 || statuses.every((s) => s?.state === "sent")}>
+            <Button onClick={() => confirmSendPending(false)} disabled={!!busy || (pending?.length ?? 0) === 0 || (pending ?? []).every((p) => statuses[p.id]?.state === "sent" || statuses[p.id]?.preflight)}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
               Kirim{pending && pending.length > 1 ? ` (${pending.length})` : ""}
             </Button>
