@@ -111,3 +111,42 @@ jobs:
             echo "- Ref: \`${GITHUB_REF}\`";
             echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}";
           } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Notify WhatsApp on failure
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          WHATSAPP_TOKEN: ${{ secrets.WHATSAPP_TOKEN }}
+          WHATSAPP_PHONE_ID: ${{ secrets.WHATSAPP_PHONE_ID }}
+          WHATSAPP_RECIPIENTS: ${{ secrets.WHATSAPP_RECIPIENTS }}
+        run: |
+          if [ -z "$WHATSAPP_TOKEN" ] || [ -z "$WHATSAPP_PHONE_ID" ] || [ -z "$WHATSAPP_RECIPIENTS" ]; then
+            echo "WhatsApp secrets belum diset (WHATSAPP_TOKEN / WHATSAPP_PHONE_ID / WHATSAPP_RECIPIENTS) — lewati notifikasi."
+            exit 0
+          fi
+          SHORT_SHA="${GITHUB_SHA::7}"
+          RUN_URL="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}"
+          MSG="❌ CI gagal di main
+          Commit: ${SHORT_SHA}
+          Repo: ${GITHUB_REPOSITORY}
+          Log: ${RUN_URL}"
+          IFS=',' read -ra NUMBERS <<< "$WHATSAPP_RECIPIENTS"
+          for raw in "${NUMBERS[@]}"; do
+            to="$(echo "$raw" | tr -d ' +')"
+            [ -z "$to" ] && continue
+            echo "→ kirim ke ${to}"
+            payload=$(jq -nc --arg to "$to" --arg body "$MSG" '{
+              messaging_product:"whatsapp",
+              to:$to,
+              type:"text",
+              text:{ preview_url:true, body:$body }
+            }')
+            http_code=$(curl -sS -o /tmp/wa-resp.json -w "%{http_code}" \
+              -X POST "https://graph.facebook.com/v20.0/${WHATSAPP_PHONE_ID}/messages" \
+              -H "Authorization: Bearer ${WHATSAPP_TOKEN}" \
+              -H "Content-Type: application/json" \
+              -d "$payload" || echo "000")
+            echo "   status=${http_code}"
+            if [ "$http_code" != "200" ]; then
+              echo "   respons: $(cat /tmp/wa-resp.json)"
+            fi
+          done
