@@ -4,7 +4,7 @@
  * dari dialog pratinjau ("Lihat log") tanpa harus mengulang aksi.
  */
 import type { SendPayloadSummary } from "@/lib/idempotency";
-import { useSyncExternalStore } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const KEY = "send-log:v1";
 const EVENT = "send-log:changed";
@@ -165,4 +165,81 @@ export function useLiveSendLog(
   const snap = useSyncExternalStore(subscribe, getSnapshot, () => "");
   if (!snap) return [];
   return getSendLog(k);
+}
+
+/**
+ * Varian `useLiveSendLog` yang juga mengembalikan metadata sinkronisasi:
+ * - `stale`     : true bila tidak ada sync yang berhasil dalam ~3× polling
+ *                 interval (misal dialog yang sempat ditutup / WebView freeze),
+ *                 atau saat pembacaan localStorage melempar exception.
+ * - `error`     : pesan singkat error baca terakhir, jika ada.
+ * - `lastSyncedAt` : timestamp pembacaan sukses terakhir (untuk badge "baru saja").
+ * - `active`    : apakah hook saat ini aktif memantau (key non-kosong).
+ *
+ * Catatan: meski sumber data adalah localStorage (bukan jaringan), pembacaan
+ * masih bisa gagal — quota, serialization error, atau JSON parse error setelah
+ * write parsial. Indikator "data belum tersinkron" memberitahu operator bahwa
+ * tampilan progres mungkin tertinggal sehingga ia bisa memuat ulang dialog.
+ */
+export function useLiveSendLogStatus(
+  key: string | null | undefined,
+  options?: { pollMs?: number },
+): {
+  entries: SendLogEntry[];
+  stale: boolean;
+  error: string | null;
+  lastSyncedAt: number | null;
+  active: boolean;
+} {
+  const k = key ?? "";
+  const pollMs = options?.pollMs ?? 1200;
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [tick, setTick] = useState(0);
+  const lastSnapshotRef = useRef<string>("");
+
+  useEffect(() => {
+    if (!k) {
+      setLastSyncedAt(null);
+      setError(null);
+      lastSnapshotRef.current = "";
+      return;
+    }
+    let cancelled = false;
+    const read = () => {
+      if (cancelled) return;
+      try {
+        const entries = getSendLog(k);
+        const snap = entries.map((e) => `${e.at}|${e.kind}|${e.label}`).join("\n");
+        setLastSyncedAt(Date.now());
+        if (error) setError(null);
+        if (snap !== lastSnapshotRef.current) {
+          lastSnapshotRef.current = snap;
+          setTick((t) => t + 1);
+        }
+      } catch (e) {
+        setError(e instanceof Error ? e.message : "Gagal membaca log kiriman");
+      }
+    };
+    read();
+    const onEvt = () => read();
+    const onStorage = (e: StorageEvent) => { if (e.key === KEY) read(); };
+    window.addEventListener(EVENT, onEvt);
+    window.addEventListener("storage", onStorage);
+    const timer = pollMs > 0 ? setInterval(read, pollMs) : null;
+    return () => {
+      cancelled = true;
+      window.removeEventListener(EVENT, onEvt);
+      window.removeEventListener("storage", onStorage);
+      if (timer) clearInterval(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [k, pollMs]);
+
+  // Re-render-aware read (tick mencegah snapshot tertinggal di first paint).
+  void tick;
+  const entries = k ? (() => { try { return getSendLog(k); } catch { return []; } })() : [];
+  const staleThreshold = Math.max(2500, pollMs * 3);
+  const stale = !!k && (error != null || lastSyncedAt == null || Date.now() - lastSyncedAt > staleThreshold);
+  return { entries, stale, error, lastSyncedAt, active: !!k };
 }

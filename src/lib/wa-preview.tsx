@@ -13,7 +13,7 @@ import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, Rotat
 import { toast } from "sonner";
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
-import { useLiveSendLog } from "@/lib/send-log";
+import { useLiveSendLogStatus } from "@/lib/send-log";
 import { InflightStepProgress } from "@/components/InflightStepProgress";
 import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
 import type { SendPayloadSummary } from "@/lib/idempotency";
@@ -157,7 +157,7 @@ export function WaPreviewHost() {
   // Pantau log langkah kiriman in-flight (channel manapun) — saat kiriman Chat
   // untuk paket yang sama masih berjalan, dialog WA ikut menampilkan progresnya.
   const liveInflightKey = live && live.status === "in-flight" ? live.key : null;
-  const liveLog = useLiveSendLog(liveInflightKey);
+  const liveLog = useLiveSendLogStatus(liveInflightKey);
   const crossChannel = !!live && liveChannel === "chat";
   const snapshotDup = current?.duplicate ?? null;
   const dup = live
@@ -284,7 +284,13 @@ export function WaPreviewHost() {
                   <SendPayloadDiff previous={dup!.summary} current={current?.currentSummary} />
                 ) : null}
                 {dup!.status === "in-flight" ? (
-                  <InflightStepProgress entries={liveLog} channel={liveChannel} />
+                  <InflightStepProgress
+                    entries={liveLog.entries}
+                    channel={liveChannel}
+                    stale={liveLog.stale}
+                    syncError={liveLog.error}
+                    lastSyncedAt={liveLog.lastSyncedAt}
+                  />
                 ) : null}
               </div>
             </div>
