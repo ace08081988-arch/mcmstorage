@@ -462,7 +462,7 @@ function TitleCard({ title, itemName, onOpen, onEdit, onDeleted, highlighted }: 
       </div>
       {title.note && <div className="mt-1 line-clamp-2 text-[11px] text-muted-foreground">{title.note}</div>}
       <div className="mt-2 flex items-center justify-between gap-2 border-t pt-2">
-        <span className="text-[10px] text-muted-foreground">Tap untuk buka penyimpanan →</span>
+        <span className="text-[11px] leading-snug text-muted-foreground">Tap untuk buka penyimpanan →</span>
         <div className="flex gap-1">
           <Button size="sm" variant="ghost" onClick={(e) => { e.stopPropagation(); onEdit(); }}>
             <Edit3 className="h-3.5 w-3.5" />
@@ -1076,7 +1076,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                     <div className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">no img</div>
                   )}
                 </div>
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[10px] text-white">
+                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[11px] leading-snug text-white">
                   <span className="truncate">{new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                   {s.location_url && (
                     <a href={s.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 rounded bg-black/50 px-1 py-0.5 backdrop-blur-sm">
@@ -1085,7 +1085,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   )}
                 </div>
                 {s.match !== "strict" && (
-                  <span className="absolute left-1 top-1 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[9px] font-semibold text-white" title={s.match === "fallback_grams" ? "Ukuran cocok, unit berbeda" : "Hanya produk yang cocok"}>
+                  <span className="absolute left-1 top-1 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[11px] leading-snug font-semibold text-white" title={s.match === "fallback_grams" ? "Ukuran cocok, unit berbeda" : "Hanya produk yang cocok"}>
                     {s.match === "fallback_grams" ? "unit≠" : "ukuran≠"}
                   </span>
                 )}
@@ -1205,20 +1205,20 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
     <div className="overflow-hidden rounded-lg border bg-card">
       <div className="relative aspect-square w-full bg-muted">
         {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : (
-          <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">No foto</div>
+          <div className="flex h-full w-full items-center justify-center text-[11px] leading-snug text-muted-foreground">No foto</div>
         )}
-        <div className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[10px] font-medium text-white">#{index}</div>
+        <div className="absolute left-1 top-1 rounded bg-black/60 px-1.5 py-0.5 text-[11px] leading-snug font-medium text-white">#{index}</div>
         {prep.created_by === "worker" && (
-          <div className="absolute right-1 top-1 rounded bg-blue-500/90 px-1.5 py-0.5 text-[10px] font-medium text-white">Pegawai</div>
+          <div className="absolute right-1 top-1 rounded bg-blue-500/90 px-1.5 py-0.5 text-[11px] leading-snug font-medium text-white">Pegawai</div>
         )}
       </div>
       <div className="space-y-1 p-2">
         <div className="text-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
-        {prep.note && <div className="line-clamp-2 text-[10px] text-muted-foreground">{prep.note}</div>}
+        {prep.note && <div className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">{prep.note}</div>}
         <div className="flex items-center justify-between gap-1 pt-1">
           {prep.location_url ? (
             <a href={prep.location_url} target="_blank" rel="noreferrer"
-              className="inline-flex items-center gap-0.5 text-[10px] text-primary hover:underline">
+              className="inline-flex items-center gap-0.5 text-[11px] leading-snug text-primary hover:underline">
               <MapPin className="h-3 w-3" /> Lokasi <ExternalLink className="h-2.5 w-2.5" />
             </a>
           ) : <span />}
@@ -1227,11 +1227,11 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDelete}><Trash2 className="h-3 w-3 text-destructive" /></Button>
           </div>
         </div>
-        <div className="text-[9px] text-muted-foreground">
+        <div className="text-[11px] leading-snug text-muted-foreground">
           {new Date(prep.created_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}
         </div>
         {shareDiag && (
-          <div className="mt-1 space-y-1 rounded border border-destructive/40 bg-destructive/5 p-2 text-[10px]">
+          <div className="mt-1 space-y-1 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] leading-snug">
             <div className="flex items-center justify-between gap-1">
               <span className="font-semibold text-destructive">Diagnostik kirim WA</span>
               <button type="button" onClick={() => setShareDiag(null)} className="text-muted-foreground hover:underline">Tutup</button>
@@ -1686,7 +1686,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           <div>
             <Label className="text-xs">Berat aktual ({displayUnit(item.name, title.unit_label)}) <span className="text-destructive">*</span></Label>
             <Input inputMode="decimal" value={actual} onChange={(e) => setActual(e.target.value)} />
-            <div className="mt-1 text-[10px] text-muted-foreground">Stok produk akan berkurang sebanyak angka ini.</div>
+            <div className="mt-1 text-[11px] leading-snug text-muted-foreground">Stok produk akan berkurang sebanyak angka ini.</div>
           </div>
 
           <div>
@@ -1708,7 +1708,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 {locBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />} GPS
               </Button>
             </div>
-            <div className="mt-1 text-[10px] text-muted-foreground">
+            <div className="mt-1 text-[11px] leading-snug text-muted-foreground">
               {gps
                 ? `✓ Koordinat: ${gps.lat.toFixed(5)}, ${gps.lng.toFixed(5)}`
                 : locUrl
@@ -1729,7 +1729,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     loading="lazy"
                     referrerPolicy="no-referrer"
                   />
-                  <div className="flex items-center justify-between gap-2 border-t bg-muted/40 px-2 py-1 text-[10px] text-muted-foreground">
+                  <div className="flex items-center justify-between gap-2 border-t bg-muted/40 px-2 py-1 text-[11px] leading-snug text-muted-foreground">
                     <span>Penanda: {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}</span>
                     <a href={link} target="_blank" rel="noreferrer" className="font-medium text-primary underline-offset-2 hover:underline">
                       Buka peta besar
@@ -1743,7 +1743,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                 <div className="mb-1 flex items-center justify-between gap-2">
                   <Label className="text-[11px]">Alamat (bisa diedit)</Label>
                   {addressBusy && (
-                    <span className="flex items-center gap-1 text-[10px] text-muted-foreground">
+                    <span className="flex items-center gap-1 text-[11px] leading-snug text-muted-foreground">
                       <Loader2 className="h-3 w-3 animate-spin" /> Mencari alamat…
                     </span>
                   )}
@@ -1799,7 +1799,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     <RotateCw className="mr-1 h-3 w-3" /> Ambil ulang
                   </Button>
                   {addressError && (
-                    <span className="text-[10px] text-destructive">{addressError}</span>
+                    <span className="text-[11px] leading-snug text-destructive">{addressError}</span>
                   )}
                 </div>
               </div>
@@ -1816,7 +1816,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                     Salin detail GPS
                   </Button>
                 </div>
-                <details className="mt-2 text-[10px] text-muted-foreground">
+                <details className="mt-2 text-[11px] leading-snug text-muted-foreground">
                   <summary className="cursor-pointer">Detail teknis</summary>
                   <pre className="mt-1 max-h-24 overflow-auto whitespace-pre-wrap break-words rounded bg-background/70 p-2">
                     {JSON.stringify(locProblem, null, 2)}
