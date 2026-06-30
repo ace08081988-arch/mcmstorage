@@ -1109,7 +1109,7 @@ function Index() {
                     )}
                   </button>
                 )}
-                <div className="flex items-center gap-2 px-2.5 py-2">
+                <div className="flex min-h-[44px] items-center gap-2 px-2.5 py-2 leading-snug">
                   {selectMode && viewMode === "list" ? (
                     <input
                       type="checkbox"
@@ -1149,21 +1149,21 @@ function Index() {
                         {tagFor(p.kategori)}
                       </span>
                     )}
-                    <span className="truncate text-sm font-medium">{p.nama}</span>
+                     <span className="truncate text-sm font-medium leading-snug">{p.nama}</span>
                     {viewMode === "list" && p.satuan && (
-                      <span className="shrink-0 text-[10px] text-muted-foreground">
+                      <span className="shrink-0 whitespace-nowrap text-[11px] leading-snug text-muted-foreground">
                         · {formatJumlah(p.jumlah ?? 0, p.satuan)}
                       </span>
                     )}
                     {viewMode === "list" && sent && (
-                      <span className="shrink-0 rounded bg-[#25D366]/15 px-1.5 py-0.5 text-[10px] font-medium text-[#128C7E]">
+                      <span className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded bg-[#25D366]/15 px-1.5 text-[11px] font-medium leading-none text-[#128C7E]">
                         ✓
                       </span>
                     )}
                     {viewMode === "list" && fotoCount > 0 && (
-                      <span className="shrink-0 text-[10px] text-muted-foreground">📷{fotoCount}</span>
+                      <span className="shrink-0 whitespace-nowrap text-[11px] leading-snug text-muted-foreground">📷{fotoCount}</span>
                     )}
-                    <span className="ml-auto shrink-0 text-xs tabular-nums text-muted-foreground">
+                    <span className="ml-auto shrink-0 whitespace-nowrap text-xs leading-snug tabular-nums text-muted-foreground">
                       {rupiah(p.harga)}
                     </span>
                   </button>
@@ -1190,7 +1190,7 @@ function Index() {
                   )}
                 </div>
                 {viewMode === "grid" && (
-                  <div className="flex items-center gap-2 border-t px-2.5 py-1.5">
+                  <div className="flex min-h-[40px] items-center gap-2 border-t px-2.5 py-1.5 leading-snug">
                     <label className="flex items-center gap-1.5 text-[11px]">
                       <input
                         type="checkbox"
