@@ -614,6 +614,26 @@ function RecentNotificationsCard({
     qc.invalidateQueries({ queryKey: ["notif-feed"] });
   }
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const pendingAffected = useMemo(
+    () =>
+      allItems.filter(
+        (it) => enabledKinds[it.kind] && it.unread && !localRead.has(it.id),
+      ).length,
+    [allItems, enabledKinds, localRead],
+  );
+  const activeKindLabels = useMemo(() => {
+    const labels: Record<NotifKind, string> = {
+      chat: "Chat",
+      tugas: "Tugas pegawai",
+      order: "Pesanan",
+      system: "Sistem",
+    };
+    return (Object.keys(enabledKinds) as NotifKind[])
+      .filter((k) => enabledKinds[k])
+      .map((k) => labels[k]);
+  }, [enabledKinds]);
+
   return (
     <Card>
       <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
