@@ -19,8 +19,9 @@ export function PinnedBanner({
   return (
     <div className="border-b bg-amber-50 dark:bg-amber-950/30">
       {pinned.map((m) => {
-        const text = m.deleted_at
-          ? "Pesan dihapus"
+        const deleted = !!m.deleted_at;
+        const text = deleted
+          ? "(pesan dihapus)"
           : m.body?.trim() || (m.attachment_name ? `📎 ${m.attachment_name}` : "Lampiran");
         return (
           <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 text-xs">
@@ -32,7 +33,7 @@ export function PinnedBanner({
               title={text}
             >
               <span className="font-semibold text-amber-700 dark:text-amber-300">Disematkan · </span>
-              <span className="text-foreground">{text}</span>
+              <span className={deleted ? "italic text-muted-foreground" : "text-foreground"}>{text}</span>
             </button>
             {canUnpin ? (
               <Button
