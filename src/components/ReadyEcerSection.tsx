@@ -1142,7 +1142,7 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null; sentDetails: Map<string, SentEntry> }) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, onToggleSelect }: EcerCardProps) {
   const [sending, setSending] = useState(false);
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
