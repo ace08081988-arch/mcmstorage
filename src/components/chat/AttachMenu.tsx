@@ -266,6 +266,23 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
 
   const [confirmDelete, setConfirmDelete] = useState<null | "selected" | "all">(null);
   const [showAllDelete, setShowAllDelete] = useState(false);
+  const [deleteSnapshot, setDeleteSnapshot] = useState<{ count: number; bytes: number } | null>(null);
+  // Saat dialog konfirmasi dibuka, ambil snapshot jumlah & total ukuran agar bisa menampilkan delta real-time.
+  useEffect(() => {
+    if (confirmDelete === null) {
+      setDeleteSnapshot(null);
+      return;
+    }
+    if (!pending) return;
+    const list = confirmDelete === "all" ? pending : pending.filter((p) => selected.has(p.id));
+    const rem = list.filter((p) => statuses[p.id]?.state !== "uploading");
+    setDeleteSnapshot({
+      count: rem.length,
+      bytes: rem.reduce((s, p) => s + (p.file.size || 0), 0),
+    });
+    // Hanya saat dialog beralih state (buka/tutup) — bukan saat daftar berubah.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmDelete]);
 
   async function runTile(id: TileId) {
     persistLast(id);
@@ -790,6 +807,19 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                     {removable.length === 0
                       ? "Tidak ada berkas yang dapat dihapus."
                       : `Total ${formatBytes(totalBytes)} akan dibuang dari antrean dan tidak bisa dikembalikan.`}
+                    {deleteSnapshot && (deleteSnapshot.count !== removable.length || deleteSnapshot.bytes !== totalBytes) ? (
+                      <span className="mt-1 block text-[11px] text-amber-600 dark:text-amber-400">
+                        Daftar diperbarui:{" "}
+                        {deleteSnapshot.count !== removable.length
+                          ? `${removable.length - deleteSnapshot.count > 0 ? "+" : ""}${removable.length - deleteSnapshot.count} berkas`
+                          : null}
+                        {deleteSnapshot.count !== removable.length && deleteSnapshot.bytes !== totalBytes ? ", " : ""}
+                        {deleteSnapshot.bytes !== totalBytes
+                          ? `${totalBytes - deleteSnapshot.bytes > 0 ? "+" : "−"}${formatBytes(Math.abs(totalBytes - deleteSnapshot.bytes))}`
+                          : null}
+                        {" "}sejak dialog dibuka.
+                      </span>
+                    ) : null}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 {targets.length > 0 ? (
@@ -855,7 +885,8 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
                   <AlertDialogAction
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={removable.length === 0}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
                     onClick={() => {
                       if (confirmDelete === "all") removeAllPending();
                       else if (confirmDelete === "selected") removeSelectedPending();
