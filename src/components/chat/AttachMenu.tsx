@@ -150,7 +150,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     : TILES;
   type PendingItem = { id: string; file: File; previewUrl: string | null };
   type ItemStatus = "idle" | "uploading" | "sent" | "error";
-  type StatusEntry = { state: ItemStatus; error?: string; preflight?: boolean };
+  type StatusEntry = { state: ItemStatus; error?: string; preflight?: boolean; startedAt?: number; endedAt?: number };
   const [pending, setPending] = useState<PendingItem[] | null>(null);
   const [statuses, setStatuses] = useState<Record<string, StatusEntry>>({});
   const [caption, setCaption] = useState("");
@@ -277,6 +277,17 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   // perubahan berikutnya dihitung relatif ke kondisi terbaru.
   const [snapshotEpoch, setSnapshotEpoch] = useState(0);
   const rebaseDeleteSnapshot = useCallback(() => setSnapshotEpoch((e) => e + 1), []);
+  // Akumulasi bytes/ms upload sukses untuk estimasi durasi berkas berikutnya.
+  const uploadStatsRef = useRef<{ bytes: number; ms: number }>({ bytes: 0, ms: 0 });
+  // Ticker 1 detik agar elapsed time per berkas tampil hidup di dialog.
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    if (confirmDelete === null) return;
+    const hasUploading = Object.values(statusesRef.current).some((s) => s?.state === "uploading");
+    if (!hasUploading) return;
+    const id = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [confirmDelete, statuses]);
   // Saat dialog konfirmasi dibuka, ambil snapshot jumlah & total ukuran agar bisa menampilkan delta real-time.
   useEffect(() => {
     if (confirmDelete === null) {
@@ -445,7 +456,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         setProgress({ done, total });
         continue;
       }
-      setStatuses((prev) => ({ ...prev, [id]: { state: "uploading" } }));
+      setStatuses((prev) => ({ ...prev, [id]: { state: "uploading", startedAt: Date.now() } }));
       try {
         const up = await uploadChatFile({ conversationId, file: item.file });
         const includeCaption = !firstCaptionConsumed && !!cap;
@@ -460,14 +471,26 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           },
         });
         if (includeCaption) firstCaptionConsumed = true;
-        setStatuses((prev) => (prev[id] ? { ...prev, [id]: { state: "sent" } } : prev));
+        setStatuses((prev) => {
+          if (!prev[id]) return prev;
+          const startedAt = prev[id].startedAt;
+          const endedAt = Date.now();
+          if (startedAt && item.file.size > 0) {
+            const dur = Math.max(1, endedAt - startedAt);
+            uploadStatsRef.current = {
+              bytes: uploadStatsRef.current.bytes + item.file.size,
+              ms: uploadStatsRef.current.ms + dur,
+            };
+          }
+          return { ...prev, [id]: { state: "sent", startedAt, endedAt } };
+        });
         okCount += 1;
         onSent?.();
       } catch (e) {
         anyError = true;
         failedCount += 1;
         const msg = e instanceof Error ? e.message : "Gagal mengunggah";
-        setStatuses((prev) => (prev[id] ? { ...prev, [id]: { state: "error", error: msg } } : prev));
+        setStatuses((prev) => (prev[id] ? { ...prev, [id]: { state: "error", error: msg, startedAt: prev[id].startedAt, endedAt: Date.now() } } : prev));
       }
       done += 1;
       setProgress({ done, total });
@@ -888,6 +911,21 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             };
             const tSel = tally(targets);
             const tAll = tally(pending ?? []);
+            const fmtDur = (ms: number) => {
+              if (!Number.isFinite(ms) || ms < 0) return "—";
+              const s = Math.round(ms / 1000);
+              if (s < 60) return `${s}d`;
+              const m = Math.floor(s / 60); const r = s % 60;
+              return r === 0 ? `${m}m` : `${m}m${r}d`;
+            };
+            const fmtStart = (ts: number) => {
+              try { return new Date(ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return ""; }
+            };
+            const estimateMsFor = (bytes: number) => {
+              const s = uploadStatsRef.current;
+              if (!bytes || s.bytes <= 0) return null;
+              return Math.round((bytes * s.ms) / s.bytes);
+            };
             return (
               <>
                 <AlertDialogHeader>
@@ -941,6 +979,14 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       const st = statuses[p.id]?.state ?? "idle";
                       const preflight = statuses[p.id]?.preflight;
                       const isLocked = st === "uploading";
+                      const startedAt = statuses[p.id]?.startedAt;
+                      const endedAt = statuses[p.id]?.endedAt;
+                      const elapsedMs = startedAt
+                        ? (st === "uploading" ? nowTs - startedAt : (endedAt ?? nowTs) - startedAt)
+                        : null;
+                      const estMs = st === "uploading" ? estimateMsFor(p.file.size) : null;
+                      const remainMs = estMs != null && elapsedMs != null ? estMs - elapsedMs : null;
+                      const isSlow = st === "uploading" && estMs != null && elapsedMs != null && elapsedMs > estMs * 1.5;
                       const label =
                         st === "uploading" ? "uploading"
                           : st === "error" ? "gagal"
@@ -956,8 +1002,19 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       return (
                         <li key={p.id} className={`flex items-center justify-between gap-2 py-0.5 ${isLocked ? "opacity-60" : ""}`}>
                           <span className="min-w-0 flex-1 truncate" title={p.file.name}>
-                            • {p.file.name}
-                            {isLocked ? <span className="ml-1 text-[10px] italic text-amber-600 dark:text-amber-400">(dilewati)</span> : null}
+                            <span className="truncate">• {p.file.name}{isLocked ? <span className="ml-1 text-[10px] italic text-amber-600 dark:text-amber-400">(dilewati)</span> : null}</span>
+                            {startedAt && (st === "uploading" || st === "sent" || st === "error") ? (
+                              <span className="block text-[10px] text-muted-foreground">
+                                mulai {fmtStart(startedAt)}
+                                {elapsedMs != null ? ` · ${st === "uploading" ? "berjalan" : "selesai"} ${fmtDur(elapsedMs)}` : ""}
+                                {st === "uploading" && estMs != null ? (
+                                  <span className={isSlow ? "ml-1 font-medium text-amber-600 dark:text-amber-400" : "ml-1"}>
+                                    · est {fmtDur(estMs)}{remainMs != null && remainMs > 0 ? ` (sisa ~${fmtDur(remainMs)})` : remainMs != null && remainMs <= 0 ? " (melebihi estimasi)" : ""}
+                                  </span>
+                                ) : null}
+                                {st === "uploading" && estMs == null ? <span className="ml-1 italic">· estimasi belum tersedia</span> : null}
+                              </span>
+                            ) : null}
                           </span>
                           <span className="flex shrink-0 items-center gap-1">
                             <span className={`rounded-full border px-1.5 py-0 text-[9px] font-medium uppercase tracking-wide ${tone}`}>{label}</span>
