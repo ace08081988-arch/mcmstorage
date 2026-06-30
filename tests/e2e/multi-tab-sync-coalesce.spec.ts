@@ -20,9 +20,11 @@ import { test, expect, type Page } from "@playwright/test";
 
 const TAB_COUNT = 5;
 const WRITES_PER_TAB = 4;
-// Pakai tuning "normal" agar test cepat & deterministik tanpa bergantung
-// pada deteksi navigator runtime.
-const TUNING = { throttle: 60, leading: 0, maxWait: 200 };
+// Pakai tuning "slow device" agar test deterministik di browser nyata:
+// storage event lintas tab tiba sebagai task terpisah, sehingga
+// leading-edge 0 ms bisa fire di antara event individual & kehilangan
+// efek coalescing. Window 24 ms cukup untuk bundle satu burst paralel.
+const TUNING = { throttle: 160, leading: 24, maxWait: 480 };
 
 async function installProbe(page: Page, tuning: typeof TUNING) {
   await page.goto("/");
