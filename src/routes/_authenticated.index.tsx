@@ -517,7 +517,10 @@ function Index() {
       description: "Semua pesanan akan ditandai sebagai Belum Dikirim.",
       confirmText: "Tandai ulang",
     });
-    if (ok) setItems((arr) => arr.map((i) => ({ ...i, status: "Belum Dikirim" })));
+    if (ok)
+      setItems((arr) =>
+        arr.map((i) => ({ ...i, status: "Belum Dikirim", sent_at: undefined })),
+      );
   };
 
   const filtered = scopedItems.filter((i) => filter === "semua" || i.status === filter);
@@ -552,15 +555,23 @@ function Index() {
 
   const markSent = (id: number) => {
     const target = items.find((i) => i.id === id);
+    const prevSentAt = target?.sent_at;
+    const now = Date.now();
     setItems((arr) =>
-      arr.map((i) => (i.id === id ? { ...i, status: "Sudah Dikirim" } : i)),
+      arr.map((i) =>
+        i.id === id ? { ...i, status: "Sudah Dikirim", sent_at: now } : i,
+      ),
     );
     toast.success(`Terkirim · ${target?.nama ?? "Pesanan"} ditandai sudah dikirim`, {
       action: {
         label: "Urungkan",
         onClick: () =>
           setItems((arr) =>
-            arr.map((i) => (i.id === id ? { ...i, status: "Belum Dikirim" } : i)),
+            arr.map((i) =>
+              i.id === id
+                ? { ...i, status: "Belum Dikirim", sent_at: prevSentAt }
+                : i,
+            ),
           ),
       },
     });
@@ -589,8 +600,13 @@ function Index() {
     if (selected.size === 0) return;
     const ids = new Set(selected);
     const count = ids.size;
+    const prevSentAt = new Map<number, number | undefined>();
+    for (const it of items) if (ids.has(it.id)) prevSentAt.set(it.id, it.sent_at);
+    const now = Date.now();
     setItems((arr) =>
-      arr.map((i) => (ids.has(i.id) ? { ...i, status: "Sudah Dikirim" } : i)),
+      arr.map((i) =>
+        ids.has(i.id) ? { ...i, status: "Sudah Dikirim", sent_at: now } : i,
+      ),
     );
     setSelected(new Set());
     toast.success(`${count} pesanan ditandai sudah dikirim`, {
@@ -599,7 +615,9 @@ function Index() {
         onClick: () =>
           setItems((arr) =>
             arr.map((i) =>
-              ids.has(i.id) ? { ...i, status: "Belum Dikirim" } : i,
+              ids.has(i.id)
+                ? { ...i, status: "Belum Dikirim", sent_at: prevSentAt.get(i.id) }
+                : i,
             ),
           ),
       },
