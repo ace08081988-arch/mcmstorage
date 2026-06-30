@@ -143,7 +143,13 @@ export function WaPreviewHost() {
   const expected = current?.expectedCount ?? photoCount;
   const missing = Math.max(0, expected - photoCount);
   const canRetry = !!current?.retryMissing && missing > 0;
-  const dup = current?.duplicate ?? null;
+  const live = useLiveIdemByIds(current?.idemIdsKey);
+  const liveChannel = live ? channelFromKey(live.key) : "unknown";
+  const crossChannel = !!live && liveChannel === "chat";
+  const snapshotDup = current?.duplicate ?? null;
+  const dup = live
+    ? { at: live.at, status: live.status, destination: snapshotDup?.destination, fingerprint: live.fingerprint }
+    : snapshotDup;
   const dupActive = !!dup && dup.status !== "failed";
   // Tombol "Kirim ulang (paksa)" hanya boleh aktif jika fingerprint payload
   // saat ini sama dengan fingerprint payload kiriman sebelumnya. Bila salah
