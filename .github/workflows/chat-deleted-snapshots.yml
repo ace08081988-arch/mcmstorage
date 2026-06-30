@@ -38,7 +38,26 @@ jobs:
         run: bun install --frozen-lockfile
 
       - name: Run chat-deleted unit, UI, and snapshot tests
-        run: bun run test:chat-deleted
+        env:
+          CI: "true"
+        # Vitest in CI mode fails (instead of silently writing) when a
+        # snapshot is missing or differs. Output is captured for the diff
+        # artifact below.
+        run: |
+          mkdir -p artifacts
+          bun run test:chat-deleted -- --reporter=verbose --no-color 2>&1 | tee artifacts/vitest-output.log
+
+      - name: Capture snapshot diff vs committed baseline
+        if: failure()
+        run: |
+          mkdir -p artifacts
+          git diff --no-color -- 'src/lib/**/__snapshots__/**' 'src/lib/**/*.snap' \
+            > artifacts/snapshot.diff || true
+          git status --porcelain -- 'src/lib/**/__snapshots__/**' 'src/lib/**/*.snap' \
+            > artifacts/snapshot.status || true
+          # Surface MessagePreview / DeletedPreview blocks specifically.
+          grep -n -A 20 -E 'MessagePreview|DeletedPreview' artifacts/snapshot.diff \
+            > artifacts/snapshot.message-deleted-preview.diff || true
 
       - name: Upload Vitest snapshot diffs on failure
         if: failure()
@@ -46,6 +65,7 @@ jobs:
         with:
           name: chat-deleted-snapshot-diffs
           path: |
+            artifacts/**
             src/lib/__snapshots__/**
             src/lib/**/*.snap
           retention-days: 14
