@@ -9,7 +9,7 @@
  * sinkronisasi mengandalkan event `send-log:changed` yang sudah dipancarkan
  * setiap kali `appendSendLog` dipanggil oleh pengirim aktif.
  */
-import { CheckCircle2, Info, Loader2, TriangleAlert, XCircle } from "lucide-react";
+import { CheckCircle2, CloudOff, Info, Loader2, TriangleAlert, XCircle } from "lucide-react";
 import type { SendLogEntry } from "@/lib/send-log";
 
 const MAX_VISIBLE = 6;
@@ -25,9 +25,18 @@ function fmtTime(at: number): string {
 export function InflightStepProgress({
   entries,
   channel,
+  stale = false,
+  syncError = null,
+  lastSyncedAt = null,
 }: {
   entries: SendLogEntry[];
   channel: "wa" | "chat" | "unknown";
+  /** True bila polling send-log tidak menghasilkan sync baru dalam ambang waktu wajar. */
+  stale?: boolean;
+  /** Pesan error baca terakhir (mis. localStorage corrupt). */
+  syncError?: string | null;
+  /** Timestamp sinkron sukses terakhir; dipakai untuk label "x detik lalu". */
+  lastSyncedAt?: number | null;
 }) {
   const terminal = entries.some((e) => e.kind === "outcome" || e.kind === "error");
   const visible = entries.slice(-MAX_VISIBLE);
@@ -52,6 +61,8 @@ export function InflightStepProgress({
         <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
           {terminal ? (
             <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+          ) : stale ? (
+            <CloudOff className="h-3.5 w-3.5 text-amber-600" />
           ) : (
             <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
           )}
@@ -64,6 +75,21 @@ export function InflightStepProgress({
           </div>
         ) : null}
       </header>
+      {stale && !terminal ? (
+        <div className="mb-1.5 flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[10.5px] text-amber-900 dark:text-amber-200">
+          <CloudOff className="mt-0.5 h-3 w-3 shrink-0" />
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold">Data belum tersinkron</div>
+            <div className="opacity-90">
+              {syncError
+                ? `Gagal membaca log kiriman (${syncError}). Tutup dan buka kembali dialog untuk memuat ulang.`
+                : lastSyncedAt
+                ? `Pembaruan terakhir ${Math.max(0, Math.round((Date.now() - lastSyncedAt) / 1000))} detik lalu — polling sempat berhenti (dialog ditutup / WebView dijeda).`
+                : "Belum ada pembacaan log yang berhasil setelah dialog dibuka kembali."}
+            </div>
+          </div>
+        </div>
+      ) : null}
       {visible.length === 0 ? (
         <p className="text-muted-foreground">Menunggu langkah pertama…</p>
       ) : (
