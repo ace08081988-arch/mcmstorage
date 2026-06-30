@@ -16,6 +16,7 @@ import type { SendLogEntry } from "@/lib/send-log";
 import { useLiveSendLogStatus } from "@/lib/send-log";
 import { SyncSourceBadge } from "@/components/SyncSourceBadge";
 import { InflightStepProgress } from "@/components/InflightStepProgress";
+import { StatusBadge } from "@/components/StatusBadge";
 import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
 import type { SendPayloadSummary } from "@/lib/idempotency";
 import { SendPayloadDiff } from "@/components/SendPayloadDiff";
@@ -305,7 +306,7 @@ export function WaPreviewHost() {
           <div className="rounded-lg border bg-muted/30 p-3">
             <div className="mb-1.5 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <FileText className="h-3 w-3" /> Teks pesan {edited ? <span className="rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[9px] font-medium text-amber-700 dark:text-amber-300">diubah</span> : null}
+                <FileText className="h-3 w-3" /> Teks pesan {edited ? <StatusBadge size="xs" variant="menunggu">diubah</StatusBadge> : null}
               </div>
               <div className="flex items-center gap-1">
                 {edited ? (
