@@ -52,6 +52,8 @@ import {
 import { sendMessage } from "@/lib/chat.functions";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
+import { EditContactNameDialog } from "@/components/chat/EditContactNameDialog";
+import { usePeerAlias } from "@/lib/contact-alias";
 import { useEntitlement } from "@/hooks/useEntitlement";
 import { ProPaywall } from "@/components/ProPaywall";
 import { AttachMenu } from "@/components/chat/AttachMenu";
