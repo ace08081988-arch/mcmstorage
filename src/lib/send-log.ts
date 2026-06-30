@@ -263,6 +263,9 @@ export function useLiveSendLogStatus(
   error: string | null;
   lastSyncedAt: number | null;
   active: boolean;
+  /** Asal update sinkron terakhir: `"self"` saat read() di tab ini, atau
+   *  `"external"` saat tab lain memancarkan storage event SYNC_KEY/KEY. */
+  lastSource: "self" | "external" | null;
 } {
   const k = key ?? "";
   const pollMs = options?.pollMs ?? 1200;
@@ -273,12 +276,14 @@ export function useLiveSendLogStatus(
   const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(initial?.lastSyncedAt ?? null);
   const [error, setError] = useState<string | null>(initial?.lastError ?? null);
   const [tick, setTick] = useState(0);
+  const [lastSource, setLastSource] = useState<"self" | "external" | null>(null);
   const lastSnapshotRef = useRef<string>(initial?.lastSnapshot ?? "");
 
   useEffect(() => {
     if (!k) {
       setLastSyncedAt(null);
       setError(null);
+      setLastSource(null);
       lastSnapshotRef.current = "";
       return;
     }
@@ -286,6 +291,7 @@ export function useLiveSendLogStatus(
     const hydrated = getSendLogSyncStatus(k);
     setLastSyncedAt(hydrated?.lastSyncedAt ?? null);
     setError(hydrated?.lastError ?? null);
+    setLastSource(null);
     lastSnapshotRef.current = hydrated?.lastSnapshot ?? "";
     let cancelled = false;
     // Guard anti-dobel: simpan signature terakhir yang sudah diterapkan ke
@@ -310,6 +316,7 @@ export function useLiveSendLogStatus(
         const now = Date.now();
         setLastSyncedAt(now);
         setError((prev) => (prev ? null : prev));
+        setLastSource("self");
         if (snap !== lastSnapshotRef.current) {
           lastSnapshotRef.current = snap;
           setTick((t) => t + 1);
@@ -328,7 +335,7 @@ export function useLiveSendLogStatus(
     const onEvt = () => read();
     // Sinkron antar-tab: ketika tab lain memperbarui status sinkron,
     // tarik nilai terbarunya supaya UI tab ini ikut up-to-date.
-    const onSyncEvt = () => {
+    const onSyncEvt = (source: "self" | "external" = "self") => {
       // Diterapkan instan baik untuk event dari tab ini (SYNC_EVENT) maupun
       // dari tab lain (storage event SYNC_KEY) — TIDAK menunggu
       // `visibilitychange`. Kita juga selalu menaikkan tick agar entries
@@ -346,6 +353,7 @@ export function useLiveSendLogStatus(
       lastAppliedSig = sig;
       setLastSyncedAt(s.lastSyncedAt);
       setError(s.lastError);
+      setLastSource(source);
       if (s.lastSnapshot !== lastSnapshotRef.current) {
         lastSnapshotRef.current = s.lastSnapshot;
       }
@@ -365,11 +373,18 @@ export function useLiveSendLogStatus(
     // Trailing-edge schedulers: coalesce burst storage event ke satu apply.
     const scheduleSyncApply = () => {
       if (syncPending) return;
-      syncPending = setTimeout(() => { syncPending = null; if (!cancelled) onSyncEvt(); }, STORAGE_THROTTLE_MS);
+      syncPending = setTimeout(() => { syncPending = null; if (!cancelled) onSyncEvt("external"); }, STORAGE_THROTTLE_MS);
     };
     const scheduleReadEntries = () => {
       if (readPending) return;
-      readPending = setTimeout(() => { readPending = null; if (!cancelled) read(); }, STORAGE_THROTTLE_MS);
+      readPending = setTimeout(() => {
+        readPending = null;
+        if (cancelled) return;
+        // KEY berubah dari tab lain — read() menandai "self", lalu kita
+        // override jadi "external" karena pemicunya storage event.
+        read();
+        setLastSource("external");
+      }, STORAGE_THROTTLE_MS);
     };
     // Storage event lintas tab — JANGAN tunggu visibility. Untuk SYNC_KEY
     // dan KEY pakai throttle trailing-edge (~80 ms) + guard signature agar
@@ -383,12 +398,13 @@ export function useLiveSendLogStatus(
     // visibilitychange tetap dipasang sebagai fallback paling akhir
     // (browser tertentu kadang melempar storage event saat tab background
     // tapi men-throttle setInterval); ini bukan jalur utama.
-    const onVisibility = () => { if (document.visibilityState === "visible") { onSyncEvt(); read(); } };
+    const onVisibility = () => { if (document.visibilityState === "visible") { onSyncEvt("self"); read(); } };
     window.addEventListener(EVENT, onEvt);
     // Catatan: kita gabungkan handler storage untuk KEY & SYNC_KEY ke satu
     // listener agar urutan eksekusi deterministik dan tidak ada race dua
     // listener saling menimpa state.
-    window.addEventListener(SYNC_EVENT, onSyncEvt);
+    const onSyncEvtSelf = () => onSyncEvt("self");
+    window.addEventListener(SYNC_EVENT, onSyncEvtSelf);
     window.addEventListener("storage", onCrossTabStorage);
     document.addEventListener("visibilitychange", onVisibility);
     const timer = pollMs > 0 ? setInterval(read, pollMs) : null;
@@ -397,7 +413,7 @@ export function useLiveSendLogStatus(
       if (syncPending) { clearTimeout(syncPending); syncPending = null; }
       if (readPending) { clearTimeout(readPending); readPending = null; }
       window.removeEventListener(EVENT, onEvt);
-      window.removeEventListener(SYNC_EVENT, onSyncEvt);
+      window.removeEventListener(SYNC_EVENT, onSyncEvtSelf);
       window.removeEventListener("storage", onCrossTabStorage);
       document.removeEventListener("visibilitychange", onVisibility);
       if (timer) clearInterval(timer);
@@ -410,5 +426,5 @@ export function useLiveSendLogStatus(
   const entries = k ? (() => { try { return getSendLog(k); } catch { return []; } })() : [];
   const staleThreshold = Math.max(2500, pollMs * 3);
   const stale = !!k && (error != null || lastSyncedAt == null || Date.now() - lastSyncedAt > staleThreshold);
-  return { entries, stale, error, lastSyncedAt, active: !!k };
+  return { entries, stale, error, lastSyncedAt, active: !!k, lastSource };
 }

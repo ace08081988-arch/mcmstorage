@@ -3,6 +3,7 @@ import { CheckCircle2, Loader2, MapPin, Send, XCircle, AlertTriangle, RefreshCw,
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
 import { useLiveSendLogStatus } from "@/lib/send-log";
+import { SyncSourceBadge } from "@/components/SyncSourceBadge";
 import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
 import { InflightStepProgress } from "@/components/InflightStepProgress";
 import type { SendPayloadSummary } from "@/lib/idempotency";
@@ -156,7 +157,10 @@ export function ChatSharePreviewDialog({
     <Dialog open={open} onOpenChange={(o) => { if (!sending) onOpenChange(o); }}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>Pratinjau kiriman chat</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            <span>Pratinjau kiriman chat</span>
+            <SyncSourceBadge source={liveLog.lastSource} active={liveLog.active} />
+          </DialogTitle>
           <DialogDescription>
             {data ? <>Akan dikirim ke <span className="font-medium text-foreground">{data.conversationTitle}</span>. Periksa format sebelum mengirim.</> : "Menyiapkan…"}
           </DialogDescription>

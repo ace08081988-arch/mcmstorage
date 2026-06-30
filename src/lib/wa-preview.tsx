@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
 import { useLiveSendLogStatus } from "@/lib/send-log";
+import { SyncSourceBadge } from "@/components/SyncSourceBadge";
 import { InflightStepProgress } from "@/components/InflightStepProgress";
 import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
 import type { SendPayloadSummary } from "@/lib/idempotency";
@@ -220,7 +221,10 @@ export function WaPreviewHost() {
               <MessageCircle className="h-5 w-5" />
             </div>
             <div className="min-w-0 flex-1 text-left">
-              <DialogTitle className="text-base">Pratinjau pesan WhatsApp</DialogTitle>
+              <DialogTitle className="flex items-center gap-2 text-base">
+                <span>Pratinjau pesan WhatsApp</span>
+                <SyncSourceBadge source={liveLog.lastSource} active={liveLog.active} />
+              </DialogTitle>
               <DialogDescription className="mt-0.5 text-xs">
                 Tinjau teks dan foto yang akan dikirim sebelum membuka WhatsApp.
               </DialogDescription>
