@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Sparkles, RotateCw, Eraser } from "lucide-react";
+import { Loader2, Sparkles, RotateCw, Eraser, Plus, Star, Trash2, ArrowLeft, Bookmark } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Slider } from "@/components/ui/slider";
+import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
 import {
   encodeCard, type StickerCard, type StickerArrowDir, decodeCard,
@@ -15,6 +16,9 @@ import { uploadChatFile } from "@/lib/chat-attachments";
 import { StickerView } from "@/components/chat/StickerView";
 import { sendMessage } from "@/lib/chat.functions";
 import { generateAiSticker } from "@/lib/sticker-ai.functions";
+import {
+  useStickerLibrary, saveSticker, removeSaved, toggleFav, pushRecent, type SavedSticker,
+} from "@/lib/sticker-library";
 
 const ARROW_DIRS: StickerArrowDir[] = [
   "up-left", "up", "up-right",
@@ -42,11 +46,19 @@ export function StickerPickerDialog({
   const [card, setCard] = useState<StickerCard>(initial ?? defaultArrow());
   const [tab, setTab] = useState<string>(initial?.kind ?? "arrow");
   const [busy, setBusy] = useState(false);
+  // "library" = panel grid (tap kirim), "editor" = bentuk lama untuk bikin/edit.
+  const [view, setView] = useState<"library" | "editor">(
+    mode.kind === "edit" || initial ? "editor" : "library",
+  );
+  const [saveOnSend, setSaveOnSend] = useState(true);
+  const lib = useStickerLibrary();
 
   useEffect(() => {
     if (!open) return;
     setCard(initial ?? defaultArrow());
     setTab(initial?.kind ?? "arrow");
+    setView(mode.kind === "edit" || initial ? "editor" : "library");
+    setSaveOnSend(true);
   }, [open, initial]);
 
   function switchTab(nextKind: string) {
@@ -77,6 +89,8 @@ export function StickerPickerDialog({
         await mode.onCommit(body);
       } else {
         await sendMessage({ data: { conversationId, body } });
+        pushRecent(card);
+        if (saveOnSend) saveSticker(card);
       }
       onSent?.();
       onOpenChange(false);
@@ -87,13 +101,47 @@ export function StickerPickerDialog({
     }
   }
 
+  /** Kirim langsung dari grid (one-tap). */
+  async function sendFromLibrary(s: SavedSticker) {
+    if (busy) return;
+    setBusy(true);
+    try {
+      await sendMessage({ data: { conversationId, body: encodeCard(s.card) } });
+      pushRecent(s.card);
+      onSent?.();
+      onOpenChange(false);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Gagal mengirim stiker");
+    } finally { setBusy(false); }
+  }
+
   return (
     <Dialog open={open} onOpenChange={(v) => !busy && onOpenChange(v)}>
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>{mode.kind === "edit" ? "Edit stiker" : "Tambah stiker"}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {view === "editor" && mode.kind !== "edit" ? (
+              <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setView("library")}>
+                <ArrowLeft className="h-4 w-4" />
+              </Button>
+            ) : null}
+            {mode.kind === "edit" ? "Edit stiker" : view === "library" ? "Stiker" : "Buat stiker"}
+          </DialogTitle>
         </DialogHeader>
 
+        {view === "library" ? (
+          <StickerLibraryPanel
+            saved={lib.saved}
+            recents={lib.recents}
+            fav={lib.fav}
+            busy={busy}
+            onSend={sendFromLibrary}
+            onToggleFav={(id) => toggleFav(id)}
+            onRemove={(id) => removeSaved(id)}
+            onNew={() => { setCard(defaultArrow()); setTab("arrow"); setView("editor"); }}
+          />
+        ) : (
+        <>
         <Tabs value={tab} onValueChange={switchTab} className="w-full">
           <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="arrow">Panah</TabsTrigger>
@@ -125,6 +173,12 @@ export function StickerPickerDialog({
           </div>
         </div>
 
+        {mode.kind !== "edit" ? (
+          <label className="flex items-center justify-between rounded-md border px-2 py-1.5 text-xs">
+            <span className="flex items-center gap-1.5"><Bookmark className="h-3.5 w-3.5" /> Simpan ke koleksi setelah kirim</span>
+            <Switch checked={saveOnSend} onCheckedChange={setSaveOnSend} />
+          </label>
+        ) : null}
         <DialogFooter>
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>Batal</Button>
           <Button onClick={commit} disabled={busy}>
@@ -132,8 +186,108 @@ export function StickerPickerDialog({
             {mode.kind === "edit" ? "Simpan perubahan" : "Kirim"}
           </Button>
         </DialogFooter>
+        </>
+        )}
       </DialogContent>
     </Dialog>
+  );
+}
+
+/** Grid stiker tersimpan ala WA: Buat + Favorit + Tersimpan + Terbaru. */
+function StickerLibraryPanel({
+  saved, recents, fav, busy, onSend, onToggleFav, onRemove, onNew,
+}: {
+  saved: SavedSticker[]; recents: SavedSticker[]; fav: Set<string>; busy: boolean;
+  onSend: (s: SavedSticker) => void;
+  onToggleFav: (id: string) => void;
+  onRemove: (id: string) => void;
+  onNew: () => void;
+}) {
+  const favs = useMemo(() => saved.filter((s) => fav.has(s.id)), [saved, fav]);
+  const rest = useMemo(() => saved.filter((s) => !fav.has(s.id)), [saved, fav]);
+  const empty = saved.length === 0 && recents.length === 0;
+  return (
+    <div className="space-y-3">
+      <Section title="Buat baru">
+        <div className="grid grid-cols-4 gap-2">
+          <button type="button" onClick={onNew}
+            className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border-2 border-dashed text-xs hover:bg-accent">
+            <Plus className="h-5 w-5 text-primary" />
+            <span>Buat</span>
+          </button>
+        </div>
+      </Section>
+      {favs.length ? (
+        <Section title="Favorit">
+          <Grid items={favs} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} />
+        </Section>
+      ) : null}
+      {rest.length ? (
+        <Section title="Tersimpan">
+          <Grid items={rest} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} />
+        </Section>
+      ) : null}
+      {recents.length ? (
+        <Section title="Terbaru">
+          <Grid items={recents} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} compact />
+        </Section>
+      ) : null}
+      {empty ? (
+        <p className="rounded-md border border-dashed py-6 text-center text-xs text-muted-foreground">
+          Belum ada stiker. Tekan <span className="font-medium">Buat</span> untuk membuat stiker pertama. Setelah dikirim, stiker otomatis tersimpan di sini.
+        </p>
+      ) : null}
+    </div>
+  );
+}
+
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div>
+      <div className="mb-1 text-[10px] font-medium uppercase tracking-wide text-muted-foreground">{title}</div>
+      {children}
+    </div>
+  );
+}
+
+function Grid({
+  items, fav, busy, onSend, onToggleFav, onRemove, compact,
+}: {
+  items: SavedSticker[]; fav: Set<string>; busy: boolean;
+  onSend: (s: SavedSticker) => void; onToggleFav: (id: string) => void; onRemove: (id: string) => void;
+  compact?: boolean;
+}) {
+  return (
+    <div className="grid grid-cols-4 gap-2">
+      {items.map((s) => {
+        const isFav = fav.has(s.id);
+        return (
+          <div key={s.id} className="group relative">
+            <button type="button" disabled={busy}
+              onClick={() => onSend(s)}
+              className="flex aspect-square w-full items-center justify-center overflow-hidden rounded-xl border bg-muted/30 p-1 transition active:scale-95 disabled:opacity-50">
+              <div className="pointer-events-none scale-[0.55] origin-center">
+                <StickerView card={s.card} mine />
+              </div>
+            </button>
+            {!compact ? (
+              <>
+                <button type="button" aria-label="Favorit"
+                  onClick={(e) => { e.stopPropagation(); onToggleFav(s.id); }}
+                  className="absolute left-0.5 top-0.5 rounded-full bg-background/80 p-0.5 backdrop-blur">
+                  <Star className={`h-3 w-3 ${isFav ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
+                </button>
+                <button type="button" aria-label="Hapus"
+                  onClick={(e) => { e.stopPropagation(); onRemove(s.id); }}
+                  className="absolute right-0.5 top-0.5 rounded-full bg-background/80 p-0.5 opacity-0 backdrop-blur group-hover:opacity-100">
+                  <Trash2 className="h-3 w-3 text-rose-500" />
+                </button>
+              </>
+            ) : null}
+          </div>
+        );
+      })}
+    </div>
   );
 }
 
