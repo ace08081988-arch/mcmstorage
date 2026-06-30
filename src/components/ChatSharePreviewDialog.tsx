@@ -78,6 +78,7 @@ export function ChatSharePreviewDialog({
   onForceSend,
   previousLog,
   currentFingerprint,
+  idemIdsKey,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
