@@ -52,6 +52,8 @@ import {
 import { sendMessage } from "@/lib/chat.functions";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
+import { EditContactNameDialog } from "@/components/chat/EditContactNameDialog";
+import { usePeerAlias } from "@/lib/contact-alias";
 import { useEntitlement } from "@/hooks/useEntitlement";
 import { ProPaywall } from "@/components/ProPaywall";
 import { AttachMenu } from "@/components/chat/AttachMenu";
@@ -276,6 +278,28 @@ function ChatRoomPage() {
     }
     return meta.data.title || (meta.data.kind === "order" ? "Diskusi pesanan" : "Grup");
   }, [meta.data, profiles.data, members.data, myId]);
+
+  // === Edit nama kontak (alias) untuk DM, tersinkron ke address_book ===
+  const dmPeer = useMemo(() => {
+    if (!meta.data || meta.data.kind !== "dm" || !myId) return null;
+    const other = (members.data ?? []).find((u) => u !== myId);
+    if (!other) return null;
+    const p = profiles.data?.get(other) ?? null;
+    return {
+      peerUserId: other,
+      peerPhone: p?.phone ?? null,
+      peerEmail: p?.email ?? null,
+      fallbackName: p?.display_name || p?.phone || p?.email || "Kontak",
+    };
+  }, [meta.data, members.data, profiles.data, myId]);
+
+  const peerAlias = usePeerAlias({
+    peerUserId: dmPeer?.peerUserId ?? null,
+    peerPhone: dmPeer?.peerPhone ?? null,
+    peerEmail: dmPeer?.peerEmail ?? null,
+  });
+  const displayedPeerName = peerAlias.data?.name?.trim() || dmPeer?.fallbackName || "Kontak";
+  const [editNameOpen, setEditNameOpen] = useState(false);
 
   const dmPresence = useMemo(() => {
     if (!meta.data || meta.data.kind !== "dm" || !myId || !profiles.data) return null;
@@ -595,7 +619,22 @@ function ChatRoomPage() {
           <MessageCircle className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold">{headerTitle}</div>
+          <div className="flex items-center gap-1">
+            <div className="truncate text-sm font-semibold">
+              {meta.data?.kind === "dm" ? displayedPeerName : headerTitle}
+            </div>
+            {meta.data?.kind === "dm" && dmPeer ? (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-6 w-6 shrink-0 text-muted-foreground hover:text-foreground"
+                aria-label="Edit nama kontak"
+                onClick={() => setEditNameOpen(true)}
+              >
+                <Pencil className="h-3.5 w-3.5" />
+              </Button>
+            ) : null}
+          </div>
           <div className="truncate text-[11px] text-muted-foreground">
             {typingNames.length > 0 ? (
               <span className="italic text-primary">
@@ -1281,6 +1320,20 @@ function ChatRoomPage() {
           currentTitle={meta.data.title}
           ownerUserId={meta.data.owner_user_id}
           onLeft={() => navigate({ to: "/chat" })}
+        />
+      ) : null}
+
+      {dmPeer ? (
+        <EditContactNameDialog
+          open={editNameOpen}
+          onOpenChange={setEditNameOpen}
+          peerKey={{
+            peerUserId: dmPeer.peerUserId,
+            peerPhone: dmPeer.peerPhone,
+            peerEmail: dmPeer.peerEmail,
+          }}
+          initialName={displayedPeerName}
+          fromAlias={!!peerAlias.data?.name}
         />
       ) : null}
 
