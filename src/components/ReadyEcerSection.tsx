@@ -1118,6 +1118,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           </button>
         </div>
         ) : (
+          <>
+          {view === "sent" && (
+            <SentDetailList shots={shots} details={sentDetails} />
+          )}
           <div className="flex items-center gap-1.5">
             {thumbs.slice(1, 4).map((s) => (
               <div key={s.id} className="relative h-7 w-7 shrink-0 overflow-hidden rounded border border-card bg-muted ring-1 ring-border">
@@ -1163,6 +1167,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               </button>
             )}
           </div>
+          </>
         )}
       </div>
       <PickChatConversationDialog
