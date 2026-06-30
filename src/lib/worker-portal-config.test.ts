@@ -138,3 +138,93 @@ describe("applyPreviewOverrideFromHash · sanitasi nilai ekstrem", () => {
     expect(WORKER_PORTAL_DEFAULTS.sessionTtlMs).toBeGreaterThan(0);
   });
 });
+
+describe("applyPreviewOverrideFromHash · variasi format #wpcfg", () => {
+  const validCfg = { maxAttempts: 4, lockSeconds: 30 };
+  const validJson = JSON.stringify(validCfg);
+  const stdB64 = Buffer.from(validJson, "utf8").toString("base64"); // dgn '=' padding
+  const b64UrlNoPad = stdB64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  const b64UrlWithPad = stdB64.replace(/\+/g, "-").replace(/\//g, "_"); // padding masih '='
+
+  it("base64url tanpa padding diterapkan dengan benar", () => {
+    g.window!.location.hash = `#wpcfg=${b64UrlNoPad}`;
+    expect(applyPreviewOverrideFromHash()).toEqual(validCfg);
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toEqual(validCfg);
+  });
+
+  it("base64url dengan padding '=' percent-encoded juga diterima", () => {
+    const encoded = encodeURIComponent(b64UrlWithPad); // '=' → '%3D'
+    g.window!.location.hash = `#wpcfg=${encoded}`;
+    expect(applyPreviewOverrideFromHash()).toEqual(validCfg);
+  });
+
+  it("base64 standar (dengan '+' / '/' / '=') tetap di-decode via normalisasi", () => {
+    // Payload yg memunculkan '+' atau '/' jarang muncul utk JSON pendek;
+    // di sini cukup verifikasi padding '=' standar.
+    g.window!.location.hash = `#wpcfg=${encodeURIComponent(stdB64)}`;
+    expect(applyPreviewOverrideFromHash()).toEqual(validCfg);
+  });
+
+  it("padding salah (kelebihan '=') → no-op aman", () => {
+    g.window!.location.hash = `#wpcfg=${encodeURIComponent(stdB64 + "===")}`;
+    expect(applyPreviewOverrideFromHash()).toBeNull();
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toBeUndefined();
+  });
+
+  it("whitespace di tengah payload merusak decode → no-op aman", () => {
+    const withSpace = b64UrlNoPad.slice(0, 4) + " " + b64UrlNoPad.slice(4);
+    g.window!.location.hash = `#wpcfg=${encodeURIComponent(withSpace)}`;
+    expect(applyPreviewOverrideFromHash()).toBeNull();
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toBeUndefined();
+  });
+
+  it("newline / tab di payload → no-op aman", () => {
+    g.window!.location.hash = `#wpcfg=${encodeURIComponent(b64UrlNoPad + "\n\t")}`;
+    expect(applyPreviewOverrideFromHash()).toBeNull();
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toBeUndefined();
+  });
+
+  it("#wpcfg= kosong → no-op aman", () => {
+    g.window!.location.hash = `#wpcfg=`;
+    expect(applyPreviewOverrideFromHash()).toBeNull();
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toBeUndefined();
+  });
+
+  it("base64 valid tapi bukan JSON → no-op aman", () => {
+    const notJson = Buffer.from("halo dunia", "utf8")
+      .toString("base64")
+      .replace(/=+$/, "");
+    g.window!.location.hash = `#wpcfg=${notJson}`;
+    expect(applyPreviewOverrideFromHash()).toBeNull();
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toBeUndefined();
+  });
+
+  it("JSON array (bukan object) → sanitasi jadi {}, tidak mencemari override", () => {
+    const arr = Buffer.from(JSON.stringify([1, 2, 3]), "utf8")
+      .toString("base64")
+      .replace(/=+$/, "");
+    g.window!.location.hash = `#wpcfg=${arr}`;
+    expect(applyPreviewOverrideFromHash()).toEqual({});
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toEqual({});
+  });
+
+  it("muncul sebagai parameter kedua (#foo&wpcfg=...) tetap dikenali", () => {
+    g.window!.location.hash = `#foo=bar&wpcfg=${b64UrlNoPad}`;
+    expect(applyPreviewOverrideFromHash()).toEqual(validCfg);
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toEqual(validCfg);
+  });
+
+  it("nilai out-of-range di payload base64url tanpa padding disaring", () => {
+    const ext = Buffer.from(
+      JSON.stringify({ maxAttempts: 999, lockSeconds: 60 }),
+      "utf8",
+    )
+      .toString("base64")
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=+$/, "");
+    g.window!.location.hash = `#wpcfg=${ext}`;
+    expect(applyPreviewOverrideFromHash()).toEqual({ lockSeconds: 60 });
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toEqual({ lockSeconds: 60 });
+  });
+});
