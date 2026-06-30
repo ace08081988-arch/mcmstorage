@@ -1,6 +1,9 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { MessageRow } from "@/lib/chat";
 
+const DELETED_PLACEHOLDER = "(pesan dihapus)";
+const DELETED_ATTACHMENT_PLACEHOLDER = "(lampiran dihapus)";
+
 export function MessageInfoDialog({
   open,
   onOpenChange,
@@ -29,7 +32,7 @@ export function MessageInfoDialog({
           {message.edited_at ? (
             <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Diedit</dt><dd className="text-right">{new Date(message.edited_at).toLocaleString("id-ID")}</dd></div>
           ) : null}
-          <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Status</dt><dd className="text-right">{message.deleted_at ? "Dihapus" : read ? "Dibaca" : "Terkirim"}</dd></div>
+          <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Status</dt><dd className="text-right">{message.deleted_at ? DELETED_PLACEHOLDER : read ? "Dibaca" : "Terkirim"}</dd></div>
           {readAtMs ? (
             <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Dibaca</dt><dd className="text-right">{new Date(readAtMs).toLocaleString("id-ID")}</dd></div>
           ) : null}
@@ -38,7 +41,7 @@ export function MessageInfoDialog({
             <div className="flex justify-between gap-3">
               <dt className="text-muted-foreground">Lampiran</dt>
               <dd className="break-all text-right text-[11px]">
-                {message.deleted_at ? <em className="text-muted-foreground">(lampiran dihapus)</em> : (message.attachment_name ?? message.attachment_path)}
+                {message.deleted_at ? <em className="text-muted-foreground">{DELETED_ATTACHMENT_PLACEHOLDER}</em> : (message.attachment_name ?? message.attachment_path)}
               </dd>
             </div>
           ) : null}
