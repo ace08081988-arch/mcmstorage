@@ -723,13 +723,13 @@ function DetailHero({
 function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
   return (
       <div className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-start gap-3 py-2.5 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
-      <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
+      <div className="flex min-w-0 items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
         <span className="shrink-0 text-muted-foreground/70">{icon}</span>
         <span className="truncate">{label}</span>
       </div>
-      <div className="min-w-0 text-right text-xs text-foreground">
+      <div className="min-w-0 text-right text-sm font-semibold leading-snug text-foreground">
         <div className="break-words">{value}</div>
-        {sub && <div className="mt-0.5 break-words text-[11px] text-muted-foreground">{sub}</div>}
+        {sub && <div className="mt-0.5 break-words text-[11px] font-normal leading-snug text-muted-foreground">{sub}</div>}
       </div>
     </div>
   );
