@@ -1169,8 +1169,8 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                   aria-hidden
                   className={`inline-block h-2 w-2 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
                 />
-                <h3 className="truncate text-sm font-semibold">{cat}</h3>
-                <span className="rounded-full border bg-background px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+                <h3 className="truncate text-sm font-semibold leading-snug">{cat}</h3>
+                <span className="shrink-0 whitespace-nowrap rounded-full border bg-background px-1.5 py-0.5 text-[11px] font-medium leading-snug text-muted-foreground">
                   {list.length} item
                 </span>
               </div>
