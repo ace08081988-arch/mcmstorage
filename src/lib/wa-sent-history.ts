@@ -93,6 +93,7 @@ export function markSent(ids: string[], meta?: SentMeta) {
       channel: meta?.channel,
       mapsUrl: meta?.mapsUrl ?? null,
       status: meta?.status ?? "success",
+      idemKey: meta?.idemKey,
     });
   }
   const entries = prune(Array.from(map.values()));
