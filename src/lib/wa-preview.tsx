@@ -9,7 +9,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, RotateCcw, MapPin } from "lucide-react";
+import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, RotateCcw, MapPin, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import { toast } from "sonner";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
@@ -29,6 +30,11 @@ type Request = {
   text: string;
   url?: string;
   files?: File[];
+  /** Total foto yang diharapkan ada (>= files.length). Selisihnya dianggap "gagal diunduh". */
+  expectedCount?: number;
+  /** Coba ambil ulang foto yang gagal. Implementasi caller wajib mengembalikan File[] baru
+   *  (yang sukses pada percobaan ini). Helper akan menambahkannya ke files. */
+  retryMissing?: () => Promise<File[]>;
   resolve: (result: { ok: boolean; text?: string }) => void;
 };
 
@@ -40,7 +46,13 @@ const queue: Request[] = [];
  * Mengembalikan true jika user menekan "Kirim", false jika dibatalkan.
  * Akan dilewati jika user pernah mencentang "Jangan tampilkan lagi".
  */
-export function confirmWaShare(input: { text: string; url?: string; files?: File[] }): Promise<{ ok: boolean; text?: string }> {
+export function confirmWaShare(input: {
+  text: string;
+  url?: string;
+  files?: File[];
+  expectedCount?: number;
+  retryMissing?: () => Promise<File[]>;
+}): Promise<{ ok: boolean; text?: string }> {
   if (getWaSkipPreview()) return Promise.resolve({ ok: true, text: input.text });
   return new Promise((resolve) => {
     const req: Request = { ...input, resolve };
@@ -55,12 +67,17 @@ export function WaPreviewHost() {
   const [skip, setSkip] = useState(false);
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState("");
+  const [retrying, setRetrying] = useState(false);
+  /** Counter untuk memaksa re-render setelah retryMissing memutasi current.files. */
+  const [fileRev, setFileRev] = useState(0);
 
   useEffect(() => {
     openRequest = (req) => {
       setSkip(false);
       setEditing(false);
       setDraft(req.text);
+      setRetrying(false);
+      setFileRev(0);
       setCurrent(req);
       setOpen(true);
     };
@@ -69,6 +86,8 @@ export function WaPreviewHost() {
       setSkip(false);
       setEditing(false);
       setDraft(req.text);
+      setRetrying(false);
+      setFileRev(0);
       setCurrent(req);
       setOpen(true);
     }
@@ -83,7 +102,8 @@ export function WaPreviewHost() {
       url: URL.createObjectURL(f),
       isImage: /^image\//.test(f.type),
     }));
-  }, [current]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [current, fileRev]);
 
   useEffect(() => {
     return () => {
@@ -101,8 +121,32 @@ export function WaPreviewHost() {
   const url = current?.url;
   const isMapsUrl = !!url && /(?:google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps|geo:)/i.test(url);
   const photoCount = previews.length;
+  const expected = current?.expectedCount ?? photoCount;
+  const missing = Math.max(0, expected - photoCount);
+  const canRetry = !!current?.retryMissing && missing > 0;
   const original = current?.text ?? "";
   const edited = draft !== original;
+
+  const handleRetry = async () => {
+    if (!current?.retryMissing || retrying) return;
+    setRetrying(true);
+    try {
+      const newFiles = await current.retryMissing();
+      if (newFiles && newFiles.length > 0) {
+        // Mutasi array yang dipegang caller agar foto baru ikut terkirim.
+        const arr = (current.files ??= []);
+        arr.push(...newFiles);
+        setFileRev((n) => n + 1);
+        toast.success(`${newFiles.length} foto berhasil diambil ulang.`);
+      } else {
+        toast.warning("Masih gagal mengunduh foto. Coba lagi sebentar atau periksa koneksi.");
+      }
+    } catch (err) {
+      toast.error(`Gagal mengambil ulang foto: ${(err as Error).message || "tidak diketahui"}`);
+    } finally {
+      setRetrying(false);
+    }
+  };
 
   const fmtSize = (n: number) => {
     if (n < 1024) return `${n} B`;
@@ -187,9 +231,39 @@ export function WaPreviewHost() {
                 <ImageIcon className="h-3 w-3" /> Foto / lampiran
               </div>
               <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-                {photoCount} berkas
+                {photoCount}{expected > photoCount ? ` / ${expected}` : ""} berkas
               </span>
             </div>
+            {missing > 0 ? (
+              <div className="mb-2 flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-800 dark:text-amber-200">
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium">{missing} foto gagal diunduh.</div>
+                  <div className="opacity-80">
+                    {canRetry
+                      ? "Coba ambil ulang sebelum mengirim agar tidak ada foto yang hilang."
+                      : "Foto ini tidak akan ikut terkirim — lanjutkan kirim hanya jika tidak diperlukan."}
+                  </div>
+                </div>
+                {canRetry ? (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    className="h-7 shrink-0 border-amber-500/60 bg-background px-2 text-[11px] text-amber-800 hover:bg-amber-500/10 dark:text-amber-200"
+                    onClick={handleRetry}
+                    disabled={retrying}
+                  >
+                    {retrying ? (
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    ) : (
+                      <RefreshCw className="mr-1 h-3 w-3" />
+                    )}
+                    {retrying ? "Mengambil…" : "Coba ambil ulang"}
+                  </Button>
+                ) : null}
+              </div>
+            ) : null}
             {photoCount === 0 ? (
               <div className="rounded-md border border-dashed bg-background/60 p-4 text-center text-xs text-muted-foreground">
                 Tidak ada foto — hanya teks{url ? " + link" : ""} yang akan dikirim.

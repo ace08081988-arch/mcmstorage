@@ -949,23 +949,41 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     setSendStatus("sending");
     setSendError(null);
     try {
-      const files: File[] = [];
+      // Bangun daftar slot foto (max 10). Pertahankan slot yang gagal agar bisa di-retry
+      // dari pratinjau tanpa mengulang seluruh alur kirim.
+      type Slot = { path: string; name: string; source: typeof take[number]["source"] };
+      const allSlots: Slot[] = [];
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
           ...(s.photo_path ? [s.photo_path] : []),
         ])).filter(Boolean);
-        if (paths.length === 0) continue;
         for (let pi = 0; pi < paths.length; pi++) {
-          const p = paths[pi];
-          const url = await resolveShotSignedUrl(p, s.source, 600);
-          if (!url) continue;
-          const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
-          if (f) files.push(f);
-          if (files.length >= 10) break;
+          allSlots.push({ path: paths[pi], name: `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`, source: s.source });
         }
-        if (files.length >= 10) break;
       }
+      const slots = allSlots.slice(0, 10);
+      async function fetchSlots(list: Slot[]): Promise<{ ok: File[]; failed: Slot[] }> {
+        const ok: File[] = [];
+        const failed: Slot[] = [];
+        for (const sl of list) {
+          const url = await resolveShotSignedUrl(sl.path, sl.source, 600);
+          const f = url ? await urlToFile(url, sl.name) : null;
+          if (f) ok.push(f);
+          else failed.push(sl);
+        }
+        return { ok, failed };
+      }
+      const initial = await fetchSlots(slots);
+      const files: File[] = [...initial.ok];
+      let pendingSlots: Slot[] = initial.failed;
+      const expectedCount = slots.length;
+      const retryMissing = async (): Promise<File[]> => {
+        if (pendingSlots.length === 0) return [];
+        const { ok, failed } = await fetchSlots(pendingSlots);
+        pendingSlots = failed;
+        return ok;
+      };
       if (files.length === 0) {
         toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan ke WA.");
       }
@@ -979,7 +997,14 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       const res = await withIdempotency(idemKey, {
         onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
         run: async () => {
-          const r0 = await shareToWhatsApp({ text, title: r.name, files, url: firstLocation ?? undefined });
+          const r0 = await shareToWhatsApp({
+            text,
+            title: r.name,
+            files,
+            url: firstLocation ?? undefined,
+            expectedCount,
+            retryMissing,
+          });
           notifyShareResult(r0);
           if (r0.status === "shared" || r0.status === "fallback") {
             markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
