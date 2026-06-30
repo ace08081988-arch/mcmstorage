@@ -1325,8 +1325,19 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       <PickChatConversationDialog
         open={pickChatOpen}
         onOpenChange={setPickChatOpen}
-        onPick={(id, title) => { void sendChat(id, title); }}
+        onPick={(id, title) => { void prepareChat(id, title); }}
         title={`Kirim "${r.name}" ke percakapan`}
+      />
+      <ChatSharePreviewDialog
+        open={chatPreviewOpen}
+        onOpenChange={(o) => {
+          if (chatSending) return;
+          setChatPreviewOpen(o);
+          if (!o) setChatPreview(null);
+        }}
+        data={chatPreview?.preview ?? null}
+        sending={chatSending}
+        onConfirm={() => { void confirmChatSend(); }}
       />
     </div>
   );
