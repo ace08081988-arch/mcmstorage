@@ -134,6 +134,18 @@ function PublicPrepPage() {
   // kembali ke layar PIN. PIN disimpan dalam scope per-token, TTL singkat.
   const SESSION_KEY = `prep_session:${token}`;
   const SESSION_TTL_MS = cfg.sessionTtlMs;
+  // BroadcastChannel untuk sinkron antar-tab: countdown sesi PIN dan
+  // status lock berlaku real-time tanpa reload. localStorage hanya bicara
+  // antar-tab via `storage` event (cocok utk lock), tapi sessionStorage
+  // per-tab — jadi countdown sesi butuh BroadcastChannel.
+  const bcRef = useRef<BroadcastChannel | null>(null);
+  type PortalMsg =
+    | { type: "session"; pin: string; ts: number }
+    | { type: "session-clear" }
+    | { type: "attempts"; attempts: number; lockedUntil: number | null };
+  function broadcast(msg: PortalMsg) {
+    try { bcRef.current?.postMessage(msg); } catch { /* noop */ }
+  }
   function readSession(): { pin: string; ts: number } | null {
     if (typeof window === "undefined") return null;
     try {
