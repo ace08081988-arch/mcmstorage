@@ -268,6 +268,19 @@ function PublicPrepPage() {
   // Timestamp mulai sesi PIN aktif. Dipakai utk countdown sisa waktu
   // sebelum re-login. Dipasang di writeSession dan rehydrate.
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
+  // Penanda bahwa sesi PIN baru saja kedaluwarsa otomatis. Dipakai
+  // untuk menampilkan tombol "Re-login" yang menonjol di layar PIN.
+  const [sessionJustExpired, setSessionJustExpired] = useState(false);
+  const pinInputRef = useRef<HTMLInputElement | null>(null);
+  function focusPinInput() {
+    setTimeout(() => {
+      try { pinInputRef.current?.focus(); } catch { /* noop */ }
+    }, 50);
+  }
+  function reloginNow() {
+    goBackToPin();
+    focusPinInput();
+  }
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
   // berturut-turut sebelum input PIN dikunci selama LOCK_SECONDS.
   // Data disimpan di localStorage per-token agar reload halaman tidak
