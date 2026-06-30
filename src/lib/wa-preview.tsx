@@ -38,7 +38,11 @@ type Request = {
    *  (yang sukses pada percobaan ini). Helper akan menambahkannya ke files. */
   retryMissing?: () => Promise<File[]>;
   /** Info klik ganda (idempotency hit) saat dialog dibuka. */
-  duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string } | null;
+  duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string; fingerprint?: string } | null;
+  /** Fingerprint payload yang akan dikirim sekarang. Dipakai untuk membandingkan
+   *  dengan `duplicate.fingerprint` agar tombol "Kirim ulang (paksa)" hanya aktif
+   *  jika payload-nya benar-benar sama. */
+  currentFingerprint?: string;
   previousLog?: SendLogEntry[];
   resolve: (result: { ok: boolean; text?: string; force?: boolean }) => void;
 };
@@ -57,7 +61,8 @@ export function confirmWaShare(input: {
   files?: File[];
   expectedCount?: number;
   retryMissing?: () => Promise<File[]>;
-  duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string } | null;
+  duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string; fingerprint?: string } | null;
+  currentFingerprint?: string;
   previousLog?: SendLogEntry[];
 }): Promise<{ ok: boolean; text?: string; force?: boolean }> {
   // Tampilkan pratinjau saat klik ganda terdeteksi, meski user pernah meminta "jangan
@@ -136,6 +141,19 @@ export function WaPreviewHost() {
   const canRetry = !!current?.retryMissing && missing > 0;
   const dup = current?.duplicate ?? null;
   const dupActive = !!dup && dup.status !== "failed";
+  // Tombol "Kirim ulang (paksa)" hanya boleh aktif jika fingerprint payload
+  // saat ini sama dengan fingerprint payload kiriman sebelumnya. Bila salah
+  // satu fingerprint tidak tersedia (record lama tanpa fingerprint), default
+  // ke "tidak cocok" demi kehati-hatian — operator harus menutup dialog
+  // alih-alih mengirim konten yang mungkin berbeda secara tak sengaja.
+  const dupFp = dup?.fingerprint;
+  const curFp = current?.currentFingerprint;
+  const payloadMatches = !!dupFp && !!curFp && dupFp === curFp;
+  const forceDisabledReason = !payloadMatches
+    ? (!dupFp
+        ? "Tidak ada sidik jari payload tersimpan dari kiriman sebelumnya — tutup dialog dan tunggu jeda idempotency selesai sebelum mengirim ulang."
+        : "Payload (caption / foto / link) berbeda dari kiriman sebelumnya. Tombol paksa dinonaktifkan agar konten berbeda tidak terkirim ke tujuan yang sama dengan key idempotency yang sama.")
+    : null;
   const dupAgoSec = dup ? Math.max(0, Math.round((Date.now() - dup.at) / 1000)) : 0;
   const dupAgoLabel = dupAgoSec < 60 ? `${dupAgoSec} detik lalu` : `${Math.round(dupAgoSec / 60)} menit lalu`;
   const dupAbsLabel = dup ? new Date(dup.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
@@ -212,6 +230,20 @@ export function WaPreviewHost() {
                   <dt className="font-medium opacity-80">Status</dt>
                   <dd className="break-words">{dupStatusLabel}</dd>
                 </dl>
+                {dup!.status !== "in-flight" ? (
+                  <div
+                    className={
+                      "mt-2 rounded-md border px-2 py-1.5 text-[11px] " +
+                      (payloadMatches
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                        : "border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-200")
+                    }
+                  >
+                    {payloadMatches
+                      ? "Payload identik dengan kiriman sebelumnya — aman untuk dikirim ulang bila perlu."
+                      : forceDisabledReason}
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -359,8 +391,14 @@ export function WaPreviewHost() {
                 type="button"
                 size="sm"
                 onClick={() => finish(true, true)}
-                disabled={dup!.status === "in-flight"}
-                title={dup!.status === "in-flight" ? "Kiriman sebelumnya masih berjalan" : "Kirim ulang meski klik ganda terdeteksi"}
+                disabled={dup!.status === "in-flight" || !payloadMatches}
+                title={
+                  dup!.status === "in-flight"
+                    ? "Kiriman sebelumnya masih berjalan"
+                    : !payloadMatches
+                      ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
+                      : "Kirim ulang meski klik ganda terdeteksi"
+                }
                 className="bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
               >
                 <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />

@@ -13,7 +13,7 @@ import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, History, Undo2 } from "lucide-react";
 import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
-import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, type IdemRecord } from "@/lib/idempotency";
+import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, type IdemRecord } from "@/lib/idempotency";
 import { appendSendLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
@@ -922,6 +922,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     preview: ChatSharePreviewData;
     duplicate: ChatShareDuplicateInfo | null;
     previousLog: SendLogEntry[];
+    fingerprint: string;
   };
   const [chatPreview, setChatPreview] = useState<ChatPreviewState | null>(null);
   const [chatStatus, setChatStatus] = useState<ChatShareLiveStatus | null>(null);
@@ -943,7 +944,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const existing = getIdem(idemKey);
     const duplicateRec: IdemRecord | null = existing && existing.status !== "failed" ? existing : null;
     const duplicate = duplicateRec
-      ? { at: duplicateRec.at, status: duplicateRec.status, destination: r.name }
+      ? { at: duplicateRec.at, status: duplicateRec.status, destination: r.name, fingerprint: duplicateRec.fingerprint }
       : null;
     const previousLog = duplicate ? getSendLog(idemKey) : [];
     setSending(true);
@@ -995,6 +996,16 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
         ...lines,
       ].join("\n");
+      // Fingerprint payload WA: caption + link + daftar slot foto (path & nama).
+      // Stabil terhadap urutan dan dipakai untuk membandingkan dengan payload
+      // kiriman sebelumnya pada idempotency key yang sama.
+      const waFingerprint = payloadFingerprint({
+        channel: "wa",
+        text,
+        url: firstLocation ?? null,
+        expectedCount,
+        slots: slots.map((s) => ({ path: s.path, name: s.name })),
+      });
       const callShare = () => shareToWhatsApp({
             text,
             title: r.name,
@@ -1004,6 +1015,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             retryMissing,
             duplicate,
             previousLog,
+            currentFingerprint: waFingerprint,
           });
       // Saat duplikat aktif: bypass withIdempotency agar pratinjau (yang sekarang
       // memuat peringatan "Klik ganda terdeteksi") selalu tampil. Jika operator
@@ -1015,7 +1027,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         notifyShareResult(r0);
         if (r0.status === "shared" || r0.status === "fallback") {
           clearIdem(idemKey);
-          setIdem(idemKey, "done");
+          setIdem(idemKey, "done", undefined, waFingerprint);
           markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
           res = { status: "shared" };
         } else if (r0.status === "cancelled") {
@@ -1028,6 +1040,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         appendSendLog(idemKey, { kind: "info", label: `Mulai kirim WA ke "${r.name}"`, detail: `${take.length} kiriman · ${files.length}/${expectedCount} foto` });
         res = await withIdempotency(idemKey, {
           onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
+          fingerprint: waFingerprint,
           run: async () => {
           const r0 = await callShare();
           notifyShareResult(r0);
@@ -1080,7 +1093,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const existing = getIdem(idemKey);
     const duplicate: ChatShareDuplicateInfo | null =
       existing && existing.status !== "failed"
-        ? { at: existing.at, status: existing.status, destination: convTitle }
+        ? { at: existing.at, status: existing.status, destination: convTitle, fingerprint: existing.fingerprint }
         : null;
     const previousLog = duplicate ? getSendLog(idemKey) : [];
     setPickChatOpen(false);
@@ -1129,6 +1142,16 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         missingPhotos: Math.max(0, attemptedPaths - chatShots.length),
         mapsUrl: firstLocation,
       };
+      // Fingerprint payload Chat: caption + conv + lokasi + daftar id foto.
+      // Dipakai untuk membandingkan dengan payload kiriman sebelumnya agar
+      // tombol "Kirim ulang (paksa)" hanya aktif saat konten benar-benar sama.
+      const chatFingerprint = payloadFingerprint({
+        channel: "chat",
+        conversationId,
+        caption,
+        locationUrl: firstLocation ?? null,
+        shotIds: [...chatShots.map((s) => s.id)].sort(),
+      });
       setChatPreview({
         conversationId,
         conversationTitle: convTitle,
@@ -1140,6 +1163,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         preview,
         duplicate,
         previousLog,
+        fingerprint: chatFingerprint,
       });
       setChatPreviewOpen(true);
     } catch (err) {
@@ -1184,6 +1208,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     try {
       const res = await withIdempotency(ctx.idemKey, {
         onSkip: () => ({ status: "shared" as const, messageCount: 0, error: undefined as string | undefined }),
+        fingerprint: ctx.fingerprint,
         run: async () => {
           const r0 = await shareToChat({
             conversationId: ctx.conversationId,
@@ -1452,6 +1477,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         duplicate={chatPreview?.duplicate ?? null}
         onForceSend={() => { void confirmChatSend({ force: true }); }}
         previousLog={chatPreview?.previousLog ?? []}
+        currentFingerprint={chatPreview?.fingerprint}
       />
     </div>
   );
