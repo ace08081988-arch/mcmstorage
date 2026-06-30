@@ -14,6 +14,16 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/StatusBadge";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import {
   DEFAULT_PREFS,
@@ -604,6 +614,26 @@ function RecentNotificationsCard({
     qc.invalidateQueries({ queryKey: ["notif-feed"] });
   }
 
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const pendingAffected = useMemo(
+    () =>
+      allItems.filter(
+        (it) => enabledKinds[it.kind] && it.unread && !localRead.has(it.id),
+      ).length,
+    [allItems, enabledKinds, localRead],
+  );
+  const activeKindLabels = useMemo(() => {
+    const labels: Record<NotifKind, string> = {
+      chat: "Chat",
+      tugas: "Tugas pegawai",
+      order: "Pesanan",
+      system: "Sistem",
+    };
+    return (Object.keys(enabledKinds) as NotifKind[])
+      .filter((k) => enabledKinds[k])
+      .map((k) => labels[k]);
+  }, [enabledKinds]);
+
   return (
     <Card>
       <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
@@ -626,7 +656,7 @@ function RecentNotificationsCard({
             <Button
               size="sm"
               variant="ghost"
-              onClick={handleMarkAll}
+              onClick={() => setConfirmOpen(true)}
               title={`Tandai ${unreadCount} notifikasi sesuai filter aktif sebagai dibaca`}
               className="h-8 px-2 text-xs"
             >
@@ -738,6 +768,43 @@ function RecentNotificationsCard({
         )}
         {isFetchingNextPage && <FeedSkeletonList count={2} />}
       </CardContent>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tandai semua dibaca?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <div>
+                  {pendingAffected > 0 ? (
+                    <>
+                      <span className="font-medium text-foreground">{pendingAffected}</span>{" "}
+                      notifikasi akan ditandai dibaca.
+                    </>
+                  ) : (
+                    <>Tidak ada notifikasi belum dibaca yang lolos filter aktif.</>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Filter aktif:{" "}
+                  {activeKindLabels.length > 0 ? activeKindLabels.join(", ") : "tidak ada kategori"}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={pendingAffected === 0}
+              onClick={() => {
+                setConfirmOpen(false);
+                void handleMarkAll();
+              }}
+            >
+              Tandai dibaca
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
