@@ -145,7 +145,7 @@ function PhotoPicker({ value, onChange, uid }: { value: string | null; onChange:
         {value ? (
           <SignedImg path={value} className="h-16 w-16 rounded-md border object-cover bg-muted" />
         ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed text-[10px] text-muted-foreground">Tidak ada</div>
+          <div className="flex h-16 w-16 items-center justify-center rounded-md border border-dashed text-[11px] text-muted-foreground">Tidak ada</div>
         )}
         <label className="flex-1 cursor-pointer rounded-md border bg-background px-2 py-1.5 text-center text-xs hover:bg-accent">
           {busy ? "Mengunggah…" : "📷 Ambil / Pilih foto"}
@@ -620,7 +620,7 @@ function PiutangTab({
                         if (error) { toast.error(friendlyError(error)); onChanged(); }
                         else { toast.success("Pembayaran dihapus"); onChanged(); }
                       }}
-                      className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] text-destructive hover:bg-destructive/10"
+                      className="shrink-0 rounded border px-1.5 py-0.5 text-[11px] text-destructive hover:bg-destructive/10"
                     >
                       Hapus
                     </button>
@@ -859,7 +859,7 @@ function ShareCustomer({
             </button>
           </div>
           {uniqueImagePaths.length > 0 && (
-            <p className="text-[10px] text-muted-foreground">
+            <p className="text-[11px] text-muted-foreground">
               Tombol "Bagikan + Foto" memakai berbagi bawaan HP (Android/iOS) sehingga foto barang ikut terkirim. Tombol WhatsApp/Telegram di atas hanya mengirim teks karena tidak mendukung lampiran via link.
             </p>
           )}
@@ -1060,7 +1060,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
       <div className="flex items-stretch">
         <div className="flex flex-1 items-center px-4 py-3">
           <div className="min-w-0">
-            <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+            <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
               Inventaris Gudang
             </div>
             <div className="mt-0.5 truncate text-sm font-semibold tabular-nums">
@@ -1106,7 +1106,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
             <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
               Total per Kategori
             </h3>
-            <span className="text-[10px] text-muted-foreground">{rows.length} kategori</span>
+            <span className="text-[11px] text-muted-foreground">{rows.length} kategori</span>
           </header>
           <ul className="divide-y text-sm">
             {rows.map(([cat, { count, value }]) => {
@@ -1122,13 +1122,13 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                       className={`inline-block h-2 w-2 shrink-0 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
                     />
                     <span className="truncate font-medium">{cat}</span>
-                    <span className="shrink-0 rounded-full border bg-background px-1.5 py-0.5 text-[10px] text-muted-foreground">
+                    <span className="shrink-0 rounded-full border bg-background px-1.5 py-0.5 text-[11px] text-muted-foreground">
                       {count}
                     </span>
                   </div>
                   <div className="text-right">
                     <div className="text-sm font-semibold tabular-nums">{rupiah(value)}</div>
-                    <div className="text-[10px] text-muted-foreground tabular-nums">
+                    <div className="text-[11px] text-muted-foreground tabular-nums">
                       {pct.toFixed(pct >= 10 ? 0 : 1)}%
                     </div>
                   </div>
@@ -1170,7 +1170,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                   className={`inline-block h-2 w-2 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
                 />
                 <h3 className="truncate text-sm font-semibold">{cat}</h3>
-                <span className="rounded-full border bg-background px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                <span className="rounded-full border bg-background px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
                   {list.length} item
                 </span>
               </div>
@@ -1189,7 +1189,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                         {i.image_path ? (
                           <SignedImg path={i.image_path} className="h-12 w-12 shrink-0 rounded-md border object-cover bg-muted" />
                         ) : (
-                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[10px] text-muted-foreground">📷</div>
+                          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[11px] text-muted-foreground">📷</div>
                         )}
                         <div className="min-w-0">
                           <div className="truncate text-sm font-semibold">{i.name}</div>
@@ -1252,7 +1252,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
 function Stat({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex flex-col justify-center px-3 py-2 sm:px-4">
-      <div className="text-[10px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
+      <div className="text-[11px] font-medium uppercase tracking-[0.08em] text-muted-foreground">
         {label}
       </div>
       <div className="text-sm font-semibold tabular-nums">{value}</div>
@@ -1521,7 +1521,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                         <>
                           <a
                             href={`tel:${s.contact}`}
-                            className="rounded border border-sky-500 px-1.5 py-0.5 text-[10px] font-semibold text-sky-600 hover:bg-sky-500/10 dark:text-sky-400"
+                            className="rounded border border-sky-500 px-1.5 py-0.5 text-[11px] font-semibold text-sky-600 hover:bg-sky-500/10 dark:text-sky-400"
                             aria-label={`Panggil ${s.name}`}
                           >
                             📞 Panggil
@@ -1531,7 +1531,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                               href={`https://wa.me/${wa}`}
                               target="_blank"
                               rel="noopener noreferrer"
-                              className="rounded border border-emerald-500 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
+                              className="rounded border border-emerald-500 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
                               aria-label={`Chat WhatsApp ${s.name}`}
                             >
                               💬 Chat
@@ -1547,7 +1547,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                     <span className="truncate text-[11px] text-muted-foreground">📧 {s.email}</span>
                     <a
                       href={buildMailto({ to: s.email, cc: s.email_cc, bcc: s.email_bcc }).href}
-                      className="rounded border border-indigo-500 px-1.5 py-0.5 text-[10px] font-semibold text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
+                      className="rounded border border-indigo-500 px-1.5 py-0.5 text-[11px] font-semibold text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
                       aria-label={`Email ${s.name}`}
                     >
                       📧 Email
@@ -1563,13 +1563,13 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                   const bccInvalid = bccAll.filter((x) => !isValidEmail(x));
                   return (
                     <>
-                      <div className="mt-0.5 text-[10px] text-muted-foreground">
+                      <div className="mt-0.5 text-[11px] text-muted-foreground">
                         {ccAll.length > 0 && <span>CC: {ccAll.join(", ")}</span>}
                         {ccAll.length > 0 && bccAll.length > 0 && <span> · </span>}
                         {bccAll.length > 0 && <span>BCC: {bccAll.join(", ")}</span>}
                       </div>
                       {(ccInvalid.length > 0 || bccInvalid.length > 0) && (
-                        <div className="mt-0.5 text-[10px] text-amber-500">
+                        <div className="mt-0.5 text-[11px] text-amber-500">
                           ⚠️ Alamat tidak valid diabaikan: {[...ccInvalid, ...bccInvalid].join(", ")}
                         </div>
                       )}
@@ -2136,7 +2136,7 @@ function RiwayatTab({
                       </div>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold ${p.payment_method === "hutang" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400" : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"}`}>
+                      <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${p.payment_method === "hutang" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400" : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"}`}>
                         {p.payment_method === "hutang" ? "📝 Hutang" : "💵 Kas"}
                       </span>
                       <button onClick={() => delPurchase(p.id)} className="rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
@@ -2295,7 +2295,7 @@ function HutangTab({
                         {new Date(d.created_at).toLocaleDateString("id-ID")} · {Number(d.package_qty)} × {rupiah(Number(d.price_per_package))}
                       </div>
                     </div>
-                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] font-semibold ${isPaid ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"}`}>
+                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-semibold ${isPaid ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"}`}>
                       {isPaid ? "✓ Lunas" : "Hutang"}
                     </span>
                   </div>
@@ -2328,7 +2328,7 @@ function HutangTab({
                               if (error) { toast.error(friendlyError(error)); onChanged(); }
                               else { toast.success("Pembayaran dihapus"); onChanged(); }
                             }}
-                            className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] text-destructive hover:bg-destructive/10"
+                            className="shrink-0 rounded border px-1.5 py-0.5 text-[11px] text-destructive hover:bg-destructive/10"
                           >
                             Hapus
                           </button>
@@ -2740,13 +2740,13 @@ function PesananTab({
                     <div className="text-[11px] text-muted-foreground">
                       {cust?.name ?? "Tanpa pelanggan"} · {new Date(o.created_at).toLocaleString("id-ID")}
                     </div>
-                    <div className="mt-1 text-[12px]">
+                    <div className="mt-1 text-[11px]">
                       Jumlah: <b>{fmtQty(o)}</b>
                       {o.price_per_unit != null && <> · {rupiah(Number(o.price_per_unit))}/{o.qty_mode === "base" ? it?.base_unit : it?.package_type}</>}
                     </div>
                     {o.note && <div className="text-[11px] text-muted-foreground">📌 {o.note}</div>}
                   </div>
-                  <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${badge}`}>{o.status}</span>
+                  <span className={`shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold uppercase ${badge}`}>{o.status}</span>
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {o.status === "menunggu" && (

@@ -131,7 +131,7 @@ function PesananEditPage() {
                 ))}
               </select>
               {selectedItem && (
-                <div className="text-[10px] text-muted-foreground">Stok: {fmtItemQty(selectedItem.stock_base, selectedItem)}</div>
+                <div className="text-[11px] text-muted-foreground">Stok: {fmtItemQty(selectedItem.stock_base, selectedItem)}</div>
               )}
             </div>
 
@@ -171,7 +171,7 @@ function PesananEditPage() {
               </button>
               <button type="button" onClick={() => navigate({ to: "/gudang/pesanan/$id", params: { id } })} className="rounded border px-3 py-2 text-sm hover:bg-accent">Batal</button>
             </div>
-            <div className="text-[10px] text-muted-foreground">Status saat ini: <b>{order.status}</b> (ubah status dari halaman detail).</div>
+            <div className="text-[11px] text-muted-foreground">Status saat ini: <b>{order.status}</b> (ubah status dari halaman detail).</div>
           </form>
         )}
       </main>
