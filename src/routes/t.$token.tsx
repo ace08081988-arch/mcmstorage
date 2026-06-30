@@ -345,6 +345,31 @@ function PublicPrepPage() {
   const lockedClock = `${String(Math.floor(lockedSecondsLeft / 60)).padStart(2, "0")}:${String(lockedSecondsLeft % 60).padStart(2, "0")}`;
   const attemptsLeft = Math.max(0, MAX_ATTEMPTS - attempts);
 
+  // Countdown sisa waktu sesi PIN (hanya saat authed). Tick 1 detik agar
+  // operator tahu kapan akan dimintai PIN lagi. Saat 0, paksa kembali ke
+  // layar PIN — sejalan dgn TTL yang dipakai readSession().
+  useEffect(() => {
+    if (!authed || !sessionStartedAt) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [authed, sessionStartedAt]);
+  const sessionExpiresAt = sessionStartedAt ? sessionStartedAt + SESSION_TTL_MS : null;
+  const sessionSecondsLeft = sessionExpiresAt
+    ? Math.max(0, Math.ceil((sessionExpiresAt - now) / 1000))
+    : 0;
+  const sessionClock = `${String(Math.floor(sessionSecondsLeft / 60)).padStart(2, "0")}:${String(sessionSecondsLeft % 60).padStart(2, "0")}`;
+  useEffect(() => {
+    if (!authed || !sessionExpiresAt) return;
+    if (sessionSecondsLeft > 0) return;
+    // TTL habis → lepas sesi & kembalikan ke layar PIN.
+    clearSession();
+    setAuthed(false);
+    setPin("");
+    pinRef.current = "";
+    toast.info("Sesi PIN berakhir — silakan masuk ulang.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, sessionExpiresAt, sessionSecondsLeft]);
+
   async function fetchTask(p: string) {
     if (isLocked) return false;
     setLoading(true);
