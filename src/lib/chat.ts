@@ -429,11 +429,17 @@ export function useDeleteMessage(conversationId: string) {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (msg: Pick<MessageRow, "id" | "attachment_path">) => {
-      if (msg.attachment_path) {
-        await supabase.storage.from("chat-attachments").remove([msg.attachment_path]);
-      }
-      const { error } = await supabase.from("messages").delete().eq("id", msg.id);
+      // Soft-delete: keep the row so both sides see a "(pesan dihapus)"
+      // tombstone, and so realtime UPDATE syncs the change to the other
+      // participant's conversation in real time. Server-side function also
+      // enforces sender/owner permission.
+      const { data, error } = await supabase.rpc("message_delete_for_all", { _msg: msg.id });
       if (error) throw error;
+      const path = (typeof data === "string" ? data : msg.attachment_path) || null;
+      if (path) {
+        // Best-effort attachment cleanup; ignore failure so UI still reflects delete.
+        await supabase.storage.from("chat-attachments").remove([path]).catch(() => undefined);
+      }
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
@@ -449,27 +455,17 @@ export function useDeleteMessage(conversationId: string) {
  */
 export function useDeleteAllMyMessages(conversationId: string) {
   const qc = useQueryClient();
-  const { data: myId } = useMyUserId();
   return useMutation({
     mutationFn: async () => {
-      if (!myId) throw new Error("not_signed_in");
-      const { data: mine, error: selErr } = await supabase
-        .from("messages")
-        .select("id, attachment_path")
-        .eq("conversation_id", conversationId)
-        .eq("sender_id", myId);
-      if (selErr) throw selErr;
-      const paths = (mine ?? []).map((m) => m.attachment_path).filter((p): p is string => !!p);
-      if (paths.length > 0) {
-        await supabase.storage.from("chat-attachments").remove(paths);
-      }
-      const { error } = await supabase
-        .from("messages")
-        .delete()
-        .eq("conversation_id", conversationId)
-        .eq("sender_id", myId);
+      const { data, error } = await supabase.rpc("message_delete_all_mine", { _conv: conversationId });
       if (error) throw error;
-      return mine?.length ?? 0;
+      const paths = ((data ?? []) as unknown as Array<string | { message_delete_all_mine: string }>)
+        .map((row) => (typeof row === "string" ? row : row?.message_delete_all_mine))
+        .filter((p): p is string => !!p);
+      if (paths.length > 0) {
+        await supabase.storage.from("chat-attachments").remove(paths).catch(() => undefined);
+      }
+      return paths.length;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
