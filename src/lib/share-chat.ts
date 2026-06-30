@@ -78,12 +78,16 @@ export async function shareToChat(input: ChatShareInput): Promise<ChatShareResul
       return { status: "failed", error: "Tidak ada pesan yang berhasil dikirim.", messageCount: 0 };
     }
 
-    if (markIds && markIds.length > 0) markSent(markIds);
+    if (markIds && markIds.length > 0) {
+      markSent(markIds, { channel: "chat", mapsUrl: locationUrl ?? null, status: "success" });
+    }
     return { status: "shared", messageCount: count };
   } catch (err) {
     const msg = (err as Error)?.message ?? "Unknown error";
     if (count > 0) {
-      if (markIds && markIds.length > 0) markSent(markIds);
+      if (markIds && markIds.length > 0) {
+        markSent(markIds, { channel: "chat", mapsUrl: locationUrl ?? null, status: "success" });
+      }
       return { status: "shared", messageCount: count };
     }
     return { status: "failed", error: msg, messageCount: 0 };

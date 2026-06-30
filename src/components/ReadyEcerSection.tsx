@@ -11,7 +11,7 @@ import { PickChatConversationDialog } from "@/components/PickChatConversationDia
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, History, Undo2 } from "lucide-react";
-import { markSent, unmarkSent, useSentShots } from "@/lib/wa-sent-history";
+import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
 // Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
@@ -389,6 +389,7 @@ export function ReadyEcerSection() {
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
   const [view, setView] = useState<"active" | "sent">("active");
   const sentMap = useSentShots();
+  const sentDetails = useSentDetails();
   // Split each row's shots into active vs sent based on local history.
   const rowsForView = (filtered ?? []).map((r) => {
     const active: WorkerShot[] = [];
@@ -628,7 +629,7 @@ export function ReadyEcerSection() {
             </div>
           ) : (
             visible.map((r) => (
-              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={r._lastSentAt} />
+              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={r._lastSentAt} sentDetails={sentDetails} />
             ))
           )}
         </div>
@@ -716,9 +717,9 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   );
 }
 
-function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null }) {
+function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null; sentDetails: Map<string, SentEntry> }) {
   void 0;
-  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={lastSentAt} />;
+  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={lastSentAt} sentDetails={sentDetails} />;
 }
 
 const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> = {
@@ -801,6 +802,63 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
 }
 
 function SyncBadge({ row: r }: { row: Row }) {
+  void 0;
+  return <SyncBadgeImpl row={r} />;
+}
+
+function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<string, SentEntry> }) {
+  const rows = shots
+    .map((s) => ({ shot: s, entry: details.get(s.id) }))
+    .filter((r): r is { shot: WorkerShot; entry: SentEntry } => !!r.entry)
+    .sort((a, b) => b.entry.at - a.entry.at);
+  if (rows.length === 0) return null;
+  return (
+    <div className="rounded-md border bg-muted/40 p-1.5">
+      <div className="mb-1 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <History className="h-2.5 w-2.5" /> Detail kiriman ({rows.length})
+      </div>
+      <ul className="space-y-1">
+        {rows.map(({ shot, entry }) => {
+          const ok = entry.status !== "failed";
+          const channel = entry.channel ?? "wa";
+          const time = new Date(entry.at).toLocaleString("id-ID", {
+            day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+          });
+          const maps = entry.mapsUrl ?? shot.location_url ?? null;
+          return (
+            <li key={shot.id} className="flex flex-wrap items-center gap-1 text-[9px] leading-tight">
+              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}`}>
+                {channel === "chat" ? <Send className="h-2.5 w-2.5" /> : <MessageCircle className="h-2.5 w-2.5" />}
+                {channel === "chat" ? "Chat" : "WA"}
+              </span>
+              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${ok ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+                {ok ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
+                {ok ? "Sukses" : "Gagal"}
+              </span>
+              <span className="text-muted-foreground" title={new Date(entry.at).toLocaleString()}>{time}</span>
+              {maps ? (
+                <a
+                  href={maps}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="ml-auto inline-flex items-center gap-0.5 rounded-full bg-sky-500/10 px-1.5 py-0.5 font-semibold text-sky-600 hover:bg-sky-500/20 dark:text-sky-400"
+                  title="Buka lokasi di Maps"
+                >
+                  <MapPin className="h-2.5 w-2.5" /> Maps
+                </a>
+              ) : (
+                <span className="ml-auto text-muted-foreground/70">tanpa lokasi</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function SyncBadgeImpl({ row: r }: { row: Row }) {
   const meta = SYNC_META[r.sync.level];
   return (
     <Popover>
@@ -841,7 +899,7 @@ function SyncBadge({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null }) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null; sentDetails: Map<string, SentEntry> }) {
   const [sending, setSending] = useState(false);
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
@@ -893,10 +951,11 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         ...lines,
         ...(take.find((s) => s.location_url) ? [`📍 ${take.find((s) => s.location_url)!.location_url}`] : []),
       ].join("\n");
+      const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
       const res = await shareToWhatsApp({ text, title: r.name, files });
       notifyShareResult(res);
       if (res.status === "shared" || res.status === "fallback") {
-        markSent(take.map((s) => s.id));
+        markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success" });
         setSendStatus("success");
       } else if (res.status === "cancelled") {
         setSendStatus("cancelled");
@@ -1116,6 +1175,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           </button>
         </div>
         ) : (
+          <>
+          {view === "sent" && (
+            <SentDetailList shots={shots} details={sentDetails} />
+          )}
           <div className="flex items-center gap-1.5">
             {thumbs.slice(1, 4).map((s) => (
               <div key={s.id} className="relative h-7 w-7 shrink-0 overflow-hidden rounded border border-card bg-muted ring-1 ring-border">
@@ -1161,6 +1224,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               </button>
             )}
           </div>
+          </>
         )}
       </div>
       <PickChatConversationDialog
