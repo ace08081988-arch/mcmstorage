@@ -56,7 +56,7 @@ function CategoryHeader({ name, count }: { name: string; count: number }) {
     <header className="flex items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2">
       <div className="flex min-w-0 flex-1 items-center gap-2">
         <span aria-hidden className="h-2 w-2 shrink-0 rounded-full bg-primary" />
-        <h3 className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug">{name}</h3>
+        <h3 className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug" title={name}>{name}</h3>
         <CountChip count={count} />
       </div>
     </header>
