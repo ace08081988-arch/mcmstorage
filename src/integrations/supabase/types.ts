@@ -2323,6 +2323,8 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: boolean
       }
+      message_delete_all_mine: { Args: { _conv: string }; Returns: string[] }
+      message_delete_for_all: { Args: { _msg: string }; Returns: string }
       message_edit: {
         Args: { _body: string; _msg: string }
         Returns: undefined
