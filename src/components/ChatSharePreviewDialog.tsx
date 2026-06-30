@@ -2,7 +2,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { CheckCircle2, Loader2, MapPin, Send, XCircle, AlertTriangle, RefreshCw, ShieldAlert } from "lucide-react";
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
+import { useLiveSendLog } from "@/lib/send-log";
 import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
+import { InflightStepProgress } from "@/components/InflightStepProgress";
 import type { SendPayloadSummary } from "@/lib/idempotency";
 import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
@@ -116,6 +118,10 @@ export function ChatSharePreviewDialog({
   // Live: pantau record idempotency untuk shot yang sama lintas channel.
   const live = useLiveIdemByIds(idemIdsKey);
   const liveChannel = live ? channelFromKey(live.key) : "unknown";
+  // Pantau log langkah kiriman in-flight (channel manapun) untuk key idempotency
+  // yang sama. Saat WA sedang berjalan, operator melihat progres-nya di sini.
+  const liveInflightKey = live && live.status === "in-flight" ? live.key : null;
+  const liveLog = useLiveSendLog(liveInflightKey);
   // Gabungkan dengan snapshot `duplicate` dari caller. Live lebih diutamakan
   // saat statusnya in-flight (channel manapun) atau saat status snapshot
   // sudah usang (mis. snapshot "in-flight" lalu live menjadi "done").
@@ -209,6 +215,9 @@ export function ChatSharePreviewDialog({
                 ) : null}
                 {effectiveDup.status !== "in-flight" && !payloadMatches ? (
                   <SendPayloadDiff previous={effectiveDup.summary} current={currentSummary} />
+                ) : null}
+                {effectiveDup.status === "in-flight" ? (
+                  <InflightStepProgress entries={liveLog} channel={liveChannel} />
                 ) : null}
                 </div>
               </div>

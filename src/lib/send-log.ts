@@ -4,8 +4,10 @@
  * dari dialog pratinjau ("Lihat log") tanpa harus mengulang aksi.
  */
 import type { SendPayloadSummary } from "@/lib/idempotency";
+import { useSyncExternalStore } from "react";
 
 const KEY = "send-log:v1";
+const EVENT = "send-log:changed";
 const TTL_MS = 24 * 60 * 60 * 1000;  // 24 jam
 const MAX_ENTRIES_PER_KEY = 50;
 const MAX_KEYS = 80;
@@ -50,7 +52,10 @@ function writeAll(store: Store) {
     keys.sort((a, b) => store[b].updatedAt - store[a].updatedAt);
     for (const k of keys.slice(MAX_KEYS)) delete store[k];
   }
-  try { window.localStorage.setItem(KEY, JSON.stringify(store)); } catch { /* quota */ }
+  try {
+    window.localStorage.setItem(KEY, JSON.stringify(store));
+    window.dispatchEvent(new CustomEvent(EVENT));
+  } catch { /* quota */ }
 }
 
 export function appendSendLog(key: string, entry: Omit<SendLogEntry, "at"> & { at?: number }) {
@@ -115,4 +120,33 @@ export function appendPayloadDiffLog(
   slot.updatedAt = Date.now();
   store[key] = slot;
   writeAll(store);
+}
+
+/**
+ * Hook: lacak entri send-log untuk `key` secara real-time. Dipakai dialog
+ * pratinjau Chat/WA untuk menampilkan progres langkah dari kiriman channel
+ * lain yang sedang in-flight (cross-channel awareness).
+ */
+export function useLiveSendLog(key: string | null | undefined): SendLogEntry[] {
+  const k = key ?? "";
+  const subscribe = (cb: () => void) => {
+    if (typeof window === "undefined") return () => {};
+    const onEvt = () => cb();
+    const onStorage = (e: StorageEvent) => { if (e.key === KEY) cb(); };
+    window.addEventListener(EVENT, onEvt);
+    window.addEventListener("storage", onStorage);
+    return () => {
+      window.removeEventListener(EVENT, onEvt);
+      window.removeEventListener("storage", onStorage);
+    };
+  };
+  const getSnapshot = () => {
+    if (!k) return "";
+    const entries = getSendLog(k);
+    // Snapshot string stabil untuk useSyncExternalStore.
+    return entries.map((e) => `${e.at}|${e.kind}|${e.label}`).join("\n");
+  };
+  const snap = useSyncExternalStore(subscribe, getSnapshot, () => "");
+  if (!snap) return [];
+  return getSendLog(k);
 }
