@@ -1076,7 +1076,12 @@ function ChatRoomPage() {
                 Balas {replyTo.sender_id === myId ? "Anda" : (profiles.data?.get(replyTo.sender_id)?.display_name || "Pengguna")}
               </div>
               <div className="line-clamp-2 text-muted-foreground">
-                {replyTo.deleted_at ? <em>(pesan dihapus)</em> : (previewText(replyTo.body) ?? "(lampiran)")}
+                {replyTo.deleted_at ? (
+                  <span className="inline-flex items-center gap-1 italic">
+                    <Ban className="h-3 w-3 opacity-80" />
+                    Pesan dihapus
+                  </span>
+                ) : (previewText(replyTo.body) ?? (replyTo.attachment_name ? `📎 ${replyTo.attachment_name}` : "(lampiran)"))}
               </div>
             </div>
             <Button

@@ -35,7 +35,12 @@ export function MessageInfoDialog({
           ) : null}
           <div className="flex justify-between gap-3"><dt className="text-muted-foreground">ID</dt><dd className="break-all text-right font-mono text-[11px]">{message.id}</dd></div>
           {message.attachment_path ? (
-            <div className="flex justify-between gap-3"><dt className="text-muted-foreground">Lampiran</dt><dd className="break-all text-right text-[11px]">{message.attachment_name ?? message.attachment_path}</dd></div>
+            <div className="flex justify-between gap-3">
+              <dt className="text-muted-foreground">Lampiran</dt>
+              <dd className="break-all text-right text-[11px]">
+                {message.deleted_at ? <em className="text-muted-foreground">(lampiran dihapus)</em> : (message.attachment_name ?? message.attachment_path)}
+              </dd>
+            </div>
           ) : null}
         </dl>
       </DialogContent>
