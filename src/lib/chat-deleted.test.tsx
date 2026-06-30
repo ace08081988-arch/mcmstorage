@@ -120,10 +120,10 @@ describe("chat-deleted helpers", () => {
 
     it("renders DeletedPreview for deleted messages", () => {
       const html = renderToStaticMarkup(
-        <MessagePreview message={base({ body: "hi", deleted_at: "now" })} />,
+        <MessagePreview message={base({ body: "rahasia-pesan", deleted_at: "now" })} />,
       );
       expect(html).toContain(DELETED_PLACEHOLDER);
-      expect(html).not.toContain("hi");
+      expect(html).not.toContain("rahasia-pesan");
     });
 
     it("renders body text for live messages", () => {
