@@ -751,6 +751,8 @@ function LinkPegawaiPage() {
             }
             const badge = BADGE[avail];
             const expiresAt = new Date(t.expires_at);
+            const extendedAgeMs = extendedAt[t.id] != null ? now - extendedAt[t.id] : null;
+            const justExtended = extendedAgeMs != null && extendedAgeMs >= 0 && extendedAgeMs < 15000;
             const openable = (avail === "active" || avail === "done") && !urlError;
             const tokenState = classifyToken(t.share_token, regenAt[t.id], now);
             const msToExpire = expiresAt.getTime() - now;
