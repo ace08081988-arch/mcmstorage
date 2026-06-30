@@ -16,6 +16,18 @@ import { encodeCard } from "@/lib/chat-cards";
 import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 import { sendMessage } from "@/lib/chat.functions";
 import { StickerPickerDialog } from "@/components/chat/StickerPickerDialog";
+import type { LucideIcon } from "lucide-react";
+
+function Tile({ icon: Icon, label, color, onClick }: { icon: LucideIcon; label: string; color: string; onClick: () => void | Promise<void> }) {
+  return (
+    <button type="button" onClick={onClick} className="flex flex-col items-center gap-1.5 rounded-xl p-2 text-center transition hover:bg-accent active:scale-95">
+      <span className={`flex h-12 w-12 items-center justify-center rounded-full ${color}`}>
+        <Icon className="h-6 w-6" />
+      </span>
+      <span className="text-[11px] font-medium text-foreground">{label}</span>
+    </button>
+  );
+}
 
 type Props = {
   conversationId: string;
