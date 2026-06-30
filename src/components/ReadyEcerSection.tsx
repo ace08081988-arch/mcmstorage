@@ -943,7 +943,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const existing = getIdem(idemKey);
     const duplicateRec: IdemRecord | null = existing && existing.status !== "failed" ? existing : null;
     const duplicate = duplicateRec
-      ? { at: duplicateRec.at, status: duplicateRec.status, destination: r.name }
+      ? { at: duplicateRec.at, status: duplicateRec.status, destination: r.name, fingerprint: duplicateRec.fingerprint }
       : null;
     const previousLog = duplicate ? getSendLog(idemKey) : [];
     setSending(true);
