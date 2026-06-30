@@ -843,6 +843,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       if (confirmDelete === "all") removeAllPending();
                       else if (confirmDelete === "selected") removeSelectedPending();
                       setConfirmDelete(null);
+                      setShowAllDelete(false);
                     }}
                   >
                     Hapus{removable.length > 0 ? ` (${removable.length})` : ""}
