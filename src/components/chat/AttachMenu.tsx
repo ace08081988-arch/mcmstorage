@@ -150,6 +150,55 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const [statuses, setStatuses] = useState<Array<{ state: ItemStatus; error?: string; preflight?: boolean }>>([]);
   const [caption, setCaption] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [selectMode, setSelectMode] = useState(false);
+  const [selected, setSelected] = useState<Set<number>>(new Set());
+
+  // Reset mode pilih saat dialog ditutup atau daftar kosong.
+  useEffect(() => {
+    if (!pending || pending.length === 0) {
+      setSelectMode(false);
+      setSelected(new Set());
+    }
+  }, [pending]);
+
+  function toggleSelected(i: number) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(i)) next.delete(i); else next.add(i);
+      return next;
+    });
+  }
+  function selectAllPending() {
+    if (!pending) return;
+    // Tidak ikutkan item yang sudah terkirim.
+    const all = pending.map((_, i) => i).filter((i) => statuses[i]?.state !== "sent");
+    setSelected(new Set(all));
+  }
+  function clearSelection() { setSelected(new Set()); }
+
+  function removeIndices(indices: number[]) {
+    if (!pending || indices.length === 0) return;
+    const drop = new Set(indices);
+    pending.forEach((p, i) => { if (drop.has(i) && p.previewUrl) URL.revokeObjectURL(p.previewUrl); });
+    const nextPending = pending.filter((_, i) => !drop.has(i));
+    const nextStatuses = statuses.filter((_, i) => !drop.has(i));
+    setPending(nextPending.length ? nextPending : null);
+    setStatuses(nextStatuses);
+    setSelected(new Set());
+  }
+  function removeSelectedPending() {
+    removeIndices(Array.from(selected));
+    setSelectMode(false);
+  }
+  function removeAllPending() {
+    if (!pending) return;
+    pending.forEach((p) => { if (p.previewUrl) URL.revokeObjectURL(p.previewUrl); });
+    setPending(null);
+    setStatuses([]);
+    setSelected(new Set());
+    setSelectMode(false);
+    setCaption("");
+  }
 
   async function runTile(id: TileId) {
     persistLast(id);
