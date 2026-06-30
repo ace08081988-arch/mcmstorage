@@ -38,6 +38,7 @@ import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.e
 import { Route as AuthenticatedDiagnosticsRouteImport } from './routes/_authenticated.diagnostics'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
+import { Route as AuthenticatedCatatanRouteImport } from './routes/_authenticated.catatan'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
@@ -200,6 +201,11 @@ const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedCatatanRoute = AuthenticatedCatatanRouteImport.update({
+  id: '/catatan',
+  path: '/catatan',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
   id: '/audit',
   path: '/audit',
@@ -276,6 +282,7 @@ export interface FileRoutesByFullPath {
   '/terms': typeof TermsRoute
   '/trust': typeof TrustRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/catatan': typeof AuthenticatedCatatanRoute
   '/chat': typeof AuthenticatedChatRouteWithChildren
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   '/terms': typeof TermsRoute
   '/trust': typeof TrustRoute
   '/audit': typeof AuthenticatedAuditRoute
+  '/catatan': typeof AuthenticatedCatatanRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
@@ -358,6 +366,7 @@ export interface FileRoutesById {
   '/terms': typeof TermsRoute
   '/trust': typeof TrustRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
+  '/_authenticated/catatan': typeof AuthenticatedCatatanRoute
   '/_authenticated/chat': typeof AuthenticatedChatRouteWithChildren
   '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/_authenticated/diagnostics': typeof AuthenticatedDiagnosticsRoute
@@ -402,6 +411,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trust'
     | '/audit'
+    | '/catatan'
     | '/chat'
     | '/device-verify'
     | '/diagnostics'
@@ -442,6 +452,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trust'
     | '/audit'
+    | '/catatan'
     | '/device-verify'
     | '/diagnostics'
     | '/ecer'
@@ -483,6 +494,7 @@ export interface FileRouteTypes {
     | '/terms'
     | '/trust'
     | '/_authenticated/audit'
+    | '/_authenticated/catatan'
     | '/_authenticated/chat'
     | '/_authenticated/device-verify'
     | '/_authenticated/diagnostics'
@@ -738,6 +750,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/catatan': {
+      id: '/_authenticated/catatan'
+      path: '/catatan'
+      fullPath: '/catatan'
+      preLoaderRoute: typeof AuthenticatedCatatanRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/audit': {
       id: '/_authenticated/audit'
       path: '/audit'
@@ -860,6 +879,7 @@ const AuthenticatedGudangRouteWithChildren =
 
 interface AuthenticatedRouteChildren {
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
+  AuthenticatedCatatanRoute: typeof AuthenticatedCatatanRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRouteWithChildren
   AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
   AuthenticatedDiagnosticsRoute: typeof AuthenticatedDiagnosticsRoute
@@ -883,6 +903,7 @@ interface AuthenticatedRouteChildren {
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
+  AuthenticatedCatatanRoute: AuthenticatedCatatanRoute,
   AuthenticatedChatRoute: AuthenticatedChatRouteWithChildren,
   AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
   AuthenticatedDiagnosticsRoute: AuthenticatedDiagnosticsRoute,
