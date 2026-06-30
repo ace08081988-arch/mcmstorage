@@ -512,10 +512,10 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 Buang yang ditolak ({statuses.filter((s) => s?.preflight).length})
               </Button>
             ) : null}
-            {statuses.some((s) => s?.state === "error") && !busy ? (
+            {statuses.some((s) => s?.state === "error" && !s?.preflight) && !busy ? (
               <Button variant="secondary" onClick={() => confirmSendPending(true)}>
                 <RotateCcw className="mr-1 h-4 w-4" />
-                Coba lagi ({statuses.filter((s) => s?.state !== "sent").length})
+                Coba lagi ({statuses.filter((s) => s?.state === "error" && !s?.preflight).length})
               </Button>
             ) : null}
             <Button onClick={() => confirmSendPending(false)} disabled={!!busy || (pending?.length ?? 0) === 0 || statuses.every((s) => s?.state === "sent")}>
