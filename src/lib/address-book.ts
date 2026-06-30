@@ -115,16 +115,15 @@ export async function importDeviceContacts(
 
   // Use upsert on (user_id, device_contact_id). The DB unique index uses a
   // partial filter; pg accepts the index name via onConflict columns.
-  const { error, count } = await supabase
+  const { data, error } = await supabase
     .from("address_book")
     .upsert(rows, {
       onConflict: "user_id,device_contact_id",
       ignoreDuplicates: false,
-      count: "exact",
     })
-    .select("id", { count: "exact" });
+    .select("id");
   if (error) throw error;
-  return { inserted: count ?? rows.length, skipped: 0 };
+  return { inserted: data?.length ?? rows.length, skipped: 0 };
 }
 
 export async function matchAgainstProfiles(rows: AddressBookRow[]): Promise<ProfileMatch[]> {
@@ -136,8 +135,8 @@ export async function matchAgainstProfiles(rows: AddressBookRow[]): Promise<Prof
   );
   if (phones.length === 0 && emails.length === 0) return [];
   const { data, error } = await supabase.rpc("match_address_book_profiles", {
-    _phones: phones.length ? phones : null,
-    _emails: emails.length ? emails : null,
+    _phones: phones.length ? phones : undefined,
+    _emails: emails.length ? emails : undefined,
   });
   if (error) throw error;
   return (data ?? []) as ProfileMatch[];
