@@ -558,6 +558,133 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
   );
 }
 
+// ---- Hero: branded receipt-style header for a title ----
+function DetailHero({
+  item, title, preps, onAdd, onCreateTitle, onCreateProduct, onScrollToWorker,
+}: {
+  item: WarehouseItem;
+  title: EcerTitle;
+  preps: EcerPreparation[];
+  onAdd: () => void;
+  onCreateTitle?: () => void;
+  onCreateProduct?: () => void;
+  onScrollToWorker: () => void;
+}) {
+  const unit = displayUnit(item.name, title.unit_label);
+  const totalActual = preps.reduce((s, p) => s + (Number(p.actual_grams) || 0), 0);
+  const targetTotal = (Number(title.target_grams) || 0) * preps.length;
+  const progress = targetTotal > 0 ? Math.min(100, Math.round((totalActual / targetTotal) * 100)) : 0;
+  const last = preps[0];
+  const lastDate = last ? new Date(last.created_at) : null;
+  const fmtDate = (d: Date) => d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  const fmtTime = (d: Date) => d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB";
+  const ref = title.id.replace(/-/g, "").slice(0, 16).toUpperCase();
+
+  return (
+    <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
+      {/* Brand strip */}
+      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-5 pb-6 pt-5 text-primary-foreground">
+        <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-primary-foreground/40 to-emerald-400" />
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
+              <Scale className="h-3 w-3" /> Detail penyiapan ecer
+            </div>
+            <h2 className="mt-1.5 truncate text-xl font-bold leading-tight">{title.name}</h2>
+            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-primary-foreground/85">
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 backdrop-blur-sm">
+                <Package className="h-3 w-3" /> {item.name}
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 backdrop-blur-sm">
+                Target <b className="ml-0.5">{title.target_grams} {unit}</b>
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/25 px-2 py-0.5 font-semibold text-emerald-50 ring-1 ring-emerald-300/50 backdrop-blur-sm">
+                <CheckCircle2 className="h-3 w-3" /> Aktif
+              </span>
+            </div>
+          </div>
+          <div className="hidden shrink-0 text-right sm:block">
+            <div className="text-[10px] uppercase tracking-wider text-primary-foreground/70">No. Referensi</div>
+            <div className="font-mono text-[11px] text-primary-foreground/95">{ref}</div>
+          </div>
+        </div>
+      </div>
+
+      {/* Detail rows */}
+      <div className="divide-y bg-card px-5">
+        <DetailRow icon={<Package className="h-3.5 w-3.5" />} label="Produk gudang"
+          value={<span className="font-semibold">{item.name}</span>}
+          sub={`Stok: ${fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}`}
+        />
+        <DetailRow icon={<Scale className="h-3.5 w-3.5" />} label="Target per kotak"
+          value={<span className="font-semibold">{title.target_grams} {unit}</span>}
+          sub={preps.length > 0 ? `Total target ${targetTotal} ${unit} · aktual ${totalActual} ${unit}` : undefined}
+        />
+        <DetailRow icon={<Boxes className="h-3.5 w-3.5" />} label="Jumlah penyiapan"
+          value={<span className="font-semibold">{preps.length} kotak</span>}
+          sub={preps.length > 0 ? `${progress}% dari target` : "Belum ada kotak"}
+        />
+        {lastDate && (
+          <>
+            <DetailRow icon={<Calendar className="h-3.5 w-3.5" />} label="Tanggal terakhir"
+              value={<span className="font-semibold">{fmtDate(lastDate)}</span>} />
+            <DetailRow icon={<Clock className="h-3.5 w-3.5" />} label="Jam terakhir"
+              value={<span className="font-semibold">{fmtTime(lastDate)}</span>} />
+          </>
+        )}
+        <DetailRow icon={<Hash className="h-3.5 w-3.5" />} label="ID judul"
+          value={<span className="font-mono text-[11px]">{ref}</span>} />
+        {title.note && (
+          <div className="py-3">
+            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Catatan</div>
+            <div className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-foreground">{title.note}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Action footer */}
+      <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/40 px-5 py-3">
+        <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
+          Simpan halaman ini sebagai referensi penyiapan.
+        </div>
+        <div className="flex flex-wrap items-center gap-1.5">
+          {onCreateTitle && (
+            <Button size="sm" variant="outline" onClick={onCreateTitle} title="Judul ecer baru untuk produk yang sama">
+              <Plus className="h-4 w-4" /> Judul lain
+            </Button>
+          )}
+          {onCreateProduct && (
+            <Button size="sm" variant="outline" onClick={onCreateProduct} title="Buat produk gudang baru lalu langsung dibuatkan judulnya">
+              <Package className="h-4 w-4" /> Produk baru
+            </Button>
+          )}
+          <Button size="sm" variant="outline" onClick={onScrollToWorker} title="Lihat kiriman pegawai untuk judul ini">
+            <Users className="h-4 w-4" /> Pegawai
+          </Button>
+          <Button size="sm" onClick={onAdd} className="bg-emerald-600 hover:bg-emerald-700">
+            <Plus className="h-4 w-4" /> Penyiapan
+          </Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3 py-2.5">
+      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="text-muted-foreground/70">{icon}</span>
+        {label}
+      </div>
+      <div className="min-w-0 text-right text-xs text-foreground">
+        <div>{value}</div>
+        {sub && <div className="mt-0.5 text-[10.5px] text-muted-foreground">{sub}</div>}
+      </div>
+    </div>
+  );
+}
+
 // ---- Detail view: preparations grid ----
 function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct }: {
   item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
