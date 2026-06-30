@@ -13,6 +13,8 @@ import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, Rotat
 import { toast } from "sonner";
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
+import { useLiveSendLog } from "@/lib/send-log";
+import { InflightStepProgress } from "@/components/InflightStepProgress";
 import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
 import type { SendPayloadSummary } from "@/lib/idempotency";
 import { SendPayloadDiff } from "@/components/SendPayloadDiff";
