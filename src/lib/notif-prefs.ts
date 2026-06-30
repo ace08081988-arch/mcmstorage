@@ -14,6 +14,7 @@ export type NotifPrefs = {
 
 const STORAGE_KEY = "mcm.notif.prefs.v1";
 const SYNC_META_KEY = "mcm.notif.prefs.synced_at";
+const LOCAL_UPDATED_KEY = "mcm.notif.prefs.updated_at";
 
 export const DEFAULT_PREFS: NotifPrefs = {
   enabledKinds: { chat: true, tugas: true, order: true, system: true },
@@ -40,15 +41,17 @@ export function loadPrefs(): NotifPrefs {
 
 export function savePrefs(prefs: NotifPrefs) {
   if (typeof window === "undefined") return;
+  const stamp = new Date().toISOString();
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(prefs));
+    window.localStorage.setItem(LOCAL_UPDATED_KEY, stamp);
   } catch {}
   broadcastPrefs(prefs);
   try {
     window.dispatchEvent(new CustomEvent("notif-prefs-changed", { detail: prefs }));
   } catch {}
   // Sinkronkan ke cloud (best-effort) supaya perangkat lain ikut update.
-  pushPrefsToCloud(prefs).catch(() => {});
+  pushPrefsToCloud(prefs, stamp).catch(() => {});
 }
 
 export function broadcastPrefs(prefs: NotifPrefs) {
@@ -77,19 +80,20 @@ export function isInDndWindow(now: Date, start: string, end: string): boolean {
 
 // ===== Sinkronisasi lintas perangkat via Supabase =====
 
-async function pushPrefsToCloud(prefs: NotifPrefs): Promise<void> {
+async function pushPrefsToCloud(prefs: NotifPrefs, updatedAt?: string): Promise<void> {
   try {
     const { supabase } = await import("@/integrations/supabase/client");
     const { data: u } = await supabase.auth.getUser();
     if (!u.user) return;
+    const stamp = updatedAt ?? new Date().toISOString();
     await supabase
       .from("user_notif_prefs")
       .upsert(
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        { user_id: u.user.id, prefs: prefs as any, updated_at: new Date().toISOString() },
+        { user_id: u.user.id, prefs: prefs as any, updated_at: stamp },
         { onConflict: "user_id" },
       );
-    try { window.localStorage.setItem(SYNC_META_KEY, new Date().toISOString()); } catch {}
+    try { window.localStorage.setItem(SYNC_META_KEY, stamp); } catch {}
   } catch {
     // diamkan; perubahan lokal tetap tersimpan dan akan disinkronkan saat online berikutnya
   }
@@ -102,6 +106,9 @@ async function pushPrefsToCloud(prefs: NotifPrefs): Promise<void> {
 export async function pullPrefsFromCloud(): Promise<NotifPrefs> {
   const local = loadPrefs();
   if (typeof window === "undefined") return local;
+  const localUpdated = (() => {
+    try { return window.localStorage.getItem(LOCAL_UPDATED_KEY); } catch { return null; }
+  })();
   try {
     const { supabase } = await import("@/integrations/supabase/client");
     const { data: u } = await supabase.auth.getUser();
@@ -113,7 +120,14 @@ export async function pullPrefsFromCloud(): Promise<NotifPrefs> {
       .maybeSingle();
     if (error || !data) {
       // Baris belum ada → dorong default/lokal ke cloud sebagai baseline
-      await pushPrefsToCloud(local);
+      await pushPrefsToCloud(local, localUpdated ?? undefined);
+      return local;
+    }
+    // Jika perubahan lokal lebih baru daripada cloud, dorong lokal ke cloud
+    // dan jangan timpa state UI dengan versi cloud yang lebih lama.
+    const remoteUpdated = (data as { updated_at?: string | null }).updated_at ?? null;
+    if (localUpdated && (!remoteUpdated || localUpdated > remoteUpdated)) {
+      await pushPrefsToCloud(local, localUpdated);
       return local;
     }
     const remote = data.prefs as Partial<NotifPrefs> | null;
@@ -124,7 +138,12 @@ export async function pullPrefsFromCloud(): Promise<NotifPrefs> {
       dnd: { ...DEFAULT_PREFS.dnd, ...((remote && remote.dnd) || {}) },
     };
     try { window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged)); } catch {}
-    try { window.localStorage.setItem(SYNC_META_KEY, new Date().toISOString()); } catch {}
+    try {
+      if (remoteUpdated) {
+        window.localStorage.setItem(LOCAL_UPDATED_KEY, remoteUpdated);
+      }
+      window.localStorage.setItem(SYNC_META_KEY, new Date().toISOString());
+    } catch {}
     broadcastPrefs(merged);
     try {
       window.dispatchEvent(new CustomEvent("notif-prefs-changed", { detail: merged }));
