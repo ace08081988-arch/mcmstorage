@@ -8,8 +8,9 @@
  * URL: /lovable/visual/komponen-review
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { Boxes, Hash, Package, Scale, CheckCircle2, Moon, Sun } from "lucide-react";
-import { useState } from "react";
+import { Boxes, Hash, Package, Scale, CheckCircle2, Moon, Sun, Download, Images } from "lucide-react";
+import { useRef, useState } from "react";
+import { toPng } from "html-to-image";
 
 const WIDTHS = [320, 360, 411, 480] as const;
 
@@ -286,6 +287,36 @@ function SectionTitle({ title }: { title: string }) {
 
 function KomponenReviewPage() {
   const [dark, setDark] = useState(false);
+  const [busy, setBusy] = useState<string | null>(null);
+  const frameRefs = useRef<Record<number, HTMLDivElement | null>>({});
+
+  async function exportOne(w: number) {
+    const node = frameRefs.current[w];
+    if (!node) return;
+    setBusy(`${w}`);
+    try {
+      const dataUrl = await toPng(node, { pixelRatio: 2, cacheBust: true, backgroundColor: dark ? "#0b0b0c" : "#ffffff" });
+      triggerDownload(dataUrl, `komponen-review-${w}px${dark ? "-dark" : ""}.png`);
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function exportAll() {
+    setBusy("all");
+    try {
+      for (const w of WIDTHS) {
+        const node = frameRefs.current[w];
+        if (!node) continue;
+        const dataUrl = await toPng(node, { pixelRatio: 2, cacheBust: true, backgroundColor: dark ? "#0b0b0c" : "#ffffff" });
+        triggerDownload(dataUrl, `komponen-review-${w}px${dark ? "-dark" : ""}.png`);
+        await new Promise((r) => setTimeout(r, 120));
+      }
+    } finally {
+      setBusy(null);
+    }
+  }
+
   return (
     <div className={`${dark ? "dark" : ""} min-h-screen bg-muted/30 p-4 text-foreground`}>
       <header className="mx-auto mb-4 flex max-w-6xl items-start justify-between gap-3">
@@ -296,16 +327,28 @@ function KomponenReviewPage() {
             320 / 360 / 411 / 480 px. Aturan: <code className="rounded bg-muted px-1">docs/responsive-layout-rules.md</code>.
           </p>
         </div>
-        <button
-          type="button"
-          onClick={() => setDark((v) => !v)}
-          aria-pressed={dark}
-          title={dark ? "Beralih ke mode terang" : "Beralih ke mode gelap"}
-          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold text-foreground shadow-sm hover:bg-muted"
-        >
-          {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
-          <span>{dark ? "Terang" : "Gelap"}</span>
-        </button>
+        <div className="flex shrink-0 items-center gap-2">
+          <button
+            type="button"
+            onClick={exportAll}
+            disabled={busy !== null}
+            title="Unduh PNG untuk semua lebar"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-primary px-3 text-xs font-semibold text-primary-foreground shadow-sm hover:opacity-90 disabled:opacity-50"
+          >
+            <Images className="h-3.5 w-3.5" />
+            <span>{busy === "all" ? "Mengunduh…" : "Unduh semua"}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => setDark((v) => !v)}
+            aria-pressed={dark}
+            title={dark ? "Beralih ke mode terang" : "Beralih ke mode gelap"}
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold text-foreground shadow-sm hover:bg-muted"
+          >
+            {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+            <span>{dark ? "Terang" : "Gelap"}</span>
+          </button>
+        </div>
       </header>
 
       <VariantTable />
@@ -315,9 +358,19 @@ function KomponenReviewPage() {
           <figure key={w} className="space-y-2">
             <figcaption className="flex items-center justify-between text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground">
               <span>Lebar {w}px</span>
-              <span className="tabular-nums text-muted-foreground/70">{w}×</span>
+              <button
+                type="button"
+                onClick={() => exportOne(w)}
+                disabled={busy !== null}
+                title={`Unduh PNG ${w}px`}
+                className="inline-flex h-6 items-center gap-1 rounded-full border bg-background px-2 text-[11px] font-semibold normal-case tracking-normal text-foreground hover:bg-muted disabled:opacity-50"
+              >
+                <Download className="h-3 w-3" />
+                {busy === `${w}` ? "…" : "PNG"}
+              </button>
             </figcaption>
             <div
+              ref={(el) => { frameRefs.current[w] = el; }}
               className="overflow-hidden rounded-2xl border bg-background shadow-sm"
               style={{ width: w, maxWidth: "100%" }}
               data-visual-frame={w}
@@ -333,4 +386,13 @@ function KomponenReviewPage() {
       </footer>
     </div>
   );
+}
+
+function triggerDownload(dataUrl: string, filename: string) {
+  const a = document.createElement("a");
+  a.href = dataUrl;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
 }
