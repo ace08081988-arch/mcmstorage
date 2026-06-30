@@ -1096,7 +1096,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   )}
                 </div>
                 {s.match !== "strict" && (
-                  <span className="absolute left-1 top-1 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[11px] leading-snug font-semibold text-white" title={s.match === "fallback_grams" ? "Ukuran cocok, unit berbeda" : "Hanya produk yang cocok"}>
+                  <span
+                    className="absolute left-1 top-1 inline-flex h-5 max-w-[80%] items-center whitespace-nowrap rounded-full bg-amber-500/90 px-1.5 text-[11px] font-semibold leading-none text-white"
+                    title={s.match === "fallback_grams" ? "Ukuran cocok, unit berbeda" : "Hanya produk yang cocok"}
+                  >
                     {s.match === "fallback_grams" ? "unit≠" : "ukuran≠"}
                   </span>
                 )}
