@@ -27,8 +27,18 @@ export type FeedItem = {
  */
 export const getRecentNotifications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((data?: { before?: string; pageSize?: number }) => {
+    const before = data?.before;
+    const pageSize = Math.min(Math.max(data?.pageSize ?? 20, 5), 50);
+    if (before !== undefined && (typeof before !== "string" || Number.isNaN(Date.parse(before)))) {
+      throw new Error("invalid_before");
+    }
+    return { before, pageSize };
+  })
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
+    const { before, pageSize } = data;
+    const perSource = pageSize;
     const items: FeedItem[] = [];
 
     /* ── Chat: pesan masuk pada percakapan user ───────────────────── */
@@ -44,14 +54,16 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
       (members ?? []).map((m) => [m.conversation_id, m.archived_at as string | null]),
     );
     if (convIds.length > 0) {
-      const { data: msgs } = await supabase
+      let q = supabase
         .from("messages")
         .select("id, conversation_id, sender_id, body, attachment_mime, attachment_name, created_at")
         .in("conversation_id", convIds)
         .neq("sender_id", userId)
         .is("deleted_at", null)
         .order("created_at", { ascending: false })
-        .limit(30);
+        .limit(perSource);
+      if (before) q = q.lt("created_at", before);
+      const { data: msgs } = await q;
       for (const m of msgs ?? []) {
         if (archivedByConv.get(m.conversation_id)) continue;
         const lr = lastReadByConv.get(m.conversation_id);
@@ -90,12 +102,14 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
     const taskIds = (myTasks ?? []).map((t) => t.id);
     const titleByTask = new Map((myTasks ?? []).map((t) => [t.id, t.title as string]));
     if (taskIds.length > 0) {
-      const { data: subs } = await supabase
+      let q = supabase
         .from("prep_submissions")
         .select("id, task_id, qty_reported, submitted_at, photo_paths")
         .in("task_id", taskIds)
         .order("submitted_at", { ascending: false })
-        .limit(20);
+        .limit(perSource);
+      if (before) q = q.lt("submitted_at", before);
+      const { data: subs } = await q;
       for (const s of subs ?? []) {
         const photos = Array.isArray(s.photo_paths) ? s.photo_paths.length : 0;
         items.push({
@@ -110,13 +124,15 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
     }
 
     /* ── Sistem: prep_pin_alerts belum di-ack ─────────────────────── */
-    const { data: alerts } = await supabase
+    let alertsQ = supabase
       .from("prep_pin_alerts")
       .select("id, task_id, failure_count, window_start, window_end, created_at, acknowledged_at")
       .eq("owner_user_id", userId)
       .is("acknowledged_at", null)
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(perSource);
+    if (before) alertsQ = alertsQ.lt("created_at", before);
+    const { data: alerts } = await alertsQ;
     for (const a of alerts ?? []) {
       items.push({
         id: `system:${a.id}`,
@@ -130,11 +146,13 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
     }
 
     /* ── Order: event status pesanan terbaru ──────────────────────── */
-    const { data: events } = await supabase
+    let eventsQ = supabase
       .from("order_request_events")
       .select("id, order_id, from_status, to_status, note, created_at")
       .order("created_at", { ascending: false })
-      .limit(10);
+      .limit(perSource);
+    if (before) eventsQ = eventsQ.lt("created_at", before);
+    const { data: events } = await eventsQ;
     for (const e of events ?? []) {
       items.push({
         id: `order:${e.id}`,
@@ -147,7 +165,15 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
     }
 
     items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
-    return { items: items.slice(0, 40), generatedAt: new Date().toISOString() };
+    const page = items.slice(0, pageSize);
+    // Halaman penuh ⇒ kemungkinan masih ada item lebih lama.
+    const nextCursor =
+      page.length === pageSize ? page[page.length - 1].createdAt : null;
+    return {
+      items: page,
+      nextCursor,
+      generatedAt: new Date().toISOString(),
+    };
   });
 
 /**

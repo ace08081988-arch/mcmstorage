@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Bell, BellOff, Moon, Vibrate, MessageCircle, ClipboardList, PackagePlus, Settings2, BellRing, RefreshCw, Inbox } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 
 import { Button } from "@/components/ui/button";
@@ -40,7 +40,7 @@ import {
   type FeedItem,
 } from "@/lib/notif-feed.functions";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check } from "lucide-react";
+import { Check, ChevronDown } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/notifikasi")({
   ssr: false,
@@ -457,19 +457,36 @@ function RecentNotificationsCard({
       /* ignore */
     }
   }
-  const { data, isLoading, isFetching, refetch, error } = useQuery({
+  const {
+    data,
+    isLoading,
+    isFetching,
+    isFetchingNextPage,
+    fetchNextPage,
+    hasNextPage,
+    refetch,
+    error,
+  } = useInfiniteQuery({
     queryKey: ["notif-feed"],
-    queryFn: () => fetchFeed(),
+    queryFn: ({ pageParam }) =>
+      fetchFeed({ data: { before: pageParam ?? undefined, pageSize: 20 } }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
     staleTime: 30_000,
     refetchOnWindowFocus: true,
   });
 
+  const allItems = useMemo(
+    () => (data?.pages ?? []).flatMap((p) => p.items),
+    [data],
+  );
+
   const items = useMemo(
     () =>
-      (data?.items ?? [])
+      allItems
         .filter((it) => enabledKinds[it.kind])
         .map((it) => (localRead.has(it.id) ? { ...it, unread: false } : it)),
-    [data, enabledKinds, localRead],
+    [allItems, enabledKinds, localRead],
   );
   const unreadCount = items.filter((i) => i.unread).length;
 
@@ -490,7 +507,7 @@ function RecentNotificationsCard({
 
   async function handleMarkAll() {
     const allIds = new Set(localRead);
-    for (const it of data?.items ?? []) allIds.add(it.id);
+    for (const it of allItems) allIds.add(it.id);
     persistLocalRead(allIds);
     try {
       await markAll();
@@ -608,6 +625,35 @@ function RecentNotificationsCard({
               </div>
             );
           })
+        )}
+        {!isLoading && !error && items.length > 0 && (
+          <div className="pt-2">
+            {hasNextPage ? (
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full"
+                onClick={() => void fetchNextPage()}
+                disabled={isFetchingNextPage}
+              >
+                {isFetchingNextPage ? (
+                  <>
+                    <RefreshCw className="mr-2 size-3.5 animate-spin" />
+                    Memuat…
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="mr-2 size-3.5" />
+                    Muat lebih banyak
+                  </>
+                )}
+              </Button>
+            ) : (
+              <div className="py-2 text-center text-[11px] text-muted-foreground">
+                Sudah sampai ujung daftar
+              </div>
+            )}
+          </div>
         )}
       </CardContent>
     </Card>
