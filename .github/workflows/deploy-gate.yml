@@ -1,0 +1,104 @@
+name: Deploy Gate
+
+on:
+  workflow_run:
+    workflows: ["Typecheck & Build"]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: write
+  issues: write
+  actions: read
+
+jobs:
+  mark-ready:
+    name: Mark commit ready to publish
+    if: ${{ github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout commit from upstream run
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 0
+
+      - name: Create deploy/ready tag
+        env:
+          SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          SHORT_SHA="${SHA:0:7}"
+          TAG="deploy/ready-${SHORT_SHA}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          if git rev-parse -q --verify "refs/tags/${TAG}" >/dev/null; then
+            echo "Tag ${TAG} already exists — skipping."
+          else
+            git tag -a "${TAG}" "${SHA}" -m "CI passed on main @ ${SHORT_SHA} — siap publish via Lovable"
+            git push origin "refs/tags/${TAG}"
+            echo "Pushed ${TAG}"
+          fi
+          echo "TAG=${TAG}" >> "$GITHUB_ENV"
+          echo "SHORT_SHA=${SHORT_SHA}" >> "$GITHUB_ENV"
+
+      - name: Open / update "siap publish" issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.payload.workflow_run.head_sha;
+            const shortSha = sha.slice(0, 7);
+            const tag = `deploy/ready-${shortSha}`;
+            const commitUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${sha}`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.payload.workflow_run.id}`;
+            const tagUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/releases/tag/${encodeURIComponent(tag)}`;
+            const { data: commit } = await github.rest.repos.getCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+            });
+            const author = commit.author?.login || commit.commit.author?.name || "unknown";
+            const message = (commit.commit.message || "").split("\n")[0];
+            const title = `Siap publish: ${shortSha}`;
+            const body = [
+              `**Commit:** [\`${shortSha}\`](${commitUrl}) — ${message}`,
+              `**Author:** @${author}`,
+              `**Tag:** [\`${tag}\`](${tagUrl})`,
+              `**CI run:** ${runUrl}`,
+              ``,
+              `CI (\`Typecheck & Build\`) lulus di \`main\`. Balas **"publish"** di chat Lovable untuk men-deploy commit ini ke https://mcmstorage.biz.`,
+            ].join("\n");
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "deploy-ready",
+              per_page: 1,
+            });
+            if (existing.length > 0) {
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing[0].number,
+                title,
+                body,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["deploy-ready"],
+              });
+            }
+
+      - name: Job summary
+        run: |
+          {
+            echo "## ✅ Siap publish";
+            echo "";
+            echo "- Commit: \`${SHORT_SHA}\`";
+            echo "- Tag: \`${TAG}\`";
+            echo "- Balas **\"publish\"** di chat Lovable untuk men-deploy.";
+          } >> "$GITHUB_STEP_SUMMARY"
