@@ -46,3 +46,68 @@ jobs:
           path: dist/
           retention-days: 7
           if-no-files-found: ignore
+
+      - name: Notify on failure (open / update issue)
+        if: failure() && github.event_name == 'push' && github.ref == 'refs/heads/main'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = context.sha;
+            const shortSha = sha.slice(0, 7);
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const commitUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${sha}`;
+            const { data: commit } = await github.rest.repos.getCommit({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+            });
+            const author = commit.author?.login || commit.commit.author?.name || "unknown";
+            const message = (commit.commit.message || "").split("\n")[0];
+            const title = `CI gagal di main @ ${shortSha}`;
+            const body = [
+              `**Commit:** [\`${shortSha}\`](${commitUrl}) — ${message}`,
+              `**Author:** @${author}`,
+              `**Run:** ${runUrl}`,
+              ``,
+              `Workflow \`Typecheck & Build\` gagal pada push ke \`main\`. Periksa log run di atas untuk langkah yang gagal (typecheck atau build).`,
+            ].join("\n");
+            const { data: existing } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: "open",
+              labels: "ci-failure",
+              per_page: 1,
+            });
+            if (existing.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing[0].number,
+                body,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: existing[0].number,
+                title,
+              });
+            } else {
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ["ci-failure"],
+              });
+            }
+
+      - name: Job summary on failure
+        if: failure()
+        run: |
+          {
+            echo "## ❌ CI gagal";
+            echo "";
+            echo "- Commit: \`${GITHUB_SHA::7}\`";
+            echo "- Ref: \`${GITHUB_REF}\`";
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}";
+          } >> "$GITHUB_STEP_SUMMARY"
