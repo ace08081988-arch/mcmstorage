@@ -167,6 +167,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     let done = 0;
     setProgress({ done, total });
     let anyError = false;
+    let failedCount = 0;
     let firstCaptionConsumed = retryOnly
       ? statuses.findIndex((s) => s?.state === "sent") !== -1 // caption sudah ikut item pertama yang sukses
       : false;
@@ -199,6 +200,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         onSent?.();
       } catch (e) {
         anyError = true;
+        failedCount += 1;
         const msg = e instanceof Error ? e.message : "Gagal mengunggah";
         setStatuses((prev) => {
           const next = [...prev];
@@ -224,13 +226,6 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         setStatuses([]);
       }, 300);
     } else {
-      // Hitung dari hasil terbaru, bukan state lama.
-      const okCount = indices.filter((i) => {
-        // status state diset sinkron tapi kita pakai snapshot terbaru via DOM batch — fallback aman:
-        return false;
-      }).length; // placeholder dihindari di bawah
-      // Hitung ulang dari closure: kita tahu total = indices.length, dan anyError true.
-      // Pakai counter sederhana yang kita pelihara sepanjang loop.
       const failed = failedCount;
       const ok = indices.length - failed;
       toast.error(
@@ -241,7 +236,6 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             : `Tekan "Coba lagi" untuk mengulang.`,
         },
       );
-      void okCount;
     }
   }
 
