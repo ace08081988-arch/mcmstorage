@@ -140,14 +140,14 @@ function PesananDetailPage() {
                     {customer?.contact && ` · 📞 ${customer.contact}`}
                   </div>
                 </div>
-                <span className={`shrink-0 rounded px-2 py-0.5 text-[10px] font-semibold uppercase ${badge(order.status)}`}>{order.status}</span>
+                <span className={`shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold uppercase ${badge(order.status)}`}>{order.status}</span>
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <div className="rounded bg-muted/50 p-2">
                   <div className="text-muted-foreground">Jumlah pesanan</div>
                   <div className="font-semibold">{order.qty} {perUnitLabel}</div>
                   {item && order.qty_mode === "package" && (
-                    <div className="text-[10px] text-muted-foreground">≈ {fmtBase(qtyBase, item.base_unit)}</div>
+                    <div className="text-[11px] text-muted-foreground">≈ {fmtBase(qtyBase, item.base_unit)}</div>
                   )}
                 </div>
                 <div className="rounded bg-muted/50 p-2">
@@ -156,12 +156,12 @@ function PesananDetailPage() {
                     {order.price_per_unit != null ? `${rupiah(Number(order.price_per_unit))}/${perUnitLabel}` : "—"}
                   </div>
                   {order.price_per_unit != null && item && (
-                    <div className="text-[10px] text-muted-foreground">Total ≈ {rupiah(qtyBase * (order.qty_mode === "base" ? Number(order.price_per_unit) : Number(order.price_per_unit) / item.package_size))}</div>
+                    <div className="text-[11px] text-muted-foreground">Total ≈ {rupiah(qtyBase * (order.qty_mode === "base" ? Number(order.price_per_unit) : Number(order.price_per_unit) / item.package_size))}</div>
                   )}
                 </div>
               </div>
               {order.note && <div className="text-[11px] text-muted-foreground">📌 {order.note}</div>}
-              <div className="text-[10px] text-muted-foreground">
+              <div className="text-[11px] text-muted-foreground">
                 Dibuat: {new Date(order.created_at).toLocaleString("id-ID")} · Diperbarui: {new Date(order.updated_at).toLocaleString("id-ID")}
               </div>
             </div>
@@ -197,14 +197,14 @@ function PesananDetailPage() {
               ) : (
                 <ol className="space-y-2">
                   {events.map((e) => (
-                    <li key={e.id} className="flex items-start gap-2 text-[12px]">
+                    <li key={e.id} className="flex items-start gap-2 text-[11px]">
                       <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-primary" />
                       <div className="min-w-0 flex-1">
                         <div>
                           {e.from_status ? <><span className="text-muted-foreground">{e.from_status}</span> → </> : null}
-                          <span className={`rounded px-1.5 py-0.5 text-[10px] font-semibold uppercase ${badge(e.to_status)}`}>{e.to_status}</span>
+                          <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase ${badge(e.to_status)}`}>{e.to_status}</span>
                         </div>
-                        <div className="text-[10px] text-muted-foreground">
+                        <div className="text-[11px] text-muted-foreground">
                           {new Date(e.created_at).toLocaleString("id-ID")}
                           {e.note && ` · ${e.note}`}
                         </div>

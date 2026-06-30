@@ -422,7 +422,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
               className="block w-full text-xs file:mr-2 file:rounded-md file:border file:bg-muted file:px-2 file:py-1.5 file:text-xs"
             />
             </div>
-            <div className="mt-1 flex items-center gap-2 text-[10px] text-muted-foreground">
+            <div className="mt-1 flex items-center gap-2 text-[11px] text-muted-foreground">
               <Camera className="h-3 w-3" /> kamera HP <span>•</span> <ImageIcon className="h-3 w-3" /> galeri <span>•</span> bisa pilih beberapa foto
             </div>
             {previewUrls.length > 0 && (
@@ -435,7 +435,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                       setFiles([]);
                       if (fileRef.current) fileRef.current.value = "";
                     }}
-                    className="inline-flex h-6 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10"
+                    className="inline-flex h-6 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[11px] text-destructive hover:bg-destructive/10"
                   >
                     <Trash2 className="h-3 w-3" /> Hapus semua
                   </button>
@@ -467,7 +467,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                         <Trash2 className="h-3 w-3" />
                       </button>
                       {idx === 0 && (
-                        <span className="absolute bottom-1 left-1 rounded bg-primary/90 px-1 text-[9px] font-semibold text-primary-foreground">
+                        <span className="absolute bottom-1 left-1 rounded bg-primary/90 px-1 text-[11px] font-semibold text-primary-foreground">
                           Utama
                         </span>
                       )}
@@ -525,7 +525,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 const src = `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${coords.lat},${coords.lng}`;
                 return (
                   <div className="mt-2 space-y-1">
-                    <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                    <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                       <span>Pratinjau lokasi</span>
                       <span className="tabular-nums">{coords.lat.toFixed(5)}, {coords.lng.toFixed(5)}</span>
                     </div>
@@ -541,7 +541,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                       href={validUrl ? trimmed : `https://www.openstreetmap.org/?mlat=${coords.lat}&mlon=${coords.lng}#map=16/${coords.lat}/${coords.lng}`}
                       target="_blank"
                       rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[10px] text-primary underline"
+                      className="inline-flex items-center gap-1 text-[11px] text-primary underline"
                     >
                       <ExternalLink className="h-3 w-3" /> Buka di peta
                     </a>
@@ -549,7 +549,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 );
               }
               return (
-                <div className="mt-2 rounded-md border border-dashed bg-muted/30 p-2 text-[10px] text-muted-foreground">
+                <div className="mt-2 rounded-md border border-dashed bg-muted/30 p-2 text-[11px] text-muted-foreground">
                   {validUrl
                     ? "Link tersimpan, tapi koordinat tidak terdeteksi otomatis. Pratinjau peta tidak tersedia — pastikan link Google Maps memuat koordinat (mis. /@lat,lng atau ?q=lat,lng)."
                     : "Tempel link Google Maps yang valid (https://) untuk melihat pratinjau peta."}
@@ -615,7 +615,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                     </a>
                   )}
                   {r.note && <div className="mt-0.5 line-clamp-2 text-[11px] text-muted-foreground">{r.note}</div>}
-                  <div className="mt-1 text-[10px] text-muted-foreground">
+                  <div className="mt-1 text-[11px] text-muted-foreground">
                     Dibuat {new Date(r.created_at).toLocaleString("id-ID")}
                   </div>
                   <div className="mt-2 flex flex-wrap gap-2">
@@ -659,7 +659,7 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                 )}
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-semibold">{r.title}</div>
-                  <div className="text-[10px] text-muted-foreground">
+                  <div className="text-[11px] text-muted-foreground">
                     Dikirim {r.sent_at ? new Date(r.sent_at).toLocaleString("id-ID") : "—"}
                   </div>
                   {r.location_url && (

@@ -588,7 +588,7 @@ export function ReadyEcerSection() {
           <button
             type="button"
             onClick={() => setView("active")}
-            className={`flex-1 rounded px-2 py-1 text-[10.5px] font-semibold transition ${view === "active" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
+            className={`flex-1 rounded px-2 py-1 text-[11px] font-semibold transition ${view === "active" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
             aria-pressed={view === "active"}
           >
             Aktif <span className="ml-1 font-mono opacity-80">{totalActive}</span>
@@ -596,7 +596,7 @@ export function ReadyEcerSection() {
           <button
             type="button"
             onClick={() => setView("sent")}
-            className={`flex-1 inline-flex items-center justify-center gap-1 rounded px-2 py-1 text-[10.5px] font-semibold transition ${view === "sent" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
+            className={`flex-1 inline-flex items-center justify-center gap-1 rounded px-2 py-1 text-[11px] font-semibold transition ${view === "sent" ? "bg-primary text-primary-foreground shadow-sm" : "text-muted-foreground hover:bg-accent"}`}
             aria-pressed={view === "sent"}
           >
             <History className="h-3 w-3" /> Riwayat terkirim <span className="ml-0.5 font-mono opacity-80">{totalSent}</span>
@@ -802,7 +802,7 @@ function BulkToolbar({
         <button
           type="button"
           onClick={() => setSelectMode(true)}
-          className="inline-flex h-7 items-center gap-1 rounded-md border bg-card px-2 text-[10.5px] font-semibold text-foreground hover:bg-accent"
+          className="inline-flex h-7 items-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-foreground hover:bg-accent"
         >
           <ListChecks className="h-3 w-3" /> Pilih beberapa
         </button>
@@ -817,18 +817,18 @@ function BulkToolbar({
           if (allSelected) setSelectedIds(new Set());
           else setSelectedIds(new Set(visibleIds));
         }}
-        className="inline-flex h-7 items-center gap-1 rounded-md bg-card px-2 text-[10.5px] font-semibold hover:bg-accent"
+        className="inline-flex h-7 items-center gap-1 rounded-md bg-card px-2 text-[11px] font-semibold hover:bg-accent"
       >
         {allSelected ? <CheckSquare className="h-3 w-3 text-primary" /> : <Square className="h-3 w-3" />}
         {allSelected ? "Lepas semua" : "Pilih semua"}
       </button>
-      <span className="text-[10.5px] font-semibold text-primary">{count} terpilih</span>
+      <span className="text-[11px] font-semibold text-primary">{count} terpilih</span>
       <div className="ml-auto flex flex-wrap items-center gap-1">
         <button
           type="button"
           onClick={onBulkWA}
           disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md bg-[#25D366] px-2 text-[10.5px] font-semibold text-white shadow-sm hover:bg-[#1ebe57] disabled:opacity-50"
+          className="inline-flex h-7 items-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm hover:bg-[#1ebe57] disabled:opacity-50"
         >
           {busy === "wa" ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
           WA
@@ -837,7 +837,7 @@ function BulkToolbar({
           type="button"
           onClick={onBulkChatPick}
           disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[10.5px] font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+          className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
         >
           {busy === "chat" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
           Chat
@@ -846,7 +846,7 @@ function BulkToolbar({
           type="button"
           onClick={onBulkDelete}
           disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 text-[10.5px] font-semibold text-destructive hover:bg-destructive/20 disabled:opacity-50"
+          className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 text-[11px] font-semibold text-destructive hover:bg-destructive/20 disabled:opacity-50"
         >
           {busy === "delete" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
           Hapus
@@ -855,12 +855,12 @@ function BulkToolbar({
           type="button"
           onClick={() => setSelectMode(false)}
           disabled={busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md border bg-card px-2 text-[10.5px] font-semibold text-muted-foreground hover:bg-accent disabled:opacity-50"
+          className="inline-flex h-7 items-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-muted-foreground hover:bg-accent disabled:opacity-50"
         >
           <X className="h-3 w-3" /> Batal
         </button>
       </div>
-      <p className="basis-full text-[9.5px] text-muted-foreground">
+      <p className="basis-full text-[11px] text-muted-foreground">
         {view === "sent"
           ? "Tap kartu untuk centang. Aksi WA/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
           : "Tap kartu untuk centang. WA/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
@@ -879,16 +879,16 @@ function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncL
   return (
     <div className="rounded-md border bg-card/50 p-1.5">
       <div className="mb-1 flex items-center justify-between px-0.5">
-        <span className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Status sinkron</span>
+        <span className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Status sinkron</span>
         {failing > 0 && (
-          <span className="text-[9px] font-semibold text-destructive">{failing} gagal</span>
+          <span className="text-[11px] font-semibold text-destructive">{failing} gagal</span>
         )}
       </div>
       <div className="flex flex-wrap gap-1">
         <button
           type="button"
           onClick={() => onChange("all")}
-          className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${active === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
+          className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${active === "all" ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-accent"}`}
         >
           Semua <span className="font-mono">{total}</span>
         </button>
@@ -902,7 +902,7 @@ function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncL
               key={lvl}
               type="button"
               onClick={() => onChange(isActive ? "all" : lvl)}
-              className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${meta.cls} ${isActive ? "ring-2 ring-primary/40" : ""}`}
+              className={`inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${meta.cls} ${isActive ? "ring-2 ring-primary/40" : ""}`}
               aria-pressed={isActive}
             >
               <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
@@ -918,14 +918,14 @@ function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncL
 function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "offline"; syncing: boolean }) {
   if (syncing) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-medium text-primary">
+      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
         <Loader2 className="h-2.5 w-2.5 animate-spin" /> Memperbarui…
       </span>
     );
   }
   if (status === "live") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
         <span className="relative flex h-1.5 w-1.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -936,13 +936,13 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   }
   if (status === "offline") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[9px] font-medium text-destructive">
+      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[11px] font-medium text-destructive">
         <Radio className="h-2.5 w-2.5" /> Offline
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
       <Loader2 className="h-2.5 w-2.5 animate-spin" /> Menyambung…
     </span>
   );
@@ -998,7 +998,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
   const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
   if (status === "sending") {
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[9px] font-semibold text-primary">
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary">
         <Loader2 className="h-2.5 w-2.5 animate-spin" /> Mengirim…
       </span>
     );
@@ -1007,11 +1007,11 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
     return (
       <Popover>
         <PopoverTrigger asChild>
-          <button type="button" onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[9px] font-semibold text-destructive">
+          <button type="button" onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[11px] font-semibold text-destructive">
             <XCircle className="h-2.5 w-2.5" /> Gagal kirim
           </button>
         </PopoverTrigger>
-        <PopoverContent align="start" className="w-64 space-y-1 p-2.5 text-[10px]" onClick={stop}>
+        <PopoverContent align="start" className="w-64 space-y-1 p-2.5 text-[11px]" onClick={stop}>
           <div className="font-semibold text-foreground">Gagal mengirim ke WhatsApp</div>
           <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
           <p className="text-muted-foreground">Tekan tombol WA lagi untuk mencoba ulang.</p>
@@ -1021,7 +1021,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
   }
   if (status === "cancelled") {
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-semibold text-muted-foreground">
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-semibold text-muted-foreground">
         <CircleSlash className="h-2.5 w-2.5" /> Dibatalkan
       </span>
     );
@@ -1029,14 +1029,14 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
   if (status === "success" || (view === "sent" && lastSentAt)) {
     const label = status === "success" ? "Sukses dikirim" : `Terkirim · ${fmtAgo(lastSentAt!)}`;
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[9px] font-semibold text-emerald-600 dark:text-emerald-400" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-600 dark:text-emerald-400" title={lastSentAt ? new Date(lastSentAt).toLocaleString() : undefined}>
         <CheckCircle2 className="h-2.5 w-2.5" /> {label}
       </span>
     );
   }
   if (view === "active" && sentCount === 0) {
     return (
-      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground">
+      <span onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
         <span className="h-1 w-1 rounded-full bg-muted-foreground/60" /> Belum dikirim
       </span>
     );
@@ -1057,7 +1057,7 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
   if (rows.length === 0) return null;
   return (
     <div className="rounded-md border bg-muted/40 p-1.5">
-      <div className="mb-1 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+      <div className="mb-1 flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
         <History className="h-2.5 w-2.5" /> Detail kiriman ({rows.length})
       </div>
       <ul className="space-y-1">
@@ -1069,7 +1069,7 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
           });
           const maps = entry.mapsUrl ?? shot.location_url ?? null;
           return (
-            <li key={shot.id} className="flex flex-wrap items-center gap-1 text-[9px] leading-tight">
+            <li key={shot.id} className="flex flex-wrap items-center gap-1 text-[11px] leading-snug">
               <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}`}>
                 {channel === "chat" ? <Send className="h-2.5 w-2.5" /> : <MessageCircle className="h-2.5 w-2.5" />}
                 {channel === "chat" ? "Chat" : "WA"}
@@ -1109,7 +1109,7 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
         <button
           type="button"
           onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-          className={`inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold ${meta.cls}`}
+          className={`inline-flex w-fit items-center gap-1 rounded-full px-1.5 py-0.5 text-[11px] font-semibold ${meta.cls}`}
           aria-label={`Status sinkron: ${meta.label}`}
         >
           <span className={`h-1 w-1 rounded-full ${meta.dot}`} />
@@ -1118,7 +1118,7 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
       </PopoverTrigger>
       <PopoverContent
         align="start"
-        className="w-64 space-y-2 p-2.5 text-[10px]"
+        className="w-64 space-y-2 p-2.5 text-[11px]"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="font-semibold text-foreground">Status sinkron foto pegawai</div>
@@ -1690,16 +1690,16 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">…</div>
           )}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2">
-            <div className="flex items-center gap-1 text-[9px] font-medium text-white/90">
+            <div className="flex items-center gap-1 text-[11px] font-medium text-white/90">
               <Scale className="h-2.5 w-2.5" />
               <span className="truncate">{r.name}</span>
             </div>
           </div>
-          <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-sky-500/95 px-1.5 py-0.5 text-[9px] font-semibold text-white shadow-sm">
+          <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-sky-500/95 px-1.5 py-0.5 text-[11px] font-semibold text-white shadow-sm">
             {shots.length} foto
           </span>
           {thumbs[0]?.location_url && (
-            <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[9px] font-medium text-white backdrop-blur-sm">
+            <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
               <MapPin className="h-2.5 w-2.5" /> GPS
             </span>
           )}
@@ -1715,10 +1715,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           {shots.length === 0 && (
             <div className="flex items-center gap-1.5">
               <Scale className="h-3.5 w-3.5 text-primary" />
-              <span className="truncate text-xs font-semibold leading-tight">{r.name}</span>
+              <span className="truncate text-xs font-semibold leading-snug">{r.name}</span>
             </div>
           )}
-          <span className="truncate text-[10px] font-medium leading-tight text-foreground/80">
+          <span className="truncate text-[11px] font-medium leading-snug text-foreground/80">
             {r.product_name} · {r.target_grams} {unit}
           </span>
           <SyncBadge row={r} />
@@ -1734,7 +1734,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[9px] font-medium text-muted-foreground hover:bg-accent"
+                className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground hover:bg-accent"
               >
                 <span className="h-1 w-1 rounded-full bg-primary" />
                 Cocok: produk + {r.target_grams}{unit}
@@ -1742,7 +1742,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             </PopoverTrigger>
             <PopoverContent
               align="start"
-              className="w-64 space-y-2 p-2.5 text-[10px]"
+              className="w-64 space-y-2 p-2.5 text-[11px]"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="font-semibold text-foreground">Aturan cocok foto</div>
@@ -1764,13 +1764,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               <Link
                 to="/ecer"
                 search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
-                className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-[10px] font-semibold text-primary hover:bg-primary/20"
+                className="inline-flex items-center gap-1 rounded bg-primary/10 px-2 py-1 text-[11px] font-semibold text-primary hover:bg-primary/20"
               >
                 <ExternalLink className="h-2.5 w-2.5" /> Buka detail item di Ecer
               </Link>
             </PopoverContent>
           </Popover>
-          <span className="text-[10px] leading-tight">
+          <span className="text-[11px] leading-snug">
             <span className={r.prep_count > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
               {r.prep_count} kotak siap
             </span>
@@ -1784,10 +1784,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           ) : (
             <Inbox className="h-3.5 w-3.5 text-muted-foreground" />
           )}
-          <span className="text-[10px] font-medium leading-tight text-muted-foreground">
+          <span className="text-[11px] font-medium leading-snug text-muted-foreground">
             {syncing || refreshing ? "Memuat kiriman…" : "Belum ada kiriman pegawai"}
           </span>
-          <span className="text-[9px] leading-tight text-muted-foreground">
+          <span className="text-[11px] leading-snug text-muted-foreground">
             {realtimeStatus === "live"
               ? "Menunggu foto pegawai — akan muncul otomatis."
               : realtimeStatus === "offline"
@@ -1798,7 +1798,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             type="button"
             onClick={(e) => { e.preventDefault(); e.stopPropagation(); onRefresh(); }}
             disabled={refreshing}
-            className="mt-0.5 inline-flex h-6 items-center gap-1 rounded bg-primary/10 px-2 text-[10px] font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
+            className="mt-0.5 inline-flex h-6 items-center gap-1 rounded bg-primary/10 px-2 text-[11px] font-semibold text-primary hover:bg-primary/20 disabled:opacity-50"
           >
             <RefreshCw className={`h-2.5 w-2.5 ${refreshing ? "animate-spin" : ""}`} />
             {refreshing ? "Menyegarkan…" : "Segarkan"}
@@ -1818,7 +1818,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               </div>
             ))}
             {extra > 0 && (
-              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-card bg-muted text-[9px] font-semibold text-muted-foreground ring-1 ring-border">
+              <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded border border-card bg-muted text-[11px] font-semibold text-muted-foreground ring-1 ring-border">
                 +{extra}
               </div>
             )}
@@ -1827,7 +1827,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               onClick={sendWA}
               disabled={sending}
               aria-label="Kirim ke WhatsApp"
-              className="ml-auto inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[10px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
+              className="ml-auto inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
             >
               <MessageCircle className="h-3 w-3" />
               {sending ? "…" : view === "sent" ? "Kirim ulang" : "WA"}
@@ -1838,7 +1838,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               disabled={chatSending || chatPreparing}
               aria-label="Kirim via Chat aplikasi"
               title="Kirim ke percakapan dalam aplikasi"
-              className="inline-flex h-7 items-center justify-center gap-1 rounded-md bg-primary px-2 text-[10px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+              className="inline-flex h-7 items-center justify-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
             >
               {(chatSending || chatPreparing) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
               {chatPreparing ? "Siap…" : "Chat"}
@@ -1848,7 +1848,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 type="button"
                 onClick={undoSent}
                 aria-label="Kembalikan ke aktif"
-                className="inline-flex h-7 items-center justify-center gap-1 rounded-md border bg-card px-2 text-[10px] font-semibold text-muted-foreground hover:bg-accent"
+                className="inline-flex h-7 items-center justify-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-muted-foreground hover:bg-accent"
               >
                 <Undo2 className="h-3 w-3" /> Aktif
               </button>
