@@ -288,6 +288,20 @@ export function useLiveSendLogStatus(
     setError(hydrated?.lastError ?? null);
     lastSnapshotRef.current = hydrated?.lastSnapshot ?? "";
     let cancelled = false;
+    // Guard anti-dobel: simpan signature terakhir yang sudah diterapkan ke
+    // state. Saat banyak tab menulis SYNC_KEY hampir bersamaan, beberapa
+    // storage event bisa tiba berturut-turut dengan payload identik —
+    // signature ini memastikan kita hanya memicu setState/tick saat benar-
+    // benar ada perubahan material.
+    let lastAppliedSig = "";
+    const sigOf = (s: SendLogSyncStatus | null) =>
+      s ? `${s.lastSyncedAt ?? 0}|${s.lastError ?? ""}|${s.lastSnapshot}` : "";
+    // Throttle storage event lintas tab: pakai trailing-edge ~80 ms supaya
+    // burst write dari N tab (mis. semuanya melakukan poll bersamaan) hanya
+    // memicu satu siklus apply, namun tetap responsif untuk mata operator.
+    const STORAGE_THROTTLE_MS = 80;
+    let syncPending: ReturnType<typeof setTimeout> | null = null;
+    let readPending: ReturnType<typeof setTimeout> | null = null;
     const read = () => {
       if (cancelled) return;
       try {
@@ -303,6 +317,7 @@ export function useLiveSendLogStatus(
         // Persist status sinkronisasi agar tab/refresh lain melihat nilai
         // konsisten — bukan reset ke "belum pernah sinkron".
         patchSendLogSyncStatus(k, { lastSyncedAt: now, lastError: null, lastSnapshot: snap });
+        lastAppliedSig = `${now}|${""}|${snap}`;
       } catch (e) {
         const msg = e instanceof Error ? e.message : "Gagal membaca log kiriman";
         setError(msg);
@@ -311,7 +326,6 @@ export function useLiveSendLogStatus(
     };
     read();
     const onEvt = () => read();
-    const onStorage = (e: StorageEvent) => { if (e.key === KEY) read(); };
     // Sinkron antar-tab: ketika tab lain memperbarui status sinkron,
     // tarik nilai terbarunya supaya UI tab ini ikut up-to-date.
     const onSyncEvt = () => {
@@ -323,6 +337,13 @@ export function useLiveSendLogStatus(
       // `lastSyncedAt` tanpa entri baru).
       const s = getSendLogSyncStatus(k);
       if (!s) return;
+      const sig = sigOf(s);
+      // Guard: jika signature persis sama dengan yang terakhir diterapkan,
+      // skip — mencegah re-render dobel saat beberapa tab menulis SYNC_KEY
+      // bersamaan (mis. lima tab poll sinkron, kelimanya men-trigger event
+      // dengan payload sama).
+      if (sig && sig === lastAppliedSig) return;
+      lastAppliedSig = sig;
       setLastSyncedAt(s.lastSyncedAt);
       setError(s.lastError);
       if (s.lastSnapshot !== lastSnapshotRef.current) {
@@ -341,13 +362,23 @@ export function useLiveSendLogStatus(
         }
       } catch { /* abaikan, read() berikutnya akan mencoba lagi */ }
     };
+    // Trailing-edge schedulers: coalesce burst storage event ke satu apply.
+    const scheduleSyncApply = () => {
+      if (syncPending) return;
+      syncPending = setTimeout(() => { syncPending = null; if (!cancelled) onSyncEvt(); }, STORAGE_THROTTLE_MS);
+    };
+    const scheduleReadEntries = () => {
+      if (readPending) return;
+      readPending = setTimeout(() => { readPending = null; if (!cancelled) read(); }, STORAGE_THROTTLE_MS);
+    };
     // Storage event lintas tab — JANGAN tunggu visibility. Untuk SYNC_KEY
-    // terapkan status instan; untuk KEY, baca ulang entries lokal lalu
-    // perbarui sync status sehingga indikator "Data belum tersinkron"
-    // segera reset di tab background.
+    // dan KEY pakai throttle trailing-edge (~80 ms) + guard signature agar
+    // tidak menjadwalkan apply dobel saat beberapa tab menulis bersamaan.
+    // Indikator "Data belum tersinkron" tetap reset cepat di tab background
+    // tanpa membanjiri React dengan setState berturut-turut.
     const onCrossTabStorage = (e: StorageEvent) => {
-      if (e.key === SYNC_KEY) { onSyncEvt(); return; }
-      if (e.key === KEY) { read(); return; }
+      if (e.key === SYNC_KEY) { scheduleSyncApply(); return; }
+      if (e.key === KEY) { scheduleReadEntries(); return; }
     };
     // visibilitychange tetap dipasang sebagai fallback paling akhir
     // (browser tertentu kadang melempar storage event saat tab background
@@ -363,6 +394,8 @@ export function useLiveSendLogStatus(
     const timer = pollMs > 0 ? setInterval(read, pollMs) : null;
     return () => {
       cancelled = true;
+      if (syncPending) { clearTimeout(syncPending); syncPending = null; }
+      if (readPending) { clearTimeout(readPending); readPending = null; }
       window.removeEventListener(EVENT, onEvt);
       window.removeEventListener(SYNC_EVENT, onSyncEvt);
       window.removeEventListener("storage", onCrossTabStorage);
