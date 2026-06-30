@@ -1137,13 +1137,26 @@ function PublicPrepPage() {
               <Clock className="h-3 w-3" />
               Sesi {sessionClock}
             </span>
-            <span className="text-muted-foreground">
-              {sessionSecondsLeft <= 60
-                ? "Akan diminta PIN sebentar lagi"
-                : sessionSecondsLeft <= 300
-                  ? "Sesi PIN hampir habis"
-                  : `Re-login pada ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
-            </span>
+            {sessionSecondsLeft <= 300 ? (
+              <button
+                type="button"
+                onClick={reloginNow}
+                className={
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-sm transition " +
+                  (sessionSecondsLeft <= 60
+                    ? "bg-destructive hover:bg-destructive/90"
+                    : "bg-amber-600 hover:bg-amber-700")
+                }
+                title="Masuk ulang dengan PIN sekarang"
+              >
+                <Lock className="h-3 w-3" />
+                Re-login sekarang
+              </button>
+            ) : (
+              <span className="text-muted-foreground">
+                {`Re-login pada ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
+              </span>
+            )}
           </div>
         )}
       </header>
