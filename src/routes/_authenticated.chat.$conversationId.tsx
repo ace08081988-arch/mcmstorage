@@ -938,6 +938,17 @@ function ChatRoomPage() {
                               (() => {
                                 const ageMin = (Date.now() - new Date(m.created_at).getTime()) / 60_000;
                                 if (ageMin > 24 * 60) return null;
+                                const sticker = parseStickerFromBody(m.body);
+                                if (sticker) {
+                                  return (
+                                    <DropdownMenuItem
+                                      onSelect={() => setEditStickerMsg({ id: m.id, body: m.body ?? "" })}
+                                    >
+                                      <StickerIcon className="mr-2 h-4 w-4" />
+                                      Edit stiker
+                                    </DropdownMenuItem>
+                                  );
+                                }
                                 return (
                                   <DropdownMenuItem
                                     onSelect={() => {
