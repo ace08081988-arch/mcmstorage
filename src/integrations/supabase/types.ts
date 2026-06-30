@@ -53,6 +53,47 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_delete_audit: {
+        Row: {
+          action: Database["public"]["Enums"]["chat_delete_action"]
+          actor_user_id: string
+          conversation_id: string
+          count: number
+          created_at: string
+          id: string
+          message_id: string | null
+          message_ids: string[] | null
+        }
+        Insert: {
+          action: Database["public"]["Enums"]["chat_delete_action"]
+          actor_user_id?: string
+          conversation_id: string
+          count?: number
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          message_ids?: string[] | null
+        }
+        Update: {
+          action?: Database["public"]["Enums"]["chat_delete_action"]
+          actor_user_id?: string
+          conversation_id?: string
+          count?: number
+          created_at?: string
+          id?: string
+          message_id?: string | null
+          message_ids?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_delete_audit_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_notes: {
         Row: {
           body: string
@@ -2555,6 +2596,12 @@ export type Database = {
     }
     Enums: {
       app_role: "admin" | "moderator" | "user"
+      chat_delete_action:
+        | "for_me"
+        | "for_all"
+        | "for_me_bulk"
+        | "for_all_bulk"
+        | "all_mine"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -2683,6 +2730,13 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "moderator", "user"],
+      chat_delete_action: [
+        "for_me",
+        "for_all",
+        "for_me_bulk",
+        "for_all_bulk",
+        "all_mine",
+      ],
     },
   },
 } as const
