@@ -970,17 +970,16 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan ke WA.");
       }
       const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
       const text = [
         `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
         `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
         ...lines,
-        ...(take.find((s) => s.location_url) ? [`📍 ${take.find((s) => s.location_url)!.location_url}`] : []),
       ].join("\n");
-      const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
       const res = await withIdempotency(idemKey, {
         onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
         run: async () => {
-          const r0 = await shareToWhatsApp({ text, title: r.name, files });
+          const r0 = await shareToWhatsApp({ text, title: r.name, files, url: firstLocation ?? undefined });
           notifyShareResult(r0);
           if (r0.status === "shared" || r0.status === "fallback") {
             markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
