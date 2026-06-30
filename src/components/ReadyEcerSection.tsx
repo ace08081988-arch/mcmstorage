@@ -1135,7 +1135,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       existing && existing.status !== "failed"
         ? { at: existing.at, status: existing.status, destination: convTitle, fingerprint: existing.fingerprint, summary: existing.summary }
         : null;
-    const previousLog = duplicate ? getSendLog(idemKey) : [];
+    let previousLog = existing ? getSendLog(idemKey) : [];
     setPickChatOpen(false);
     setChatPreparing(true);
     setSendError(null);
@@ -1199,6 +1199,24 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         photoCount: chatShots.length,
         locationUrl: firstLocation ?? null,
       };
+      // Simpan snapshot diff payload bila kiriman chat sebelumnya gagal atau
+      // sidik jari berbeda — tampilkan di "Lihat log kiriman sebelumnya".
+      if (existing) {
+        const prevFp = existing.fingerprint;
+        const fpMismatch = !!prevFp && prevFp !== chatFingerprint;
+        const prevFailed = existing.status === "failed";
+        if (prevFailed || fpMismatch) {
+          appendPayloadDiffLog(
+            idemKey,
+            existing.summary ?? null,
+            chatSummary,
+            prevFailed
+              ? "Kiriman Chat sebelumnya gagal — bandingkan payload"
+              : "Sidik jari payload tidak cocok dengan kiriman Chat sebelumnya",
+          );
+          previousLog = getSendLog(idemKey);
+        }
+      }
       setChatPreview({
         conversationId,
         conversationTitle: convTitle,
