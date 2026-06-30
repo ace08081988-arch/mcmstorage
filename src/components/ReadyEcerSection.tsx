@@ -938,14 +938,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const take = shots.slice(0, 6);
     const idemKey = buildSendKey({ channel: "wa", ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
-    if (existing && existing.status !== "failed") {
-      toast.info(
-        existing.status === "in-flight"
-          ? "Pengiriman WA untuk paket ini sedang berjalan…"
-          : "Paket ini baru saja terkirim ke WA. Klik diabaikan untuk hindari kiriman ganda.",
-      );
-      return;
-    }
+    const duplicate: IdemRecord | null = existing && existing.status !== "failed" ? existing : null;
     setSending(true);
     setSendStatus("sending");
     setSendError(null);
@@ -995,29 +988,50 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
         ...lines,
       ].join("\n");
-      const res = await withIdempotency(idemKey, {
-        onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
-        run: async () => {
-          const r0 = await shareToWhatsApp({
+      const callShare = () => shareToWhatsApp({
             text,
             title: r.name,
             files,
             url: firstLocation ?? undefined,
             expectedCount,
             retryMissing,
+            duplicate,
           });
+      // Saat duplikat aktif: bypass withIdempotency agar pratinjau (yang sekarang
+      // memuat peringatan "Klik ganda terdeteksi") selalu tampil. Jika operator
+      // memilih Kirim ulang (paksa), `shareToWhatsApp` mengembalikan shared/fallback —
+      // bersihkan record lama sebelum menulis record baru.
+      let res: { status: "shared"; error?: string };
+      if (duplicate) {
+        const r0 = await callShare();
+        notifyShareResult(r0);
+        if (r0.status === "shared" || r0.status === "fallback") {
+          clearIdem(idemKey);
+          setIdem(idemKey, "done");
+          markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
+          res = { status: "shared" };
+        } else if (r0.status === "cancelled") {
+          throw new Error("__cancelled__");
+        } else {
+          throw new Error(r0.error || "share-failed");
+        }
+      } else {
+        res = await withIdempotency(idemKey, {
+          onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
+          run: async () => {
+            const r0 = await callShare();
           notifyShareResult(r0);
           if (r0.status === "shared" || r0.status === "fallback") {
             markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
-            return { status: "shared" as const, error: undefined as string | undefined, raw: r0 };
+            return { status: "shared" as const, error: undefined as string | undefined };
           }
           if (r0.status === "cancelled") {
-            // Cancellation is not a "done" — clear so the user can retry.
             throw new Error("__cancelled__");
           }
           throw new Error(r0.error || "share-failed");
         },
       });
+      }
       void res;
       setSendStatus("success");
     } catch (err) {
