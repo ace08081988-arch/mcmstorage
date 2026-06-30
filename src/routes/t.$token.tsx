@@ -497,6 +497,9 @@ function PublicPrepPage() {
       else if (kind === "expired") setClosedReason("expired");
       else if (kind === "closed") setClosedReason("closed");
       else if (kind === "not_found") setClosedReason("not_found");
+      // PIN cached sudah tidak valid → buang supaya tidak auto-rehydrate
+      // ke loop "Kembali ke PIN" lagi setelah WebView dire-create.
+      clearSession();
       // eslint-disable-next-line no-console
       console.warn("[t.$token] silentRefresh non-ok (kicked)", res);
       return;
