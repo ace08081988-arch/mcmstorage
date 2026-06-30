@@ -9,6 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { StatusBadge } from "@/components/StatusBadge";
 
 import {
   DEFAULT_PREFS,
@@ -314,9 +315,9 @@ function NotifikasiPage() {
           <CardTitle className="flex items-center gap-2 text-base">
             <Moon className="size-4" /> Jangan Ganggu
             {dndActive && (
-              <span className="ml-1 rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-900/40 dark:text-amber-200">
+              <StatusBadge size="xs" variant="menunggu" className="ml-1">
                 Aktif sekarang
-              </span>
+              </StatusBadge>
             )}
           </CardTitle>
           <CardDescription>

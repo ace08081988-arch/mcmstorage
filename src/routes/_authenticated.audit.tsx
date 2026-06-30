@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ChevronLeft, ClipboardCheck, Play, CheckCircle2, XCircle, Loader2, Download, Trash2 } from "lucide-react";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
+import { StatusBadge } from "@/components/StatusBadge";
 
 export const Route = createFileRoute("/_authenticated/audit")({
   head: () => ({
@@ -193,15 +194,9 @@ function AuditPage() {
           />
           Audit otomatis saat Mode Ringkas/Normal diaktifkan
         </label>
-        <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
-          OK: {okCount}
-        </span>
-        <span className="rounded-md bg-destructive/15 px-1.5 py-0.5 text-destructive ring-1 ring-destructive/30">
-          Gagal: {failCount}
-        </span>
-        <span className="rounded-md bg-muted px-1.5 py-0.5 text-muted-foreground ring-1 ring-border">
-          Total: {rows.length}
-        </span>
+        <StatusBadge size="xs" variant="siap">OK: {okCount}</StatusBadge>
+        <StatusBadge size="xs" variant="danger">Gagal: {failCount}</StatusBadge>
+        <StatusBadge size="xs" variant="selesai">Total: {rows.length}</StatusBadge>
       </div>
 
       <div className="overflow-hidden rounded-lg border">

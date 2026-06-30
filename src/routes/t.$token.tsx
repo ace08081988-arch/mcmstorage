@@ -10,6 +10,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
 import { getWorkerPortalConfig, fetchAndApplyWorkerPortalConfig, applyPreviewOverrideFromHash } from "@/lib/worker-portal-config";
+import { StatusBadge } from "@/components/StatusBadge";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -1448,13 +1449,11 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5">
         <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Item #{index}</div>
         {isDone ? (
-          <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
-            <CheckCircle2 className="h-3 w-3" /> Selesai
-          </span>
+          <StatusBadge size="xs" variant="siap">
+            <CheckCircle2 className="mr-1 h-3 w-3" /> Selesai
+          </StatusBadge>
         ) : (
-          <span className="inline-flex items-center gap-1 rounded-full bg-amber-500/10 px-2 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-400">
-            Belum dikirim
-          </span>
+          <StatusBadge size="xs" variant="menunggu">Belum dikirim</StatusBadge>
         )}
       </div>
       <div className="p-3">

@@ -776,31 +776,31 @@ function LinkPegawaiPage() {
                       <div className="truncate text-sm font-semibold">{t.title}</div>
                       <StatusBadge size="xs" variant={badge.variant}>{badge.label}</StatusBadge>
                       {justExtended && (
-                        <span className="inline-flex shrink-0 animate-fade-in items-center gap-0.5 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
-                          <Sparkles className="h-3 w-3" /> Baru diperpanjang
-                        </span>
+                        <StatusBadge size="xs" variant="siap" className="animate-fade-in">
+                          <Sparkles className="mr-1 h-3 w-3" /> Baru diperpanjang
+                        </StatusBadge>
                       )}
                       {testMode && (
                         <>
                           {tokenState.kind === "valid" && (
-                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-500/20 dark:text-emerald-400">
-                              <ShieldCheck className="h-3 w-3" /> Valid
-                            </span>
+                            <StatusBadge size="xs" variant="siap">
+                              <ShieldCheck className="mr-1 h-3 w-3" /> Valid
+                            </StatusBadge>
                           )}
                           {tokenState.kind === "fresh" && (
-                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-medium text-sky-700 ring-1 ring-sky-500/20 dark:text-sky-400">
-                              <Sparkles className="h-3 w-3" /> Baru · {Math.max(1, Math.floor(tokenState.ageMs / 1000))}d lalu
-                            </span>
+                            <StatusBadge size="xs" variant="info">
+                              <Sparkles className="mr-1 h-3 w-3" /> Baru · {Math.max(1, Math.floor(tokenState.ageMs / 1000))}d lalu
+                            </StatusBadge>
                           )}
                           {tokenState.kind === "invalid" && (
-                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-amber-500/10 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 ring-1 ring-amber-500/20 dark:text-amber-400">
-                              <AlertTriangle className="h-3 w-3" /> Invalid
-                            </span>
+                            <StatusBadge size="xs" variant="menunggu">
+                              <AlertTriangle className="mr-1 h-3 w-3" /> Invalid
+                            </StatusBadge>
                           )}
                           {tokenState.kind === "empty" && (
-                            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive ring-1 ring-destructive/20">
-                              <CircleSlash className="h-3 w-3" /> Kosong
-                            </span>
+                            <StatusBadge size="xs" variant="danger">
+                              <CircleSlash className="mr-1 h-3 w-3" /> Kosong
+                            </StatusBadge>
                           )}
                           <span className={`inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 tabular-nums ${countdownTone}`}>
                             <Timer className="h-3 w-3" /> {countdown.text}
