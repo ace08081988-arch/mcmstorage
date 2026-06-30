@@ -70,9 +70,15 @@ jobs:
           done
           echo "Dev server failed to start"; tail -100 artifacts/dev-server.log; exit 1
 
-      - name: Run Playwright visual regression (chat-deleted public)
+      - name: Run Playwright visual regression (chat-deleted, multi-viewport)
         # Strict in CI: any pixel diff > maxDiffPixelRatio OR missing baseline fails.
-        run: bunx playwright test tests/visual/chat-deleted.public.spec.ts --project=mobile-public --reporter=list,html
+        # Runs mobile (390x844), tablet portrait (820x1180), tablet landscape (1180x820).
+        run: |
+          bunx playwright test tests/visual/chat-deleted.public.spec.ts \
+            --project=mobile-public \
+            --project=tablet-public \
+            --project=tablet-landscape-public \
+            --reporter=list,html
 
       - name: Collect screenshot diffs
         if: failure()

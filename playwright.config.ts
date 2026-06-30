@@ -55,6 +55,22 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // Tablet portrait — verifies PinnedBanner & conversation list
+      // render consistently at iPad-class widths.
+      name: "tablet-public",
+      testMatch: /chat-deleted\.public\.spec\.ts/,
+      use: { ...devices["iPad (gen 7)"], viewport: { width: 820, height: 1180 } },
+    },
+    {
+      // Tablet landscape — wider list rows, banner stretches.
+      name: "tablet-landscape-public",
+      testMatch: /chat-deleted\.public\.spec\.ts/,
+      use: {
+        ...devices["iPad (gen 7) landscape"],
+        viewport: { width: 1180, height: 820 },
+      },
+    },
+    {
       name: "mobile-admin",
       testMatch: /admin\.spec\.ts/,
       use: {
