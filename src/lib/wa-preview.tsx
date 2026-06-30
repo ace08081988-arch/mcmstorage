@@ -13,6 +13,7 @@ import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, Rotat
 import { toast } from "sonner";
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
+import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
@@ -44,6 +45,8 @@ type Request = {
    *  jika payload-nya benar-benar sama. */
   currentFingerprint?: string;
   previousLog?: SendLogEntry[];
+  /** Daftar shot ID (sorted, koma) untuk sinkronisasi idempotency lintas channel. */
+  idemIdsKey?: string;
   resolve: (result: { ok: boolean; text?: string; force?: boolean }) => void;
 };
 
@@ -64,6 +67,7 @@ export function confirmWaShare(input: {
   duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string; fingerprint?: string } | null;
   currentFingerprint?: string;
   previousLog?: SendLogEntry[];
+  idemIdsKey?: string;
 }): Promise<{ ok: boolean; text?: string; force?: boolean }> {
   // Tampilkan pratinjau saat klik ganda terdeteksi, meski user pernah meminta "jangan
   // tampilkan lagi" — operator perlu lihat peringatan duplikat & tombol force.
