@@ -1161,14 +1161,17 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
               className="flex cursor-pointer items-center justify-between gap-2 border-b bg-muted/40 px-3 py-2"
               onClick={() => setCollapsed((c) => ({ ...c, [cat]: !c[cat] }))}
             >
-              <div className="flex min-w-0 items-center gap-2">
+              <div className="flex min-w-0 flex-1 items-center gap-2">
                 <span
                   aria-hidden
-                  className={`inline-block h-2 w-2 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
+                  className={`inline-block h-2 w-2 shrink-0 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
                 />
-                <h3 className="truncate text-sm font-semibold leading-snug">{cat}</h3>
-                <span className="shrink-0 whitespace-nowrap rounded-full border bg-background px-1.5 py-0.5 text-[11px] font-medium leading-snug text-muted-foreground">
-                  {list.length} item
+                <h3 className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug">{cat}</h3>
+                <span
+                  className="inline-flex h-5 max-w-[7rem] shrink-0 items-center rounded-full border bg-background px-1.5 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
+                  title={`${list.length} item`}
+                >
+                  <span className="min-w-0 truncate whitespace-nowrap">{list.length} item</span>
                 </span>
               </div>
               <div className="flex shrink-0 items-center gap-2 text-[11px] leading-snug">
