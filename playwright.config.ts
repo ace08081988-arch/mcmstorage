@@ -63,6 +63,16 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E multi-tab: simulasi N tab same-origin menulis SYNC_KEY
+      // bersamaan & verifikasi coalescing scheduler hanya melakukan 1
+      // apply per jendela. Pakai desktop viewport karena uji ini tidak
+      // bergantung form factor — hanya storage event lintas-page.
+      name: "multi-tab-sync-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /multi-tab-sync-coalesce\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
