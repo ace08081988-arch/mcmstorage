@@ -297,11 +297,34 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     if (lastTile) { void runTile(lastTile); } else { setOpenSheet(true); }
   }
 
-  // Bersihkan object URL saat pratinjau ditutup / ganti.
+  // Bersihkan object URL hanya untuk item yang HILANG dari `pending`
+  // (bukan revoke semua tiap perubahan — itu bug yang membuat preview tersisa
+  // jadi blank setelah satu item dihapus). Penghapusan per-item sudah
+  // di-revoke di `removeIds`; efek ini berfungsi sebagai jaring pengaman
+  // (mis. saat `setPending(null)` dari tombol Batal / setelah kirim) dan
+  // saat unmount komponen.
+  const prevPendingRef = useRef<PendingItem[] | null>(null);
   useEffect(() => {
-    return () => { pending?.forEach((p) => { if (p.previewUrl) URL.revokeObjectURL(p.previewUrl); }); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    const prev = prevPendingRef.current;
+    if (prev && prev.length > 0) {
+      const nextIds = new Set((pending ?? []).map((p) => p.id));
+      for (const p of prev) {
+        if (p.previewUrl && !nextIds.has(p.id)) {
+          try { URL.revokeObjectURL(p.previewUrl); } catch { /* ignore */ }
+        }
+      }
+    }
+    prevPendingRef.current = pending;
   }, [pending]);
+  useEffect(() => {
+    return () => {
+      prevPendingRef.current?.forEach((p) => {
+        if (p.previewUrl) {
+          try { URL.revokeObjectURL(p.previewUrl); } catch { /* ignore */ }
+        }
+      });
+    };
+  }, []);
 
   function stageFiles(files: File[] | File | null) {
     const arr = Array.isArray(files) ? files : files ? [files] : [];
