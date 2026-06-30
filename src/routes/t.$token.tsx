@@ -139,6 +139,8 @@ function PublicPrepPage() {
   // antar-tab via `storage` event (cocok utk lock), tapi sessionStorage
   // per-tab — jadi countdown sesi butuh BroadcastChannel.
   const bcRef = useRef<BroadcastChannel | null>(null);
+  const authedRef = useRef(false);
+  useEffect(() => { authedRef.current = authed; }, [authed]);
   type PortalMsg =
     | { type: "session"; pin: string; ts: number }
     | { type: "session-clear" }
