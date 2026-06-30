@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, RotateCcw } from "lucide-react";
+import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, RotateCcw, MapPin } from "lucide-react";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
@@ -99,6 +99,7 @@ export function WaPreviewHost() {
   };
 
   const url = current?.url;
+  const isMapsUrl = !!url && /(?:google\.[^/]+\/maps|maps\.app\.goo\.gl|goo\.gl\/maps|geo:)/i.test(url);
   const photoCount = previews.length;
   const original = current?.text ?? "";
   const edited = draft !== original;
@@ -166,7 +167,8 @@ export function WaPreviewHost() {
           {url ? (
             <div className="rounded-lg border bg-muted/30 p-3">
               <div className="mb-1.5 flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
-                <Link2 className="h-3 w-3" /> Link tambahan
+                {isMapsUrl ? <MapPin className="h-3 w-3" /> : <Link2 className="h-3 w-3" />}
+                {isMapsUrl ? "Link Maps" : "Link tambahan"}
               </div>
               <a
                 href={url}
