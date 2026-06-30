@@ -23,6 +23,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
+import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
@@ -123,6 +124,11 @@ const AuthenticatedTugasBaruRoute = AuthenticatedTugasBaruRouteImport.update({
 const AuthenticatedTugasRoute = AuthenticatedTugasRouteImport.update({
   id: '/tugas',
   path: '/tugas',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedSesiRoute = AuthenticatedSesiRouteImport.update({
+  id: '/sesi',
+  path: '/sesi',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedRequestRoute = AuthenticatedRequestRouteImport.update({
@@ -333,6 +339,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
+  '/sesi': typeof AuthenticatedSesiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
@@ -378,6 +385,7 @@ export interface FileRoutesByTo {
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
+  '/sesi': typeof AuthenticatedSesiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
@@ -427,6 +435,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
+  '/_authenticated/sesi': typeof AuthenticatedSesiRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
@@ -477,6 +486,7 @@ export interface FileRouteTypes {
     | '/pengaturan-kunci'
     | '/profil'
     | '/request'
+    | '/sesi'
     | '/tugas'
     | '/tugas-baru'
     | '/t/$token'
@@ -522,6 +532,7 @@ export interface FileRouteTypes {
     | '/pengaturan-kunci'
     | '/profil'
     | '/request'
+    | '/sesi'
     | '/tugas'
     | '/tugas-baru'
     | '/t/$token'
@@ -570,6 +581,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-kunci'
     | '/_authenticated/profil'
     | '/_authenticated/request'
+    | '/_authenticated/sesi'
     | '/_authenticated/tugas'
     | '/_authenticated/tugas-baru'
     | '/t/$token'
@@ -706,6 +718,13 @@ declare module '@tanstack/react-router' {
       path: '/tugas'
       fullPath: '/tugas'
       preLoaderRoute: typeof AuthenticatedTugasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/sesi': {
+      id: '/_authenticated/sesi'
+      path: '/sesi'
+      fullPath: '/sesi'
+      preLoaderRoute: typeof AuthenticatedSesiRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/request': {
@@ -996,6 +1015,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
+  AuthenticatedSesiRoute: typeof AuthenticatedSesiRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
   AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
@@ -1024,6 +1044,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
+  AuthenticatedSesiRoute: AuthenticatedSesiRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
   AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
