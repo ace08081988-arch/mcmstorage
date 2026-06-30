@@ -40,7 +40,7 @@ import {
   type FeedItem,
 } from "@/lib/notif-feed.functions";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, FilterX } from "lucide-react";
+import { Check, FilterX } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/notifikasi")({
   ssr: false,
