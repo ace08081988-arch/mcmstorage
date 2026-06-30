@@ -459,9 +459,7 @@ export function useDeleteAllMyMessages(conversationId: string) {
     mutationFn: async () => {
       const { data, error } = await supabase.rpc("message_delete_all_mine", { _conv: conversationId });
       if (error) throw error;
-      const paths = ((data ?? []) as unknown as Array<string | { message_delete_all_mine: string }>)
-        .map((row) => (typeof row === "string" ? row : row?.message_delete_all_mine))
-        .filter((p): p is string => !!p);
+      const paths = ((data ?? []) as string[]).filter((p): p is string => !!p);
       if (paths.length > 0) {
         await supabase.storage.from("chat-attachments").remove(paths).catch(() => undefined);
       }
