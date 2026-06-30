@@ -1223,8 +1223,10 @@ function ChatRoomPage() {
                   const target = longPressMsg;
                   if (!target) return;
                   setLongPressMsg(null);
+                  const restore = optimisticDeleteMessages(qc, conversationId, [target.id]);
                   scheduleUndo({
                     label: "Pesan akan dihapus untuk semua",
+                    onCancel: restore,
                     onCommit: () =>
                       deleteMsg.mutate(
                         { id: target.id, attachment_path: target.attachment_path },
@@ -1233,8 +1235,10 @@ function ChatRoomPage() {
                             toast.success("Pesan dihapus untuk semua");
                             void logChatDelete({ conversationId, action: "for_all", messageId: target.id });
                           },
-                          onError: (e) =>
-                            toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
+                          onError: (e) => {
+                            restore();
+                            toast.error(e instanceof Error ? e.message : "Gagal menghapus");
+                          },
                         },
                       ),
                   });
