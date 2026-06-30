@@ -8,6 +8,7 @@ import { ecerSignedUrl } from "@/lib/ecer";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { ChatSharePreviewDialog, type ChatSharePreviewData } from "@/components/ChatSharePreviewDialog";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, History, Undo2 } from "lucide-react";
@@ -907,6 +908,19 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   const [sendError, setSendError] = useState<string | null>(null);
   const [pickChatOpen, setPickChatOpen] = useState(false);
   const [chatSending, setChatSending] = useState(false);
+  const [chatPreparing, setChatPreparing] = useState(false);
+  const [chatPreviewOpen, setChatPreviewOpen] = useState(false);
+  type ChatPreviewState = {
+    conversationId: string;
+    conversationTitle: string;
+    idemKey: string;
+    caption: string;
+    locationUrl: string | null;
+    chatShots: { id: string; file: File; caption?: string }[];
+    markIds: string[];
+    preview: ChatSharePreviewData;
+  };
+  const [chatPreview, setChatPreview] = useState<ChatPreviewState | null>(null);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
   const extra = Math.max(0, shots.length - thumbs.length);
@@ -1002,8 +1016,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     toast.message("Dikembalikan ke daftar aktif.");
   }
 
-  async function sendChat(conversationId: string, convTitle: string) {
-    if (chatSending) return;
+  async function prepareChat(conversationId: string, convTitle: string) {
+    if (chatSending || chatPreparing) return;
     if (shots.length === 0) {
       toast.info("Belum ada kiriman pegawai untuk judul ini.");
       return;
@@ -1021,13 +1035,14 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       return;
     }
     setPickChatOpen(false);
-    setChatSending(true);
-    setSendStatus("sending");
+    setChatPreparing(true);
     setSendError(null);
-    const tid = toast.loading(`Mengirim ke ${convTitle}…`);
+    const tid = toast.loading(`Menyiapkan pratinjau untuk ${convTitle}…`);
     try {
       // Kumpulkan file dari setiap shot (foto-foto sudah punya signed URL via load()).
       const chatShots: { id: string; file: File; caption?: string }[] = [];
+      let attemptedPaths = 0;
+      const thumbUrls: string[] = [];
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
@@ -1036,10 +1051,14 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         if (paths.length === 0) continue;
         for (let pi = 0; pi < paths.length; pi++) {
           const p = paths[pi];
+          attemptedPaths++;
           const url = await resolveShotSignedUrl(p, s.source, 600);
           if (!url) continue;
           const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
-          if (f) chatShots.push({ id: `${s.id}:${pi}`, file: f });
+          if (f) {
+            chatShots.push({ id: `${s.id}:${pi}`, file: f });
+            if (thumbUrls.length < 4) thumbUrls.push(url);
+          }
           if (chatShots.length >= 10) break;
         }
         if (chatShots.length >= 10) break;
@@ -1051,17 +1070,56 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${chatShots.length} foto terlampir:`,
         ...lines,
       ].join("\n");
+      toast.dismiss(tid);
+      const preview: ChatSharePreviewData = {
+        conversationTitle: convTitle,
+        caption,
+        photoCount: chatShots.length,
+        thumbs: thumbUrls,
+        totalPhotos: chatShots.length,
+        missingPhotos: Math.max(0, attemptedPaths - chatShots.length),
+        mapsUrl: firstLocation,
+      };
+      setChatPreview({
+        conversationId,
+        conversationTitle: convTitle,
+        idemKey,
+        caption,
+        locationUrl: firstLocation,
+        chatShots,
+        markIds: take.map((s) => s.id),
+        preview,
+      });
+      setChatPreviewOpen(true);
+    } catch (err) {
+      toast.dismiss(tid);
+      const msg = (err as Error).message;
+      setSendStatus("failed");
+      setSendError(msg);
+      toast.error(`Gagal menyiapkan pratinjau: ${msg}`);
+    } finally {
+      setChatPreparing(false);
+    }
+  }
 
-      const res = await withIdempotency(idemKey, {
+  async function confirmChatSend() {
+    const ctx = chatPreview;
+    if (!ctx || chatSending) return;
+    setChatSending(true);
+    setSendStatus("sending");
+    setSendError(null);
+    const tid = toast.loading(`Mengirim ke ${ctx.conversationTitle}…`);
+    try {
+      const res = await withIdempotency(ctx.idemKey, {
         onSkip: () => ({ status: "shared" as const, messageCount: 0, error: undefined as string | undefined }),
         run: async () => {
           const r0 = await shareToChat({
-            conversationId,
-            caption,
-            locationUrl: firstLocation,
-            shots: chatShots,
-            markIds: take.map((s) => s.id),
-            idemKey,
+            conversationId: ctx.conversationId,
+            caption: ctx.caption,
+            locationUrl: ctx.locationUrl,
+            shots: ctx.chatShots,
+            markIds: ctx.markIds,
+            idemKey: ctx.idemKey,
           });
           if (r0.status !== "shared") throw new Error(r0.error || "share-failed");
           return r0;
@@ -1069,7 +1127,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       });
       toast.dismiss(tid);
       setSendStatus("success");
-      toast.success(`Terkirim ke ${convTitle}${"messageCount" in res && res.messageCount ? ` (${res.messageCount} pesan)` : ""}.`);
+      toast.success(`Terkirim ke ${ctx.conversationTitle}${"messageCount" in res && res.messageCount ? ` (${res.messageCount} pesan)` : ""}.`);
+      setChatPreviewOpen(false);
+      setChatPreview(null);
     } catch (err) {
       toast.dismiss(tid);
       const msg = (err as Error).message;
@@ -1240,13 +1300,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPickChatOpen(true); }}
-              disabled={chatSending}
+              disabled={chatSending || chatPreparing}
               aria-label="Kirim via Chat aplikasi"
               title="Kirim ke percakapan dalam aplikasi"
               className="inline-flex h-7 items-center justify-center gap-1 rounded-md bg-primary px-2 text-[10px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
             >
-              {chatSending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-              Chat
+              {(chatSending || chatPreparing) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+              {chatPreparing ? "Siap…" : "Chat"}
             </button>
             {view === "sent" && (
               <button
@@ -1265,8 +1325,19 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       <PickChatConversationDialog
         open={pickChatOpen}
         onOpenChange={setPickChatOpen}
-        onPick={(id, title) => { void sendChat(id, title); }}
+        onPick={(id, title) => { void prepareChat(id, title); }}
         title={`Kirim "${r.name}" ke percakapan`}
+      />
+      <ChatSharePreviewDialog
+        open={chatPreviewOpen}
+        onOpenChange={(o) => {
+          if (chatSending) return;
+          setChatPreviewOpen(o);
+          if (!o) setChatPreview(null);
+        }}
+        data={chatPreview?.preview ?? null}
+        sending={chatSending}
+        onConfirm={() => { void confirmChatSend(); }}
       />
     </div>
   );
