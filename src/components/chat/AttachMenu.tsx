@@ -807,6 +807,19 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                     {removable.length === 0
                       ? "Tidak ada berkas yang dapat dihapus."
                       : `Total ${formatBytes(totalBytes)} akan dibuang dari antrean dan tidak bisa dikembalikan.`}
+                    {deleteSnapshot && (deleteSnapshot.count !== removable.length || deleteSnapshot.bytes !== totalBytes) ? (
+                      <span className="mt-1 block text-[11px] text-amber-600 dark:text-amber-400">
+                        Daftar diperbarui:{" "}
+                        {deleteSnapshot.count !== removable.length
+                          ? `${removable.length - deleteSnapshot.count > 0 ? "+" : ""}${removable.length - deleteSnapshot.count} berkas`
+                          : null}
+                        {deleteSnapshot.count !== removable.length && deleteSnapshot.bytes !== totalBytes ? ", " : ""}
+                        {deleteSnapshot.bytes !== totalBytes
+                          ? `${totalBytes - deleteSnapshot.bytes > 0 ? "+" : "−"}${formatBytes(Math.abs(totalBytes - deleteSnapshot.bytes))}`
+                          : null}
+                        {" "}sejak dialog dibuka.
+                      </span>
+                    ) : null}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 {targets.length > 0 ? (
