@@ -758,6 +758,17 @@ function LinkPegawaiPage() {
                       Buat Ulang Token
                     </button>
                   )}
+                  {availability === "expired" && (
+                    <button
+                      onClick={() => void regenerateToken(t.id, { extendDays: 7 })}
+                      disabled={regenId === t.id}
+                      title="Perpanjang masa aktif 7 hari & terbitkan token baru"
+                      className="inline-flex h-8 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400"
+                    >
+                      {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
+                      Perpanjang &amp; Token Baru (7 hari)
+                    </button>
+                  )}
                   {testMode && !urlError && (
                     <button
                       onClick={() => void regenerateToken(t.id)}
