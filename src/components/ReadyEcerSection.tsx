@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
 import { ecerSignedUrl } from "@/lib/ecer";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
+import { shareToChat } from "@/lib/share-chat";
+import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, History, Undo2 } from "lucide-react";
@@ -844,6 +846,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
   const [sendError, setSendError] = useState<string | null>(null);
+  const [pickChatOpen, setPickChatOpen] = useState(false);
+  const [chatSending, setChatSending] = useState(false);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
   const extra = Math.max(0, shots.length - thumbs.length);
@@ -915,6 +919,72 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     e.stopPropagation();
     unmarkSent(shots.map((s) => s.id));
     toast.message("Dikembalikan ke daftar aktif.");
+  }
+
+  async function sendChat(conversationId: string, convTitle: string) {
+    if (chatSending) return;
+    if (shots.length === 0) {
+      toast.info("Belum ada kiriman pegawai untuk judul ini.");
+      return;
+    }
+    setPickChatOpen(false);
+    setChatSending(true);
+    setSendStatus("sending");
+    setSendError(null);
+    const tid = toast.loading(`Mengirim ke ${convTitle}…`);
+    try {
+      const take = shots.slice(0, 6);
+      // Kumpulkan file dari setiap shot (foto-foto sudah punya signed URL via load()).
+      const chatShots: { id: string; file: File; caption?: string }[] = [];
+      for (const s of take) {
+        const paths = Array.from(new Set([
+          ...((s.photo_paths ?? []) as string[]),
+          ...(s.photo_path ? [s.photo_path] : []),
+        ])).filter(Boolean);
+        if (paths.length === 0) continue;
+        for (let pi = 0; pi < paths.length; pi++) {
+          const p = paths[pi];
+          const url = await resolveShotSignedUrl(p, s.source, 600);
+          if (!url) continue;
+          const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
+          if (f) chatShots.push({ id: `${s.id}:${pi}`, file: f });
+          if (chatShots.length >= 10) break;
+        }
+        if (chatShots.length >= 10) break;
+      }
+      const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
+      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const caption = [
+        `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
+        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${chatShots.length} foto terlampir:`,
+        ...lines,
+      ].join("\n");
+
+      const res = await shareToChat({
+        conversationId,
+        caption,
+        locationUrl: firstLocation,
+        shots: chatShots,
+        markIds: take.map((s) => s.id),
+      });
+      toast.dismiss(tid);
+      if (res.status === "shared") {
+        setSendStatus("success");
+        toast.success(`Terkirim ke ${convTitle} (${res.messageCount} pesan).`);
+      } else {
+        setSendStatus("failed");
+        setSendError(res.error);
+        toast.error(`Gagal kirim ke chat: ${res.error}`);
+      }
+    } catch (err) {
+      toast.dismiss(tid);
+      const msg = (err as Error).message;
+      setSendStatus("failed");
+      setSendError(msg);
+      toast.error(`Gagal kirim ke chat: ${msg}`);
+    } finally {
+      setChatSending(false);
+    }
   }
 
   return (
@@ -1069,6 +1139,17 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               <MessageCircle className="h-3 w-3" />
               {sending ? "…" : view === "sent" ? "Kirim ulang" : "WA"}
             </button>
+            <button
+              type="button"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPickChatOpen(true); }}
+              disabled={chatSending}
+              aria-label="Kirim via Chat aplikasi"
+              title="Kirim ke percakapan dalam aplikasi"
+              className="inline-flex h-7 items-center justify-center gap-1 rounded-md bg-primary px-2 text-[10px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+            >
+              {chatSending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+              Chat
+            </button>
             {view === "sent" && (
               <button
                 type="button"
@@ -1082,6 +1163,12 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           </div>
         )}
       </div>
+      <PickChatConversationDialog
+        open={pickChatOpen}
+        onOpenChange={setPickChatOpen}
+        onPick={(id, title) => { void sendChat(id, title); }}
+        title={`Kirim "${r.name}" ke percakapan`}
+      />
     </div>
   );
 }
