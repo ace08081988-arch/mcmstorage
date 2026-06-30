@@ -1039,7 +1039,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
               <Users className="h-4 w-4 text-primary" /> Kiriman pegawai
               {!loading && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                <span
+                  className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
+                  title={`${shots.length} kiriman`}
+                >
                   {shots.length}
                 </span>
               )}
