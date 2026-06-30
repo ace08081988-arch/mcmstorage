@@ -63,6 +63,18 @@ function AdminWorkerPortalPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(() => toFormState({}));
   const [errors, setErrors] = useState<Partial<Record<keyof WorkerPortalConfig, string>>>({});
+  // Token preview portal pegawai. Persist di localStorage agar tidak
+  // perlu paste ulang tiap reload halaman admin.
+  const [previewToken, setPreviewToken] = useState<string>("");
+  useEffect(() => {
+    try {
+      const t = window.localStorage.getItem("admin:worker-portal:previewToken") ?? "";
+      if (t) setPreviewToken(t);
+    } catch { /* abaikan */ }
+  }, []);
+  useEffect(() => {
+    try { window.localStorage.setItem("admin:worker-portal:previewToken", previewToken); } catch { /* abaikan */ }
+  }, [previewToken]);
   const [testResult, setTestResult] = useState<{
     ok: boolean;
     issues: Array<{ key?: keyof WorkerPortalConfig; message: string }>;
