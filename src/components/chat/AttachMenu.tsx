@@ -41,6 +41,62 @@ function formatBytes(n: number): string {
   return `${(n / (1024 * 1024)).toFixed(1)} MB`;
 }
 
+// ===== Validasi lampiran (ukuran & tipe) =====
+const MB = 1024 * 1024;
+const LIMIT_IMAGE = 10 * MB;
+const LIMIT_VIDEO = 50 * MB;
+const LIMIT_AUDIO = 20 * MB;
+const LIMIT_DOC = 25 * MB;
+const LIMIT_ABS = 50 * MB; // batas keras apa pun jenisnya
+
+// Ekstensi yang ditolak demi keamanan (eksekutabel/installer/script).
+const BLOCKED_EXT = new Set([
+  "exe","bat","cmd","com","msi","scr","ps1","vbs","js","jse","wsf","wsh",
+  "sh","bash","zsh","apk","ipa","dmg","app","jar","dll","so",
+]);
+// MIME yang ditolak.
+const BLOCKED_MIME = new Set([
+  "application/x-msdownload",
+  "application/x-msdos-program",
+  "application/x-sh",
+  "application/x-bat",
+  "application/x-msi",
+  "application/vnd.android.package-archive",
+  "application/x-executable",
+]);
+
+function extOf(name: string): string {
+  const i = name.lastIndexOf(".");
+  return i >= 0 ? name.slice(i + 1).toLowerCase() : "";
+}
+
+function validateFile(file: File): string | null {
+  if (!file || file.size === 0) return "Berkas kosong (0 KB) — pilih berkas lain.";
+  const ext = extOf(file.name);
+  const mime = (file.type || "").toLowerCase();
+  if (BLOCKED_EXT.has(ext) || BLOCKED_MIME.has(mime)) {
+    return `Jenis berkas .${ext || "tidak dikenal"} tidak diizinkan untuk keamanan.`;
+  }
+  if (file.size > LIMIT_ABS) {
+    return `Ukuran ${formatBytes(file.size)} melebihi batas keras ${formatBytes(LIMIT_ABS)}.`;
+  }
+  if (mime.startsWith("image/") && file.size > LIMIT_IMAGE) {
+    return `Gambar ${formatBytes(file.size)} melebihi batas ${formatBytes(LIMIT_IMAGE)}.`;
+  }
+  if (mime.startsWith("video/") && file.size > LIMIT_VIDEO) {
+    return `Video ${formatBytes(file.size)} melebihi batas ${formatBytes(LIMIT_VIDEO)}.`;
+  }
+  if (mime.startsWith("audio/") && file.size > LIMIT_AUDIO) {
+    return `Audio ${formatBytes(file.size)} melebihi batas ${formatBytes(LIMIT_AUDIO)}.`;
+  }
+  if (!mime.startsWith("image/") && !mime.startsWith("video/") && !mime.startsWith("audio/")) {
+    if (file.size > LIMIT_DOC) {
+      return `Dokumen ${formatBytes(file.size)} melebihi batas ${formatBytes(LIMIT_DOC)}.`;
+    }
+  }
+  return null;
+}
+
 type Props = {
   conversationId: string;
   disabled?: boolean;
@@ -91,7 +147,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   type PendingItem = { file: File; previewUrl: string | null };
   type ItemStatus = "idle" | "uploading" | "sent" | "error";
   const [pending, setPending] = useState<PendingItem[] | null>(null);
-  const [statuses, setStatuses] = useState<Array<{ state: ItemStatus; error?: string }>>([]);
+  const [statuses, setStatuses] = useState<Array<{ state: ItemStatus; error?: string; preflight?: boolean }>>([]);
   const [caption, setCaption] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
@@ -137,11 +193,26 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     if (arr.length === 0) return;
     setOpenSheet(false);
     setCaption("");
+    // Validasi tiap berkas; tetap ditampilkan agar pengguna langsung tahu alasannya.
+    const errors = arr.map((f) => validateFile(f));
     setPending(arr.map((f) => ({
       file: f,
       previewUrl: (f.type.startsWith("image/") || f.type.startsWith("video/")) ? URL.createObjectURL(f) : null,
     })));
-    setStatuses(arr.map(() => ({ state: "idle" as ItemStatus })));
+    setStatuses(arr.map((_, i) => {
+      const err = errors[i];
+      return err ? { state: "error" as ItemStatus, error: err, preflight: true } : { state: "idle" as ItemStatus };
+    }));
+    const invalidCount = errors.filter(Boolean).length;
+    if (invalidCount > 0) {
+      const first = errors.find(Boolean) as string;
+      toast.error(
+        invalidCount === arr.length
+          ? "Semua lampiran tidak valid"
+          : `${invalidCount} dari ${arr.length} lampiran ditolak`,
+        { description: first },
+      );
+    }
   }
 
   function removePendingAt(idx: number) {
@@ -155,14 +226,34 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     setStatuses((prev) => prev.filter((_, i) => i !== idx));
   }
 
+  function removeInvalidPending() {
+    if (!pending) return;
+    const keepIdx: number[] = [];
+    pending.forEach((p, i) => {
+      if (statuses[i]?.preflight) {
+        if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
+      } else {
+        keepIdx.push(i);
+      }
+    });
+    setPending(keepIdx.length ? keepIdx.map((i) => pending[i]) : null);
+    setStatuses(keepIdx.map((i) => statuses[i]));
+  }
+
   async function confirmSendPending(retryOnly = false) {
     if (!pending || pending.length === 0) return;
     setBusy("upload");
     const cap = caption.trim();
-    // Indeks yang akan dikirim: semua (atau hanya yang error / belum) saat retry.
-    const indices = retryOnly
-      ? pending.map((_, i) => i).filter((i) => statuses[i]?.state !== "sent")
-      : pending.map((_, i) => i);
+    // Indeks yang akan dikirim: lewati yang sudah sukses dan yang gagal validasi (preflight).
+    const indices = pending
+      .map((_, i) => i)
+      .filter((i) => statuses[i]?.state !== "sent" && !statuses[i]?.preflight)
+      .filter((i) => (retryOnly ? statuses[i]?.state === "error" : true));
+    if (indices.length === 0) {
+      setBusy(null);
+      toast.error("Tidak ada lampiran valid untuk dikirim", { description: "Buang berkas yang ditolak terlebih dahulu." });
+      return;
+    }
     const total = indices.length;
     let done = 0;
     setProgress({ done, total });
