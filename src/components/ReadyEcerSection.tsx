@@ -922,6 +922,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     preview: ChatSharePreviewData;
     duplicate: ChatShareDuplicateInfo | null;
     previousLog: SendLogEntry[];
+    fingerprint: string;
   };
   const [chatPreview, setChatPreview] = useState<ChatPreviewState | null>(null);
   const [chatStatus, setChatStatus] = useState<ChatShareLiveStatus | null>(null);
