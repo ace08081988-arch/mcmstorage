@@ -343,10 +343,10 @@ export function ChatSharePreviewDialog({
                 <button
                   type="button"
                   onClick={onForceSend}
-                  disabled={sending || !data || !onForceSend || duplicate?.status === "in-flight" || !payloadMatches}
+                  disabled={sending || !data || !onForceSend || effectiveDup?.status === "in-flight" || !payloadMatches}
                   title={
-                    duplicate?.status === "in-flight"
-                      ? "Kiriman sebelumnya masih berjalan"
+                    effectiveDup?.status === "in-flight"
+                      ? (crossChannel ? "Kiriman WhatsApp untuk paket ini masih berjalan" : "Kiriman sebelumnya masih berjalan")
                       : !payloadMatches
                         ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                         : "Kirim ulang meski klik ganda terdeteksi"
@@ -360,11 +360,12 @@ export function ChatSharePreviewDialog({
                 <button
                   type="button"
                   onClick={onConfirm}
-                  disabled={sending || !data}
+                  disabled={sending || !data || live?.status === "in-flight"}
+                  title={live?.status === "in-flight" ? (crossChannel ? "Kiriman WhatsApp untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
                   className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
                 >
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  {sending ? "Mengirim…" : "Kirim sekarang"}
+                  {sending ? "Mengirim…" : live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim sekarang"}
                 </button>
               )}
             </>
