@@ -113,6 +113,41 @@ function ChatRoomPage() {
   const [replyTo, setReplyTo] = useState<MessageRow | null>(null);
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
   const [longPressMsg, setLongPressMsg] = useState<MessageRow | null>(null);
+  // Selection mode + extra dialogs
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [securityOpen, setSecurityOpen] = useState(false);
+  const [translateSource, setTranslateSource] = useState<string | null>(null);
+  const [noteSource, setNoteSource] = useState<MessageRow | null>(null);
+  const [qrSource, setQrSource] = useState<string | null>(null);
+  const starMut = useStarMessage(conversationId);
+  const pinMut = usePinMessage(conversationId);
+
+  const toggleSelect = useCallback((m: MessageRow) => {
+    if (m.deleted_at) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(m.id)) next.delete(m.id);
+      else next.add(m.id);
+      return next;
+    });
+  }, []);
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+  const selectionMode = selectedIds.size > 0;
+
+  // Jump-to-message helper (used by pinned banner)
+  const jumpToMessage = useCallback((id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-amber-400");
+    setTimeout(() => el.classList.remove("ring-2", "ring-amber-400"), 1500);
+  }, []);
+
+  // Quick reply popover state (driven by `/shortcut` in composer)
+  const [qrQuery, setQrQuery] = useState<string | null>(null);
+
   const longPressTimer = useRef<number | null>(null);
   const longPressFired = useRef(false);
   const startLongPress = useCallback((m: MessageRow) => {
@@ -124,7 +159,12 @@ function ChatRoomPage() {
       if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         try { navigator.vibrate?.(15); } catch { /* noop */ }
       }
-      setLongPressMsg(m);
+      // Long-press now enters selection mode and selects this message.
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.add(m.id);
+        return next;
+      });
     }, 500);
   }, []);
   const cancelLongPress = useCallback(() => {
