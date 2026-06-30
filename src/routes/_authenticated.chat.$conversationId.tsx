@@ -897,7 +897,7 @@ function ChatRoomPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={async () => {
-                                const text = `${senderName}: ${previewText(m.body) ?? "(lampiran)"}`;
+                                const text = `${senderName}: ${safePreview(m)}`;
                                 const res = await shareToWhatsApp({ text });
                                 notifyShareResult(res);
                               }}
@@ -907,7 +907,8 @@ function ChatRoomPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={() => {
-                                navigator.clipboard?.writeText(m.body ?? "").then(
+                                const text = m.deleted_at ? DELETED_PLACEHOLDER : (m.body ?? "");
+                                navigator.clipboard?.writeText(text).then(
                                   () => toast.success("Teks pesan disalin"),
                                   () => toast.error("Gagal menyalin"),
                                 );
