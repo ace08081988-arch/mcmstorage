@@ -14,6 +14,7 @@ import {
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
   Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, MessageCircle, RefreshCw,
+  Calendar, Clock, Hash, CheckCircle2, Boxes,
 } from "lucide-react";
 import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
