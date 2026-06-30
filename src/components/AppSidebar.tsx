@@ -58,7 +58,6 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
     label: "Keuangan",
     items: [
       { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
-      { title: "Langganan", url: "/langganan", icon: Sparkles },
     ],
   },
   {
