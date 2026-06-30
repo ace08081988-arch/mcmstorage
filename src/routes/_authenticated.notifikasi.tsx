@@ -600,6 +600,7 @@ function RecentNotificationsCard({
       toast.info("Tidak ada notifikasi yang perlu ditandai");
       return;
     }
+    setMarkingAll(true);
     const nextLocal = new Set(localRead);
     for (const it of allItems) {
       if (enabledKinds[it.kind]) nextLocal.add(it.id);
@@ -610,11 +611,14 @@ function RecentNotificationsCard({
       toast.success(`${affected} notifikasi ditandai dibaca`);
     } catch {
       toast.error("Gagal menandai semua dibaca");
+    } finally {
+      setMarkingAll(false);
     }
     qc.invalidateQueries({ queryKey: ["notif-feed"] });
   }
 
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [markingAll, setMarkingAll] = useState(false);
   const pendingAffected = useMemo(
     () =>
       allItems.filter(
@@ -657,11 +661,16 @@ function RecentNotificationsCard({
               size="sm"
               variant="ghost"
               onClick={() => setConfirmOpen(true)}
-              title={`Tandai ${unreadCount} notifikasi sesuai filter aktif sebagai dibaca`}
+              disabled={markingAll}
+              title={markingAll ? "Sedang menandai…" : `Tandai ${unreadCount} notifikasi sesuai filter aktif sebagai dibaca`}
               className="h-8 px-2 text-xs"
             >
-              <Check className="mr-1 size-3.5" />
-              Tandai dibaca ({unreadCount})
+              {markingAll ? (
+                <RefreshCw className="mr-1 size-3.5 animate-spin" />
+              ) : (
+                <Check className="mr-1 size-3.5" />
+              )}
+              {markingAll ? "Menandai…" : `Tandai dibaca (${unreadCount})`}
             </Button>
           )}
           <Button
@@ -792,15 +801,22 @@ function RecentNotificationsCard({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={markingAll}>Batal</AlertDialogCancel>
             <AlertDialogAction
-              disabled={pendingAffected === 0}
-              onClick={() => {
-                setConfirmOpen(false);
-                void handleMarkAll();
+              disabled={pendingAffected === 0 || markingAll}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleMarkAll().then(() => setConfirmOpen(false));
               }}
             >
-              Tandai dibaca
+              {markingAll ? (
+                <>
+                  <RefreshCw className="mr-1 size-3.5 animate-spin" />
+                  Menandai…
+                </>
+              ) : (
+                "Tandai dibaca"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
