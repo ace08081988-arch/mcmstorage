@@ -50,11 +50,18 @@ describe("createCoalescingScheduler — multi-tab burst", () => {
   it("coalesces burst on slow devices with longer window", () => {
     const apply = vi.fn();
     const s = createCoalescingScheduler(apply, slowTuning);
+    // Burst pertama setelah idle → leading-edge (delay `leading`).
     for (let i = 0; i < 20; i++) s.schedule();
-    vi.advanceTimersByTime(slowTuning.throttle - 1);
+    vi.advanceTimersByTime(slowTuning.leading - 1);
     expect(apply).not.toHaveBeenCalled();
     vi.advanceTimersByTime(2);
     expect(apply).toHaveBeenCalledTimes(1);
+    // Burst kedua dalam window aktif → throttle penuh.
+    for (let i = 0; i < 20; i++) s.schedule();
+    vi.advanceTimersByTime(slowTuning.throttle - 1);
+    expect(apply).toHaveBeenCalledTimes(1);
+    vi.advanceTimersByTime(2);
+    expect(apply).toHaveBeenCalledTimes(2);
   });
 
   it("does NOT reset the timer when additional events arrive mid-burst", () => {
