@@ -915,6 +915,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     conversationId: string;
     conversationTitle: string;
     idemKey: string;
+    idemIdsKey: string;
     caption: string;
     locationUrl: string | null;
     chatShots: { id: string; file: File; caption?: string }[];
@@ -1091,6 +1092,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       return;
     }
     const take = shots.slice(0, 6);
+    const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
     const idemKey = buildSendKey({ channel: "chat", conversationId, ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
     const duplicate: ChatShareDuplicateInfo | null =
@@ -1158,6 +1160,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         conversationId,
         conversationTitle: convTitle,
         idemKey,
+        idemIdsKey,
         caption,
         locationUrl: firstLocation,
         chatShots,
