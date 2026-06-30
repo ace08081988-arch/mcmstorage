@@ -775,8 +775,8 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             const lockedCount = targets.filter((p) => statuses[p.id]?.state === "uploading").length;
             const removable = targets.filter((p) => statuses[p.id]?.state !== "uploading");
             const previewLimit = 6;
-            const shown = showAllDelete ? removable : removable.slice(0, previewLimit);
-            const extra = removable.length - shown.length;
+            const shown = showAllDelete ? targets : targets.slice(0, previewLimit);
+            const extra = targets.length - shown.length;
             const totalBytes = removable.reduce((sum, p) => sum + (p.file.size || 0), 0);
             return (
               <>
