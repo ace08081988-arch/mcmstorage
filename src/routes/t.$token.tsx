@@ -464,22 +464,45 @@ function PublicPrepPage() {
   // ke layar yang sesuai tanpa menghapus state percobaan.
   async function silentRefresh() {
     if (!pinRef.current || !authed) return;
-    const { data } = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
-    const res = data as { ok: boolean; error?: string; task?: unknown; items?: unknown };
-    if (!res?.ok) {
-      if (res?.error === "bad_pin") {
-        setClosedReason("pin_changed");
-      } else if (res?.error === "expired") {
-        setClosedReason("expired");
-      } else if (res?.error === "closed") {
-        setClosedReason("closed");
-      } else if (res?.error === "not_found") {
-        setClosedReason("not_found");
+    let data: unknown = null;
+    try {
+      const r = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
+      if (r.error) {
+        // Network / transport error → JANGAN flip ke closedReason. Biar status
+        // realtime/sync badge yang memberi tahu user.
+        // eslint-disable-next-line no-console
+        console.warn("[t.$token] silentRefresh transport error", r.error);
+        return;
       }
+      data = r.data;
+    } catch (e) {
       // eslint-disable-next-line no-console
-      console.warn("[t.$token] silentRefresh non-ok", res);
+      console.warn("[t.$token] silentRefresh threw", e);
       return;
     }
+    const res = data as { ok: boolean; error?: string; task?: unknown; items?: unknown };
+    if (!res?.ok) {
+      const kind = res?.error ?? "unknown";
+      // Butuh 2x kegagalan berturut-turut dgn kind yang sama sebelum
+      // benar-benar menendang user — hindari false positive saat owner
+      // sedang rotate PIN / replikasi DB belum sinkron sepersekian detik.
+      if (silentFailRef.current.kind === kind) silentFailRef.current.count += 1;
+      else silentFailRef.current = { kind, count: 1 };
+      if (silentFailRef.current.count < 2) {
+        // eslint-disable-next-line no-console
+        console.warn("[t.$token] silentRefresh non-ok (tolerated)", res);
+        return;
+      }
+      if (kind === "bad_pin") setClosedReason("pin_changed");
+      else if (kind === "expired") setClosedReason("expired");
+      else if (kind === "closed") setClosedReason("closed");
+      else if (kind === "not_found") setClosedReason("not_found");
+      // eslint-disable-next-line no-console
+      console.warn("[t.$token] silentRefresh non-ok (kicked)", res);
+      return;
+    }
+    // Reset counter saat sukses.
+    silentFailRef.current = { kind: null, count: 0 };
     // Deteksi item yang sedang dilihat pegawai tapi sudah berubah versinya.
     const normalizedTask = normalizePrepTask(res.task);
     if (!normalizedTask) {
