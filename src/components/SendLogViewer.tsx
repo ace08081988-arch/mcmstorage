@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import { AlertCircle, CheckCircle2, ChevronDown, ChevronRight, Info, ListOrdered, XCircle } from "lucide-react";
 import type { SendLogEntry } from "@/lib/send-log";
+import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 
 /**
  * Panel "Lihat log" untuk dialog pratinjau. Menampilkan urutan langkah dan
@@ -45,6 +46,9 @@ export function SendLogViewer({ entries, defaultOpen = false }: { entries: SendL
                     <pre className="mt-0.5 whitespace-pre-wrap break-words rounded bg-muted/60 p-1 font-mono text-[10.5px] text-muted-foreground">
                       {e.detail}
                     </pre>
+                  ) : null}
+                  {e.diff ? (
+                    <SendPayloadDiff previous={e.diff.previous ?? undefined} current={e.diff.current ?? undefined} />
                   ) : null}
                 </div>
               </li>

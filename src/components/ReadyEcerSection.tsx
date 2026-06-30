@@ -14,7 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ExternalLink, History, Undo2 } from "lucide-react";
 import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, type IdemRecord } from "@/lib/idempotency";
-import { appendSendLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
+import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
 // Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
@@ -949,7 +949,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const duplicate = duplicateRec
       ? { at: duplicateRec.at, status: duplicateRec.status, destination: r.name, fingerprint: duplicateRec.fingerprint, summary: duplicateRec.summary }
       : null;
-    const previousLog = duplicate ? getSendLog(idemKey) : [];
+    // Selalu baca log saat ada record (termasuk yang failed) — agar operator
+    // bisa melihat penyebab kegagalan kiriman sebelumnya di pratinjau.
+    let previousLog = existing ? getSendLog(idemKey) : [];
+    const preserveLog = existing?.status === "failed";
     setSending(true);
     setSendStatus("sending");
     setSendError(null);
@@ -1019,6 +1022,24 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         photoCount: files.length,
         locationUrl: firstLocation ?? null,
       };
+      // Catat snapshot diff payload bila kiriman sebelumnya gagal atau sidik
+      // jari berbeda — supaya bisa direview lewat "Lihat log kiriman sebelumnya".
+      if (existing) {
+        const prevFp = existing.fingerprint;
+        const fpMismatch = !!prevFp && prevFp !== waFingerprint;
+        const prevFailed = existing.status === "failed";
+        if (prevFailed || fpMismatch) {
+          appendPayloadDiffLog(
+            idemKey,
+            existing.summary ?? null,
+            waSummary,
+            prevFailed
+              ? "Kiriman WA sebelumnya gagal — bandingkan payload"
+              : "Sidik jari payload tidak cocok dengan kiriman WA sebelumnya",
+          );
+          previousLog = getSendLog(idemKey);
+        }
+      }
       const callShare = () => shareToWhatsApp({
             text,
             title: r.name,
@@ -1051,7 +1072,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           throw new Error(r0.error || "share-failed");
         }
       } else {
-        resetSendLog(idemKey);
+        // Pertahankan log saat percobaan sebelumnya gagal agar operator
+        // tetap bisa melihat urutan langkah + diff payloadnya.
+        if (!preserveLog) resetSendLog(idemKey);
         appendSendLog(idemKey, { kind: "info", label: `Mulai kirim WA ke "${r.name}"`, detail: `${take.length} kiriman · ${files.length}/${expectedCount} foto` });
         res = await withIdempotency(idemKey, {
           onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
@@ -1112,7 +1135,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       existing && existing.status !== "failed"
         ? { at: existing.at, status: existing.status, destination: convTitle, fingerprint: existing.fingerprint, summary: existing.summary }
         : null;
-    const previousLog = duplicate ? getSendLog(idemKey) : [];
+    let previousLog = existing ? getSendLog(idemKey) : [];
     setPickChatOpen(false);
     setChatPreparing(true);
     setSendError(null);
@@ -1176,6 +1199,24 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         photoCount: chatShots.length,
         locationUrl: firstLocation ?? null,
       };
+      // Simpan snapshot diff payload bila kiriman chat sebelumnya gagal atau
+      // sidik jari berbeda — tampilkan di "Lihat log kiriman sebelumnya".
+      if (existing) {
+        const prevFp = existing.fingerprint;
+        const fpMismatch = !!prevFp && prevFp !== chatFingerprint;
+        const prevFailed = existing.status === "failed";
+        if (prevFailed || fpMismatch) {
+          appendPayloadDiffLog(
+            idemKey,
+            existing.summary ?? null,
+            chatSummary,
+            prevFailed
+              ? "Kiriman Chat sebelumnya gagal — bandingkan payload"
+              : "Sidik jari payload tidak cocok dengan kiriman Chat sebelumnya",
+          );
+          previousLog = getSendLog(idemKey);
+        }
+      }
       setChatPreview({
         conversationId,
         conversationTitle: convTitle,

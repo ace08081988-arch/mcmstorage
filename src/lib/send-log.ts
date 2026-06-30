@@ -3,17 +3,28 @@
  * supaya operator bisa melihat urutan langkah & error kiriman sebelumnya
  * dari dialog pratinjau ("Lihat log") tanpa harus mengulang aksi.
  */
+import type { SendPayloadSummary } from "@/lib/idempotency";
+
 const KEY = "send-log:v1";
 const TTL_MS = 24 * 60 * 60 * 1000;  // 24 jam
 const MAX_ENTRIES_PER_KEY = 50;
 const MAX_KEYS = 80;
 
 export type SendLogKind = "info" | "step" | "error" | "outcome";
+export type SendLogDiff = {
+  previous: SendPayloadSummary | null;
+  current: SendPayloadSummary | null;
+  reason: string;
+};
 export type SendLogEntry = {
   at: number;
   kind: SendLogKind;
   label: string;
   detail?: string;
+  /** Snapshot perbedaan payload (kiriman sebelumnya vs sekarang). Dilampirkan
+   *  saat kiriman sebelumnya gagal atau sidik jari payload tidak cocok — agar
+   *  diff bisa direview di "Lihat log kiriman sebelumnya" tanpa perlu replay. */
+  diff?: SendLogDiff;
 };
 
 type Store = Record<string, { updatedAt: number; entries: SendLogEntry[] }>;
@@ -46,7 +57,7 @@ export function appendSendLog(key: string, entry: Omit<SendLogEntry, "at"> & { a
   if (!key) return;
   const store = readAll();
   const slot = store[key] ?? { updatedAt: 0, entries: [] };
-  slot.entries.push({ at: entry.at ?? Date.now(), kind: entry.kind, label: entry.label, detail: entry.detail });
+  slot.entries.push({ at: entry.at ?? Date.now(), kind: entry.kind, label: entry.label, detail: entry.detail, diff: entry.diff });
   if (slot.entries.length > MAX_ENTRIES_PER_KEY) slot.entries = slot.entries.slice(-MAX_ENTRIES_PER_KEY);
   slot.updatedAt = Date.now();
   store[key] = slot;
@@ -69,5 +80,39 @@ export function clearSendLog(key: string) {
 export function resetSendLog(key: string) {
   const store = readAll();
   store[key] = { updatedAt: Date.now(), entries: [] };
+  writeAll(store);
+}
+
+/**
+ * Catat snapshot diff payload (kiriman sebelumnya vs sekarang) ke log
+ * idempotency key. Dipakai saat kiriman sebelumnya gagal atau sidik jari
+ * payload tidak cocok agar operator bisa meninjau penyebabnya dari panel
+ * "Lihat log kiriman sebelumnya".
+ *
+ * Dedupe: jika entri terakhir adalah diff dengan payload identik (alasan,
+ * previous, current — dibandingkan via JSON), tidak menambah baris baru
+ * supaya log tidak banjir saat dialog dibuka berkali-kali.
+ */
+export function appendPayloadDiffLog(
+  key: string,
+  previous: SendPayloadSummary | null,
+  current: SendPayloadSummary | null,
+  reason: string,
+) {
+  if (!key) return;
+  const store = readAll();
+  const slot = store[key] ?? { updatedAt: 0, entries: [] };
+  const last = slot.entries[slot.entries.length - 1];
+  const nextDiff: SendLogDiff = { previous, current, reason };
+  if (last?.diff && JSON.stringify(last.diff) === JSON.stringify(nextDiff)) return;
+  slot.entries.push({
+    at: Date.now(),
+    kind: "info",
+    label: reason,
+    diff: nextDiff,
+  });
+  if (slot.entries.length > MAX_ENTRIES_PER_KEY) slot.entries = slot.entries.slice(-MAX_ENTRIES_PER_KEY);
+  slot.updatedAt = Date.now();
+  store[key] = slot;
   writeAll(store);
 }
