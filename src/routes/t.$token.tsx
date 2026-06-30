@@ -108,6 +108,18 @@ function PublicPrepPage() {
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
   const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found" | "expired" | "closed">(null);
+  // Hasil pengecekan otomatis status link saat halaman dibuka (sebelum PIN).
+  // Memberi tahu pegawai segera kalau link tidak valid, kedaluwarsa, ditutup,
+  // atau aksesnya sedang dikunci karena terlalu banyak salah PIN.
+  const [peekStatus, setPeekStatus] = useState<
+    | { state: "checking" }
+    | { state: "ok"; title?: string; expiresAt?: string | null }
+    | { state: "not_found" }
+    | { state: "expired"; expiresAt?: string | null }
+    | { state: "closed"; status?: string | null }
+    | { state: "rate_limited"; retryAfter: number }
+    | { state: "network"; message: string }
+  >({ state: "checking" });
   // Pesan error terakhir dari proses verifikasi PIN; ditampilkan inline di kartu PIN.
   const [lastError, setLastError] = useState<null | {
     kind: "bad_pin" | "rate_limited" | "not_found" | "expired" | "closed" | "network" | "no_task";
@@ -511,6 +523,40 @@ function PublicPrepPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Auto-validasi status link saat halaman dibuka. Tidak perlu PIN —
+  // memanggil RPC `prep_peek_task` yang hanya mengembalikan status aman
+  // (ok / not_found / expired / closed / rate_limited).
+  useEffect(() => {
+    let cancelled = false;
+    async function check() {
+      setPeekStatus({ state: "checking" });
+      const { data, error } = await publicSupabase.rpc("prep_peek_task", { _token: token });
+      if (cancelled) return;
+      if (error) {
+        setPeekStatus({ state: "network", message: error.message });
+        return;
+      }
+      const res = data as { ok: boolean; error?: string; retry_after?: number; expires_at?: string; status?: string; title?: string };
+      if (res?.ok) {
+        setPeekStatus({ state: "ok", title: res.title, expiresAt: res.expires_at ?? null });
+        return;
+      }
+      if (res?.error === "rate_limited") {
+        const secs = Math.max(1, res.retry_after ?? 600);
+        setPeekStatus({ state: "rate_limited", retryAfter: secs });
+        setLockedUntil(Date.now() + secs * 1000);
+        return;
+      }
+      if (res?.error === "expired") { setPeekStatus({ state: "expired", expiresAt: res.expires_at ?? null }); return; }
+      if (res?.error === "closed") { setPeekStatus({ state: "closed", status: res.status ?? null }); return; }
+      if (res?.error === "not_found") { setPeekStatus({ state: "not_found" }); return; }
+      setPeekStatus({ state: "network", message: `Kode tidak dikenal: ${res?.error ?? "unknown"}` });
+    }
+    void check();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
+
   if (!authed) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
@@ -546,6 +592,84 @@ function PublicPrepPage() {
           <div className="w-full rounded-2xl border bg-card p-6 shadow-lg shadow-black/5">
             <div className="mb-1 flex items-center gap-2 text-base font-semibold"><Lock className="h-4 w-4 text-primary" /> Verifikasi PIN</div>
             <p className="mb-5 text-xs leading-relaxed text-muted-foreground">Masukkan PIN dari pemilik untuk membuka daftar barang yang harus disiapkan.</p>
+            {peekStatus.state === "checking" && (
+              <div className="mb-3 flex items-center gap-2 rounded-md border border-muted bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground" role="status" aria-live="polite">
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memeriksa status link tugas…
+              </div>
+            )}
+            {peekStatus.state === "ok" && (
+              <div className="mb-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-[11px] text-emerald-700 dark:text-emerald-400" role="status">
+                <div className="flex items-start gap-2">
+                  <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <div className="min-w-0">
+                    <div className="font-semibold truncate">Link tugas valid{peekStatus.title ? ` · ${peekStatus.title}` : ""}</div>
+                    {peekStatus.expiresAt && (
+                      <div className="opacity-80">Berlaku sampai {new Date(peekStatus.expiresAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+            {(peekStatus.state === "not_found" || peekStatus.state === "expired" || peekStatus.state === "closed" || peekStatus.state === "rate_limited" || peekStatus.state === "network") && (
+              <div
+                className={
+                  "mb-3 rounded-md border px-3 py-2 text-[11px] leading-relaxed " +
+                  (peekStatus.state === "rate_limited" || peekStatus.state === "network"
+                    ? "border-destructive/40 bg-destructive/5 text-destructive"
+                    : "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400")
+                }
+                role="alert"
+              >
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  <div className="min-w-0">
+                    {peekStatus.state === "not_found" && (
+                      <>
+                        <div className="font-semibold">Link tugas tidak ditemukan</div>
+                        <div className="mt-0.5 opacity-90">Pastikan URL tidak terpotong, atau minta pemilik mengirim link baru.</div>
+                      </>
+                    )}
+                    {peekStatus.state === "expired" && (
+                      <>
+                        <div className="font-semibold">Link tugas sudah kedaluwarsa</div>
+                        <div className="mt-0.5 opacity-90">
+                          {peekStatus.expiresAt
+                            ? `Kedaluwarsa pada ${new Date(peekStatus.expiresAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}. `
+                            : ""}
+                          Minta pemilik mengirim link / PIN baru.
+                        </div>
+                      </>
+                    )}
+                    {peekStatus.state === "closed" && (
+                      <>
+                        <div className="font-semibold">
+                          {peekStatus.status === "cancelled" ? "Tugas dibatalkan pemilik" : "Tugas sudah ditutup"}
+                        </div>
+                        <div className="mt-0.5 opacity-90">
+                          {peekStatus.status === "cancelled"
+                            ? "Pemilik membatalkan tugas ini sebelum selesai."
+                            : "Tugas ini sudah ditandai selesai oleh pemilik."}
+                        </div>
+                      </>
+                    )}
+                    {peekStatus.state === "rate_limited" && (
+                      <>
+                        <div className="font-semibold">Akses sementara dikunci</div>
+                        <div className="mt-0.5 opacity-90">
+                          Terlalu banyak PIN salah. Coba lagi dalam {Math.floor(peekStatus.retryAfter / 60)} menit {peekStatus.retryAfter % 60} detik.
+                        </div>
+                      </>
+                    )}
+                    {peekStatus.state === "network" && (
+                      <>
+                        <div className="font-semibold">Tidak bisa memeriksa status link</div>
+                        <div className="mt-0.5 opacity-90">{peekStatus.message}</div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
             {lastError && !isLocked && (
               <div
                 className={
@@ -647,7 +771,7 @@ function PublicPrepPage() {
               }}
               placeholder="••••••" disabled={isLocked}
               className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60" />
-            <button disabled={pin.length < 4 || loading || isLocked} onClick={() => fetchTask(pin)}
+            <button disabled={pin.length < 4 || loading || isLocked || peekStatus.state === "not_found" || peekStatus.state === "expired" || peekStatus.state === "closed"} onClick={() => fetchTask(pin)}
               className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50">
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {isLocked ? `Terkunci ${lockedClock} lagi` : "Buka Tugas"}
