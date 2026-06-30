@@ -150,11 +150,14 @@ function PublicPrepPage() {
   }
   function writeSession(pin: string) {
     if (typeof window === "undefined") return;
-    try { window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, ts: Date.now() })); } catch {}
+    const ts = Date.now();
+    try { window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, ts })); } catch {}
+    setSessionStartedAt(ts);
   }
   function clearSession() {
     if (typeof window === "undefined") return;
     try { window.sessionStorage.removeItem(SESSION_KEY); } catch {}
+    setSessionStartedAt(null);
   }
   // Counter kegagalan berturut-turut untuk silentRefresh; baru flip ke layar
   // closedReason setelah 2x kegagalan kategori sama agar transient error
@@ -246,6 +249,9 @@ function PublicPrepPage() {
   }, [authed, rtStatus, lastSyncAt, syncTick, resyncing]);
   const [lockedUntil, setLockedUntil] = useState<number | null>(null);
   const [now, setNow] = useState(() => Date.now());
+  // Timestamp mulai sesi PIN aktif. Dipakai utk countdown sisa waktu
+  // sebelum re-login. Dipasang di writeSession dan rehydrate.
+  const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
   // berturut-turut sebelum input PIN dikunci selama LOCK_SECONDS.
   // Data disimpan di localStorage per-token agar reload halaman tidak
@@ -338,6 +344,31 @@ function PublicPrepPage() {
   const isLocked = lockedSecondsLeft > 0;
   const lockedClock = `${String(Math.floor(lockedSecondsLeft / 60)).padStart(2, "0")}:${String(lockedSecondsLeft % 60).padStart(2, "0")}`;
   const attemptsLeft = Math.max(0, MAX_ATTEMPTS - attempts);
+
+  // Countdown sisa waktu sesi PIN (hanya saat authed). Tick 1 detik agar
+  // operator tahu kapan akan dimintai PIN lagi. Saat 0, paksa kembali ke
+  // layar PIN — sejalan dgn TTL yang dipakai readSession().
+  useEffect(() => {
+    if (!authed || !sessionStartedAt) return;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [authed, sessionStartedAt]);
+  const sessionExpiresAt = sessionStartedAt ? sessionStartedAt + SESSION_TTL_MS : null;
+  const sessionSecondsLeft = sessionExpiresAt
+    ? Math.max(0, Math.ceil((sessionExpiresAt - now) / 1000))
+    : 0;
+  const sessionClock = `${String(Math.floor(sessionSecondsLeft / 60)).padStart(2, "0")}:${String(sessionSecondsLeft % 60).padStart(2, "0")}`;
+  useEffect(() => {
+    if (!authed || !sessionExpiresAt) return;
+    if (sessionSecondsLeft > 0) return;
+    // TTL habis → lepas sesi & kembalikan ke layar PIN.
+    clearSession();
+    setAuthed(false);
+    setPin("");
+    pinRef.current = "";
+    toast.info("Sesi PIN berakhir — silakan masuk ulang.");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authed, sessionExpiresAt, sessionSecondsLeft]);
 
   async function fetchTask(p: string) {
     if (isLocked) return false;
@@ -597,6 +628,7 @@ function PublicPrepPage() {
     const session = readSession();
     const autoPin = m?.[1] ?? session?.pin ?? null;
     if (!autoPin) return;
+    if (session?.ts) setSessionStartedAt(session.ts);
     autoTriedRef.current = true;
     setPin(autoPin);
     void fetchTask(autoPin);
@@ -986,6 +1018,31 @@ function PublicPrepPage() {
             onRefresh={() => { void manualResync(); }}
           />
         </div>
+        {sessionExpiresAt && (
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 pb-2 text-[11px]">
+            <span
+              className={
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium tabular-nums " +
+                (sessionSecondsLeft <= 60
+                  ? "border-destructive/30 bg-destructive/10 text-destructive"
+                  : sessionSecondsLeft <= 300
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                    : "border-border bg-muted/60 text-muted-foreground")
+              }
+              title={`Sesi PIN aktif sampai ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
+            >
+              <Clock className="h-3 w-3" />
+              Sesi {sessionClock}
+            </span>
+            <span className="text-muted-foreground">
+              {sessionSecondsLeft <= 60
+                ? "Akan diminta PIN sebentar lagi"
+                : sessionSecondsLeft <= 300
+                  ? "Sesi PIN hampir habis"
+                  : `Re-login pada ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
+            </span>
+          </div>
+        )}
       </header>
 
       <div className="mx-auto max-w-2xl px-3 pt-4">
