@@ -98,11 +98,43 @@ function currentOrigin(): string | null {
   }
 }
 
+/**
+ * Apakah origin saat ini layak dipakai sebagai base URL link pegawai?
+ *
+ * Backend (Lovable Cloud / Supabase) dipakai bersama di semua environment,
+ * jadi link `mcmstorage.biz` tetap valid walau tugas dibuat dari preview.
+ * Sebaliknya, URL sandbox preview (`id-preview--…lovable.app`,
+ * `*.lovableproject.com`, `localhost`) tidak boleh dibagikan ke pegawai —
+ * sandbox tersebut bisa hilang/berubah dan link jadi mati di HP pegawai.
+ */
+function isShareableOrigin(origin: string): boolean {
+  try {
+    const host = new URL(origin).hostname.toLowerCase();
+    if (!host) return false;
+    if (host === "localhost" || host === "127.0.0.1" || host.endsWith(".local")) return false;
+    if (host.startsWith("id-preview--")) return false;
+    if (host.endsWith(".lovableproject.com")) return false;
+    // Domain *.lovable.app yang valid hanya yang persis = subdomain produksi
+    // proyek (mis. mcmstorage.lovable.app). Preview build seperti
+    // `id-preview--xxx.lovable.app` sudah tersaring di atas.
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Daftar kandidat base URL berurutan dari yang paling diutamakan. */
 export function taskBaseUrlCandidates(): string[] {
+  const origin = currentOrigin();
+  const shareableOrigin = origin && isShareableOrigin(origin) ? origin : null;
   const list = [
-    currentOrigin(),
+    // Domain produksi selalu diprioritaskan agar link yang dibagikan ke
+    // pegawai tetap hidup setelah preview sandbox mati / pemilik pindah
+    // perangkat. Origin saat ini hanya dipakai bila itu domain produksi
+    // yang sudah terverifikasi (mcmstorage.biz / www.mcmstorage.biz /
+    // mcmstorage.lovable.app), bukan URL sandbox preview.
     isValidHttpBase(PRODUCTION_BASE) ? PRODUCTION_BASE : null,
+    shareableOrigin,
     isValidHttpBase(PRODUCTION_BASE_FALLBACK) ? PRODUCTION_BASE_FALLBACK : null,
   ].filter((v): v is string => !!v);
   // Dedup tanpa mengubah urutan.
