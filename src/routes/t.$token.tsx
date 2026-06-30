@@ -603,6 +603,7 @@ function PublicPrepPage() {
     const session = readSession();
     const autoPin = m?.[1] ?? session?.pin ?? null;
     if (!autoPin) return;
+    if (session?.ts) setSessionStartedAt(session.ts);
     autoTriedRef.current = true;
     setPin(autoPin);
     void fetchTask(autoPin);
