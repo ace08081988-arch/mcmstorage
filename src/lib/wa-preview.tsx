@@ -36,7 +36,7 @@ type Request = {
    *  (yang sukses pada percobaan ini). Helper akan menambahkannya ke files. */
   retryMissing?: () => Promise<File[]>;
   /** Info klik ganda (idempotency hit) saat dialog dibuka. */
-  duplicate?: { at: number; status: "in-flight" | "done" | "failed" } | null;
+  duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string } | null;
   resolve: (result: { ok: boolean; text?: string; force?: boolean }) => void;
 };
 
@@ -54,7 +54,7 @@ export function confirmWaShare(input: {
   files?: File[];
   expectedCount?: number;
   retryMissing?: () => Promise<File[]>;
-  duplicate?: { at: number; status: "in-flight" | "done" | "failed" } | null;
+  duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string } | null;
 }): Promise<{ ok: boolean; text?: string; force?: boolean }> {
   // Tampilkan pratinjau saat klik ganda terdeteksi, meski user pernah meminta "jangan
   // tampilkan lagi" — operator perlu lihat peringatan duplikat & tombol force.
@@ -134,6 +134,8 @@ export function WaPreviewHost() {
   const dupActive = !!dup && dup.status !== "failed";
   const dupAgoSec = dup ? Math.max(0, Math.round((Date.now() - dup.at) / 1000)) : 0;
   const dupAgoLabel = dupAgoSec < 60 ? `${dupAgoSec} detik lalu` : `${Math.round(dupAgoSec / 60)} menit lalu`;
+  const dupAbsLabel = dup ? new Date(dup.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
+  const dupStatusLabel = dup ? (dup.status === "in-flight" ? "Masih berjalan" : dup.status === "done" ? "Sudah terkirim" : "Gagal") : "";
   const original = current?.text ?? "";
   const edited = draft !== original;
 
@@ -196,6 +198,16 @@ export function WaPreviewHost() {
                     ? `Dimulai ${dupAgoLabel}. Tunggu hingga selesai agar tidak terkirim dua kali.`
                     : `Dikirim ${dupAgoLabel}. Tombol "Kirim WA" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
                 </div>
+                <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
+                  <dt className="font-medium opacity-80">Waktu</dt>
+                  <dd className="break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
+                  {dup!.destination ? (<>
+                    <dt className="font-medium opacity-80">Tujuan</dt>
+                    <dd className="break-words">{dup!.destination}</dd>
+                  </>) : null}
+                  <dt className="font-medium opacity-80">Status</dt>
+                  <dd className="break-words">{dupStatusLabel}</dd>
+                </dl>
               </div>
             </div>
           ) : null}

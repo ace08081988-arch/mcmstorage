@@ -18,6 +18,8 @@ export type ChatSharePreviewData = {
 export type ChatShareDuplicateInfo = {
   at: number;
   status: "in-flight" | "done" | "failed";
+  /** Label tujuan kiriman sebelumnya untuk ditampilkan di banner duplikat. */
+  destination?: string;
 };
 
 /** Status hidup pengiriman ke chat — dipakai untuk menampilkan progres di dialog. */
@@ -88,6 +90,8 @@ export function ChatSharePreviewDialog({
   const dupActive = !!duplicate && duplicate.status !== "failed" && !progressActive && !outcome;
   const dupAgoSec = duplicate ? Math.max(0, Math.round((Date.now() - duplicate.at) / 1000)) : 0;
   const dupAgoLabel = dupAgoSec < 60 ? `${dupAgoSec} detik lalu` : `${Math.round(dupAgoSec / 60)} menit lalu`;
+  const dupAbsLabel = duplicate ? new Date(duplicate.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
+  const dupStatusLabel = duplicate ? (duplicate.status === "in-flight" ? "Masih berjalan" : duplicate.status === "done" ? "Sudah terkirim" : "Gagal") : "";
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!sending) onOpenChange(o); }}>
@@ -115,6 +119,14 @@ export function ChatSharePreviewDialog({
                       ? `Dimulai ${dupAgoLabel}. Tunggu hingga selesai agar tidak terkirim dua kali.`
                       : `Dikirim ${dupAgoLabel}. Tombol "Kirim sekarang" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
                   </div>
+                  <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
+                    <dt className="font-medium opacity-80">Waktu</dt>
+                    <dd className="break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
+                    <dt className="font-medium opacity-80">Tujuan</dt>
+                    <dd className="break-words">{duplicate.destination ?? data.conversationTitle}</dd>
+                    <dt className="font-medium opacity-80">Status</dt>
+                    <dd className="break-words">{dupStatusLabel}</dd>
+                  </dl>
                 </div>
               </div>
             ) : null}
