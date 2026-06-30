@@ -802,6 +802,63 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
 }
 
 function SyncBadge({ row: r }: { row: Row }) {
+  void 0;
+  return <SyncBadgeImpl row={r} />;
+}
+
+function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<string, SentEntry> }) {
+  const rows = shots
+    .map((s) => ({ shot: s, entry: details.get(s.id) }))
+    .filter((r): r is { shot: WorkerShot; entry: SentEntry } => !!r.entry)
+    .sort((a, b) => b.entry.at - a.entry.at);
+  if (rows.length === 0) return null;
+  return (
+    <div className="rounded-md border bg-muted/40 p-1.5">
+      <div className="mb-1 flex items-center gap-1 text-[9px] font-semibold uppercase tracking-wide text-muted-foreground">
+        <History className="h-2.5 w-2.5" /> Detail kiriman ({rows.length})
+      </div>
+      <ul className="space-y-1">
+        {rows.map(({ shot, entry }) => {
+          const ok = entry.status !== "failed";
+          const channel = entry.channel ?? "wa";
+          const time = new Date(entry.at).toLocaleString("id-ID", {
+            day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+          });
+          const maps = entry.mapsUrl ?? shot.location_url ?? null;
+          return (
+            <li key={shot.id} className="flex flex-wrap items-center gap-1 text-[9px] leading-tight">
+              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}`}>
+                {channel === "chat" ? <Send className="h-2.5 w-2.5" /> : <MessageCircle className="h-2.5 w-2.5" />}
+                {channel === "chat" ? "Chat" : "WA"}
+              </span>
+              <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${ok ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
+                {ok ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
+                {ok ? "Sukses" : "Gagal"}
+              </span>
+              <span className="text-muted-foreground" title={new Date(entry.at).toLocaleString()}>{time}</span>
+              {maps ? (
+                <a
+                  href={maps}
+                  target="_blank"
+                  rel="noreferrer"
+                  onClick={(e) => e.stopPropagation()}
+                  className="ml-auto inline-flex items-center gap-0.5 rounded-full bg-sky-500/10 px-1.5 py-0.5 font-semibold text-sky-600 hover:bg-sky-500/20 dark:text-sky-400"
+                  title="Buka lokasi di Maps"
+                >
+                  <MapPin className="h-2.5 w-2.5" /> Maps
+                </a>
+              ) : (
+                <span className="ml-auto text-muted-foreground/70">tanpa lokasi</span>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
+function SyncBadgeImpl({ row: r }: { row: Row }) {
   const meta = SYNC_META[r.sync.level];
   return (
     <Popover>
