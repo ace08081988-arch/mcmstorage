@@ -14,6 +14,8 @@ import { toast } from "sonner";
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
 import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
+import type { SendPayloadSummary } from "@/lib/idempotency";
+import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
@@ -39,11 +41,14 @@ type Request = {
    *  (yang sukses pada percobaan ini). Helper akan menambahkannya ke files. */
   retryMissing?: () => Promise<File[]>;
   /** Info klik ganda (idempotency hit) saat dialog dibuka. */
-  duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string; fingerprint?: string } | null;
+  duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string; fingerprint?: string; summary?: SendPayloadSummary } | null;
   /** Fingerprint payload yang akan dikirim sekarang. Dipakai untuk membandingkan
    *  dengan `duplicate.fingerprint` agar tombol "Kirim ulang (paksa)" hanya aktif
    *  jika payload-nya benar-benar sama. */
   currentFingerprint?: string;
+  /** Ringkasan payload yang akan dikirim sekarang — dipakai banner untuk
+   *  menampilkan diff field-by-field saat fingerprint tidak cocok. */
+  currentSummary?: SendPayloadSummary;
   previousLog?: SendLogEntry[];
   /** Daftar shot ID (sorted, koma) untuk sinkronisasi idempotency lintas channel. */
   idemIdsKey?: string;
@@ -64,8 +69,9 @@ export function confirmWaShare(input: {
   files?: File[];
   expectedCount?: number;
   retryMissing?: () => Promise<File[]>;
-  duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string; fingerprint?: string } | null;
+  duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string; fingerprint?: string; summary?: SendPayloadSummary } | null;
   currentFingerprint?: string;
+  currentSummary?: SendPayloadSummary;
   previousLog?: SendLogEntry[];
   idemIdsKey?: string;
 }): Promise<{ ok: boolean; text?: string; force?: boolean }> {
@@ -148,7 +154,7 @@ export function WaPreviewHost() {
   const crossChannel = !!live && liveChannel === "chat";
   const snapshotDup = current?.duplicate ?? null;
   const dup = live
-    ? { at: live.at, status: live.status, destination: snapshotDup?.destination, fingerprint: live.fingerprint }
+    ? { at: live.at, status: live.status, destination: snapshotDup?.destination, fingerprint: live.fingerprint, summary: live.summary }
     : snapshotDup;
   const dupActive = !!dup && dup.status !== "failed";
   // Tombol "Kirim ulang (paksa)" hanya boleh aktif jika fingerprint payload
@@ -255,6 +261,9 @@ export function WaPreviewHost() {
                       ? "Payload identik dengan kiriman sebelumnya — aman untuk dikirim ulang bila perlu."
                       : forceDisabledReason}
                   </div>
+                ) : null}
+                {dup!.status !== "in-flight" && !payloadMatches ? (
+                  <SendPayloadDiff previous={dup!.summary} current={current?.currentSummary} />
                 ) : null}
               </div>
             </div>
