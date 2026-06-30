@@ -120,6 +120,8 @@ function LinkPegawaiPage() {
     url: string | null;
     expiresLabel: string | null;
     extendDays: number;
+    updatedAt: number;
+    seq: number;
   } | null>(null);
   const [testMode, setTestMode] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
