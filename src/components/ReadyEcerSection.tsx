@@ -1451,6 +1451,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         onRetry={() => { setChatStatus(null); void confirmChatSend(); }}
         duplicate={chatPreview?.duplicate ?? null}
         onForceSend={() => { void confirmChatSend({ force: true }); }}
+        previousLog={chatPreview?.previousLog ?? []}
       />
     </div>
   );
