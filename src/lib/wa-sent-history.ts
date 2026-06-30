@@ -19,6 +19,8 @@ export type SentMeta = {
   channel?: SentChannel;
   mapsUrl?: string | null;
   status?: SentStatus;
+  /** Idempotency key dari helper kirim, untuk audit/debug ulangan klik. */
+  idemKey?: string;
 };
 
 export type Entry = {
@@ -27,6 +29,7 @@ export type Entry = {
   channel?: SentChannel;
   mapsUrl?: string | null;
   status?: SentStatus;
+  idemKey?: string;
 };
 
 function readRaw(): Entry[] {
