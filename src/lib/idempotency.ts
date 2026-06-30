@@ -16,7 +16,28 @@ const TTL_MS = 5 * 60 * 1000;       // 5 menit
 const MAX_ENTRIES = 200;
 
 export type IdemStatus = "in-flight" | "done" | "failed";
-export type IdemRecord = { key: string; at: number; status: IdemStatus; note?: string; fingerprint?: string };
+/**
+ * Ringkasan payload yang dilampirkan ke record idempotency agar dialog
+ * pratinjau bisa menampilkan PERBEDAAN antara payload yang akan dikirim
+ * sekarang dengan payload kiriman sebelumnya — bukan hanya status "cocok /
+ * tidak cocok" dari fingerprint. Bidang dipilih agar serialisasi tetap
+ * kecil (muat di localStorage) dan tidak menyimpan binari foto.
+ */
+export type SendPayloadSummary = {
+  channel?: "wa" | "chat";
+  destination?: string;
+  caption: string;
+  photoCount: number;
+  locationUrl: string | null;
+};
+export type IdemRecord = {
+  key: string;
+  at: number;
+  status: IdemStatus;
+  note?: string;
+  fingerprint?: string;
+  summary?: SendPayloadSummary;
+};
 
 /** Channel turunan dari `key` (`wa:` atau `chat:<convId>:`). */
 export function channelFromKey(key: string): "wa" | "chat" | "unknown" {
@@ -79,7 +100,9 @@ export function useLiveIdemByIds(idsKey: string | undefined | null): IdemRecord 
     const r = findIdemByIds(key);
     // Stabilkan referensi snapshot untuk useSyncExternalStore: kembalikan
     // string serialisasi sederhana untuk perbandingan, lalu rebuild object.
-    return r ? `${r.key}|${r.at}|${r.status}|${r.fingerprint ?? ""}` : "";
+    return r
+      ? `${r.key}|${r.at}|${r.status}|${r.fingerprint ?? ""}|${r.summary ? stableStringify(r.summary) : ""}`
+      : "";
   };
   const snap = useSyncExternalStore(subscribe, getSnapshot, () => "");
   if (!snap) return null;
@@ -103,11 +126,19 @@ function readAll(): Map<string, IdemRecord> {
           status: r.status === "done" || r.status === "failed" || r.status === "in-flight" ? r.status : "done",
           note: typeof r.note === "string" ? r.note : undefined,
           fingerprint: typeof r.fingerprint === "string" ? r.fingerprint : undefined,
+          summary: isSummary(r.summary) ? (r.summary as SendPayloadSummary) : undefined,
         });
       }
     }
     return m;
   } catch { return new Map(); }
+}
+
+function isSummary(v: unknown): boolean {
+  if (!v || typeof v !== "object") return false;
+  const s = v as Record<string, unknown>;
+  return typeof s.caption === "string" && typeof s.photoCount === "number"
+    && (s.locationUrl === null || typeof s.locationUrl === "string");
 }
 
 function writeAll(map: Map<string, IdemRecord>) {
@@ -137,13 +168,14 @@ export function getIdem(key: string): IdemRecord | null {
   return r;
 }
 
-export function setIdem(key: string, status: IdemStatus, note?: string, fingerprint?: string) {
+export function setIdem(key: string, status: IdemStatus, note?: string, fingerprint?: string, summary?: SendPayloadSummary) {
   const m = readAll();
   const prev = m.get(key);
   // Pertahankan fingerprint lama bila pemanggil tidak menyediakannya (mis. saat
   // menandai "in-flight" sebelum payload tersedia atau saat finalisasi status).
   const fp = fingerprint ?? prev?.fingerprint;
-  m.set(key, { key, at: Date.now(), status, note, fingerprint: fp });
+  const sm = summary ?? prev?.summary;
+  m.set(key, { key, at: Date.now(), status, note, fingerprint: fp, summary: sm });
   writeAll(m);
 }
 
@@ -174,19 +206,19 @@ export function buildSendKey(input: {
  */
 export async function withIdempotency<T>(
   key: string,
-  opts: { onSkip: (existing: IdemRecord) => T | Promise<T>; run: () => Promise<T>; fingerprint?: string },
+  opts: { onSkip: (existing: IdemRecord) => T | Promise<T>; run: () => Promise<T>; fingerprint?: string; summary?: SendPayloadSummary },
 ): Promise<T> {
   const existing = getIdem(key);
   if (existing && existing.status !== "failed") {
     return await opts.onSkip(existing);
   }
-  setIdem(key, "in-flight", undefined, opts.fingerprint);
+  setIdem(key, "in-flight", undefined, opts.fingerprint, opts.summary);
   try {
     const result = await opts.run();
-    setIdem(key, "done", undefined, opts.fingerprint);
+    setIdem(key, "done", undefined, opts.fingerprint, opts.summary);
     return result;
   } catch (e) {
-    setIdem(key, "failed", (e as Error)?.message, opts.fingerprint);
+    setIdem(key, "failed", (e as Error)?.message, opts.fingerprint, opts.summary);
     throw e;
   }
 }
@@ -208,7 +240,7 @@ export function payloadFingerprint(payload: unknown): string {
   return h.toString(16).padStart(8, "0");
 }
 
-function stableStringify(value: unknown): string {
+export function stableStringify(value: unknown): string {
   if (value === null || typeof value !== "object") return JSON.stringify(value ?? null);
   if (Array.isArray(value)) return "[" + value.map(stableStringify).join(",") + "]";
   const obj = value as Record<string, unknown>;
