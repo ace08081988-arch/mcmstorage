@@ -647,26 +647,71 @@ function DetailHero({
         )}
       </div>
 
-      {/* Action footer */}
-      <div className="flex flex-col items-stretch gap-2 border-t bg-muted/40 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5">
-        <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
+      {/* Action footer — bar 4 tombol ramah jempol (pill aktif lega) */}
+      <div
+        className="sticky bottom-0 z-10 -mx-px border-t bg-card/95 px-2 pt-2 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:bg-muted/40 sm:px-5 sm:py-3 sm:shadow-none sm:backdrop-blur-0"
+        style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)" }}
+      >
+        <div className="hidden text-[10.5px] uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
           Simpan halaman ini sebagai referensi penyiapan.
         </div>
-        <div className="-mx-1 flex flex-wrap items-center gap-1.5 sm:mx-0 sm:justify-end">
+        <div className="grid grid-cols-4 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-1.5">
           {onCreateTitle && (
-            <Button size="sm" variant="outline" onClick={onCreateTitle} title="Judul ecer baru untuk produk yang sama">
+            <button
+              type="button"
+              onClick={onCreateTitle}
+              title="Judul ecer baru untuk produk yang sama"
+              className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+            >
+              <Plus className="h-5 w-5" aria-hidden />
+              <span className="text-[11px] font-medium tracking-tight">Judul</span>
+            </button>
+          )}
+          {onCreateProduct && (
+            <button
+              type="button"
+              onClick={onCreateProduct}
+              title="Buat produk gudang baru lalu langsung dibuatkan judulnya"
+              className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+            >
+              <Package className="h-5 w-5" aria-hidden />
+              <span className="text-[11px] font-medium tracking-tight">Produk</span>
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onScrollToWorker}
+            title="Lihat kiriman pegawai untuk judul ini"
+            className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+          >
+            <Users className="h-5 w-5" aria-hidden />
+            <span className="text-[11px] font-medium tracking-tight">Pegawai</span>
+          </button>
+          <button
+            type="button"
+            onClick={onAdd}
+            title="Tambah penyiapan untuk judul ini"
+            className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50 p-2 text-emerald-700 transition-all active:scale-95 dark:bg-emerald-500/15 dark:text-emerald-300 sm:hidden"
+          >
+            <Plus className="h-5 w-5" aria-hidden />
+            <span className="text-[11px] font-bold tracking-tight">Penyiapan</span>
+          </button>
+
+          {/* Desktop / tablet — keep richer labels */}
+          {onCreateTitle && (
+            <Button size="sm" variant="outline" onClick={onCreateTitle} title="Judul ecer baru untuk produk yang sama" className="hidden sm:inline-flex">
               <Plus className="h-4 w-4" /> Judul lain
             </Button>
           )}
           {onCreateProduct && (
-            <Button size="sm" variant="outline" onClick={onCreateProduct} title="Buat produk gudang baru lalu langsung dibuatkan judulnya">
+            <Button size="sm" variant="outline" onClick={onCreateProduct} title="Buat produk gudang baru lalu langsung dibuatkan judulnya" className="hidden sm:inline-flex">
               <Package className="h-4 w-4" /> Produk baru
             </Button>
           )}
-          <Button size="sm" variant="outline" onClick={onScrollToWorker} title="Lihat kiriman pegawai untuk judul ini">
+          <Button size="sm" variant="outline" onClick={onScrollToWorker} title="Lihat kiriman pegawai untuk judul ini" className="hidden sm:inline-flex">
             <Users className="h-4 w-4" /> Pegawai
           </Button>
-          <Button size="sm" onClick={onAdd} className="bg-emerald-600 hover:bg-emerald-700">
+          <Button size="sm" onClick={onAdd} className="hidden bg-emerald-600 hover:bg-emerald-700 sm:inline-flex">
             <Plus className="h-4 w-4" /> Penyiapan
           </Button>
         </div>
