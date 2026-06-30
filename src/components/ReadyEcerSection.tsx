@@ -918,14 +918,14 @@ function SyncSummary({ counts, total, active, onChange }: { counts: Record<SyncL
 function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "offline"; syncing: boolean }) {
   if (syncing) {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+      <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-primary/10 px-1.5 text-[11px] font-medium leading-none text-primary">
         <Loader2 className="h-2.5 w-2.5 animate-spin" /> Memperbarui…
       </span>
     );
   }
   if (status === "live") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-1.5 py-0.5 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+      <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-1.5 text-[11px] font-medium leading-none text-emerald-600 dark:text-emerald-400">
         <span className="relative flex h-1.5 w-1.5">
           <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
           <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -936,13 +936,13 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   }
   if (status === "offline") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[11px] font-medium text-destructive">
+      <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-destructive/10 px-1.5 text-[11px] font-medium leading-none text-destructive">
         <Radio className="h-2.5 w-2.5" /> Offline
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium text-muted-foreground">
+    <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-muted px-1.5 text-[11px] font-medium leading-none text-muted-foreground">
       <Loader2 className="h-2.5 w-2.5 animate-spin" /> Menyambung…
     </span>
   );

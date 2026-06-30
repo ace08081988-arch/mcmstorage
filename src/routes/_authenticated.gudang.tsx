@@ -1118,9 +1118,12 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                       aria-hidden
                       className={`inline-block h-2 w-2 shrink-0 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
                     />
-                    <span className="truncate font-medium">{cat}</span>
-                    <span className="shrink-0 rounded-full border bg-background px-1.5 py-0.5 text-[11px] text-muted-foreground">
-                      {count}
+                    <span className="min-w-0 flex-1 truncate font-medium">{cat}</span>
+                    <span
+                      className="inline-flex h-5 max-w-[5rem] shrink-0 items-center rounded-full border bg-background px-1.5 text-[11px] leading-none text-muted-foreground tabular-nums"
+                      title={`${count} item`}
+                    >
+                      <span className="min-w-0 truncate whitespace-nowrap">{count}</span>
                     </span>
                   </div>
                   <div className="text-right">

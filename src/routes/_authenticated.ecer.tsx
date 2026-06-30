@@ -807,7 +807,10 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         <CardHeader className="pb-2">
           <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
             <Boxes className="h-4 w-4 text-primary" /> Daftar penyiapan
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+            <span
+              className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
+              title={`${preps.length} penyiapan`}
+            >
               {preps.length}
             </span>
           </CardTitle>
@@ -1036,7 +1039,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
               <Users className="h-4 w-4 text-primary" /> Kiriman pegawai
               {!loading && (
-                <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                <span
+                  className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
+                  title={`${shots.length} kiriman`}
+                >
                   {shots.length}
                 </span>
               )}
@@ -1090,7 +1096,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   )}
                 </div>
                 {s.match !== "strict" && (
-                  <span className="absolute left-1 top-1 rounded-full bg-amber-500/90 px-1.5 py-0.5 text-[11px] leading-snug font-semibold text-white" title={s.match === "fallback_grams" ? "Ukuran cocok, unit berbeda" : "Hanya produk yang cocok"}>
+                  <span
+                    className="absolute left-1 top-1 inline-flex h-5 max-w-[80%] items-center whitespace-nowrap rounded-full bg-amber-500/90 px-1.5 text-[11px] font-semibold leading-none text-white"
+                    title={s.match === "fallback_grams" ? "Ukuran cocok, unit berbeda" : "Hanya produk yang cocok"}
+                  >
                     {s.match === "fallback_grams" ? "unit≠" : "ukuran≠"}
                   </span>
                 )}
@@ -1643,11 +1652,13 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         <div className="space-y-3">
           {photo ? (
             <div>
-              <div className="mb-1 flex items-center justify-between text-[11px]">
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-400">
+              <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
+                <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-2 font-medium leading-none text-emerald-700 dark:text-emerald-400">
                   ✓ Pratinjau foto
                 </span>
-                <span className="text-muted-foreground">{Math.round(photo.blob.size / 1024)} KB · ketuk untuk perbesar</span>
+                <span className="min-w-0 truncate text-right leading-none text-muted-foreground tabular-nums">
+                  {Math.round(photo.blob.size / 1024)} KB · ketuk untuk perbesar
+                </span>
               </div>
               <button
                 type="button"
