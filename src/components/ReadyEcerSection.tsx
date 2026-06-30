@@ -948,9 +948,21 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   );
 }
 
-function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null; sentDetails: Map<string, SentEntry> }) {
-  void 0;
-  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={lastSentAt} sentDetails={sentDetails} />;
+type EcerCardProps = {
+  row: Row;
+  onRefresh: () => void;
+  refreshing: boolean;
+  syncing: boolean;
+  realtimeStatus: "connecting" | "live" | "offline";
+  view: "active" | "sent";
+  lastSentAt: number | null;
+  sentDetails: Map<string, SentEntry>;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
+};
+function EcerCard(props: EcerCardProps) {
+  return <EcerCardImpl {...props} />;
 }
 
 const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> = {
