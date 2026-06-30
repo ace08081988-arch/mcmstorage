@@ -330,7 +330,7 @@ function LinkPegawaiPage() {
     let lastErr: string | null = null;
     for (let i = 0; i < 3; i++) {
       const next = genShareToken();
-      const patch: Record<string, unknown> = { share_token: next };
+      const patch: { share_token: string; expires_at?: string } = { share_token: next };
       if (newExpiresAt) patch.expires_at = newExpiresAt;
       const { data, error } = await supabase
         .from("prep_tasks")
