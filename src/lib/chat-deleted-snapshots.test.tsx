@@ -247,4 +247,120 @@ describe("snapshots: deleted message rendering", () => {
       ).toMatchSnapshot();
     });
   });
+
+  describe("Edge cases: extreme data combinations", () => {
+    const LONG_BODY = "A".repeat(2000);
+    const LONG_NAME = `${"nama-file-sangat-panjang-".repeat(20)}.pdf`;
+
+    it("snapshot: MessagePreview with very long body (live)", () => {
+      expect(
+        renderToStaticMarkup(<MessagePreview message={mkMessage({ body: LONG_BODY })} />),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview with very long body (deleted)", () => {
+      expect(
+        renderToStaticMarkup(
+          <MessagePreview message={mkMessage({ body: LONG_BODY, deleted_at: "now" })} />,
+        ),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview with 0 attachments and empty body", () => {
+      expect(
+        renderToStaticMarkup(<MessagePreview message={mkMessage({ body: "   " })} />),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview with 1 attachment, no name (path only)", () => {
+      expect(
+        renderToStaticMarkup(
+          <MessagePreview message={mkMessage({ attachment_path: "uploads/blob-1" })} />,
+        ),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview with 1 attachment, mime only", () => {
+      expect(
+        renderToStaticMarkup(
+          <MessagePreview message={mkMessage({ attachment_mime: "image/png" })} />,
+        ),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview with 1 attachment named, very long name", () => {
+      expect(
+        renderToStaticMarkup(
+          <MessagePreview message={mkMessage({ attachment_name: LONG_NAME })} />,
+        ),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview with multiple attachment hints (path+mime+name)", () => {
+      // The schema models a single attachment per message; this exercises the
+      // ">1 attachment metadata fields populated" combination.
+      expect(
+        renderToStaticMarkup(
+          <MessagePreview
+            message={mkMessage({
+              attachment_path: "uploads/a.pdf",
+              attachment_mime: "application/pdf",
+              attachment_name: "a.pdf, b.pdf, c.pdf",
+            })}
+          />,
+        ),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: DeletedPreview with empty/whitespace sender metadata (no attachment)", () => {
+      expect(
+        renderToStaticMarkup(
+          <DeletedPreview
+            message={mkMessage({ body: "   ", deleted_at: "now", attachment_name: "" })}
+          />,
+        ),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: DeletedPreview with multi-field attachment metadata", () => {
+      expect(
+        renderToStaticMarkup(
+          <DeletedPreview
+            message={mkMessage({
+              deleted_at: "now",
+              attachment_path: "uploads/a.pdf",
+              attachment_mime: "application/pdf",
+              attachment_name: "a.pdf, b.pdf",
+            })}
+          />,
+        ),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: DeletedPreview with custom className + iconClassName", () => {
+      expect(
+        renderToStaticMarkup(
+          <DeletedPreview
+            message={mkMessage({ deleted_at: "now", attachment_path: "x" })}
+            className="text-xs text-muted-foreground"
+            iconClassName="h-2 w-2"
+          />,
+        ),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview with all metadata null/undefined", () => {
+      expect(
+        renderToStaticMarkup(<MessagePreview message={mkMessage({})} />),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview when message is null", () => {
+      expect(renderToStaticMarkup(<MessagePreview message={null} />)).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview when message is undefined", () => {
+      expect(renderToStaticMarkup(<MessagePreview message={undefined} />)).toMatchSnapshot();
+    });
+  });
 });
