@@ -954,16 +954,20 @@ function ChatRoomPage() {
                                 className="text-destructive focus:text-destructive"
                                 disabled={deleteMsg.isPending}
                                 onSelect={() => {
+                                  const restore = optimisticDeleteMessages(qc, conversationId, [m.id]);
                                   scheduleUndo({
                                     label: "Pesan akan dihapus untuk semua",
+                                    onCancel: restore,
                                     onCommit: () =>
                                       deleteMsg.mutate(
                                         { id: m.id, attachment_path: m.attachment_path },
                                         {
                                           onSuccess: () =>
                                             void logChatDelete({ conversationId, action: "for_all", messageId: m.id }),
-                                          onError: (e) =>
-                                            toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
+                                          onError: (e) => {
+                                            restore();
+                                            toast.error(e instanceof Error ? e.message : "Gagal menghapus");
+                                          },
                                         },
                                       ),
                                   });
