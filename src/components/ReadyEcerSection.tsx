@@ -1136,9 +1136,14 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     }
   }
 
-  async function confirmChatSend() {
+  async function confirmChatSend(opts?: { force?: boolean }) {
     const ctx = chatPreview;
     if (!ctx || chatSending) return;
+    // Jika operator menekan "Kirim ulang (paksa)" pada banner duplikat, bersihkan
+    // record lama agar withIdempotency tidak men-skip eksekusi.
+    if (opts?.force) {
+      clearIdem(ctx.idemKey);
+    }
     const captionStep = ctx.caption.trim().length > 0;
     const locationStep = !!(ctx.locationUrl && ctx.locationUrl.trim());
     const photosTotal = ctx.chatShots.length;
