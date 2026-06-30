@@ -103,6 +103,27 @@ function ChatRoomPage() {
   const [manageOpen, setManageOpen] = useState(false);
   const [replyTo, setReplyTo] = useState<MessageRow | null>(null);
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
+  const [longPressMsg, setLongPressMsg] = useState<MessageRow | null>(null);
+  const longPressTimer = useRef<number | null>(null);
+  const longPressFired = useRef(false);
+  const startLongPress = useCallback((m: MessageRow) => {
+    if (m.deleted_at) return;
+    longPressFired.current = false;
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      longPressFired.current = true;
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        try { navigator.vibrate?.(15); } catch { /* noop */ }
+      }
+      setLongPressMsg(m);
+    }, 500);
+  }, []);
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
   const entitlement = useEntitlement();
   const chatBlocked = !entitlement.loading && !entitlement.isPro;
 
