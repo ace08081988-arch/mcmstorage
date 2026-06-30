@@ -103,6 +103,27 @@ function ChatRoomPage() {
   const [manageOpen, setManageOpen] = useState(false);
   const [replyTo, setReplyTo] = useState<MessageRow | null>(null);
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
+  const [longPressMsg, setLongPressMsg] = useState<MessageRow | null>(null);
+  const longPressTimer = useRef<number | null>(null);
+  const longPressFired = useRef(false);
+  const startLongPress = useCallback((m: MessageRow) => {
+    if (m.deleted_at) return;
+    longPressFired.current = false;
+    if (longPressTimer.current) window.clearTimeout(longPressTimer.current);
+    longPressTimer.current = window.setTimeout(() => {
+      longPressFired.current = true;
+      if (typeof navigator !== "undefined" && "vibrate" in navigator) {
+        try { navigator.vibrate?.(15); } catch { /* noop */ }
+      }
+      setLongPressMsg(m);
+    }, 500);
+  }, []);
+  const cancelLongPress = useCallback(() => {
+    if (longPressTimer.current) {
+      window.clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  }, []);
   const entitlement = useEntitlement();
   const chatBlocked = !entitlement.loading && !entitlement.isPro;
 
@@ -508,7 +529,19 @@ function ChatRoomPage() {
                           mine
                             ? "rounded-br-sm bg-primary text-primary-foreground"
                             : "rounded-bl-sm bg-muted text-foreground"
-                        }`}
+                        } select-none touch-manipulation`}
+                        onPointerDown={(e) => {
+                          if (e.pointerType === "mouse" && e.button !== 0) return;
+                          startLongPress(m);
+                        }}
+                        onPointerUp={cancelLongPress}
+                        onPointerLeave={cancelLongPress}
+                        onPointerCancel={cancelLongPress}
+                        onContextMenu={(e) => {
+                          if (m.deleted_at) return;
+                          e.preventDefault();
+                          setLongPressMsg(m);
+                        }}
                       >
                         {showSender ? (
                           <div className="mb-0.5 text-[10px] font-semibold opacity-80">{senderName}</div>
@@ -886,6 +919,71 @@ function ChatRoomPage() {
               )}
               Hapus semua
             </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={!!longPressMsg} onOpenChange={(v) => { if (!v) setLongPressMsg(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus pesan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {longPressMsg?.sender_id === myId
+                ? "Pilih cara menghapus pesan ini. \"Hapus untuk semua orang\" akan menghapus pesan dari sisi lawan chat juga."
+                : "Pesan ini bukan milik Anda, jadi hanya bisa disembunyikan di perangkat Anda."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              disabled={hideMsg.isPending}
+              onClick={() => {
+                const target = longPressMsg;
+                if (!target) return;
+                hideMsg.mutate(target.id, {
+                  onSuccess: () => {
+                    toast.success("Pesan disembunyikan untuk Anda");
+                    setLongPressMsg(null);
+                  },
+                  onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
+                });
+              }}
+            >
+              <EyeOff className="mr-2 h-4 w-4" />
+              Hapus untuk saya
+            </Button>
+            {longPressMsg?.sender_id === myId ? (
+              <Button
+                variant="destructive"
+                className="w-full justify-start"
+                disabled={deleteMsg.isPending}
+                onClick={() => {
+                  const target = longPressMsg;
+                  if (!target) return;
+                  deleteMsg.mutate(
+                    { id: target.id, attachment_path: target.attachment_path },
+                    {
+                      onSuccess: () => {
+                        toast.success("Pesan dihapus untuk semua");
+                        setLongPressMsg(null);
+                      },
+                      onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
+                    },
+                  );
+                }}
+              >
+                {deleteMsg.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Hapus untuk semua orang
+              </Button>
+            ) : null}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
