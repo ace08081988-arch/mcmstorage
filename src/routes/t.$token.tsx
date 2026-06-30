@@ -417,21 +417,21 @@ function PublicPrepPage() {
     // browser tidak membawa sisa percobaan/lock.
     resetAttemptsFully();
     setTask(normalizedTask); setItems(normalizedItems); pinRef.current = p;
+    // Simpan PIN ke sessionStorage agar WebView yang di-recreate (mis. setelah
+    // user buka kamera/galeri) bisa auto-rehydrate ke layar tugas.
+    writeSession(p);
     // eslint-disable-next-line no-console
     console.log("[t.$token] PIN ok", {
       taskId: normalizedTask.id,
       itemsCount: normalizedItems.length,
       status: normalizedTask.status,
     });
-    // Tampilkan layar sukses inline sebelum berpindah ke daftar tugas,
-    // supaya pengguna melihat konfirmasi yang jelas di layar PIN.
-    setSuccessFlash(true);
-    setTimeout(() => {
-      // eslint-disable-next-line no-console
-      console.log("[t.$token] setAuthed(true) fired after success flash");
-      setSuccessFlash(false);
-      setAuthed(true);
-    }, 1200);
+    // Langsung pindah ke layar tugas — flash sukses bisa terlihat sebagai
+    // "balik ke awal" kalau user menyentuh layar dalam jendela 1.2 dtk.
+    // Tampilkan konfirmasi via toast saja.
+    setAuthed(true);
+    setSuccessFlash(false);
+    toast.success("Masuk pegawai berhasil", { duration: 1500 });
     // Pastikan posisi scroll kembali ke atas halaman tugas.
     if (typeof window !== "undefined") {
       try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
@@ -447,6 +447,7 @@ function PublicPrepPage() {
     setItems([]);
     setPin("");
     pinRef.current = "";
+    clearSession();
     if (typeof window !== "undefined") {
       try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
     }
