@@ -39,6 +39,8 @@ export type MessageRow = {
   deleted_at: string | null;
   reply_to_id?: string | null;
   attachment_duration_sec?: number | null;
+  starred_by?: string[] | null;
+  pinned_at?: string | null;
 };
 
 export function useMyUserId() {

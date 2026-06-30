@@ -53,6 +53,66 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_notes: {
+        Row: {
+          body: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          source_message_id: string | null
+          title: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          source_message_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          source_message_id?: string | null
+          title?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      chat_quick_replies: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          shortcut: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          shortcut: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          shortcut?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       conversation_members: {
         Row: {
           archived_at: string | null
@@ -715,8 +775,10 @@ export type Database = {
           deleted_at: string | null
           edited_at: string | null
           id: string
+          pinned_at: string | null
           reply_to_id: string | null
           sender_id: string
+          starred_by: string[]
         }
         Insert: {
           attachment_duration_sec?: number | null
@@ -730,8 +792,10 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          pinned_at?: string | null
           reply_to_id?: string | null
           sender_id: string
+          starred_by?: string[]
         }
         Update: {
           attachment_duration_sec?: number | null
@@ -745,8 +809,10 @@ export type Database = {
           deleted_at?: string | null
           edited_at?: string | null
           id?: string
+          pinned_at?: string | null
           reply_to_id?: string | null
           sender_id?: string
+          starred_by?: string[]
         }
         Relationships: [
           {
@@ -2330,10 +2396,12 @@ export type Database = {
         Returns: undefined
       }
       message_hide_for_me: { Args: { _msg: string }; Returns: undefined }
+      message_pin: { Args: { _id: string; _on: boolean }; Returns: undefined }
       message_react: {
         Args: { _emoji: string; _msg: string; _on: boolean }
         Returns: undefined
       }
+      message_star: { Args: { _id: string; _on: boolean }; Returns: undefined }
       move_to_dlq: {
         Args: {
           dlq_name: string

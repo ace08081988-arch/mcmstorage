@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
-  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban,
+  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,15 @@ import { ProPaywall } from "@/components/ProPaywall";
 import { AttachMenu } from "@/components/chat/AttachMenu";
 import { MessageAttachment, CardBlock, decodeCard } from "@/components/chat/MessageAttachment";
 import { previewText } from "@/lib/chat-cards";
+import { SelectionToolbar } from "@/components/chat/SelectionToolbar";
+import { PinnedBanner } from "@/components/chat/PinnedBanner";
+import { MessageInfoDialog } from "@/components/chat/MessageInfoDialog";
+import { SecurityCodeDialog } from "@/components/chat/SecurityCodeDialog";
+import { TranslateDialog } from "@/components/chat/TranslateDialog";
+import { SaveAsNoteDialog } from "@/components/chat/SaveAsNoteDialog";
+import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog";
+import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
+import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 
 function ChatProGate() {
   const ent = useEntitlement();
@@ -104,6 +113,41 @@ function ChatRoomPage() {
   const [replyTo, setReplyTo] = useState<MessageRow | null>(null);
   const [editing, setEditing] = useState<{ id: string; body: string } | null>(null);
   const [longPressMsg, setLongPressMsg] = useState<MessageRow | null>(null);
+  // Selection mode + extra dialogs
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [bulkDeleteOpen, setBulkDeleteOpen] = useState(false);
+  const [infoOpen, setInfoOpen] = useState(false);
+  const [securityOpen, setSecurityOpen] = useState(false);
+  const [translateSource, setTranslateSource] = useState<string | null>(null);
+  const [noteSource, setNoteSource] = useState<MessageRow | null>(null);
+  const [qrSource, setQrSource] = useState<string | null>(null);
+  const starMut = useStarMessage(conversationId);
+  const pinMut = usePinMessage(conversationId);
+
+  const toggleSelect = useCallback((m: MessageRow) => {
+    if (m.deleted_at) return;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(m.id)) next.delete(m.id);
+      else next.add(m.id);
+      return next;
+    });
+  }, []);
+  const clearSelection = useCallback(() => setSelectedIds(new Set()), []);
+  const selectionMode = selectedIds.size > 0;
+
+  // Jump-to-message helper (used by pinned banner)
+  const jumpToMessage = useCallback((id: string) => {
+    const el = document.getElementById(`msg-${id}`);
+    if (!el) return;
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+    el.classList.add("ring-2", "ring-amber-400");
+    setTimeout(() => el.classList.remove("ring-2", "ring-amber-400"), 1500);
+  }, []);
+
+  // Quick reply popover state (driven by `/shortcut` in composer)
+  const [qrQuery, setQrQuery] = useState<string | null>(null);
+
   const longPressTimer = useRef<number | null>(null);
   const longPressFired = useRef(false);
   const startLongPress = useCallback((m: MessageRow) => {
@@ -115,7 +159,12 @@ function ChatRoomPage() {
       if (typeof navigator !== "undefined" && "vibrate" in navigator) {
         try { navigator.vibrate?.(15); } catch { /* noop */ }
       }
-      setLongPressMsg(m);
+      // Long-press now enters selection mode and selects this message.
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        next.add(m.id);
+        return next;
+      });
     }, 500);
   }, []);
   const cancelLongPress = useCallback(() => {
@@ -422,6 +471,22 @@ function ChatRoomPage() {
     return out;
   }, [visibleMessages]);
 
+  // Pinned messages (sorted by pinned_at desc, max 3)
+  const pinnedMessages = useMemo(() => {
+    return (visibleMessages ?? [])
+      .filter((m) => !!m.pinned_at && !m.deleted_at)
+      .sort((a, b) => (b.pinned_at ?? "").localeCompare(a.pinned_at ?? ""))
+      .slice(0, 3);
+  }, [visibleMessages]);
+
+  const selectedMessages = useMemo(
+    () => (messages ?? []).filter((m) => selectedIds.has(m.id)),
+    [messages, selectedIds],
+  );
+  const oneSelected = selectedMessages.length === 1;
+  const onlyOne = oneSelected ? selectedMessages[0] : null;
+  const allMineSelected = selectedMessages.length > 0 && selectedMessages.every((m) => m.sender_id === myId);
+
   // Re-scroll when outbox changes too.
   useEffect(() => {
     const el = scrollerRef.current;
@@ -430,6 +495,78 @@ function ChatRoomPage() {
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col">
+      {selectionMode ? (
+        <SelectionToolbar
+          count={selectedIds.size}
+          oneSelected={oneSelected}
+          allMine={allMineSelected}
+          onClose={clearSelection}
+          onReply={() => {
+            if (onlyOne) {
+              setReplyTo(onlyOne);
+              setEditing(null);
+            }
+            clearSelection();
+          }}
+          onInfo={() => {
+            if (onlyOne) setInfoOpen(true);
+          }}
+          onDelete={() => setBulkDeleteOpen(true)}
+          onCopy={() => {
+            const text = selectedMessages
+              .map((m) => previewText(m.body) ?? (m.attachment_name ? `📎 ${m.attachment_name}` : ""))
+              .filter(Boolean)
+              .join("\n\n");
+            navigator.clipboard?.writeText(text).then(
+              () => toast.success(`${selectedMessages.length} pesan disalin`),
+              () => toast.error("Gagal menyalin"),
+            );
+            clearSelection();
+          }}
+          onForward={async () => {
+            const text = selectedMessages
+              .map((m) => {
+                const sp = profiles.data?.get(m.sender_id);
+                const name = sp?.display_name || sp?.email || "Pengguna";
+                return `${name}: ${previewText(m.body) ?? "(lampiran)"}`;
+              })
+              .join("\n");
+            const res = await shareToWhatsApp({ text });
+            notifyShareResult(res);
+            clearSelection();
+          }}
+          onSecurityCode={() => setSecurityOpen(true)}
+          onStar={() => {
+            const turnOn = selectedMessages.some((m) => !(m.starred_by ?? []).includes(myId ?? ""));
+            selectedMessages.forEach((m) => {
+              starMut.mutate({ messageId: m.id, on: turnOn });
+            });
+            toast.success(turnOn ? "Diberi bintang" : "Bintang dilepas");
+            clearSelection();
+          }}
+          onPin={() => {
+            if (!onlyOne) return;
+            const turnOn = !onlyOne.pinned_at;
+            pinMut.mutate(
+              { messageId: onlyOne.id, on: turnOn },
+              {
+                onSuccess: () => toast.success(turnOn ? "Pesan disematkan" : "Pin dilepas"),
+                onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal"),
+              },
+            );
+            clearSelection();
+          }}
+          onSaveNote={() => {
+            if (onlyOne) setNoteSource(onlyOne);
+          }}
+          onSaveQuickReply={() => {
+            if (onlyOne) setQrSource(previewText(onlyOne.body) ?? "");
+          }}
+          onTranslate={() => {
+            if (onlyOne) setTranslateSource(previewText(onlyOne.body) ?? "");
+          }}
+        />
+      ) : (
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background/95 px-3 py-2 backdrop-blur">
         <Button
           variant="ghost"
@@ -487,6 +624,14 @@ function ChatRoomPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
+      )}
+
+      <PinnedBanner
+        conversationId={conversationId}
+        pinned={pinnedMessages}
+        onJump={jumpToMessage}
+        canUnpin
+      />
 
       <div ref={scrollerRef} className="flex-1 space-y-3 overflow-y-auto p-3">
         {isLoading ? (
@@ -522,14 +667,18 @@ function ChatRoomPage() {
                   }
                 }
                 return (
-                  <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                  <div
+                    key={m.id}
+                    id={`msg-${m.id}`}
+                    className={`flex transition ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
+                  >
                     <div className={`group relative flex max-w-[80%] items-start gap-1 ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
                         className={`rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm ${
                           mine
                             ? "rounded-br-sm bg-primary text-primary-foreground"
                             : "rounded-bl-sm bg-muted text-foreground"
-                        } select-none touch-manipulation`}
+                        } select-none touch-manipulation ${selectedIds.has(m.id) ? "ring-2 ring-primary" : ""}`}
                         onPointerDown={(e) => {
                           if (e.pointerType === "mouse" && e.button !== 0) return;
                           startLongPress(m);
@@ -537,14 +686,22 @@ function ChatRoomPage() {
                         onPointerUp={cancelLongPress}
                         onPointerLeave={cancelLongPress}
                         onPointerCancel={cancelLongPress}
+                        onClick={() => {
+                          if (selectionMode) toggleSelect(m);
+                        }}
                         onContextMenu={(e) => {
                           if (m.deleted_at) return;
                           e.preventDefault();
-                          setLongPressMsg(m);
+                          toggleSelect(m);
                         }}
                       >
                         {showSender ? (
                           <div className="mb-0.5 text-[10px] font-semibold opacity-80">{senderName}</div>
+                        ) : null}
+                        {m.pinned_at && !m.deleted_at ? (
+                          <div className={`mb-0.5 inline-flex items-center gap-1 text-[10px] ${mine ? "text-primary-foreground/80" : "text-amber-600"}`}>
+                            <Pin className="h-3 w-3" /> Disematkan
+                          </div>
                         ) : null}
                         {replyMsg ? (
                           <div
@@ -601,6 +758,9 @@ function ChatRoomPage() {
                         )}
                         <div className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                           {m.edited_at && !m.deleted_at ? <span className="italic">diedit</span> : null}
+                          {(m.starred_by ?? []).length > 0 && !m.deleted_at ? (
+                            <Star className="h-3 w-3 fill-current text-amber-400" aria-label="Berbintang" />
+                          ) : null}
                           <span>{fmtTime(m.created_at)}</span>
                           {mine && !m.deleted_at ? (
                             (() => {
@@ -871,13 +1031,31 @@ function ChatRoomPage() {
             </Button>
           </div>
         ) : null}
-        <div className="flex items-end gap-2">
+        <div className="relative flex items-end gap-2">
+          {qrQuery !== null ? (
+            <QuickReplyPopover
+              query={qrQuery}
+              onClose={() => setQrQuery(null)}
+              onPick={(qr) => {
+                setBody((prev) => {
+                  const re = /\/(\w*)$/;
+                  const m = re.exec(prev);
+                  if (!m) return prev + qr.body;
+                  return prev.slice(0, prev.length - m[0].length) + qr.body;
+                });
+                setQrQuery(null);
+              }}
+            />
+          ) : null}
           <AttachMenu conversationId={conversationId} disabled={chatBlocked} onSent={() => { void othersRead.refetch(); }} />
           <Textarea
             value={body}
             onChange={(e) => {
-              setBody(e.target.value);
-              if (e.target.value.length > 0) emitTyping();
+              const v = e.target.value;
+              setBody(v);
+              if (v.length > 0) emitTyping();
+              const m = /\/(\w*)$/.exec(v);
+              setQrQuery(m ? m[1] : null);
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
@@ -1011,6 +1189,102 @@ function ChatRoomPage() {
           onLeft={() => navigate({ to: "/chat" })}
         />
       ) : null}
+
+      <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus {selectedMessages.length} pesan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Pilih cara penghapusan. “Hapus untuk semua orang” hanya berlaku untuk pesan yang Anda kirim.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              disabled={hideMsg.isPending}
+              onClick={async () => {
+                for (const m of selectedMessages) {
+                  await new Promise<void>((resolve) =>
+                    hideMsg.mutate(m.id, { onSuccess: () => resolve(), onError: () => resolve() }),
+                  );
+                }
+                toast.success(`${selectedMessages.length} pesan disembunyikan`);
+                setBulkDeleteOpen(false);
+                clearSelection();
+              }}
+            >
+              <EyeOff className="mr-2 h-4 w-4" /> Hapus untuk saya
+            </Button>
+            {allMineSelected ? (
+              <Button
+                variant="destructive"
+                className="w-full justify-start"
+                disabled={deleteMsg.isPending}
+                onClick={async () => {
+                  for (const m of selectedMessages) {
+                    await new Promise<void>((resolve) =>
+                      deleteMsg.mutate(
+                        { id: m.id, attachment_path: m.attachment_path },
+                        { onSuccess: () => resolve(), onError: () => resolve() },
+                      ),
+                    );
+                  }
+                  toast.success(`${selectedMessages.length} pesan dihapus`);
+                  setBulkDeleteOpen(false);
+                  clearSelection();
+                }}
+              >
+                <Trash2 className="mr-2 h-4 w-4" /> Hapus untuk semua orang
+              </Button>
+            ) : null}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <MessageInfoDialog
+        open={infoOpen}
+        onOpenChange={setInfoOpen}
+        message={onlyOne}
+        senderName={(() => {
+          if (!onlyOne) return "";
+          const sp = profiles.data?.get(onlyOne.sender_id);
+          return onlyOne.sender_id === myId
+            ? "Anda"
+            : (sp?.display_name || sp?.email || "Pengguna");
+        })()}
+        readAtMs={othersRead.data}
+      />
+
+      <SecurityCodeDialog
+        open={securityOpen}
+        onOpenChange={setSecurityOpen}
+        conversationId={conversationId}
+        memberIds={members.data ?? []}
+      />
+
+      <TranslateDialog
+        open={translateSource !== null}
+        onOpenChange={(v) => { if (!v) setTranslateSource(null); }}
+        source={translateSource ?? ""}
+      />
+
+      <SaveAsNoteDialog
+        open={noteSource !== null}
+        onOpenChange={(v) => { if (!v) setNoteSource(null); }}
+        defaultBody={previewText(noteSource?.body ?? null) ?? ""}
+        conversationId={conversationId}
+        sourceMessageId={noteSource?.id}
+      />
+
+      <SaveAsQuickReplyDialog
+        open={qrSource !== null}
+        onOpenChange={(v) => { if (!v) setQrSource(null); }}
+        defaultBody={qrSource ?? ""}
+      />
     </div>
   );
 }
