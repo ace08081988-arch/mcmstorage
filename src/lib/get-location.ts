@@ -88,9 +88,11 @@ async function getNative(): Promise<GeoResult> {
     if (e instanceof GeoError) throw e;
     // fall through to coords attempt
   }
+  // Sampling: kumpulkan beberapa fix lalu pilih akurasi terbaik agar
+  // koordinat lebih stabil dan tidak "loncat" karena reading pertama
+  // sering berasal dari cache jaringan/WiFi (akurasi 500-2000 m).
   try {
-    const pos = await Geolocation.getCurrentPosition({ enableHighAccuracy: useHighAccuracy, timeout: 20000, maximumAge: 30000 });
-    return { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
+    return await watchBestNative(useHighAccuracy);
   } catch (e) {
     const firstError = toGeoError(e);
     if (useHighAccuracy && (firstError.code === "timeout" || firstError.code === "unavailable")) {
@@ -103,6 +105,95 @@ async function getNative(): Promise<GeoResult> {
     }
     throw firstError;
   }
+}
+
+// Target akurasi & jendela waktu pengambilan sampel GPS.
+// TARGET_ACC_M: berhenti lebih awal saat sudah cukup presisi.
+// MIN_WAIT_MS:  minimum sampling supaya tidak pakai fix pertama yang kasar.
+// MAX_WAIT_MS:  batas atas, kembalikan sampel terbaik yang ada.
+const TARGET_ACC_M = 15;
+const MIN_WAIT_MS = 3500;
+const MAX_WAIT_MS = 15000;
+
+async function watchBestNative(highAccuracy: boolean): Promise<GeoResult> {
+  const { Geolocation } = await import("@capacitor/geolocation");
+  return new Promise<GeoResult>((resolve, reject) => {
+    let best: GeoResult | null = null;
+    let watchId: string | null = null;
+    let settled = false;
+    const startedAt = Date.now();
+
+    const finish = (kind: "ok" | "err", payload: GeoResult | unknown) => {
+      if (settled) return;
+      settled = true;
+      if (watchId) { try { void Geolocation.clearWatch({ id: watchId }); } catch { /* noop */ } }
+      clearTimeout(maxTimer);
+      if (kind === "ok") resolve(payload as GeoResult);
+      else reject(payload);
+    };
+
+    const maxTimer = setTimeout(() => {
+      if (best) finish("ok", best);
+      else finish("err", new GeoError("timeout", "GPS tidak merespons tepat waktu."));
+    }, MAX_WAIT_MS);
+
+    Geolocation.watchPosition(
+      { enableHighAccuracy: highAccuracy, timeout: MAX_WAIT_MS, maximumAge: 0 },
+      (pos, err) => {
+        if (err) {
+          if (!best) finish("err", err);
+          return;
+        }
+        if (!pos) return;
+        const sample: GeoResult = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+        if (!best || (sample.accuracy ?? Infinity) < (best.accuracy ?? Infinity)) best = sample;
+        const elapsed = Date.now() - startedAt;
+        if (best && (best.accuracy ?? Infinity) <= TARGET_ACC_M && elapsed >= MIN_WAIT_MS) {
+          finish("ok", best);
+        }
+      },
+    ).then((id) => { watchId = id; }).catch((e) => finish("err", e));
+  });
+}
+
+function watchBestWeb(options: PositionOptions): Promise<GeoResult> {
+  return new Promise<GeoResult>((resolve, reject) => {
+    let best: GeoResult | null = null;
+    let settled = false;
+    const startedAt = Date.now();
+    const id = navigator.geolocation.watchPosition(
+      (pos) => {
+        const sample: GeoResult = {
+          lat: pos.coords.latitude,
+          lng: pos.coords.longitude,
+          accuracy: pos.coords.accuracy,
+        };
+        if (!best || (sample.accuracy ?? Infinity) < (best.accuracy ?? Infinity)) best = sample;
+        const elapsed = Date.now() - startedAt;
+        if (best && (best.accuracy ?? Infinity) <= TARGET_ACC_M && elapsed >= MIN_WAIT_MS) {
+          finish("ok", best);
+        }
+      },
+      (err) => { if (!best) finish("err", toGeoError(err)); },
+      options,
+    );
+    const maxTimer = setTimeout(() => {
+      if (best) finish("ok", best);
+      else finish("err", new GeoError("timeout", "GPS tidak merespons tepat waktu."));
+    }, MAX_WAIT_MS);
+    function finish(kind: "ok" | "err", payload: GeoResult | unknown) {
+      if (settled) return;
+      settled = true;
+      try { navigator.geolocation.clearWatch(id); } catch { /* noop */ }
+      clearTimeout(maxTimer);
+      if (kind === "ok") resolve(payload as GeoResult);
+      else reject(payload);
+    }
+  });
 }
 
 async function getNativeIfAllowed(): Promise<GeoResult | null> {
@@ -161,7 +252,7 @@ async function getWeb(): Promise<GeoResult> {
   }
 
   try {
-    return await getWebPosition({ enableHighAccuracy: true, timeout: 15000, maximumAge: 0 });
+    return await watchBestWeb({ enableHighAccuracy: true, timeout: MAX_WAIT_MS, maximumAge: 0 });
   } catch (e) {
     const firstError = toGeoError(e);
     if (firstError.code === "timeout" || firstError.code === "unavailable") {
