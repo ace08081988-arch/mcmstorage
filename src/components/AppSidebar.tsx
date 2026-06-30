@@ -14,33 +14,69 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
+  SidebarSeparator,
   useSidebar,
 } from "@/components/ui/sidebar";
 import { CompactModeToggle } from "@/components/CompactModeToggle";
 import { ReduceMotionToggle } from "@/components/ReduceMotionToggle";
 import { useConversations } from "@/lib/chat";
 
-const items = [
-  { title: "Beranda", url: "/", icon: Home },
-  { title: "Gudang & Supplier", url: "/gudang", icon: Package },
-  { title: "Penyiapan Ecer", url: "/ecer", icon: Scale },
-  { title: "Penyiapan Request", url: "/request", icon: PackagePlus },
-  { title: "Penyiapan Produk", url: "/tugas", icon: ClipboardList },
-  { title: "Buat Tugas Manual", url: "/tugas-baru", icon: ClipboardCheck },
-  { title: "Chat", url: "/chat", icon: MessageCircle },
-  { title: "Catatan", url: "/catatan", icon: NotebookPen },
-  { title: "Balas Cepat", url: "/balas-cepat", icon: MessageSquarePlus },
-  { title: "Buku Alamat", url: "/buku-alamat", icon: ContactRound },
-  { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
-  { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
-  { title: "Langganan", url: "/langganan", icon: Sparkles },
-  { title: "Profil Akun", url: "/profil", icon: User },
-  { title: "Notifikasi", url: "/notifikasi", icon: BellRing },
-  { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },
-  { title: "Audit Rute", url: "/audit", icon: ClipboardCheck },
-  { title: "Diagnostik", url: "/diagnostics", icon: Activity },
-  { title: "Antrian Email", url: "/email-queue", icon: Mail },
-] as const;
+/**
+ * Menu dikelompokkan supaya tidak terbaca seperti daftar panjang yang
+ * datar. Tiap grup punya satu peran kerja yang jelas; urutan dalam grup
+ * mengikuti alur harian operator (Beranda → Operasional → Komunikasi →
+ * Keuangan → Akun → Sistem).
+ */
+type NavItem = { title: string; url: string; icon: typeof Home };
+const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
+  {
+    label: "Utama",
+    items: [{ title: "Beranda", url: "/", icon: Home }],
+  },
+  {
+    label: "Operasional",
+    items: [
+      { title: "Gudang & Supplier", url: "/gudang", icon: Package },
+      { title: "Penyiapan Ecer", url: "/ecer", icon: Scale },
+      { title: "Penyiapan Request", url: "/request", icon: PackagePlus },
+      { title: "Penyiapan Produk", url: "/tugas", icon: ClipboardList },
+      { title: "Buat Tugas Manual", url: "/tugas-baru", icon: ClipboardCheck },
+      { title: "Pratinjau Label", url: "/label-preview", icon: Tags },
+    ],
+  },
+  {
+    label: "Komunikasi",
+    items: [
+      { title: "Chat", url: "/chat", icon: MessageCircle },
+      { title: "Catatan", url: "/catatan", icon: NotebookPen },
+      { title: "Balas Cepat", url: "/balas-cepat", icon: MessageSquarePlus },
+      { title: "Buku Alamat", url: "/buku-alamat", icon: ContactRound },
+      { title: "Notifikasi", url: "/notifikasi", icon: BellRing },
+    ],
+  },
+  {
+    label: "Keuangan",
+    items: [
+      { title: "Hutang & Piutang", url: "/hutang-piutang", icon: Wallet },
+      { title: "Langganan", url: "/langganan", icon: Sparkles },
+    ],
+  },
+  {
+    label: "Akun",
+    items: [
+      { title: "Profil Akun", url: "/profil", icon: User },
+      { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },
+    ],
+  },
+  {
+    label: "Sistem",
+    items: [
+      { title: "Audit Rute", url: "/audit", icon: ClipboardCheck },
+      { title: "Diagnostik", url: "/diagnostics", icon: Activity },
+      { title: "Antrian Email", url: "/email-queue", icon: Mail },
+    ],
+  },
+];
 
 export function AppSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
@@ -123,64 +159,99 @@ export function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      <SidebarHeader className="px-3 py-3 text-sm font-semibold">MCM Storage</SidebarHeader>
-      <SidebarContent>
-        <SidebarGroup>
-          <SidebarGroupLabel>Menu</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {items.map((item) => (
-                <SidebarMenuItem key={item.url}>
-                  <SidebarMenuButton
-                    asChild
-                    isActive={isActive(item.url)}
-                    tooltip={item.title}
-                    className="group/3d relative overflow-hidden rounded-lg border border-transparent bg-gradient-to-b from-sidebar-accent/40 to-sidebar/0 shadow-[inset_0_1px_0_0_hsl(0_0%_100%/0.06),0_1px_2px_0_hsl(0_0%_0%/0.25)] transition-all duration-150 hover:-translate-y-px hover:border-sidebar-border/60 hover:from-sidebar-accent/70 hover:shadow-[inset_0_1px_0_0_hsl(0_0%_100%/0.1),0_4px_10px_-2px_hsl(0_0%_0%/0.35)] active:translate-y-px active:shadow-[inset_0_2px_4px_0_hsl(0_0%_0%/0.35)] data-[active=true]:border-primary/40 data-[active=true]:bg-gradient-to-b data-[active=true]:from-primary/25 data-[active=true]:to-primary/5 data-[active=true]:shadow-[inset_0_1px_0_0_hsl(0_0%_100%/0.15),0_6px_14px_-4px_color-mix(in_oklab,var(--primary)_55%,transparent)]"
-                  >
-                    <Link
-                      to={item.url}
-                      preload="intent"
-                      className="flex items-center gap-2"
-                      onPointerDown={(e) => {
-                        if (!isMobile) return;
-                        // Hanya tap utama (mouse kiri / sentuh) — biarkan ctrl/shift-click default
-                        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-                        e.preventDefault();
-                        setOpenMobile(false);
-                        if (pathname !== item.url) {
-                          void navigate({ to: item.url });
-                        }
-                      }}
-                    >
-                      <item.icon className="h-4 w-4 shrink-0 drop-shadow-[0_1px_0_hsl(0_0%_0%/0.4)] transition-transform duration-150 group-hover/3d:scale-110 group-active/3d:scale-95" />
-                      <span className="drop-shadow-[0_1px_0_hsl(0_0%_0%/0.35)]">{item.title}</span>
-                      {item.url === "/chat" && (chatCounts.unread > 0 || chatCounts.archivedUnread > 0) ? (
-                        <span className="ml-auto flex items-center gap-1 group-data-[collapsible=icon]:hidden">
-                          {chatCounts.unread > 0 ? (
-                            <span
-                              title={`${chatCounts.unread} pesan belum dibaca`}
-                              className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-none text-primary-foreground"
-                            >
-                              {chatCounts.unread > 99 ? "99+" : chatCounts.unread}
+      <SidebarHeader className="border-b border-sidebar-border/60 px-3 py-3.5">
+        <div className="flex items-center gap-2.5">
+          <span
+            aria-hidden
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-[12px] font-bold tracking-tight text-primary-foreground shadow-sm ring-1 ring-primary/20"
+          >
+            MCM
+          </span>
+          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+            <div className="truncate text-[13px] font-semibold leading-tight tracking-tight">
+              MCM Storage
+            </div>
+            <div className="truncate text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              Manajemen Operasional
+            </div>
+          </div>
+        </div>
+      </SidebarHeader>
+      <SidebarContent className="gap-0">
+        {groups.map((group, gi) => (
+          <SidebarGroup key={group.label} className="px-2 py-1.5">
+            {gi > 0 ? (
+              <SidebarSeparator className="mx-0 mb-1.5 group-data-[collapsible=icon]:hidden" />
+            ) : null}
+            <SidebarGroupLabel className="px-2 text-[10px] font-semibold uppercase tracking-[0.16em] text-muted-foreground/80">
+              {group.label}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-0.5">
+                {group.items.map((item) => {
+                  const active = isActive(item.url);
+                  return (
+                    <SidebarMenuItem key={item.url}>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={active}
+                        tooltip={item.title}
+                        className="group/nav relative h-9 rounded-md px-2.5 font-medium text-sidebar-foreground/85 transition-colors duration-150 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:shadow-[inset_2px_0_0_0_var(--primary)]"
+                      >
+                        <Link
+                          to={item.url}
+                          preload="intent"
+                          className="flex items-center gap-2.5"
+                          onPointerDown={(e) => {
+                            if (!isMobile) return;
+                            if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+                            e.preventDefault();
+                            setOpenMobile(false);
+                            if (pathname !== item.url) {
+                              void navigate({ to: item.url });
+                            }
+                          }}
+                        >
+                          <item.icon
+                            className={
+                              "h-[17px] w-[17px] shrink-0 transition-colors " +
+                              (active
+                                ? "text-primary"
+                                : "text-muted-foreground group-hover/nav:text-sidebar-foreground")
+                            }
+                          />
+                          <span className="truncate text-[13px] tracking-[-0.005em]">
+                            {item.title}
+                          </span>
+                          {item.url === "/chat" && (chatCounts.unread > 0 || chatCounts.archivedUnread > 0) ? (
+                            <span className="ml-auto flex items-center gap-1 group-data-[collapsible=icon]:hidden">
+                              {chatCounts.unread > 0 ? (
+                                <span
+                                  title={`${chatCounts.unread} pesan belum dibaca`}
+                                  className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-none text-primary-foreground"
+                                >
+                                  {chatCounts.unread > 99 ? "99+" : chatCounts.unread}
+                                </span>
+                              ) : null}
+                              {chatCounts.archivedUnread > 0 ? (
+                                <span
+                                  title={`${chatCounts.archivedUnread} pesan belum dibaca di arsip`}
+                                  className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full border border-sidebar-border bg-sidebar-accent/60 px-1.5 text-[10px] font-medium leading-none text-muted-foreground"
+                                >
+                                  {chatCounts.archivedUnread > 99 ? "99+" : chatCounts.archivedUnread}
+                                </span>
+                              ) : null}
                             </span>
                           ) : null}
-                          {chatCounts.archivedUnread > 0 ? (
-                            <span
-                              title={`${chatCounts.archivedUnread} pesan belum dibaca di arsip`}
-                              className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full border border-sidebar-border bg-sidebar-accent/60 px-1.5 text-[10px] font-medium leading-none text-muted-foreground"
-                            >
-                              {chatCounts.archivedUnread > 99 ? "99+" : chatCounts.archivedUnread}
-                            </span>
-                          ) : null}
-                        </span>
-                      ) : null}
-                    </Link>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
+                        </Link>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        ))}
       </SidebarContent>
       <SidebarFooter className="px-2 pb-2 group-data-[collapsible=icon]:hidden">
         <div
