@@ -1031,13 +1031,31 @@ function ChatRoomPage() {
             </Button>
           </div>
         ) : null}
-        <div className="flex items-end gap-2">
+        <div className="relative flex items-end gap-2">
+          {qrQuery !== null ? (
+            <QuickReplyPopover
+              query={qrQuery}
+              onClose={() => setQrQuery(null)}
+              onPick={(qr) => {
+                setBody((prev) => {
+                  const re = /\/(\w*)$/;
+                  const m = re.exec(prev);
+                  if (!m) return prev + qr.body;
+                  return prev.slice(0, prev.length - m[0].length) + qr.body;
+                });
+                setQrQuery(null);
+              }}
+            />
+          ) : null}
           <AttachMenu conversationId={conversationId} disabled={chatBlocked} onSent={() => { void othersRead.refetch(); }} />
           <Textarea
             value={body}
             onChange={(e) => {
-              setBody(e.target.value);
-              if (e.target.value.length > 0) emitTyping();
+              const v = e.target.value;
+              setBody(v);
+              if (v.length > 0) emitTyping();
+              const m = /\/(\w*)$/.exec(v);
+              setQrQuery(m ? m[1] : null);
             }}
             onKeyDown={(e) => {
               if (e.key === "Enter" && !e.shiftKey) {
