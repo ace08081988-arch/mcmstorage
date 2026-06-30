@@ -506,6 +506,12 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             <Button variant="ghost" onClick={() => { setPending(null); setStatuses([]); }} disabled={!!busy}>
               <X className="mr-1 h-4 w-4" /> Batal
             </Button>
+            {statuses.some((s) => s?.preflight) && !busy ? (
+              <Button variant="outline" onClick={removeInvalidPending}>
+                <X className="mr-1 h-4 w-4" />
+                Buang yang ditolak ({statuses.filter((s) => s?.preflight).length})
+              </Button>
+            ) : null}
             {statuses.some((s) => s?.state === "error") && !busy ? (
               <Button variant="secondary" onClick={() => confirmSendPending(true)}>
                 <RotateCcw className="mr-1 h-4 w-4" />
