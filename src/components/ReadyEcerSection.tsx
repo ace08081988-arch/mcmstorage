@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, History, Undo2 } from "lucide-react";
 import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
+import { buildSendKey, withIdempotency, getIdem } from "@/lib/idempotency";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
 // Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
@@ -919,12 +920,22 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       toast.info("Belum ada kiriman pegawai untuk judul ini.");
       return;
     }
+    const take = shots.slice(0, 6);
+    const idemKey = buildSendKey({ channel: "wa", ids: take.map((s) => s.id) });
+    const existing = getIdem(idemKey);
+    if (existing && existing.status !== "failed") {
+      toast.info(
+        existing.status === "in-flight"
+          ? "Pengiriman WA untuk paket ini sedang berjalan…"
+          : "Paket ini baru saja terkirim ke WA. Klik diabaikan untuk hindari kiriman ganda.",
+      );
+      return;
+    }
     setSending(true);
     setSendStatus("sending");
     setSendError(null);
     try {
       const files: File[] = [];
-      const take = shots.slice(0, 6); // batasi jumlah kiriman; tiap kiriman bisa berisi banyak foto
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
@@ -952,22 +963,33 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         ...(take.find((s) => s.location_url) ? [`📍 ${take.find((s) => s.location_url)!.location_url}`] : []),
       ].join("\n");
       const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
-      const res = await shareToWhatsApp({ text, title: r.name, files });
-      notifyShareResult(res);
-      if (res.status === "shared" || res.status === "fallback") {
-        markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success" });
-        setSendStatus("success");
-      } else if (res.status === "cancelled") {
-        setSendStatus("cancelled");
-      } else {
-        setSendStatus("failed");
-        setSendError(res.error);
-      }
+      const res = await withIdempotency(idemKey, {
+        onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
+        run: async () => {
+          const r0 = await shareToWhatsApp({ text, title: r.name, files });
+          notifyShareResult(r0);
+          if (r0.status === "shared" || r0.status === "fallback") {
+            markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
+            return { status: "shared" as const, error: undefined as string | undefined, raw: r0 };
+          }
+          if (r0.status === "cancelled") {
+            // Cancellation is not a "done" — clear so the user can retry.
+            throw new Error("__cancelled__");
+          }
+          throw new Error(r0.error || "share-failed");
+        },
+      });
+      void res;
+      setSendStatus("success");
     } catch (err) {
       const msg = (err as Error).message;
-      toast.error(`Gagal kirim WA: ${msg}`);
-      setSendStatus("failed");
-      setSendError(msg);
+      if (msg === "__cancelled__") {
+        setSendStatus("cancelled");
+      } else {
+        toast.error(`Gagal kirim WA: ${msg}`);
+        setSendStatus("failed");
+        setSendError(msg);
+      }
     } finally {
       setSending(false);
     }
@@ -986,13 +1008,24 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       toast.info("Belum ada kiriman pegawai untuk judul ini.");
       return;
     }
+    const take = shots.slice(0, 6);
+    const idemKey = buildSendKey({ channel: "chat", conversationId, ids: take.map((s) => s.id) });
+    const existing = getIdem(idemKey);
+    if (existing && existing.status !== "failed") {
+      toast.info(
+        existing.status === "in-flight"
+          ? "Pengiriman ke chat sedang berjalan…"
+          : "Paket ini baru saja terkirim ke chat ini. Klik diabaikan untuk hindari kiriman ganda.",
+      );
+      setPickChatOpen(false);
+      return;
+    }
     setPickChatOpen(false);
     setChatSending(true);
     setSendStatus("sending");
     setSendError(null);
     const tid = toast.loading(`Mengirim ke ${convTitle}…`);
     try {
-      const take = shots.slice(0, 6);
       // Kumpulkan file dari setiap shot (foto-foto sudah punya signed URL via load()).
       const chatShots: { id: string; file: File; caption?: string }[] = [];
       for (const s of take) {
@@ -1019,22 +1052,24 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         ...lines,
       ].join("\n");
 
-      const res = await shareToChat({
-        conversationId,
-        caption,
-        locationUrl: firstLocation,
-        shots: chatShots,
-        markIds: take.map((s) => s.id),
+      const res = await withIdempotency(idemKey, {
+        onSkip: () => ({ status: "shared" as const, messageCount: 0, error: undefined as string | undefined }),
+        run: async () => {
+          const r0 = await shareToChat({
+            conversationId,
+            caption,
+            locationUrl: firstLocation,
+            shots: chatShots,
+            markIds: take.map((s) => s.id),
+            idemKey,
+          });
+          if (r0.status !== "shared") throw new Error(r0.error || "share-failed");
+          return r0;
+        },
       });
       toast.dismiss(tid);
-      if (res.status === "shared") {
-        setSendStatus("success");
-        toast.success(`Terkirim ke ${convTitle} (${res.messageCount} pesan).`);
-      } else {
-        setSendStatus("failed");
-        setSendError(res.error);
-        toast.error(`Gagal kirim ke chat: ${res.error}`);
-      }
+      setSendStatus("success");
+      toast.success(`Terkirim ke ${convTitle}${"messageCount" in res && res.messageCount ? ` (${res.messageCount} pesan)` : ""}.`);
     } catch (err) {
       toast.dismiss(tid);
       const msg = (err as Error).message;
