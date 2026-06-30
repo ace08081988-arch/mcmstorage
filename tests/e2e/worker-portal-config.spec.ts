@@ -172,4 +172,57 @@ test.describe("Portal pegawai · konfigurasi TTL & lock", () => {
 
     await ctx.close();
   });
+
+  test("nilai invalid → portal pakai default, tidak mengunci akses secara salah", async ({
+    browser,
+  }) => {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    // Semua nilai di bawah ini melanggar `min` di WORKER_PORTAL_CONFIG_FIELDS
+    // sehingga sanitizer harus membuangnya dan fallback ke default operasional
+    // (maxAttempts=3, lockSeconds=60, sessionTtlMs=30 menit).
+    await injectConfig(page, {
+      sessionTtlMs: 10,
+      maxAttempts: 0,
+      lockSeconds: 1,
+      silentFailTolerance: 0,
+      lagThresholdSec: 1,
+      staleThresholdSec: 1,
+    });
+    await installStubs(page);
+
+    await page.goto(`/t/${TOKEN}`);
+    await expect(page.getByText(/Verifikasi PIN/i)).toBeVisible({ timeout: 10_000 });
+
+    const input = page.locator('input[inputmode="numeric"]').first();
+    const submit = page.getByRole("button", { name: /buka/i });
+
+    // 2x PIN salah — kalau maxAttempts invalid dipakai (=0), pengguna akan
+    // langsung terkunci. Default (3) harus dipertahankan, jadi masih ada
+    // sisa percobaan dan hint "dari 3".
+    await input.fill("000000");
+    await submit.click();
+    await expect(page.getByText(/Sisa percobaan.*dari 3/)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/dikunci 60 detik/)).toBeVisible();
+
+    await input.fill("000001");
+    await submit.click();
+    await expect(page.getByText(/Sisa percobaan.*dari 3/)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText(/Akses sementara dikunci/i)).toHaveCount(0);
+    await expect(submit).toBeEnabled();
+
+    // PIN benar harus tetap diterima dan masuk daftar tugas.
+    await input.fill(PIN);
+    await submit.click();
+    await expect(page.getByText("Beras Premium")).toBeVisible({ timeout: 10_000 });
+
+    // Reload cepat — sessionTtlMs invalid (=10 ms) tidak boleh memantulkan
+    // pegawai ke layar PIN; default 30 menit harus berlaku.
+    await page.waitForTimeout(500);
+    await page.reload();
+    await expect(page.getByText("Beras Premium")).toBeVisible({ timeout: 10_000 });
+    await expect(page.getByText(/Verifikasi PIN/i)).toHaveCount(0);
+
+    await ctx.close();
+  });
 });
