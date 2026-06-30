@@ -45,7 +45,7 @@ jobs:
         # artifact below.
         run: |
           mkdir -p artifacts
-          bun run test:chat-deleted --reporter=verbose --no-color 2>&1 | tee artifacts/vitest-output.log
+          bun run test:chat-deleted -- --reporter=verbose --no-color 2>&1 | tee artifacts/vitest-output.log
 
       - name: Capture snapshot diff vs committed baseline
         if: failure()
