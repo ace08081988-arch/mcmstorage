@@ -225,4 +225,83 @@ test.describe("Portal pegawai · konfigurasi TTL & lock", () => {
 
     await ctx.close();
   });
+
+  test("rt error → auto-resync menghormati cooldown, lalu pegawai dipantulkan ke layar PIN sesuai tolerance", async ({
+    browser,
+  }) => {
+    const ctx = await browser.newContext();
+    const page = await ctx.newPage();
+    // Cooldown kecil agar test selesai cepat tapi tetap di atas min (1000ms).
+    await injectConfig(page, {
+      lagThresholdSec: 5,
+      staleThresholdSec: 10,
+      lagCooldownMs: 1000,
+      staleCooldownBaseMs: 1000,
+      staleCooldownMaxMs: 4000,
+      silentFailTolerance: 2,
+      sessionTtlMs: 30 * 60 * 1000,
+      maxAttempts: 3,
+      lockSeconds: 60,
+    });
+
+    // Realtime sengaja diputus → rtStatus="error" → effect auto-resync
+    // langsung menganggap status "stale" tanpa harus menunggu umur data.
+    await page.route("**/realtime/v1/**", (r) => r.abort());
+    await page.route("**/rest/v1/rpc/prep_peek_task*", (r) => fulfillJson(r, PEEK_PAYLOAD));
+    await page.route("**/rest/v1/app_settings*", (r) =>
+      r.fulfill({ status: 200, contentType: "application/json", body: "[]" }),
+    );
+
+    // Hitung waktu tiap panggilan prep_get_task. Panggilan PERTAMA (auth via
+    // PIN) harus sukses; panggilan berikutnya (auto-resync) membalas "closed"
+    // agar silentFailRef menumpuk sampai tolerance terpenuhi.
+    const callTimestamps: number[] = [];
+    await page.route("**/rest/v1/rpc/prep_get_task*", async (route) => {
+      callTimestamps.push(Date.now());
+      const isFirst = callTimestamps.length === 1;
+      let pinOk = true;
+      try {
+        const post = route.request().postDataJSON() as { _pin?: string } | null;
+        pinOk = post?._pin === PIN;
+      } catch { /* anggap valid */ }
+      if (isFirst) {
+        await fulfillJson(route, pinOk ? TASK_PAYLOAD : { ok: false, error: "bad_pin" });
+        return;
+      }
+      await fulfillJson(route, { ok: false, error: "closed", status: "completed" });
+    });
+
+    await page.goto(`/t/${TOKEN}`);
+    await expect(page.getByText(/Verifikasi PIN/i)).toBeVisible({ timeout: 10_000 });
+
+    await page.locator('input[inputmode="numeric"]').first().fill(PIN);
+    await page.getByRole("button", { name: /buka/i }).click();
+    await expect(page.getByText("Beras Premium")).toBeVisible({ timeout: 10_000 });
+
+    // Tunggu hingga ≥3 panggilan: 1 auth + 2 auto-resync (cukup memicu
+    // tolerance=2 → kick). Polling sampai 20 dtk.
+    await expect.poll(() => callTimestamps.length, { timeout: 20_000, intervals: [500] }).toBeGreaterThanOrEqual(3);
+
+    // Cooldown sanity-check: jarak antar percobaan auto-resync (call #2 → #3)
+    // tidak boleh lebih cepat dari staleCooldownBaseMs (1000 ms). Pakai
+    // batas bawah longgar 800 ms untuk toleransi scheduler.
+    const gap = callTimestamps[2] - callTimestamps[1];
+    expect(gap, `gap auto-resync ${gap}ms harus ≥ cooldown`).toBeGreaterThanOrEqual(800);
+
+    // Setelah tolerance terpenuhi: layar "Tugas sudah ditutup pemilik" muncul,
+    // sessionStorage dibersihkan, dan tombol kembali ke PIN tersedia.
+    await expect(page.getByText(/Tugas sudah ditutup pemilik/i)).toBeVisible({ timeout: 15_000 });
+    const sessionLeft = await page.evaluate(
+      (key) => window.sessionStorage.getItem(key),
+      `prep_session:${TOKEN}`,
+    );
+    expect(sessionLeft).toBeNull();
+
+    // Kembali ke halaman PIN harus tersedia dan berfungsi.
+    await page.getByRole("button", { name: /Kembali ke halaman PIN/i }).click();
+    await expect(page.getByText(/Verifikasi PIN/i)).toBeVisible({ timeout: 5_000 });
+    await expect(page.getByText("Beras Premium")).toHaveCount(0);
+
+    await ctx.close();
+  });
 });
