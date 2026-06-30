@@ -403,6 +403,10 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
 
   async function confirmSendPending(retryOnly = false, onlyIds?: string[]) {
     if (!pending || pending.length === 0) return;
+    // Jika dialog konfirmasi hapus sedang terbuka saat user menekan "Coba lagi" /
+    // mengirim ulang sebagian, baseline snapshot ikut di-rebase agar delta menjadi 0
+    // dan perubahan status berikutnya dihitung relatif terhadap kondisi sekarang.
+    if (confirmDelete !== null && (retryOnly || onlyIds)) rebaseDeleteSnapshot();
     setBusy("upload");
     const cap = caption.trim();
     // ID yang akan dikirim: lewati yang sudah sukses dan yang gagal validasi (preflight).
