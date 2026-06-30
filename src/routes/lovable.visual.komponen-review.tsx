@@ -13,6 +13,92 @@ import { useState } from "react";
 
 const WIDTHS = [320, 360, 411, 480] as const;
 
+/* ──────────────── Ringkasan varian ──────────────── */
+
+type VariantRow = { label: string; props: string; note?: string };
+type ComponentSpec = { name: string; rows: VariantRow[] };
+
+const VARIANT_TABLE: ComponentSpec[] = [
+  {
+    name: "CocokPill",
+    rows: [
+      { label: "Berat gram kecil", props: "target=250, unit=\"g\"", note: "label pendek" },
+      { label: "Berat gram besar", props: "target=1000, unit=\"g\"", note: "4 digit angka" },
+      { label: "Satuan pcs", props: "target=12, unit=\"pcs\"", note: "non-berat" },
+    ],
+  },
+  {
+    name: "CountChip ({n} item)",
+    rows: [
+      { label: "Hitungan kecil", props: "count=12", note: "lebar minimum" },
+      { label: "Hitungan besar", props: "count=345", note: "tabular-nums" },
+      { label: "Hitungan tunggal", props: "count=1", note: "header dengan nama panjang" },
+    ],
+  },
+  {
+    name: "CategoryHeader",
+    rows: [
+      { label: "Nama normal", props: "name=\"Sembako\", count=12" },
+      { label: "Nama panjang (spasi)", props: "name=\"Kategori …terpotong rapi\", count=345", note: "uji wrapping" },
+      { label: "Nama panjang (no-space)", props: `name=LONG, count=1`, note: "uji break-anywhere" },
+    ],
+  },
+  {
+    name: "HeroCardMini",
+    rows: [
+      { label: "Produk normal", props: "name=\"Gulaku 1kg\", target=\"250 g\", ref=A1B2…", note: "4 badge" },
+      { label: "Produk nama panjang", props: "name=LONG, target=\"1000 g\", ref=9F8E…", note: "uji truncate badge" },
+    ],
+  },
+  {
+    name: "DetailRow",
+    rows: [
+      { label: "Nilai panjang + sub", props: "label=\"Produk gudang\", value=LONG, sub=\"Stok…\"", note: "break-anywhere" },
+      { label: "Nilai pendek + sub", props: "label=\"Target per kotak\", value=\"250 g\"", note: "sub multi-info" },
+      { label: "Jumlah", props: "label=\"Jumlah penyiapan\", value=\"20 kotak\"", note: "persentase" },
+      { label: "Ref mono tanpa sub", props: "label=\"ID judul…\", value=mono", note: "tanpa sub" },
+    ],
+  },
+];
+
+function VariantTable() {
+  return (
+    <section className="mx-auto mb-4 max-w-6xl overflow-hidden rounded-xl border bg-card">
+      <header className="border-b bg-muted/40 px-3 py-2">
+        <h2 className="text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground">
+          Ringkasan varian & props
+        </h2>
+      </header>
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[640px] border-collapse text-left text-xs">
+          <thead className="bg-muted/30 text-[11px] uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 font-semibold">Komponen</th>
+              <th className="px-3 py-2 font-semibold">Varian</th>
+              <th className="px-3 py-2 font-semibold">Props</th>
+              <th className="px-3 py-2 font-semibold">Catatan</th>
+            </tr>
+          </thead>
+          <tbody>
+            {VARIANT_TABLE.flatMap((c) =>
+              c.rows.map((r, i) => (
+                <tr key={`${c.name}-${i}`} className="border-t align-top">
+                  <td className="px-3 py-2 font-semibold text-foreground">
+                    {i === 0 ? c.name : <span className="text-muted-foreground/60">↳</span>}
+                  </td>
+                  <td className="px-3 py-2 text-foreground">{r.label}</td>
+                  <td className="px-3 py-2 font-mono text-[11px] text-muted-foreground">{r.props}</td>
+                  <td className="px-3 py-2 text-muted-foreground">{r.note ?? "—"}</td>
+                </tr>
+              )),
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export const Route = createFileRoute("/lovable/visual/komponen-review")({
   component: KomponenReviewPage,
   head: () => ({
@@ -221,6 +307,8 @@ function KomponenReviewPage() {
           <span>{dark ? "Terang" : "Gelap"}</span>
         </button>
       </header>
+
+      <VariantTable />
 
       <div className="mx-auto grid max-w-6xl gap-4 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
         {WIDTHS.map((w) => (
