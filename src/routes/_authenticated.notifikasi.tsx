@@ -546,11 +546,11 @@ function RecentNotificationsCard({
               size="sm"
               variant="ghost"
               onClick={handleMarkAll}
-              title="Tandai semua sudah dibaca"
+              title={`Tandai ${unreadCount} notifikasi sesuai filter aktif sebagai dibaca`}
               className="h-8 px-2 text-xs"
             >
               <Check className="mr-1 size-3.5" />
-              Tandai dibaca
+              Tandai dibaca ({unreadCount})
             </Button>
           )}
           <Button
