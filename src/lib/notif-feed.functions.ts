@@ -149,3 +149,81 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
     items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     return { items: items.slice(0, 40), generatedAt: new Date().toISOString() };
   });
+
+/**
+ * Tandai satu item notifikasi sebagai sudah dibaca.
+ *   - chat:<messageId>  → set conversation_members.last_read_at ≥ message.created_at
+ *   - system:<alertId>  → set prep_pin_alerts.acknowledged_at = now()
+ *   - tugas/order       → no server-side read state (akan ditangani di klien)
+ */
+export const markNotificationRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: { id: string }) => {
+    if (!data || typeof data.id !== "string" || !data.id.includes(":")) {
+      throw new Error("invalid_id");
+    }
+    return data;
+  })
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const [kind, rawId] = data.id.split(":", 2);
+    if (kind === "chat") {
+      const { data: msg } = await supabase
+        .from("messages")
+        .select("conversation_id, created_at")
+        .eq("id", rawId)
+        .maybeSingle();
+      if (!msg) return { ok: false, reason: "message_not_found" as const };
+      const { data: member } = await supabase
+        .from("conversation_members")
+        .select("last_read_at")
+        .eq("conversation_id", msg.conversation_id)
+        .eq("user_id", userId)
+        .maybeSingle();
+      const next = msg.created_at as string;
+      if (member?.last_read_at && new Date(member.last_read_at) >= new Date(next)) {
+        return { ok: true, skipped: true as const };
+      }
+      const { error } = await supabase
+        .from("conversation_members")
+        .update({ last_read_at: next })
+        .eq("conversation_id", msg.conversation_id)
+        .eq("user_id", userId);
+      if (error) throw error;
+      return { ok: true };
+    }
+    if (kind === "system") {
+      const { error } = await supabase
+        .from("prep_pin_alerts")
+        .update({ acknowledged_at: new Date().toISOString() })
+        .eq("id", rawId)
+        .eq("owner_user_id", userId)
+        .is("acknowledged_at", null);
+      if (error) throw error;
+      return { ok: true };
+    }
+    return { ok: true, skipped: true as const };
+  });
+
+/** Tandai semua percakapan dibaca + acknowledge semua peringatan PIN. */
+export const markAllNotificationsRead = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { supabase, userId } = context;
+    const nowIso = new Date().toISOString();
+    const [c, s] = await Promise.all([
+      supabase
+        .from("conversation_members")
+        .update({ last_read_at: nowIso })
+        .eq("user_id", userId)
+        .is("archived_at", null),
+      supabase
+        .from("prep_pin_alerts")
+        .update({ acknowledged_at: nowIso })
+        .eq("owner_user_id", userId)
+        .is("acknowledged_at", null),
+    ]);
+    if (c.error) throw c.error;
+    if (s.error) throw s.error;
+    return { ok: true };
+  });
