@@ -676,9 +676,11 @@ function ChatRoomPage() {
                     <div className={`group relative flex max-w-[80%] items-start gap-1 ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
                         className={`rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm ${
-                          mine
-                            ? "rounded-br-sm bg-primary text-primary-foreground"
-                            : "rounded-bl-sm bg-muted text-foreground"
+                          m.deleted_at
+                            ? `${mine ? "rounded-br-sm" : "rounded-bl-sm"} bg-muted/60 text-muted-foreground border border-dashed border-border`
+                            : mine
+                              ? "rounded-br-sm bg-primary text-primary-foreground"
+                              : "rounded-bl-sm bg-muted text-foreground"
                         } select-none touch-manipulation ${selectedIds.has(m.id) ? "ring-2 ring-primary" : ""}`}
                         onPointerDown={(e) => {
                           if (e.pointerType === "mouse" && e.button !== 0) return;
@@ -726,15 +728,27 @@ function ChatRoomPage() {
                           </div>
                         ) : null}
                         {m.deleted_at ? (
-                          <div
-                            className={`flex items-center gap-1.5 italic ${
-                              mine ? "text-primary-foreground/80" : "text-muted-foreground"
-                            }`}
-                            aria-label={mine ? "Anda menghapus pesan ini" : "Pesan ini telah dihapus"}
-                          >
-                            <Ban className="h-3.5 w-3.5 shrink-0 opacity-80" />
-                            <span>{mine ? "Anda menghapus pesan ini" : "Pesan ini telah dihapus"}</span>
-                          </div>
+                          (() => {
+                            const hadAttachment = !!(m.attachment_path || m.attachment_mime || m.attachment_name);
+                            const label = mine ? "Anda menghapus pesan ini" : "Pesan ini telah dihapus";
+                            return (
+                              <div
+                                className="flex flex-col gap-0.5 italic text-muted-foreground"
+                                aria-label={label}
+                                title={`Dihapus ${new Date(m.deleted_at).toLocaleString("id-ID")}`}
+                              >
+                                <div className="flex items-center gap-1.5">
+                                  <Ban className="h-3.5 w-3.5 shrink-0 opacity-80" />
+                                  <span>{label}</span>
+                                </div>
+                                {hadAttachment ? (
+                                  <div className="ml-5 text-[11px] not-italic opacity-80">
+                                    Lampiran ikut dihapus
+                                  </div>
+                                ) : null}
+                              </div>
+                            );
+                          })()
                         ) : (
                           (() => {
                             const card = decodeCard(m.body);
@@ -757,12 +771,25 @@ function ChatRoomPage() {
                             );
                           })()
                         )}
-                        <div className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
+                        <div
+                          className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${
+                            m.deleted_at
+                              ? "text-muted-foreground/80"
+                              : mine
+                                ? "text-primary-foreground/70"
+                                : "text-muted-foreground"
+                          }`}
+                          title={
+                            m.deleted_at
+                              ? `Dikirim ${new Date(m.created_at).toLocaleString("id-ID")} · Dihapus ${new Date(m.deleted_at).toLocaleString("id-ID")}`
+                              : new Date(m.created_at).toLocaleString("id-ID")
+                          }
+                        >
                           {m.edited_at && !m.deleted_at ? <span className="italic">diedit</span> : null}
                           {(m.starred_by ?? []).length > 0 && !m.deleted_at ? (
                             <Star className="h-3 w-3 fill-current text-amber-400" aria-label="Berbintang" />
                           ) : null}
-                          <span>{fmtTime(m.created_at)}</span>
+                          <span>{fmtTime(m.deleted_at ?? m.created_at)}</span>
                           {mine && !m.deleted_at ? (
                             (() => {
                               const sentMs = new Date(m.created_at).getTime();
