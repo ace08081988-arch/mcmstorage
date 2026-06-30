@@ -167,6 +167,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     let done = 0;
     setProgress({ done, total });
     let anyError = false;
+    let failedCount = 0;
     let firstCaptionConsumed = retryOnly
       ? statuses.findIndex((s) => s?.state === "sent") !== -1 // caption sudah ikut item pertama yang sukses
       : false;
@@ -199,6 +200,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         onSent?.();
       } catch (e) {
         anyError = true;
+        failedCount += 1;
         const msg = e instanceof Error ? e.message : "Gagal mengunggah";
         setStatuses((prev) => {
           const next = [...prev];
@@ -212,6 +214,11 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     setBusy(null);
     setProgress(null);
     if (!anyError) {
+      const okCount = indices.length;
+      toast.success(
+        okCount > 1 ? `${okCount} lampiran terkirim` : "Lampiran terkirim",
+        { description: cap ? `Caption: "${cap.slice(0, 60)}${cap.length > 60 ? "…" : ""}"` : undefined },
+      );
       // Semua berhasil → tutup dialog setelah jeda kecil supaya status terlihat.
       setTimeout(() => {
         setPending(null);
@@ -219,7 +226,16 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         setStatuses([]);
       }, 300);
     } else {
-      toast.error(`${statuses.filter((s) => s?.state === "error").length || "Beberapa"} lampiran gagal — tekan "Coba lagi"`);
+      const failed = failedCount;
+      const ok = indices.length - failed;
+      toast.error(
+        failed > 1 ? `${failed} lampiran gagal diunggah` : "1 lampiran gagal diunggah",
+        {
+          description: ok > 0
+            ? `${ok} berhasil terkirim. Tekan "Coba lagi" untuk mengulang yang gagal.`
+            : `Tekan "Coba lagi" untuk mengulang.`,
+        },
+      );
     }
   }
 
