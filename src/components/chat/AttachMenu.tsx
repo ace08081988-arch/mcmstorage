@@ -1002,8 +1002,19 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       return (
                         <li key={p.id} className={`flex items-center justify-between gap-2 py-0.5 ${isLocked ? "opacity-60" : ""}`}>
                           <span className="min-w-0 flex-1 truncate" title={p.file.name}>
-                            • {p.file.name}
-                            {isLocked ? <span className="ml-1 text-[10px] italic text-amber-600 dark:text-amber-400">(dilewati)</span> : null}
+                            <span className="truncate">• {p.file.name}{isLocked ? <span className="ml-1 text-[10px] italic text-amber-600 dark:text-amber-400">(dilewati)</span> : null}</span>
+                            {startedAt && (st === "uploading" || st === "sent" || st === "error") ? (
+                              <span className="block text-[10px] text-muted-foreground">
+                                mulai {fmtStart(startedAt)}
+                                {elapsedMs != null ? ` · ${st === "uploading" ? "berjalan" : "selesai"} ${fmtDur(elapsedMs)}` : ""}
+                                {st === "uploading" && estMs != null ? (
+                                  <span className={isSlow ? "ml-1 font-medium text-amber-600 dark:text-amber-400" : "ml-1"}>
+                                    · est {fmtDur(estMs)}{remainMs != null && remainMs > 0 ? ` (sisa ~${fmtDur(remainMs)})` : remainMs != null && remainMs <= 0 ? " (melebihi estimasi)" : ""}
+                                  </span>
+                                ) : null}
+                                {st === "uploading" && estMs == null ? <span className="ml-1 italic">· estimasi belum tersedia</span> : null}
+                              </span>
+                            ) : null}
                           </span>
                           <span className="flex shrink-0 items-center gap-1">
                             <span className={`rounded-full border px-1.5 py-0 text-[9px] font-medium uppercase tracking-wide ${tone}`}>{label}</span>
