@@ -447,7 +447,9 @@ function PublicPrepPage() {
     setAuthed(false);
     setPin("");
     pinRef.current = "";
+    setSessionJustExpired(true);
     toast.info("Sesi PIN berakhir — silakan masuk ulang.");
+    focusPinInput();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, sessionExpiresAt, sessionSecondsLeft]);
 
