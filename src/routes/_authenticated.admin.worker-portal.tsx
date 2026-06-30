@@ -405,6 +405,11 @@ function AdminWorkerPortalPage() {
             <summary className="cursor-pointer text-muted-foreground">Lihat JSON</summary>
             <pre className="mt-2 overflow-auto rounded-md bg-muted p-3 text-xs">{JSON.stringify(testResult.effective, null, 2)}</pre>
           </details>
+          <PreviewPortalLauncher
+            effective={testResult.effective}
+            previewToken={previewToken}
+            setPreviewToken={setPreviewToken}
+          />
         </div>
       ) : null}
 
