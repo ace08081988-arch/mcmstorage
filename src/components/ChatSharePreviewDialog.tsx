@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { CheckCircle2, Loader2, MapPin, Send, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, Send, XCircle, AlertTriangle, RefreshCw, ShieldAlert } from "lucide-react";
 
 export type ChatSharePreviewData = {
   conversationTitle: string;
@@ -12,6 +12,12 @@ export type ChatSharePreviewData = {
   /** Foto yang tidak bisa diunduh dari storage (gagal ditambahkan). */
   missingPhotos: number;
   mapsUrl: string | null;
+};
+
+/** Info duplikat saat idempotency key terdeteksi (klik ganda dalam ~5 menit). */
+export type ChatShareDuplicateInfo = {
+  at: number;
+  status: "in-flight" | "done" | "failed";
 };
 
 /** Status hidup pengiriman ke chat — dipakai untuk menampilkan progres di dialog. */
@@ -59,6 +65,8 @@ export function ChatSharePreviewDialog({
   onConfirm,
   status,
   onRetry,
+  duplicate,
+  onForceSend,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -67,6 +75,8 @@ export function ChatSharePreviewDialog({
   onConfirm: () => void;
   status?: ChatShareLiveStatus | null;
   onRetry?: () => void;
+  duplicate?: ChatShareDuplicateInfo | null;
+  onForceSend?: () => void;
 }) {
   const progressActive = !!status && (sending || !!status.outcome);
   const totalSteps = (status?.captionStep ? 1 : 0) + (status?.photosTotal ?? 0) + (status?.locationStep ? 1 : 0);
@@ -75,6 +85,9 @@ export function ChatSharePreviewDialog({
     + (status?.locationStatus === "ok" || status?.locationStatus === "fail" ? 1 : 0);
   const pct = totalSteps > 0 ? Math.min(100, Math.round((doneSteps / totalSteps) * 100)) : 0;
   const outcome = status?.outcome ?? null;
+  const dupActive = !!duplicate && duplicate.status !== "failed" && !progressActive && !outcome;
+  const dupAgoSec = duplicate ? Math.max(0, Math.round((Date.now() - duplicate.at) / 1000)) : 0;
+  const dupAgoLabel = dupAgoSec < 60 ? `${dupAgoSec} detik lalu` : `${Math.round(dupAgoSec / 60)} menit lalu`;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!sending) onOpenChange(o); }}>
@@ -88,6 +101,23 @@ export function ChatSharePreviewDialog({
 
         {data && (
           <div className="space-y-3 text-sm">
+            {duplicate && !progressActive && !outcome ? (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2.5 text-[12px] text-amber-900 dark:text-amber-200">
+                <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold">
+                    {duplicate.status === "in-flight"
+                      ? "Klik ganda terdeteksi — kiriman sebelumnya masih berjalan."
+                      : "Klik ganda terdeteksi — paket ini baru saja terkirim."}
+                  </div>
+                  <div className="mt-0.5 opacity-90">
+                    {duplicate.status === "in-flight"
+                      ? `Dimulai ${dupAgoLabel}. Tunggu hingga selesai agar tidak terkirim dua kali.`
+                      : `Dikirim ${dupAgoLabel}. Tombol "Kirim sekarang" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
+                  </div>
+                </div>
+              </div>
+            ) : null}
             <section>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Caption</h3>
               <pre className="max-h-48 overflow-auto whitespace-pre-wrap break-words rounded-md border bg-muted/40 p-2 font-sans text-[12.5px] leading-snug">{data.caption || "(kosong)"}</pre>
