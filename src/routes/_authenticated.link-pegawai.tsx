@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { publicTaskUrl, isValidShareToken, InvalidShareTokenError, genShareToken, genPin } from "@/lib/prep";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { confirm } from "@/lib/confirm";
+import { StatusBadge } from "@/components/StatusBadge";
 import {
   Dialog,
   DialogContent,
@@ -80,11 +81,11 @@ function computeAvailability(t: Task, now: number): Availability {
   return "active";
 }
 
-const BADGE: Record<Availability, { label: string; cls: string }> = {
-  active: { label: "Aktif", cls: "bg-emerald-500/15 text-emerald-700 ring-emerald-500/30 dark:text-emerald-400" },
-  expired: { label: "Kedaluwarsa", cls: "bg-amber-500/15 text-amber-700 ring-amber-500/30 dark:text-amber-400" },
-  done: { label: "Selesai", cls: "bg-sky-500/15 text-sky-700 ring-sky-500/30 dark:text-sky-400" },
-  cancelled: { label: "Dibatalkan", cls: "bg-muted text-muted-foreground ring-border" },
+const BADGE: Record<Availability, { label: string; variant: import("@/components/StatusBadge").StatusVariant }> = {
+  active: { label: "Aktif", variant: "siap" },
+  expired: { label: "Kedaluwarsa", variant: "menunggu" },
+  done: { label: "Selesai", variant: "info" },
+  cancelled: { label: "Dibatalkan", variant: "selesai" },
 };
 
 type SortKey = "newest" | "oldest" | "status";
@@ -773,9 +774,7 @@ function LinkPegawaiPage() {
                   <div className="min-w-0 flex-1">
                     <div className="flex flex-wrap items-center gap-1.5">
                       <div className="truncate text-sm font-semibold">{t.title}</div>
-                      <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ${badge.cls}`}>
-                        {badge.label}
-                      </span>
+                      <StatusBadge size="xs" variant={badge.variant}>{badge.label}</StatusBadge>
                       {justExtended && (
                         <span className="inline-flex shrink-0 animate-fade-in items-center gap-0.5 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
                           <Sparkles className="h-3 w-3" /> Baru diperpanjang

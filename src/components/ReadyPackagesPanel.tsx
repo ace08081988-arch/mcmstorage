@@ -6,6 +6,7 @@ import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { fmtBase, fmtItemQty } from "@/lib/stock-format";
+import { StatusBadge, type StatusVariant } from "@/components/StatusBadge";
 
 type Item = {
   id: string;
@@ -39,12 +40,12 @@ const STATUS_LABEL: Record<Pkg["status"], string> = {
   cancelled: "Batal",
   failed: "Gagal dikirim",
 };
-const STATUS_BADGE: Record<Pkg["status"], string> = {
-  ready: "bg-muted text-foreground",
-  sent: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
-  archived: "bg-blue-500/15 text-blue-700 dark:text-blue-300",
-  cancelled: "bg-amber-500/15 text-amber-700 dark:text-amber-300",
-  failed: "bg-destructive/15 text-destructive",
+const STATUS_VARIANT: Record<Pkg["status"], StatusVariant> = {
+  ready: "selesai",
+  sent: "siap",
+  archived: "info",
+  cancelled: "menunggu",
+  failed: "danger",
 };
 
 const signedCache = new Map<string, { url: string; exp: number }>();
@@ -441,9 +442,9 @@ function PackageCard({
         <div className="min-w-0 flex-1 space-y-1 text-xs">
           <div className="flex flex-wrap items-center gap-2">
             <div className="font-semibold tabular-nums text-sm">{fmtBase(pkg.qty_base, item.base_unit)}</div>
-            <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${STATUS_BADGE[pkg.status]}`}>
+            <StatusBadge size="xs" variant={STATUS_VARIANT[pkg.status]}>
               {STATUS_LABEL[pkg.status]}
-            </span>
+            </StatusBadge>
           </div>
           {pkg.location_url && /^https:\/\//i.test(pkg.location_url) && (
             <a href={pkg.location_url} target="_blank" rel="noreferrer" className="block truncate text-primary hover:underline">

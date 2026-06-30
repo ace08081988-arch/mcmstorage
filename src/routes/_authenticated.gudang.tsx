@@ -2139,9 +2139,9 @@ function RiwayatTab({
                       </div>
                     </div>
                     <div className="flex shrink-0 flex-col items-end gap-1">
-                      <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold ${p.payment_method === "hutang" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400" : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"}`}>
+                      <StatusBadge size="xs" variant={p.payment_method === "hutang" ? "hutang" : "lunas"}>
                         {p.payment_method === "hutang" ? "📝 Hutang" : "💵 Kas"}
-                      </span>
+                      </StatusBadge>
                       <button onClick={() => delPurchase(p.id)} className="rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">Hapus</button>
                     </div>
                   </div>
@@ -2298,9 +2298,9 @@ function HutangTab({
                         {new Date(d.created_at).toLocaleDateString("id-ID")} · {Number(d.package_qty)} × {rupiah(Number(d.price_per_package))}
                       </div>
                     </div>
-                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] font-semibold ${isPaid ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400" : "bg-amber-500/15 text-amber-700 dark:text-amber-400"}`}>
+                    <StatusBadge size="xs" variant={isPaid ? "lunas" : "hutang"}>
                       {isPaid ? "✓ Lunas" : "Hutang"}
-                    </span>
+                    </StatusBadge>
                   </div>
                   <div className="mt-1 grid grid-cols-3 gap-2 text-[11px]">
                     <div><span className="text-muted-foreground">Total </span><b>{rupiah(Number(d.total_cost))}</b></div>
