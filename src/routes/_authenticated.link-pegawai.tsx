@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { publicTaskUrl, isValidShareToken, InvalidShareTokenError, genShareToken, genPin } from "@/lib/prep";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { confirm } from "@/lib/confirm";
 import {
   Dialog,
   DialogContent,
@@ -760,7 +761,17 @@ function LinkPegawaiPage() {
                   )}
                   {avail === "expired" && (
                     <button
-                      onClick={() => void regenerateToken(t.id, { extendDays: 7 })}
+                      onClick={async () => {
+                        const ok = await confirm({
+                          title: "Perpanjang tugas & terbitkan token baru?",
+                          description:
+                            `Tugas "${t.title || "(tanpa judul)"}" akan diperpanjang +7 hari dan token lama akan diganti dengan token baru.\n\nLink lama tidak bisa lagi dibuka oleh pegawai. Lanjutkan?`,
+                          confirmText: "Ya, perpanjang",
+                          cancelText: "Batal",
+                        });
+                        if (!ok) return;
+                        void regenerateToken(t.id, { extendDays: 7 });
+                      }}
                       disabled={regenId === t.id}
                       title="Perpanjang masa aktif 7 hari & terbitkan token baru"
                       className="inline-flex h-8 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400"
