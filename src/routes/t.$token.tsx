@@ -9,6 +9,7 @@ import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldC
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
+import { getWorkerPortalConfig } from "@/lib/worker-portal-config";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
