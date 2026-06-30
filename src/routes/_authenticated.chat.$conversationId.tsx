@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { scheduleUndo } from "@/lib/undo-action";
 import { logChatDelete } from "@/lib/chat-delete-audit";
+import { optimisticDeleteMessages } from "@/lib/chat-optimistic-delete";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
   Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
@@ -110,6 +111,7 @@ function ChatRoomPage() {
   useChatHeartbeat();
   const { conversationId } = Route.useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data: myId } = useMyUserId();
   const { data: messages, isLoading } = useConversationMessages(conversationId);
   const deleteMsg = useDeleteMessage(conversationId);
