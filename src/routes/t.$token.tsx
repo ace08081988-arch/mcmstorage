@@ -331,12 +331,63 @@ function PublicPrepPage() {
       if (e.newValue == null) {
         setAttempts(0);
         setLockedUntil(null);
+        return;
       }
+      // Tab lain memperbarui status lock (mis. salah PIN / dikunci server).
+      try {
+        const parsed = JSON.parse(e.newValue) as AttemptState;
+        setAttempts(Number(parsed.attempts) || 0);
+        const until = parsed.lockedUntil && parsed.lockedUntil > Date.now() ? parsed.lockedUntil : null;
+        setLockedUntil(until);
+      }
+      catch { /* ignore corrupt payload */ }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // BroadcastChannel: sinkron sesi (countdown PIN) dan status lock antar-tab.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
+    const bc = new BroadcastChannel(`prep-portal:${token}`);
+    bcRef.current = bc;
+    bc.onmessage = (ev: MessageEvent<PortalMsg>) => {
+      const msg = ev.data;
+      if (!msg || typeof msg !== "object") return;
+      if (msg.type === "session") {
+        // Tab lain berhasil login / refresh sesi → samakan countdown.
+        setSessionStartedAt(msg.ts);
+        pinRef.current = msg.pin;
+        setPin(msg.pin);
+        setClosedReason(null);
+        if (!authed) {
+          // Belum punya data tugas di tab ini → ambil senyap.
+          setAuthed(true);
+          void silentRefresh();
+        }
+      } else if (msg.type === "session-clear") {
+        // Tab lain sign-out → ikut kembali ke layar PIN.
+        setSessionStartedAt(null);
+        if (authed) {
+          setAuthed(false);
+          setTask(null);
+          setItems([]);
+          setPin("");
+          pinRef.current = "";
+        }
+      } else if (msg.type === "attempts") {
+        setAttempts(Number(msg.attempts) || 0);
+        const until = msg.lockedUntil && msg.lockedUntil > Date.now() ? msg.lockedUntil : null;
+        setLockedUntil(until);
+      }
+    };
+    return () => {
+      try { bc.close(); } catch { /* noop */ }
+      if (bcRef.current === bc) bcRef.current = null;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   useEffect(() => {
     if (lockedUntil == null) return;
