@@ -320,23 +320,31 @@ function LinkPegawaiPage() {
     }
   }
 
-  async function regenerateToken(taskId: string) {
+  async function regenerateToken(taskId: string, opts?: { extendDays?: number }) {
     setRegenId(taskId);
+    const extendDays = opts?.extendDays;
+    const newExpiresAt = extendDays && extendDays > 0
+      ? new Date(Date.now() + extendDays * 24 * 60 * 60 * 1000).toISOString()
+      : null;
     // Coba beberapa kali jika token unik bentrok (sangat kecil kemungkinannya).
     let lastErr: string | null = null;
     for (let i = 0; i < 3; i++) {
       const next = genShareToken();
+      const patch: Record<string, unknown> = { share_token: next };
+      if (newExpiresAt) patch.expires_at = newExpiresAt;
       const { data, error } = await supabase
         .from("prep_tasks")
-        .update({ share_token: next })
+        .update(patch)
         .eq("id", taskId)
-        .select("id,share_token")
+        .select("id,share_token,expires_at")
         .maybeSingle();
       if (!error && data) {
-        setTasks((prev) => (prev ? prev.map((t) => (t.id === taskId ? { ...t, share_token: data.share_token } : t)) : prev));
+        setTasks((prev) => (prev ? prev.map((t) => (t.id === taskId ? { ...t, share_token: data.share_token, expires_at: data.expires_at ?? t.expires_at } : t)) : prev));
         setRegenAt((prev) => ({ ...prev, [taskId]: Date.now() }));
         setRegenId(null);
-        toast.success("Token diperbarui — link baru siap dipakai");
+        toast.success(newExpiresAt
+          ? `Link diperpanjang ${extendDays} hari & token baru aktif`
+          : "Token diperbarui — link baru siap dipakai");
         return;
       }
       lastErr = error?.message ?? "Tidak ada baris yang diperbarui (izin?)";
