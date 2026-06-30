@@ -33,7 +33,14 @@ import {
   isPushSupported,
   sendTestNotification,
 } from "@/lib/push-client";
-import { getRecentNotifications, type FeedItem } from "@/lib/notif-feed.functions";
+import {
+  getRecentNotifications,
+  markNotificationRead,
+  markAllNotificationsRead,
+  type FeedItem,
+} from "@/lib/notif-feed.functions";
+import { useQueryClient } from "@tanstack/react-query";
+import { Check } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/notifikasi")({
   ssr: false,
@@ -429,6 +436,27 @@ function RecentNotificationsCard({
   enabledKinds: NotifPrefs["enabledKinds"];
 }) {
   const fetchFeed = useServerFn(getRecentNotifications);
+  const markRead = useServerFn(markNotificationRead);
+  const markAll = useServerFn(markAllNotificationsRead);
+  const qc = useQueryClient();
+  const [localRead, setLocalRead] = useState<Set<string>>(() => {
+    try {
+      const raw = localStorage.getItem("notif-feed-read");
+      return new Set<string>(raw ? (JSON.parse(raw) as string[]) : []);
+    } catch {
+      return new Set<string>();
+    }
+  });
+  function persistLocalRead(next: Set<string>) {
+    setLocalRead(next);
+    try {
+      // Keep at most last 500 ids to avoid unbounded growth.
+      const arr = Array.from(next).slice(-500);
+      localStorage.setItem("notif-feed-read", JSON.stringify(arr));
+    } catch {
+      /* ignore */
+    }
+  }
   const { data, isLoading, isFetching, refetch, error } = useQuery({
     queryKey: ["notif-feed"],
     queryFn: () => fetchFeed(),
@@ -437,10 +465,40 @@ function RecentNotificationsCard({
   });
 
   const items = useMemo(
-    () => (data?.items ?? []).filter((it) => enabledKinds[it.kind]),
-    [data, enabledKinds],
+    () =>
+      (data?.items ?? [])
+        .filter((it) => enabledKinds[it.kind])
+        .map((it) => (localRead.has(it.id) ? { ...it, unread: false } : it)),
+    [data, enabledKinds, localRead],
   );
   const unreadCount = items.filter((i) => i.unread).length;
+
+  async function handleOpen(it: FeedItem) {
+    // Optimistic: hide unread dot immediately.
+    const next = new Set(localRead);
+    next.add(it.id);
+    persistLocalRead(next);
+    if (it.kind === "chat" || it.kind === "system") {
+      try {
+        await markRead({ data: { id: it.id } });
+      } catch {
+        /* non-fatal: badge will reconcile on next refetch */
+      }
+      qc.invalidateQueries({ queryKey: ["notif-feed"] });
+    }
+  }
+
+  async function handleMarkAll() {
+    const allIds = new Set(localRead);
+    for (const it of data?.items ?? []) allIds.add(it.id);
+    persistLocalRead(allIds);
+    try {
+      await markAll();
+    } catch {
+      /* ignore */
+    }
+    qc.invalidateQueries({ queryKey: ["notif-feed"] });
+  }
 
   return (
     <Card>
@@ -459,15 +517,29 @@ function RecentNotificationsCard({
             Diambil langsung dari chat, tugas pegawai, pesanan, dan peringatan sistem milik akun ini.
           </CardDescription>
         </div>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => refetch()}
-          disabled={isFetching}
-          title="Muat ulang"
-        >
-          <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
-        </Button>
+        <div className="flex shrink-0 items-center gap-1">
+          {unreadCount > 0 && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={handleMarkAll}
+              title="Tandai semua sudah dibaca"
+              className="h-8 px-2 text-xs"
+            >
+              <Check className="mr-1 size-3.5" />
+              Tandai dibaca
+            </Button>
+          )}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => refetch()}
+            disabled={isFetching}
+            title="Muat ulang"
+          >
+            <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
+          </Button>
+        </div>
       </CardHeader>
       <CardContent className="space-y-1">
         {isLoading ? (
@@ -517,11 +589,21 @@ function RecentNotificationsCard({
               <div key={it.id}>
                 {idx > 0 && <Separator />}
                 {it.href ? (
-                  <Link to={it.href} className="block rounded-md px-1 hover:bg-muted/50">
+                  <Link
+                    to={it.href}
+                    onClick={() => void handleOpen(it)}
+                    className="block rounded-md px-1 hover:bg-muted/50"
+                  >
                     {row}
                   </Link>
                 ) : (
-                  <div className="px-1">{row}</div>
+                  <button
+                    type="button"
+                    onClick={() => void handleOpen(it)}
+                    className="block w-full rounded-md px-1 text-left hover:bg-muted/50"
+                  >
+                    {row}
+                  </button>
                 )}
               </div>
             );
