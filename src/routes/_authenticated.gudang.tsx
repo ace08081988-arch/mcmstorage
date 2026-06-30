@@ -2728,10 +2728,6 @@ function PesananTab({
           {visible.map((o) => {
             const it = itemMap[o.item_id];
             const cust = o.customer_id ? custMap[o.customer_id] : null;
-            const badge =
-              o.status === "menunggu" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-              : o.status === "siap" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-              : "bg-muted text-muted-foreground";
             return (
               <li key={o.id} className="rounded-lg border bg-card p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -2746,7 +2742,7 @@ function PesananTab({
                     </div>
                     {o.note && <div className="text-[11px] text-muted-foreground">📌 {o.note}</div>}
                   </div>
-                  <span className={`shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold uppercase ${badge}`}>{o.status}</span>
+                  <StatusBadge status={o.status} />
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {o.status === "menunggu" && (
