@@ -31,10 +31,12 @@ export type ChatShareInput = {
   shots: ChatShareShot[];
   /** ID kiriman yang harus ditandai "terkirim" agar berpindah ke Riwayat. */
   markIds?: string[];
+  /** Idempotency key — diteruskan ke entri Riwayat agar bisa diaudit ulang. */
+  idemKey?: string;
 };
 
 export async function shareToChat(input: ChatShareInput): Promise<ChatShareResult> {
-  const { conversationId, caption, locationUrl, shots, markIds } = input;
+  const { conversationId, caption, locationUrl, shots, markIds, idemKey } = input;
   let count = 0;
 
   try {
@@ -79,14 +81,14 @@ export async function shareToChat(input: ChatShareInput): Promise<ChatShareResul
     }
 
     if (markIds && markIds.length > 0) {
-      markSent(markIds, { channel: "chat", mapsUrl: locationUrl ?? null, status: "success" });
+      markSent(markIds, { channel: "chat", mapsUrl: locationUrl ?? null, status: "success", idemKey });
     }
     return { status: "shared", messageCount: count };
   } catch (err) {
     const msg = (err as Error)?.message ?? "Unknown error";
     if (count > 0) {
       if (markIds && markIds.length > 0) {
-        markSent(markIds, { channel: "chat", mapsUrl: locationUrl ?? null, status: "success" });
+        markSent(markIds, { channel: "chat", mapsUrl: locationUrl ?? null, status: "success", idemKey });
       }
       return { status: "shared", messageCount: count };
     }
