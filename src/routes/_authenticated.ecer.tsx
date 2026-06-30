@@ -592,46 +592,30 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={onBack}><ChevronLeft className="h-4 w-4" /> Kembali</Button>
       </div>
+      <DetailHero
+        item={item}
+        title={title}
+        preps={preps}
+        onAdd={() => setAdding(true)}
+        onCreateTitle={onCreateTitle}
+        onCreateProduct={onCreateProduct}
+        onScrollToWorker={() => {
+          const el = document.getElementById(`worker-shots-${title.id}`);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "start" });
+            el.classList.add("ring-2", "ring-primary");
+            setTimeout(() => el.classList.remove("ring-2", "ring-primary"), 1500);
+          }
+        }}
+      />
       <Card>
-        <CardHeader className="pb-3">
-          <div className="flex items-start justify-between gap-2">
-            <div className="min-w-0">
-              <CardTitle className="truncate text-base">{title.name}</CardTitle>
-              <div className="mt-0.5 text-xs text-muted-foreground">
-                <Package className="mr-1 inline h-3 w-3" />
-                {item.name} · target <b>{title.target_grams} {displayUnit(item.name, title.unit_label)}</b> · stok produk {fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}
-              </div>
-              {title.note && <div className="mt-1 text-[11px] text-muted-foreground whitespace-pre-wrap">{title.note}</div>}
-            </div>
-            <div className="flex flex-wrap items-center gap-1.5">
-              {onCreateTitle && (
-                <Button size="sm" variant="outline" onClick={onCreateTitle} title="Judul ecer baru untuk produk yang sama">
-                  <Plus className="h-4 w-4" /> Judul lain
-                </Button>
-              )}
-              {onCreateProduct && (
-                <Button size="sm" variant="outline" onClick={onCreateProduct} title="Buat produk gudang baru lalu langsung dibuatkan judulnya">
-                  <Package className="h-4 w-4" /> Produk baru
-                </Button>
-              )}
-              <Button size="sm" onClick={() => setAdding(true)}><Plus className="h-4 w-4" /> Penyiapan</Button>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => {
-                  const el = document.getElementById(`worker-shots-${title.id}`);
-                  if (el) {
-                    el.scrollIntoView({ behavior: "smooth", block: "start" });
-                    el.classList.add("ring-2", "ring-primary");
-                    setTimeout(() => el.classList.remove("ring-2", "ring-primary"), 1500);
-                  }
-                }}
-                title="Lihat kiriman pegawai untuk judul ini"
-              >
-                <Users className="h-4 w-4" /> Penyiapan pegawai
-              </Button>
-            </div>
-          </div>
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-1.5 text-sm">
+            <Boxes className="h-4 w-4 text-primary" /> Daftar penyiapan
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+              {preps.length}
+            </span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {loading ? (
