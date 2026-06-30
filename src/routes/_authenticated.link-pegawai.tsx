@@ -758,7 +758,7 @@ function LinkPegawaiPage() {
                       Buat Ulang Token
                     </button>
                   )}
-                  {availability === "expired" && (
+                  {avail === "expired" && (
                     <button
                       onClick={() => void regenerateToken(t.id, { extendDays: 7 })}
                       disabled={regenId === t.id}
