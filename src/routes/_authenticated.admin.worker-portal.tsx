@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, RotateCcw, Save, ShieldCheck, ArrowLeft, FlaskConical, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, RotateCcw, Save, ShieldCheck, ArrowLeft, FlaskConical, CheckCircle2, AlertTriangle, ExternalLink, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   WORKER_PORTAL_DEFAULTS,
   WORKER_PORTAL_CONFIG_FIELDS,
   sanitizeWorkerPortalConfig,
+  encodePreviewConfigHash,
   type WorkerPortalConfig,
 } from "@/lib/worker-portal-config";
 
