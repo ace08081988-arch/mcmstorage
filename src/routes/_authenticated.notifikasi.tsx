@@ -609,6 +609,38 @@ function RecentNotificationsCard({
     }
     persistLocalRead(nextLocal);
 
+    // Optimistic: tandai unread=false di seluruh cache notif-feed untuk kind yang
+    // sedang difilter, sehingga badge & ringkasan di UI lain ikut update instan.
+    const affectedKindSet = new Set(activeKinds);
+    const affectedIdSet = new Set(
+      allItems
+        .filter((it) => enabledKinds[it.kind])
+        .map((it) => it.id),
+    );
+    type FeedPage = { items: FeedItem[]; nextCursor?: string | null };
+    qc.setQueriesData<{ pages: FeedPage[]; pageParams: unknown[] }>(
+      { queryKey: ["notif-feed"] },
+      (old) => {
+        if (!old?.pages) return old;
+        return {
+          ...old,
+          pages: old.pages.map((p) => ({
+            ...p,
+            items: p.items.map((it) =>
+              affectedKindSet.has(it.kind) && affectedIdSet.has(it.id)
+                ? { ...it, unread: false }
+                : it,
+            ),
+          })),
+        };
+      },
+    );
+    // Badge chat di sidebar memakai key ["chat","conversations"] — refresh segera
+    // agar angka unread mengikuti pemrosesan kategori chat.
+    if (affectedKindSet.has("chat")) {
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+    }
+
     // Tunda panggilan server agar bisa di-undo.
     const UNDO_MS = 5000;
     let undone = false;
@@ -621,6 +653,9 @@ function RecentNotificationsCard({
       } finally {
         setMarkingAll(false);
         qc.invalidateQueries({ queryKey: ["notif-feed"] });
+        if (affectedKindSet.has("chat")) {
+          qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+        }
       }
     }, UNDO_MS);
 
@@ -635,6 +670,9 @@ function RecentNotificationsCard({
           setMarkingAll(false);
           toast.info("Tindakan dibatalkan");
           qc.invalidateQueries({ queryKey: ["notif-feed"] });
+          if (affectedKindSet.has("chat")) {
+            qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+          }
         },
       },
     });
