@@ -1,0 +1,97 @@
+name: Chat Deleted Visual Regression
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Visual regression for the public chat-deleted harness
+# (PinnedBanner, MessageInfoDialog, conversation list).
+# Spec: tests/visual/chat-deleted.public.spec.ts (project: mobile-public).
+# No auth, no network — fixtures are deterministic.
+jobs:
+  chat-deleted-visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_URL: http://localhost:5173
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun global store
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-store-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-store-
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Start dev server
+        run: |
+          mkdir -p artifacts
+          (bun run dev --port 5173 --host 127.0.0.1 > artifacts/dev-server.log 2>&1 &) || \
+            (bunx vite --port 5173 --host 127.0.0.1 > artifacts/dev-server.log 2>&1 &)
+          # Wait for server (max ~90s)
+          for i in $(seq 1 90); do
+            if curl -sf http://localhost:5173/lovable/visual/chat-deleted?part=pinned > /dev/null; then
+              echo "dev server ready after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "Dev server failed to start"; tail -100 artifacts/dev-server.log; exit 1
+
+      - name: Run Playwright visual regression (chat-deleted public)
+        # Strict in CI: any pixel diff > maxDiffPixelRatio OR missing baseline fails.
+        run: bunx playwright test tests/visual/chat-deleted.public.spec.ts --project=mobile-public --reporter=list,html
+
+      - name: Collect screenshot diffs
+        if: failure()
+        run: |
+          mkdir -p artifacts/diffs
+          # Playwright writes -actual / -diff / -expected next to expected snapshots.
+          find test-results playwright-report tests/visual/__screenshots__ \
+            -type f \( -name '*-actual.png' -o -name '*-diff.png' -o -name '*-expected.png' \) \
+            -exec cp --parents {} artifacts/diffs/ \; 2>/dev/null || true
+          ls -la artifacts/diffs || true
+
+      - name: Upload Playwright report + diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: chat-deleted-visual-report
+          path: |
+            playwright-report/**
+            test-results/**
+            artifacts/**
+          retention-days: 14
+          if-no-files-found: ignore
