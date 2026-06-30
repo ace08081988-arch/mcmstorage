@@ -592,7 +592,7 @@ function DetailHero({
               <Scale className="h-3 w-3 shrink-0" />
               <span className="truncate">Detail penyiapan ecer</span>
             </div>
-            <h2 className="mt-1.5 break-words text-base font-bold leading-tight sm:text-xl">{title.name}</h2>
+            <h2 className="mt-2 break-words text-base font-bold leading-tight sm:text-xl">{title.name}</h2>
             <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[11px] leading-none text-primary-foreground/85">
               <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-white/15 px-2 py-1 backdrop-blur-sm">
                 <Package className="h-3 w-3 shrink-0" />
@@ -1026,7 +1026,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
 
   return (
     <Card id={`worker-shots-${title.id}`} className="scroll-mt-20 transition-shadow">
-      <CardHeader className="pb-3">
+      <CardHeader className="pb-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div className="min-w-0">
             <CardTitle className="flex items-center gap-1.5 text-sm">
