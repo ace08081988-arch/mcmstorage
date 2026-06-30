@@ -5,6 +5,7 @@
  */
 import type { SendPayloadSummary } from "@/lib/idempotency";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { createCoalescingScheduler, detectTuning } from "@/lib/multi-tab-throttle";
 
 const KEY = "send-log:v1";
 const EVENT = "send-log:changed";
@@ -302,38 +303,22 @@ export function useLiveSendLogStatus(
     let lastAppliedSig = "";
     const sigOf = (s: SendLogSyncStatus | null) =>
       s ? `${s.lastSyncedAt ?? 0}|${s.lastError ?? ""}|${s.lastSnapshot}` : "";
-    // Throttle storage event lintas tab. Nilai disesuaikan adaptif: pada
-    // perangkat lemah (CPU ≤ 4 core / RAM ≤ 2 GB / koneksi 2g–3g) kita
-    // perpanjang window agar burst write dari N tab benar-benar dikompres
-    // jadi satu apply, sementara perangkat normal tetap mendapat respons
-    // sub-100 ms. Leading-edge dipakai untuk event pertama supaya UI tidak
-    // terasa "tertinggal", trailing-edge untuk burst, dan `MAX_WAIT_MS`
-    // sebagai pengaman agar update tidak pernah ditahan lebih lama dari
-    // batas yang dirasakan operator.
-    type Tuning = { throttle: number; leading: number; maxWait: number };
-    const detectTuning = (): Tuning => {
-      try {
-        const nav = typeof navigator !== "undefined" ? navigator : null;
-        const cores = nav?.hardwareConcurrency ?? 8;
-        // deviceMemory tidak ada di semua browser → fallback 4 GB.
-        const mem = (nav as unknown as { deviceMemory?: number } | null)?.deviceMemory ?? 4;
-        const conn = (nav as unknown as { connection?: { effectiveType?: string; saveData?: boolean } } | null)?.connection;
-        const slowNet = conn?.saveData === true || (conn?.effectiveType ? /^(2g|slow-2g|3g)$/.test(conn.effectiveType) : false);
-        const slow = cores <= 4 || mem <= 2 || slowNet;
-        return slow
-          ? { throttle: 160, leading: 24, maxWait: 480 }
-          : { throttle: 60,  leading: 0,  maxWait: 200 };
-      } catch {
-        return { throttle: 80, leading: 0, maxWait: 240 };
-      }
-    };
-    const { throttle: STORAGE_THROTTLE_MS, leading: LEADING_MS, maxWait: MAX_WAIT_MS } = detectTuning();
-    let syncPending: ReturnType<typeof setTimeout> | null = null;
-    let readPending: ReturnType<typeof setTimeout> | null = null;
-    let syncFirstScheduledAt = 0;
-    let readFirstScheduledAt = 0;
-    let lastSyncAppliedAt = 0;
-    let lastReadAppliedAt = 0;
+    // Throttle storage event lintas tab — adaptif berdasarkan
+    // hardwareConcurrency / deviceMemory / connection (lihat
+    // `multi-tab-throttle.ts`). Burst write dari N tab dikompres jadi satu
+    // apply, leading-edge dipakai saat idle agar UI tidak terasa tertinggal,
+    // dan `maxWait` mencegah apply tertahan terlalu lama.
+    const tuning = detectTuning(typeof navigator !== "undefined" ? (navigator as unknown as Parameters<typeof detectTuning>[0]) : null);
+    const syncScheduler = createCoalescingScheduler(
+      () => { if (!cancelled) onSyncEvt("external"); },
+      tuning,
+      { shouldApply: () => !cancelled },
+    );
+    const readScheduler = createCoalescingScheduler(
+      () => { if (cancelled) return; read(); setLastSource("external"); },
+      tuning,
+      { shouldApply: () => !cancelled },
+    );
     const read = () => {
       if (cancelled) return;
       try {
@@ -396,63 +381,8 @@ export function useLiveSendLogStatus(
         }
       } catch { /* abaikan, read() berikutnya akan mencoba lagi */ }
     };
-    // Trailing-edge + leading-edge + maxWait. Burst dikompres jadi satu
-    // apply, tetapi event pertama dalam jendela "idle" diterapkan cepat
-    // dan tidak ada apply yang tertahan melewati `MAX_WAIT_MS`.
-    const scheduleSyncApply = () => {
-      const now = Date.now();
-      // Leading-edge: jika sudah lama tidak ada apply, jalankan hampir
-      // segera supaya UI responsif di perangkat lemah sekalipun.
-      if (!syncPending && now - lastSyncAppliedAt > MAX_WAIT_MS) {
-        syncFirstScheduledAt = now;
-        syncPending = setTimeout(() => {
-          syncPending = null;
-          if (cancelled) return;
-          lastSyncAppliedAt = Date.now();
-          onSyncEvt("external");
-        }, LEADING_MS);
-        return;
-      }
-      if (syncPending) {
-        // Hormati maxWait: kalau sudah menunggu terlalu lama, biarkan
-        // timer yang ada selesai — jangan reset.
-        if (now - syncFirstScheduledAt >= MAX_WAIT_MS) return;
-        return;
-      }
-      syncFirstScheduledAt = now;
-      syncPending = setTimeout(() => {
-        syncPending = null;
-        if (cancelled) return;
-        lastSyncAppliedAt = Date.now();
-        onSyncEvt("external");
-      }, STORAGE_THROTTLE_MS);
-    };
-    const scheduleReadEntries = () => {
-      const now = Date.now();
-      if (!readPending && now - lastReadAppliedAt > MAX_WAIT_MS) {
-        readFirstScheduledAt = now;
-        readPending = setTimeout(() => {
-          readPending = null;
-          if (cancelled) return;
-          lastReadAppliedAt = Date.now();
-          read();
-          setLastSource("external");
-        }, LEADING_MS);
-        return;
-      }
-      if (readPending) {
-        if (now - readFirstScheduledAt >= MAX_WAIT_MS) return;
-        return;
-      }
-      readFirstScheduledAt = now;
-      readPending = setTimeout(() => {
-        readPending = null;
-        if (cancelled) return;
-        lastReadAppliedAt = Date.now();
-        read();
-        setLastSource("external");
-      }, STORAGE_THROTTLE_MS);
-    };
+    const scheduleSyncApply = () => syncScheduler.schedule();
+    const scheduleReadEntries = () => readScheduler.schedule();
     // Storage event lintas tab — JANGAN tunggu visibility. Untuk SYNC_KEY
     // dan KEY pakai throttle trailing-edge (~80 ms) + guard signature agar
     // tidak menjadwalkan apply dobel saat beberapa tab menulis bersamaan.
@@ -477,8 +407,8 @@ export function useLiveSendLogStatus(
     const timer = pollMs > 0 ? setInterval(read, pollMs) : null;
     return () => {
       cancelled = true;
-      if (syncPending) { clearTimeout(syncPending); syncPending = null; }
-      if (readPending) { clearTimeout(readPending); readPending = null; }
+      syncScheduler.cancel();
+      readScheduler.cancel();
       window.removeEventListener(EVENT, onEvt);
       window.removeEventListener(SYNC_EVENT, onSyncEvtSelf);
       window.removeEventListener("storage", onCrossTabStorage);
