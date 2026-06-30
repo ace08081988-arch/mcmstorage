@@ -418,12 +418,14 @@ function LinkPegawaiPage() {
         }
         if (newExpiresAt) {
           const taskTitle = tasks?.find((t) => t.id === taskId)?.title ?? "(tanpa judul)";
-          setExtendedInfo({
+          setExtendedInfo((prev) => ({
             title: taskTitle,
             url: newUrl,
             expiresLabel,
             extendDays: extendDays!,
-          });
+            updatedAt: Date.now(),
+            seq: (prev?.seq ?? 0) + 1,
+          }));
         }
         toast.success(
           newExpiresAt
