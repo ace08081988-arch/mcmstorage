@@ -222,20 +222,22 @@ export function WaPreviewHost() {
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">
                   {dup!.status === "in-flight"
-                    ? "Klik ganda terdeteksi — kiriman WA sebelumnya masih berjalan."
+                    ? (crossChannel
+                        ? "Kiriman Chat untuk paket ini sedang berjalan."
+                        : "Klik ganda terdeteksi — kiriman WA sebelumnya masih berjalan.")
                     : "Klik ganda terdeteksi — paket ini baru saja dikirim ke WA."}
                 </div>
                 <div className="mt-0.5 opacity-90">
                   {dup!.status === "in-flight"
-                    ? `Dimulai ${dupAgoLabel}. Tunggu hingga selesai agar tidak terkirim dua kali.`
+                    ? `Dimulai ${dupAgoLabel}. Tombol "Kirim WA" dinonaktifkan hingga ${crossChannel ? "kiriman Chat" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
                     : `Dikirim ${dupAgoLabel}. Tombol "Kirim WA" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
                 </div>
                 <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
                   <dt className="font-medium opacity-80">Waktu</dt>
                   <dd className="break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
-                  {dup!.destination ? (<>
+                  {dup!.destination || crossChannel ? (<>
                     <dt className="font-medium opacity-80">Tujuan</dt>
-                    <dd className="break-words">{dup!.destination}</dd>
+                    <dd className="break-words">{dup!.destination ?? "—"}{crossChannel ? " · via Chat" : ""}</dd>
                   </>) : null}
                   <dt className="font-medium opacity-80">Status</dt>
                   <dd className="break-words">{dupStatusLabel}</dd>
