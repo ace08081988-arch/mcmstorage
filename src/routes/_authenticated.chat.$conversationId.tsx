@@ -558,12 +558,25 @@ function ChatRoomPage() {
                               {replyMsg.sender_id === myId ? "Anda" : replySenderName}
                             </div>
                             <div className="line-clamp-2 opacity-80">
-                              {replyMsg.deleted_at ? <em>(pesan dihapus)</em> : (previewText(replyMsg.body) ?? "(lampiran)")}
+                              {replyMsg.deleted_at ? (
+                                <span className="inline-flex items-center gap-1 italic">
+                                  <Ban className="h-3 w-3 opacity-80" />
+                                  Pesan dihapus
+                                </span>
+                              ) : (previewText(replyMsg.body) ?? "(lampiran)")}
                             </div>
                           </div>
                         ) : null}
                         {m.deleted_at ? (
-                          <em className="opacity-70">(pesan dihapus)</em>
+                          <div
+                            className={`flex items-center gap-1.5 italic ${
+                              mine ? "text-primary-foreground/80" : "text-muted-foreground"
+                            }`}
+                            aria-label={mine ? "Anda menghapus pesan ini" : "Pesan ini telah dihapus"}
+                          >
+                            <Ban className="h-3.5 w-3.5 shrink-0 opacity-80" />
+                            <span>{mine ? "Anda menghapus pesan ini" : "Pesan ini telah dihapus"}</span>
+                          </div>
                         ) : (
                           (() => {
                             const card = decodeCard(m.body);
