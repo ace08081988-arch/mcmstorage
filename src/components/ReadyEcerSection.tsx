@@ -995,6 +995,16 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
         ...lines,
       ].join("\n");
+      // Fingerprint payload WA: caption + link + daftar slot foto (path & nama).
+      // Stabil terhadap urutan dan dipakai untuk membandingkan dengan payload
+      // kiriman sebelumnya pada idempotency key yang sama.
+      const waFingerprint = payloadFingerprint({
+        channel: "wa",
+        text,
+        url: firstLocation ?? null,
+        expectedCount,
+        slots: slots.map((s) => ({ path: s.path, name: s.name })),
+      });
       const callShare = () => shareToWhatsApp({
             text,
             title: r.name,
@@ -1004,6 +1014,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             retryMissing,
             duplicate,
             previousLog,
+            currentFingerprint: waFingerprint,
           });
       // Saat duplikat aktif: bypass withIdempotency agar pratinjau (yang sekarang
       // memuat peringatan "Klik ganda terdeteksi") selalu tampil. Jika operator
@@ -1015,7 +1026,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         notifyShareResult(r0);
         if (r0.status === "shared" || r0.status === "fallback") {
           clearIdem(idemKey);
-          setIdem(idemKey, "done");
+          setIdem(idemKey, "done", undefined, waFingerprint);
           markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
           res = { status: "shared" };
         } else if (r0.status === "cancelled") {
@@ -1028,6 +1039,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         appendSendLog(idemKey, { kind: "info", label: `Mulai kirim WA ke "${r.name}"`, detail: `${take.length} kiriman · ${files.length}/${expectedCount} foto` });
         res = await withIdempotency(idemKey, {
           onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
+          fingerprint: waFingerprint,
           run: async () => {
           const r0 = await callShare();
           notifyShareResult(r0);
