@@ -979,6 +979,14 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       const st = statuses[p.id]?.state ?? "idle";
                       const preflight = statuses[p.id]?.preflight;
                       const isLocked = st === "uploading";
+                      const startedAt = statuses[p.id]?.startedAt;
+                      const endedAt = statuses[p.id]?.endedAt;
+                      const elapsedMs = startedAt
+                        ? (st === "uploading" ? nowTs - startedAt : (endedAt ?? nowTs) - startedAt)
+                        : null;
+                      const estMs = st === "uploading" ? estimateMsFor(p.file.size) : null;
+                      const remainMs = estMs != null && elapsedMs != null ? estMs - elapsedMs : null;
+                      const isSlow = st === "uploading" && estMs != null && elapsedMs != null && elapsedMs > estMs * 1.5;
                       const label =
                         st === "uploading" ? "uploading"
                           : st === "error" ? "gagal"
