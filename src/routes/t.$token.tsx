@@ -1018,6 +1018,31 @@ function PublicPrepPage() {
             onRefresh={() => { void manualResync(); }}
           />
         </div>
+        {sessionExpiresAt && (
+          <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 pb-2 text-[11px]">
+            <span
+              className={
+                "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 font-medium tabular-nums " +
+                (sessionSecondsLeft <= 60
+                  ? "border-destructive/30 bg-destructive/10 text-destructive"
+                  : sessionSecondsLeft <= 300
+                    ? "border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300"
+                    : "border-border bg-muted/60 text-muted-foreground")
+              }
+              title={`Sesi PIN aktif sampai ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
+            >
+              <Clock className="h-3 w-3" />
+              Sesi {sessionClock}
+            </span>
+            <span className="text-muted-foreground">
+              {sessionSecondsLeft <= 60
+                ? "Akan diminta PIN sebentar lagi"
+                : sessionSecondsLeft <= 300
+                  ? "Sesi PIN hampir habis"
+                  : `Re-login pada ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
+            </span>
+          </div>
+        )}
       </header>
 
       <div className="mx-auto max-w-2xl px-3 pt-4">
