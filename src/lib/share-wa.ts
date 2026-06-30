@@ -19,7 +19,12 @@ export type ShareInput = {
   retryMissing?: () => Promise<File[]>;
   /** Info klik ganda dari idempotency layer; saat hadir, pratinjau menampilkan
    *  peringatan "Klik ganda terdeteksi" dan tombol "Kirim ulang (paksa)". */
-  duplicate?: { at: number; status: "in-flight" | "done" | "failed" } | null;
+  duplicate?: {
+    at: number;
+    status: "in-flight" | "done" | "failed";
+    /** Label tujuan kiriman sebelumnya (mis. nama judul/nomor WA) untuk ditampilkan di banner. */
+    destination?: string;
+  } | null;
 };
 
 import { toast } from "sonner";
