@@ -14,7 +14,6 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RefundRouteImport } from './routes/refund'
-import { Route as PricingRouteImport } from './routes/pricing'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -29,7 +28,6 @@ import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
-import { Route as AuthenticatedLanggananRouteImport } from './routes/_authenticated.langganan'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
 import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
@@ -50,7 +48,6 @@ import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/pub
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
-import { Route as AuthenticatedAdminPembayaranRouteImport } from './routes/_authenticated.admin.pembayaran'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
 import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
@@ -80,11 +77,6 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const RefundRoute = RefundRouteImport.update({
   id: '/refund',
   path: '/refund',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PricingRoute = PricingRouteImport.update({
-  id: '/pricing',
-  path: '/pricing',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -158,11 +150,6 @@ const AuthenticatedLinkPegawaiRoute =
     path: '/link-pegawai',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedLanggananRoute = AuthenticatedLanggananRouteImport.update({
-  id: '/langganan',
-  path: '/langganan',
-  getParentRoute: () => AuthenticatedRoute,
-} as any)
 const AuthenticatedLabelPreviewRoute =
   AuthenticatedLabelPreviewRouteImport.update({
     id: '/label-preview',
@@ -271,12 +258,6 @@ const AuthenticatedAdminWorkerPortalRoute =
     path: '/admin/worker-portal',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
-const AuthenticatedAdminPembayaranRoute =
-  AuthenticatedAdminPembayaranRouteImport.update({
-    id: '/admin/pembayaran',
-    path: '/admin/pembayaran',
-    getParentRoute: () => AuthenticatedRoute,
-  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -313,7 +294,6 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRoute
   '/error': typeof ErrorRoute
-  '/pricing': typeof PricingRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -333,7 +313,6 @@ export interface FileRoutesByFullPath {
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/kontak': typeof AuthenticatedKontakRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
-  '/langganan': typeof AuthenticatedLanggananRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
@@ -343,7 +322,6 @@ export interface FileRoutesByFullPath {
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
-  '/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
@@ -360,7 +338,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRoute
   '/error': typeof ErrorRoute
-  '/pricing': typeof PricingRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -379,7 +356,6 @@ export interface FileRoutesByTo {
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/kontak': typeof AuthenticatedKontakRoute
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
-  '/langganan': typeof AuthenticatedLanggananRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
@@ -390,7 +366,6 @@ export interface FileRoutesByTo {
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
-  '/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
@@ -409,7 +384,6 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRoute
   '/error': typeof ErrorRoute
-  '/pricing': typeof PricingRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -429,7 +403,6 @@ export interface FileRoutesById {
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/_authenticated/kontak': typeof AuthenticatedKontakRoute
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
-  '/_authenticated/langganan': typeof AuthenticatedLanggananRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
@@ -440,7 +413,6 @@ export interface FileRoutesById {
   '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
-  '/_authenticated/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
@@ -460,7 +432,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/download'
     | '/error'
-    | '/pricing'
     | '/refund'
     | '/reset-password'
     | '/sitemap.xml'
@@ -480,7 +451,6 @@ export interface FileRouteTypes {
     | '/hutang-piutang'
     | '/kontak'
     | '/label-preview'
-    | '/langganan'
     | '/link-pegawai'
     | '/notifikasi'
     | '/pengaturan-kunci'
@@ -490,7 +460,6 @@ export interface FileRouteTypes {
     | '/tugas'
     | '/tugas-baru'
     | '/t/$token'
-    | '/admin/pembayaran'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/api/public/ai-ping'
@@ -507,7 +476,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/download'
     | '/error'
-    | '/pricing'
     | '/refund'
     | '/reset-password'
     | '/sitemap.xml'
@@ -526,7 +494,6 @@ export interface FileRouteTypes {
     | '/hutang-piutang'
     | '/kontak'
     | '/label-preview'
-    | '/langganan'
     | '/link-pegawai'
     | '/notifikasi'
     | '/pengaturan-kunci'
@@ -537,7 +504,6 @@ export interface FileRouteTypes {
     | '/tugas-baru'
     | '/t/$token'
     | '/'
-    | '/admin/pembayaran'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/api/public/ai-ping'
@@ -555,7 +521,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/download'
     | '/error'
-    | '/pricing'
     | '/refund'
     | '/reset-password'
     | '/sitemap.xml'
@@ -575,7 +540,6 @@ export interface FileRouteTypes {
     | '/_authenticated/hutang-piutang'
     | '/_authenticated/kontak'
     | '/_authenticated/label-preview'
-    | '/_authenticated/langganan'
     | '/_authenticated/link-pegawai'
     | '/_authenticated/notifikasi'
     | '/_authenticated/pengaturan-kunci'
@@ -586,7 +550,6 @@ export interface FileRouteTypes {
     | '/_authenticated/tugas-baru'
     | '/t/$token'
     | '/_authenticated/'
-    | '/_authenticated/admin/pembayaran'
     | '/_authenticated/admin/worker-portal'
     | '/_authenticated/chat/$conversationId'
     | '/api/public/ai-ping'
@@ -605,7 +568,6 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DownloadRoute: typeof DownloadRoute
   ErrorRoute: typeof ErrorRoute
-  PricingRoute: typeof PricingRoute
   RefundRoute: typeof RefundRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -655,13 +617,6 @@ declare module '@tanstack/react-router' {
       path: '/refund'
       fullPath: '/refund'
       preLoaderRoute: typeof RefundRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/pricing': {
-      id: '/pricing'
-      path: '/pricing'
-      fullPath: '/pricing'
-      preLoaderRoute: typeof PricingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -760,13 +715,6 @@ declare module '@tanstack/react-router' {
       path: '/link-pegawai'
       fullPath: '/link-pegawai'
       preLoaderRoute: typeof AuthenticatedLinkPegawaiRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
-    '/_authenticated/langganan': {
-      id: '/_authenticated/langganan'
-      path: '/langganan'
-      fullPath: '/langganan'
-      preLoaderRoute: typeof AuthenticatedLanggananRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/label-preview': {
@@ -909,13 +857,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkerPortalRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
-    '/_authenticated/admin/pembayaran': {
-      id: '/_authenticated/admin/pembayaran'
-      path: '/admin/pembayaran'
-      fullPath: '/admin/pembayaran'
-      preLoaderRoute: typeof AuthenticatedAdminPembayaranRouteImport
-      parentRoute: typeof AuthenticatedRoute
-    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -1009,7 +950,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
   AuthenticatedKontakRoute: typeof AuthenticatedKontakRoute
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
-  AuthenticatedLanggananRoute: typeof AuthenticatedLanggananRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
@@ -1019,7 +959,6 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
   AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
-  AuthenticatedAdminPembayaranRoute: typeof AuthenticatedAdminPembayaranRoute
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
 }
 
@@ -1038,7 +977,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
   AuthenticatedKontakRoute: AuthenticatedKontakRoute,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
-  AuthenticatedLanggananRoute: AuthenticatedLanggananRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
@@ -1048,7 +986,6 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
   AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
-  AuthenticatedAdminPembayaranRoute: AuthenticatedAdminPembayaranRoute,
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
 }
 
@@ -1061,7 +998,6 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DownloadRoute: DownloadRoute,
   ErrorRoute: ErrorRoute,
-  PricingRoute: PricingRoute,
   RefundRoute: RefundRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
