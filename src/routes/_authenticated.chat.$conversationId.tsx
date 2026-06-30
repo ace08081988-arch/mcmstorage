@@ -7,6 +7,7 @@ import { logChatDelete } from "@/lib/chat-delete-audit";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
   Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
+  History as HistoryIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -621,7 +622,7 @@ function ChatRoomPage() {
                 navigate({ to: "/chat-audit", search: { c: conversationId } })
               }
             >
-              <History className="mr-2 h-4 w-4" />
+              <HistoryIcon className="mr-2 h-4 w-4" />
               Log hapus pesan
             </DropdownMenuItem>
             <DropdownMenuItem
