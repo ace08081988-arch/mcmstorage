@@ -4,6 +4,7 @@ import { signedChatUrl } from "@/lib/chat-attachments";
 import { decodeCard, type Card } from "@/lib/chat-cards";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
+import { StickerView } from "@/components/chat/StickerView";
 
 function bytes(n: number | null | undefined): string {
   if (!n) return "";
@@ -125,6 +126,9 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
         </Link>
       </div>
     );
+  }
+  if (card.type === "sticker") {
+    return <StickerView card={card} mine={mine} />;
   }
   return null;
 }

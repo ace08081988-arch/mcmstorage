@@ -9,6 +9,7 @@ import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
   Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
   History as HistoryIcon,
+  Sticker as StickerIcon,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -64,6 +65,7 @@ import { TranslateDialog } from "@/components/chat/TranslateDialog";
 import { SaveAsNoteDialog } from "@/components/chat/SaveAsNoteDialog";
 import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog";
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
+import { StickerPickerDialog, parseStickerFromBody } from "@/components/chat/StickerPickerDialog";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import {
   DELETED_PLACEHOLDER,
@@ -131,6 +133,7 @@ function ChatRoomPage() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
   const [translateSource, setTranslateSource] = useState<string | null>(null);
+  const [editStickerMsg, setEditStickerMsg] = useState<{ id: string; body: string } | null>(null);
   const [noteSource, setNoteSource] = useState<MessageRow | null>(null);
   const [qrSource, setQrSource] = useState<string | null>(null);
   const starMut = useStarMessage(conversationId);
@@ -935,6 +938,17 @@ function ChatRoomPage() {
                               (() => {
                                 const ageMin = (Date.now() - new Date(m.created_at).getTime()) / 60_000;
                                 if (ageMin > 24 * 60) return null;
+                                const sticker = parseStickerFromBody(m.body);
+                                if (sticker) {
+                                  return (
+                                    <DropdownMenuItem
+                                      onSelect={() => setEditStickerMsg({ id: m.id, body: m.body ?? "" })}
+                                    >
+                                      <StickerIcon className="mr-2 h-4 w-4" />
+                                      Edit stiker
+                                    </DropdownMenuItem>
+                                  );
+                                }
                                 return (
                                   <DropdownMenuItem
                                     onSelect={() => {
@@ -1400,6 +1414,24 @@ function ChatRoomPage() {
         open={qrSource !== null}
         onOpenChange={(v) => { if (!v) setQrSource(null); }}
         defaultBody={qrSource ?? ""}
+      />
+
+      <StickerPickerDialog
+        conversationId={conversationId}
+        open={editStickerMsg !== null}
+        onOpenChange={(v) => { if (!v) setEditStickerMsg(null); }}
+        initial={editStickerMsg ? parseStickerFromBody(editStickerMsg.body) : null}
+        mode={
+          editStickerMsg
+            ? {
+                kind: "edit",
+                messageId: editStickerMsg.id,
+                onCommit: async (newBody) => {
+                  await editMsg.mutateAsync({ messageId: editStickerMsg.id, body: newBody });
+                },
+              }
+            : { kind: "create" }
+        }
       />
     </div>
   );

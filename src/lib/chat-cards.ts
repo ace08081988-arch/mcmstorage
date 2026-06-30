@@ -24,7 +24,35 @@ export type ProductCard = {
   category?: string | null;
   href?: string;
 };
-export type Card = LocationCard | ContactCard | ProductCard;
+
+/**
+ * Stiker yang dirender langsung di gelembung chat. Semua field
+ * kosmetik (warna, rotasi, skala, caption) bisa diedit ulang oleh
+ * pengirim via menu "Edit stiker" → dialog stiker dibuka pre-filled.
+ */
+export type StickerArrowDir =
+  | "up" | "down" | "left" | "right"
+  | "up-left" | "up-right" | "down-left" | "down-right";
+export type StickerCard =
+  | {
+      type: "sticker"; kind: "arrow"; direction: StickerArrowDir;
+      color?: string; bg?: string; rotation?: number; scale?: number; caption?: string;
+    }
+  | {
+      type: "sticker"; kind: "bank";
+      bank: string; account_number: string; account_name: string;
+      color?: string; bg?: string; rotation?: number; scale?: number; caption?: string;
+    }
+  | {
+      type: "sticker"; kind: "text"; text: string;
+      color?: string; bg?: string; rotation?: number; scale?: number; caption?: string;
+    }
+  | {
+      type: "sticker"; kind: "ai"; image_path: string; prompt?: string;
+      rotation?: number; scale?: number; caption?: string;
+    };
+
+export type Card = LocationCard | ContactCard | ProductCard | StickerCard;
 
 const SENTINEL = "[mcm-card:v1]";
 
@@ -56,5 +84,11 @@ export function previewText(body: string | null | undefined): string | null {
   if (c.type === "location") return c.live_until ? "📍 Berbagi live location" : "📍 Lokasi dibagikan";
   if (c.type === "contact") return `👤 Kontak: ${c.name}`;
   if (c.type === "product") return `🛒 Produk: ${c.name}`;
+  if (c.type === "sticker") {
+    if (c.kind === "arrow") return `🧭 Stiker panah${c.caption ? ` · ${c.caption}` : ""}`;
+    if (c.kind === "bank") return `🏦 Rekening ${c.bank} · ${c.account_number}`;
+    if (c.kind === "text") return `🏷️ ${c.text.slice(0, 60)}`;
+    if (c.kind === "ai") return `✨ Stiker AI${c.caption ? ` · ${c.caption}` : ""}`;
+  }
   return body;
 }
