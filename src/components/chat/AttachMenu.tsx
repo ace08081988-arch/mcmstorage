@@ -265,6 +265,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   }
 
   const [confirmDelete, setConfirmDelete] = useState<null | "selected" | "all">(null);
+  const [showAllDelete, setShowAllDelete] = useState(false);
 
   async function runTile(id: TileId) {
     persistLast(id);
@@ -765,7 +766,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         onOpenChange={setOpenSticker}
         onSent={() => { onSent?.(); setOpenSticker(false); }}
       />
-      <AlertDialog open={confirmDelete !== null} onOpenChange={(v) => { if (!v) setConfirmDelete(null); }}>
+      <AlertDialog open={confirmDelete !== null} onOpenChange={(v) => { if (!v) { setConfirmDelete(null); setShowAllDelete(false); } }}>
         <AlertDialogContent>
           {(() => {
             const targets = !pending ? [] : confirmDelete === "all"
@@ -774,7 +775,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             const lockedCount = targets.filter((p) => statuses[p.id]?.state === "uploading").length;
             const removable = targets.filter((p) => statuses[p.id]?.state !== "uploading");
             const previewLimit = 6;
-            const shown = removable.slice(0, previewLimit);
+            const shown = showAllDelete ? removable : removable.slice(0, previewLimit);
             const extra = removable.length - shown.length;
             const totalBytes = removable.reduce((sum, p) => sum + (p.file.size || 0), 0);
             return (
@@ -792,7 +793,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 {removable.length > 0 ? (
-                  <ul className="max-h-44 overflow-y-auto rounded-md border bg-muted/30 p-2 text-[12px]">
+                  <ul className={`${showAllDelete ? "max-h-64" : "max-h-44"} overflow-y-auto rounded-md border bg-muted/30 p-2 text-[12px]`}>
                     {shown.map((p) => {
                       const st = statuses[p.id]?.state;
                       return (
@@ -806,7 +807,26 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       );
                     })}
                     {extra > 0 ? (
-                      <li className="pt-1 text-[11px] italic text-muted-foreground">…dan {extra} berkas lainnya</li>
+                      <li className="flex items-center justify-between pt-1">
+                        <span className="text-[11px] italic text-muted-foreground">…dan {extra} berkas lainnya</span>
+                        <button
+                          type="button"
+                          onClick={() => setShowAllDelete(true)}
+                          className="shrink-0 text-[11px] font-medium text-primary hover:underline"
+                        >
+                          Lihat semua
+                        </button>
+                      </li>
+                    ) : showAllDelete && removable.length > previewLimit ? (
+                      <li className="pt-1 text-right">
+                        <button
+                          type="button"
+                          onClick={() => setShowAllDelete(false)}
+                          className="text-[11px] font-medium text-primary hover:underline"
+                        >
+                          Tampilkan lebih sedikit
+                        </button>
+                      </li>
                     ) : null}
                   </ul>
                 ) : null}
@@ -823,6 +843,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       if (confirmDelete === "all") removeAllPending();
                       else if (confirmDelete === "selected") removeSelectedPending();
                       setConfirmDelete(null);
+                      setShowAllDelete(false);
                     }}
                   >
                     Hapus{removable.length > 0 ? ` (${removable.length})` : ""}
