@@ -1185,15 +1185,15 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                 {list.map((i) => (
                   <li key={i.id} className="p-3 transition-colors hover:bg-muted/30">
                     <div className="flex items-start justify-between gap-2">
-                      <div className="flex min-w-0 gap-2">
+                      <div className="flex min-w-0 flex-1 gap-2">
                         {i.image_path ? (
                           <SignedImg path={i.image_path} className="h-12 w-12 shrink-0 rounded-md border object-cover bg-muted" />
                         ) : (
                           <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-md border border-dashed text-[11px] text-muted-foreground">📷</div>
                         )}
-                        <div className="min-w-0">
-                          <div className="truncate text-sm font-semibold">{i.name}</div>
-                          <div className="text-[11px] text-muted-foreground">
+                        <div className="min-w-0 flex-1">
+                          <div className="line-clamp-2 break-words text-sm font-semibold leading-snug [overflow-wrap:anywhere]">{i.name}</div>
+                          <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
                             per {i.package_type}
                             {i.package_type !== "pcs" && ` (${i.package_size} ${i.base_unit}/kemasan)`}
                           </div>
@@ -1214,18 +1214,18 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                         </button>
                       </div>
                     </div>
-                    <div className="mt-2 grid grid-cols-3 gap-2 text-[11px]">
-                      <div className="rounded bg-muted/50 p-2">
-                        <div className="text-muted-foreground">Stok</div>
-                        <div className="font-semibold tabular-nums">{fmtItemQty(i.stock_base, i)}</div>
+                    <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] leading-snug">
+                      <div className="min-w-0 rounded bg-muted/50 p-2">
+                        <div className="truncate text-muted-foreground">Stok</div>
+                        <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{fmtItemQty(i.stock_base, i)}</div>
                       </div>
-                      <div className="rounded bg-muted/50 p-2">
-                        <div className="text-muted-foreground">HPP / {i.base_unit}</div>
-                        <div className="font-semibold tabular-nums">{rupiah(i.avg_cost_per_base)}</div>
+                      <div className="min-w-0 rounded bg-muted/50 p-2">
+                        <div className="truncate text-muted-foreground">HPP / {i.base_unit}</div>
+                        <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.avg_cost_per_base)}</div>
                       </div>
-                      <div className="rounded bg-muted/50 p-2">
-                        <div className="text-muted-foreground">Nilai</div>
-                        <div className="font-semibold tabular-nums">{rupiah(i.stock_base * i.avg_cost_per_base)}</div>
+                      <div className="min-w-0 rounded bg-muted/50 p-2">
+                        <div className="truncate text-muted-foreground">Nilai</div>
+                        <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.stock_base * i.avg_cost_per_base)}</div>
                       </div>
                     </div>
                   </li>
