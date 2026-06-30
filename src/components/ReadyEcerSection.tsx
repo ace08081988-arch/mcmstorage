@@ -1,7 +1,17 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash, Send } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash, Send, CheckSquare, Square, Trash2, ListChecks } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { signedUrl } from "@/lib/prep";
 import { ecerSignedUrl } from "@/lib/ecer";
@@ -391,6 +401,24 @@ export function ReadyEcerSection() {
   const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
   const [view, setView] = useState<"active" | "sent">("active");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete">(null);
+  const [bulkPickChat, setBulkPickChat] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState<null | "wa" | "chat" | "delete">(null);
+  // Reset pilihan jika tab/view berganti.
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }, [view]);
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const sentMap = useSentShots();
   const sentDetails = useSentDetails();
   // Split each row's shots into active vs sent based on local history.
@@ -576,6 +604,103 @@ export function ReadyEcerSection() {
         </div>
       )}
 
+      {rows && rows.length > 0 && visible.length > 0 && (
+        <BulkToolbar
+          selectMode={selectMode}
+          setSelectMode={(v) => { setSelectMode(v); if (!v) setSelectedIds(new Set()); }}
+          selectedIds={selectedIds}
+          setSelectedIds={setSelectedIds}
+          visibleIds={visible.map((r) => r.id)}
+          view={view}
+          busy={bulkBusy}
+          onBulkWA={async () => {
+            if (selectedIds.size === 0) return;
+            setBulkBusy("wa");
+            try {
+              const ids = [...selectedIds];
+              for (const id of ids) {
+                await new Promise<void>((resolve) => {
+                  const handler = () => { window.removeEventListener(`ecer-bulk-done:${id}`, handler); resolve(); };
+                  window.addEventListener(`ecer-bulk-done:${id}`, handler);
+                  window.dispatchEvent(new CustomEvent(`ecer-bulk:wa:${id}`));
+                  // safety timeout
+                  setTimeout(() => { window.removeEventListener(`ecer-bulk-done:${id}`, handler); resolve(); }, 60000);
+                });
+              }
+            } finally {
+              setBulkBusy(null);
+              setSelectedIds(new Set());
+              setSelectMode(false);
+            }
+          }}
+          onBulkChatPick={() => setBulkPickChat(true)}
+          onBulkDelete={() => setBulkConfirm("delete")}
+        />
+      )}
+
+      <PickChatConversationDialog
+        open={bulkPickChat}
+        onOpenChange={setBulkPickChat}
+        onPick={async (cid, ctitle) => {
+          setBulkPickChat(false);
+          if (selectedIds.size === 0) return;
+          setBulkBusy("chat");
+          try {
+            const ids = [...selectedIds];
+            for (const id of ids) {
+              await new Promise<void>((resolve) => {
+                const handler = () => { window.removeEventListener(`ecer-bulk-done:${id}`, handler); resolve(); };
+                window.addEventListener(`ecer-bulk-done:${id}`, handler);
+                window.dispatchEvent(new CustomEvent(`ecer-bulk:chat:${id}`, { detail: { conversationId: cid, conversationTitle: ctitle } }));
+                setTimeout(() => { window.removeEventListener(`ecer-bulk-done:${id}`, handler); resolve(); }, 60000);
+              });
+            }
+          } finally {
+            setBulkBusy(null);
+            setSelectedIds(new Set());
+            setSelectMode(false);
+          }
+        }}
+        title={`Kirim ${selectedIds.size} kartu ke percakapan`}
+      />
+
+      <AlertDialog open={bulkConfirm === "delete"} onOpenChange={(o) => !o && setBulkConfirm(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Hapus {selectedIds.size} kartu dari {view === "sent" ? "Riwayat terkirim" : "daftar aktif"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {view === "sent"
+                ? "Riwayat lokal kartu yang dipilih akan dibersihkan. Foto pegawai tetap ada — kartu akan kembali ke daftar Aktif."
+                : "Kartu terpilih akan ditandai terkirim (dilewati) tanpa mengirim ke WA atau Chat. Anda bisa mengembalikannya dari tab Riwayat terkirim."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (selectedIds.size === 0) { setBulkConfirm(null); return; }
+                setBulkBusy("delete");
+                try {
+                  const ids = [...selectedIds];
+                  for (const id of ids) {
+                    window.dispatchEvent(new CustomEvent(`ecer-bulk:${view === "sent" ? "undo" : "skip"}:${id}`));
+                  }
+                } finally {
+                  setBulkBusy(null);
+                  setSelectedIds(new Set());
+                  setSelectMode(false);
+                  setBulkConfirm(null);
+                }
+              }}
+            >
+              Ya, hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {rows === null ? (
         <div className="grid grid-cols-2 gap-2" aria-busy="true" aria-label="Memuat produk eceran">
           {Array.from({ length: 4 }).map((_, i) => (
@@ -632,11 +757,114 @@ export function ReadyEcerSection() {
             </div>
           ) : (
             visible.map((r) => (
-              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={r._lastSentAt} sentDetails={sentDetails} />
+              <EcerCard
+                key={r.id}
+                row={r}
+                onRefresh={handleRefresh}
+                refreshing={refreshing}
+                syncing={syncing}
+                realtimeStatus={realtimeStatus}
+                view={view}
+                lastSentAt={r._lastSentAt}
+                sentDetails={sentDetails}
+                selectMode={selectMode}
+                selected={selectedIds.has(r.id)}
+                onToggleSelect={() => toggleSelect(r.id)}
+              />
             ))
           )}
         </div>
       )}
+    </div>
+  );
+}
+
+function BulkToolbar({
+  selectMode, setSelectMode, selectedIds, setSelectedIds, visibleIds, view, busy,
+  onBulkWA, onBulkChatPick, onBulkDelete,
+}: {
+  selectMode: boolean;
+  setSelectMode: (v: boolean) => void;
+  selectedIds: Set<string>;
+  setSelectedIds: (s: Set<string>) => void;
+  visibleIds: string[];
+  view: "active" | "sent";
+  busy: null | "wa" | "chat" | "delete";
+  onBulkWA: () => void;
+  onBulkChatPick: () => void;
+  onBulkDelete: () => void;
+}) {
+  const allSelected = selectMode && visibleIds.length > 0 && visibleIds.every((id) => selectedIds.has(id));
+  const count = selectedIds.size;
+  if (!selectMode) {
+    return (
+      <div className="flex items-center justify-end">
+        <button
+          type="button"
+          onClick={() => setSelectMode(true)}
+          className="inline-flex h-7 items-center gap-1 rounded-md border bg-card px-2 text-[10.5px] font-semibold text-foreground hover:bg-accent"
+        >
+          <ListChecks className="h-3 w-3" /> Pilih beberapa
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-1 rounded-md border bg-primary/5 px-1.5 py-1">
+      <button
+        type="button"
+        onClick={() => {
+          if (allSelected) setSelectedIds(new Set());
+          else setSelectedIds(new Set(visibleIds));
+        }}
+        className="inline-flex h-7 items-center gap-1 rounded-md bg-card px-2 text-[10.5px] font-semibold hover:bg-accent"
+      >
+        {allSelected ? <CheckSquare className="h-3 w-3 text-primary" /> : <Square className="h-3 w-3" />}
+        {allSelected ? "Lepas semua" : "Pilih semua"}
+      </button>
+      <span className="text-[10.5px] font-semibold text-primary">{count} terpilih</span>
+      <div className="ml-auto flex flex-wrap items-center gap-1">
+        <button
+          type="button"
+          onClick={onBulkWA}
+          disabled={count === 0 || busy !== null}
+          className="inline-flex h-7 items-center gap-1 rounded-md bg-[#25D366] px-2 text-[10.5px] font-semibold text-white shadow-sm hover:bg-[#1ebe57] disabled:opacity-50"
+        >
+          {busy === "wa" ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
+          WA
+        </button>
+        <button
+          type="button"
+          onClick={onBulkChatPick}
+          disabled={count === 0 || busy !== null}
+          className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[10.5px] font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+        >
+          {busy === "chat" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+          Chat
+        </button>
+        <button
+          type="button"
+          onClick={onBulkDelete}
+          disabled={count === 0 || busy !== null}
+          className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 text-[10.5px] font-semibold text-destructive hover:bg-destructive/20 disabled:opacity-50"
+        >
+          {busy === "delete" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Trash2 className="h-3 w-3" />}
+          Hapus
+        </button>
+        <button
+          type="button"
+          onClick={() => setSelectMode(false)}
+          disabled={busy !== null}
+          className="inline-flex h-7 items-center gap-1 rounded-md border bg-card px-2 text-[10.5px] font-semibold text-muted-foreground hover:bg-accent disabled:opacity-50"
+        >
+          <X className="h-3 w-3" /> Batal
+        </button>
+      </div>
+      <p className="basis-full text-[9.5px] text-muted-foreground">
+        {view === "sent"
+          ? "Tap kartu untuk centang. Aksi WA/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
+          : "Tap kartu untuk centang. WA/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
+      </p>
     </div>
   );
 }
@@ -720,9 +948,21 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   );
 }
 
-function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null; sentDetails: Map<string, SentEntry> }) {
-  void 0;
-  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={lastSentAt} sentDetails={sentDetails} />;
+type EcerCardProps = {
+  row: Row;
+  onRefresh: () => void;
+  refreshing: boolean;
+  syncing: boolean;
+  realtimeStatus: "connecting" | "live" | "offline";
+  view: "active" | "sent";
+  lastSentAt: number | null;
+  sentDetails: Map<string, SentEntry>;
+  selectMode?: boolean;
+  selected?: boolean;
+  onToggleSelect?: () => void;
+};
+function EcerCard(props: EcerCardProps) {
+  return <EcerCardImpl {...props} />;
 }
 
 const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> = {
@@ -902,7 +1142,7 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null; sentDetails: Map<string, SentEntry> }) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, onToggleSelect }: EcerCardProps) {
   const [sending, setSending] = useState(false);
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
@@ -1343,8 +1583,101 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     }
   }
 
+  // ---------- Bulk action listeners (multi-pilih dari toolbar) ----------
+  const autoBulkChat = useRef(false);
+  useEffect(() => {
+    const dispatchDone = () => window.dispatchEvent(new CustomEvent(`ecer-bulk-done:${r.id}`));
+    const fake = { preventDefault() {}, stopPropagation() {} } as unknown as React.MouseEvent;
+    const handleWa = async () => {
+      try { await sendWA(fake); } catch { /* dilaporkan di kartu */ } finally { dispatchDone(); }
+    };
+    const handleChat = async (e: Event) => {
+      const ev = e as CustomEvent<{ conversationId: string; conversationTitle: string }>;
+      if (!ev.detail) { dispatchDone(); return; }
+      autoBulkChat.current = true;
+      try { await prepareChat(ev.detail.conversationId, ev.detail.conversationTitle); }
+      catch { autoBulkChat.current = false; dispatchDone(); }
+      // Lanjutan: effect auto-confirm di bawah akan menutup dialog & dispatch done.
+    };
+    const handleUndo = () => {
+      try { unmarkSent(shots.map((s) => s.id)); } finally { dispatchDone(); }
+    };
+    const handleSkip = () => {
+      try {
+        if (shots.length > 0) {
+          markSent(shots.map((s) => s.id), {
+            channel: "wa",
+            mapsUrl: null,
+            status: "success",
+            idemKey: `bulk-skip-${r.id}-${Date.now()}`,
+          });
+        }
+      } finally { dispatchDone(); }
+    };
+    window.addEventListener(`ecer-bulk:wa:${r.id}`, handleWa as EventListener);
+    window.addEventListener(`ecer-bulk:chat:${r.id}`, handleChat as EventListener);
+    window.addEventListener(`ecer-bulk:undo:${r.id}`, handleUndo as EventListener);
+    window.addEventListener(`ecer-bulk:skip:${r.id}`, handleSkip as EventListener);
+    return () => {
+      window.removeEventListener(`ecer-bulk:wa:${r.id}`, handleWa as EventListener);
+      window.removeEventListener(`ecer-bulk:chat:${r.id}`, handleChat as EventListener);
+      window.removeEventListener(`ecer-bulk:undo:${r.id}`, handleUndo as EventListener);
+      window.removeEventListener(`ecer-bulk:skip:${r.id}`, handleSkip as EventListener);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [r.id, shots]);
+
+  // Auto-confirm bulk-chat saat tidak ada duplikat — supaya satu klik bulk
+  // memproses semua kartu tanpa harus menekan tombol Kirim di tiap pratinjau.
+  useEffect(() => {
+    if (!autoBulkChat.current) return;
+    if (chatPreview && !chatPreview.duplicate && !chatSending && chatPreviewOpen) {
+      void confirmChatSend();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatPreview, chatPreviewOpen]);
+
+  // Tutup dialog & beritahu orkestrator bulk saat satu kartu selesai.
+  useEffect(() => {
+    if (!autoBulkChat.current) return;
+    if (!chatSending && chatStatus?.outcome) {
+      autoBulkChat.current = false;
+      setChatPreviewOpen(false);
+      setChatPreview(null);
+      setChatStatus(null);
+      window.dispatchEvent(new CustomEvent(`ecer-bulk-done:${r.id}`));
+    }
+  }, [chatSending, chatStatus, r.id]);
+
   return (
-    <div className="group flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md">
+    <div
+      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md ${
+        selectMode ? "cursor-pointer" : ""
+      } ${selected ? "ring-2 ring-primary ring-offset-1" : ""}`}
+      onClickCapture={
+        selectMode
+          ? (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleSelect?.();
+            }
+          : undefined
+      }
+    >
+      {selectMode && (
+        <button
+          type="button"
+          aria-label={selected ? "Lepas pilihan" : "Pilih kartu"}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect?.(); }}
+          className={`absolute left-1.5 top-1.5 z-20 inline-flex h-6 w-6 items-center justify-center rounded-md border shadow-sm transition ${
+            selected
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-card/90 text-muted-foreground hover:bg-accent"
+          }`}
+        >
+          {selected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+        </button>
+      )}
       {shots.length > 0 ? (
         <Link
           to="/ecer"
