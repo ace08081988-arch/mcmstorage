@@ -779,7 +779,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   }, [title.id]);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
+    <div className="ecer-detail mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
       <div className="flex items-center gap-2">
         <Button variant="ghost" size="sm" onClick={onBack}><ChevronLeft className="h-4 w-4" /> Kembali</Button>
       </div>
