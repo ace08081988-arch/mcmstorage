@@ -1650,7 +1650,34 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   }, [chatSending, chatStatus, r.id]);
 
   return (
-    <div className="group flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md">
+    <div
+      className={`group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md ${
+        selectMode ? "cursor-pointer" : ""
+      } ${selected ? "ring-2 ring-primary ring-offset-1" : ""}`}
+      onClickCapture={
+        selectMode
+          ? (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              onToggleSelect?.();
+            }
+          : undefined
+      }
+    >
+      {selectMode && (
+        <button
+          type="button"
+          aria-label={selected ? "Lepas pilihan" : "Pilih kartu"}
+          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onToggleSelect?.(); }}
+          className={`absolute left-1.5 top-1.5 z-20 inline-flex h-6 w-6 items-center justify-center rounded-md border shadow-sm transition ${
+            selected
+              ? "border-primary bg-primary text-primary-foreground"
+              : "border-border bg-card/90 text-muted-foreground hover:bg-accent"
+          }`}
+        >
+          {selected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+        </button>
+      )}
       {shots.length > 0 ? (
         <Link
           to="/ecer"
