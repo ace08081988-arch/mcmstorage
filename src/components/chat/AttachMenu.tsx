@@ -267,6 +267,22 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const [confirmDelete, setConfirmDelete] = useState<null | "selected" | "all">(null);
   const [showAllDelete, setShowAllDelete] = useState(false);
   const [deleteSnapshot, setDeleteSnapshot] = useState<{ count: number; bytes: number } | null>(null);
+  // Saat dialog konfirmasi dibuka, ambil snapshot jumlah & total ukuran agar bisa menampilkan delta real-time.
+  useEffect(() => {
+    if (confirmDelete === null) {
+      setDeleteSnapshot(null);
+      return;
+    }
+    if (!pending) return;
+    const list = confirmDelete === "all" ? pending : pending.filter((p) => selected.has(p.id));
+    const rem = list.filter((p) => statuses[p.id]?.state !== "uploading");
+    setDeleteSnapshot({
+      count: rem.length,
+      bytes: rem.reduce((s, p) => s + (p.file.size || 0), 0),
+    });
+    // Hanya saat dialog beralih state (buka/tutup) — bukan saat daftar berubah.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [confirmDelete]);
 
   async function runTile(id: TileId) {
     persistLast(id);
