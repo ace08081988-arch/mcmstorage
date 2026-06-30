@@ -312,9 +312,13 @@ function LinkPegawaiPage() {
       t,
       avail: computeAvailability(t, now),
       tokenState: classifyToken(t.share_token, regenAt[t.id], now),
+      extendedAgeMs: extendedAt[t.id] != null ? now - extendedAt[t.id] : null,
     }));
-    const filtered = list.filter(({ t, avail, tokenState }) => {
-      if (filter !== "all" && avail !== filter) return false;
+    const filtered = list.filter(({ t, avail, tokenState, extendedAgeMs }) => {
+      // Pin freshly extended tasks for ~15s across any filter so the user
+      // can confirm the badge/description updated even on the "Kedaluwarsa" tab.
+      const justExtended = extendedAgeMs != null && extendedAgeMs >= 0 && extendedAgeMs < 15000;
+      if (filter !== "all" && avail !== filter && !justExtended) return false;
       if (tokenFilter !== "all" && tokenState.kind !== tokenFilter) return false;
       if (tokenKw.trim()) {
         const n = tokenKw.trim().toLowerCase();
@@ -336,7 +340,7 @@ function LinkPegawaiPage() {
     }
     // "newest" / "oldest" come pre-sorted from the server.
     return filtered;
-  }, [tasks, q, filter, tokenFilter, tokenKw, now, sort, regenAt]);
+  }, [tasks, q, filter, tokenFilter, tokenKw, now, sort, regenAt, extendedAt]);
 
   const counts = useMemo(() => {
     const c = { all: 0, active: 0, expired: 0, done: 0, cancelled: 0 } as Record<string, number>;
