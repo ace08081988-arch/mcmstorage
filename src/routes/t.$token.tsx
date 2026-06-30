@@ -9,6 +9,7 @@ import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldC
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
+import { getWorkerPortalConfig } from "@/lib/worker-portal-config";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -108,12 +109,18 @@ function PublicPrepPage() {
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
   const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found" | "expired" | "closed">(null);
+  // Konfigurasi runtime (TTL sesi, retry, ambang stale). Dibaca via
+  // useRef agar tidak bikin re-render saat dipakai dari callback dan
+  // tidak berubah di tengah lifecycle satu mount. Override bisa via
+  // `window.__WORKER_PORTAL_CONFIG__` atau env `VITE_WORKER_PORTAL_*`.
+  const cfgRef = useRef(getWorkerPortalConfig());
+  const cfg = cfgRef.current;
   // Persistensi sesi pegawai (PIN + flag authed) di sessionStorage.
   // Tujuan: WebView Android yang dire-create setelah kembali dari aplikasi
   // kamera / galeri / share / pengunci layar TIDAK memantulkan pegawai
   // kembali ke layar PIN. PIN disimpan dalam scope per-token, TTL singkat.
   const SESSION_KEY = `prep_session:${token}`;
-  const SESSION_TTL_MS = 30 * 60 * 1000; // 30 menit
+  const SESSION_TTL_MS = cfg.sessionTtlMs;
   function readSession(): { pin: string; ts: number } | null {
     if (typeof window === "undefined") return null;
     try {
@@ -200,15 +207,17 @@ function PublicPrepPage() {
   useEffect(() => {
     if (!authed || resyncing) return;
     const age = lastSyncAt ? (Date.now() - lastSyncAt) / 1000 : null;
-    const isStale = rtStatus === "error" || (age != null && age > 90);
-    const isLag = !isStale && age != null && age > 30;
+    const isStale = rtStatus === "error" || (age != null && age > cfg.staleThresholdSec);
+    const isLag = !isStale && age != null && age > cfg.lagThresholdSec;
     if (!isStale && !isLag) {
       autoResyncRef.current.failCount = 0;
       return;
     }
     // Cooldown backoff: lag 10 dtk; stale mulai 5 dtk, naik hingga 30 dtk.
     const fc = autoResyncRef.current.failCount;
-    const cooldownMs = isStale ? Math.min(30000, 5000 * Math.pow(2, fc)) : 10000;
+    const cooldownMs = isStale
+      ? Math.min(cfg.staleCooldownMaxMs, cfg.staleCooldownBaseMs * Math.pow(2, fc))
+      : cfg.lagCooldownMs;
     if (Date.now() - autoResyncRef.current.lastAt < cooldownMs) return;
     autoResyncRef.current.lastAt = Date.now();
     const prevSync = lastSyncAt;
@@ -229,8 +238,8 @@ function PublicPrepPage() {
   // Data disimpan di localStorage per-token agar reload halaman tidak
   // mem-bypass pembatasan. Server juga punya rate-limit terpisah
   // (mengembalikan "rate_limited" + retry_after).
-  const MAX_ATTEMPTS = 3;
-  const LOCK_SECONDS = 60;
+  const MAX_ATTEMPTS = cfg.maxAttempts;
+  const LOCK_SECONDS = cfg.lockSeconds;
   const STORAGE_KEY = `prep_pin_attempts:${token}`;
   const [attempts, setAttempts] = useState(0);
   const [justUnlocked, setJustUnlocked] = useState(false);
@@ -488,7 +497,7 @@ function PublicPrepPage() {
       // sedang rotate PIN / replikasi DB belum sinkron sepersekian detik.
       if (silentFailRef.current.kind === kind) silentFailRef.current.count += 1;
       else silentFailRef.current = { kind, count: 1 };
-      if (silentFailRef.current.count < 2) {
+      if (silentFailRef.current.count < cfg.silentFailTolerance) {
         // eslint-disable-next-line no-console
         console.warn("[t.$token] silentRefresh non-ok (tolerated)", res);
         return;
