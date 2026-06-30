@@ -148,14 +148,29 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const filteredTiles = q
     ? TILES.filter((t) => norm(t.label).includes(q) || t.keywords.some((k) => k.includes(q)))
     : TILES;
-  type PendingItem = { file: File; previewUrl: string | null };
+  type PendingItem = { id: string; file: File; previewUrl: string | null };
   type ItemStatus = "idle" | "uploading" | "sent" | "error";
+  type StatusEntry = { state: ItemStatus; error?: string; preflight?: boolean };
   const [pending, setPending] = useState<PendingItem[] | null>(null);
-  const [statuses, setStatuses] = useState<Array<{ state: ItemStatus; error?: string; preflight?: boolean }>>([]);
+  const [statuses, setStatuses] = useState<Record<string, StatusEntry>>({});
   const [caption, setCaption] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [selectMode, setSelectMode] = useState(false);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Ref agar loop upload selalu baca pending terbaru (penghapusan saat upload tetap konsisten).
+  const pendingRef = useRef<PendingItem[] | null>(null);
+  useEffect(() => { pendingRef.current = pending; }, [pending]);
+  const statusesRef = useRef<Record<string, StatusEntry>>({});
+  useEffect(() => { statusesRef.current = statuses; }, [statuses]);
+
+  function nextItemId(): string {
+    try {
+      const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+      if (c?.randomUUID) return c.randomUUID();
+    } catch { /* ignore */ }
+    return `f_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  }
 
   // Reset mode pilih saat dialog ditutup atau daftar kosong.
   useEffect(() => {
@@ -165,43 +180,88 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     }
   }, [pending]);
 
-  function toggleSelected(i: number) {
+  function toggleSelected(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(i)) next.delete(i); else next.add(i);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   }
   function selectAllPending() {
     if (!pending) return;
-    // Tidak ikutkan item yang sudah terkirim.
-    const all = pending.map((_, i) => i).filter((i) => statuses[i]?.state !== "sent");
+    // Tidak ikutkan item yang sudah terkirim atau sedang upload.
+    const all = pending
+      .filter((p) => {
+        const s = statuses[p.id]?.state;
+        return s !== "sent" && s !== "uploading";
+      })
+      .map((p) => p.id);
     setSelected(new Set(all));
   }
   function clearSelection() { setSelected(new Set()); }
 
-  function removeIndices(indices: number[]) {
-    if (!pending || indices.length === 0) return;
-    const drop = new Set(indices);
-    pending.forEach((p, i) => { if (drop.has(i) && p.previewUrl) URL.revokeObjectURL(p.previewUrl); });
-    const nextPending = pending.filter((_, i) => !drop.has(i));
-    const nextStatuses = statuses.filter((_, i) => !drop.has(i));
+  /** Hapus berdasarkan id. Item yang sedang "uploading" tidak boleh dihapus (lock). */
+  function removeIds(ids: Iterable<string>): { removed: string[]; skipped: number } {
+    if (!pending) return { removed: [], skipped: 0 };
+    const wanted = new Set(ids);
+    const removed: string[] = [];
+    let skipped = 0;
+    const nextPending: PendingItem[] = [];
+    for (const p of pending) {
+      if (wanted.has(p.id)) {
+        if (statuses[p.id]?.state === "uploading") {
+          skipped += 1;
+          nextPending.push(p);
+        } else {
+          if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
+          removed.push(p.id);
+        }
+      } else {
+        nextPending.push(p);
+      }
+    }
+    if (removed.length === 0) return { removed, skipped };
     setPending(nextPending.length ? nextPending : null);
-    setStatuses(nextStatuses);
-    setSelected(new Set());
+    setStatuses((prev) => {
+      const next = { ...prev };
+      for (const id of removed) delete next[id];
+      return next;
+    });
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const id of removed) next.delete(id);
+      return next;
+    });
+    // Sinkronkan progress jika upload sedang jalan: kurangi total untuk item yang
+    // dihapus & belum selesai (state "idle"/"error" yang akan masuk antrean).
+    setProgress((p) => {
+      if (!p) return p;
+      const stillPending = removed.filter((id) => {
+        const s = statusesRef.current[id]?.state;
+        return s === "idle" || s === "error";
+      }).length;
+      if (stillPending === 0) return p;
+      const total = Math.max(p.done, p.total - stillPending);
+      return { done: p.done, total };
+    });
+    return { removed, skipped };
   }
+
   function removeSelectedPending() {
-    removeIndices(Array.from(selected));
+    const { skipped } = removeIds(Array.from(selected));
+    if (skipped > 0) toast.message(`${skipped} berkas sedang diunggah dan dilewati`);
     setSelectMode(false);
   }
   function removeAllPending() {
     if (!pending) return;
-    pending.forEach((p) => { if (p.previewUrl) URL.revokeObjectURL(p.previewUrl); });
-    setPending(null);
-    setStatuses([]);
-    setSelected(new Set());
+    const ids = pending.map((p) => p.id);
+    const { skipped } = removeIds(ids);
+    if (skipped > 0) {
+      toast.message(`${skipped} berkas sedang diunggah dan dilewati`);
+    } else {
+      setCaption("");
+    }
     setSelectMode(false);
-    setCaption("");
   }
 
   const [confirmDelete, setConfirmDelete] = useState<null | "selected" | "all">(null);
