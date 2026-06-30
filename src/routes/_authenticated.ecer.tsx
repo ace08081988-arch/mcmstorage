@@ -563,6 +563,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
   onCreateTitle?: () => void; onCreateProduct?: () => void;
 }) {
+  void onBack;
   const [preps, setPreps] = useState<EcerPreparation[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
