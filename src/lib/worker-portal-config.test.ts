@@ -165,21 +165,27 @@ describe("applyPreviewOverrideFromHash · variasi format #wpcfg", () => {
     expect(applyPreviewOverrideFromHash()).toEqual(validCfg);
   });
 
-  it("padding salah (kelebihan '=') → no-op aman", () => {
+  it("padding salah (kelebihan '=') ditoleransi decoder dan tetap di-sanitasi", () => {
     g.window!.location.hash = `#wpcfg=${encodeURIComponent(stdB64 + "===")}`;
-    expect(applyPreviewOverrideFromHash()).toBeNull();
-    expect(g.window!.__WORKER_PORTAL_CONFIG__).toBeUndefined();
+    expect(applyPreviewOverrideFromHash()).toEqual(validCfg);
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toEqual(validCfg);
   });
 
-  it("whitespace di tengah payload merusak decode → no-op aman", () => {
+  it("whitespace di tengah payload ditoleransi decoder dan tetap di-sanitasi", () => {
     const withSpace = b64UrlNoPad.slice(0, 4) + " " + b64UrlNoPad.slice(4);
     g.window!.location.hash = `#wpcfg=${encodeURIComponent(withSpace)}`;
-    expect(applyPreviewOverrideFromHash()).toBeNull();
-    expect(g.window!.__WORKER_PORTAL_CONFIG__).toBeUndefined();
+    expect(applyPreviewOverrideFromHash()).toEqual(validCfg);
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toEqual(validCfg);
   });
 
-  it("newline / tab di payload → no-op aman", () => {
+  it("newline / tab di akhir payload ditoleransi decoder", () => {
     g.window!.location.hash = `#wpcfg=${encodeURIComponent(b64UrlNoPad + "\n\t")}`;
+    expect(applyPreviewOverrideFromHash()).toEqual(validCfg);
+    expect(g.window!.__WORKER_PORTAL_CONFIG__).toEqual(validCfg);
+  });
+
+  it("karakter di luar alfabet base64 → no-op aman", () => {
+    g.window!.location.hash = `#wpcfg=${encodeURIComponent("!!!@@@")}`;
     expect(applyPreviewOverrideFromHash()).toBeNull();
     expect(g.window!.__WORKER_PORTAL_CONFIG__).toBeUndefined();
   });
