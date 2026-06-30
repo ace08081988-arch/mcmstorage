@@ -277,6 +277,17 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   // perubahan berikutnya dihitung relatif ke kondisi terbaru.
   const [snapshotEpoch, setSnapshotEpoch] = useState(0);
   const rebaseDeleteSnapshot = useCallback(() => setSnapshotEpoch((e) => e + 1), []);
+  // Akumulasi bytes/ms upload sukses untuk estimasi durasi berkas berikutnya.
+  const uploadStatsRef = useRef<{ bytes: number; ms: number }>({ bytes: 0, ms: 0 });
+  // Ticker 1 detik agar elapsed time per berkas tampil hidup di dialog.
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  useEffect(() => {
+    if (confirmDelete === null) return;
+    const hasUploading = Object.values(statusesRef.current).some((s) => s?.state === "uploading");
+    if (!hasUploading) return;
+    const id = window.setInterval(() => setNowTs(Date.now()), 1000);
+    return () => window.clearInterval(id);
+  }, [confirmDelete, statuses]);
   // Saat dialog konfirmasi dibuka, ambil snapshot jumlah & total ukuran agar bisa menampilkan delta real-time.
   useEffect(() => {
     if (confirmDelete === null) {
