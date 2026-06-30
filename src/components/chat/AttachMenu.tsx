@@ -595,6 +595,18 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             <Button variant="ghost" onClick={() => { setPending(null); setStatuses([]); }} disabled={!!busy}>
               <X className="mr-1 h-4 w-4" /> Batal
             </Button>
+            {selectMode && selected.size > 0 && !busy ? (
+              <Button variant="destructive" onClick={removeSelectedPending}>
+                <Trash2 className="mr-1 h-4 w-4" />
+                Hapus terpilih ({selected.size})
+              </Button>
+            ) : null}
+            {!selectMode && (pending?.length ?? 0) > 1 && !busy ? (
+              <Button variant="outline" onClick={removeAllPending} aria-label="Hapus semua lampiran">
+                <Trash2 className="mr-1 h-4 w-4" />
+                Hapus semua
+              </Button>
+            ) : null}
             {statuses.some((s) => s?.preflight) && !busy ? (
               <Button variant="outline" onClick={removeInvalidPending}>
                 <X className="mr-1 h-4 w-4" />
