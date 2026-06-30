@@ -525,7 +525,7 @@ function ChatRoomPage() {
           onDelete={() => setBulkDeleteOpen(true)}
           onCopy={() => {
             const text = selectedMessages
-              .map((m) => previewText(m.body) ?? (m.attachment_name ? `📎 ${m.attachment_name}` : ""))
+              .map((m) => safePreview(m))
               .filter(Boolean)
               .join("\n\n");
             navigator.clipboard?.writeText(text).then(
@@ -539,7 +539,7 @@ function ChatRoomPage() {
               .map((m) => {
                 const sp = profiles.data?.get(m.sender_id);
                 const name = sp?.display_name || sp?.email || "Pengguna";
-                return `${name}: ${previewText(m.body) ?? "(lampiran)"}`;
+                return `${name}: ${safePreview(m)}`;
               })
               .join("\n");
             const res = await shareToWhatsApp({ text });
@@ -571,10 +571,10 @@ function ChatRoomPage() {
             if (onlyOne) setNoteSource(onlyOne);
           }}
           onSaveQuickReply={() => {
-            if (onlyOne) setQrSource(previewText(onlyOne.body) ?? "");
+            if (onlyOne) setQrSource(onlyOne.deleted_at ? "" : (previewText(onlyOne.body) ?? ""));
           }}
           onTranslate={() => {
-            if (onlyOne) setTranslateSource(previewText(onlyOne.body) ?? "");
+            if (onlyOne) setTranslateSource(onlyOne.deleted_at ? "" : (previewText(onlyOne.body) ?? ""));
           }}
         />
       ) : (
