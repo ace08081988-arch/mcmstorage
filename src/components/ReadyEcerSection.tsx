@@ -1093,7 +1093,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const existing = getIdem(idemKey);
     const duplicate: ChatShareDuplicateInfo | null =
       existing && existing.status !== "failed"
-        ? { at: existing.at, status: existing.status, destination: convTitle }
+        ? { at: existing.at, status: existing.status, destination: convTitle, fingerprint: existing.fingerprint }
         : null;
     const previousLog = duplicate ? getSendLog(idemKey) : [];
     setPickChatOpen(false);
