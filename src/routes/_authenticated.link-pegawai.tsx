@@ -350,19 +350,34 @@ function LinkPegawaiPage() {
         void fetchFilteredTotal({ silent: true });
         let newUrl: string | null = null;
         try { newUrl = publicTaskUrl(data.share_token); } catch { newUrl = null; }
+        const effectiveExpiresAt = data.expires_at ?? newExpiresAt;
+        let expiresLabel: string | null = null;
+        if (effectiveExpiresAt) {
+          try {
+            expiresLabel = new Intl.DateTimeFormat("id-ID", {
+              dateStyle: "full",
+              timeStyle: "short",
+            }).format(new Date(effectiveExpiresAt));
+          } catch {
+            expiresLabel = new Date(effectiveExpiresAt).toLocaleString();
+          }
+        }
         toast.success(
           newExpiresAt
             ? `Link diperpanjang ${extendDays} hari & token baru aktif`
             : "Token diperbarui — link baru siap dipakai",
-          newUrl
-            ? {
-                duration: 8000,
-                action: {
+          {
+            duration: 9000,
+            description: expiresLabel
+              ? `Kedaluwarsa baru: ${expiresLabel} (WIB/zona perangkat)`
+              : undefined,
+            action: newUrl
+              ? {
                   label: "Salin link",
                   onClick: () => void copyLink(newUrl!),
-                },
-              }
-            : undefined,
+                }
+              : undefined,
+          },
         );
         return;
       }
