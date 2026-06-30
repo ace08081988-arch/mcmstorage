@@ -1,7 +1,10 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Bell, BellOff, Moon, Vibrate, MessageCircle, ClipboardList, PackagePlus, Settings2, BellRing } from "lucide-react";
+import { Bell, BellOff, Moon, Vibrate, MessageCircle, ClipboardList, PackagePlus, Settings2, BellRing, RefreshCw, Inbox } from "lucide-react";
+import { Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useServerFn } from "@tanstack/react-start";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -10,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { StatusBadge } from "@/components/StatusBadge";
+import { Skeleton } from "@/components/ui/skeleton";
 
 import {
   DEFAULT_PREFS,
@@ -29,6 +33,7 @@ import {
   isPushSupported,
   sendTestNotification,
 } from "@/lib/push-client";
+import { getRecentNotifications, type FeedItem } from "@/lib/notif-feed.functions";
 
 export const Route = createFileRoute("/_authenticated/notifikasi")({
   ssr: false,
@@ -194,6 +199,8 @@ function NotifikasiPage() {
               : "Preferensi akan otomatis disinkronkan ke perangkat lain saat Anda login."}
         </p>
       </header>
+
+      <RecentNotificationsCard enabledKinds={prefs.enabledKinds} />
 
       <Card>
         <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
@@ -395,5 +402,132 @@ function NotifikasiPage() {
         </Button>
       </div>
     </div>
+  );
+}
+
+/* ─────────────────── Daftar notifikasi nyata ─────────────────── */
+
+const KIND_META: Record<FeedItem["kind"], { label: string; Icon: typeof MessageCircle; tone: string }> = {
+  chat: { label: "Chat", Icon: MessageCircle, tone: "bg-blue-500/10 text-blue-600" },
+  tugas: { label: "Tugas", Icon: ClipboardList, tone: "bg-emerald-500/10 text-emerald-600" },
+  order: { label: "Pesanan", Icon: PackagePlus, tone: "bg-amber-500/10 text-amber-700" },
+  system: { label: "Sistem", Icon: Settings2, tone: "bg-destructive/10 text-destructive" },
+};
+
+function formatRelative(iso: string, now = new Date()) {
+  const diff = (now.getTime() - new Date(iso).getTime()) / 1000;
+  if (diff < 60) return "baru saja";
+  if (diff < 3600) return `${Math.floor(diff / 60)} mnt lalu`;
+  if (diff < 86400) return `${Math.floor(diff / 3600)} jam lalu`;
+  if (diff < 86400 * 7) return `${Math.floor(diff / 86400)} hari lalu`;
+  return new Date(iso).toLocaleDateString("id-ID", { day: "numeric", month: "short" });
+}
+
+function RecentNotificationsCard({
+  enabledKinds,
+}: {
+  enabledKinds: NotifPrefs["enabledKinds"];
+}) {
+  const fetchFeed = useServerFn(getRecentNotifications);
+  const { data, isLoading, isFetching, refetch, error } = useQuery({
+    queryKey: ["notif-feed"],
+    queryFn: () => fetchFeed(),
+    staleTime: 30_000,
+    refetchOnWindowFocus: true,
+  });
+
+  const items = useMemo(
+    () => (data?.items ?? []).filter((it) => enabledKinds[it.kind]),
+    [data, enabledKinds],
+  );
+  const unreadCount = items.filter((i) => i.unread).length;
+
+  return (
+    <Card>
+      <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
+        <div className="min-w-0">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Inbox className="size-4 text-primary" />
+            Notifikasi terkini
+            {unreadCount > 0 && (
+              <StatusBadge size="xs" variant="info" className="ml-1">
+                {unreadCount} belum dibaca
+              </StatusBadge>
+            )}
+          </CardTitle>
+          <CardDescription>
+            Diambil langsung dari chat, tugas pegawai, pesanan, dan peringatan sistem milik akun ini.
+          </CardDescription>
+        </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          title="Muat ulang"
+        >
+          <RefreshCw className={`size-3.5 ${isFetching ? "animate-spin" : ""}`} />
+        </Button>
+      </CardHeader>
+      <CardContent className="space-y-1">
+        {isLoading ? (
+          <>
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+            <Skeleton className="h-12 w-full" />
+          </>
+        ) : error ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
+            Gagal memuat: {(error as Error).message}
+          </div>
+        ) : items.length === 0 ? (
+          <div className="grid place-items-center gap-1 py-6 text-center text-xs text-muted-foreground">
+            <Inbox className="size-6 opacity-50" />
+            <div>Belum ada notifikasi baru untuk kategori yang aktif.</div>
+          </div>
+        ) : (
+          items.map((it, idx) => {
+            const meta = KIND_META[it.kind];
+            const Icon = meta.Icon;
+            const row = (
+              <div className="flex items-start gap-3 py-2">
+                <span className={`grid size-9 shrink-0 place-items-center rounded-md ${meta.tone}`}>
+                  <Icon className="size-4" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-2">
+                    <div className="truncate text-sm font-medium" title={it.title}>
+                      {it.title}
+                    </div>
+                    {it.unread && <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-primary" />}
+                    <span className="ml-auto shrink-0 text-[11px] text-muted-foreground tabular-nums">
+                      {formatRelative(it.createdAt)}
+                    </span>
+                  </div>
+                  <div className="truncate text-xs text-muted-foreground" title={it.body}>
+                    {it.body}
+                  </div>
+                  <div className="mt-0.5 text-[10px] uppercase tracking-wider text-muted-foreground/70">
+                    {meta.label}
+                  </div>
+                </div>
+              </div>
+            );
+            return (
+              <div key={it.id}>
+                {idx > 0 && <Separator />}
+                {it.href ? (
+                  <Link to={it.href} className="block rounded-md px-1 hover:bg-muted/50">
+                    {row}
+                  </Link>
+                ) : (
+                  <div className="px-1">{row}</div>
+                )}
+              </div>
+            );
+          })
+        )}
+      </CardContent>
+    </Card>
   );
 }
