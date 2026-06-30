@@ -22,6 +22,10 @@ export type ChatShareDuplicateInfo = {
   status: "in-flight" | "done" | "failed";
   /** Label tujuan kiriman sebelumnya untuk ditampilkan di banner duplikat. */
   destination?: string;
+  /** Fingerprint payload kiriman sebelumnya. Dipakai untuk membandingkan
+   *  dengan payload saat ini agar tombol "Kirim ulang (paksa)" hanya aktif
+   *  saat konten benar-benar sama. */
+  fingerprint?: string;
 };
 
 /** Status hidup pengiriman ke chat — dipakai untuk menampilkan progres di dialog. */
@@ -72,6 +76,7 @@ export function ChatSharePreviewDialog({
   duplicate,
   onForceSend,
   previousLog,
+  currentFingerprint,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -83,6 +88,8 @@ export function ChatSharePreviewDialog({
   duplicate?: ChatShareDuplicateInfo | null;
   onForceSend?: () => void;
   previousLog?: SendLogEntry[];
+  /** Fingerprint payload yang akan dikirim sekarang. */
+  currentFingerprint?: string;
 }) {
   const progressActive = !!status && (sending || !!status.outcome);
   const totalSteps = (status?.captionStep ? 1 : 0) + (status?.photosTotal ?? 0) + (status?.locationStep ? 1 : 0);
@@ -96,6 +103,17 @@ export function ChatSharePreviewDialog({
   const dupAgoLabel = dupAgoSec < 60 ? `${dupAgoSec} detik lalu` : `${Math.round(dupAgoSec / 60)} menit lalu`;
   const dupAbsLabel = duplicate ? new Date(duplicate.at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "";
   const dupStatusLabel = duplicate ? (duplicate.status === "in-flight" ? "Masih berjalan" : duplicate.status === "done" ? "Sudah terkirim" : "Gagal") : "";
+  // Hanya izinkan "Kirim ulang (paksa)" jika fingerprint payload saat ini
+  // sama dengan fingerprint kiriman sebelumnya yang dicatat oleh idempotency.
+  // Mencegah operator mengirim konten berbeda (caption/foto/lokasi berubah)
+  // di bawah idempotency key yang sama secara tidak sengaja.
+  const dupFp = duplicate?.fingerprint;
+  const payloadMatches = !!dupFp && !!currentFingerprint && dupFp === currentFingerprint;
+  const forceDisabledReason = !payloadMatches
+    ? (!dupFp
+        ? "Tidak ada sidik jari payload kiriman sebelumnya — tunggu jeda idempotency selesai (≈5 menit) sebelum mengirim ulang."
+        : "Payload (caption / foto / lokasi) berbeda dari kiriman sebelumnya. Tombol paksa dinonaktifkan agar konten berbeda tidak terkirim dengan key idempotency yang sama.")
+    : null;
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!sending) onOpenChange(o); }}>
@@ -131,6 +149,20 @@ export function ChatSharePreviewDialog({
                     <dt className="font-medium opacity-80">Status</dt>
                     <dd className="break-words">{dupStatusLabel}</dd>
                   </dl>
+                {duplicate.status !== "in-flight" ? (
+                  <div
+                    className={
+                      "mt-2 rounded-md border px-2 py-1.5 text-[11px] " +
+                      (payloadMatches
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                        : "border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-200")
+                    }
+                  >
+                    {payloadMatches
+                      ? "Payload identik dengan kiriman sebelumnya — aman untuk dikirim ulang bila perlu."
+                      : forceDisabledReason}
+                  </div>
+                ) : null}
                 </div>
               </div>
             ) : null}
@@ -288,8 +320,14 @@ export function ChatSharePreviewDialog({
                 <button
                   type="button"
                   onClick={onForceSend}
-                  disabled={sending || !data || !onForceSend || duplicate?.status === "in-flight"}
-                  title={duplicate?.status === "in-flight" ? "Kiriman sebelumnya masih berjalan" : "Kirim ulang meski klik ganda terdeteksi"}
+                  disabled={sending || !data || !onForceSend || duplicate?.status === "in-flight" || !payloadMatches}
+                  title={
+                    duplicate?.status === "in-flight"
+                      ? "Kiriman sebelumnya masih berjalan"
+                      : !payloadMatches
+                        ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
+                        : "Kirim ulang meski klik ganda terdeteksi"
+                  }
                   className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50"
                 >
                   <ShieldAlert className="h-4 w-4" />
