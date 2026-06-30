@@ -65,6 +65,14 @@ import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 
+const DELETED_PLACEHOLDER = "(pesan dihapus)";
+
+function safePreview(m: { body?: string | null; attachment_name?: string | null; deleted_at?: string | null } | null | undefined): string {
+  if (!m) return "";
+  if (m.deleted_at) return DELETED_PLACEHOLDER;
+  return previewText(m.body ?? null) ?? (m.attachment_name ? `📎 ${m.attachment_name}` : "(lampiran)");
+}
+
 function ChatProGate() {
   const ent = useEntitlement();
   if (ent.loading || ent.isPro) return null;
@@ -517,7 +525,7 @@ function ChatRoomPage() {
           onDelete={() => setBulkDeleteOpen(true)}
           onCopy={() => {
             const text = selectedMessages
-              .map((m) => previewText(m.body) ?? (m.attachment_name ? `📎 ${m.attachment_name}` : ""))
+              .map((m) => safePreview(m))
               .filter(Boolean)
               .join("\n\n");
             navigator.clipboard?.writeText(text).then(
@@ -531,7 +539,7 @@ function ChatRoomPage() {
               .map((m) => {
                 const sp = profiles.data?.get(m.sender_id);
                 const name = sp?.display_name || sp?.email || "Pengguna";
-                return `${name}: ${previewText(m.body) ?? "(lampiran)"}`;
+                return `${name}: ${safePreview(m)}`;
               })
               .join("\n");
             const res = await shareToWhatsApp({ text });
@@ -563,10 +571,10 @@ function ChatRoomPage() {
             if (onlyOne) setNoteSource(onlyOne);
           }}
           onSaveQuickReply={() => {
-            if (onlyOne) setQrSource(previewText(onlyOne.body) ?? "");
+            if (onlyOne) setQrSource(onlyOne.deleted_at ? "" : (previewText(onlyOne.body) ?? ""));
           }}
           onTranslate={() => {
-            if (onlyOne) setTranslateSource(previewText(onlyOne.body) ?? "");
+            if (onlyOne) setTranslateSource(onlyOne.deleted_at ? "" : (previewText(onlyOne.body) ?? ""));
           }}
         />
       ) : (
@@ -889,7 +897,7 @@ function ChatRoomPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={async () => {
-                                const text = `${senderName}: ${previewText(m.body) ?? "(lampiran)"}`;
+                                const text = `${senderName}: ${safePreview(m)}`;
                                 const res = await shareToWhatsApp({ text });
                                 notifyShareResult(res);
                               }}
@@ -899,7 +907,8 @@ function ChatRoomPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={() => {
-                                navigator.clipboard?.writeText(m.body ?? "").then(
+                                const text = m.deleted_at ? DELETED_PLACEHOLDER : (m.body ?? "");
+                                navigator.clipboard?.writeText(text).then(
                                   () => toast.success("Teks pesan disalin"),
                                   () => toast.error("Gagal menyalin"),
                                 );
@@ -1364,7 +1373,7 @@ function ChatRoomPage() {
       <SaveAsNoteDialog
         open={noteSource !== null}
         onOpenChange={(v) => { if (!v) setNoteSource(null); }}
-        defaultBody={previewText(noteSource?.body ?? null) ?? ""}
+        defaultBody={noteSource?.deleted_at ? DELETED_PLACEHOLDER : (previewText(noteSource?.body ?? null) ?? "")}
         conversationId={conversationId}
         sourceMessageId={noteSource?.id}
       />
