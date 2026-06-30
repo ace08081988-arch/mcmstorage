@@ -775,8 +775,8 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             const lockedCount = targets.filter((p) => statuses[p.id]?.state === "uploading").length;
             const removable = targets.filter((p) => statuses[p.id]?.state !== "uploading");
             const previewLimit = 6;
-            const shown = showAllDelete ? removable : removable.slice(0, previewLimit);
-            const extra = removable.length - shown.length;
+            const shown = showAllDelete ? targets : targets.slice(0, previewLimit);
+            const extra = targets.length - shown.length;
             const totalBytes = removable.reduce((sum, p) => sum + (p.file.size || 0), 0);
             return (
               <>
@@ -792,16 +792,33 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       : `Total ${formatBytes(totalBytes)} akan dibuang dari antrean dan tidak bisa dikembalikan.`}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
-                {removable.length > 0 ? (
+                {targets.length > 0 ? (
                   <ul className={`${showAllDelete ? "max-h-64" : "max-h-44"} overflow-y-auto rounded-md border bg-muted/30 p-2 text-[12px]`}>
                     {shown.map((p) => {
-                      const st = statuses[p.id]?.state;
+                      const st = statuses[p.id]?.state ?? "idle";
+                      const preflight = statuses[p.id]?.preflight;
+                      const isLocked = st === "uploading";
+                      const label =
+                        st === "uploading" ? "uploading"
+                          : st === "error" ? "gagal"
+                          : st === "sent" ? "terkirim"
+                          : preflight ? "ditolak"
+                          : "menunggu";
+                      const tone =
+                        st === "uploading" ? "border-amber-400/50 bg-amber-500/10 text-amber-700 dark:text-amber-400"
+                          : st === "error" ? "border-destructive/40 bg-destructive/10 text-destructive"
+                          : st === "sent" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                          : preflight ? "border-destructive/40 bg-destructive/10 text-destructive"
+                          : "border-muted-foreground/30 bg-background text-muted-foreground";
                       return (
-                        <li key={p.id} className="flex items-center justify-between gap-2 py-0.5">
-                          <span className="truncate" title={p.file.name}>• {p.file.name}</span>
-                          <span className="shrink-0 text-[10px] text-muted-foreground">
-                            {formatBytes(p.file.size)}
-                            {st === "error" ? " · gagal" : st === "sent" ? " · terkirim" : ""}
+                        <li key={p.id} className={`flex items-center justify-between gap-2 py-0.5 ${isLocked ? "opacity-60" : ""}`}>
+                          <span className="min-w-0 flex-1 truncate" title={p.file.name}>
+                            • {p.file.name}
+                            {isLocked ? <span className="ml-1 text-[10px] italic text-amber-600 dark:text-amber-400">(dilewati)</span> : null}
+                          </span>
+                          <span className="flex shrink-0 items-center gap-1">
+                            <span className={`rounded-full border px-1.5 py-0 text-[9px] font-medium uppercase tracking-wide ${tone}`}>{label}</span>
+                            <span className="text-[10px] text-muted-foreground">{formatBytes(p.file.size)}</span>
                           </span>
                         </li>
                       );
