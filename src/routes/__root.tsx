@@ -19,6 +19,7 @@ import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
 import { WhatsAppTargetHost } from "@/lib/wa-target";
 import { WaPreviewHost } from "@/lib/wa-preview";
+import { useDeviceSessionGuard } from "@/lib/device-sessions";
 
 function NotFoundComponent() {
   return (
