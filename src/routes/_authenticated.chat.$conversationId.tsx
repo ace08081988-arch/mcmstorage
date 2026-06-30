@@ -667,14 +667,18 @@ function ChatRoomPage() {
                   }
                 }
                 return (
-                  <div key={m.id} className={`flex ${mine ? "justify-end" : "justify-start"}`}>
+                  <div
+                    key={m.id}
+                    id={`msg-${m.id}`}
+                    className={`flex transition ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
+                  >
                     <div className={`group relative flex max-w-[80%] items-start gap-1 ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
                         className={`rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm ${
                           mine
                             ? "rounded-br-sm bg-primary text-primary-foreground"
                             : "rounded-bl-sm bg-muted text-foreground"
-                        } select-none touch-manipulation`}
+                        } select-none touch-manipulation ${selectedIds.has(m.id) ? "ring-2 ring-primary" : ""}`}
                         onPointerDown={(e) => {
                           if (e.pointerType === "mouse" && e.button !== 0) return;
                           startLongPress(m);
@@ -682,14 +686,22 @@ function ChatRoomPage() {
                         onPointerUp={cancelLongPress}
                         onPointerLeave={cancelLongPress}
                         onPointerCancel={cancelLongPress}
+                        onClick={() => {
+                          if (selectionMode) toggleSelect(m);
+                        }}
                         onContextMenu={(e) => {
                           if (m.deleted_at) return;
                           e.preventDefault();
-                          setLongPressMsg(m);
+                          toggleSelect(m);
                         }}
                       >
                         {showSender ? (
                           <div className="mb-0.5 text-[10px] font-semibold opacity-80">{senderName}</div>
+                        ) : null}
+                        {m.pinned_at && !m.deleted_at ? (
+                          <div className={`mb-0.5 inline-flex items-center gap-1 text-[10px] ${mine ? "text-primary-foreground/80" : "text-amber-600"}`}>
+                            <Pin className="h-3 w-3" /> Disematkan
+                          </div>
                         ) : null}
                         {replyMsg ? (
                           <div
@@ -746,6 +758,9 @@ function ChatRoomPage() {
                         )}
                         <div className={`mt-0.5 flex items-center justify-end gap-1 text-[10px] ${mine ? "text-primary-foreground/70" : "text-muted-foreground"}`}>
                           {m.edited_at && !m.deleted_at ? <span className="italic">diedit</span> : null}
+                          {(m.starred_by ?? []).length > 0 && !m.deleted_at ? (
+                            <Star className="h-3 w-3 fill-current text-amber-400" aria-label="Berbintang" />
+                          ) : null}
                           <span>{fmtTime(m.created_at)}</span>
                           {mine && !m.deleted_at ? (
                             (() => {
