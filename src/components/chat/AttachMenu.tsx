@@ -911,6 +911,21 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             };
             const tSel = tally(targets);
             const tAll = tally(pending ?? []);
+            const fmtDur = (ms: number) => {
+              if (!Number.isFinite(ms) || ms < 0) return "—";
+              const s = Math.round(ms / 1000);
+              if (s < 60) return `${s}d`;
+              const m = Math.floor(s / 60); const r = s % 60;
+              return r === 0 ? `${m}m` : `${m}m${r}d`;
+            };
+            const fmtStart = (ts: number) => {
+              try { return new Date(ts).toLocaleTimeString(undefined, { hour: "2-digit", minute: "2-digit", second: "2-digit" }); } catch { return ""; }
+            };
+            const estimateMsFor = (bytes: number) => {
+              const s = uploadStatsRef.current;
+              if (!bytes || s.bytes <= 0) return null;
+              return Math.round((bytes * s.ms) / s.bytes);
+            };
             return (
               <>
                 <AlertDialogHeader>
