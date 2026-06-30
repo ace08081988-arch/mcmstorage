@@ -1415,6 +1415,24 @@ function ChatRoomPage() {
         onOpenChange={(v) => { if (!v) setQrSource(null); }}
         defaultBody={qrSource ?? ""}
       />
+
+      <StickerPickerDialog
+        conversationId={conversationId}
+        open={editStickerMsg !== null}
+        onOpenChange={(v) => { if (!v) setEditStickerMsg(null); }}
+        initial={editStickerMsg ? parseStickerFromBody(editStickerMsg.body) : null}
+        mode={
+          editStickerMsg
+            ? {
+                kind: "edit",
+                messageId: editStickerMsg.id,
+                onCommit: async (newBody) => {
+                  await editMsg.mutateAsync({ messageId: editStickerMsg.id, body: newBody });
+                },
+              }
+            : { kind: "create" }
+        }
+      />
     </div>
   );
 }
