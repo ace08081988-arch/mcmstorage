@@ -212,6 +212,11 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     setBusy(null);
     setProgress(null);
     if (!anyError) {
+      const okCount = indices.length;
+      toast.success(
+        okCount > 1 ? `${okCount} lampiran terkirim` : "Lampiran terkirim",
+        { description: cap ? `Caption: "${cap.slice(0, 60)}${cap.length > 60 ? "…" : ""}"` : undefined },
+      );
       // Semua berhasil → tutup dialog setelah jeda kecil supaya status terlihat.
       setTimeout(() => {
         setPending(null);
@@ -219,7 +224,24 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         setStatuses([]);
       }, 300);
     } else {
-      toast.error(`${statuses.filter((s) => s?.state === "error").length || "Beberapa"} lampiran gagal — tekan "Coba lagi"`);
+      // Hitung dari hasil terbaru, bukan state lama.
+      const okCount = indices.filter((i) => {
+        // status state diset sinkron tapi kita pakai snapshot terbaru via DOM batch — fallback aman:
+        return false;
+      }).length; // placeholder dihindari di bawah
+      // Hitung ulang dari closure: kita tahu total = indices.length, dan anyError true.
+      // Pakai counter sederhana yang kita pelihara sepanjang loop.
+      const failed = failedCount;
+      const ok = indices.length - failed;
+      toast.error(
+        failed > 1 ? `${failed} lampiran gagal diunggah` : "1 lampiran gagal diunggah",
+        {
+          description: ok > 0
+            ? `${ok} berhasil terkirim. Tekan "Coba lagi" untuk mengulang yang gagal.`
+            : `Tekan "Coba lagi" untuk mengulang.`,
+        },
+      );
+      void okCount;
     }
   }
 
