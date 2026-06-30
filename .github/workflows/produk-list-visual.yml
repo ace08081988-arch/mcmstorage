@@ -1,0 +1,126 @@
+name: Produk List Visual Regression
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.ecer.tsx"
+      - "src/routes/_authenticated.gudang.tsx"
+      - "src/routes/_authenticated.gudang.pesanan.$id.tsx"
+      - "src/components/StatusBadge.tsx"
+      - "src/components/ReadyEcerSection.tsx"
+      - "src/components/ecer/**"
+      - "src/routes/lovable.visual.produk-list.tsx"
+      - "src/styles.css"
+      - "tests/visual/produk-list.public.spec.ts"
+      - "tests/visual/__screenshots__/produk-list.public.spec.ts/**"
+      - "playwright.config.ts"
+      - ".github/workflows/produk-list-visual.yml"
+  push:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.ecer.tsx"
+      - "src/routes/_authenticated.gudang.tsx"
+      - "src/routes/_authenticated.gudang.pesanan.$id.tsx"
+      - "src/components/StatusBadge.tsx"
+      - "src/components/ReadyEcerSection.tsx"
+      - "src/components/ecer/**"
+      - "src/routes/lovable.visual.produk-list.tsx"
+      - "src/styles.css"
+      - "tests/visual/produk-list.public.spec.ts"
+      - "tests/visual/__screenshots__/produk-list.public.spec.ts/**"
+      - "playwright.config.ts"
+      - ".github/workflows/produk-list-visual.yml"
+  workflow_dispatch:
+
+# Visual regression daftar produk pada 4 lebar Android umum
+# (320/360/411/480). Fixture publik tanpa auth/network di
+# /lovable/visual/produk-list. Setiap pixel diff > toleransi atau
+# baseline yang hilang akan menggagalkan CI.
+jobs:
+  produk-list-visual:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_URL: http://localhost:5173
+      CI: "true"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun global store
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-store-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-store-
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Cache Playwright browsers
+        id: cache-playwright
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Install Playwright Chromium
+        run: bunx playwright install --with-deps chromium
+
+      - name: Start dev server
+        run: |
+          mkdir -p artifacts
+          (bun run dev --port 5173 --host 127.0.0.1 > artifacts/dev-server.log 2>&1 &) || \
+            (bunx vite --port 5173 --host 127.0.0.1 > artifacts/dev-server.log 2>&1 &)
+          for i in $(seq 1 90); do
+            if curl -sf "http://localhost:5173/lovable/visual/produk-list?part=hero" > /dev/null; then
+              echo "dev server ready after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "Dev server failed to start"; tail -100 artifacts/dev-server.log; exit 1
+
+      - name: Run Playwright visual regression (produk-list, 4 viewports)
+        run: |
+          bunx playwright test tests/visual/produk-list.public.spec.ts \
+            --project=produk-list-320 \
+            --project=produk-list-360 \
+            --project=produk-list-411 \
+            --project=produk-list-480 \
+            --reporter=list,html
+
+      - name: Collect screenshot diffs
+        if: failure()
+        run: |
+          mkdir -p artifacts/diffs
+          find test-results playwright-report tests/visual/__screenshots__ \
+            -type f \( -name '*-actual.png' -o -name '*-diff.png' -o -name '*-expected.png' \) \
+            -exec cp --parents {} artifacts/diffs/ \; 2>/dev/null || true
+          ls -la artifacts/diffs || true
+
+      - name: Upload Playwright report + diffs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: produk-list-visual-report
+          path: |
+            playwright-report/**
+            test-results/**
+            artifacts/**
+          retention-days: 14
+          if-no-files-found: ignore
