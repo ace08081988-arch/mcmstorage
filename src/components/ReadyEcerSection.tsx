@@ -1583,6 +1583,72 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     }
   }
 
+  // ---------- Bulk action listeners (multi-pilih dari toolbar) ----------
+  const autoBulkChat = useRef(false);
+  useEffect(() => {
+    const dispatchDone = () => window.dispatchEvent(new CustomEvent(`ecer-bulk-done:${r.id}`));
+    const fake = { preventDefault() {}, stopPropagation() {} } as unknown as React.MouseEvent;
+    const handleWa = async () => {
+      try { await sendWA(fake); } catch { /* dilaporkan di kartu */ } finally { dispatchDone(); }
+    };
+    const handleChat = async (e: Event) => {
+      const ev = e as CustomEvent<{ conversationId: string; conversationTitle: string }>;
+      if (!ev.detail) { dispatchDone(); return; }
+      autoBulkChat.current = true;
+      try { await prepareChat(ev.detail.conversationId, ev.detail.conversationTitle); }
+      catch { autoBulkChat.current = false; dispatchDone(); }
+      // Lanjutan: effect auto-confirm di bawah akan menutup dialog & dispatch done.
+    };
+    const handleUndo = () => {
+      try { unmarkSent(shots.map((s) => s.id)); } finally { dispatchDone(); }
+    };
+    const handleSkip = () => {
+      try {
+        if (shots.length > 0) {
+          markSent(shots.map((s) => s.id), {
+            channel: "wa",
+            mapsUrl: null,
+            status: "success",
+            idemKey: `bulk-skip-${r.id}-${Date.now()}`,
+          });
+        }
+      } finally { dispatchDone(); }
+    };
+    window.addEventListener(`ecer-bulk:wa:${r.id}`, handleWa as EventListener);
+    window.addEventListener(`ecer-bulk:chat:${r.id}`, handleChat as EventListener);
+    window.addEventListener(`ecer-bulk:undo:${r.id}`, handleUndo as EventListener);
+    window.addEventListener(`ecer-bulk:skip:${r.id}`, handleSkip as EventListener);
+    return () => {
+      window.removeEventListener(`ecer-bulk:wa:${r.id}`, handleWa as EventListener);
+      window.removeEventListener(`ecer-bulk:chat:${r.id}`, handleChat as EventListener);
+      window.removeEventListener(`ecer-bulk:undo:${r.id}`, handleUndo as EventListener);
+      window.removeEventListener(`ecer-bulk:skip:${r.id}`, handleSkip as EventListener);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [r.id, shots]);
+
+  // Auto-confirm bulk-chat saat tidak ada duplikat — supaya satu klik bulk
+  // memproses semua kartu tanpa harus menekan tombol Kirim di tiap pratinjau.
+  useEffect(() => {
+    if (!autoBulkChat.current) return;
+    if (chatPreview && !chatPreview.duplicate && !chatSending && chatPreviewOpen) {
+      void confirmChatSend();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [chatPreview, chatPreviewOpen]);
+
+  // Tutup dialog & beritahu orkestrator bulk saat satu kartu selesai.
+  useEffect(() => {
+    if (!autoBulkChat.current) return;
+    if (!chatSending && chatStatus?.outcome) {
+      autoBulkChat.current = false;
+      setChatPreviewOpen(false);
+      setChatPreview(null);
+      setChatStatus(null);
+      window.dispatchEvent(new CustomEvent(`ecer-bulk-done:${r.id}`));
+    }
+  }, [chatSending, chatStatus, r.id]);
+
   return (
     <div className="group flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition hover:border-primary/40 hover:shadow-md">
       {shots.length > 0 ? (
