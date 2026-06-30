@@ -1483,6 +1483,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         onForceSend={() => { void confirmChatSend({ force: true }); }}
         previousLog={chatPreview?.previousLog ?? []}
         currentFingerprint={chatPreview?.fingerprint}
+        idemIdsKey={chatPreview?.idemIdsKey}
       />
     </div>
   );
