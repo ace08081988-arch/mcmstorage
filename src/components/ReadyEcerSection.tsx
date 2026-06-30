@@ -939,7 +939,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const take = shots.slice(0, 6);
     const idemKey = buildSendKey({ channel: "wa", ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
-    const duplicate: IdemRecord | null = existing && existing.status !== "failed" ? existing : null;
+    const duplicateRec: IdemRecord | null = existing && existing.status !== "failed" ? existing : null;
+    const duplicate = duplicateRec
+      ? { at: duplicateRec.at, status: duplicateRec.status, destination: r.name }
+      : null;
     setSending(true);
     setSendStatus("sending");
     setSendError(null);
@@ -1066,7 +1069,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const idemKey = buildSendKey({ channel: "chat", conversationId, ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
     const duplicate: ChatShareDuplicateInfo | null =
-      existing && existing.status !== "failed" ? { at: existing.at, status: existing.status } : null;
+      existing && existing.status !== "failed"
+        ? { at: existing.at, status: existing.status, destination: convTitle }
+        : null;
     setPickChatOpen(false);
     setChatPreparing(true);
     setSendError(null);
