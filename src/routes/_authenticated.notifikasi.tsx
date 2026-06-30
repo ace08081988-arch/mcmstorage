@@ -711,20 +711,51 @@ function InfiniteScrollSentinel({
   loading: boolean;
 }) {
   const ref = useRef<HTMLDivElement | null>(null);
+  const onVisibleRef = useRef(onVisible);
+  const loadingRef = useRef(loading);
+  const lastFiredRef = useRef(0);
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  useEffect(() => {
+    onVisibleRef.current = onVisible;
+    loadingRef.current = loading;
+  }, [onVisible, loading]);
   useEffect(() => {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
+    const COOLDOWN_MS = 400;
+    const tryFire = () => {
+      if (loadingRef.current) return;
+      const now = Date.now();
+      const wait = Math.max(0, COOLDOWN_MS - (now - lastFiredRef.current));
+      if (wait === 0) {
+        lastFiredRef.current = now;
+        onVisibleRef.current();
+      } else if (!timerRef.current) {
+        timerRef.current = setTimeout(() => {
+          timerRef.current = null;
+          if (loadingRef.current) return;
+          lastFiredRef.current = Date.now();
+          onVisibleRef.current();
+        }, wait);
+      }
+    };
     const io = new IntersectionObserver(
       (entries) => {
         for (const e of entries) {
-          if (e.isIntersecting) onVisible();
+          if (e.isIntersecting) tryFire();
         }
       },
       { rootMargin: "200px 0px" },
     );
     io.observe(el);
-    return () => io.disconnect();
-  }, [onVisible]);
+    return () => {
+      io.disconnect();
+      if (timerRef.current) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
+    };
+  }, []);
   return (
     <div
       ref={ref}
