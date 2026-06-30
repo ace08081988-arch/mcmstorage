@@ -8,12 +8,12 @@ import { ecerSignedUrl } from "@/lib/ecer";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
-import { ChatSharePreviewDialog, type ChatSharePreviewData, type ChatShareLiveStatus } from "@/components/ChatSharePreviewDialog";
+import { ChatSharePreviewDialog, type ChatSharePreviewData, type ChatShareLiveStatus, type ChatShareDuplicateInfo } from "@/components/ChatSharePreviewDialog";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, History, Undo2 } from "lucide-react";
 import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
-import { buildSendKey, withIdempotency, getIdem } from "@/lib/idempotency";
+import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, type IdemRecord } from "@/lib/idempotency";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
 // Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
@@ -919,6 +919,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     chatShots: { id: string; file: File; caption?: string }[];
     markIds: string[];
     preview: ChatSharePreviewData;
+    duplicate: ChatShareDuplicateInfo | null;
   };
   const [chatPreview, setChatPreview] = useState<ChatPreviewState | null>(null);
   const [chatStatus, setChatStatus] = useState<ChatShareLiveStatus | null>(null);
@@ -938,14 +939,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const take = shots.slice(0, 6);
     const idemKey = buildSendKey({ channel: "wa", ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
-    if (existing && existing.status !== "failed") {
-      toast.info(
-        existing.status === "in-flight"
-          ? "Pengiriman WA untuk paket ini sedang berjalan…"
-          : "Paket ini baru saja terkirim ke WA. Klik diabaikan untuk hindari kiriman ganda.",
-      );
-      return;
-    }
+    const duplicate: IdemRecord | null = existing && existing.status !== "failed" ? existing : null;
     setSending(true);
     setSendStatus("sending");
     setSendError(null);
@@ -995,29 +989,50 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
         ...lines,
       ].join("\n");
-      const res = await withIdempotency(idemKey, {
-        onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
-        run: async () => {
-          const r0 = await shareToWhatsApp({
+      const callShare = () => shareToWhatsApp({
             text,
             title: r.name,
             files,
             url: firstLocation ?? undefined,
             expectedCount,
             retryMissing,
+            duplicate,
           });
+      // Saat duplikat aktif: bypass withIdempotency agar pratinjau (yang sekarang
+      // memuat peringatan "Klik ganda terdeteksi") selalu tampil. Jika operator
+      // memilih Kirim ulang (paksa), `shareToWhatsApp` mengembalikan shared/fallback —
+      // bersihkan record lama sebelum menulis record baru.
+      let res: { status: "shared"; error?: string };
+      if (duplicate) {
+        const r0 = await callShare();
+        notifyShareResult(r0);
+        if (r0.status === "shared" || r0.status === "fallback") {
+          clearIdem(idemKey);
+          setIdem(idemKey, "done");
+          markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
+          res = { status: "shared" };
+        } else if (r0.status === "cancelled") {
+          throw new Error("__cancelled__");
+        } else {
+          throw new Error(r0.error || "share-failed");
+        }
+      } else {
+        res = await withIdempotency(idemKey, {
+          onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
+          run: async () => {
+            const r0 = await callShare();
           notifyShareResult(r0);
           if (r0.status === "shared" || r0.status === "fallback") {
             markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
-            return { status: "shared" as const, error: undefined as string | undefined, raw: r0 };
+            return { status: "shared" as const, error: undefined as string | undefined };
           }
           if (r0.status === "cancelled") {
-            // Cancellation is not a "done" — clear so the user can retry.
             throw new Error("__cancelled__");
           }
           throw new Error(r0.error || "share-failed");
         },
       });
+      }
       void res;
       setSendStatus("success");
     } catch (err) {
@@ -1050,15 +1065,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const take = shots.slice(0, 6);
     const idemKey = buildSendKey({ channel: "chat", conversationId, ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
-    if (existing && existing.status !== "failed") {
-      toast.info(
-        existing.status === "in-flight"
-          ? "Pengiriman ke chat sedang berjalan…"
-          : "Paket ini baru saja terkirim ke chat ini. Klik diabaikan untuk hindari kiriman ganda.",
-      );
-      setPickChatOpen(false);
-      return;
-    }
+    const duplicate: ChatShareDuplicateInfo | null =
+      existing && existing.status !== "failed" ? { at: existing.at, status: existing.status } : null;
     setPickChatOpen(false);
     setChatPreparing(true);
     setSendError(null);
@@ -1114,6 +1122,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         chatShots,
         markIds: take.map((s) => s.id),
         preview,
+        duplicate,
       });
       setChatPreviewOpen(true);
     } catch (err) {
@@ -1127,9 +1136,14 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     }
   }
 
-  async function confirmChatSend() {
+  async function confirmChatSend(opts?: { force?: boolean }) {
     const ctx = chatPreview;
     if (!ctx || chatSending) return;
+    // Jika operator menekan "Kirim ulang (paksa)" pada banner duplikat, bersihkan
+    // record lama agar withIdempotency tidak men-skip eksekusi.
+    if (opts?.force) {
+      clearIdem(ctx.idemKey);
+    }
     const captionStep = ctx.caption.trim().length > 0;
     const locationStep = !!(ctx.locationUrl && ctx.locationUrl.trim());
     const photosTotal = ctx.chatShots.length;
@@ -1401,6 +1415,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         onConfirm={() => { void confirmChatSend(); }}
         status={chatStatus}
         onRetry={() => { setChatStatus(null); void confirmChatSend(); }}
+        duplicate={chatPreview?.duplicate ?? null}
+        onForceSend={() => { void confirmChatSend({ force: true }); }}
       />
     </div>
   );
