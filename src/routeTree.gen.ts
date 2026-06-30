@@ -40,6 +40,7 @@ import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authent
 import { Route as AuthenticatedChatAuditRouteImport } from './routes/_authenticated.chat-audit'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
 import { Route as AuthenticatedCatatanRouteImport } from './routes/_authenticated.catatan'
+import { Route as AuthenticatedBukuAlamatRouteImport } from './routes/_authenticated.buku-alamat'
 import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authenticated.balas-cepat'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
@@ -215,6 +216,11 @@ const AuthenticatedCatatanRoute = AuthenticatedCatatanRouteImport.update({
   path: '/catatan',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedBukuAlamatRoute = AuthenticatedBukuAlamatRouteImport.update({
+  id: '/buku-alamat',
+  path: '/buku-alamat',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedBalasCepatRoute = AuthenticatedBalasCepatRouteImport.update({
   id: '/balas-cepat',
   path: '/balas-cepat',
@@ -309,6 +315,7 @@ export interface FileRoutesByFullPath {
   '/trust': typeof TrustRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/balas-cepat': typeof AuthenticatedBalasCepatRoute
+  '/buku-alamat': typeof AuthenticatedBukuAlamatRoute
   '/catatan': typeof AuthenticatedCatatanRoute
   '/chat': typeof AuthenticatedChatRouteWithChildren
   '/chat-audit': typeof AuthenticatedChatAuditRoute
@@ -354,6 +361,7 @@ export interface FileRoutesByTo {
   '/trust': typeof TrustRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/balas-cepat': typeof AuthenticatedBalasCepatRoute
+  '/buku-alamat': typeof AuthenticatedBukuAlamatRoute
   '/catatan': typeof AuthenticatedCatatanRoute
   '/chat-audit': typeof AuthenticatedChatAuditRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
@@ -401,6 +409,7 @@ export interface FileRoutesById {
   '/trust': typeof TrustRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/balas-cepat': typeof AuthenticatedBalasCepatRoute
+  '/_authenticated/buku-alamat': typeof AuthenticatedBukuAlamatRoute
   '/_authenticated/catatan': typeof AuthenticatedCatatanRoute
   '/_authenticated/chat': typeof AuthenticatedChatRouteWithChildren
   '/_authenticated/chat-audit': typeof AuthenticatedChatAuditRoute
@@ -450,6 +459,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/audit'
     | '/balas-cepat'
+    | '/buku-alamat'
     | '/catatan'
     | '/chat'
     | '/chat-audit'
@@ -495,6 +505,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/audit'
     | '/balas-cepat'
+    | '/buku-alamat'
     | '/catatan'
     | '/chat-audit'
     | '/device-verify'
@@ -541,6 +552,7 @@ export interface FileRouteTypes {
     | '/trust'
     | '/_authenticated/audit'
     | '/_authenticated/balas-cepat'
+    | '/_authenticated/buku-alamat'
     | '/_authenticated/catatan'
     | '/_authenticated/chat'
     | '/_authenticated/chat-audit'
@@ -815,6 +827,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCatatanRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/buku-alamat': {
+      id: '/_authenticated/buku-alamat'
+      path: '/buku-alamat'
+      fullPath: '/buku-alamat'
+      preLoaderRoute: typeof AuthenticatedBukuAlamatRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/balas-cepat': {
       id: '/_authenticated/balas-cepat'
       path: '/balas-cepat'
@@ -959,6 +978,7 @@ const AuthenticatedGudangRouteWithChildren =
 interface AuthenticatedRouteChildren {
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedBalasCepatRoute: typeof AuthenticatedBalasCepatRoute
+  AuthenticatedBukuAlamatRoute: typeof AuthenticatedBukuAlamatRoute
   AuthenticatedCatatanRoute: typeof AuthenticatedCatatanRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRouteWithChildren
   AuthenticatedChatAuditRoute: typeof AuthenticatedChatAuditRoute
@@ -986,6 +1006,7 @@ interface AuthenticatedRouteChildren {
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedBalasCepatRoute: AuthenticatedBalasCepatRoute,
+  AuthenticatedBukuAlamatRoute: AuthenticatedBukuAlamatRoute,
   AuthenticatedCatatanRoute: AuthenticatedCatatanRoute,
   AuthenticatedChatRoute: AuthenticatedChatRouteWithChildren,
   AuthenticatedChatAuditRoute: AuthenticatedChatAuditRoute,
