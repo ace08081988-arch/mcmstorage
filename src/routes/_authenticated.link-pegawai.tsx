@@ -249,6 +249,44 @@ function LinkPegawaiPage() {
     return () => clearInterval(id);
   }, [testMode]);
 
+  // Realtime: sinkronkan perubahan tugas (token diperpanjang, status diubah,
+  // tugas dihapus) dari tab/perangkat lain tanpa perlu refresh. Badge
+  // "Kedaluwarsa"/"Aktif" ikut terhitung ulang karena tergantung
+  // `tasks` + `now`.
+  useEffect(() => {
+    const ch = supabase
+      .channel("prep_tasks-link-pegawai")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "prep_tasks" },
+        (payload) => {
+          if (payload.eventType === "UPDATE") {
+            const next = payload.new as Task;
+            setTasks((prev) =>
+              prev ? prev.map((t) => (t.id === next.id ? { ...t, ...next } : t)) : prev,
+            );
+          } else if (payload.eventType === "DELETE") {
+            const oldId = (payload.old as { id?: string })?.id;
+            if (!oldId) return;
+            setTasks((prev) => (prev ? prev.filter((t) => t.id !== oldId) : prev));
+            setTotal((prev) => (typeof prev === "number" ? Math.max(0, prev - 1) : prev));
+          } else if (payload.eventType === "INSERT") {
+            const next = payload.new as Task;
+            setTasks((prev) => {
+              if (!prev) return prev;
+              if (prev.some((t) => t.id === next.id)) return prev;
+              return [next, ...prev];
+            });
+            setTotal((prev) => (typeof prev === "number" ? prev + 1 : prev));
+          }
+          setNow(Date.now());
+          void fetchFilteredTotal({ silent: true });
+        },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, [fetchFilteredTotal]);
+
   // Infinite scroll sentinel.
   useEffect(() => {
     const el = sentinelRef.current;
