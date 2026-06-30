@@ -106,5 +106,30 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    // ── Daftar produk: 4 lebar Android umum untuk regresi wrap/overflow.
+    //   320 = Galaxy Fold tertutup / iPhone 5-era
+    //   360 = Android baseline (Samsung A-series default)
+    //   411 = Pixel 6/7/8
+    //   480 = phablet / phone landscape kelas bawah
+    {
+      name: "produk-list-320",
+      testMatch: /produk-list\.public\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 320, height: 800 } },
+    },
+    {
+      name: "produk-list-360",
+      testMatch: /produk-list\.public\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 360, height: 800 } },
+    },
+    {
+      name: "produk-list-411",
+      testMatch: /produk-list\.public\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
+      name: "produk-list-480",
+      testMatch: /produk-list\.public\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 480, height: 900 } },
+    },
   ],
 });
