@@ -1734,10 +1734,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               <button
                 type="button"
                 onClick={(e) => { e.preventDefault(); e.stopPropagation(); }}
-                className="inline-flex w-fit max-w-full items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium leading-snug text-muted-foreground hover:bg-accent"
+                className="flex w-fit min-w-0 max-w-full items-center gap-1 rounded-full bg-muted px-1.5 py-0.5 text-[11px] font-medium leading-none text-muted-foreground hover:bg-accent"
+                title={`Cocok: produk + ${r.target_grams}${unit}`}
               >
-                <span className="h-1 w-1 shrink-0 rounded-full bg-primary" />
-                <span className="truncate">Cocok: produk + {r.target_grams}{unit}</span>
+                <span className="h-1 w-1 shrink-0 rounded-full bg-primary" aria-hidden />
+                <span className="min-w-0 flex-1 truncate whitespace-nowrap">
+                  Cocok: produk + {r.target_grams}{unit}
+                </span>
               </button>
             </PopoverTrigger>
             <PopoverContent
