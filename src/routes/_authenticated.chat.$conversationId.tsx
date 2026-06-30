@@ -1373,7 +1373,7 @@ function ChatRoomPage() {
       <SaveAsNoteDialog
         open={noteSource !== null}
         onOpenChange={(v) => { if (!v) setNoteSource(null); }}
-        defaultBody={previewText(noteSource?.body ?? null) ?? ""}
+        defaultBody={noteSource?.deleted_at ? DELETED_PLACEHOLDER : (previewText(noteSource?.body ?? null) ?? "")}
         conversationId={conversationId}
         sourceMessageId={noteSource?.id}
       />
