@@ -8,7 +8,7 @@ import { ecerSignedUrl } from "@/lib/ecer";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
-import { ChatSharePreviewDialog, type ChatSharePreviewData } from "@/components/ChatSharePreviewDialog";
+import { ChatSharePreviewDialog, type ChatSharePreviewData, type ChatShareLiveStatus } from "@/components/ChatSharePreviewDialog";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, History, Undo2 } from "lucide-react";
@@ -921,6 +921,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     preview: ChatSharePreviewData;
   };
   const [chatPreview, setChatPreview] = useState<ChatPreviewState | null>(null);
+  const [chatStatus, setChatStatus] = useState<ChatShareLiveStatus | null>(null);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
   const extra = Math.max(0, shots.length - thumbs.length);
@@ -1129,10 +1130,24 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   async function confirmChatSend() {
     const ctx = chatPreview;
     if (!ctx || chatSending) return;
+    const captionStep = ctx.caption.trim().length > 0;
+    const locationStep = !!(ctx.locationUrl && ctx.locationUrl.trim());
+    const photosTotal = ctx.chatShots.length;
+    const liveStatus: ChatShareLiveStatus = {
+      captionStep,
+      captionStatus: captionStep ? "pending" : "ok",
+      photosTotal,
+      photosSent: 0,
+      photosFailed: 0,
+      photoCurrent: null,
+      locationStep,
+      locationStatus: locationStep ? "pending" : "ok",
+      outcome: null,
+    };
+    setChatStatus(liveStatus);
     setChatSending(true);
     setSendStatus("sending");
     setSendError(null);
-    const tid = toast.loading(`Mengirim ke ${ctx.conversationTitle}…`);
     try {
       const res = await withIdempotency(ctx.idemKey, {
         onSkip: () => ({ status: "shared" as const, messageCount: 0, error: undefined as string | undefined }),
@@ -1144,22 +1159,44 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             shots: ctx.chatShots,
             markIds: ctx.markIds,
             idemKey: ctx.idemKey,
+            onProgress: (p) => {
+              setChatStatus((prev) => {
+                if (!prev) return prev;
+                const next = { ...prev };
+                if (p.type === "caption") {
+                  next.captionStatus = p.status === "ok" ? "ok" : p.status === "fail" ? "fail" : "running";
+                } else if (p.type === "photo") {
+                  if (p.status === "start") next.photoCurrent = p.index;
+                  else if (p.status === "ok") { next.photosSent = prev.photosSent + 1; next.photoCurrent = null; }
+                  else if (p.status === "fail") { next.photosFailed = prev.photosFailed + 1; next.photoCurrent = null; }
+                } else if (p.type === "location") {
+                  next.locationStatus = p.status === "ok" ? "ok" : p.status === "fail" ? "fail" : "running";
+                }
+                return next;
+              });
+            },
           });
           if (r0.status !== "shared") throw new Error(r0.error || "share-failed");
           return r0;
         },
       });
-      toast.dismiss(tid);
       setSendStatus("success");
-      toast.success(`Terkirim ke ${ctx.conversationTitle}${"messageCount" in res && res.messageCount ? ` (${res.messageCount} pesan)` : ""}.`);
-      setChatPreviewOpen(false);
-      setChatPreview(null);
+      const msgCount = "messageCount" in res ? res.messageCount ?? 0 : 0;
+      setChatStatus((prev) => prev ? {
+        ...prev,
+        outcome: {
+          kind: prev.photosFailed > 0 ? "partial" : "success",
+          messageCount: msgCount,
+        },
+      } : prev);
     } catch (err) {
-      toast.dismiss(tid);
       const msg = (err as Error).message;
       setSendStatus("failed");
       setSendError(msg);
-      toast.error(`Gagal kirim ke chat: ${msg}`);
+      setChatStatus((prev) => prev ? {
+        ...prev,
+        outcome: { kind: "failed", messageCount: 0, error: msg },
+      } : prev);
     } finally {
       setChatSending(false);
     }
@@ -1357,11 +1394,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         onOpenChange={(o) => {
           if (chatSending) return;
           setChatPreviewOpen(o);
-          if (!o) setChatPreview(null);
+          if (!o) { setChatPreview(null); setChatStatus(null); }
         }}
         data={chatPreview?.preview ?? null}
         sending={chatSending}
         onConfirm={() => { void confirmChatSend(); }}
+        status={chatStatus}
+        onRetry={() => { setChatStatus(null); void confirmChatSend(); }}
       />
     </div>
   );
