@@ -110,6 +110,11 @@ function NotifikasiPage() {
   }
   function toggleKind(k: NotifKind, value: boolean) {
     update({ enabledKinds: { ...prefs.enabledKinds, [k]: value } });
+    const label = KINDS.find((m) => m.key === k)?.label ?? k;
+    toast.success(`${label} ${value ? "diaktifkan" : "dimatikan"}`, {
+      description: "Preferensi tersimpan",
+      duration: 1800,
+    });
   }
 
   async function requestPermission() {
