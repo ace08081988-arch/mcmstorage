@@ -17,6 +17,9 @@ export type ShareInput = {
    *  mengembalikan File[] tambahan yang berhasil diambil pada percobaan ini —
    *  helper akan menambahkannya ke array `files`. */
   retryMissing?: () => Promise<File[]>;
+  /** Info klik ganda dari idempotency layer; saat hadir, pratinjau menampilkan
+   *  peringatan "Klik ganda terdeteksi" dan tombol "Kirim ulang (paksa)". */
+  duplicate?: { at: number; status: "in-flight" | "done" | "failed" } | null;
 };
 
 import { toast } from "sonner";
@@ -113,13 +116,13 @@ export type ShareResult =
 
 export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   let { text } = input;
-  const { title, url, files, phone, expectedCount, retryMissing } = input;
+  const { title, url, files, phone, expectedCount, retryMissing, duplicate } = input;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
   // Pratinjau pesan + daftar foto sebelum benar-benar membuka WA. Pratinjau
   // dapat menambah file via retryMissing (memutasi array `files`), jadi cek
   // `hasFiles` SETELAH konfirmasi.
-  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing });
+  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing, duplicate });
   if (!approved.ok) return { status: "cancelled" };
   if (typeof approved.text === "string") text = approved.text;
   const hasFiles = !!(files && files.length > 0);
