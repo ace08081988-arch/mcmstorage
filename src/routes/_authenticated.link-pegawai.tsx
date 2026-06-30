@@ -5,6 +5,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { publicTaskUrl, isValidShareToken, InvalidShareTokenError, genShareToken, genPin } from "@/lib/prep";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { confirm } from "@/lib/confirm";
+import { StatusBadge } from "@/components/StatusBadge";
 import {
   Dialog,
   DialogContent,
