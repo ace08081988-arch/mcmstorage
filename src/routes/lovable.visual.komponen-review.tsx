@@ -8,7 +8,8 @@
  * URL: /lovable/visual/komponen-review
  */
 import { createFileRoute } from "@tanstack/react-router";
-import { Boxes, Hash, Package, Scale, CheckCircle2 } from "lucide-react";
+import { Boxes, Hash, Package, Scale, CheckCircle2, Moon, Sun } from "lucide-react";
+import { useState } from "react";
 
 const WIDTHS = [320, 360, 411, 480] as const;
 
@@ -198,14 +199,27 @@ function SectionTitle({ title }: { title: string }) {
 /* ──────────────── Halaman ──────────────── */
 
 function KomponenReviewPage() {
+  const [dark, setDark] = useState(false);
   return (
-    <div className="min-h-screen bg-muted/30 p-4 text-foreground">
-      <header className="mx-auto mb-4 max-w-6xl space-y-1">
-        <h1 className="text-lg font-bold leading-snug">Review komponen responsif</h1>
-        <p className="text-xs text-muted-foreground">
-          Pratinjau pill Cocok, chip {"{n}"} item, hero card, dan DetailRow pada lebar Android
-          320 / 360 / 411 / 480 px. Aturan: <code className="rounded bg-muted px-1">docs/responsive-layout-rules.md</code>.
-        </p>
+    <div className={`${dark ? "dark" : ""} min-h-screen bg-muted/30 p-4 text-foreground`}>
+      <header className="mx-auto mb-4 flex max-w-6xl items-start justify-between gap-3">
+        <div className="min-w-0 space-y-1">
+          <h1 className="text-lg font-bold leading-snug">Review komponen responsif</h1>
+          <p className="text-xs text-muted-foreground">
+            Pratinjau pill Cocok, chip {"{n}"} item, hero card, dan DetailRow pada lebar Android
+            320 / 360 / 411 / 480 px. Aturan: <code className="rounded bg-muted px-1">docs/responsive-layout-rules.md</code>.
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => setDark((v) => !v)}
+          aria-pressed={dark}
+          title={dark ? "Beralih ke mode terang" : "Beralih ke mode gelap"}
+          className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full border bg-background px-3 text-xs font-semibold text-foreground shadow-sm hover:bg-muted"
+        >
+          {dark ? <Sun className="h-3.5 w-3.5" /> : <Moon className="h-3.5 w-3.5" />}
+          <span>{dark ? "Terang" : "Gelap"}</span>
+        </button>
       </header>
 
       <div className="mx-auto grid max-w-6xl gap-4 [grid-template-columns:repeat(auto-fit,minmax(320px,1fr))]">
