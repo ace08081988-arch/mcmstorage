@@ -801,15 +801,22 @@ function RecentNotificationsCard({
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={markingAll}>Batal</AlertDialogCancel>
             <AlertDialogAction
-              disabled={pendingAffected === 0}
-              onClick={() => {
-                setConfirmOpen(false);
-                void handleMarkAll();
+              disabled={pendingAffected === 0 || markingAll}
+              onClick={(e) => {
+                e.preventDefault();
+                void handleMarkAll().then(() => setConfirmOpen(false));
               }}
             >
-              Tandai dibaca
+              {markingAll ? (
+                <>
+                  <RefreshCw className="mr-1 size-3.5 animate-spin" />
+                  Menandai…
+                </>
+              ) : (
+                "Tandai dibaca"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
