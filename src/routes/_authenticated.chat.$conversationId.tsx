@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { scheduleUndo } from "@/lib/undo-action";
+import { logChatDelete } from "@/lib/chat-delete-audit";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
   Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
@@ -904,7 +905,10 @@ function ChatRoomPage() {
                                   label: "Pesan akan disembunyikan",
                                   onCommit: () =>
                                     hideMsg.mutate(m.id, {
-                                      onSuccess: () => toast.success("Pesan disembunyikan untuk Anda"),
+                                      onSuccess: () => {
+                                        toast.success("Pesan disembunyikan untuk Anda");
+                                        void logChatDelete({ conversationId, action: "for_me", messageId: m.id });
+                                      },
                                       onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
                                     }),
                                 })
@@ -942,6 +946,8 @@ function ChatRoomPage() {
                                       deleteMsg.mutate(
                                         { id: m.id, attachment_path: m.attachment_path },
                                         {
+                                          onSuccess: () =>
+                                            void logChatDelete({ conversationId, action: "for_all", messageId: m.id }),
                                           onError: (e) =>
                                             toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
                                         },
