@@ -343,9 +343,22 @@ function LinkPegawaiPage() {
         setTasks((prev) => (prev ? prev.map((t) => (t.id === taskId ? { ...t, share_token: data.share_token, expires_at: data.expires_at ?? t.expires_at } : t)) : prev));
         setRegenAt((prev) => ({ ...prev, [taskId]: Date.now() }));
         setRegenId(null);
-        toast.success(newExpiresAt
-          ? `Link diperpanjang ${extendDays} hari & token baru aktif`
-          : "Token diperbarui — link baru siap dipakai");
+        let newUrl: string | null = null;
+        try { newUrl = publicTaskUrl(data.share_token); } catch { newUrl = null; }
+        toast.success(
+          newExpiresAt
+            ? `Link diperpanjang ${extendDays} hari & token baru aktif`
+            : "Token diperbarui — link baru siap dipakai",
+          newUrl
+            ? {
+                duration: 8000,
+                action: {
+                  label: "Salin link",
+                  onClick: () => void copyLink(newUrl!),
+                },
+              }
+            : undefined,
+        );
         return;
       }
       lastErr = error?.message ?? "Tidak ada baris yang diperbarui (izin?)";
