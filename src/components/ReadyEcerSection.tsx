@@ -401,6 +401,24 @@ export function ReadyEcerSection() {
   const activeFilters = (q !== "" ? 1 : 0) + (productFilter !== "all" ? 1 : 0);
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
   const [view, setView] = useState<"active" | "sent">("active");
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkConfirm, setBulkConfirm] = useState<null | "delete">(null);
+  const [bulkPickChat, setBulkPickChat] = useState(false);
+  const [bulkBusy, setBulkBusy] = useState<null | "wa" | "chat" | "delete">(null);
+  // Reset pilihan jika tab/view berganti.
+  useEffect(() => {
+    setSelectedIds(new Set());
+    setSelectMode(false);
+  }, [view]);
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
   const sentMap = useSentShots();
   const sentDetails = useSentDetails();
   // Split each row's shots into active vs sent based on local history.
