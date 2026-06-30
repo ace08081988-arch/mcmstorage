@@ -1,0 +1,126 @@
+name: Deploy Published
+
+on:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA yang baru saja dipublish (full atau short). Kosongkan untuk pakai HEAD main."
+        required: false
+        type: string
+      url:
+        description: "URL live (default: https://mcmstorage.biz)"
+        required: false
+        type: string
+        default: "https://mcmstorage.biz"
+      note:
+        description: "Catatan tambahan (opsional)"
+        required: false
+        type: string
+  repository_dispatch:
+    types: [lovable-published]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  notify:
+    name: Notify deploy published
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Resolve commit + payload
+        id: resolve
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const isDispatch = context.eventName === 'repository_dispatch';
+            const payload = isDispatch ? (context.payload.client_payload || {}) : {};
+            const inputs = context.payload.inputs || {};
+            let sha = (payload.sha || inputs.sha || '').trim();
+            if (!sha) {
+              const { data: ref } = await github.rest.repos.getBranch({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                branch: 'main',
+              });
+              sha = ref.commit.sha;
+            } else if (sha.length < 40) {
+              const { data: commit } = await github.rest.repos.getCommit({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                ref: sha,
+              });
+              sha = commit.sha;
+            }
+            const url = (payload.url || inputs.url || 'https://mcmstorage.biz').trim();
+            const note = (payload.note || inputs.note || '').trim();
+            core.setOutput('sha', sha);
+            core.setOutput('short', sha.slice(0, 7));
+            core.setOutput('url', url);
+            core.setOutput('note', note);
+
+      - name: Comment + close "Siap publish" issue, open "Published" issue
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const sha = '${{ steps.resolve.outputs.sha }}';
+            const shortSha = '${{ steps.resolve.outputs.short }}';
+            const url = '${{ steps.resolve.outputs.url }}';
+            const note = `${{ steps.resolve.outputs.note }}`;
+            const commitUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${sha}`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const when = new Date().toISOString();
+            const noteLine = note ? `\n**Catatan:** ${note}` : '';
+
+            // 1) Close any open "deploy-ready" issues with a published comment.
+            const { data: ready } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'deploy-ready',
+              per_page: 20,
+            });
+            for (const issue of ready) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                body: `✅ **Published** ke [${url}](${url})\n**Commit:** [\`${shortSha}\`](${commitUrl})\n**Waktu:** ${when}${noteLine}\n\nDitutup otomatis oleh \`deploy-published\` workflow ([log](${runUrl})).`,
+              });
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                state: 'closed',
+                state_reason: 'completed',
+              });
+            }
+
+            // 2) Open a fresh "Published" issue as the inbox notification.
+            const title = `✅ Published: ${shortSha} → ${url.replace(/^https?:\/\//, '')}`;
+            const body = [
+              `**Status:** Live`,
+              `**URL:** [${url}](${url})`,
+              `**Commit:** [\`${shortSha}\`](${commitUrl})`,
+              `**Waktu publish:** ${when}`,
+              note ? `**Catatan:** ${note}` : null,
+              ``,
+              `Notifikasi otomatis dari \`deploy-published\` ([log](${runUrl})). Tutup issue ini setelah verifikasi.`,
+            ].filter(Boolean).join('\n');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title,
+              body,
+              labels: ['deployed'],
+            });
+
+      - name: Job summary
+        run: |
+          {
+            echo "## ✅ Deploy notified";
+            echo "";
+            echo "- Commit: \`${{ steps.resolve.outputs.short }}\`";
+            echo "- URL: ${{ steps.resolve.outputs.url }}";
+          } >> "$GITHUB_STEP_SUMMARY"
