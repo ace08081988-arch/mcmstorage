@@ -1,0 +1,106 @@
+name: Deploy Rollup Status
+
+# Menggabungkan dua commit status (deploy/published + deploy/healthcheck)
+# menjadi satu status `deploy/all` yang bisa dijadikan required check di PR.
+#
+# Rules:
+# - pending  → minimal salah satu dari kedua status belum success/failure
+# - failure  → salah satu dari keduanya failure/error
+# - success  → keduanya success
+
+on:
+  status:
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit SHA (full). Kosongkan untuk HEAD main."
+        required: false
+        type: string
+
+permissions:
+  contents: read
+  statuses: write
+
+jobs:
+  rollup:
+    name: Rollup deploy/* into deploy/all
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Hanya bereaksi ke status milik kita sendiri; cegah infinite loop saat
+    # workflow ini sendiri menulis status `deploy/all`.
+    if: ${{ github.event_name != 'status' || (github.event.context != 'deploy/all' && (github.event.context == 'deploy/published' || github.event.context == 'deploy/healthcheck')) }}
+    steps:
+      - name: Compute rollup state
+        uses: actions/github-script@v7
+        with:
+          script: |
+            let sha = '';
+            if (context.eventName === 'status') {
+              sha = context.payload.sha;
+            } else {
+              sha = (context.payload.inputs?.sha || '').trim();
+              if (!sha) {
+                const { data: ref } = await github.rest.repos.getBranch({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  branch: 'main',
+                });
+                sha = ref.commit.sha;
+              }
+            }
+            if (!sha) { core.info('No SHA resolved; skipping.'); return; }
+
+            const { data: combined } = await github.rest.repos.listCommitStatusesForRef({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              ref: sha,
+              per_page: 100,
+            });
+
+            // listCommitStatusesForRef returns newest-first; pick the latest entry per context.
+            const latest = new Map();
+            for (const s of combined) {
+              if (!latest.has(s.context)) latest.set(s.context, s);
+            }
+            const pub = latest.get('deploy/published');
+            const hc = latest.get('deploy/healthcheck');
+
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const commitUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${sha}`;
+
+            let state = 'pending';
+            let description = 'Menunggu deploy/published & deploy/healthcheck…';
+            let target = runUrl;
+
+            const isFail = (s) => s && (s.state === 'failure' || s.state === 'error');
+            const isOk = (s) => s && s.state === 'success';
+
+            if (isFail(pub) || isFail(hc)) {
+              state = 'failure';
+              const which = [isFail(pub) ? 'published' : null, isFail(hc) ? 'healthcheck' : null].filter(Boolean).join(' + ');
+              description = `Deploy gagal: ${which}`;
+              target = (isFail(hc) ? hc?.target_url : pub?.target_url) || runUrl;
+            } else if (isOk(pub) && isOk(hc)) {
+              state = 'success';
+              description = `Live & sehat • ${hc.description || 'health OK'}`.slice(0, 140);
+              target = pub.target_url || hc.target_url || runUrl;
+            } else {
+              const missing = [!pub ? 'published' : null, !hc ? 'healthcheck' : null].filter(Boolean).join(' + ');
+              description = missing
+                ? `Menunggu: ${missing}`
+                : `Menunggu: ${pub?.state || 'pending'}/${hc?.state || 'pending'}`;
+              description = description.slice(0, 140);
+            }
+
+            core.info(`Rollup deploy/all for ${sha.slice(0,7)} → ${state} (${description})`);
+            core.info(`commit: ${commitUrl}`);
+
+            await github.rest.repos.createCommitStatus({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              sha,
+              context: 'deploy/all',
+              state,
+              description,
+              target_url: target,
+            });
