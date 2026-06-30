@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
-  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban,
+  Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -52,6 +52,15 @@ import { ProPaywall } from "@/components/ProPaywall";
 import { AttachMenu } from "@/components/chat/AttachMenu";
 import { MessageAttachment, CardBlock, decodeCard } from "@/components/chat/MessageAttachment";
 import { previewText } from "@/lib/chat-cards";
+import { SelectionToolbar } from "@/components/chat/SelectionToolbar";
+import { PinnedBanner } from "@/components/chat/PinnedBanner";
+import { MessageInfoDialog } from "@/components/chat/MessageInfoDialog";
+import { SecurityCodeDialog } from "@/components/chat/SecurityCodeDialog";
+import { TranslateDialog } from "@/components/chat/TranslateDialog";
+import { SaveAsNoteDialog } from "@/components/chat/SaveAsNoteDialog";
+import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog";
+import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
+import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 
 function ChatProGate() {
   const ent = useEntitlement();
