@@ -21,6 +21,13 @@ import {
   type NotifKind,
   type NotifPrefs,
 } from "@/lib/notif-prefs";
+import {
+  enablePushNotifications,
+  disablePushNotifications,
+  hasActivePushSubscription,
+  isPushSupported,
+  sendTestNotification,
+} from "@/lib/push-client";
 
 export const Route = createFileRoute("/_authenticated/notifikasi")({
   ssr: false,
@@ -51,6 +58,8 @@ function NotifikasiPage() {
   const [now, setNow] = useState(() => new Date());
   const [syncedAt, setSyncedAt] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const [subscribed, setSubscribed] = useState<boolean | null>(null);
+  const [busy, setBusy] = useState(false);
 
   useEffect(() => {
     setPrefs(loadPrefs());
@@ -60,6 +69,7 @@ function NotifikasiPage() {
     pullPrefsFromCloud()
       .then((p) => { setPrefs(p); setSyncedAt(getLastSyncedAt()); })
       .finally(() => setSyncing(false));
+    void hasActivePushSubscription().then(setSubscribed).catch(() => setSubscribed(false));
     const unsub = subscribeRemotePrefs((p) => {
       setPrefs(p);
       setSyncedAt(getLastSyncedAt());
@@ -90,43 +100,73 @@ function NotifikasiPage() {
   }
 
   async function requestPermission() {
-    if (typeof Notification === "undefined") {
-      toast.error("Browser tidak mendukung notifikasi");
+    if (!isPushSupported()) {
+      toast.error("Browser/perangkat ini tidak mendukung notifikasi push");
       return;
     }
+    setBusy(true);
     try {
-      const p = await Notification.requestPermission();
-      setPermission(p);
-      if (p === "granted") toast.success("Notifikasi diizinkan");
-      else toast.warning("Notifikasi belum diizinkan");
+      const r = await enablePushNotifications();
+      setPermission(typeof Notification !== "undefined" ? Notification.permission : "default");
+      if (r.ok) {
+        setSubscribed(true);
+        toast.success("Notifikasi aktif di perangkat ini");
+      } else if (r.reason === "denied") {
+        toast.warning("Notifikasi diblokir di pengaturan browser/HP");
+      } else if (r.reason === "unsupported") {
+        toast.error("Perangkat ini tidak mendukung push");
+      } else {
+        toast.error("Gagal mengaktifkan notifikasi");
+      }
     } catch (e) {
-      toast.error("Gagal meminta izin notifikasi");
+      toast.error("Gagal mendaftarkan langganan push: " + ((e as Error)?.message ?? "unknown"));
+    } finally {
+      setBusy(false);
     }
   }
 
-  function testNotification() {
+  async function testNotification() {
     if (typeof Notification === "undefined" || Notification.permission !== "granted") {
       toast.warning("Izinkan notifikasi terlebih dahulu");
       return;
     }
+    setBusy(true);
     try {
-      navigator.serviceWorker?.getRegistration().then((reg) => {
-        const opts: NotificationOptions = {
-          body: dndActive
-            ? "DND aktif: notifikasi akan disenyapkan sesuai pengaturan."
-            : "Halo! Notifikasi MCM Storage siap dipakai.",
+      // Selalu coba kirim via server (round-trip push asli). Jika belum berlangganan, daftarkan dulu.
+      const isSub = await hasActivePushSubscription();
+      if (!isSub) {
+        const r = await enablePushNotifications();
+        if (!r.ok) throw new Error(r.reason ?? "subscribe_failed");
+        setSubscribed(true);
+      }
+      const res = await sendTestNotification();
+      if (res.sent > 0) toast.success(res.message);
+      else toast.warning(res.message || "Gagal mengirim notifikasi uji");
+    } catch (e) {
+      // Fallback lokal supaya user paham izin OK tapi pipeline server gagal
+      try {
+        const reg = await navigator.serviceWorker?.getRegistration();
+        await reg?.showNotification("Uji Notifikasi (lokal)", {
+          body: "Push server gagal — ini hanya notifikasi lokal. Periksa langganan & koneksi.",
           icon: "/icon-192.png",
           badge: "/icon-192.png",
           tag: "notif-test",
-          // @ts-expect-error vibrate didukung di mobile
-          vibrate: prefs.vibrate && !dndActive ? [80, 40, 80] : [0],
-          silent: dndActive,
-        };
-        if (reg) reg.showNotification("Uji Notifikasi", opts);
-        else new Notification("Uji Notifikasi", opts);
-      });
-    } catch (e) {
-      toast.error("Tidak bisa menampilkan notifikasi uji");
+        });
+      } catch (_) {}
+      toast.error("Push server gagal: " + ((e as Error)?.message ?? "unknown"));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function turnOff() {
+    setBusy(true);
+    try {
+      await disablePushNotifications();
+      setSubscribed(false);
+      toast.success("Langganan push dinonaktifkan di perangkat ini");
+    } finally {
+      setBusy(false);
     }
   }
 
@@ -157,29 +197,54 @@ function NotifikasiPage() {
       <Card>
         <CardHeader className="flex-row items-start justify-between gap-3 space-y-0">
           <div>
-            <CardTitle className="text-base">Izin browser</CardTitle>
-            <CardDescription>
-              Status saat ini:{" "}
-              <span
-                className={
-                  permission === "granted"
-                    ? "font-medium text-emerald-600"
-                    : permission === "denied"
-                      ? "font-medium text-destructive"
-                      : "font-medium text-amber-600"
-                }
-              >
-                {permission === "granted" ? "Diizinkan" : permission === "denied" ? "Diblokir" : "Belum diatur"}
-              </span>
+            <CardTitle className="text-base">Izin & langganan</CardTitle>
+            <CardDescription className="space-y-0.5">
+              <div>
+                Izin:{" "}
+                <span
+                  className={
+                    permission === "granted"
+                      ? "font-medium text-emerald-600"
+                      : permission === "denied"
+                        ? "font-medium text-destructive"
+                        : "font-medium text-amber-600"
+                  }
+                >
+                  {permission === "granted" ? "Diizinkan" : permission === "denied" ? "Diblokir" : "Belum diatur"}
+                </span>
+              </div>
+              <div>
+                Langganan push:{" "}
+                <span
+                  className={
+                    subscribed === true
+                      ? "font-medium text-emerald-600"
+                      : subscribed === false
+                        ? "font-medium text-amber-600"
+                        : "font-medium text-muted-foreground"
+                  }
+                >
+                  {subscribed === true ? "Aktif" : subscribed === false ? "Belum aktif" : "Memeriksa…"}
+                </span>
+              </div>
+              {permission === "denied" && (
+                <div className="text-[11px] text-destructive">
+                  Buka Pengaturan situs/aplikasi di HP, izinkan Notifikasi untuk MCM Storage, lalu kembali.
+                </div>
+              )}
             </CardDescription>
           </div>
           <div className="flex shrink-0 gap-2">
-            {permission !== "granted" && (
-              <Button size="sm" onClick={requestPermission}>
-                Izinkan
+            {subscribed !== true ? (
+              <Button size="sm" onClick={requestPermission} disabled={busy}>
+                Aktifkan
+              </Button>
+            ) : (
+              <Button size="sm" variant="outline" onClick={turnOff} disabled={busy}>
+                Matikan
               </Button>
             )}
-            <Button size="sm" variant="outline" onClick={testNotification}>
+            <Button size="sm" variant="outline" onClick={testNotification} disabled={busy}>
               Uji
             </Button>
           </div>
