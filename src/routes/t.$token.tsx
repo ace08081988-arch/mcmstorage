@@ -268,6 +268,19 @@ function PublicPrepPage() {
   // Timestamp mulai sesi PIN aktif. Dipakai utk countdown sisa waktu
   // sebelum re-login. Dipasang di writeSession dan rehydrate.
   const [sessionStartedAt, setSessionStartedAt] = useState<number | null>(null);
+  // Penanda bahwa sesi PIN baru saja kedaluwarsa otomatis. Dipakai
+  // untuk menampilkan tombol "Re-login" yang menonjol di layar PIN.
+  const [sessionJustExpired, setSessionJustExpired] = useState(false);
+  const pinInputRef = useRef<HTMLInputElement | null>(null);
+  function focusPinInput() {
+    setTimeout(() => {
+      try { pinInputRef.current?.focus(); } catch { /* noop */ }
+    }, 50);
+  }
+  function reloginNow() {
+    goBackToPin();
+    focusPinInput();
+  }
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
   // berturut-turut sebelum input PIN dikunci selama LOCK_SECONDS.
   // Data disimpan di localStorage per-token agar reload halaman tidak
@@ -434,7 +447,9 @@ function PublicPrepPage() {
     setAuthed(false);
     setPin("");
     pinRef.current = "";
+    setSessionJustExpired(true);
     toast.info("Sesi PIN berakhir — silakan masuk ulang.");
+    focusPinInput();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authed, sessionExpiresAt, sessionSecondsLeft]);
 
@@ -950,11 +965,31 @@ function PublicPrepPage() {
                 </div>
               </div>
             )}
+            {sessionJustExpired && !isLocked && (
+              <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-300" role="alert">
+                <div className="flex items-start gap-2">
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold">Sesi PIN sudah berakhir</div>
+                    <div className="mt-0.5 text-[11px] opacity-90">Masukkan PIN lagi untuk melanjutkan tugas yang tadi.</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setSessionJustExpired(false); focusPinInput(); }}
+                  className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-amber-600 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-700"
+                >
+                  <Lock className="h-4 w-4" /> Re-login sekarang
+                </button>
+              </div>
+            )}
             <input
+              ref={pinInputRef}
               inputMode="numeric" maxLength={8} value={pin}
               onChange={(e) => {
                 setPin(e.target.value.replace(/\D/g, ""));
                 if (lastError?.kind === "bad_pin") setLastError(null);
+                if (sessionJustExpired) setSessionJustExpired(false);
               }}
               placeholder="••••••" disabled={isLocked}
               className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60" />
@@ -1102,13 +1137,26 @@ function PublicPrepPage() {
               <Clock className="h-3 w-3" />
               Sesi {sessionClock}
             </span>
-            <span className="text-muted-foreground">
-              {sessionSecondsLeft <= 60
-                ? "Akan diminta PIN sebentar lagi"
-                : sessionSecondsLeft <= 300
-                  ? "Sesi PIN hampir habis"
-                  : `Re-login pada ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
-            </span>
+            {sessionSecondsLeft <= 300 ? (
+              <button
+                type="button"
+                onClick={reloginNow}
+                className={
+                  "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-white shadow-sm transition " +
+                  (sessionSecondsLeft <= 60
+                    ? "bg-destructive hover:bg-destructive/90"
+                    : "bg-amber-600 hover:bg-amber-700")
+                }
+                title="Masuk ulang dengan PIN sekarang"
+              >
+                <Lock className="h-3 w-3" />
+                Re-login sekarang
+              </button>
+            ) : (
+              <span className="text-muted-foreground">
+                {`Re-login pada ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
+              </span>
+            )}
           </div>
         )}
       </header>
