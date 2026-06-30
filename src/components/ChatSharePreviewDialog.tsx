@@ -265,15 +265,28 @@ export function ChatSharePreviewDialog({
               >
                 Batal
               </button>
-              <button
-                type="button"
-                onClick={onConfirm}
-                disabled={sending || !data}
-                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
-              >
-                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                {sending ? "Mengirim…" : "Kirim sekarang"}
-              </button>
+              {dupActive ? (
+                <button
+                  type="button"
+                  onClick={onForceSend}
+                  disabled={sending || !data || !onForceSend || duplicate?.status === "in-flight"}
+                  title={duplicate?.status === "in-flight" ? "Kiriman sebelumnya masih berjalan" : "Kirim ulang meski klik ganda terdeteksi"}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border border-amber-500 bg-amber-500 px-3 text-sm font-semibold text-white shadow-sm transition hover:bg-amber-600 disabled:opacity-50"
+                >
+                  <ShieldAlert className="h-4 w-4" />
+                  Kirim ulang (paksa)
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={onConfirm}
+                  disabled={sending || !data}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+                >
+                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {sending ? "Mengirim…" : "Kirim sekarang"}
+                </button>
+              )}
             </>
           )}
         </DialogFooter>
