@@ -720,11 +720,11 @@ function ChatRoomPage() {
                   <div
                     key={m.id}
                     id={`msg-${m.id}`}
-                    className={`flex transition ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
+                    className={`flex transition-colors duration-200 ${mine ? "justify-end" : "justify-start"} ${selectedIds.has(m.id) ? "bg-primary/10 rounded-md" : ""}`}
                   >
                     <div className={`group relative flex max-w-[80%] items-start gap-1 ${mine ? "flex-row-reverse" : "flex-row"}`}>
                       <div
-                        className={`rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm ${
+                        className={`rounded-2xl px-3 py-1.5 text-sm leading-snug shadow-sm transition-[transform,box-shadow,background-color,ring] duration-200 ease-out active:scale-[0.985] [-webkit-tap-highlight-color:transparent] [-webkit-touch-callout:none] ${
                           m.deleted_at
                             ? `${mine ? "rounded-br-sm" : "rounded-bl-sm"} bg-muted/60 text-muted-foreground border border-dashed border-border`
                             : mine
