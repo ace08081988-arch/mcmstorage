@@ -8,6 +8,8 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 
 const KEY = "send-log:v1";
 const EVENT = "send-log:changed";
+const SYNC_KEY = "send-log-sync:v1";
+const SYNC_EVENT = "send-log-sync:changed";
 const TTL_MS = 24 * 60 * 60 * 1000;  // 24 jam
 const MAX_ENTRIES_PER_KEY = 50;
 const MAX_KEYS = 80;
@@ -86,6 +88,77 @@ export function resetSendLog(key: string) {
   const store = readAll();
   store[key] = { updatedAt: Date.now(), entries: [] };
   writeAll(store);
+}
+
+/**
+ * Status sinkronisasi terakhir per idempotency key — dipersist ke
+ * localStorage agar indikator "Data belum tersinkron" konsisten meski
+ * operator pindah tab atau refresh halaman. Bukan untuk korelasi lintas
+ * device; cukup per-browser saja.
+ */
+export type SendLogSyncStatus = {
+  lastSyncedAt: number | null;
+  lastError: string | null;
+  lastSnapshot: string;
+  updatedAt: number;
+};
+type SyncStore = Record<string, SendLogSyncStatus>;
+
+function readSyncAll(): SyncStore {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(SYNC_KEY);
+    if (!raw) return {};
+    const data = JSON.parse(raw);
+    if (!data || typeof data !== "object") return {};
+    return data as SyncStore;
+  } catch { return {}; }
+}
+
+function writeSyncAll(store: SyncStore) {
+  const now = Date.now();
+  for (const k of Object.keys(store)) {
+    if (now - store[k].updatedAt > TTL_MS) delete store[k];
+  }
+  const keys = Object.keys(store);
+  if (keys.length > MAX_KEYS) {
+    keys.sort((a, b) => store[b].updatedAt - store[a].updatedAt);
+    for (const k of keys.slice(MAX_KEYS)) delete store[k];
+  }
+  try {
+    window.localStorage.setItem(SYNC_KEY, JSON.stringify(store));
+    window.dispatchEvent(new CustomEvent(SYNC_EVENT));
+  } catch { /* quota */ }
+}
+
+export function getSendLogSyncStatus(key: string): SendLogSyncStatus | null {
+  if (!key) return null;
+  const slot = readSyncAll()[key];
+  if (!slot) return null;
+  if (Date.now() - slot.updatedAt > TTL_MS) return null;
+  return slot;
+}
+
+function patchSendLogSyncStatus(key: string, patch: Partial<SendLogSyncStatus>) {
+  if (!key) return;
+  const store = readSyncAll();
+  const prev = store[key] ?? { lastSyncedAt: null, lastError: null, lastSnapshot: "", updatedAt: 0 };
+  const next: SendLogSyncStatus = {
+    lastSyncedAt: patch.lastSyncedAt !== undefined ? patch.lastSyncedAt : prev.lastSyncedAt,
+    lastError: patch.lastError !== undefined ? patch.lastError : prev.lastError,
+    lastSnapshot: patch.lastSnapshot !== undefined ? patch.lastSnapshot : prev.lastSnapshot,
+    updatedAt: Date.now(),
+  };
+  // Skip write jika tidak ada perubahan material — kurangi storage churn.
+  if (
+    prev.lastSyncedAt === next.lastSyncedAt &&
+    prev.lastError === next.lastError &&
+    prev.lastSnapshot === next.lastSnapshot
+  ) {
+    return;
+  }
+  store[key] = next;
+  writeSyncAll(store);
 }
 
 /**
@@ -193,10 +266,14 @@ export function useLiveSendLogStatus(
 } {
   const k = key ?? "";
   const pollMs = options?.pollMs ?? 1200;
-  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  // Hydrate dari localStorage agar indikator tetap konsisten setelah
+  // refresh / pindah tab — operator tidak melihat status "fresh" palsu
+  // hanya karena komponen baru di-mount.
+  const initial = k ? getSendLogSyncStatus(k) : null;
+  const [lastSyncedAt, setLastSyncedAt] = useState<number | null>(initial?.lastSyncedAt ?? null);
+  const [error, setError] = useState<string | null>(initial?.lastError ?? null);
   const [tick, setTick] = useState(0);
-  const lastSnapshotRef = useRef<string>("");
+  const lastSnapshotRef = useRef<string>(initial?.lastSnapshot ?? "");
 
   useEffect(() => {
     if (!k) {
@@ -205,32 +282,63 @@ export function useLiveSendLogStatus(
       lastSnapshotRef.current = "";
       return;
     }
+    // Re-hydrate saat key berubah.
+    const hydrated = getSendLogSyncStatus(k);
+    setLastSyncedAt(hydrated?.lastSyncedAt ?? null);
+    setError(hydrated?.lastError ?? null);
+    lastSnapshotRef.current = hydrated?.lastSnapshot ?? "";
     let cancelled = false;
     const read = () => {
       if (cancelled) return;
       try {
         const entries = getSendLog(k);
         const snap = entries.map((e) => `${e.at}|${e.kind}|${e.label}`).join("\n");
-        setLastSyncedAt(Date.now());
-        if (error) setError(null);
+        const now = Date.now();
+        setLastSyncedAt(now);
+        setError((prev) => (prev ? null : prev));
         if (snap !== lastSnapshotRef.current) {
           lastSnapshotRef.current = snap;
           setTick((t) => t + 1);
         }
+        // Persist status sinkronisasi agar tab/refresh lain melihat nilai
+        // konsisten — bukan reset ke "belum pernah sinkron".
+        patchSendLogSyncStatus(k, { lastSyncedAt: now, lastError: null, lastSnapshot: snap });
       } catch (e) {
-        setError(e instanceof Error ? e.message : "Gagal membaca log kiriman");
+        const msg = e instanceof Error ? e.message : "Gagal membaca log kiriman";
+        setError(msg);
+        patchSendLogSyncStatus(k, { lastError: msg });
       }
     };
     read();
     const onEvt = () => read();
     const onStorage = (e: StorageEvent) => { if (e.key === KEY) read(); };
+    // Sinkron antar-tab: ketika tab lain memperbarui status sinkron,
+    // tarik nilai terbarunya supaya UI tab ini ikut up-to-date.
+    const onSyncEvt = () => {
+      const s = getSendLogSyncStatus(k);
+      if (!s) return;
+      setLastSyncedAt(s.lastSyncedAt);
+      setError(s.lastError);
+      if (s.lastSnapshot !== lastSnapshotRef.current) {
+        lastSnapshotRef.current = s.lastSnapshot;
+        setTick((t) => t + 1);
+      }
+    };
+    const onSyncStorage = (e: StorageEvent) => { if (e.key === SYNC_KEY) onSyncEvt(); };
+    const onVisibility = () => { if (document.visibilityState === "visible") read(); };
     window.addEventListener(EVENT, onEvt);
     window.addEventListener("storage", onStorage);
+    window.addEventListener(SYNC_EVENT, onSyncEvt);
+    window.addEventListener("storage", onSyncStorage);
+    document.addEventListener("visibilitychange", onVisibility);
     const timer = pollMs > 0 ? setInterval(read, pollMs) : null;
     return () => {
       cancelled = true;
       window.removeEventListener(EVENT, onEvt);
       window.removeEventListener("storage", onStorage);
+      window.removeEventListener(SYNC_EVENT, onSyncEvt);
+      window.removeEventListener("storage", onSyncStorage);
+      document.removeEventListener("visibilitychange", onVisibility);
       if (timer) clearInterval(timer);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
