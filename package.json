@@ -16,6 +16,7 @@
     "test:visual": "playwright test",
     "test:visual:update": "playwright test --update-snapshots",
     "test:sidebar": "playwright test --project=sidebar-highlight",
+    "test:worker-portal": "playwright test --project=worker-portal-e2e",
     "test:security:sql": "psql -v ON_ERROR_STOP=1 -f supabase/tests/security_rls_authz.sql -f supabase/tests/security_definer_authz.sql",
     "test:security:integration": "vitest run tests/integration/security-rls.test.ts",
     "test:security": "npm run test:security:sql && npm run test:security:integration",
