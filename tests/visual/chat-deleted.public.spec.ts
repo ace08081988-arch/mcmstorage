@@ -14,10 +14,25 @@ import { test, expect, type Locator, type Page } from "@playwright/test";
 
 const HARNESS = "/lovable/visual/chat-deleted";
 
-const PARTS: { name: string; part: "pinned" | "info-live" | "info-deleted" | "list" }[] = [
+const PARTS: {
+  name: string;
+  part:
+    | "pinned"
+    | "info-live"
+    | "info-deleted"
+    | "info-long"
+    | "info-empty-sender"
+    | "info-edited"
+    | "info-attach-no-name"
+    | "list";
+}[] = [
   { name: "pinned-banner", part: "pinned" },
   { name: "message-info-live", part: "info-live" },
   { name: "message-info-deleted", part: "info-deleted" },
+  { name: "message-info-long", part: "info-long" },
+  { name: "message-info-empty-sender", part: "info-empty-sender" },
+  { name: "message-info-edited", part: "info-edited" },
+  { name: "message-info-attach-no-name", part: "info-attach-no-name" },
   { name: "conversation-list", part: "list" },
 ];
 
