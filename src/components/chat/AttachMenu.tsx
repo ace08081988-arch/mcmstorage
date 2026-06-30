@@ -204,6 +204,8 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     setCaption("");
   }
 
+  const [confirmDelete, setConfirmDelete] = useState<null | "selected" | "all">(null);
+
   async function runTile(id: TileId) {
     persistLast(id);
     setOpenSheet(false);
