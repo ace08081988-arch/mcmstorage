@@ -529,7 +529,19 @@ function ChatRoomPage() {
                           mine
                             ? "rounded-br-sm bg-primary text-primary-foreground"
                             : "rounded-bl-sm bg-muted text-foreground"
-                        }`}
+                        } select-none touch-manipulation`}
+                        onPointerDown={(e) => {
+                          if (e.pointerType === "mouse" && e.button !== 0) return;
+                          startLongPress(m);
+                        }}
+                        onPointerUp={cancelLongPress}
+                        onPointerLeave={cancelLongPress}
+                        onPointerCancel={cancelLongPress}
+                        onContextMenu={(e) => {
+                          if (m.deleted_at) return;
+                          e.preventDefault();
+                          setLongPressMsg(m);
+                        }}
                       >
                         {showSender ? (
                           <div className="mb-0.5 text-[10px] font-semibold opacity-80">{senderName}</div>
