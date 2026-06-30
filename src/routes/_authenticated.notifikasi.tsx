@@ -601,20 +601,43 @@ function RecentNotificationsCard({
       return;
     }
     setMarkingAll(true);
+    // Snapshot untuk rollback bila pengguna menekan Undo.
+    const prevLocal = new Set(localRead);
     const nextLocal = new Set(localRead);
     for (const it of allItems) {
       if (enabledKinds[it.kind]) nextLocal.add(it.id);
     }
     persistLocalRead(nextLocal);
-    try {
-      await markAll({ data: { kinds: activeKinds } });
-      toast.success(`${affected} notifikasi ditandai dibaca`);
-    } catch {
-      toast.error("Gagal menandai semua dibaca");
-    } finally {
-      setMarkingAll(false);
-    }
-    qc.invalidateQueries({ queryKey: ["notif-feed"] });
+
+    // Tunda panggilan server agar bisa di-undo.
+    const UNDO_MS = 5000;
+    let undone = false;
+    const timer = window.setTimeout(async () => {
+      if (undone) return;
+      try {
+        await markAll({ data: { kinds: activeKinds } });
+      } catch {
+        toast.error("Gagal menandai semua dibaca di server");
+      } finally {
+        setMarkingAll(false);
+        qc.invalidateQueries({ queryKey: ["notif-feed"] });
+      }
+    }, UNDO_MS);
+
+    toast.success(`${affected} notifikasi ditandai dibaca`, {
+      duration: UNDO_MS,
+      action: {
+        label: "Undo",
+        onClick: () => {
+          undone = true;
+          window.clearTimeout(timer);
+          persistLocalRead(prevLocal);
+          setMarkingAll(false);
+          toast.info("Tindakan dibatalkan");
+          qc.invalidateQueries({ queryKey: ["notif-feed"] });
+        },
+      },
+    });
   }
 
   const [confirmOpen, setConfirmOpen] = useState(false);
