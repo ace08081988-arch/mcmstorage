@@ -65,6 +65,14 @@ import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 
+const DELETED_PLACEHOLDER = "(pesan dihapus)";
+
+function safePreview(m: { body?: string | null; attachment_name?: string | null; deleted_at?: string | null } | null | undefined): string {
+  if (!m) return "";
+  if (m.deleted_at) return DELETED_PLACEHOLDER;
+  return previewText(m.body ?? null) ?? (m.attachment_name ? `📎 ${m.attachment_name}` : "(lampiran)");
+}
+
 function ChatProGate() {
   const ent = useEntitlement();
   if (ent.loading || ent.isPro) return null;
