@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Bell, BellOff, Moon, Vibrate, MessageCircle, ClipboardList, PackagePlus, Settings2, BellRing, RefreshCw, Inbox } from "lucide-react";
 import { Link } from "@tanstack/react-router";
@@ -40,7 +40,7 @@ import {
   type FeedItem,
 } from "@/lib/notif-feed.functions";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, FilterX } from "lucide-react";
+import { Check, FilterX } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/notifikasi")({
   ssr: false,
@@ -636,25 +636,12 @@ function RecentNotificationsCard({
         {!isLoading && !error && items.length > 0 && (
           <div className="pt-2">
             {hasNextPage ? (
-              <Button
-                variant="outline"
-                size="sm"
-                className="w-full"
-                onClick={() => void fetchNextPage()}
-                disabled={isFetchingNextPage}
-              >
-                {isFetchingNextPage ? (
-                  <>
-                    <RefreshCw className="mr-2 size-3.5 animate-spin" />
-                    Memuat…
-                  </>
-                ) : (
-                  <>
-                    <ChevronDown className="mr-2 size-3.5" />
-                    Muat lebih banyak
-                  </>
-                )}
-              </Button>
+              <InfiniteScrollSentinel
+                onVisible={() => {
+                  if (!isFetchingNextPage) void fetchNextPage();
+                }}
+                loading={isFetchingNextPage}
+              />
             ) : (
               <div className="py-2 text-center text-[11px] text-muted-foreground">
                 Sudah sampai ujung daftar
@@ -665,6 +652,46 @@ function RecentNotificationsCard({
         {isFetchingNextPage && <FeedSkeletonList count={2} />}
       </CardContent>
     </Card>
+  );
+}
+
+function InfiniteScrollSentinel({
+  onVisible,
+  loading,
+}: {
+  onVisible: () => void;
+  loading: boolean;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el || typeof IntersectionObserver === "undefined") return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        for (const e of entries) {
+          if (e.isIntersecting) onVisible();
+        }
+      },
+      { rootMargin: "200px 0px" },
+    );
+    io.observe(el);
+    return () => io.disconnect();
+  }, [onVisible]);
+  return (
+    <div
+      ref={ref}
+      className="flex items-center justify-center py-2 text-[11px] text-muted-foreground"
+      aria-live="polite"
+    >
+      {loading ? (
+        <span className="inline-flex items-center gap-1.5">
+          <RefreshCw className="size-3.5 animate-spin" />
+          Memuat…
+        </span>
+      ) : (
+        <span className="opacity-0">.</span>
+      )}
+    </div>
   );
 }
 
