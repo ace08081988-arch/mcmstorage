@@ -68,6 +68,34 @@ function TugasPage() {
   }
   useEffect(() => { void load(); }, [uid]);
 
+  // Realtime: sinkronkan perubahan tugas (token diperpanjang, expires_at
+  // diperbarui, status berubah, atau tugas dihapus) dari halaman lain
+  // (mis. Link Pegawai) tanpa perlu refresh manual.
+  useEffect(() => {
+    if (!uid) return;
+    const ch = supabase
+      .channel("prep_tasks-tugas")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "prep_tasks" },
+        (payload) => {
+          if (payload.eventType === "UPDATE") {
+            const next = payload.new as Task;
+            setTasks((prev) => prev.map((t) => (t.id === next.id ? { ...t, ...next } : t)));
+          } else if (payload.eventType === "DELETE") {
+            const oldId = (payload.old as { id?: string })?.id;
+            if (!oldId) return;
+            setTasks((prev) => prev.filter((t) => t.id !== oldId));
+          } else if (payload.eventType === "INSERT") {
+            const next = payload.new as Task;
+            setTasks((prev) => (prev.some((t) => t.id === next.id) ? prev : [next, ...prev]));
+          }
+        },
+      )
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, [uid]);
+
   async function loadPinAlerts() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase.from as any)("prep_pin_alerts")
