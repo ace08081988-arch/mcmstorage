@@ -66,7 +66,6 @@ import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import {
   DELETED_PLACEHOLDER,
-  DeletedPreview,
   MessagePreview,
   messagePreviewText,
 } from "@/lib/chat-deleted";
