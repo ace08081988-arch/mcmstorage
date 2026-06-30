@@ -16,8 +16,15 @@ import { MessageInfoDialog } from "@/components/chat/MessageInfoDialog";
 import { MessagePreview } from "@/lib/chat-deleted";
 import type { MessageRow } from "@/lib/chat";
 
+type Part = "pinned" | "info-live" | "info-deleted" | "list" | "all";
+
 export const Route = createFileRoute("/lovable/visual/chat-deleted")({
   component: VisualHarness,
+  validateSearch: (s: Record<string, unknown>): { part: Part } => {
+    const p = s.part as Part | undefined;
+    const allowed: Part[] = ["pinned", "info-live", "info-deleted", "list", "all"];
+    return { part: allowed.includes(p as Part) ? (p as Part) : "all" };
+  },
   head: () => ({
     meta: [
       { title: "Visual harness — chat deleted" },
@@ -112,12 +119,16 @@ function Section({ id, title, children }: { id: string; title: string; children:
 }
 
 function VisualHarness() {
+  const { part } = Route.useSearch();
   const qc = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const show = (p: Part) => part === "all" || part === p;
   return (
     <QueryClientProvider client={qc}>
       <div className="mx-auto max-w-md space-y-6 p-4">
         <h1 className="text-lg font-semibold">Visual harness — chat deleted</h1>
 
+        {show("pinned") ? (
+          <>
         <Section id="pinned-banner-live" title="PinnedBanner — live">
           <PinnedBanner
             conversationId="c-fixture"
@@ -144,9 +155,11 @@ function VisualHarness() {
             canUnpin={false}
           />
         </Section>
+          </>
+        ) : null}
 
-        <Section id="message-info-live" title="MessageInfoDialog — live (inline)">
-          <div data-info-mount="live" className="p-3">
+        {show("info-live") ? (
+          <Section id="message-info-live" title="MessageInfoDialog — live">
             <MessageInfoDialog
               open
               onOpenChange={() => {}}
@@ -154,11 +167,11 @@ function VisualHarness() {
               senderName="Andi Pratama"
               readAtMs={FIXED_READ_MS}
             />
-          </div>
-        </Section>
+          </Section>
+        ) : null}
 
-        <Section id="message-info-deleted" title="MessageInfoDialog — deleted (inline)">
-          <div data-info-mount="deleted" className="p-3">
+        {show("info-deleted") ? (
+          <Section id="message-info-deleted" title="MessageInfoDialog — deleted">
             <MessageInfoDialog
               open
               onOpenChange={() => {}}
@@ -166,10 +179,11 @@ function VisualHarness() {
               senderName="Citra"
               readAtMs={null}
             />
-          </div>
-        </Section>
+          </Section>
+        ) : null}
 
-        <Section id="conversation-list" title="Conversation list — mixed states">
+        {show("list") ? (
+          <Section id="conversation-list" title="Conversation list — mixed states">
           <ul className="divide-y">
             {conversationRows.map((r) => (
               <li key={r.id} className="flex items-center gap-3 px-3 py-2 text-sm">
@@ -184,7 +198,8 @@ function VisualHarness() {
               </li>
             ))}
           </ul>
-        </Section>
+          </Section>
+        ) : null}
       </div>
     </QueryClientProvider>
   );
