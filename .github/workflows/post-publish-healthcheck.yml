@@ -1,0 +1,175 @@
+name: Post-Publish Health Check
+
+on:
+  workflow_dispatch:
+    inputs:
+      url:
+        description: "URL live yang dicek (default https://mcmstorage.biz)"
+        required: false
+        type: string
+        default: "https://mcmstorage.biz"
+      sha:
+        description: "Commit SHA terkait publish (opsional, untuk pelaporan)"
+        required: false
+        type: string
+  repository_dispatch:
+    types: [lovable-published, healthcheck-requested]
+  workflow_run:
+    workflows: ["Deploy Published"]
+    types: [completed]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  healthcheck:
+    name: Health check ${{ github.event.inputs.url || 'https://mcmstorage.biz' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Resolve inputs
+        id: cfg
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const isDispatch = context.eventName === 'repository_dispatch';
+            const payload = isDispatch ? (context.payload.client_payload || {}) : {};
+            const inputs = context.payload.inputs || {};
+            const url = (payload.url || inputs.url || 'https://mcmstorage.biz').trim();
+            const sha = (payload.sha || inputs.sha || context.sha || '').trim();
+            core.setOutput('url', url);
+            core.setOutput('sha', sha);
+            core.setOutput('short', sha ? sha.slice(0, 7) : '');
+
+      - name: Probe URL (retry up to ~3 menit)
+        id: probe
+        shell: bash
+        run: |
+          set +e
+          URL="${{ steps.cfg.outputs.url }}"
+          ATTEMPTS=12
+          SLEEP=15
+          LAST_STATUS=0
+          LAST_TIME=0
+          LAST_SIZE=0
+          LAST_ERR=""
+          OK=0
+          for i in $(seq 1 "$ATTEMPTS"); do
+            echo "Attempt $i/$ATTEMPTS → $URL"
+            RESP=$(curl -sS -L -o /tmp/body.html -D /tmp/headers.txt \
+              -A "lovable-healthcheck/1.0" \
+              -w '%{http_code} %{time_total} %{size_download}' \
+              --max-time 25 "$URL" 2>/tmp/curl.err)
+            CURL_EXIT=$?
+            if [ $CURL_EXIT -ne 0 ]; then
+              LAST_ERR=$(tr '\n' ' ' < /tmp/curl.err | head -c 400)
+              echo "  curl error ($CURL_EXIT): $LAST_ERR"
+              sleep "$SLEEP"; continue
+            fi
+            LAST_STATUS=$(echo "$RESP" | awk '{print $1}')
+            LAST_TIME=$(echo "$RESP" | awk '{print $2}')
+            LAST_SIZE=$(echo "$RESP" | awk '{print $3}')
+            echo "  status=$LAST_STATUS time=${LAST_TIME}s size=${LAST_SIZE}b"
+            if [ "$LAST_STATUS" = "200" ] && [ "${LAST_SIZE:-0}" -gt 500 ] && grep -qi "<html" /tmp/body.html; then
+              OK=1
+              break
+            fi
+            sleep "$SLEEP"
+          done
+          TITLE=$(grep -oiE '<title>[^<]*</title>' /tmp/body.html | head -1 | sed -E 's/<\/?title>//gi' | head -c 200)
+          {
+            echo "ok=$OK"
+            echo "status=$LAST_STATUS"
+            echo "time=$LAST_TIME"
+            echo "size=$LAST_SIZE"
+            echo "attempts_used=$i"
+            echo "title<<EOF"
+            echo "$TITLE"
+            echo "EOF"
+            echo "err<<EOF"
+            echo "$LAST_ERR"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Report to GitHub
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const ok = '${{ steps.probe.outputs.ok }}' === '1';
+            const url = '${{ steps.cfg.outputs.url }}';
+            const sha = '${{ steps.cfg.outputs.sha }}';
+            const short = '${{ steps.cfg.outputs.short }}';
+            const status = '${{ steps.probe.outputs.status }}';
+            const time = '${{ steps.probe.outputs.time }}';
+            const size = '${{ steps.probe.outputs.size }}';
+            const attempts = '${{ steps.probe.outputs.attempts_used }}';
+            const title = `${{ steps.probe.outputs.title }}`;
+            const err = `${{ steps.probe.outputs.err }}`;
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const when = new Date().toISOString();
+            const commitLine = sha
+              ? `\n- Commit: [\`${short}\`](${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/commit/${sha})`
+              : '';
+
+            const summary = [
+              `${ok ? '## ✅ Health check OK' : '## ❌ Health check FAILED'}`,
+              ``,
+              `- URL: ${url}`,
+              `- HTTP: \`${status}\``,
+              `- Latency: \`${time}s\``,
+              `- Size: \`${size}\` bytes`,
+              `- Attempts: ${attempts}`,
+              `- Title: \`${title || '(kosong)'}\``,
+              err ? `- Last error: \`${err}\`` : null,
+            ].filter(Boolean).join('\n');
+            await core.summary.addRaw(summary).write();
+
+            // Comment on latest "deployed" issue (jika ada) untuk hubungkan ke notifikasi publish
+            const { data: deployedIssues } = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              state: 'open',
+              labels: 'deployed',
+              per_page: 5,
+              sort: 'created',
+              direction: 'desc',
+            });
+            const body = [
+              ok ? `✅ **Health check OK** — situs merespons normal.` : `❌ **Health check FAILED** — situs tidak merespons sesuai harapan.`,
+              ``,
+              `- URL: [${url}](${url})`,
+              `- HTTP: \`${status || 'n/a'}\``,
+              `- Latency: \`${time || 'n/a'}s\``,
+              `- Size: \`${size || 0}\` bytes`,
+              `- Attempts: ${attempts}`,
+              `- Title: \`${title || '(kosong)'}\``,
+              err ? `- Last error: \`${err}\`` : null,
+              commitLine ? commitLine.trim() : null,
+              `- Waktu: ${when}`,
+              ``,
+              `Log lengkap: ${runUrl}`,
+            ].filter(Boolean).join('\n');
+
+            if (deployedIssues.length > 0) {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: deployedIssues[0].number,
+                body,
+              });
+            }
+
+            // Jika gagal, buka issue dengan label health-check-failure
+            if (!ok) {
+              const title = `❌ Health check gagal: ${url.replace(/^https?:\/\//, '')}${short ? ' @ ' + short : ''}`;
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['health-check-failure'],
+              });
+              core.setFailed(`Health check failed for ${url} (status=${status})`);
+            }
