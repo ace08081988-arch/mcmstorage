@@ -9,9 +9,6 @@ export function PublicFooter() {
           sebagai MCM Storage.
         </p>
         <nav className="flex flex-wrap items-center gap-x-4 gap-y-1">
-          <Link to="/pricing" className="hover:underline">
-            Harga
-          </Link>
           <Link to="/terms" className="hover:underline">
             Syarat &amp; Ketentuan
           </Link>
