@@ -723,14 +723,18 @@ function DetailHero({
 
 function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
   return (
-      <div className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-start gap-3 py-2.5 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
-      <EcerLabel className="flex min-w-0 items-center gap-1.5">
+    <div className="grid min-h-[40px] grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-2 py-2 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
+      <EcerLabel className="flex min-w-0 items-center gap-1.5 leading-none">
         <span className="shrink-0 text-muted-foreground/70">{icon}</span>
         <span className="truncate">{label}</span>
       </EcerLabel>
-      <div className="min-w-0 text-right text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]">
-        <div className="[overflow-wrap:anywhere]">{value}</div>
-        {sub && <EcerMeta as="div" className="mt-0.5 break-words font-normal">{sub}</EcerMeta>}
+      <div className="flex min-w-0 flex-wrap items-baseline justify-end gap-x-1.5 gap-y-0 text-right text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]">
+        <span className="min-w-0 [overflow-wrap:anywhere]">{value}</span>
+        {sub && (
+          <EcerMeta as="span" className="min-w-0 truncate font-normal leading-none">
+            · {sub}
+          </EcerMeta>
+        )}
       </div>
     </div>
   );
