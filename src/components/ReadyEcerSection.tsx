@@ -949,7 +949,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const duplicate = duplicateRec
       ? { at: duplicateRec.at, status: duplicateRec.status, destination: r.name, fingerprint: duplicateRec.fingerprint, summary: duplicateRec.summary }
       : null;
-    const previousLog = duplicate ? getSendLog(idemKey) : [];
+    // Selalu baca log saat ada record (termasuk yang failed) — agar operator
+    // bisa melihat penyebab kegagalan kiriman sebelumnya di pratinjau.
+    let previousLog = existing ? getSendLog(idemKey) : [];
+    const preserveLog = existing?.status === "failed";
     setSending(true);
     setSendStatus("sending");
     setSendError(null);
@@ -1019,6 +1022,24 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         photoCount: files.length,
         locationUrl: firstLocation ?? null,
       };
+      // Catat snapshot diff payload bila kiriman sebelumnya gagal atau sidik
+      // jari berbeda — supaya bisa direview lewat "Lihat log kiriman sebelumnya".
+      if (existing) {
+        const prevFp = existing.fingerprint;
+        const fpMismatch = !!prevFp && prevFp !== waFingerprint;
+        const prevFailed = existing.status === "failed";
+        if (prevFailed || fpMismatch) {
+          appendPayloadDiffLog(
+            idemKey,
+            existing.summary ?? null,
+            waSummary,
+            prevFailed
+              ? "Kiriman WA sebelumnya gagal — bandingkan payload"
+              : "Sidik jari payload tidak cocok dengan kiriman WA sebelumnya",
+          );
+          previousLog = getSendLog(idemKey);
+        }
+      }
       const callShare = () => shareToWhatsApp({
             text,
             title: r.name,
@@ -1051,7 +1072,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           throw new Error(r0.error || "share-failed");
         }
       } else {
-        resetSendLog(idemKey);
+        // Pertahankan log saat percobaan sebelumnya gagal agar operator
+        // tetap bisa melihat urutan langkah + diff payloadnya.
+        if (!preserveLog) resetSendLog(idemKey);
         appendSendLog(idemKey, { kind: "info", label: `Mulai kirim WA ke "${r.name}"`, detail: `${take.length} kiriman · ${files.length}/${expectedCount} foto` });
         res = await withIdempotency(idemKey, {
           onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
