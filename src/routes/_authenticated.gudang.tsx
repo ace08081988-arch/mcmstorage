@@ -1174,9 +1174,9 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                   {list.length} item
                 </span>
               </div>
-              <div className="flex shrink-0 items-center gap-2 text-[11px]">
+              <div className="flex shrink-0 items-center gap-2 text-[11px] leading-snug">
                 <span className="hidden text-muted-foreground sm:inline">Nilai</span>
-                <span className="font-semibold tabular-nums">{rupiah(catValue)}</span>
+                <span className="whitespace-nowrap font-semibold tabular-nums">{rupiah(catValue)}</span>
                 <span className="text-muted-foreground">{isCollapsed ? "▸" : "▾"}</span>
               </div>
             </header>
