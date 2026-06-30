@@ -1208,6 +1208,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     try {
       const res = await withIdempotency(ctx.idemKey, {
         onSkip: () => ({ status: "shared" as const, messageCount: 0, error: undefined as string | undefined }),
+        fingerprint: ctx.fingerprint,
         run: async () => {
           const r0 = await shareToChat({
             conversationId: ctx.conversationId,
