@@ -966,10 +966,12 @@ function PublicPrepPage() {
               </div>
             )}
             <input
+              ref={pinInputRef}
               inputMode="numeric" maxLength={8} value={pin}
               onChange={(e) => {
                 setPin(e.target.value.replace(/\D/g, ""));
                 if (lastError?.kind === "bad_pin") setLastError(null);
+                if (sessionJustExpired) setSessionJustExpired(false);
               }}
               placeholder="••••••" disabled={isLocked}
               className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60" />
