@@ -108,6 +108,38 @@ function PublicPrepPage() {
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
   const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found" | "expired" | "closed">(null);
+  // Persistensi sesi pegawai (PIN + flag authed) di sessionStorage.
+  // Tujuan: WebView Android yang dire-create setelah kembali dari aplikasi
+  // kamera / galeri / share / pengunci layar TIDAK memantulkan pegawai
+  // kembali ke layar PIN. PIN disimpan dalam scope per-token, TTL singkat.
+  const SESSION_KEY = `prep_session:${token}`;
+  const SESSION_TTL_MS = 30 * 60 * 1000; // 30 menit
+  function readSession(): { pin: string; ts: number } | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.sessionStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { pin?: string; ts?: number };
+      if (!parsed?.pin || !parsed?.ts) return null;
+      if (Date.now() - parsed.ts > SESSION_TTL_MS) {
+        window.sessionStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+      return { pin: parsed.pin, ts: parsed.ts };
+    } catch { return null; }
+  }
+  function writeSession(pin: string) {
+    if (typeof window === "undefined") return;
+    try { window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, ts: Date.now() })); } catch {}
+  }
+  function clearSession() {
+    if (typeof window === "undefined") return;
+    try { window.sessionStorage.removeItem(SESSION_KEY); } catch {}
+  }
+  // Counter kegagalan berturut-turut untuk silentRefresh; baru flip ke layar
+  // closedReason setelah 2x kegagalan kategori sama agar transient error
+  // (DB hiccup, koneksi seluler putus sekejap) tidak menendang user balik.
+  const silentFailRef = useRef<{ kind: string | null; count: number }>({ kind: null, count: 0 });
   // Hasil pengecekan otomatis status link saat halaman dibuka (sebelum PIN).
   // Memberi tahu pegawai segera kalau link tidak valid, kedaluwarsa, ditutup,
   // atau aksesnya sedang dikunci karena terlalu banyak salah PIN.
@@ -385,21 +417,21 @@ function PublicPrepPage() {
     // browser tidak membawa sisa percobaan/lock.
     resetAttemptsFully();
     setTask(normalizedTask); setItems(normalizedItems); pinRef.current = p;
+    // Simpan PIN ke sessionStorage agar WebView yang di-recreate (mis. setelah
+    // user buka kamera/galeri) bisa auto-rehydrate ke layar tugas.
+    writeSession(p);
     // eslint-disable-next-line no-console
     console.log("[t.$token] PIN ok", {
       taskId: normalizedTask.id,
       itemsCount: normalizedItems.length,
       status: normalizedTask.status,
     });
-    // Tampilkan layar sukses inline sebelum berpindah ke daftar tugas,
-    // supaya pengguna melihat konfirmasi yang jelas di layar PIN.
-    setSuccessFlash(true);
-    setTimeout(() => {
-      // eslint-disable-next-line no-console
-      console.log("[t.$token] setAuthed(true) fired after success flash");
-      setSuccessFlash(false);
-      setAuthed(true);
-    }, 1200);
+    // Langsung pindah ke layar tugas — flash sukses bisa terlihat sebagai
+    // "balik ke awal" kalau user menyentuh layar dalam jendela 1.2 dtk.
+    // Tampilkan konfirmasi via toast saja.
+    setAuthed(true);
+    setSuccessFlash(false);
+    toast.success("Masuk pegawai berhasil", { duration: 1500 });
     // Pastikan posisi scroll kembali ke atas halaman tugas.
     if (typeof window !== "undefined") {
       try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
@@ -415,6 +447,7 @@ function PublicPrepPage() {
     setItems([]);
     setPin("");
     pinRef.current = "";
+    clearSession();
     if (typeof window !== "undefined") {
       try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
     }
@@ -431,22 +464,48 @@ function PublicPrepPage() {
   // ke layar yang sesuai tanpa menghapus state percobaan.
   async function silentRefresh() {
     if (!pinRef.current || !authed) return;
-    const { data } = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
-    const res = data as { ok: boolean; error?: string; task?: unknown; items?: unknown };
-    if (!res?.ok) {
-      if (res?.error === "bad_pin") {
-        setClosedReason("pin_changed");
-      } else if (res?.error === "expired") {
-        setClosedReason("expired");
-      } else if (res?.error === "closed") {
-        setClosedReason("closed");
-      } else if (res?.error === "not_found") {
-        setClosedReason("not_found");
+    let data: unknown = null;
+    try {
+      const r = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
+      if (r.error) {
+        // Network / transport error → JANGAN flip ke closedReason. Biar status
+        // realtime/sync badge yang memberi tahu user.
+        // eslint-disable-next-line no-console
+        console.warn("[t.$token] silentRefresh transport error", r.error);
+        return;
       }
+      data = r.data;
+    } catch (e) {
       // eslint-disable-next-line no-console
-      console.warn("[t.$token] silentRefresh non-ok", res);
+      console.warn("[t.$token] silentRefresh threw", e);
       return;
     }
+    const res = data as { ok: boolean; error?: string; task?: unknown; items?: unknown };
+    if (!res?.ok) {
+      const kind = res?.error ?? "unknown";
+      // Butuh 2x kegagalan berturut-turut dgn kind yang sama sebelum
+      // benar-benar menendang user — hindari false positive saat owner
+      // sedang rotate PIN / replikasi DB belum sinkron sepersekian detik.
+      if (silentFailRef.current.kind === kind) silentFailRef.current.count += 1;
+      else silentFailRef.current = { kind, count: 1 };
+      if (silentFailRef.current.count < 2) {
+        // eslint-disable-next-line no-console
+        console.warn("[t.$token] silentRefresh non-ok (tolerated)", res);
+        return;
+      }
+      if (kind === "bad_pin") setClosedReason("pin_changed");
+      else if (kind === "expired") setClosedReason("expired");
+      else if (kind === "closed") setClosedReason("closed");
+      else if (kind === "not_found") setClosedReason("not_found");
+      // PIN cached sudah tidak valid → buang supaya tidak auto-rehydrate
+      // ke loop "Kembali ke PIN" lagi setelah WebView dire-create.
+      clearSession();
+      // eslint-disable-next-line no-console
+      console.warn("[t.$token] silentRefresh non-ok (kicked)", res);
+      return;
+    }
+    // Reset counter saat sukses.
+    silentFailRef.current = { kind: null, count: 0 };
     // Deteksi item yang sedang dilihat pegawai tapi sudah berubah versinya.
     const normalizedTask = normalizePrepTask(res.task);
     if (!normalizedTask) {
@@ -508,18 +567,24 @@ function PublicPrepPage() {
   // Fragment tidak dikirim ke server, jadi PIN tetap aman dari log.
   useEffect(() => {
     if (authed || autoTriedRef.current || typeof window === "undefined") return;
+    // Prioritas 1: fragment URL (#p=1234) — link share/QR pertama kali.
+    // Prioritas 2: sessionStorage — WebView yang dire-create setelah user
+    //              kembali dari kamera/galeri/share/lock screen.
     const hash = window.location.hash || "";
     const m = hash.match(/(?:^#|[#&])p=(\d{4,8})/);
-    if (!m) return;
+    const session = readSession();
+    const autoPin = m?.[1] ?? session?.pin ?? null;
+    if (!autoPin) return;
     autoTriedRef.current = true;
-    const autoPin = m[1];
     setPin(autoPin);
     void fetchTask(autoPin);
-    // Bersihkan fragment dari address bar agar PIN tidak terlihat lagi.
-    try {
-      const { pathname, search } = window.location;
-      window.history.replaceState(null, "", `${pathname}${search}`);
-    } catch { /* noop */ }
+    if (m) {
+      // Bersihkan fragment dari address bar agar PIN tidak terlihat lagi.
+      try {
+        const { pathname, search } = window.location;
+        window.history.replaceState(null, "", `${pathname}${search}`);
+      } catch { /* noop */ }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
