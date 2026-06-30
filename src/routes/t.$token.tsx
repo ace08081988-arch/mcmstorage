@@ -108,6 +108,38 @@ function PublicPrepPage() {
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
   const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found" | "expired" | "closed">(null);
+  // Persistensi sesi pegawai (PIN + flag authed) di sessionStorage.
+  // Tujuan: WebView Android yang dire-create setelah kembali dari aplikasi
+  // kamera / galeri / share / pengunci layar TIDAK memantulkan pegawai
+  // kembali ke layar PIN. PIN disimpan dalam scope per-token, TTL singkat.
+  const SESSION_KEY = `prep_session:${token}`;
+  const SESSION_TTL_MS = 30 * 60 * 1000; // 30 menit
+  function readSession(): { pin: string; ts: number } | null {
+    if (typeof window === "undefined") return null;
+    try {
+      const raw = window.sessionStorage.getItem(SESSION_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { pin?: string; ts?: number };
+      if (!parsed?.pin || !parsed?.ts) return null;
+      if (Date.now() - parsed.ts > SESSION_TTL_MS) {
+        window.sessionStorage.removeItem(SESSION_KEY);
+        return null;
+      }
+      return { pin: parsed.pin, ts: parsed.ts };
+    } catch { return null; }
+  }
+  function writeSession(pin: string) {
+    if (typeof window === "undefined") return;
+    try { window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, ts: Date.now() })); } catch {}
+  }
+  function clearSession() {
+    if (typeof window === "undefined") return;
+    try { window.sessionStorage.removeItem(SESSION_KEY); } catch {}
+  }
+  // Counter kegagalan berturut-turut untuk silentRefresh; baru flip ke layar
+  // closedReason setelah 2x kegagalan kategori sama agar transient error
+  // (DB hiccup, koneksi seluler putus sekejap) tidak menendang user balik.
+  const silentFailRef = useRef<{ kind: string | null; count: number }>({ kind: null, count: 0 });
   // Hasil pengecekan otomatis status link saat halaman dibuka (sebelum PIN).
   // Memberi tahu pegawai segera kalau link tidak valid, kedaluwarsa, ditutup,
   // atau aksesnya sedang dikunci karena terlalu banyak salah PIN.
