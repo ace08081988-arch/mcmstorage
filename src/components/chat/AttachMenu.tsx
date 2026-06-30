@@ -310,14 +310,20 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     setCaption("");
     // Validasi tiap berkas; tetap ditampilkan agar pengguna langsung tahu alasannya.
     const errors = arr.map((f) => validateFile(f));
-    setPending(arr.map((f) => ({
+    const items: PendingItem[] = arr.map((f) => ({
+      id: nextItemId(),
       file: f,
       previewUrl: (f.type.startsWith("image/") || f.type.startsWith("video/")) ? URL.createObjectURL(f) : null,
-    })));
-    setStatuses(arr.map((_, i) => {
-      const err = errors[i];
-      return err ? { state: "error" as ItemStatus, error: err, preflight: true } : { state: "idle" as ItemStatus };
     }));
+    const nextStatuses: Record<string, StatusEntry> = {};
+    items.forEach((it, i) => {
+      const err = errors[i];
+      nextStatuses[it.id] = err
+        ? { state: "error", error: err, preflight: true }
+        : { state: "idle" };
+    });
+    setPending(items);
+    setStatuses(nextStatuses);
     const invalidCount = errors.filter(Boolean).length;
     if (invalidCount > 0) {
       const first = errors.find(Boolean) as string;
@@ -331,60 +337,52 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   }
 
   function removePendingAt(idx: number) {
-    setPending((prev) => {
-      if (!prev) return prev;
-      const removed = prev[idx];
-      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
-      const next = prev.filter((_, i) => i !== idx);
-      return next.length ? next : null;
-    });
-    setStatuses((prev) => prev.filter((_, i) => i !== idx));
+    if (!pending) return;
+    const target = pending[idx];
+    if (!target) return;
+    const { skipped } = removeIds([target.id]);
+    if (skipped > 0) toast.message("Berkas sedang diunggah; tunggu sampai selesai.");
   }
 
   function removeInvalidPending() {
     if (!pending) return;
-    const keepIdx: number[] = [];
-    pending.forEach((p, i) => {
-      if (statuses[i]?.preflight) {
-        if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
-      } else {
-        keepIdx.push(i);
-      }
-    });
-    setPending(keepIdx.length ? keepIdx.map((i) => pending[i]) : null);
-    setStatuses(keepIdx.map((i) => statuses[i]));
+    const ids = pending.filter((p) => statuses[p.id]?.preflight).map((p) => p.id);
+    removeIds(ids);
   }
 
   async function confirmSendPending(retryOnly = false) {
     if (!pending || pending.length === 0) return;
     setBusy("upload");
     const cap = caption.trim();
-    // Indeks yang akan dikirim: lewati yang sudah sukses dan yang gagal validasi (preflight).
-    const indices = pending
-      .map((_, i) => i)
-      .filter((i) => statuses[i]?.state !== "sent" && !statuses[i]?.preflight)
-      .filter((i) => (retryOnly ? statuses[i]?.state === "error" : true));
-    if (indices.length === 0) {
+    // ID yang akan dikirim: lewati yang sudah sukses dan yang gagal validasi (preflight).
+    const queueIds = pending
+      .filter((p) => statuses[p.id]?.state !== "sent" && !statuses[p.id]?.preflight)
+      .filter((p) => (retryOnly ? statuses[p.id]?.state === "error" : true))
+      .map((p) => p.id);
+    if (queueIds.length === 0) {
       setBusy(null);
       toast.error("Tidak ada lampiran valid untuk dikirim", { description: "Buang berkas yang ditolak terlebih dahulu." });
       return;
     }
-    const total = indices.length;
+    let total = queueIds.length;
     let done = 0;
     setProgress({ done, total });
     let anyError = false;
     let failedCount = 0;
     let firstCaptionConsumed = retryOnly
-      ? statuses.findIndex((s) => s?.state === "sent") !== -1 // caption sudah ikut item pertama yang sukses
+      ? Object.values(statuses).some((s) => s?.state === "sent")
       : false;
-    for (const i of indices) {
-      setStatuses((prev) => {
-        const next = [...prev];
-        next[i] = { state: "uploading" };
-        return next;
-      });
+    let okCount = 0;
+    for (const id of queueIds) {
+      // Lewati item yang dihapus saat upload berjalan.
+      const item = (pendingRef.current ?? []).find((p) => p.id === id);
+      if (!item) {
+        total = Math.max(done, total - 1);
+        setProgress({ done, total });
+        continue;
+      }
+      setStatuses((prev) => ({ ...prev, [id]: { state: "uploading" } }));
       try {
-        const item = pending[i];
         const up = await uploadChatFile({ conversationId, file: item.file });
         const includeCaption = !firstCaptionConsumed && !!cap;
         await sendMessage({
@@ -398,29 +396,21 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           },
         });
         if (includeCaption) firstCaptionConsumed = true;
-        setStatuses((prev) => {
-          const next = [...prev];
-          next[i] = { state: "sent" };
-          return next;
-        });
+        setStatuses((prev) => (prev[id] ? { ...prev, [id]: { state: "sent" } } : prev));
+        okCount += 1;
         onSent?.();
       } catch (e) {
         anyError = true;
         failedCount += 1;
         const msg = e instanceof Error ? e.message : "Gagal mengunggah";
-        setStatuses((prev) => {
-          const next = [...prev];
-          next[i] = { state: "error", error: msg };
-          return next;
-        });
+        setStatuses((prev) => (prev[id] ? { ...prev, [id]: { state: "error", error: msg } } : prev));
       }
       done += 1;
       setProgress({ done, total });
     }
     setBusy(null);
     setProgress(null);
-    if (!anyError) {
-      const okCount = indices.length;
+    if (!anyError && okCount > 0) {
       toast.success(
         okCount > 1 ? `${okCount} lampiran terkirim` : "Lampiran terkirim",
         { description: cap ? `Caption: "${cap.slice(0, 60)}${cap.length > 60 ? "…" : ""}"` : undefined },
@@ -429,11 +419,11 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       setTimeout(() => {
         setPending(null);
         setCaption("");
-        setStatuses([]);
+        setStatuses({});
       }, 300);
-    } else {
+    } else if (anyError) {
       const failed = failedCount;
-      const ok = indices.length - failed;
+      const ok = okCount;
       toast.error(
         failed > 1 ? `${failed} lampiran gagal diunggah` : "1 lampiran gagal diunggah",
         {
