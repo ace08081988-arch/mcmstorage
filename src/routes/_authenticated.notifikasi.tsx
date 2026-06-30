@@ -768,6 +768,43 @@ function RecentNotificationsCard({
         )}
         {isFetchingNextPage && <FeedSkeletonList count={2} />}
       </CardContent>
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Tandai semua dibaca?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-sm">
+                <div>
+                  {pendingAffected > 0 ? (
+                    <>
+                      <span className="font-medium text-foreground">{pendingAffected}</span>{" "}
+                      notifikasi akan ditandai dibaca.
+                    </>
+                  ) : (
+                    <>Tidak ada notifikasi belum dibaca yang lolos filter aktif.</>
+                  )}
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Filter aktif:{" "}
+                  {activeKindLabels.length > 0 ? activeKindLabels.join(", ") : "tidak ada kategori"}
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={pendingAffected === 0}
+              onClick={() => {
+                setConfirmOpen(false);
+                void handleMarkAll();
+              }}
+            >
+              Tandai dibaca
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
