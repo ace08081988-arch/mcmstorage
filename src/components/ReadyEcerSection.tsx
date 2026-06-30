@@ -1300,13 +1300,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             <button
               type="button"
               onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPickChatOpen(true); }}
-              disabled={chatSending}
+              disabled={chatSending || chatPreparing}
               aria-label="Kirim via Chat aplikasi"
               title="Kirim ke percakapan dalam aplikasi"
               className="inline-flex h-7 items-center justify-center gap-1 rounded-md bg-primary px-2 text-[10px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
             >
-              {chatSending ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-              Chat
+              {(chatSending || chatPreparing) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+              {chatPreparing ? "Siap…" : "Chat"}
             </button>
             {view === "sent" && (
               <button
