@@ -91,6 +91,45 @@ function NotifikasiPage() {
     return () => { window.clearInterval(t); unsub(); };
   }, []);
 
+  // Persist & restore window scroll position across filter changes and revisits.
+  useEffect(() => {
+    const KEY = "notif-scroll-y";
+    let restored = false;
+    const tryRestore = () => {
+      if (restored) return;
+      try {
+        const raw = sessionStorage.getItem(KEY);
+        const y = raw ? parseInt(raw, 10) : 0;
+        if (!Number.isNaN(y) && y > 0) {
+          // Wait a tick so feed/skeleton renders and document height is sufficient.
+          requestAnimationFrame(() => window.scrollTo(0, y));
+        }
+      } catch { /* ignore */ }
+      restored = true;
+    };
+    tryRestore();
+    let raf = 0;
+    const onScroll = () => {
+      if (raf) return;
+      raf = window.requestAnimationFrame(() => {
+        raf = 0;
+        try { sessionStorage.setItem(KEY, String(window.scrollY)); } catch { /* ignore */ }
+      });
+    };
+    const onHide = () => {
+      try { sessionStorage.setItem(KEY, String(window.scrollY)); } catch { /* ignore */ }
+    };
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("pagehide", onHide);
+    document.addEventListener("visibilitychange", onHide);
+    return () => {
+      window.removeEventListener("scroll", onScroll);
+      window.removeEventListener("pagehide", onHide);
+      document.removeEventListener("visibilitychange", onHide);
+      if (raf) cancelAnimationFrame(raf);
+    };
+  }, []);
+
   const dndActive =
     prefs.dnd.enabled && isInDndWindow(now, prefs.dnd.start, prefs.dnd.end);
   const startError = !/^\d{2}:\d{2}$/.test(prefs.dnd.start);
