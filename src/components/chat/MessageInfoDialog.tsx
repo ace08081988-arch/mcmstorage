@@ -1,8 +1,6 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import type { MessageRow } from "@/lib/chat";
-
-const DELETED_PLACEHOLDER = "(pesan dihapus)";
-const DELETED_ATTACHMENT_PLACEHOLDER = "(lampiran dihapus)";
+import { DELETED_ATTACHMENT_PLACEHOLDER, DELETED_PLACEHOLDER } from "@/lib/chat-deleted";
 
 export function MessageInfoDialog({
   open,
