@@ -894,10 +894,11 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         ...lines,
         ...(take.find((s) => s.location_url) ? [`📍 ${take.find((s) => s.location_url)!.location_url}`] : []),
       ].join("\n");
+      const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
       const res = await shareToWhatsApp({ text, title: r.name, files });
       notifyShareResult(res);
       if (res.status === "shared" || res.status === "fallback") {
-        markSent(take.map((s) => s.id));
+        markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success" });
         setSendStatus("success");
       } else if (res.status === "cancelled") {
         setSendStatus("cancelled");
