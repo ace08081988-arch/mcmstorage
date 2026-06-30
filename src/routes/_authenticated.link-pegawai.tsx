@@ -320,23 +320,31 @@ function LinkPegawaiPage() {
     }
   }
 
-  async function regenerateToken(taskId: string) {
+  async function regenerateToken(taskId: string, opts?: { extendDays?: number }) {
     setRegenId(taskId);
+    const extendDays = opts?.extendDays;
+    const newExpiresAt = extendDays && extendDays > 0
+      ? new Date(Date.now() + extendDays * 24 * 60 * 60 * 1000).toISOString()
+      : null;
     // Coba beberapa kali jika token unik bentrok (sangat kecil kemungkinannya).
     let lastErr: string | null = null;
     for (let i = 0; i < 3; i++) {
       const next = genShareToken();
+      const patch: { share_token: string; expires_at?: string } = { share_token: next };
+      if (newExpiresAt) patch.expires_at = newExpiresAt;
       const { data, error } = await supabase
         .from("prep_tasks")
-        .update({ share_token: next })
+        .update(patch)
         .eq("id", taskId)
-        .select("id,share_token")
+        .select("id,share_token,expires_at")
         .maybeSingle();
       if (!error && data) {
-        setTasks((prev) => (prev ? prev.map((t) => (t.id === taskId ? { ...t, share_token: data.share_token } : t)) : prev));
+        setTasks((prev) => (prev ? prev.map((t) => (t.id === taskId ? { ...t, share_token: data.share_token, expires_at: data.expires_at ?? t.expires_at } : t)) : prev));
         setRegenAt((prev) => ({ ...prev, [taskId]: Date.now() }));
         setRegenId(null);
-        toast.success("Token diperbarui — link baru siap dipakai");
+        toast.success(newExpiresAt
+          ? `Link diperpanjang ${extendDays} hari & token baru aktif`
+          : "Token diperbarui — link baru siap dipakai");
         return;
       }
       lastErr = error?.message ?? "Tidak ada baris yang diperbarui (izin?)";
@@ -748,6 +756,17 @@ function LinkPegawaiPage() {
                     >
                       {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
                       Buat Ulang Token
+                    </button>
+                  )}
+                  {avail === "expired" && (
+                    <button
+                      onClick={() => void regenerateToken(t.id, { extendDays: 7 })}
+                      disabled={regenId === t.id}
+                      title="Perpanjang masa aktif 7 hari & terbitkan token baru"
+                      className="inline-flex h-8 items-center gap-1 rounded-md border border-amber-500/40 bg-amber-500/10 px-2 text-[11px] font-medium text-amber-700 hover:bg-amber-500/20 disabled:opacity-50 dark:text-amber-400"
+                    >
+                      {regenId === t.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <KeyRound className="h-3.5 w-3.5" />}
+                      Perpanjang &amp; Token Baru (7 hari)
                     </button>
                   )}
                   {testMode && !urlError && (
