@@ -154,6 +154,10 @@ export function WaPreviewHost() {
   const canRetry = !!current?.retryMissing && missing > 0;
   const live = useLiveIdemByIds(current?.idemIdsKey);
   const liveChannel = live ? channelFromKey(live.key) : "unknown";
+  // Pantau log langkah kiriman in-flight (channel manapun) — saat kiriman Chat
+  // untuk paket yang sama masih berjalan, dialog WA ikut menampilkan progresnya.
+  const liveInflightKey = live && live.status === "in-flight" ? live.key : null;
+  const liveLog = useLiveSendLog(liveInflightKey);
   const crossChannel = !!live && liveChannel === "chat";
   const snapshotDup = current?.duplicate ?? null;
   const dup = live
@@ -278,6 +282,9 @@ export function WaPreviewHost() {
                 ) : null}
                 {dup!.status !== "in-flight" && !payloadMatches ? (
                   <SendPayloadDiff previous={dup!.summary} current={current?.currentSummary} />
+                ) : null}
+                {dup!.status === "in-flight" ? (
+                  <InflightStepProgress entries={liveLog} channel={liveChannel} />
                 ) : null}
               </div>
             </div>
