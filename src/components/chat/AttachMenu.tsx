@@ -726,16 +726,73 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       />
       <AlertDialog open={confirmDelete !== null} onOpenChange={(v) => { if (!v) setConfirmDelete(null); }}>
         <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {confirmDelete === "all" ? "Hapus semua lampiran?" : `Hapus ${selected.size} berkas terpilih?`}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {confirmDelete === "all"
-                ? `${pending?.length ?? 0} berkas akan dibuang dari antrean dan tidak bisa dikembalikan.`
-                : "Berkas terpilih akan dibuang dari antrean dan tidak bisa dikembalikan."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
+          {(() => {
+            const targets = !pending ? [] : confirmDelete === "all"
+              ? pending
+              : pending.filter((p) => selected.has(p.id));
+            const lockedCount = targets.filter((p) => statuses[p.id]?.state === "uploading").length;
+            const removable = targets.filter((p) => statuses[p.id]?.state !== "uploading");
+            const previewLimit = 6;
+            const shown = removable.slice(0, previewLimit);
+            const extra = removable.length - shown.length;
+            const totalBytes = removable.reduce((sum, p) => sum + (p.file.size || 0), 0);
+            return (
+              <>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>
+                    {confirmDelete === "all"
+                      ? `Hapus semua lampiran (${removable.length})?`
+                      : `Hapus ${removable.length} berkas terpilih?`}
+                  </AlertDialogTitle>
+                  <AlertDialogDescription>
+                    {removable.length === 0
+                      ? "Tidak ada berkas yang dapat dihapus."
+                      : `Total ${formatBytes(totalBytes)} akan dibuang dari antrean dan tidak bisa dikembalikan.`}
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                {removable.length > 0 ? (
+                  <ul className="max-h-44 overflow-y-auto rounded-md border bg-muted/30 p-2 text-[12px]">
+                    {shown.map((p) => {
+                      const st = statuses[p.id]?.state;
+                      return (
+                        <li key={p.id} className="flex items-center justify-between gap-2 py-0.5">
+                          <span className="truncate" title={p.file.name}>• {p.file.name}</span>
+                          <span className="shrink-0 text-[10px] text-muted-foreground">
+                            {formatBytes(p.file.size)}
+                            {st === "error" ? " · gagal" : st === "sent" ? " · terkirim" : ""}
+                          </span>
+                        </li>
+                      );
+                    })}
+                    {extra > 0 ? (
+                      <li className="pt-1 text-[11px] italic text-muted-foreground">…dan {extra} berkas lainnya</li>
+                    ) : null}
+                  </ul>
+                ) : null}
+                {lockedCount > 0 ? (
+                  <p className="text-[11px] text-amber-600 dark:text-amber-400">
+                    {lockedCount} berkas sedang diunggah dan akan dilewati.
+                  </p>
+                ) : null}
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Batal</AlertDialogCancel>
+                  <AlertDialogAction
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    onClick={() => {
+                      if (confirmDelete === "all") removeAllPending();
+                      else if (confirmDelete === "selected") removeSelectedPending();
+                      setConfirmDelete(null);
+                    }}
+                  >
+                    Hapus{removable.length > 0 ? ` (${removable.length})` : ""}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </>
+            );
+          })()}
+        </AlertDialogContent>
+      </AlertDialog>
+      {/*
           <AlertDialogFooter>
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
@@ -751,6 +808,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      */}
     </>
   );
 }
