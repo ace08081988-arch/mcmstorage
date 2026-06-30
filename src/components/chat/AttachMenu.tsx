@@ -792,23 +792,6 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           })()}
         </AlertDialogContent>
       </AlertDialog>
-      {/*
-          <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
-            <AlertDialogAction
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              onClick={() => {
-                if (confirmDelete === "all") removeAllPending();
-                else if (confirmDelete === "selected") removeSelectedPending();
-                setConfirmDelete(null);
-              }}
-            >
-              Hapus
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-      */}
     </>
   );
 }
