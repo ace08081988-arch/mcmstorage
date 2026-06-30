@@ -492,16 +492,20 @@ function RecentNotificationsCard({
 
   async function handleOpen(it: FeedItem) {
     // Optimistic: hide unread dot immediately.
+    const wasUnread = it.unread;
     const next = new Set(localRead);
     next.add(it.id);
     persistLocalRead(next);
     if (it.kind === "chat" || it.kind === "system") {
       try {
         await markRead({ data: { id: it.id } });
+        if (wasUnread) toast.success("Notifikasi ditandai dibaca");
       } catch {
-        /* non-fatal: badge will reconcile on next refetch */
+        toast.error("Gagal menandai dibaca, akan dicoba ulang otomatis");
       }
       qc.invalidateQueries({ queryKey: ["notif-feed"] });
+    } else if (wasUnread) {
+      toast.success("Notifikasi ditandai dibaca");
     }
   }
 
@@ -510,6 +514,13 @@ function RecentNotificationsCard({
     const activeKinds = (Object.keys(enabledKinds) as NotifKind[]).filter(
       (k) => enabledKinds[k],
     );
+    const affected = allItems.filter(
+      (it) => enabledKinds[it.kind] && it.unread && !localRead.has(it.id),
+    ).length;
+    if (affected === 0) {
+      toast.info("Tidak ada notifikasi yang perlu ditandai");
+      return;
+    }
     const nextLocal = new Set(localRead);
     for (const it of allItems) {
       if (enabledKinds[it.kind]) nextLocal.add(it.id);
@@ -517,8 +528,9 @@ function RecentNotificationsCard({
     persistLocalRead(nextLocal);
     try {
       await markAll({ data: { kinds: activeKinds } });
+      toast.success(`${affected} notifikasi ditandai dibaca`);
     } catch {
-      /* ignore */
+      toast.error("Gagal menandai semua dibaca");
     }
     qc.invalidateQueries({ queryKey: ["notif-feed"] });
   }
