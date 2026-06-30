@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker, X, Send, FileText, Search, CheckCircle2, AlertCircle, RotateCcw, RefreshCw, Trash2, CheckSquare, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -224,6 +224,9 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     }
     if (removed.length === 0) return { removed, skipped };
     setPending(nextPending.length ? nextPending : null);
+    // Jika dialog konfirmasi sedang terbuka, segarkan baseline snapshot supaya delta
+    // dihitung relatif ke daftar setelah penghapusan ini.
+    if (confirmDelete !== null) rebaseDeleteSnapshot();
     setStatuses((prev) => {
       const next = { ...prev };
       for (const id of removed) delete next[id];
@@ -269,6 +272,11 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const [confirmDelete, setConfirmDelete] = useState<null | "selected" | "all">(null);
   const [showAllDelete, setShowAllDelete] = useState(false);
   const [deleteSnapshot, setDeleteSnapshot] = useState<{ count: number; bytes: number } | null>(null);
+  // Naikkan epoch ini untuk memaksa baseline snapshot di-rebase (mis. setelah retry / buang berkas
+  // saat dialog konfirmasi sedang terbuka), sehingga delta yang ditampilkan kembali nol dan
+  // perubahan berikutnya dihitung relatif ke kondisi terbaru.
+  const [snapshotEpoch, setSnapshotEpoch] = useState(0);
+  const rebaseDeleteSnapshot = useCallback(() => setSnapshotEpoch((e) => e + 1), []);
   // Saat dialog konfirmasi dibuka, ambil snapshot jumlah & total ukuran agar bisa menampilkan delta real-time.
   useEffect(() => {
     if (confirmDelete === null) {
@@ -282,9 +290,9 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       count: rem.length,
       bytes: rem.reduce((s, p) => s + (p.file.size || 0), 0),
     });
-    // Hanya saat dialog beralih state (buka/tutup) — bukan saat daftar berubah.
+    // Re-baseline saat dialog beralih state (buka/tutup) ATAU saat `rebaseDeleteSnapshot()` dipanggil.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [confirmDelete]);
+  }, [confirmDelete, snapshotEpoch]);
 
   async function runTile(id: TileId) {
     persistLast(id);
@@ -395,6 +403,10 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
 
   async function confirmSendPending(retryOnly = false, onlyIds?: string[]) {
     if (!pending || pending.length === 0) return;
+    // Jika dialog konfirmasi hapus sedang terbuka saat user menekan "Coba lagi" /
+    // mengirim ulang sebagian, baseline snapshot ikut di-rebase agar delta menjadi 0
+    // dan perubahan status berikutnya dihitung relatif terhadap kondisi sekarang.
+    if (confirmDelete !== null && (retryOnly || onlyIds)) rebaseDeleteSnapshot();
     setBusy("upload");
     const cap = caption.trim();
     // ID yang akan dikirim: lewati yang sudah sukses dan yang gagal validasi (preflight).
