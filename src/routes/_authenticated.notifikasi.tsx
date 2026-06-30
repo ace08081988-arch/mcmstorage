@@ -40,7 +40,7 @@ import {
   type FeedItem,
 } from "@/lib/notif-feed.functions";
 import { useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown } from "lucide-react";
+import { Check, ChevronDown, FilterX } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/notifikasi")({
   ssr: false,
@@ -560,20 +560,27 @@ function RecentNotificationsCard({
       </CardHeader>
       <CardContent className="space-y-1">
         {isLoading ? (
-          <>
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-            <Skeleton className="h-12 w-full" />
-          </>
+          <FeedSkeletonList count={4} />
         ) : error ? (
           <div className="rounded-md border border-destructive/40 bg-destructive/5 p-3 text-xs text-destructive">
-            Gagal memuat: {(error as Error).message}
+            <div className="font-medium">Gagal memuat notifikasi</div>
+            <div className="mt-0.5 break-words">{(error as Error).message}</div>
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-2 h-7 text-xs"
+              onClick={() => refetch()}
+            >
+              <RefreshCw className="mr-1 size-3.5" /> Coba lagi
+            </Button>
           </div>
         ) : items.length === 0 ? (
-          <div className="grid place-items-center gap-1 py-6 text-center text-xs text-muted-foreground">
-            <Inbox className="size-6 opacity-50" />
-            <div>Belum ada notifikasi baru untuk kategori yang aktif.</div>
-          </div>
+          <FeedEmptyState
+            hasRawItems={allItems.length > 0}
+            enabledKinds={enabledKinds}
+            onRefresh={() => refetch()}
+            isRefreshing={isFetching}
+          />
         ) : (
           items.map((it, idx) => {
             const meta = KIND_META[it.kind];
@@ -655,7 +662,101 @@ function RecentNotificationsCard({
             )}
           </div>
         )}
+        {isFetchingNextPage && <FeedSkeletonList count={2} />}
       </CardContent>
     </Card>
+  );
+}
+
+function FeedSkeletonList({ count }: { count: number }) {
+  return (
+    <div className="space-y-1" aria-hidden>
+      {Array.from({ length: count }).map((_, i) => (
+        <div key={i}>
+          {i > 0 && <Separator />}
+          <div className="flex items-start gap-3 px-1 py-2">
+            <Skeleton className="size-9 shrink-0 rounded-md" />
+            <div className="min-w-0 flex-1 space-y-1.5">
+              <div className="flex items-center gap-2">
+                <Skeleton className="h-3.5 w-32" />
+                <Skeleton className="ml-auto h-3 w-12" />
+              </div>
+              <Skeleton className="h-3 w-3/4" />
+              <Skeleton className="h-2.5 w-10" />
+            </div>
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function FeedEmptyState({
+  hasRawItems,
+  enabledKinds,
+  onRefresh,
+  isRefreshing,
+}: {
+  hasRawItems: boolean;
+  enabledKinds: NotifPrefs["enabledKinds"];
+  onRefresh: () => void;
+  isRefreshing: boolean;
+}) {
+  const totalKinds = (Object.keys(enabledKinds) as NotifKind[]).length;
+  const activeKinds = (Object.keys(enabledKinds) as NotifKind[]).filter(
+    (k) => enabledKinds[k],
+  );
+  const allKindsOff = activeKinds.length === 0;
+  const filteredOut = hasRawItems; // ada item dari server tapi tersaring filter
+
+  if (allKindsOff) {
+    return (
+      <div className="grid place-items-center gap-2 py-8 text-center">
+        <span className="grid size-10 place-items-center rounded-full bg-destructive/10 text-destructive">
+          <BellOff className="size-5" />
+        </span>
+        <div className="text-sm font-medium">Semua jenis notifikasi dimatikan</div>
+        <div className="max-w-xs text-xs text-muted-foreground">
+          Aktifkan minimal satu kategori di bagian “Jenis Notifikasi” di bawah untuk melihat daftar.
+        </div>
+      </div>
+    );
+  }
+
+  if (filteredOut) {
+    return (
+      <div className="grid place-items-center gap-2 py-8 text-center">
+        <span className="grid size-10 place-items-center rounded-full bg-amber-500/10 text-amber-700">
+          <FilterX className="size-5" />
+        </span>
+        <div className="text-sm font-medium">Tidak ada yang cocok dengan filter</div>
+        <div className="max-w-xs text-xs text-muted-foreground">
+          Notifikasi tersedia, tetapi semuanya berada di kategori yang sedang dimatikan
+          ({activeKinds.length}/{totalKinds} kategori aktif).
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid place-items-center gap-2 py-8 text-center">
+      <span className="grid size-10 place-items-center rounded-full bg-muted text-muted-foreground">
+        <Inbox className="size-5" />
+      </span>
+      <div className="text-sm font-medium">Tidak ada notifikasi baru</div>
+      <div className="max-w-xs text-xs text-muted-foreground">
+        Belum ada pesan, kiriman pegawai, pesanan baru, atau peringatan sistem yang perlu Anda lihat.
+      </div>
+      <Button
+        size="sm"
+        variant="outline"
+        className="mt-1 h-7 text-xs"
+        onClick={onRefresh}
+        disabled={isRefreshing}
+      >
+        <RefreshCw className={`mr-1 size-3.5 ${isRefreshing ? "animate-spin" : ""}`} />
+        Periksa lagi
+      </Button>
+    </div>
   );
 }
