@@ -908,6 +908,19 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   const [sendError, setSendError] = useState<string | null>(null);
   const [pickChatOpen, setPickChatOpen] = useState(false);
   const [chatSending, setChatSending] = useState(false);
+  const [chatPreparing, setChatPreparing] = useState(false);
+  const [chatPreviewOpen, setChatPreviewOpen] = useState(false);
+  type ChatPreviewState = {
+    conversationId: string;
+    conversationTitle: string;
+    idemKey: string;
+    caption: string;
+    locationUrl: string | null;
+    chatShots: { id: string; file: File; caption?: string }[];
+    markIds: string[];
+    preview: ChatSharePreviewData;
+  };
+  const [chatPreview, setChatPreview] = useState<ChatPreviewState | null>(null);
   const shots = r.worker_shots;
   const thumbs = shots.slice(0, 4);
   const extra = Math.max(0, shots.length - thumbs.length);
