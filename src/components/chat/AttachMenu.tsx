@@ -148,14 +148,29 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const filteredTiles = q
     ? TILES.filter((t) => norm(t.label).includes(q) || t.keywords.some((k) => k.includes(q)))
     : TILES;
-  type PendingItem = { file: File; previewUrl: string | null };
+  type PendingItem = { id: string; file: File; previewUrl: string | null };
   type ItemStatus = "idle" | "uploading" | "sent" | "error";
+  type StatusEntry = { state: ItemStatus; error?: string; preflight?: boolean };
   const [pending, setPending] = useState<PendingItem[] | null>(null);
-  const [statuses, setStatuses] = useState<Array<{ state: ItemStatus; error?: string; preflight?: boolean }>>([]);
+  const [statuses, setStatuses] = useState<Record<string, StatusEntry>>({});
   const [caption, setCaption] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [selectMode, setSelectMode] = useState(false);
-  const [selected, setSelected] = useState<Set<number>>(new Set());
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+
+  // Ref agar loop upload selalu baca pending terbaru (penghapusan saat upload tetap konsisten).
+  const pendingRef = useRef<PendingItem[] | null>(null);
+  useEffect(() => { pendingRef.current = pending; }, [pending]);
+  const statusesRef = useRef<Record<string, StatusEntry>>({});
+  useEffect(() => { statusesRef.current = statuses; }, [statuses]);
+
+  function nextItemId(): string {
+    try {
+      const c = (globalThis as { crypto?: { randomUUID?: () => string } }).crypto;
+      if (c?.randomUUID) return c.randomUUID();
+    } catch { /* ignore */ }
+    return `f_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+  }
 
   // Reset mode pilih saat dialog ditutup atau daftar kosong.
   useEffect(() => {
@@ -165,43 +180,88 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     }
   }, [pending]);
 
-  function toggleSelected(i: number) {
+  function toggleSelected(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
-      if (next.has(i)) next.delete(i); else next.add(i);
+      if (next.has(id)) next.delete(id); else next.add(id);
       return next;
     });
   }
   function selectAllPending() {
     if (!pending) return;
-    // Tidak ikutkan item yang sudah terkirim.
-    const all = pending.map((_, i) => i).filter((i) => statuses[i]?.state !== "sent");
+    // Tidak ikutkan item yang sudah terkirim atau sedang upload.
+    const all = pending
+      .filter((p) => {
+        const s = statuses[p.id]?.state;
+        return s !== "sent" && s !== "uploading";
+      })
+      .map((p) => p.id);
     setSelected(new Set(all));
   }
   function clearSelection() { setSelected(new Set()); }
 
-  function removeIndices(indices: number[]) {
-    if (!pending || indices.length === 0) return;
-    const drop = new Set(indices);
-    pending.forEach((p, i) => { if (drop.has(i) && p.previewUrl) URL.revokeObjectURL(p.previewUrl); });
-    const nextPending = pending.filter((_, i) => !drop.has(i));
-    const nextStatuses = statuses.filter((_, i) => !drop.has(i));
+  /** Hapus berdasarkan id. Item yang sedang "uploading" tidak boleh dihapus (lock). */
+  function removeIds(ids: Iterable<string>): { removed: string[]; skipped: number } {
+    if (!pending) return { removed: [], skipped: 0 };
+    const wanted = new Set(ids);
+    const removed: string[] = [];
+    let skipped = 0;
+    const nextPending: PendingItem[] = [];
+    for (const p of pending) {
+      if (wanted.has(p.id)) {
+        if (statuses[p.id]?.state === "uploading") {
+          skipped += 1;
+          nextPending.push(p);
+        } else {
+          if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
+          removed.push(p.id);
+        }
+      } else {
+        nextPending.push(p);
+      }
+    }
+    if (removed.length === 0) return { removed, skipped };
     setPending(nextPending.length ? nextPending : null);
-    setStatuses(nextStatuses);
-    setSelected(new Set());
+    setStatuses((prev) => {
+      const next = { ...prev };
+      for (const id of removed) delete next[id];
+      return next;
+    });
+    setSelected((prev) => {
+      const next = new Set(prev);
+      for (const id of removed) next.delete(id);
+      return next;
+    });
+    // Sinkronkan progress jika upload sedang jalan: kurangi total untuk item yang
+    // dihapus & belum selesai (state "idle"/"error" yang akan masuk antrean).
+    setProgress((p) => {
+      if (!p) return p;
+      const stillPending = removed.filter((id) => {
+        const s = statusesRef.current[id]?.state;
+        return s === "idle" || s === "error";
+      }).length;
+      if (stillPending === 0) return p;
+      const total = Math.max(p.done, p.total - stillPending);
+      return { done: p.done, total };
+    });
+    return { removed, skipped };
   }
+
   function removeSelectedPending() {
-    removeIndices(Array.from(selected));
+    const { skipped } = removeIds(Array.from(selected));
+    if (skipped > 0) toast.message(`${skipped} berkas sedang diunggah dan dilewati`);
     setSelectMode(false);
   }
   function removeAllPending() {
     if (!pending) return;
-    pending.forEach((p) => { if (p.previewUrl) URL.revokeObjectURL(p.previewUrl); });
-    setPending(null);
-    setStatuses([]);
-    setSelected(new Set());
+    const ids = pending.map((p) => p.id);
+    const { skipped } = removeIds(ids);
+    if (skipped > 0) {
+      toast.message(`${skipped} berkas sedang diunggah dan dilewati`);
+    } else {
+      setCaption("");
+    }
     setSelectMode(false);
-    setCaption("");
   }
 
   const [confirmDelete, setConfirmDelete] = useState<null | "selected" | "all">(null);
@@ -250,14 +310,20 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     setCaption("");
     // Validasi tiap berkas; tetap ditampilkan agar pengguna langsung tahu alasannya.
     const errors = arr.map((f) => validateFile(f));
-    setPending(arr.map((f) => ({
+    const items: PendingItem[] = arr.map((f) => ({
+      id: nextItemId(),
       file: f,
       previewUrl: (f.type.startsWith("image/") || f.type.startsWith("video/")) ? URL.createObjectURL(f) : null,
-    })));
-    setStatuses(arr.map((_, i) => {
-      const err = errors[i];
-      return err ? { state: "error" as ItemStatus, error: err, preflight: true } : { state: "idle" as ItemStatus };
     }));
+    const nextStatuses: Record<string, StatusEntry> = {};
+    items.forEach((it, i) => {
+      const err = errors[i];
+      nextStatuses[it.id] = err
+        ? { state: "error", error: err, preflight: true }
+        : { state: "idle" };
+    });
+    setPending(items);
+    setStatuses(nextStatuses);
     const invalidCount = errors.filter(Boolean).length;
     if (invalidCount > 0) {
       const first = errors.find(Boolean) as string;
@@ -271,60 +337,52 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   }
 
   function removePendingAt(idx: number) {
-    setPending((prev) => {
-      if (!prev) return prev;
-      const removed = prev[idx];
-      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
-      const next = prev.filter((_, i) => i !== idx);
-      return next.length ? next : null;
-    });
-    setStatuses((prev) => prev.filter((_, i) => i !== idx));
+    if (!pending) return;
+    const target = pending[idx];
+    if (!target) return;
+    const { skipped } = removeIds([target.id]);
+    if (skipped > 0) toast.message("Berkas sedang diunggah; tunggu sampai selesai.");
   }
 
   function removeInvalidPending() {
     if (!pending) return;
-    const keepIdx: number[] = [];
-    pending.forEach((p, i) => {
-      if (statuses[i]?.preflight) {
-        if (p.previewUrl) URL.revokeObjectURL(p.previewUrl);
-      } else {
-        keepIdx.push(i);
-      }
-    });
-    setPending(keepIdx.length ? keepIdx.map((i) => pending[i]) : null);
-    setStatuses(keepIdx.map((i) => statuses[i]));
+    const ids = pending.filter((p) => statuses[p.id]?.preflight).map((p) => p.id);
+    removeIds(ids);
   }
 
   async function confirmSendPending(retryOnly = false) {
     if (!pending || pending.length === 0) return;
     setBusy("upload");
     const cap = caption.trim();
-    // Indeks yang akan dikirim: lewati yang sudah sukses dan yang gagal validasi (preflight).
-    const indices = pending
-      .map((_, i) => i)
-      .filter((i) => statuses[i]?.state !== "sent" && !statuses[i]?.preflight)
-      .filter((i) => (retryOnly ? statuses[i]?.state === "error" : true));
-    if (indices.length === 0) {
+    // ID yang akan dikirim: lewati yang sudah sukses dan yang gagal validasi (preflight).
+    const queueIds = pending
+      .filter((p) => statuses[p.id]?.state !== "sent" && !statuses[p.id]?.preflight)
+      .filter((p) => (retryOnly ? statuses[p.id]?.state === "error" : true))
+      .map((p) => p.id);
+    if (queueIds.length === 0) {
       setBusy(null);
       toast.error("Tidak ada lampiran valid untuk dikirim", { description: "Buang berkas yang ditolak terlebih dahulu." });
       return;
     }
-    const total = indices.length;
+    let total = queueIds.length;
     let done = 0;
     setProgress({ done, total });
     let anyError = false;
     let failedCount = 0;
     let firstCaptionConsumed = retryOnly
-      ? statuses.findIndex((s) => s?.state === "sent") !== -1 // caption sudah ikut item pertama yang sukses
+      ? Object.values(statuses).some((s) => s?.state === "sent")
       : false;
-    for (const i of indices) {
-      setStatuses((prev) => {
-        const next = [...prev];
-        next[i] = { state: "uploading" };
-        return next;
-      });
+    let okCount = 0;
+    for (const id of queueIds) {
+      // Lewati item yang dihapus saat upload berjalan.
+      const item = (pendingRef.current ?? []).find((p) => p.id === id);
+      if (!item) {
+        total = Math.max(done, total - 1);
+        setProgress({ done, total });
+        continue;
+      }
+      setStatuses((prev) => ({ ...prev, [id]: { state: "uploading" } }));
       try {
-        const item = pending[i];
         const up = await uploadChatFile({ conversationId, file: item.file });
         const includeCaption = !firstCaptionConsumed && !!cap;
         await sendMessage({
@@ -338,29 +396,21 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           },
         });
         if (includeCaption) firstCaptionConsumed = true;
-        setStatuses((prev) => {
-          const next = [...prev];
-          next[i] = { state: "sent" };
-          return next;
-        });
+        setStatuses((prev) => (prev[id] ? { ...prev, [id]: { state: "sent" } } : prev));
+        okCount += 1;
         onSent?.();
       } catch (e) {
         anyError = true;
         failedCount += 1;
         const msg = e instanceof Error ? e.message : "Gagal mengunggah";
-        setStatuses((prev) => {
-          const next = [...prev];
-          next[i] = { state: "error", error: msg };
-          return next;
-        });
+        setStatuses((prev) => (prev[id] ? { ...prev, [id]: { state: "error", error: msg } } : prev));
       }
       done += 1;
       setProgress({ done, total });
     }
     setBusy(null);
     setProgress(null);
-    if (!anyError) {
-      const okCount = indices.length;
+    if (!anyError && okCount > 0) {
       toast.success(
         okCount > 1 ? `${okCount} lampiran terkirim` : "Lampiran terkirim",
         { description: cap ? `Caption: "${cap.slice(0, 60)}${cap.length > 60 ? "…" : ""}"` : undefined },
@@ -369,11 +419,11 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       setTimeout(() => {
         setPending(null);
         setCaption("");
-        setStatuses([]);
+        setStatuses({});
       }, 300);
-    } else {
+    } else if (anyError) {
       const failed = failedCount;
-      const ok = indices.length - failed;
+      const ok = okCount;
       toast.error(
         failed > 1 ? `${failed} lampiran gagal diunggah` : "1 lampiran gagal diunggah",
         {
@@ -508,13 +558,13 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
               </div>
               <div className="grid max-h-72 grid-cols-3 gap-2 overflow-y-auto">
                 {pending.map((p, i) => {
-                  const st = statuses[i]?.state ?? "idle";
-                  const isSelected = selected.has(i);
+                  const st = statuses[p.id]?.state ?? "idle";
+                  const isSelected = selected.has(p.id);
                   return (
                   <div
-                    key={i}
+                    key={p.id}
                     role={selectMode ? "button" : undefined}
-                    onClick={selectMode && !busy ? () => toggleSelected(i) : undefined}
+                    onClick={selectMode && !busy ? () => toggleSelected(p.id) : undefined}
                     className={`relative aspect-square overflow-hidden rounded-lg border bg-muted/30 ${selectMode ? "cursor-pointer" : ""} ${isSelected ? "ring-2 ring-primary" : st === "error" ? "ring-2 ring-destructive" : st === "sent" ? "ring-2 ring-emerald-500/70" : ""}`}
                   >
                     {p.previewUrl && p.file.type.startsWith("image/") ? (
@@ -553,7 +603,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         <CheckCircle2 className="h-3.5 w-3.5" />
                       </div>
                     ) : st === "error" && !selectMode ? (
-                      <div className="absolute right-7 top-1 rounded-full bg-destructive/95 p-0.5 text-destructive-foreground shadow" title={statuses[i]?.error}>
+                      <div className="absolute right-7 top-1 rounded-full bg-destructive/95 p-0.5 text-destructive-foreground shadow" title={statuses[p.id]?.error}>
                         <AlertCircle className="h-3.5 w-3.5" />
                       </div>
                     ) : null}
@@ -565,14 +615,14 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 })}
               </div>
               {/* Daftar error rinci agar pesan tidak terpotong di chip */}
-              {statuses.some((s) => s?.state === "error") ? (
+              {Object.values(statuses).some((s) => s?.state === "error") ? (
                 <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px]">
                   <div className="mb-1 flex items-center gap-1 font-medium text-destructive">
                     <AlertCircle className="h-3.5 w-3.5" /> Sebagian lampiran gagal
                   </div>
                   <ul className="space-y-0.5 text-destructive/90">
-                    {pending.map((p, i) => statuses[i]?.state === "error" ? (
-                      <li key={i} className="truncate">• <span className="font-medium">{p.file.name}:</span> {statuses[i]?.error}</li>
+                    {pending.map((p) => statuses[p.id]?.state === "error" ? (
+                      <li key={p.id} className="truncate">• <span className="font-medium">{p.file.name}:</span> {statuses[p.id]?.error}</li>
                     ) : null)}
                   </ul>
                 </div>
@@ -598,7 +648,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             </div>
           ) : null}
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="ghost" onClick={() => { setPending(null); setStatuses([]); }} disabled={!!busy}>
+            <Button variant="ghost" onClick={() => { setPending(null); setStatuses({}); }} disabled={!!busy}>
               <X className="mr-1 h-4 w-4" /> Batal
             </Button>
             {selectMode && selected.size > 0 && !busy ? (
@@ -613,19 +663,19 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 Hapus semua
               </Button>
             ) : null}
-            {statuses.some((s) => s?.preflight) && !busy ? (
+            {Object.values(statuses).some((s) => s?.preflight) && !busy ? (
               <Button variant="outline" onClick={removeInvalidPending}>
                 <X className="mr-1 h-4 w-4" />
-                Buang yang ditolak ({statuses.filter((s) => s?.preflight).length})
+                Buang yang ditolak ({Object.values(statuses).filter((s) => s?.preflight).length})
               </Button>
             ) : null}
-            {statuses.some((s) => s?.state === "error" && !s?.preflight) && !busy ? (
+            {Object.values(statuses).some((s) => s?.state === "error" && !s?.preflight) && !busy ? (
               <Button variant="secondary" onClick={() => confirmSendPending(true)}>
                 <RotateCcw className="mr-1 h-4 w-4" />
-                Coba lagi ({statuses.filter((s) => s?.state === "error" && !s?.preflight).length})
+                Coba lagi ({Object.values(statuses).filter((s) => s?.state === "error" && !s?.preflight).length})
               </Button>
             ) : null}
-            <Button onClick={() => confirmSendPending(false)} disabled={!!busy || (pending?.length ?? 0) === 0 || statuses.every((s) => s?.state === "sent")}>
+            <Button onClick={() => confirmSendPending(false)} disabled={!!busy || (pending?.length ?? 0) === 0 || (pending ?? []).every((p) => statuses[p.id]?.state === "sent" || statuses[p.id]?.preflight)}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
               Kirim{pending && pending.length > 1 ? ` (${pending.length})` : ""}
             </Button>
