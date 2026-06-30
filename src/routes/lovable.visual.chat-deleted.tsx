@@ -16,13 +16,32 @@ import { MessageInfoDialog } from "@/components/chat/MessageInfoDialog";
 import { MessagePreview } from "@/lib/chat-deleted";
 import type { MessageRow } from "@/lib/chat";
 
-type Part = "pinned" | "info-live" | "info-deleted" | "list" | "all";
+type Part =
+  | "pinned"
+  | "info-live"
+  | "info-deleted"
+  | "info-long"
+  | "info-empty-sender"
+  | "info-edited"
+  | "info-attach-no-name"
+  | "list"
+  | "all";
 
 export const Route = createFileRoute("/lovable/visual/chat-deleted")({
   component: VisualHarness,
   validateSearch: (s: Record<string, unknown>): { part: Part } => {
     const p = s.part as Part | undefined;
-    const allowed: Part[] = ["pinned", "info-live", "info-deleted", "list", "all"];
+    const allowed: Part[] = [
+      "pinned",
+      "info-live",
+      "info-deleted",
+      "info-long",
+      "info-empty-sender",
+      "info-edited",
+      "info-attach-no-name",
+      "list",
+      "all",
+    ];
     return { part: allowed.includes(p as Part) ? (p as Part) : "all" };
   },
   head: () => ({
@@ -61,6 +80,12 @@ const pinnedDeleted = mkRow({
   deleted_at: FIXED_ISO,
 });
 
+// 2000-char body to stress wrapping/truncation in the banner.
+const LONG_BODY =
+  "Pengumuman penting: " +
+  "stok GS, ST, SPR, dan 1G sudah masuk gudang utama. ".repeat(40);
+const pinnedLong = mkRow({ id: "pin-long", body: LONG_BODY });
+
 const infoLive = mkRow({ id: "info-live", body: "Halo, pesan biasa" });
 const infoDeleted = mkRow({
   id: "info-del",
@@ -69,6 +94,26 @@ const infoDeleted = mkRow({
   attachment_path: "uploads/rahasia.pdf",
   attachment_mime: "application/pdf",
   deleted_at: FIXED_ISO,
+});
+const infoLong = mkRow({
+  id: "info-long",
+  body: LONG_BODY,
+  attachment_name:
+    "laporan-stok-gudang-utama-bulan-juni-2026-versi-final-revisi-3.pdf",
+  attachment_path: "uploads/laporan.pdf",
+  attachment_mime: "application/pdf",
+});
+const infoEdited = mkRow({
+  id: "info-edited",
+  body: "Pesan ini sudah diedit",
+  edited_at: "2026-06-30T03:20:00.000Z",
+});
+const infoAttachNoName = mkRow({
+  id: "info-attach-no-name",
+  body: null,
+  attachment_path: "uploads/anon-blob",
+  attachment_mime: "image/png",
+  attachment_name: null,
 });
 
 type Row = { id: string; title: string; preview: ReturnType<typeof MessagePreview>; time: string };
@@ -106,6 +151,79 @@ const conversationRows: Row[] = [
     title: "Dewi (attachment only)",
     preview: <MessagePreview message={mkRow({ attachment_name: "invoice.pdf" })} />,
     time: "08:55",
+  },
+  {
+    // Very long body to verify single-line truncation in the row preview.
+    id: "c5",
+    title: "Eka (very long body)",
+    preview: <MessagePreview message={mkRow({ body: LONG_BODY })} />,
+    time: "08:30",
+  },
+  {
+    // Sender metadata missing — title becomes an empty string.
+    id: "c6",
+    title: "",
+    preview: <MessagePreview message={mkRow({ body: "Tanpa nama pengirim" })} />,
+    time: "08:00",
+  },
+  {
+    // Whitespace-only body — should still render placeholder space.
+    id: "c7",
+    title: "Fajar (whitespace body)",
+    preview: <MessagePreview message={mkRow({ body: "   " })} />,
+    time: "07:45",
+  },
+  {
+    // Deleted + attachment WITHOUT a name (path-only).
+    id: "c8",
+    title: "Gita (deleted, path-only attachment)",
+    preview: (
+      <MessagePreview
+        message={mkRow({
+          body: "rahasia",
+          attachment_path: "uploads/anon-blob",
+          attachment_mime: "image/png",
+          deleted_at: FIXED_ISO,
+        })}
+      />
+    ),
+    time: "07:30",
+  },
+  {
+    // Image attachment (mime hints).
+    id: "c9",
+    title: "Hadi (image attachment)",
+    preview: (
+      <MessagePreview
+        message={mkRow({
+          attachment_name: "foto.jpg",
+          attachment_path: "uploads/foto.jpg",
+          attachment_mime: "image/jpeg",
+        })}
+      />
+    ),
+    time: "07:15",
+  },
+  {
+    // Edited (live) message preview.
+    id: "c10",
+    title: "Indah (edited)",
+    preview: (
+      <MessagePreview
+        message={mkRow({
+          body: "Pesan diperbarui",
+          edited_at: "2026-06-30T03:25:00.000Z",
+        })}
+      />
+    ),
+    time: "07:00",
+  },
+  {
+    // Deleted, no body, no attachment — minimum deleted state.
+    id: "c11",
+    title: "Joko (deleted minimal)",
+    preview: <MessagePreview message={mkRow({ deleted_at: FIXED_ISO })} />,
+    time: "06:45",
   },
 ];
 
@@ -155,6 +273,15 @@ function VisualHarness() {
             canUnpin={false}
           />
         </Section>
+
+        <Section id="pinned-banner-long" title="PinnedBanner — very long body">
+          <PinnedBanner
+            conversationId="c-fixture"
+            pinned={[pinnedLong]}
+            onJump={() => {}}
+            canUnpin
+          />
+        </Section>
           </>
         ) : null}
 
@@ -177,6 +304,54 @@ function VisualHarness() {
               onOpenChange={() => {}}
               message={infoDeleted}
               senderName="Citra"
+              readAtMs={null}
+            />
+          </Section>
+        ) : null}
+
+        {show("info-long") ? (
+          <Section id="message-info-long" title="MessageInfoDialog — long body + long filename">
+            <MessageInfoDialog
+              open
+              onOpenChange={() => {}}
+              message={infoLong}
+              senderName="Pengirim Dengan Nama Yang Sangat Panjang Sekali"
+              readAtMs={FIXED_READ_MS}
+            />
+          </Section>
+        ) : null}
+
+        {show("info-empty-sender") ? (
+          <Section id="message-info-empty-sender" title="MessageInfoDialog — empty sender">
+            <MessageInfoDialog
+              open
+              onOpenChange={() => {}}
+              message={infoLive}
+              senderName=""
+              readAtMs={null}
+            />
+          </Section>
+        ) : null}
+
+        {show("info-edited") ? (
+          <Section id="message-info-edited" title="MessageInfoDialog — edited (live)">
+            <MessageInfoDialog
+              open
+              onOpenChange={() => {}}
+              message={infoEdited}
+              senderName="Andi Pratama"
+              readAtMs={FIXED_READ_MS}
+            />
+          </Section>
+        ) : null}
+
+        {show("info-attach-no-name") ? (
+          <Section id="message-info-attach-no-name" title="MessageInfoDialog — attachment without name">
+            <MessageInfoDialog
+              open
+              onOpenChange={() => {}}
+              message={infoAttachNoName}
+              senderName="Andi Pratama"
               readAtMs={null}
             />
           </Section>
