@@ -98,13 +98,15 @@ export function AppSidebar() {
   }[syncState];
   const chatCounts = (() => {
     const list = conversations ?? [];
-    let active = 0;
-    let archived = 0;
+    let unread = 0;
+    let archivedUnread = 0;
     for (const c of list) {
-      if (c.archived_at) archived += 1;
-      else active += 1;
+      const u = c.unread ?? 0;
+      if (u <= 0) continue;
+      if (c.archived_at) archivedUnread += u;
+      else unread += u;
     }
-    return { active, archived };
+    return { unread, archivedUnread };
   })();
   // Highlight mengikuti route aktif sepenuhnya — tidak terpengaruh search params
   // (mis. /ecer?item=…&highlight=…) maupun child route (mis. /chat/$id, /gudang/pesanan/$id).
@@ -149,22 +151,22 @@ export function AppSidebar() {
                     >
                       <item.icon className="h-4 w-4 shrink-0 drop-shadow-[0_1px_0_hsl(0_0%_0%/0.4)] transition-transform duration-150 group-hover/3d:scale-110 group-active/3d:scale-95" />
                       <span className="drop-shadow-[0_1px_0_hsl(0_0%_0%/0.35)]">{item.title}</span>
-                      {item.url === "/chat" && (chatCounts.active > 0 || chatCounts.archived > 0) ? (
+                      {item.url === "/chat" && (chatCounts.unread > 0 || chatCounts.archivedUnread > 0) ? (
                         <span className="ml-auto flex items-center gap-1 group-data-[collapsible=icon]:hidden">
-                          {chatCounts.active > 0 ? (
+                          {chatCounts.unread > 0 ? (
                             <span
-                              title={`${chatCounts.active} percakapan aktif`}
+                              title={`${chatCounts.unread} pesan belum dibaca`}
                               className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold leading-none text-primary-foreground"
                             >
-                              {chatCounts.active > 99 ? "99+" : chatCounts.active}
+                              {chatCounts.unread > 99 ? "99+" : chatCounts.unread}
                             </span>
                           ) : null}
-                          {chatCounts.archived > 0 ? (
+                          {chatCounts.archivedUnread > 0 ? (
                             <span
-                              title={`${chatCounts.archived} percakapan diarsipkan`}
+                              title={`${chatCounts.archivedUnread} pesan belum dibaca di arsip`}
                               className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full border border-sidebar-border bg-sidebar-accent/60 px-1.5 text-[10px] font-medium leading-none text-muted-foreground"
                             >
-                              {chatCounts.archived > 99 ? "99+" : chatCounts.archived}
+                              {chatCounts.archivedUnread > 99 ? "99+" : chatCounts.archivedUnread}
                             </span>
                           ) : null}
                         </span>
