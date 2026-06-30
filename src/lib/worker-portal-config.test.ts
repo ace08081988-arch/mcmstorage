@@ -2,7 +2,9 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
   applyPreviewOverrideFromHash,
   encodePreviewConfigHash,
+  setPreviewOverrideTelemetry,
   WORKER_PORTAL_DEFAULTS,
+  type PreviewOverrideTelemetryEvent,
   type WorkerPortalConfig,
 } from "./worker-portal-config";
 
@@ -43,6 +45,7 @@ beforeEach(() => {
 afterEach(() => {
   delete g.window;
   delete g.atob;
+  setPreviewOverrideTelemetry(null);
 });
 
 describe("applyPreviewOverrideFromHash · sanitasi nilai ekstrem", () => {
