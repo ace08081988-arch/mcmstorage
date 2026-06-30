@@ -302,12 +302,38 @@ export function useLiveSendLogStatus(
     let lastAppliedSig = "";
     const sigOf = (s: SendLogSyncStatus | null) =>
       s ? `${s.lastSyncedAt ?? 0}|${s.lastError ?? ""}|${s.lastSnapshot}` : "";
-    // Throttle storage event lintas tab: pakai trailing-edge ~80 ms supaya
-    // burst write dari N tab (mis. semuanya melakukan poll bersamaan) hanya
-    // memicu satu siklus apply, namun tetap responsif untuk mata operator.
-    const STORAGE_THROTTLE_MS = 80;
+    // Throttle storage event lintas tab. Nilai disesuaikan adaptif: pada
+    // perangkat lemah (CPU ≤ 4 core / RAM ≤ 2 GB / koneksi 2g–3g) kita
+    // perpanjang window agar burst write dari N tab benar-benar dikompres
+    // jadi satu apply, sementara perangkat normal tetap mendapat respons
+    // sub-100 ms. Leading-edge dipakai untuk event pertama supaya UI tidak
+    // terasa "tertinggal", trailing-edge untuk burst, dan `MAX_WAIT_MS`
+    // sebagai pengaman agar update tidak pernah ditahan lebih lama dari
+    // batas yang dirasakan operator.
+    type Tuning = { throttle: number; leading: number; maxWait: number };
+    const detectTuning = (): Tuning => {
+      try {
+        const nav = typeof navigator !== "undefined" ? navigator : null;
+        const cores = nav?.hardwareConcurrency ?? 8;
+        // deviceMemory tidak ada di semua browser → fallback 4 GB.
+        const mem = (nav as unknown as { deviceMemory?: number } | null)?.deviceMemory ?? 4;
+        const conn = (nav as unknown as { connection?: { effectiveType?: string; saveData?: boolean } } | null)?.connection;
+        const slowNet = conn?.saveData === true || (conn?.effectiveType ? /^(2g|slow-2g|3g)$/.test(conn.effectiveType) : false);
+        const slow = cores <= 4 || mem <= 2 || slowNet;
+        return slow
+          ? { throttle: 160, leading: 24, maxWait: 480 }
+          : { throttle: 60,  leading: 0,  maxWait: 200 };
+      } catch {
+        return { throttle: 80, leading: 0, maxWait: 240 };
+      }
+    };
+    const { throttle: STORAGE_THROTTLE_MS, leading: LEADING_MS, maxWait: MAX_WAIT_MS } = detectTuning();
     let syncPending: ReturnType<typeof setTimeout> | null = null;
     let readPending: ReturnType<typeof setTimeout> | null = null;
+    let syncFirstScheduledAt = 0;
+    let readFirstScheduledAt = 0;
+    let lastSyncAppliedAt = 0;
+    let lastReadAppliedAt = 0;
     const read = () => {
       if (cancelled) return;
       try {
@@ -370,18 +396,59 @@ export function useLiveSendLogStatus(
         }
       } catch { /* abaikan, read() berikutnya akan mencoba lagi */ }
     };
-    // Trailing-edge schedulers: coalesce burst storage event ke satu apply.
+    // Trailing-edge + leading-edge + maxWait. Burst dikompres jadi satu
+    // apply, tetapi event pertama dalam jendela "idle" diterapkan cepat
+    // dan tidak ada apply yang tertahan melewati `MAX_WAIT_MS`.
     const scheduleSyncApply = () => {
-      if (syncPending) return;
-      syncPending = setTimeout(() => { syncPending = null; if (!cancelled) onSyncEvt("external"); }, STORAGE_THROTTLE_MS);
+      const now = Date.now();
+      // Leading-edge: jika sudah lama tidak ada apply, jalankan hampir
+      // segera supaya UI responsif di perangkat lemah sekalipun.
+      if (!syncPending && now - lastSyncAppliedAt > MAX_WAIT_MS) {
+        syncFirstScheduledAt = now;
+        syncPending = setTimeout(() => {
+          syncPending = null;
+          if (cancelled) return;
+          lastSyncAppliedAt = Date.now();
+          onSyncEvt("external");
+        }, LEADING_MS);
+        return;
+      }
+      if (syncPending) {
+        // Hormati maxWait: kalau sudah menunggu terlalu lama, biarkan
+        // timer yang ada selesai — jangan reset.
+        if (now - syncFirstScheduledAt >= MAX_WAIT_MS) return;
+        return;
+      }
+      syncFirstScheduledAt = now;
+      syncPending = setTimeout(() => {
+        syncPending = null;
+        if (cancelled) return;
+        lastSyncAppliedAt = Date.now();
+        onSyncEvt("external");
+      }, STORAGE_THROTTLE_MS);
     };
     const scheduleReadEntries = () => {
-      if (readPending) return;
+      const now = Date.now();
+      if (!readPending && now - lastReadAppliedAt > MAX_WAIT_MS) {
+        readFirstScheduledAt = now;
+        readPending = setTimeout(() => {
+          readPending = null;
+          if (cancelled) return;
+          lastReadAppliedAt = Date.now();
+          read();
+          setLastSource("external");
+        }, LEADING_MS);
+        return;
+      }
+      if (readPending) {
+        if (now - readFirstScheduledAt >= MAX_WAIT_MS) return;
+        return;
+      }
+      readFirstScheduledAt = now;
       readPending = setTimeout(() => {
         readPending = null;
         if (cancelled) return;
-        // KEY berubah dari tab lain — read() menandai "self", lalu kita
-        // override jadi "external" karena pemicunya storage event.
+        lastReadAppliedAt = Date.now();
         read();
         setLastSource("external");
       }, STORAGE_THROTTLE_MS);
