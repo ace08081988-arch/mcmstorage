@@ -79,6 +79,8 @@ type Produk = {
   jumlah?: number;
   foto?: string;
   galeri?: string[];
+  /** Timestamp (ms epoch) saat status terakhir berubah menjadi "Sudah Dikirim". */
+  sent_at?: number;
 };
 
 function tagFor(kat: Kategori): string {
@@ -95,6 +97,18 @@ function rupiah(n: number) {
     currency: "IDR",
     minimumFractionDigits: 0,
   }).format(n);
+}
+
+/** True jika ts berada dalam rentang hari kalender lokal hari ini. */
+function isToday(ts: number | undefined): boolean {
+  if (!ts) return false;
+  const d = new Date(ts);
+  const n = new Date();
+  return (
+    d.getFullYear() === n.getFullYear() &&
+    d.getMonth() === n.getMonth() &&
+    d.getDate() === n.getDate()
+  );
 }
 
 function buildPesan(p: Produk) {
@@ -503,7 +517,10 @@ function Index() {
       description: "Semua pesanan akan ditandai sebagai Belum Dikirim.",
       confirmText: "Tandai ulang",
     });
-    if (ok) setItems((arr) => arr.map((i) => ({ ...i, status: "Belum Dikirim" })));
+    if (ok)
+      setItems((arr) =>
+        arr.map((i) => ({ ...i, status: "Belum Dikirim", sent_at: undefined })),
+      );
   };
 
   const filtered = scopedItems.filter((i) => filter === "semua" || i.status === filter);
@@ -538,15 +555,23 @@ function Index() {
 
   const markSent = (id: number) => {
     const target = items.find((i) => i.id === id);
+    const prevSentAt = target?.sent_at;
+    const now = Date.now();
     setItems((arr) =>
-      arr.map((i) => (i.id === id ? { ...i, status: "Sudah Dikirim" } : i)),
+      arr.map((i) =>
+        i.id === id ? { ...i, status: "Sudah Dikirim", sent_at: now } : i,
+      ),
     );
     toast.success(`Terkirim · ${target?.nama ?? "Pesanan"} ditandai sudah dikirim`, {
       action: {
         label: "Urungkan",
         onClick: () =>
           setItems((arr) =>
-            arr.map((i) => (i.id === id ? { ...i, status: "Belum Dikirim" } : i)),
+            arr.map((i) =>
+              i.id === id
+                ? { ...i, status: "Belum Dikirim", sent_at: prevSentAt }
+                : i,
+            ),
           ),
       },
     });
@@ -575,8 +600,13 @@ function Index() {
     if (selected.size === 0) return;
     const ids = new Set(selected);
     const count = ids.size;
+    const prevSentAt = new Map<number, number | undefined>();
+    for (const it of items) if (ids.has(it.id)) prevSentAt.set(it.id, it.sent_at);
+    const now = Date.now();
     setItems((arr) =>
-      arr.map((i) => (ids.has(i.id) ? { ...i, status: "Sudah Dikirim" } : i)),
+      arr.map((i) =>
+        ids.has(i.id) ? { ...i, status: "Sudah Dikirim", sent_at: now } : i,
+      ),
     );
     setSelected(new Set());
     toast.success(`${count} pesanan ditandai sudah dikirim`, {
@@ -585,7 +615,9 @@ function Index() {
         onClick: () =>
           setItems((arr) =>
             arr.map((i) =>
-              ids.has(i.id) ? { ...i, status: "Belum Dikirim" } : i,
+              ids.has(i.id)
+                ? { ...i, status: "Belum Dikirim", sent_at: prevSentAt.get(i.id) }
+                : i,
             ),
           ),
       },
@@ -963,6 +995,8 @@ function Index() {
           const terkirim = scopedItems.filter((i) => i.status === "Sudah Dikirim");
           const belum = total - terkirim.length;
           const omzet = terkirim.reduce((s, i) => s + i.harga, 0);
+          const terkirimHariIni = terkirim.filter((i) => isToday(i.sent_at));
+          const omzetHariIni = terkirimHariIni.reduce((s, i) => s + i.harga, 0);
           const byUnit = new Map<Satuan, number>();
           for (const it of terkirim) {
             const s = it.satuan ?? "pcs";
@@ -970,6 +1004,23 @@ function Index() {
           }
           return (
             <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border bg-card p-2.5 text-[11px] sm:grid-cols-4">
+              <div
+                className="col-span-2 rounded-md border border-[#25D366]/30 bg-[#25D366]/10 p-2 sm:col-span-4"
+                role="status"
+                aria-live="polite"
+                title="Penjualan hari ini = jumlah harga semua pesanan yang ditandai Sudah Dikirim pada tanggal kalender lokal hari ini."
+              >
+                <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#0F7A6C]">
+                  Total penjualan hari ini
+                </p>
+                <p className="mt-0.5 text-lg font-bold tabular-nums text-[#0F7A6C]">
+                  {rupiah(omzetHariIni)}
+                </p>
+                <p className="text-[10.5px] text-[#0F7A6C]/80">
+                  {terkirimHariIni.length} pesanan terkirim hari ini
+                  {activeCat ? ` · kategori ${activeCat}` : ""}
+                </p>
+              </div>
               <div>
                 <p className="text-muted-foreground">Total pesanan</p>
                 <p className="text-sm font-semibold tabular-nums">{total}</p>
@@ -985,7 +1036,7 @@ function Index() {
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Omzet</p>
+                <p className="text-muted-foreground">Omzet total</p>
                 <p className="text-sm font-semibold tabular-nums">{rupiah(omzet)}</p>
               </div>
               {byUnit.size > 0 && (
@@ -1076,7 +1127,9 @@ function Index() {
                         else
                           setItems((arr) =>
                             arr.map((i) =>
-                              i.id === p.id ? { ...i, status: "Belum Dikirim" } : i,
+                              i.id === p.id
+                                ? { ...i, status: "Belum Dikirim", sent_at: undefined }
+                                : i,
                             ),
                           );
                       }}
@@ -1147,7 +1200,9 @@ function Index() {
                           else
                             setItems((arr) =>
                               arr.map((i) =>
-                                i.id === p.id ? { ...i, status: "Belum Dikirim" } : i,
+                                i.id === p.id
+                                  ? { ...i, status: "Belum Dikirim", sent_at: undefined }
+                                  : i,
                               ),
                             );
                         }}
