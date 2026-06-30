@@ -995,6 +995,8 @@ function Index() {
           const terkirim = scopedItems.filter((i) => i.status === "Sudah Dikirim");
           const belum = total - terkirim.length;
           const omzet = terkirim.reduce((s, i) => s + i.harga, 0);
+          const terkirimHariIni = terkirim.filter((i) => isToday(i.sent_at));
+          const omzetHariIni = terkirimHariIni.reduce((s, i) => s + i.harga, 0);
           const byUnit = new Map<Satuan, number>();
           for (const it of terkirim) {
             const s = it.satuan ?? "pcs";
@@ -1002,6 +1004,23 @@ function Index() {
           }
           return (
             <div className="mb-3 grid grid-cols-2 gap-2 rounded-lg border bg-card p-2.5 text-[11px] sm:grid-cols-4">
+              <div
+                className="col-span-2 rounded-md border border-[#25D366]/30 bg-[#25D366]/10 p-2 sm:col-span-4"
+                role="status"
+                aria-live="polite"
+                title="Penjualan hari ini = jumlah harga semua pesanan yang ditandai Sudah Dikirim pada tanggal kalender lokal hari ini."
+              >
+                <p className="text-[10.5px] font-medium uppercase tracking-wide text-[#0F7A6C]">
+                  Total penjualan hari ini
+                </p>
+                <p className="mt-0.5 text-lg font-bold tabular-nums text-[#0F7A6C]">
+                  {rupiah(omzetHariIni)}
+                </p>
+                <p className="text-[10.5px] text-[#0F7A6C]/80">
+                  {terkirimHariIni.length} pesanan terkirim hari ini
+                  {activeCat ? ` · kategori ${activeCat}` : ""}
+                </p>
+              </div>
               <div>
                 <p className="text-muted-foreground">Total pesanan</p>
                 <p className="text-sm font-semibold tabular-nums">{total}</p>
@@ -1017,7 +1036,7 @@ function Index() {
                 </p>
               </div>
               <div>
-                <p className="text-muted-foreground">Omzet</p>
+                <p className="text-muted-foreground">Omzet total</p>
                 <p className="text-sm font-semibold tabular-nums">{rupiah(omzet)}</p>
               </div>
               {byUnit.size > 0 && (
