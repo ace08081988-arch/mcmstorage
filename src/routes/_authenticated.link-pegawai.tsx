@@ -114,6 +114,12 @@ function LinkPegawaiPage() {
   const [resetPin, setResetPin] = useState("");
   const [resetBusy, setResetBusy] = useState(false);
   const [resetDone, setResetDone] = useState(false);
+  const [extendedInfo, setExtendedInfo] = useState<{
+    title: string;
+    url: string | null;
+    expiresLabel: string | null;
+    extendDays: number;
+  } | null>(null);
   const [testMode, setTestMode] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
@@ -399,6 +405,15 @@ function LinkPegawaiPage() {
           } catch {
             expiresLabel = new Date(effectiveExpiresAt).toLocaleString();
           }
+        }
+        if (newExpiresAt) {
+          const taskTitle = tasks?.find((t) => t.id === taskId)?.title ?? "(tanpa judul)";
+          setExtendedInfo({
+            title: taskTitle,
+            url: newUrl,
+            expiresLabel,
+            extendDays: extendDays!,
+          });
         }
         toast.success(
           newExpiresAt
