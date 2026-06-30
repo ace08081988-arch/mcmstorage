@@ -986,6 +986,45 @@ function LinkPegawaiPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      <Dialog
+        open={!!extendedInfo}
+        onOpenChange={(v) => { if (!v) setExtendedInfo(null); }}
+      >
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Timer className="h-4 w-4 text-emerald-600" /> Tugas diperpanjang
+            </DialogTitle>
+            <DialogDescription>
+              Tugas <span className="font-medium">"{extendedInfo?.title}"</span> diperpanjang {extendedInfo?.extendDays} hari & token baru aktif. Link lama tidak bisa lagi dibuka pegawai.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3">
+              <div className="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Kedaluwarsa baru</div>
+              <div className="mt-1 text-sm font-semibold">
+                {extendedInfo?.expiresLabel ?? "—"}
+              </div>
+              <div className="mt-0.5 text-[10px] text-muted-foreground">Zona waktu perangkat</div>
+            </div>
+            {extendedInfo?.url && (
+              <div className="rounded-md border bg-muted/40 p-2">
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Link baru</div>
+                <div className="mt-1 break-all font-mono text-[11px]">{extendedInfo.url}</div>
+              </div>
+            )}
+            <DialogFooter className="gap-2">
+              <Button variant="outline" onClick={() => setExtendedInfo(null)}>Tutup</Button>
+              {extendedInfo?.url && (
+                <Button onClick={() => void copyLink(extendedInfo.url!)}>
+                  <Copy className="h-4 w-4" /> Salin link
+                </Button>
+              )}
+            </DialogFooter>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
