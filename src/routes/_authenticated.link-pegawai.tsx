@@ -110,6 +110,7 @@ function LinkPegawaiPage() {
   const [busy, setBusy] = useState(false);
   const [regenId, setRegenId] = useState<string | null>(null);
   const [regenAt, setRegenAt] = useState<Record<string, number>>({});
+  const [extendedAt, setExtendedAt] = useState<Record<string, number>>({});
   const [resetTask, setResetTask] = useState<Task | null>(null);
   const [resetPin, setResetPin] = useState("");
   const [resetBusy, setResetBusy] = useState(false);
@@ -311,9 +312,13 @@ function LinkPegawaiPage() {
       t,
       avail: computeAvailability(t, now),
       tokenState: classifyToken(t.share_token, regenAt[t.id], now),
+      extendedAgeMs: extendedAt[t.id] != null ? now - extendedAt[t.id] : null,
     }));
-    const filtered = list.filter(({ t, avail, tokenState }) => {
-      if (filter !== "all" && avail !== filter) return false;
+    const filtered = list.filter(({ t, avail, tokenState, extendedAgeMs }) => {
+      // Pin freshly extended tasks for ~15s across any filter so the user
+      // can confirm the badge/description updated even on the "Kedaluwarsa" tab.
+      const justExtended = extendedAgeMs != null && extendedAgeMs >= 0 && extendedAgeMs < 15000;
+      if (filter !== "all" && avail !== filter && !justExtended) return false;
       if (tokenFilter !== "all" && tokenState.kind !== tokenFilter) return false;
       if (tokenKw.trim()) {
         const n = tokenKw.trim().toLowerCase();
@@ -335,7 +340,7 @@ function LinkPegawaiPage() {
     }
     // "newest" / "oldest" come pre-sorted from the server.
     return filtered;
-  }, [tasks, q, filter, tokenFilter, tokenKw, now, sort, regenAt]);
+  }, [tasks, q, filter, tokenFilter, tokenKw, now, sort, regenAt, extendedAt]);
 
   const counts = useMemo(() => {
     const c = { all: 0, active: 0, expired: 0, done: 0, cancelled: 0 } as Record<string, number>;
@@ -386,6 +391,9 @@ function LinkPegawaiPage() {
       if (!error && data) {
         setTasks((prev) => (prev ? prev.map((t) => (t.id === taskId ? { ...t, share_token: data.share_token, expires_at: data.expires_at ?? t.expires_at } : t)) : prev));
         setRegenAt((prev) => ({ ...prev, [taskId]: Date.now() }));
+        if (newExpiresAt) {
+          setExtendedAt((prev) => ({ ...prev, [taskId]: Date.now() }));
+        }
         setRegenId(null);
         // Pastikan badge & banner status (active/expired) langsung dihitung
         // ulang tanpa menunggu tick interval berikutnya, lalu sinkronkan
@@ -743,6 +751,8 @@ function LinkPegawaiPage() {
             }
             const badge = BADGE[avail];
             const expiresAt = new Date(t.expires_at);
+            const extendedAgeMs = extendedAt[t.id] != null ? now - extendedAt[t.id] : null;
+            const justExtended = extendedAgeMs != null && extendedAgeMs >= 0 && extendedAgeMs < 15000;
             const openable = (avail === "active" || avail === "done") && !urlError;
             const tokenState = classifyToken(t.share_token, regenAt[t.id], now);
             const msToExpire = expiresAt.getTime() - now;
@@ -762,6 +772,11 @@ function LinkPegawaiPage() {
                       <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ${badge.cls}`}>
                         {badge.label}
                       </span>
+                      {justExtended && (
+                        <span className="inline-flex shrink-0 animate-fade-in items-center gap-0.5 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
+                          <Sparkles className="h-3 w-3" /> Baru diperpanjang
+                        </span>
+                      )}
                       {testMode && (
                         <>
                           {tokenState.kind === "valid" && (
