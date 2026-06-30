@@ -315,29 +315,57 @@ export function useLiveSendLogStatus(
     // Sinkron antar-tab: ketika tab lain memperbarui status sinkron,
     // tarik nilai terbarunya supaya UI tab ini ikut up-to-date.
     const onSyncEvt = () => {
+      // Diterapkan instan baik untuk event dari tab ini (SYNC_EVENT) maupun
+      // dari tab lain (storage event SYNC_KEY) — TIDAK menunggu
+      // `visibilitychange`. Kita juga selalu menaikkan tick agar entries
+      // ikut dibaca ulang lewat re-render meski snapshot hash sama
+      // (mis. saat tab lain hanya menulis error atau memperbarui
+      // `lastSyncedAt` tanpa entri baru).
       const s = getSendLogSyncStatus(k);
       if (!s) return;
       setLastSyncedAt(s.lastSyncedAt);
       setError(s.lastError);
       if (s.lastSnapshot !== lastSnapshotRef.current) {
         lastSnapshotRef.current = s.lastSnapshot;
-        setTick((t) => t + 1);
       }
+      setTick((t) => t + 1);
+      // Sumber kebenaran entries ada di KEY; tarik ulang supaya UI tidak
+      // memperlihatkan badge "tersinkron" sementara isi entries masih
+      // tertinggal (race antar tab: SYNC_KEY tertulis lebih dulu / lebih
+      // belakangan dari KEY tergantung urutan write).
+      try {
+        const entries = getSendLog(k);
+        const snap = entries.map((e) => `${e.at}|${e.kind}|${e.label}`).join("\n");
+        if (snap !== lastSnapshotRef.current) {
+          lastSnapshotRef.current = snap;
+        }
+      } catch { /* abaikan, read() berikutnya akan mencoba lagi */ }
     };
-    const onSyncStorage = (e: StorageEvent) => { if (e.key === SYNC_KEY) onSyncEvt(); };
-    const onVisibility = () => { if (document.visibilityState === "visible") read(); };
+    // Storage event lintas tab — JANGAN tunggu visibility. Untuk SYNC_KEY
+    // terapkan status instan; untuk KEY, baca ulang entries lokal lalu
+    // perbarui sync status sehingga indikator "Data belum tersinkron"
+    // segera reset di tab background.
+    const onCrossTabStorage = (e: StorageEvent) => {
+      if (e.key === SYNC_KEY) { onSyncEvt(); return; }
+      if (e.key === KEY) { read(); return; }
+    };
+    // visibilitychange tetap dipasang sebagai fallback paling akhir
+    // (browser tertentu kadang melempar storage event saat tab background
+    // tapi men-throttle setInterval); ini bukan jalur utama.
+    const onVisibility = () => { if (document.visibilityState === "visible") { onSyncEvt(); read(); } };
     window.addEventListener(EVENT, onEvt);
-    window.addEventListener("storage", onStorage);
+    // Catatan: kita gabungkan handler storage untuk KEY & SYNC_KEY ke satu
+    // listener agar urutan eksekusi deterministik dan tidak ada race dua
+    // listener saling menimpa state.
     window.addEventListener(SYNC_EVENT, onSyncEvt);
-    window.addEventListener("storage", onSyncStorage);
+    window.addEventListener("storage", onCrossTabStorage);
     document.addEventListener("visibilitychange", onVisibility);
     const timer = pollMs > 0 ? setInterval(read, pollMs) : null;
     return () => {
       cancelled = true;
       window.removeEventListener(EVENT, onEvt);
-      window.removeEventListener("storage", onStorage);
       window.removeEventListener(SYNC_EVENT, onSyncEvt);
-      window.removeEventListener("storage", onSyncStorage);
+      window.removeEventListener("storage", onCrossTabStorage);
       document.removeEventListener("visibilitychange", onVisibility);
       if (timer) clearInterval(timer);
     };
