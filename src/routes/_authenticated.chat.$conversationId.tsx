@@ -1316,17 +1316,31 @@ function ChatRoomPage() {
                   const items = [...selectedMessages];
                   setBulkDeleteOpen(false);
                   clearSelection();
+                  const restore = optimisticDeleteMessages(
+                    qc,
+                    conversationId,
+                    items.map((m) => m.id),
+                  );
                   scheduleUndo({
                     label: `${items.length} pesan akan dihapus untuk semua`,
+                    onCancel: restore,
                     onCommit: async () => {
+                      let failed = false;
                       for (const m of items) {
                         await new Promise<void>((resolve) =>
                           deleteMsg.mutate(
                             { id: m.id, attachment_path: m.attachment_path },
-                            { onSuccess: () => resolve(), onError: () => resolve() },
+                            {
+                              onSuccess: () => resolve(),
+                              onError: () => {
+                                failed = true;
+                                resolve();
+                              },
+                            },
                           ),
                         );
                       }
+                      if (failed) restore();
                       toast.success(`${items.length} pesan dihapus`);
                       void logChatDelete({
                         conversationId,
