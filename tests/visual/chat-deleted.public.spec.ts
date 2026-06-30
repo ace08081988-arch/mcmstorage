@@ -42,14 +42,17 @@ function dynamicMasks(page: Page): Locator[] {
 
 test.describe("chat-deleted — visual", () => {
   for (const { name, part } of PARTS) {
-    test(`${name}`, async ({ page }) => {
+    test(`${name}`, async ({ page }, testInfo) => {
       await page.goto(`${HARNESS}?part=${part}`, { waitUntil: "networkidle" });
       await page.evaluate(() => (document as { fonts?: { ready: Promise<unknown> } }).fonts?.ready);
       // Dialogs render via Portal — wait until they're attached before shooting.
       if (part.startsWith("info-")) {
         await page.getByRole("dialog").waitFor({ state: "visible" });
       }
-      await expect(page).toHaveScreenshot(`chat-deleted-${name}.png`, {
+      // Project name is part of the screenshot path so each viewport
+      // (mobile / tablet-portrait / tablet-landscape) keeps its own baseline.
+      const project = testInfo.project.name;
+      await expect(page).toHaveScreenshot(`chat-deleted-${project}-${name}.png`, {
         fullPage: true,
         mask: dynamicMasks(page),
         // Solid mask color so accidental shifts in masked regions still
