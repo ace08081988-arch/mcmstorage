@@ -79,6 +79,8 @@ type Produk = {
   jumlah?: number;
   foto?: string;
   galeri?: string[];
+  /** Timestamp (ms epoch) saat status terakhir berubah menjadi "Sudah Dikirim". */
+  sent_at?: number;
 };
 
 function tagFor(kat: Kategori): string {
@@ -95,6 +97,18 @@ function rupiah(n: number) {
     currency: "IDR",
     minimumFractionDigits: 0,
   }).format(n);
+}
+
+/** True jika ts berada dalam rentang hari kalender lokal hari ini. */
+function isToday(ts: number | undefined): boolean {
+  if (!ts) return false;
+  const d = new Date(ts);
+  const n = new Date();
+  return (
+    d.getFullYear() === n.getFullYear() &&
+    d.getMonth() === n.getMonth() &&
+    d.getDate() === n.getDate()
+  );
 }
 
 function buildPesan(p: Produk) {
