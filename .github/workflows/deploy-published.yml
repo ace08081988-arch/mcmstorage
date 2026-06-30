@@ -88,6 +88,37 @@ jobs:
                 issue_number: issue.number,
                 body: `✅ **Published** ke [${url}](${url})\n**Commit:** [\`${shortSha}\`](${commitUrl})\n**Waktu:** ${when}${noteLine}\n\nDitutup otomatis oleh \`deploy-published\` workflow ([log](${runUrl})).`,
               });
+              // Update title + body issue "Siap publish" supaya status live langsung terlihat.
+              const newTitle = issue.title.startsWith('✅ Live:')
+                ? issue.title
+                : `✅ Live: ${shortSha} → ${url.replace(/^https?:\/\//, '')}`;
+              const liveBanner = [
+                `> ✅ **Status:** LIVE`,
+                `> **URL:** [${url}](${url})`,
+                `> **Commit:** [\`${shortSha}\`](${commitUrl})`,
+                `> **Waktu deploy:** ${when}`,
+                note ? `> **Catatan:** ${note}` : null,
+                `> **Log:** [run #${context.runId}](${runUrl})`,
+              ].filter(Boolean).join('\n');
+              const originalBody = issue.body || '';
+              const cleaned = originalBody.replace(/^> ✅ \*\*Status:\*\* LIVE[\s\S]*?(?=\n\n|$)/m, '').trim();
+              const newBody = `${liveBanner}\n\n---\n\n${cleaned}`.slice(0, 60000);
+              await github.rest.issues.update({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: issue.number,
+                title: newTitle,
+                body: newBody,
+              });
+              // Tambah label 'deployed' agar terhubung dengan filter pasca-publish (idempotent).
+              try {
+                await github.rest.issues.addLabels({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: issue.number,
+                  labels: ['deployed'],
+                });
+              } catch (e) { /* label may not exist yet — ignore */ }
               await github.rest.issues.update({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
