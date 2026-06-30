@@ -674,6 +674,33 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         onOpenChange={setOpenSticker}
         onSent={() => { onSent?.(); setOpenSticker(false); }}
       />
+      <AlertDialog open={confirmDelete !== null} onOpenChange={(v) => { if (!v) setConfirmDelete(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {confirmDelete === "all" ? "Hapus semua lampiran?" : `Hapus ${selected.size} berkas terpilih?`}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {confirmDelete === "all"
+                ? `${pending?.length ?? 0} berkas akan dibuang dari antrean dan tidak bisa dikembalikan.`
+                : "Berkas terpilih akan dibuang dari antrean dan tidak bisa dikembalikan."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (confirmDelete === "all") removeAllPending();
+                else if (confirmDelete === "selected") removeSelectedPending();
+                setConfirmDelete(null);
+              }}
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
