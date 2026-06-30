@@ -98,18 +98,51 @@ function numFromEnv(key: string): number | undefined {
   return Number.isFinite(n) && n >= 0 ? n : undefined;
 }
 
-function pickPositive(...values: Array<number | undefined>): number | undefined {
+/** Index field metadata (min/max) by key untuk lookup cepat. */
+const FIELD_BOUNDS: Record<keyof WorkerPortalConfig, { min: number; max: number }> =
+  WORKER_PORTAL_CONFIG_FIELDS.reduce(
+    (acc, f) => {
+      acc[f.key] = { min: f.min, max: f.max };
+      return acc;
+    },
+    {} as Record<keyof WorkerPortalConfig, { min: number; max: number }>,
+  );
+
+/**
+ * Validasi nilai terhadap bounds field. Mengembalikan `undefined` saat
+ * nilai bukan angka, non-finite, atau di luar rentang — sehingga jalur
+ * resolusi otomatis lanjut ke kandidat berikutnya (env → default).
+ */
+function pickValid(
+  key: keyof WorkerPortalConfig,
+  ...values: Array<number | undefined>
+): number | undefined {
+  const b = FIELD_BOUNDS[key];
   for (const v of values) {
-    if (typeof v === "number" && Number.isFinite(v) && v > 0) return v;
+    if (typeof v !== "number" || !Number.isFinite(v)) continue;
+    if (b && (v < b.min || v > b.max)) continue;
+    return v;
   }
   return undefined;
 }
 
-function pickNonNegative(...values: Array<number | undefined>): number | undefined {
-  for (const v of values) {
-    if (typeof v === "number" && Number.isFinite(v) && v >= 0) return v;
+/**
+ * Validasi satu objek kandidat config; nilai tidak valid dihilangkan
+ * sehingga otomatis fallback ke sumber berikutnya. Berguna untuk admin
+ * UI dan unit test.
+ */
+export function sanitizeWorkerPortalConfig(
+  input: Partial<WorkerPortalConfig> | null | undefined,
+): Partial<WorkerPortalConfig> {
+  if (!input || typeof input !== "object") return {};
+  const out: Partial<WorkerPortalConfig> = {};
+  for (const f of WORKER_PORTAL_CONFIG_FIELDS) {
+    const v = (input as Record<string, unknown>)[f.key];
+    if (typeof v !== "number" || !Number.isFinite(v)) continue;
+    if (v < f.min || v > f.max) continue;
+    out[f.key] = v;
   }
-  return undefined;
+  return out;
 }
 
 /** Resolusi konfigurasi efektif (override runtime > env build > default). */
@@ -118,53 +151,48 @@ export function getWorkerPortalConfig(): WorkerPortalConfig {
     typeof window !== "undefined" ? window.__WORKER_PORTAL_CONFIG__ ?? {} : {};
   const remote = remoteOverride ?? {};
   const d = WORKER_PORTAL_DEFAULTS;
-  return {
-    sessionTtlMs:
-      pickPositive(win.sessionTtlMs, remote.sessionTtlMs, numFromEnv("VITE_WORKER_PORTAL_SESSION_TTL_MS")) ??
-      d.sessionTtlMs,
-    maxAttempts:
-      pickPositive(win.maxAttempts, remote.maxAttempts, numFromEnv("VITE_WORKER_PORTAL_MAX_ATTEMPTS")) ??
-      d.maxAttempts,
-    lockSeconds:
-      pickPositive(win.lockSeconds, remote.lockSeconds, numFromEnv("VITE_WORKER_PORTAL_LOCK_SECONDS")) ??
-      d.lockSeconds,
-    silentFailTolerance:
-      pickPositive(
-        win.silentFailTolerance,
-        remote.silentFailTolerance,
-        numFromEnv("VITE_WORKER_PORTAL_SILENT_FAIL_TOLERANCE"),
-      ) ?? d.silentFailTolerance,
-    lagThresholdSec:
-      pickPositive(
-        win.lagThresholdSec,
-        remote.lagThresholdSec,
-        numFromEnv("VITE_WORKER_PORTAL_LAG_THRESHOLD_SEC"),
-      ) ?? d.lagThresholdSec,
-    staleThresholdSec:
-      pickPositive(
-        win.staleThresholdSec,
-        remote.staleThresholdSec,
-        numFromEnv("VITE_WORKER_PORTAL_STALE_THRESHOLD_SEC"),
-      ) ?? d.staleThresholdSec,
-    lagCooldownMs:
-      pickNonNegative(
-        win.lagCooldownMs,
-        remote.lagCooldownMs,
-        numFromEnv("VITE_WORKER_PORTAL_LAG_COOLDOWN_MS"),
-      ) ?? d.lagCooldownMs,
-    staleCooldownBaseMs:
-      pickNonNegative(
-        win.staleCooldownBaseMs,
-        remote.staleCooldownBaseMs,
-        numFromEnv("VITE_WORKER_PORTAL_STALE_COOLDOWN_BASE_MS"),
-      ) ?? d.staleCooldownBaseMs,
-    staleCooldownMaxMs:
-      pickPositive(
-        win.staleCooldownMaxMs,
-        remote.staleCooldownMaxMs,
-        numFromEnv("VITE_WORKER_PORTAL_STALE_COOLDOWN_MAX_MS"),
-      ) ?? d.staleCooldownMaxMs,
+  const envMap: Record<keyof WorkerPortalConfig, string> = {
+    sessionTtlMs: "VITE_WORKER_PORTAL_SESSION_TTL_MS",
+    maxAttempts: "VITE_WORKER_PORTAL_MAX_ATTEMPTS",
+    lockSeconds: "VITE_WORKER_PORTAL_LOCK_SECONDS",
+    silentFailTolerance: "VITE_WORKER_PORTAL_SILENT_FAIL_TOLERANCE",
+    lagThresholdSec: "VITE_WORKER_PORTAL_LAG_THRESHOLD_SEC",
+    staleThresholdSec: "VITE_WORKER_PORTAL_STALE_THRESHOLD_SEC",
+    lagCooldownMs: "VITE_WORKER_PORTAL_LAG_COOLDOWN_MS",
+    staleCooldownBaseMs: "VITE_WORKER_PORTAL_STALE_COOLDOWN_BASE_MS",
+    staleCooldownMaxMs: "VITE_WORKER_PORTAL_STALE_COOLDOWN_MAX_MS",
   };
+  const resolve = (key: keyof WorkerPortalConfig): number =>
+    pickValid(
+      key,
+      (win as Record<string, number | undefined>)[key],
+      (remote as Record<string, number | undefined>)[key],
+      numFromEnv(envMap[key]),
+    ) ?? d[key];
+
+  const out: WorkerPortalConfig = {
+    sessionTtlMs: resolve("sessionTtlMs"),
+    maxAttempts: resolve("maxAttempts"),
+    lockSeconds: resolve("lockSeconds"),
+    silentFailTolerance: resolve("silentFailTolerance"),
+    lagThresholdSec: resolve("lagThresholdSec"),
+    staleThresholdSec: resolve("staleThresholdSec"),
+    lagCooldownMs: resolve("lagCooldownMs"),
+    staleCooldownBaseMs: resolve("staleCooldownBaseMs"),
+    staleCooldownMaxMs: resolve("staleCooldownMaxMs"),
+  };
+
+  // Cross-field invariants — kalau dilanggar, fallback ke default kedua
+  // sisi agar konsisten dan tidak menimbulkan loop resync agresif.
+  if (out.lagThresholdSec >= out.staleThresholdSec) {
+    out.lagThresholdSec = d.lagThresholdSec;
+    out.staleThresholdSec = d.staleThresholdSec;
+  }
+  if (out.staleCooldownBaseMs > out.staleCooldownMaxMs) {
+    out.staleCooldownBaseMs = d.staleCooldownBaseMs;
+    out.staleCooldownMaxMs = d.staleCooldownMaxMs;
+  }
+  return out;
 }
 
 /**
