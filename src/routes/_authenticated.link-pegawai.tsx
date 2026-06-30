@@ -120,6 +120,8 @@ function LinkPegawaiPage() {
     url: string | null;
     expiresLabel: string | null;
     extendDays: number;
+    updatedAt: number;
+    seq: number;
   } | null>(null);
   const [testMode, setTestMode] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -416,12 +418,14 @@ function LinkPegawaiPage() {
         }
         if (newExpiresAt) {
           const taskTitle = tasks?.find((t) => t.id === taskId)?.title ?? "(tanpa judul)";
-          setExtendedInfo({
+          setExtendedInfo((prev) => ({
             title: taskTitle,
             url: newUrl,
             expiresLabel,
             extendDays: extendDays!,
-          });
+            updatedAt: Date.now(),
+            seq: (prev?.seq ?? 0) + 1,
+          }));
         }
         toast.success(
           newExpiresAt
@@ -1015,13 +1019,21 @@ function LinkPegawaiPage() {
               Tugas <span className="font-medium">"{extendedInfo?.title}"</span> diperpanjang {extendedInfo?.extendDays} hari & token baru aktif. Link lama tidak bisa lagi dibuka pegawai.
             </DialogDescription>
           </DialogHeader>
-          <div className="space-y-3">
+          <div key={extendedInfo?.seq ?? 0} className="space-y-3 animate-fade-in motion-reduce:animate-none">
             <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 p-3">
               <div className="text-[10px] uppercase tracking-wider text-emerald-700 dark:text-emerald-400">Kedaluwarsa baru</div>
               <div className="mt-1 text-sm font-semibold">
                 {extendedInfo?.expiresLabel ?? "—"}
               </div>
-              <div className="mt-0.5 text-[10px] text-muted-foreground">Zona waktu perangkat</div>
+              <div className="mt-0.5 flex items-center justify-between text-[10px] text-muted-foreground">
+                <span>Zona waktu perangkat</span>
+                {extendedInfo?.updatedAt ? (
+                  <span title={new Date(extendedInfo.updatedAt).toLocaleString()}>
+                    Diperbarui: {new Date(extendedInfo.updatedAt).toLocaleTimeString()}
+                    {(extendedInfo.seq ?? 0) > 1 ? ` · #${extendedInfo.seq}` : ""}
+                  </span>
+                ) : null}
+              </div>
             </div>
             {extendedInfo?.url && (
               <div className="rounded-md border bg-muted/40 p-2">
