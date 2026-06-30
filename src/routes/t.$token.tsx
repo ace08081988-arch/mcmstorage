@@ -153,11 +153,13 @@ function PublicPrepPage() {
     const ts = Date.now();
     try { window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, ts })); } catch {}
     setSessionStartedAt(ts);
+    broadcast({ type: "session", pin, ts });
   }
   function clearSession() {
     if (typeof window === "undefined") return;
     try { window.sessionStorage.removeItem(SESSION_KEY); } catch {}
     setSessionStartedAt(null);
+    broadcast({ type: "session-clear" });
   }
   // Counter kegagalan berturut-turut untuk silentRefresh; baru flip ke layar
   // closedReason setelah 2x kegagalan kategori sama agar transient error
@@ -284,6 +286,7 @@ function PublicPrepPage() {
       if (!state.attempts && !state.lockedUntil) window.localStorage.removeItem(STORAGE_KEY);
       else window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch { /* ignore quota */ }
+    broadcast({ type: "attempts", attempts: state.attempts, lockedUntil: state.lockedUntil });
   }
   // Reset total: state in-memory + localStorage benar-benar dibersihkan.
   // Dipanggil saat PIN benar agar refresh browser memulai dari 0 percobaan.
