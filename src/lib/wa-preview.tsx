@@ -406,7 +406,7 @@ export function WaPreviewHost() {
                 disabled={dup!.status === "in-flight" || !payloadMatches}
                 title={
                   dup!.status === "in-flight"
-                    ? "Kiriman sebelumnya masih berjalan"
+                    ? (crossChannel ? "Kiriman Chat untuk paket ini masih berjalan" : "Kiriman sebelumnya masih berjalan")
                     : !payloadMatches
                       ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                       : "Kirim ulang meski klik ganda terdeteksi"
@@ -421,10 +421,12 @@ export function WaPreviewHost() {
                 type="button"
                 size="sm"
                 onClick={() => finish(true)}
+                disabled={live?.status === "in-flight"}
+                title={live?.status === "in-flight" ? (crossChannel ? "Kiriman Chat untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
                 className="bg-emerald-600 text-white hover:bg-emerald-700"
               >
                 <Send className="mr-1.5 h-3.5 w-3.5" />
-                Kirim WA
+                {live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim WA"}
               </Button>
             )}
           </div>
