@@ -583,16 +583,16 @@ function DetailHero({
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       {/* Brand strip */}
-      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-4 pb-5 pt-4 text-primary-foreground sm:px-5 sm:pb-6 sm:pt-5">
+      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-4 pb-4 pt-4 text-primary-foreground sm:px-5 sm:pb-6 sm:pt-5">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-primary-foreground/40 to-emerald-400" />
         <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           <div className="min-w-0">
-            <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
+            <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
               <Scale className="h-3 w-3 shrink-0" />
               <span className="truncate">Detail penyiapan ecer</span>
             </div>
-            <h2 className="mt-1.5 break-words text-lg font-bold leading-tight sm:text-xl">{title.name}</h2>
-            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-primary-foreground/85">
+            <h2 className="mt-1.5 break-words text-base font-bold leading-tight sm:text-xl">{title.name}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] leading-tight text-primary-foreground/85">
               <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 backdrop-blur-sm">
                 <Package className="h-3 w-3 shrink-0" />
                 <span className="truncate">{item.name}</span>
@@ -603,13 +603,13 @@ function DetailHero({
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/25 px-2 py-0.5 font-semibold text-emerald-50 ring-1 ring-emerald-300/50 backdrop-blur-sm">
                 <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
               </span>
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 font-mono text-[10.5px] text-primary-foreground/90 backdrop-blur-sm sm:hidden">
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 font-mono text-[11px] text-primary-foreground/90 backdrop-blur-sm sm:hidden">
                 <Hash className="h-3 w-3 shrink-0" /> {ref}
               </span>
             </div>
           </div>
           <div className="hidden shrink-0 text-right sm:block">
-            <div className="text-[10px] uppercase tracking-wider text-primary-foreground/70">No. Referensi</div>
+            <div className="text-[11px] uppercase tracking-wider text-primary-foreground/70">No. Referensi</div>
             <div className="font-mono text-[11px] text-primary-foreground/95">{ref}</div>
           </div>
         </div>
@@ -638,10 +638,10 @@ function DetailHero({
           </>
         )}
         <DetailRow icon={<Hash className="h-3.5 w-3.5" />} label="ID judul"
-          value={<span className="font-mono text-[11px]">{ref}</span>} />
+          value={<span className="font-mono text-xs">{ref}</span>} />
         {title.note && (
           <div className="py-3">
-            <div className="text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">Catatan</div>
+            <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">Catatan</div>
             <div className="mt-1 whitespace-pre-wrap text-xs leading-relaxed text-foreground">{title.note}</div>
           </div>
         )}
@@ -652,7 +652,7 @@ function DetailHero({
         className="sticky bottom-0 z-10 -mx-px border-t bg-card/95 px-2 pt-2 shadow-[0_-10px_25px_-5px_rgba(0,0,0,0.05)] backdrop-blur supports-[backdrop-filter]:bg-card/80 sm:static sm:bg-muted/40 sm:px-5 sm:py-3 sm:shadow-none sm:backdrop-blur-0"
         style={{ paddingBottom: "calc(env(safe-area-inset-bottom, 0px) + 0.5rem)" }}
       >
-        <div className="hidden text-[10.5px] uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
+        <div className="hidden text-[11px] uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
           Simpan halaman ini sebagai referensi penyiapan.
         </div>
         <div className="grid grid-cols-4 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-1.5">
@@ -664,7 +664,7 @@ function DetailHero({
               className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
               <Plus className="h-5 w-5" aria-hidden />
-              <span className="text-[11px] font-medium tracking-tight">Judul</span>
+              <span className="text-[11px] font-semibold leading-none tracking-tight">Judul</span>
             </button>
           )}
           {onCreateProduct && (
@@ -675,7 +675,7 @@ function DetailHero({
               className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
               <Package className="h-5 w-5" aria-hidden />
-              <span className="text-[11px] font-medium tracking-tight">Produk</span>
+              <span className="text-[11px] font-semibold leading-none tracking-tight">Produk</span>
             </button>
           )}
           <button
@@ -685,7 +685,7 @@ function DetailHero({
             className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
           >
             <Users className="h-5 w-5" aria-hidden />
-            <span className="text-[11px] font-medium tracking-tight">Pegawai</span>
+            <span className="text-[11px] font-semibold leading-none tracking-tight">Pegawai</span>
           </button>
           <button
             type="button"
@@ -694,7 +694,7 @@ function DetailHero({
             className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50 p-2 text-emerald-700 transition-all active:scale-95 dark:bg-emerald-500/15 dark:text-emerald-300 sm:hidden"
           >
             <Plus className="h-5 w-5" aria-hidden />
-            <span className="text-[11px] font-bold tracking-tight">Penyiapan</span>
+            <span className="text-[11px] font-semibold leading-none tracking-tight">Penyiapan</span>
           </button>
 
           {/* Desktop / tablet — keep richer labels */}
@@ -722,14 +722,14 @@ function DetailHero({
 
 function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <div className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-start gap-3 py-2.5 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
-      <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+      <div className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-start gap-3 py-2.5 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
+      <div className="flex min-w-0 items-center gap-1.5 text-xs text-muted-foreground">
         <span className="shrink-0 text-muted-foreground/70">{icon}</span>
         <span className="truncate">{label}</span>
       </div>
       <div className="min-w-0 text-right text-xs text-foreground">
         <div className="break-words">{value}</div>
-        {sub && <div className="mt-0.5 break-words text-[10.5px] text-muted-foreground">{sub}</div>}
+        {sub && <div className="mt-0.5 break-words text-[11px] text-muted-foreground">{sub}</div>}
       </div>
     </div>
   );
