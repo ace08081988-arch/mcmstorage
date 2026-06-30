@@ -1100,10 +1100,15 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
       return (
         <section className="mt-3 overflow-hidden rounded-xl border bg-card shadow-sm">
           <header className="flex items-center justify-between border-b bg-muted/40 px-3 py-2">
-            <h3 className="text-[11px] font-semibold uppercase tracking-[0.08em] text-muted-foreground">
+            <h3 className="min-w-0 flex-1 truncate text-[11px] font-semibold uppercase leading-none tracking-[0.08em] text-muted-foreground">
               Total per Kategori
             </h3>
-            <span className="text-[11px] text-muted-foreground">{rows.length} kategori</span>
+            <span
+              className="inline-flex h-5 max-w-[7rem] shrink-0 items-center rounded-full border bg-background px-1.5 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
+              title={`${rows.length} kategori`}
+            >
+              <span className="min-w-0 truncate whitespace-nowrap">{rows.length} kategori</span>
+            </span>
           </header>
           <ul className="divide-y text-sm">
             {rows.map(([cat, { count, value }]) => {
@@ -1120,7 +1125,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                     />
                     <span className="min-w-0 flex-1 truncate font-medium">{cat}</span>
                     <span
-                      className="inline-flex h-5 max-w-[5rem] shrink-0 items-center rounded-full border bg-background px-1.5 text-[11px] leading-none text-muted-foreground tabular-nums"
+                      className="inline-flex h-5 max-w-[7rem] shrink-0 items-center rounded-full border bg-background px-1.5 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
                       title={`${count} item`}
                     >
                       <span className="min-w-0 truncate whitespace-nowrap">{count}</span>

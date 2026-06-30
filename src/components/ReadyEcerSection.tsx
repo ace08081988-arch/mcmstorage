@@ -1690,16 +1690,16 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             <div className="flex h-full w-full items-center justify-center text-muted-foreground">…</div>
           )}
           <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent p-2">
-            <div className="flex items-center gap-1 text-[11px] font-medium text-white/90">
-              <Scale className="h-2.5 w-2.5" />
-              <span className="truncate">{r.name}</span>
+            <div className="flex min-w-0 items-center gap-1 text-[11px] font-medium leading-none text-white/90">
+              <Scale className="h-2.5 w-2.5 shrink-0" />
+              <span className="min-w-0 flex-1 truncate" title={r.name}>{r.name}</span>
             </div>
           </div>
-          <span className="absolute left-1.5 top-1.5 inline-flex items-center gap-1 rounded-full bg-sky-500/95 px-1.5 py-0.5 text-[11px] font-semibold text-white shadow-sm">
+          <span className="absolute left-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-sky-500/95 px-1.5 text-[11px] font-semibold leading-none text-white shadow-sm">
             {shots.length} foto
           </span>
           {thumbs[0]?.location_url && (
-            <span className="absolute right-1.5 top-1.5 inline-flex items-center gap-0.5 rounded-full bg-black/60 px-1.5 py-0.5 text-[11px] font-medium text-white backdrop-blur-sm">
+            <span className="absolute right-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-[11px] font-medium leading-none text-white backdrop-blur-sm">
               <MapPin className="h-2.5 w-2.5" /> GPS
             </span>
           )}
@@ -1713,12 +1713,12 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           className="flex flex-col gap-0.5"
         >
           {shots.length === 0 && (
-            <div className="flex items-center gap-1.5">
-              <Scale className="h-3.5 w-3.5 text-primary" />
-              <span className="truncate text-xs font-semibold leading-snug">{r.name}</span>
+            <div className="flex min-w-0 items-center gap-1.5">
+              <Scale className="h-3.5 w-3.5 shrink-0 text-primary" />
+              <span className="min-w-0 flex-1 truncate text-xs font-semibold leading-snug" title={r.name}>{r.name}</span>
             </div>
           )}
-          <span className="truncate text-[11px] font-medium leading-snug text-foreground/80">
+          <span className="block min-w-0 truncate text-[11px] font-medium leading-none text-foreground/80" title={`${r.product_name} · ${r.target_grams} ${unit}`}>
             {r.product_name} · {r.target_grams} {unit}
           </span>
           <SyncBadge row={r} />
