@@ -56,7 +56,10 @@ export function confirmWaShare(input: {
   retryMissing?: () => Promise<File[]>;
   duplicate?: { at: number; status: "in-flight" | "done" | "failed" } | null;
 }): Promise<{ ok: boolean; text?: string; force?: boolean }> {
-  if (getWaSkipPreview()) return Promise.resolve({ ok: true, text: input.text });
+  // Tampilkan pratinjau saat klik ganda terdeteksi, meski user pernah meminta "jangan
+  // tampilkan lagi" — operator perlu lihat peringatan duplikat & tombol force.
+  const dupActive = !!input.duplicate && input.duplicate.status !== "failed";
+  if (getWaSkipPreview() && !dupActive) return Promise.resolve({ ok: true, text: input.text });
   return new Promise((resolve) => {
     const req: Request = { ...input, resolve };
     if (openRequest) openRequest(req);
