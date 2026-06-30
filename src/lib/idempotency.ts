@@ -15,7 +15,7 @@ const TTL_MS = 5 * 60 * 1000;       // 5 menit
 const MAX_ENTRIES = 200;
 
 export type IdemStatus = "in-flight" | "done" | "failed";
-export type IdemRecord = { key: string; at: number; status: IdemStatus; note?: string };
+export type IdemRecord = { key: string; at: number; status: IdemStatus; note?: string; fingerprint?: string };
 
 function readAll(): Map<string, IdemRecord> {
   if (typeof window === "undefined") return new Map();
@@ -32,6 +32,7 @@ function readAll(): Map<string, IdemRecord> {
           at: r.at,
           status: r.status === "done" || r.status === "failed" || r.status === "in-flight" ? r.status : "done",
           note: typeof r.note === "string" ? r.note : undefined,
+          fingerprint: typeof r.fingerprint === "string" ? r.fingerprint : undefined,
         });
       }
     }
@@ -66,9 +67,13 @@ export function getIdem(key: string): IdemRecord | null {
   return r;
 }
 
-export function setIdem(key: string, status: IdemStatus, note?: string) {
+export function setIdem(key: string, status: IdemStatus, note?: string, fingerprint?: string) {
   const m = readAll();
-  m.set(key, { key, at: Date.now(), status, note });
+  const prev = m.get(key);
+  // Pertahankan fingerprint lama bila pemanggil tidak menyediakannya (mis. saat
+  // menandai "in-flight" sebelum payload tersedia atau saat finalisasi status).
+  const fp = fingerprint ?? prev?.fingerprint;
+  m.set(key, { key, at: Date.now(), status, note, fingerprint: fp });
   writeAll(m);
 }
 
@@ -99,19 +104,44 @@ export function buildSendKey(input: {
  */
 export async function withIdempotency<T>(
   key: string,
-  opts: { onSkip: (existing: IdemRecord) => T | Promise<T>; run: () => Promise<T> },
+  opts: { onSkip: (existing: IdemRecord) => T | Promise<T>; run: () => Promise<T>; fingerprint?: string },
 ): Promise<T> {
   const existing = getIdem(key);
   if (existing && existing.status !== "failed") {
     return await opts.onSkip(existing);
   }
-  setIdem(key, "in-flight");
+  setIdem(key, "in-flight", undefined, opts.fingerprint);
   try {
     const result = await opts.run();
-    setIdem(key, "done");
+    setIdem(key, "done", undefined, opts.fingerprint);
     return result;
   } catch (e) {
-    setIdem(key, "failed", (e as Error)?.message);
+    setIdem(key, "failed", (e as Error)?.message, opts.fingerprint);
     throw e;
   }
+}
+
+/**
+ * Stable JSON-stringify dengan key tersortir, lalu di-hash FNV-1a 32-bit.
+ * Digunakan untuk membandingkan apakah payload kiriman saat ini benar-benar
+ * sama dengan payload kiriman sebelumnya pada idempotency key yang sama.
+ * Bukan kriptografis — cukup untuk mendeteksi perbedaan konten yang tak
+ * disengaja sebelum operator menekan "Kirim ulang (paksa)".
+ */
+export function payloadFingerprint(payload: unknown): string {
+  const norm = stableStringify(payload);
+  let h = 0x811c9dc5;
+  for (let i = 0; i < norm.length; i++) {
+    h ^= norm.charCodeAt(i);
+    h = (h + ((h << 1) + (h << 4) + (h << 7) + (h << 8) + (h << 24))) >>> 0;
+  }
+  return h.toString(16).padStart(8, "0");
+}
+
+function stableStringify(value: unknown): string {
+  if (value === null || typeof value !== "object") return JSON.stringify(value ?? null);
+  if (Array.isArray(value)) return "[" + value.map(stableStringify).join(",") + "]";
+  const obj = value as Record<string, unknown>;
+  const keys = Object.keys(obj).sort();
+  return "{" + keys.map((k) => JSON.stringify(k) + ":" + stableStringify(obj[k])).join(",") + "}";
 }
