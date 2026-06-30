@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker, X, Send, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -29,6 +29,12 @@ function Tile({ icon: Icon, label, color, onClick }: { icon: LucideIcon; label: 
   );
 }
 
+function formatBytes(n: number): string {
+  if (n < 1024) return `${n} B`;
+  if (n < 1024 * 1024) return `${(n / 1024).toFixed(1)} KB`;
+  return `${(n / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 type Props = {
   conversationId: string;
   disabled?: boolean;
@@ -42,13 +48,31 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const [openContact, setOpenContact] = useState(false);
   const [openProduct, setOpenProduct] = useState(false);
   const [openSticker, setOpenSticker] = useState(false);
+  const [pending, setPending] = useState<{ file: File; previewUrl: string | null; caption: string } | null>(null);
 
-  async function handleUpload(file: File | null) {
+  // Bersihkan object URL saat pratinjau ditutup / ganti.
+  useEffect(() => {
+    return () => { if (pending?.previewUrl) URL.revokeObjectURL(pending.previewUrl); };
+  }, [pending?.previewUrl]);
+
+  /** Setelah file dipilih, JANGAN langsung kirim — buka pratinjau dulu. */
+  function stageFile(file: File | null) {
     if (!file) return;
-    setBusy("upload");
     setOpenSheet(false);
+    const isPreviewable = file.type.startsWith("image/") || file.type.startsWith("video/");
+    setPending({
+      file,
+      previewUrl: isPreviewable ? URL.createObjectURL(file) : null,
+      caption: "",
+    });
+  }
+
+  async function confirmSendPending() {
+    if (!pending) return;
+    setBusy("upload");
     try {
-      const up = await uploadChatFile({ conversationId, file });
+      const up = await uploadChatFile({ conversationId, file: pending.file });
+      const caption = pending.caption.trim();
       await sendMessage({
         data: {
           conversationId,
@@ -56,8 +80,10 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           attachmentMime: up.mime,
           attachmentName: up.name,
           attachmentSize: up.size,
+          ...(caption ? { body: caption } : {}),
         },
       });
+      setPending(null);
       onSent?.();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal mengirim lampiran");
@@ -103,13 +129,13 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           </SheetHeader>
           <div className="grid grid-cols-4 gap-3 pt-2">
             <Tile color="bg-violet-500/15 text-violet-500" icon={Paperclip} label="Dokumen"
-              onClick={async () => handleUpload(await pickViaInput({ accept: "*/*" }))} />
+              onClick={async () => stageFile(await pickViaInput({ accept: "*/*" }))} />
             <Tile color="bg-fuchsia-500/15 text-fuchsia-500" icon={ImageIcon} label="Galeri"
-              onClick={async () => handleUpload(await pickViaInput({ accept: "image/*" }))} />
+              onClick={async () => stageFile(await pickViaInput({ accept: "image/*" }))} />
             <Tile color="bg-sky-500/15 text-sky-500" icon={Camera} label="Kamera"
-              onClick={async () => handleUpload(await pickFromCamera())} />
+              onClick={async () => stageFile(await pickFromCamera())} />
             <Tile color="bg-rose-500/15 text-rose-500" icon={Film} label="Video"
-              onClick={async () => handleUpload(await pickViaInput({ accept: "video/*" }))} />
+              onClick={async () => stageFile(await pickViaInput({ accept: "video/*" }))} />
             <Tile color="bg-emerald-500/15 text-emerald-500" icon={MapPin} label="Lokasi"
               onClick={() => { setOpenSheet(false); setOpenLoc(true); }} />
             <Tile color="bg-blue-500/15 text-blue-500" icon={UserRound} label="Kontak"
@@ -124,6 +150,52 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           </p>
         </SheetContent>
       </Sheet>
+
+      <Dialog open={!!pending} onOpenChange={(v) => { if (!v && !busy) setPending(null); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pratinjau lampiran</DialogTitle>
+          </DialogHeader>
+          {pending ? (
+            <div className="space-y-3">
+              <div className="flex items-center justify-center overflow-hidden rounded-lg border bg-muted/30">
+                {pending.previewUrl && pending.file.type.startsWith("image/") ? (
+                  <img src={pending.previewUrl} alt={pending.file.name} className="max-h-72 w-full object-contain" />
+                ) : pending.previewUrl && pending.file.type.startsWith("video/") ? (
+                  <video src={pending.previewUrl} controls className="max-h-72 w-full" />
+                ) : (
+                  <div className="flex w-full items-center gap-3 p-4 text-left">
+                    <FileText className="h-10 w-10 shrink-0 text-muted-foreground" />
+                    <div className="min-w-0">
+                      <div className="truncate text-sm font-medium">{pending.file.name}</div>
+                      <div className="text-[11px] text-muted-foreground">{formatBytes(pending.file.size)} · {pending.file.type || "berkas"}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                <span className="truncate">{pending.file.name}</span>
+                <span>{formatBytes(pending.file.size)}</span>
+              </div>
+              <div>
+                <Label className="text-[11px] uppercase text-muted-foreground">Caption (opsional)</Label>
+                <Textarea rows={2} maxLength={1000} placeholder="Tulis caption…"
+                  value={pending.caption}
+                  onChange={(e) => setPending((p) => p ? { ...p, caption: e.target.value } : p)} />
+              </div>
+            </div>
+          ) : null}
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="ghost" onClick={() => setPending(null)} disabled={!!busy}>
+              <X className="mr-1 h-4 w-4" /> Batal
+            </Button>
+            <Button onClick={confirmSendPending} disabled={!!busy}>
+              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
+              Kirim
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <Dialog open={openLoc} onOpenChange={(v) => !busy && setOpenLoc(v)}>
         <DialogContent className="max-w-sm">
