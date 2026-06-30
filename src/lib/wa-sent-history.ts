@@ -47,6 +47,7 @@ function readRaw(): Entry[] {
         channel: e.channel === "wa" || e.channel === "chat" ? e.channel : undefined,
         mapsUrl: typeof e.mapsUrl === "string" && e.mapsUrl ? e.mapsUrl : null,
         status: e.status === "failed" ? "failed" : e.status === "success" ? "success" : undefined,
+        idemKey: typeof e.idemKey === "string" ? e.idemKey : undefined,
       }));
   } catch {
     return [];
