@@ -19,6 +19,7 @@ import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
 import { WhatsAppTargetHost } from "@/lib/wa-target";
 import { WaPreviewHost } from "@/lib/wa-preview";
+import { useDeviceSessionGuard } from "@/lib/device-sessions";
 
 function NotFoundComponent() {
   return (
@@ -257,6 +258,9 @@ function RootShell({ children }: { children: ReactNode }) {
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const router = useRouter();
+  // Lacak perangkat tempat login + auto-signOut bila sesi dicabut dari
+  // halaman "Sesi & Perangkat" di tempat lain.
+  useDeviceSessionGuard();
 
   useEffect(() => {
     bootstrapNativePermissions().catch((e) =>

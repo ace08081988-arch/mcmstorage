@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -66,6 +66,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
     items: [
       { title: "Profil Akun", url: "/profil", icon: User },
       { title: "Pengaturan Kunci", url: "/pengaturan-kunci", icon: Lock },
+      { title: "Sesi & Perangkat", url: "/sesi", icon: MonitorSmartphone },
     ],
   },
   {
