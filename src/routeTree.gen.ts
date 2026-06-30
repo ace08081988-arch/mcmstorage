@@ -47,6 +47,7 @@ import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.v
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
+import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
 import { Route as AuthenticatedAdminPembayaranRouteImport } from './routes/_authenticated.admin.pembayaran'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
@@ -252,6 +253,12 @@ const AuthenticatedChatConversationIdRoute =
     path: '/$conversationId',
     getParentRoute: () => AuthenticatedChatRoute,
   } as any)
+const AuthenticatedAdminWorkerPortalRoute =
+  AuthenticatedAdminWorkerPortalRouteImport.update({
+    id: '/admin/worker-portal',
+    path: '/admin/worker-portal',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminPembayaranRoute =
   AuthenticatedAdminPembayaranRouteImport.update({
     id: '/admin/pembayaran',
@@ -323,6 +330,7 @@ export interface FileRoutesByFullPath {
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/t/$token': typeof TTokenRoute
   '/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
+  '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
@@ -367,6 +375,7 @@ export interface FileRoutesByTo {
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
+  '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
@@ -414,6 +423,7 @@ export interface FileRoutesById {
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/pembayaran': typeof AuthenticatedAdminPembayaranRoute
+  '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
@@ -461,6 +471,7 @@ export interface FileRouteTypes {
     | '/tugas-baru'
     | '/t/$token'
     | '/admin/pembayaran'
+    | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
@@ -505,6 +516,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/'
     | '/admin/pembayaran'
+    | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
@@ -551,6 +563,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/admin/pembayaran'
+    | '/_authenticated/admin/worker-portal'
     | '/_authenticated/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
@@ -851,6 +864,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatConversationIdRouteImport
       parentRoute: typeof AuthenticatedChatRoute
     }
+    '/_authenticated/admin/worker-portal': {
+      id: '/_authenticated/admin/worker-portal'
+      path: '/admin/worker-portal'
+      fullPath: '/admin/worker-portal'
+      preLoaderRoute: typeof AuthenticatedAdminWorkerPortalRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/pembayaran': {
       id: '/_authenticated/admin/pembayaran'
       path: '/admin/pembayaran'
@@ -960,6 +980,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminPembayaranRoute: typeof AuthenticatedAdminPembayaranRoute
+  AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -986,6 +1007,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminPembayaranRoute: AuthenticatedAdminPembayaranRoute,
+  AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(

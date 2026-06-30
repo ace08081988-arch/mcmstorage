@@ -9,7 +9,7 @@ import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldC
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
-import { getWorkerPortalConfig } from "@/lib/worker-portal-config";
+import { getWorkerPortalConfig, fetchAndApplyWorkerPortalConfig } from "@/lib/worker-portal-config";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -114,7 +114,20 @@ function PublicPrepPage() {
   // tidak berubah di tengah lifecycle satu mount. Override bisa via
   // `window.__WORKER_PORTAL_CONFIG__` atau env `VITE_WORKER_PORTAL_*`.
   const cfgRef = useRef(getWorkerPortalConfig());
+  const [cfgTick, setCfgTick] = useState(0);
   const cfg = cfgRef.current;
+  // Sinkron konfigurasi dari `app_settings` di backend agar perubahan
+  // admin (TTL PIN, retry tolerance, dsb.) berlaku tanpa code change.
+  useEffect(() => {
+    let alive = true;
+    void fetchAndApplyWorkerPortalConfig().then((next) => {
+      if (!alive) return;
+      cfgRef.current = next;
+      setCfgTick((t) => t + 1);
+    });
+    return () => { alive = false; };
+  }, []);
+  void cfgTick;
   // Persistensi sesi pegawai (PIN + flag authed) di sessionStorage.
   // Tujuan: WebView Android yang dire-create setelah kembali dari aplikasi
   // kamera / galeri / share / pengunci layar TIDAK memantulkan pegawai

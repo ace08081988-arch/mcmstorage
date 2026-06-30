@@ -26,6 +26,7 @@ export type Database = {
           trial_days: number
           updated_at: string
           whatsapp_admin: string
+          worker_portal_config: Json
         }
         Insert: {
           bank_account_holder?: string
@@ -38,6 +39,7 @@ export type Database = {
           trial_days?: number
           updated_at?: string
           whatsapp_admin?: string
+          worker_portal_config?: Json
         }
         Update: {
           bank_account_holder?: string
@@ -50,6 +52,7 @@ export type Database = {
           trial_days?: number
           updated_at?: string
           whatsapp_admin?: string
+          worker_portal_config?: Json
         }
         Relationships: []
       }
