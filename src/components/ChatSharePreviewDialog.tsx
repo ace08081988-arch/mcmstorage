@@ -5,6 +5,7 @@ import type { SendLogEntry } from "@/lib/send-log";
 import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
 import type { SendPayloadSummary } from "@/lib/idempotency";
 import { SendPayloadDiff } from "@/components/SendPayloadDiff";
+import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
 
 export type ChatSharePreviewData = {
   conversationTitle: string;
@@ -190,9 +191,20 @@ export function ChatSharePreviewDialog({
                         : "border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-200")
                     }
                   >
-                    {payloadMatches
-                      ? "Payload identik dengan kiriman sebelumnya — aman untuk dikirim ulang bila perlu."
-                      : forceDisabledReason}
+                    <span className="inline-flex items-start gap-1">
+                      <span className="flex-1">
+                        {payloadMatches
+                          ? "Payload identik dengan kiriman sebelumnya — aman untuk dikirim ulang bila perlu."
+                          : forceDisabledReason}
+                      </span>
+                      <FingerprintInfoTooltip
+                        matches={payloadMatches}
+                        previousFp={dupFp}
+                        currentFp={currentFingerprint}
+                        previous={effectiveDup.summary}
+                        current={currentSummary}
+                      />
+                    </span>
                   </div>
                 ) : null}
                 {effectiveDup.status !== "in-flight" && !payloadMatches ? (
