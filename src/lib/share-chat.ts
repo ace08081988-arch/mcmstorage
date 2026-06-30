@@ -19,7 +19,7 @@ export type ChatShareShot = {
 
 export type ChatShareResult =
   | { status: "shared"; messageCount: number }
-  | { status: "failed"; error: string };
+  | { status: "failed"; error: string; messageCount: number };
 
 export type ChatShareInput = {
   conversationId: string;
@@ -75,13 +75,17 @@ export async function shareToChat(input: ChatShareInput): Promise<ChatShareResul
     }
 
     if (count === 0) {
-      return { status: "failed", error: "Tidak ada pesan yang berhasil dikirim." };
+      return { status: "failed", error: "Tidak ada pesan yang berhasil dikirim.", messageCount: 0 };
     }
 
     if (markIds && markIds.length > 0) markSent(markIds);
     return { status: "shared", messageCount: count };
   } catch (err) {
     const msg = (err as Error)?.message ?? "Unknown error";
-    return { status: count > 0 ? "shared" : "failed", error: msg, messageCount: count } as ChatShareResult;
+    if (count > 0) {
+      if (markIds && markIds.length > 0) markSent(markIds);
+      return { status: "shared", messageCount: count };
+    }
+    return { status: "failed", error: msg, messageCount: 0 };
   }
 }
