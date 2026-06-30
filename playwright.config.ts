@@ -27,9 +27,25 @@ export default defineConfig({
   },
   expect: {
     toHaveScreenshot: {
-      maxDiffPixelRatio: 0.02,
+      // Tolerance is tuned to absorb cross-machine font hinting and
+      // sub-pixel anti-aliasing without hiding real UI regressions.
+      //
+      // - `threshold` (0..1): per-pixel YIQ color distance. 0.2 ignores
+      //   AA shading on glyph edges but still catches color/shape changes.
+      // - `maxDiffPixelRatio`: cap on the share of pixels allowed to differ.
+      //   ~1.5% absorbs font + scrollbar rendering drift between Linux CI
+      //   and local macOS/Windows machines.
+      // - `maxDiffPixels`: absolute floor so tiny screenshots aren't held
+      //   to a stricter bar than large ones.
+      //
+      // Override per-call with `{ threshold, maxDiffPixelRatio, mask }` when
+      // a specific surface needs different tolerance.
+      threshold: 0.2,
+      maxDiffPixelRatio: 0.015,
+      maxDiffPixels: 150,
       animations: "disabled",
       caret: "hide",
+      scale: "css",
     },
   },
   projects: [
