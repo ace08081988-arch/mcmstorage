@@ -919,6 +919,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     chatShots: { id: string; file: File; caption?: string }[];
     markIds: string[];
     preview: ChatSharePreviewData;
+    duplicate: ChatShareDuplicateInfo | null;
   };
   const [chatPreview, setChatPreview] = useState<ChatPreviewState | null>(null);
   const [chatStatus, setChatStatus] = useState<ChatShareLiveStatus | null>(null);
@@ -1064,15 +1065,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const take = shots.slice(0, 6);
     const idemKey = buildSendKey({ channel: "chat", conversationId, ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
-    if (existing && existing.status !== "failed") {
-      toast.info(
-        existing.status === "in-flight"
-          ? "Pengiriman ke chat sedang berjalan…"
-          : "Paket ini baru saja terkirim ke chat ini. Klik diabaikan untuk hindari kiriman ganda.",
-      );
-      setPickChatOpen(false);
-      return;
-    }
+    const duplicate: ChatShareDuplicateInfo | null =
+      existing && existing.status !== "failed" ? { at: existing.at, status: existing.status } : null;
     setPickChatOpen(false);
     setChatPreparing(true);
     setSendError(null);
@@ -1128,6 +1122,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         chatShots,
         markIds: take.map((s) => s.id),
         preview,
+        duplicate,
       });
       setChatPreviewOpen(true);
     } catch (err) {
