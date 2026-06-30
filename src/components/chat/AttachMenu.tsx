@@ -150,7 +150,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     : TILES;
   type PendingItem = { id: string; file: File; previewUrl: string | null };
   type ItemStatus = "idle" | "uploading" | "sent" | "error";
-  type StatusEntry = { state: ItemStatus; error?: string; preflight?: boolean };
+  type StatusEntry = { state: ItemStatus; error?: string; preflight?: boolean; startedAt?: number; endedAt?: number };
   const [pending, setPending] = useState<PendingItem[] | null>(null);
   const [statuses, setStatuses] = useState<Record<string, StatusEntry>>({});
   const [caption, setCaption] = useState("");
