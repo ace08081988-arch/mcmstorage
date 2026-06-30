@@ -486,9 +486,15 @@ function RecentNotificationsCard({
     refetch,
     error,
   } = useInfiniteQuery({
-    queryKey: ["notif-feed"],
+    queryKey: ["notif-feed", Object.entries(enabledKinds).filter(([, v]) => v).map(([k]) => k).sort().join(",")],
     queryFn: ({ pageParam }) =>
-      fetchFeed({ data: { before: pageParam ?? undefined, pageSize: 20 } }),
+      fetchFeed({
+        data: {
+          before: pageParam ?? undefined,
+          pageSize: 20,
+          kinds: (Object.keys(enabledKinds) as NotifKind[]).filter((k) => enabledKinds[k]),
+        },
+      }),
     initialPageParam: undefined as string | undefined,
     getNextPageParam: (last) => last.nextCursor ?? undefined,
     staleTime: 30_000,

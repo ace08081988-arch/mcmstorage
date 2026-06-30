@@ -27,25 +27,31 @@ export type FeedItem = {
  */
 export const getRecentNotifications = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .inputValidator((data?: { before?: string; pageSize?: number }) => {
+  .inputValidator((data?: { before?: string; pageSize?: number; kinds?: FeedItemKind[] }) => {
     const before = data?.before;
     const pageSize = Math.min(Math.max(data?.pageSize ?? 20, 5), 50);
     if (before !== undefined && (typeof before !== "string" || Number.isNaN(Date.parse(before)))) {
       throw new Error("invalid_before");
     }
-    return { before, pageSize };
+    const allowed: FeedItemKind[] = ["chat", "tugas", "order", "system"];
+    let kinds: FeedItemKind[] | undefined;
+    if (Array.isArray(data?.kinds)) {
+      kinds = (data!.kinds as FeedItemKind[]).filter((k) => allowed.includes(k));
+    }
+    return { before, pageSize, kinds };
   })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
-    const { before, pageSize } = data;
+    const { before, pageSize, kinds } = data;
+    const want = (k: FeedItemKind) => !kinds || kinds.length === 0 || kinds.includes(k);
     const perSource = pageSize;
     const items: FeedItem[] = [];
 
     /* ── Chat: pesan masuk pada percakapan user ───────────────────── */
-    const { data: members } = await supabase
+    const { data: members } = want("chat") ? await supabase
       .from("conversation_members")
       .select("conversation_id, last_read_at, archived_at")
-      .eq("user_id", userId);
+      .eq("user_id", userId) : { data: [] as Array<{ conversation_id: string; last_read_at: string | null; archived_at: string | null }> };
     const convIds = (members ?? []).map((m) => m.conversation_id);
     const lastReadByConv = new Map(
       (members ?? []).map((m) => [m.conversation_id, m.last_read_at as string | null]),
@@ -53,7 +59,7 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
     const archivedByConv = new Map(
       (members ?? []).map((m) => [m.conversation_id, m.archived_at as string | null]),
     );
-    if (convIds.length > 0) {
+    if (want("chat") && convIds.length > 0) {
       let q = supabase
         .from("messages")
         .select("id, conversation_id, sender_id, body, attachment_mime, attachment_name, created_at")
@@ -93,15 +99,16 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
     }
 
     /* ── Tugas: prep_submissions pada task milik user ─────────────── */
-    const { data: myTasks } = await supabase
+    const needTasks = want("tugas") || want("system");
+    const { data: myTasks } = needTasks ? await supabase
       .from("prep_tasks")
       .select("id, title, share_token")
       .eq("owner_user_id", userId)
       .order("updated_at", { ascending: false })
-      .limit(50);
+      .limit(50) : { data: [] as Array<{ id: string; title: string; share_token: string }> };
     const taskIds = (myTasks ?? []).map((t) => t.id);
     const titleByTask = new Map((myTasks ?? []).map((t) => [t.id, t.title as string]));
-    if (taskIds.length > 0) {
+    if (want("tugas") && taskIds.length > 0) {
       let q = supabase
         .from("prep_submissions")
         .select("id, task_id, qty_reported, submitted_at, photo_paths")
@@ -124,6 +131,7 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
     }
 
     /* ── Sistem: prep_pin_alerts belum di-ack ─────────────────────── */
+    if (want("system")) {
     let alertsQ = supabase
       .from("prep_pin_alerts")
       .select("id, task_id, failure_count, window_start, window_end, created_at, acknowledged_at")
@@ -144,8 +152,10 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
         unread: true,
       });
     }
+    }
 
     /* ── Order: event status pesanan terbaru ──────────────────────── */
+    if (want("order")) {
     let eventsQ = supabase
       .from("order_request_events")
       .select("id, order_id, from_status, to_status, note, created_at")
@@ -162,6 +172,7 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
         createdAt: e.created_at,
         href: `/pesanan`,
       });
+    }
     }
 
     items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
