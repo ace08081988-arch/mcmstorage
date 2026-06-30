@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { confirm } from "@/lib/confirm";
 import { fmtItemQty } from "@/lib/stock-format";
+import { StatusBadge } from "@/components/StatusBadge";
 
 export const Route = createFileRoute("/_authenticated/gudang/pesanan/$id")({
   component: PesananDetailPage,
@@ -106,10 +107,7 @@ function PesananDetailPage() {
     load();
   }
 
-  const badge = (s: string) =>
-    s === "menunggu" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-    : s === "siap" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-    : "bg-muted text-muted-foreground";
+  // Badge status pakai komponen bersama agar konsisten & tidak overflow.
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -140,7 +138,7 @@ function PesananDetailPage() {
                     {customer?.contact && ` · 📞 ${customer.contact}`}
                   </div>
                 </div>
-                <span className={`shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold uppercase ${badge(order.status)}`}>{order.status}</span>
+                <StatusBadge status={order.status} />
               </div>
               <div className="grid grid-cols-2 gap-2 text-[11px]">
                 <div className="rounded bg-muted/50 p-2">
@@ -202,7 +200,7 @@ function PesananDetailPage() {
                       <div className="min-w-0 flex-1">
                         <div>
                           {e.from_status ? <><span className="text-muted-foreground">{e.from_status}</span> → </> : null}
-                          <span className={`rounded px-1.5 py-0.5 text-[11px] font-semibold uppercase ${badge(e.to_status)}`}>{e.to_status}</span>
+                          <StatusBadge status={e.to_status} size="xs" />
                         </div>
                         <div className="text-[11px] text-muted-foreground">
                           {new Date(e.created_at).toLocaleString("id-ID")}

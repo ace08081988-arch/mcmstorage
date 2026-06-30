@@ -13,6 +13,7 @@ import {
   History,
 } from "lucide-react";
 import { friendlyError } from "@/lib/friendly-error";
+import { StatusBadge } from "@/components/StatusBadge";
 import { buildMailto, isValidEmail } from "@/lib/mailto";
 import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
@@ -547,15 +548,11 @@ function PiutangTab({
                   Hutang {rupiah(g.totalHutang)} · Bayar {rupiah(g.totalBayar)}
                 </div>
               </div>
-              <span className={`shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold ${
-                status === "hutang" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                : status === "kelebihan" ? "bg-sky-500/15 text-sky-700 dark:text-sky-400"
-                : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-              }`}>
+              <StatusBadge variant={status}>
                 {status === "hutang" ? `Sisa ${rupiah(g.balance)}`
                   : status === "kelebihan" ? `Kelebihan ${rupiah(-g.balance)}`
                   : "✓ Lunas"}
-              </span>
+              </StatusBadge>
             </div>
 
             <ShareCustomer
@@ -2728,10 +2725,6 @@ function PesananTab({
           {visible.map((o) => {
             const it = itemMap[o.item_id];
             const cust = o.customer_id ? custMap[o.customer_id] : null;
-            const badge =
-              o.status === "menunggu" ? "bg-amber-500/15 text-amber-600 dark:text-amber-400"
-              : o.status === "siap" ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"
-              : "bg-muted text-muted-foreground";
             return (
               <li key={o.id} className="rounded-lg border bg-card p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">
@@ -2746,7 +2739,7 @@ function PesananTab({
                     </div>
                     {o.note && <div className="text-[11px] text-muted-foreground">📌 {o.note}</div>}
                   </div>
-                  <span className={`shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold uppercase ${badge}`}>{o.status}</span>
+                  <StatusBadge status={o.status} />
                 </div>
                 <div className="flex flex-wrap gap-1">
                   {o.status === "menunggu" && (
