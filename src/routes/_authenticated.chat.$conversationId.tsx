@@ -2,6 +2,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { scheduleUndo } from "@/lib/undo-action";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
   Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
@@ -872,9 +873,13 @@ function ChatRoomPage() {
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               onSelect={() =>
-                                hideMsg.mutate(m.id, {
-                                  onSuccess: () => toast.success("Pesan disembunyikan untuk Anda"),
-                                  onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
+                                scheduleUndo({
+                                  label: "Pesan akan disembunyikan",
+                                  onCommit: () =>
+                                    hideMsg.mutate(m.id, {
+                                      onSuccess: () => toast.success("Pesan disembunyikan untuk Anda"),
+                                      onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
+                                    }),
                                 })
                               }
                             >
@@ -904,13 +909,17 @@ function ChatRoomPage() {
                                 className="text-destructive focus:text-destructive"
                                 disabled={deleteMsg.isPending}
                                 onSelect={() => {
-                                  deleteMsg.mutate(
-                                    { id: m.id, attachment_path: m.attachment_path },
-                                    {
-                                      onError: (e) =>
-                                        toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
-                                    },
-                                  );
+                                  scheduleUndo({
+                                    label: "Pesan akan dihapus untuk semua",
+                                    onCommit: () =>
+                                      deleteMsg.mutate(
+                                        { id: m.id, attachment_path: m.attachment_path },
+                                        {
+                                          onError: (e) =>
+                                            toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
+                                        },
+                                      ),
+                                  });
                                 }}
                               >
                                 <Trash2 className="mr-2 h-4 w-4" />
@@ -1093,13 +1102,15 @@ function ChatRoomPage() {
               disabled={deleteAllMine.isPending}
               onClick={(e) => {
                 e.preventDefault();
-                deleteAllMine.mutate(undefined, {
-                  onSuccess: (n) => {
-                    toast.success(`${n} pesan dihapus`);
-                    setConfirmAllOpen(false);
-                  },
-                  onError: (err) =>
-                    toast.error(err instanceof Error ? err.message : "Gagal menghapus"),
+                setConfirmAllOpen(false);
+                scheduleUndo({
+                  label: "Semua pesan Anda akan dihapus",
+                  onCommit: () =>
+                    deleteAllMine.mutate(undefined, {
+                      onSuccess: (n) => toast.success(`${n} pesan dihapus`),
+                      onError: (err) =>
+                        toast.error(err instanceof Error ? err.message : "Gagal menghapus"),
+                    }),
                 });
               }}
             >
@@ -1132,12 +1143,14 @@ function ChatRoomPage() {
               onClick={() => {
                 const target = longPressMsg;
                 if (!target) return;
-                hideMsg.mutate(target.id, {
-                  onSuccess: () => {
-                    toast.success("Pesan disembunyikan untuk Anda");
-                    setLongPressMsg(null);
-                  },
-                  onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
+                setLongPressMsg(null);
+                scheduleUndo({
+                  label: "Pesan akan disembunyikan",
+                  onCommit: () =>
+                    hideMsg.mutate(target.id, {
+                      onSuccess: () => toast.success("Pesan disembunyikan untuk Anda"),
+                      onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
+                    }),
                 });
               }}
             >
@@ -1152,16 +1165,19 @@ function ChatRoomPage() {
                 onClick={() => {
                   const target = longPressMsg;
                   if (!target) return;
-                  deleteMsg.mutate(
-                    { id: target.id, attachment_path: target.attachment_path },
-                    {
-                      onSuccess: () => {
-                        toast.success("Pesan dihapus untuk semua");
-                        setLongPressMsg(null);
-                      },
-                      onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
-                    },
-                  );
+                  setLongPressMsg(null);
+                  scheduleUndo({
+                    label: "Pesan akan dihapus untuk semua",
+                    onCommit: () =>
+                      deleteMsg.mutate(
+                        { id: target.id, attachment_path: target.attachment_path },
+                        {
+                          onSuccess: () => toast.success("Pesan dihapus untuk semua"),
+                          onError: (e) =>
+                            toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
+                        },
+                      ),
+                  });
                 }}
               >
                 {deleteMsg.isPending ? (
@@ -1204,14 +1220,20 @@ function ChatRoomPage() {
               className="w-full justify-start"
               disabled={hideMsg.isPending}
               onClick={async () => {
-                for (const m of selectedMessages) {
-                  await new Promise<void>((resolve) =>
-                    hideMsg.mutate(m.id, { onSuccess: () => resolve(), onError: () => resolve() }),
-                  );
-                }
-                toast.success(`${selectedMessages.length} pesan disembunyikan`);
+                const items = [...selectedMessages];
                 setBulkDeleteOpen(false);
                 clearSelection();
+                scheduleUndo({
+                  label: `${items.length} pesan akan disembunyikan`,
+                  onCommit: async () => {
+                    for (const m of items) {
+                      await new Promise<void>((resolve) =>
+                        hideMsg.mutate(m.id, { onSuccess: () => resolve(), onError: () => resolve() }),
+                      );
+                    }
+                    toast.success(`${items.length} pesan disembunyikan`);
+                  },
+                });
               }}
             >
               <EyeOff className="mr-2 h-4 w-4" /> Hapus untuk saya
@@ -1222,17 +1244,23 @@ function ChatRoomPage() {
                 className="w-full justify-start"
                 disabled={deleteMsg.isPending}
                 onClick={async () => {
-                  for (const m of selectedMessages) {
-                    await new Promise<void>((resolve) =>
-                      deleteMsg.mutate(
-                        { id: m.id, attachment_path: m.attachment_path },
-                        { onSuccess: () => resolve(), onError: () => resolve() },
-                      ),
-                    );
-                  }
-                  toast.success(`${selectedMessages.length} pesan dihapus`);
+                  const items = [...selectedMessages];
                   setBulkDeleteOpen(false);
                   clearSelection();
+                  scheduleUndo({
+                    label: `${items.length} pesan akan dihapus untuk semua`,
+                    onCommit: async () => {
+                      for (const m of items) {
+                        await new Promise<void>((resolve) =>
+                          deleteMsg.mutate(
+                            { id: m.id, attachment_path: m.attachment_path },
+                            { onSuccess: () => resolve(), onError: () => resolve() },
+                          ),
+                        );
+                      }
+                      toast.success(`${items.length} pesan dihapus`);
+                    },
+                  });
                 }}
               >
                 <Trash2 className="mr-2 h-4 w-4" /> Hapus untuk semua orang
