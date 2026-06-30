@@ -373,14 +373,14 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     removeIds(ids);
   }
 
-  async function confirmSendPending(retryOnly = false) {
+  async function confirmSendPending(retryOnly = false, onlyIds?: string[]) {
     if (!pending || pending.length === 0) return;
     setBusy("upload");
     const cap = caption.trim();
     // ID yang akan dikirim: lewati yang sudah sukses dan yang gagal validasi (preflight).
     const queueIds = pending
       .filter((p) => statuses[p.id]?.state !== "sent" && !statuses[p.id]?.preflight)
-      .filter((p) => (retryOnly ? statuses[p.id]?.state === "error" : true))
+      .filter((p) => (onlyIds ? onlyIds.includes(p.id) : retryOnly ? statuses[p.id]?.state === "error" : true))
       .map((p) => p.id);
     if (queueIds.length === 0) {
       setBusy(null);
@@ -392,7 +392,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     setProgress({ done, total });
     let anyError = false;
     let failedCount = 0;
-    let firstCaptionConsumed = retryOnly
+    let firstCaptionConsumed = retryOnly || !!onlyIds
       ? Object.values(statuses).some((s) => s?.state === "sent")
       : false;
     let okCount = 0;
