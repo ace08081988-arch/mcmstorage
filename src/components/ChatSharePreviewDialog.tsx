@@ -148,29 +148,31 @@ export function ChatSharePreviewDialog({
 
         {data && (
           <div className="space-y-3 text-sm">
-            {duplicate && !progressActive && !outcome ? (
+            {effectiveDup && !progressActive && !outcome ? (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2.5 text-[12px] text-amber-900 dark:text-amber-200">
                 <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
                 <div className="min-w-0 flex-1">
                   <div className="font-semibold">
-                    {duplicate.status === "in-flight"
-                      ? "Klik ganda terdeteksi — kiriman sebelumnya masih berjalan."
+                    {effectiveDup.status === "in-flight"
+                      ? (crossChannel
+                          ? "Kiriman WhatsApp untuk paket ini sedang berjalan."
+                          : "Klik ganda terdeteksi — kiriman sebelumnya masih berjalan.")
                       : "Klik ganda terdeteksi — paket ini baru saja terkirim."}
                   </div>
                   <div className="mt-0.5 opacity-90">
-                    {duplicate.status === "in-flight"
-                      ? `Dimulai ${dupAgoLabel}. Tunggu hingga selesai agar tidak terkirim dua kali.`
+                    {effectiveDup.status === "in-flight"
+                      ? `Dimulai ${dupAgoLabel}. Tombol "Kirim sekarang" dinonaktifkan hingga ${crossChannel ? "kiriman WA" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
                       : `Dikirim ${dupAgoLabel}. Tombol "Kirim sekarang" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
                   </div>
                   <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
                     <dt className="font-medium opacity-80">Waktu</dt>
                     <dd className="break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
                     <dt className="font-medium opacity-80">Tujuan</dt>
-                    <dd className="break-words">{duplicate.destination ?? data.conversationTitle}</dd>
+                    <dd className="break-words">{effectiveDup.destination ?? data.conversationTitle}{crossChannel ? " · via WhatsApp" : ""}</dd>
                     <dt className="font-medium opacity-80">Status</dt>
                     <dd className="break-words">{dupStatusLabel}</dd>
                   </dl>
-                {duplicate.status !== "in-flight" ? (
+                {effectiveDup.status !== "in-flight" ? (
                   <div
                     className={
                       "mt-2 rounded-md border px-2 py-1.5 text-[11px] " +
