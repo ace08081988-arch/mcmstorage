@@ -1652,11 +1652,13 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         <div className="space-y-3">
           {photo ? (
             <div>
-              <div className="mb-1 flex items-center justify-between text-[11px]">
-                <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/10 px-2 py-0.5 font-medium text-emerald-700 dark:text-emerald-400">
+              <div className="mb-1 flex items-center justify-between gap-2 text-[11px]">
+                <span className="inline-flex h-5 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-500/10 px-2 font-medium leading-none text-emerald-700 dark:text-emerald-400">
                   ✓ Pratinjau foto
                 </span>
-                <span className="text-muted-foreground">{Math.round(photo.blob.size / 1024)} KB · ketuk untuk perbesar</span>
+                <span className="min-w-0 truncate text-right leading-none text-muted-foreground tabular-nums">
+                  {Math.round(photo.blob.size / 1024)} KB · ketuk untuk perbesar
+                </span>
               </div>
               <button
                 type="button"
