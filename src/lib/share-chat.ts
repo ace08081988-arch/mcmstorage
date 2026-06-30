@@ -21,6 +21,11 @@ export type ChatShareResult =
   | { status: "shared"; messageCount: number }
   | { status: "failed"; error: string; messageCount: number };
 
+export type ChatShareProgress =
+  | { type: "caption"; status: "start" | "ok" | "fail"; error?: string }
+  | { type: "photo"; index: number; total: number; status: "start" | "ok" | "fail"; error?: string }
+  | { type: "location"; status: "start" | "ok" | "fail"; error?: string };
+
 export type ChatShareInput = {
   conversationId: string;
   /** Caption utama yang dikirim sebagai pesan teks pertama. */
@@ -33,22 +38,34 @@ export type ChatShareInput = {
   markIds?: string[];
   /** Idempotency key — diteruskan ke entri Riwayat agar bisa diaudit ulang. */
   idemKey?: string;
+  /** Dipanggil setiap fase pengiriman untuk live progress di UI. */
+  onProgress?: (p: ChatShareProgress) => void;
 };
 
 export async function shareToChat(input: ChatShareInput): Promise<ChatShareResult> {
-  const { conversationId, caption, locationUrl, shots, markIds, idemKey } = input;
+  const { conversationId, caption, locationUrl, shots, markIds, idemKey, onProgress } = input;
   let count = 0;
+  const emit = (p: ChatShareProgress) => { try { onProgress?.(p); } catch { /* ignore */ } };
 
   try {
     // 1) Caption utama
     if (caption.trim().length > 0) {
-      await sendMessage({ data: { conversationId, body: caption.trim().slice(0, 4000) } });
-      count++;
+      emit({ type: "caption", status: "start" });
+      try {
+        await sendMessage({ data: { conversationId, body: caption.trim().slice(0, 4000) } });
+        count++;
+        emit({ type: "caption", status: "ok" });
+      } catch (e) {
+        emit({ type: "caption", status: "fail", error: (e as Error)?.message });
+        throw e;
+      }
     }
 
     // 2) Setiap foto sebagai pesan terpisah (chat.functions.sendMessage hanya
     //    menerima satu attachment per pesan).
-    for (const s of shots) {
+    for (let i = 0; i < shots.length; i++) {
+      const s = shots[i];
+      emit({ type: "photo", index: i, total: shots.length, status: "start" });
       try {
         const up = await uploadChatFile({ conversationId, file: s.file });
         await sendMessage({
@@ -62,18 +79,26 @@ export async function shareToChat(input: ChatShareInput): Promise<ChatShareResul
           },
         });
         count++;
+        emit({ type: "photo", index: i, total: shots.length, status: "ok" });
       } catch (e) {
         // satu foto gagal tidak menghentikan pengiriman lain
         console.warn("[share-chat] upload/send failed:", e);
+        emit({ type: "photo", index: i, total: shots.length, status: "fail", error: (e as Error)?.message });
       }
     }
 
     // 3) Link lokasi sebagai pesan terakhir agar mudah disentuh.
     if (locationUrl && locationUrl.trim()) {
-      await sendMessage({
-        data: { conversationId, body: `📍 Lokasi: ${locationUrl.trim()}`.slice(0, 4000) },
-      });
-      count++;
+      emit({ type: "location", status: "start" });
+      try {
+        await sendMessage({
+          data: { conversationId, body: `📍 Lokasi: ${locationUrl.trim()}`.slice(0, 4000) },
+        });
+        count++;
+        emit({ type: "location", status: "ok" });
+      } catch (e) {
+        emit({ type: "location", status: "fail", error: (e as Error)?.message });
+      }
     }
 
     if (count === 0) {
