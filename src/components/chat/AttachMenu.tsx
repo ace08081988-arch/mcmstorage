@@ -445,7 +445,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         setProgress({ done, total });
         continue;
       }
-      setStatuses((prev) => ({ ...prev, [id]: { state: "uploading" } }));
+      setStatuses((prev) => ({ ...prev, [id]: { state: "uploading", startedAt: Date.now() } }));
       try {
         const up = await uploadChatFile({ conversationId, file: item.file });
         const includeCaption = !firstCaptionConsumed && !!cap;
@@ -460,14 +460,26 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           },
         });
         if (includeCaption) firstCaptionConsumed = true;
-        setStatuses((prev) => (prev[id] ? { ...prev, [id]: { state: "sent" } } : prev));
+        setStatuses((prev) => {
+          if (!prev[id]) return prev;
+          const startedAt = prev[id].startedAt;
+          const endedAt = Date.now();
+          if (startedAt && item.file.size > 0) {
+            const dur = Math.max(1, endedAt - startedAt);
+            uploadStatsRef.current = {
+              bytes: uploadStatsRef.current.bytes + item.file.size,
+              ms: uploadStatsRef.current.ms + dur,
+            };
+          }
+          return { ...prev, [id]: { state: "sent", startedAt, endedAt } };
+        });
         okCount += 1;
         onSent?.();
       } catch (e) {
         anyError = true;
         failedCount += 1;
         const msg = e instanceof Error ? e.message : "Gagal mengunggah";
-        setStatuses((prev) => (prev[id] ? { ...prev, [id]: { state: "error", error: msg } } : prev));
+        setStatuses((prev) => (prev[id] ? { ...prev, [id]: { state: "error", error: msg, startedAt: prev[id].startedAt, endedAt: Date.now() } } : prev));
       }
       done += 1;
       setProgress({ done, total });
