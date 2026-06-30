@@ -127,23 +127,39 @@ export function appendPayloadDiffLog(
  * pratinjau Chat/WA untuk menampilkan progres langkah dari kiriman channel
  * lain yang sedang in-flight (cross-channel awareness).
  */
-export function useLiveSendLog(key: string | null | undefined): SendLogEntry[] {
+export function useLiveSendLog(
+  key: string | null | undefined,
+  options?: { pollMs?: number },
+): SendLogEntry[] {
   const k = key ?? "";
+  // Polling fallback: meski `appendSendLog` memancarkan event `send-log:changed`
+  // di tab yang sama dan event `storage` lintas tab, beberapa WebView Android
+  // suka men-throttle event tersebut saat dialog modal terbuka. Selama key
+  // diset (caller hanya mengaktifkan saat status in-flight), kita bump snapshot
+  // setiap ~1.2 dtk supaya indikator langkah tidak pernah tertinggal.
+  const pollMs = options?.pollMs ?? 1200;
   const subscribe = (cb: () => void) => {
     if (typeof window === "undefined") return () => {};
     const onEvt = () => cb();
     const onStorage = (e: StorageEvent) => { if (e.key === KEY) cb(); };
     window.addEventListener(EVENT, onEvt);
     window.addEventListener("storage", onStorage);
+    let timer: ReturnType<typeof setInterval> | null = null;
+    if (k && pollMs > 0) {
+      timer = setInterval(cb, pollMs);
+    }
     return () => {
       window.removeEventListener(EVENT, onEvt);
       window.removeEventListener("storage", onStorage);
+      if (timer) clearInterval(timer);
     };
   };
   const getSnapshot = () => {
     if (!k) return "";
     const entries = getSendLog(k);
-    // Snapshot string stabil untuk useSyncExternalStore.
+    // Snapshot string stabil untuk useSyncExternalStore — hanya berubah saat
+    // ada entri baru / berubah, sehingga poll tanpa perubahan tidak memicu
+    // re-render boros.
     return entries.map((e) => `${e.at}|${e.kind}|${e.label}`).join("\n");
   };
   const snap = useSyncExternalStore(subscribe, getSnapshot, () => "");
