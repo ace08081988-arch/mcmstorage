@@ -218,3 +218,44 @@ export async function fetchAndApplyWorkerPortalConfig(): Promise<WorkerPortalCon
   }
   return getWorkerPortalConfig();
 }
+
+/**
+ * Baca override preview dari `location.hash` (`#wpcfg=<base64url-JSON>`)
+ * dan terapkan sebagai `window.__WORKER_PORTAL_CONFIG__`. Dipakai admin
+ * untuk membuka portal pegawai dengan konfigurasi yang sedang diuji
+ * tanpa menyentuh nilai tersimpan di `app_settings`.
+ *
+ * Idempoten — boleh dipanggil tiap render. Aman di SSR (no-op kalau
+ * `window` tidak ada). Gagal diam-diam kalau payload rusak.
+ */
+export function applyPreviewOverrideFromHash(): Partial<WorkerPortalConfig> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const hash = window.location.hash || "";
+    const m = hash.match(/(?:^#|[#&])wpcfg=([^&]+)/);
+    if (!m) return null;
+    const b64 = decodeURIComponent(m[1]).replace(/-/g, "+").replace(/_/g, "/");
+    const pad = b64.length % 4 === 0 ? b64 : b64 + "=".repeat(4 - (b64.length % 4));
+    const json = typeof atob === "function" ? atob(pad) : "";
+    if (!json) return null;
+    const parsed = JSON.parse(json) as Partial<WorkerPortalConfig> | null;
+    const sanitized = sanitizeWorkerPortalConfig(parsed);
+    // Gabungkan dengan override runtime yang sudah ada — preview hanya
+    // menumpuk di atas nilai yang sengaja diset operator lain.
+    const prev = (window.__WORKER_PORTAL_CONFIG__ ?? {}) as Partial<WorkerPortalConfig>;
+    window.__WORKER_PORTAL_CONFIG__ = { ...prev, ...sanitized };
+    return sanitized;
+  } catch {
+    return null;
+  }
+}
+
+/** Encode config jadi fragment hash siap pakai utk URL preview. */
+export function encodePreviewConfigHash(cfg: Partial<WorkerPortalConfig>): string {
+  const sanitized = sanitizeWorkerPortalConfig(cfg);
+  const json = JSON.stringify(sanitized);
+  const b64 = typeof btoa === "function"
+    ? btoa(json).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "")
+    : "";
+  return `#wpcfg=${b64}`;
+}

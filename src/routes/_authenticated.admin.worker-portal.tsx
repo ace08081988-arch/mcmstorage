@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, RotateCcw, Save, ShieldCheck, ArrowLeft, FlaskConical, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, RotateCcw, Save, ShieldCheck, ArrowLeft, FlaskConical, CheckCircle2, AlertTriangle, ExternalLink, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { Button } from "@/components/ui/button";
@@ -12,6 +12,7 @@ import {
   WORKER_PORTAL_DEFAULTS,
   WORKER_PORTAL_CONFIG_FIELDS,
   sanitizeWorkerPortalConfig,
+  encodePreviewConfigHash,
   type WorkerPortalConfig,
 } from "@/lib/worker-portal-config";
 
@@ -62,6 +63,18 @@ function AdminWorkerPortalPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(() => toFormState({}));
   const [errors, setErrors] = useState<Partial<Record<keyof WorkerPortalConfig, string>>>({});
+  // Token preview portal pegawai. Persist di localStorage agar tidak
+  // perlu paste ulang tiap reload halaman admin.
+  const [previewToken, setPreviewToken] = useState<string>("");
+  useEffect(() => {
+    try {
+      const t = window.localStorage.getItem("admin:worker-portal:previewToken") ?? "";
+      if (t) setPreviewToken(t);
+    } catch { /* abaikan */ }
+  }, []);
+  useEffect(() => {
+    try { window.localStorage.setItem("admin:worker-portal:previewToken", previewToken); } catch { /* abaikan */ }
+  }, [previewToken]);
   const [testResult, setTestResult] = useState<{
     ok: boolean;
     issues: Array<{ key?: keyof WorkerPortalConfig; message: string }>;
@@ -392,12 +405,89 @@ function AdminWorkerPortalPage() {
             <summary className="cursor-pointer text-muted-foreground">Lihat JSON</summary>
             <pre className="mt-2 overflow-auto rounded-md bg-muted p-3 text-xs">{JSON.stringify(testResult.effective, null, 2)}</pre>
           </details>
+          <PreviewPortalLauncher
+            effective={testResult.effective}
+            previewToken={previewToken}
+            setPreviewToken={setPreviewToken}
+          />
         </div>
       ) : null}
 
       <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
         <strong>Catatan:</strong> Nilai berlaku saat portal pegawai (mis. <code>/t/&lt;token&gt;</code>) dimount ulang. Pegawai yang sudah membuka halaman akan mengambil nilai baru ketika tab dibuka kembali atau halaman di-refresh.
       </div>
+    </div>
+  );
+}
+
+function PreviewPortalLauncher({
+  effective,
+  previewToken,
+  setPreviewToken,
+}: {
+  effective: WorkerPortalConfig;
+  previewToken: string;
+  setPreviewToken: (v: string) => void;
+}) {
+  const trimmed = previewToken.trim();
+  const tokenOk = /^[A-Za-z0-9_-]{6,}$/.test(trimmed);
+  const hash = useMemo(() => encodePreviewConfigHash(effective), [effective]);
+  const previewUrl = tokenOk
+    ? `${typeof window !== "undefined" ? window.location.origin : ""}/t/${encodeURIComponent(trimmed)}${hash}`
+    : "";
+
+  function open() {
+    if (!tokenOk) {
+      toast.error("Masukkan token tugas yang valid (min. 6 karakter alfanumerik / - / _).");
+      return;
+    }
+    window.open(previewUrl, "_blank", "noopener,noreferrer");
+  }
+
+  async function copy() {
+    if (!tokenOk || !previewUrl) return;
+    try {
+      await navigator.clipboard.writeText(previewUrl);
+      toast.success("URL preview disalin.");
+    } catch {
+      toast.error("Gagal menyalin URL — salin manual dari kolom.");
+    }
+  }
+
+  return (
+    <div className="space-y-2 rounded-md border border-primary/20 bg-primary/5 p-3 text-sm">
+      <div className="flex items-center gap-2 font-semibold text-primary">
+        <ExternalLink className="h-4 w-4" /> Buka preview portal pegawai
+      </div>
+      <p className="text-xs text-muted-foreground">
+        Buka <code>/t/&lt;token&gt;</code> di tab baru dengan konfigurasi efektif di atas sebagai override sementara (lewat hash URL). Nilai tersimpan di backend tidak berubah — preview hanya berlaku untuk tab yang dibuka.
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Input
+          aria-label="Token tugas"
+          placeholder="Token tugas (mis. dari halaman Bagikan PIN)"
+          value={previewToken}
+          onChange={(e) => setPreviewToken(e.target.value)}
+          className="font-mono"
+        />
+        <div className="flex gap-2">
+          <Button size="sm" onClick={open} disabled={!tokenOk}>
+            <ExternalLink className="mr-1 h-4 w-4" /> Buka preview
+          </Button>
+          <Button size="sm" variant="outline" onClick={copy} disabled={!tokenOk}>
+            <Copy className="mr-1 h-4 w-4" /> Salin URL
+          </Button>
+        </div>
+      </div>
+      {tokenOk ? (
+        <p className="break-all rounded bg-muted px-2 py-1 font-mono text-[11px] text-muted-foreground">
+          {previewUrl}
+        </p>
+      ) : (
+        <p className="text-xs text-amber-700 dark:text-amber-200">
+          Masukkan token tugas dulu — token sama yang dipakai di link <code>/t/&lt;token&gt;</code> untuk pegawai.
+        </p>
+      )}
     </div>
   );
 }
