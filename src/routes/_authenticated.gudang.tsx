@@ -548,15 +548,11 @@ function PiutangTab({
                   Hutang {rupiah(g.totalHutang)} · Bayar {rupiah(g.totalBayar)}
                 </div>
               </div>
-              <span className={`shrink-0 rounded px-2 py-0.5 text-[11px] font-semibold ${
-                status === "hutang" ? "bg-amber-500/15 text-amber-700 dark:text-amber-400"
-                : status === "kelebihan" ? "bg-sky-500/15 text-sky-700 dark:text-sky-400"
-                : "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-              }`}>
+              <StatusBadge variant={status}>
                 {status === "hutang" ? `Sisa ${rupiah(g.balance)}`
                   : status === "kelebihan" ? `Kelebihan ${rupiah(-g.balance)}`
                   : "✓ Lunas"}
-              </span>
+              </StatusBadge>
             </div>
 
             <ShareCustomer
