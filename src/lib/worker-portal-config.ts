@@ -79,6 +79,60 @@ declare global {
 }
 
 /**
+ * Telemetry untuk override preview `#wpcfg=…`. Default-nya log via
+ * `console.warn` dengan prefix khusus supaya mudah di-grep di log
+ * produksi (rrweb, Sentry breadcrumbs, dll). Dapat di-override via
+ * `setPreviewOverrideTelemetry()` untuk dialihkan ke pelapor lain.
+ */
+export type PreviewOverrideTelemetryEvent =
+  | { kind: "no_window" }
+  | { kind: "no_hash" }
+  | { kind: "empty_payload"; rawLength: number }
+  | { kind: "decode_failed"; reason: "base64" | "json" | "atob_missing"; message?: string }
+  | { kind: "not_object"; type: string }
+  | {
+      kind: "sanitized";
+      accepted: Array<keyof WorkerPortalConfig>;
+      dropped: Array<{
+        key: string;
+        reason: "unknown_field" | "non_number" | "out_of_range";
+        value: unknown;
+        min?: number;
+        max?: number;
+      }>;
+    };
+
+export type PreviewOverrideTelemetry = (event: PreviewOverrideTelemetryEvent) => void;
+
+const defaultTelemetry: PreviewOverrideTelemetry = (event) => {
+  // Hanya laporkan kasus yang menarik untuk debugging produksi —
+  // jangan banjiri konsol untuk no_window / no_hash yang merupakan
+  // jalur normal SSR / halaman tanpa preview.
+  if (event.kind === "no_window" || event.kind === "no_hash") return;
+  if (event.kind === "sanitized" && event.dropped.length === 0) return;
+  try {
+    // eslint-disable-next-line no-console
+    console.warn("[worker-portal:wpcfg]", event);
+  } catch {
+    /* konsol mungkin tidak tersedia di lingkungan tertentu */
+  }
+};
+
+let telemetry: PreviewOverrideTelemetry = defaultTelemetry;
+
+export function setPreviewOverrideTelemetry(fn: PreviewOverrideTelemetry | null): void {
+  telemetry = fn ?? defaultTelemetry;
+}
+
+function emit(event: PreviewOverrideTelemetryEvent) {
+  try {
+    telemetry(event);
+  } catch {
+    /* pelapor tidak boleh memengaruhi alur utama */
+  }
+}
+
+/**
  * Cache override sederhana yang diisi setelah fetch dari `app_settings`.
  * Disimpan di module scope agar mount portal pegawai selanjutnya langsung
  * memakai nilai terbaru tanpa menunggu jaringan. Saat fresh mount (cold
@@ -227,25 +281,107 @@ export async function fetchAndApplyWorkerPortalConfig(): Promise<WorkerPortalCon
  *
  * Idempoten — boleh dipanggil tiap render. Aman di SSR (no-op kalau
  * `window` tidak ada). Gagal diam-diam kalau payload rusak.
+ *
+ * Setiap penolakan payload atau sanitasi nilai ekstrem dilaporkan ke
+ * telemetry sink (default: `console.warn`) sehingga kasus produksi
+ * lebih mudah di-debug. Override sink via `setPreviewOverrideTelemetry`.
  */
 export function applyPreviewOverrideFromHash(): Partial<WorkerPortalConfig> | null {
-  if (typeof window === "undefined") return null;
+  if (typeof window === "undefined") {
+    emit({ kind: "no_window" });
+    return null;
+  }
   try {
     const hash = window.location.hash || "";
     const m = hash.match(/(?:^#|[#&])wpcfg=([^&]+)/);
-    if (!m) return null;
+    if (!m) {
+      emit({ kind: "no_hash" });
+      return null;
+    }
+    if (!m[1]) {
+      emit({ kind: "empty_payload", rawLength: 0 });
+      return null;
+    }
     const b64 = decodeURIComponent(m[1]).replace(/-/g, "+").replace(/_/g, "/");
     const pad = b64.length % 4 === 0 ? b64 : b64 + "=".repeat(4 - (b64.length % 4));
-    const json = typeof atob === "function" ? atob(pad) : "";
-    if (!json) return null;
-    const parsed = JSON.parse(json) as Partial<WorkerPortalConfig> | null;
-    const sanitized = sanitizeWorkerPortalConfig(parsed);
+    if (typeof atob !== "function") {
+      emit({ kind: "decode_failed", reason: "atob_missing" });
+      return null;
+    }
+    let json: string;
+    try {
+      json = atob(pad);
+    } catch (err) {
+      emit({
+        kind: "decode_failed",
+        reason: "base64",
+        message: err instanceof Error ? err.message : String(err),
+      });
+      return null;
+    }
+    if (!json) {
+      emit({ kind: "empty_payload", rawLength: pad.length });
+      return null;
+    }
+    let parsed: unknown;
+    try {
+      parsed = JSON.parse(json);
+    } catch (err) {
+      emit({
+        kind: "decode_failed",
+        reason: "json",
+        message: err instanceof Error ? err.message : String(err),
+      });
+      return null;
+    }
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      emit({ kind: "not_object", type: Array.isArray(parsed) ? "array" : typeof parsed });
+      // Tetap kembalikan {} agar kontrak pemanggil (`Partial<…>`) konsisten.
+      const prev = (window.__WORKER_PORTAL_CONFIG__ ?? {}) as Partial<WorkerPortalConfig>;
+      window.__WORKER_PORTAL_CONFIG__ = { ...prev };
+      return {};
+    }
+    const sanitized = sanitizeWorkerPortalConfig(parsed as Partial<WorkerPortalConfig>);
+    // Laporkan field yang dijatuhkan beserta alasannya — sangat membantu
+    // ketika operator mengirim URL preview yang nilainya sudah “mentah”
+    // (mis. detik vs ms tertukar) dan ingin tahu kenapa tidak berlaku.
+    const dropped: Array<{
+      key: string;
+      reason: "unknown_field" | "non_number" | "out_of_range";
+      value: unknown;
+      min?: number;
+      max?: number;
+    }> = [];
+    const knownKeys = new Set(WORKER_PORTAL_CONFIG_FIELDS.map((f) => f.key as string));
+    for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+      if (!knownKeys.has(k)) {
+        dropped.push({ key: k, reason: "unknown_field", value: v });
+        continue;
+      }
+      if (k in sanitized) continue;
+      if (typeof v !== "number" || !Number.isFinite(v)) {
+        dropped.push({ key: k, reason: "non_number", value: v });
+      } else {
+        const b = FIELD_BOUNDS[k as keyof WorkerPortalConfig];
+        dropped.push({ key: k, reason: "out_of_range", value: v, min: b.min, max: b.max });
+      }
+    }
+    emit({
+      kind: "sanitized",
+      accepted: Object.keys(sanitized) as Array<keyof WorkerPortalConfig>,
+      dropped,
+    });
     // Gabungkan dengan override runtime yang sudah ada — preview hanya
     // menumpuk di atas nilai yang sengaja diset operator lain.
     const prev = (window.__WORKER_PORTAL_CONFIG__ ?? {}) as Partial<WorkerPortalConfig>;
     window.__WORKER_PORTAL_CONFIG__ = { ...prev, ...sanitized };
     return sanitized;
-  } catch {
+  } catch (err) {
+    emit({
+      kind: "decode_failed",
+      reason: "json",
+      message: err instanceof Error ? err.message : String(err),
+    });
     return null;
   }
 }
