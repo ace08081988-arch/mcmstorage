@@ -2352,6 +2352,7 @@ export type Database = {
         Returns: string
       }
       prep_get_task: { Args: { _pin: string; _token: string }; Returns: Json }
+      prep_peek_task: { Args: { _token: string }; Returns: Json }
       prep_pin_locked_until: { Args: { _token: string }; Returns: string }
       prep_pin_reset: { Args: { _token: string }; Returns: Json }
       prep_reset_pin: {
