@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker, X, Send, FileText } from "lucide-react";
+import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker, X, Send, FileText, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
@@ -67,6 +67,26 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   };
   const longPressRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const longPressedRef = useRef(false);
+  const [search, setSearch] = useState("");
+  // Reset pencarian setiap kali sheet ditutup.
+  useEffect(() => { if (!openSheet) setSearch(""); }, [openSheet]);
+
+  type TileDef = { id: TileId; label: string; keywords: string[]; color: string; icon: LucideIcon };
+  const TILES: TileDef[] = [
+    { id: "doc",      label: "Dokumen", keywords: ["dokumen","document","pdf","docx","xls","file","berkas"], color: "bg-violet-500/15 text-violet-500", icon: Paperclip },
+    { id: "gallery",  label: "Galeri",  keywords: ["galeri","foto","gambar","image","jpg","png","photo"], color: "bg-fuchsia-500/15 text-fuchsia-500", icon: ImageIcon },
+    { id: "camera",   label: "Kamera",  keywords: ["kamera","camera","jepret","selfie","foto"], color: "bg-sky-500/15 text-sky-500", icon: Camera },
+    { id: "video",    label: "Video",   keywords: ["video","film","mp4","rekaman","movie"], color: "bg-rose-500/15 text-rose-500", icon: Film },
+    { id: "location", label: "Lokasi",  keywords: ["lokasi","maps","gps","alamat","peta","location"], color: "bg-emerald-500/15 text-emerald-500", icon: MapPin },
+    { id: "contact",  label: "Kontak",  keywords: ["kontak","contact","nomor","telpon","wa","whatsapp"], color: "bg-blue-500/15 text-blue-500", icon: UserRound },
+    { id: "product",  label: "Produk",  keywords: ["produk","product","barang","item","kartu"], color: "bg-amber-500/15 text-amber-500", icon: Package },
+    { id: "sticker",  label: "Stiker",  keywords: ["stiker","sticker","panah","rekening","teks","ai","emoji"], color: "bg-pink-500/15 text-pink-500", icon: Sticker },
+  ];
+  const norm = (s: string) => s.toLowerCase().trim();
+  const q = norm(search);
+  const filteredTiles = q
+    ? TILES.filter((t) => norm(t.label).includes(q) || t.keywords.some((k) => k.includes(q)))
+    : TILES;
   type PendingItem = { file: File; previewUrl: string | null };
   const [pending, setPending] = useState<PendingItem[] | null>(null);
   const [caption, setCaption] = useState("");
@@ -208,15 +228,37 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           <SheetHeader className="pb-2">
             <SheetTitle className="text-base">Lampirkan</SheetTitle>
           </SheetHeader>
-          <div className="grid grid-cols-4 gap-3 pt-2">
-            <Tile recent={lastTile === "doc"} color="bg-violet-500/15 text-violet-500" icon={Paperclip} label="Dokumen" onClick={() => runTile("doc")} />
-            <Tile recent={lastTile === "gallery"} color="bg-fuchsia-500/15 text-fuchsia-500" icon={ImageIcon} label="Galeri" onClick={() => runTile("gallery")} />
-            <Tile recent={lastTile === "camera"} color="bg-sky-500/15 text-sky-500" icon={Camera} label="Kamera" onClick={() => runTile("camera")} />
-            <Tile recent={lastTile === "video"} color="bg-rose-500/15 text-rose-500" icon={Film} label="Video" onClick={() => runTile("video")} />
-            <Tile recent={lastTile === "location"} color="bg-emerald-500/15 text-emerald-500" icon={MapPin} label="Lokasi" onClick={() => runTile("location")} />
-            <Tile recent={lastTile === "contact"} color="bg-blue-500/15 text-blue-500" icon={UserRound} label="Kontak" onClick={() => runTile("contact")} />
-            <Tile recent={lastTile === "product"} color="bg-amber-500/15 text-amber-500" icon={Package} label="Produk" onClick={() => runTile("product")} />
-            <Tile recent={lastTile === "sticker"} color="bg-pink-500/15 text-pink-500" icon={Sticker} label="Stiker" onClick={() => runTile("sticker")} />
+          <div className="relative pt-1">
+            <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input
+              autoFocus={false}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Cari: foto, video, lokasi, stiker…"
+              className="pl-8 pr-8 h-9"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && filteredTiles.length === 1) {
+                  e.preventDefault();
+                  void runTile(filteredTiles[0].id);
+                }
+              }}
+            />
+            {search ? (
+              <button type="button" onClick={() => setSearch("")} aria-label="Kosongkan pencarian"
+                className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-accent">
+                <X className="h-3.5 w-3.5" />
+              </button>
+            ) : null}
+          </div>
+          <div className="grid grid-cols-4 gap-3 pt-3">
+            {filteredTiles.map((t) => (
+              <Tile key={t.id} recent={lastTile === t.id} color={t.color} icon={t.icon} label={t.label} onClick={() => runTile(t.id)} />
+            ))}
+            {filteredTiles.length === 0 ? (
+              <div className="col-span-4 py-6 text-center text-xs text-muted-foreground">
+                Tidak ada pilihan cocok untuk "{search}".
+              </div>
+            ) : null}
           </div>
           <p className="mt-4 text-center text-[11px] text-muted-foreground">
             Tap "+" → opsi terakhir. Tahan "+" untuk menu ini. "Terakhir" = pilihan tersimpan.
