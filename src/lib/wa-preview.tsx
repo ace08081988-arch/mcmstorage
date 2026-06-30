@@ -9,7 +9,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
-import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, RotateCcw, MapPin, AlertTriangle, Loader2, RefreshCw } from "lucide-react";
+import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, RotateCcw, MapPin, AlertTriangle, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
@@ -35,7 +35,9 @@ type Request = {
   /** Coba ambil ulang foto yang gagal. Implementasi caller wajib mengembalikan File[] baru
    *  (yang sukses pada percobaan ini). Helper akan menambahkannya ke files. */
   retryMissing?: () => Promise<File[]>;
-  resolve: (result: { ok: boolean; text?: string }) => void;
+  /** Info klik ganda (idempotency hit) saat dialog dibuka. */
+  duplicate?: { at: number; status: "in-flight" | "done" | "failed" } | null;
+  resolve: (result: { ok: boolean; text?: string; force?: boolean }) => void;
 };
 
 let openRequest: ((req: Request) => void) | null = null;
@@ -52,7 +54,8 @@ export function confirmWaShare(input: {
   files?: File[];
   expectedCount?: number;
   retryMissing?: () => Promise<File[]>;
-}): Promise<{ ok: boolean; text?: string }> {
+  duplicate?: { at: number; status: "in-flight" | "done" | "failed" } | null;
+}): Promise<{ ok: boolean; text?: string; force?: boolean }> {
   if (getWaSkipPreview()) return Promise.resolve({ ok: true, text: input.text });
   return new Promise((resolve) => {
     const req: Request = { ...input, resolve };
@@ -111,10 +114,10 @@ export function WaPreviewHost() {
     };
   }, [previews]);
 
-  const finish = (ok: boolean) => {
+  const finish = (ok: boolean, force = false) => {
     setOpen(false);
     if (ok && skip) setWaSkipPreview(true);
-    current?.resolve({ ok, text: ok ? draft : undefined });
+    current?.resolve({ ok, text: ok ? draft : undefined, force: ok ? force : undefined });
     setTimeout(() => setCurrent(null), 150);
   };
 
@@ -124,6 +127,10 @@ export function WaPreviewHost() {
   const expected = current?.expectedCount ?? photoCount;
   const missing = Math.max(0, expected - photoCount);
   const canRetry = !!current?.retryMissing && missing > 0;
+  const dup = current?.duplicate ?? null;
+  const dupActive = !!dup && dup.status !== "failed";
+  const dupAgoSec = dup ? Math.max(0, Math.round((Date.now() - dup.at) / 1000)) : 0;
+  const dupAgoLabel = dupAgoSec < 60 ? `${dupAgoSec} detik lalu` : `${Math.round(dupAgoSec / 60)} menit lalu`;
   const original = current?.text ?? "";
   const edited = draft !== original;
 
@@ -172,6 +179,23 @@ export function WaPreviewHost() {
         </DialogHeader>
 
         <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-4">
+          {dupActive ? (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-[12px] text-amber-900 dark:text-amber-200">
+              <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold">
+                  {dup!.status === "in-flight"
+                    ? "Klik ganda terdeteksi — kiriman WA sebelumnya masih berjalan."
+                    : "Klik ganda terdeteksi — paket ini baru saja dikirim ke WA."}
+                </div>
+                <div className="mt-0.5 opacity-90">
+                  {dup!.status === "in-flight"
+                    ? `Dimulai ${dupAgoLabel}. Tunggu hingga selesai agar tidak terkirim dua kali.`
+                    : `Dikirim ${dupAgoLabel}. Tombol "Kirim WA" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
+                </div>
+              </div>
+            </div>
+          ) : null}
           <div className="rounded-lg border bg-muted/30 p-3">
             <div className="mb-1.5 flex items-center justify-between gap-2">
               <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-wide text-muted-foreground">
@@ -308,15 +332,29 @@ export function WaPreviewHost() {
             <Button type="button" variant="outline" size="sm" onClick={() => finish(false)}>
               Batal
             </Button>
-            <Button
-              type="button"
-              size="sm"
-              onClick={() => finish(true)}
-              className="bg-emerald-600 text-white hover:bg-emerald-700"
-            >
-              <Send className="mr-1.5 h-3.5 w-3.5" />
-              Kirim WA
-            </Button>
+            {dupActive ? (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => finish(true, true)}
+                disabled={dup!.status === "in-flight"}
+                title={dup!.status === "in-flight" ? "Kiriman sebelumnya masih berjalan" : "Kirim ulang meski klik ganda terdeteksi"}
+                className="bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
+              >
+                <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
+                Kirim ulang (paksa)
+              </Button>
+            ) : (
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => finish(true)}
+                className="bg-emerald-600 text-white hover:bg-emerald-700"
+              >
+                <Send className="mr-1.5 h-3.5 w-3.5" />
+                Kirim WA
+              </Button>
+            )}
           </div>
         </div>
       </DialogContent>
