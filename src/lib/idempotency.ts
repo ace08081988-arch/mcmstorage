@@ -9,6 +9,7 @@
  * dipotong oleh trigger DB saat foto/penyiapan dibuat. Guard ini fokus pada
  * sisi kirim agar tidak ada double-write.
  */
+import { useSyncExternalStore } from "react";
 const KEY = "send-idempotency:v1";
 const EVENT = "send-idempotency:changed";
 const TTL_MS = 5 * 60 * 1000;       // 5 menit
@@ -71,7 +72,6 @@ function subscribeIdem(cb: () => void): () => void {
  * lain — dipakai dialog pratinjau Chat/WA agar status in-flight di salah
  * satu channel langsung menonaktifkan tombol kirim di channel lainnya.
  */
-import { useSyncExternalStore } from "react";
 export function useLiveIdemByIds(idsKey: string | undefined | null): IdemRecord | null {
   const key = idsKey ?? "";
   const subscribe = (cb: () => void) => subscribeIdem(cb);
