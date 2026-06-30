@@ -363,7 +363,7 @@ function PublicPrepPage() {
         pinRef.current = msg.pin;
         setPin(msg.pin);
         setClosedReason(null);
-        if (!authed) {
+        if (!authedRef.current) {
           // Belum punya data tugas di tab ini → ambil senyap.
           setAuthed(true);
           void silentRefresh();
@@ -371,7 +371,7 @@ function PublicPrepPage() {
       } else if (msg.type === "session-clear") {
         // Tab lain sign-out → ikut kembali ke layar PIN.
         setSessionStartedAt(null);
-        if (authed) {
+        if (authedRef.current) {
           setAuthed(false);
           setTask(null);
           setItems([]);
