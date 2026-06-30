@@ -593,18 +593,18 @@ function DetailHero({
               <span className="truncate">Detail penyiapan ecer</span>
             </div>
             <h2 className="mt-2 break-words text-base font-bold leading-snug sm:text-xl">{title.name}</h2>
-            <div className="mt-2 flex flex-wrap items-center gap-x-1.5 gap-y-1.5 text-[11px] leading-snug text-primary-foreground/85">
-              <span className="inline-flex max-w-full items-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-2 py-1 backdrop-blur-sm">
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] leading-none text-primary-foreground/85">
+              <span className="inline-flex h-6 min-w-0 max-w-full items-center gap-1 rounded-full bg-white/15 px-2 leading-none backdrop-blur-sm">
                 <Package className="h-3 w-3 shrink-0" />
                 <span className="truncate">{item.name}</span>
               </span>
-              <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-2 py-1 backdrop-blur-sm">
+              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white/15 px-2 leading-none backdrop-blur-sm">
                 Target <b className="ml-0.5">{title.target_grams} {unit}</b>
               </span>
-              <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-emerald-400/25 px-2 py-1 font-semibold text-emerald-50 ring-1 ring-emerald-300/50 backdrop-blur-sm">
+              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-emerald-400/25 px-2 font-semibold leading-none text-emerald-50 ring-1 ring-emerald-300/50 backdrop-blur-sm">
                 <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
               </span>
-              <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full bg-white/10 px-2 py-1 font-mono text-[11px] text-primary-foreground/90 backdrop-blur-sm sm:hidden">
+              <span className="inline-flex h-6 shrink-0 items-center gap-1 whitespace-nowrap rounded-full bg-white/10 px-2 font-mono leading-none text-primary-foreground/90 backdrop-blur-sm sm:hidden">
                 <Hash className="h-3 w-3 shrink-0" /> {ref}
               </span>
             </div>
