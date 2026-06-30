@@ -14,6 +14,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ExternalLink, History, Undo2 } from "lucide-react";
 import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, type IdemRecord } from "@/lib/idempotency";
+import { appendSendLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
 // Selalu coba bucket sesuai source dulu, lalu fallback ke bucket satunya agar lampiran WA tidak hilang.
@@ -920,6 +921,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     markIds: string[];
     preview: ChatSharePreviewData;
     duplicate: ChatShareDuplicateInfo | null;
+    previousLog: SendLogEntry[];
   };
   const [chatPreview, setChatPreview] = useState<ChatPreviewState | null>(null);
   const [chatStatus, setChatStatus] = useState<ChatShareLiveStatus | null>(null);
@@ -943,6 +945,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     const duplicate = duplicateRec
       ? { at: duplicateRec.at, status: duplicateRec.status, destination: r.name }
       : null;
+    const previousLog = duplicate ? getSendLog(idemKey) : [];
     setSending(true);
     setSendStatus("sending");
     setSendError(null);
@@ -1000,6 +1003,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             expectedCount,
             retryMissing,
             duplicate,
+            previousLog,
           });
       // Saat duplikat aktif: bypass withIdempotency agar pratinjau (yang sekarang
       // memuat peringatan "Klik ganda terdeteksi") selalu tampil. Jika operator
@@ -1020,18 +1024,24 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           throw new Error(r0.error || "share-failed");
         }
       } else {
+        resetSendLog(idemKey);
+        appendSendLog(idemKey, { kind: "info", label: `Mulai kirim WA ke "${r.name}"`, detail: `${take.length} kiriman · ${files.length}/${expectedCount} foto` });
         res = await withIdempotency(idemKey, {
           onSkip: () => ({ status: "shared" as const, error: undefined as string | undefined }),
           run: async () => {
-            const r0 = await callShare();
+          const r0 = await callShare();
           notifyShareResult(r0);
           if (r0.status === "shared" || r0.status === "fallback") {
             markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
+            appendSendLog(idemKey, { kind: "step", label: r0.status === "shared" ? "WA dibagikan (Web Share / native)" : "WA dibuka via fallback wa.me" });
+            appendSendLog(idemKey, { kind: "outcome", label: "Selesai" });
             return { status: "shared" as const, error: undefined as string | undefined };
           }
           if (r0.status === "cancelled") {
+            appendSendLog(idemKey, { kind: "outcome", label: "Dibatalkan oleh pengguna" });
             throw new Error("__cancelled__");
           }
+          appendSendLog(idemKey, { kind: "error", label: "Gagal kirim WA", detail: r0.error });
           throw new Error(r0.error || "share-failed");
         },
       });
@@ -1072,6 +1082,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       existing && existing.status !== "failed"
         ? { at: existing.at, status: existing.status, destination: convTitle }
         : null;
+    const previousLog = duplicate ? getSendLog(idemKey) : [];
     setPickChatOpen(false);
     setChatPreparing(true);
     setSendError(null);
@@ -1128,6 +1139,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         markIds: take.map((s) => s.id),
         preview,
         duplicate,
+        previousLog,
       });
       setChatPreviewOpen(true);
     } catch (err) {
@@ -1149,6 +1161,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     if (opts?.force) {
       clearIdem(ctx.idemKey);
     }
+    resetSendLog(ctx.idemKey);
+    appendSendLog(ctx.idemKey, { kind: "info", label: `Mulai kirim Chat ke "${ctx.conversationTitle}"`, detail: `${ctx.chatShots.length} foto${ctx.locationUrl ? " + lokasi" : ""}` });
     const captionStep = ctx.caption.trim().length > 0;
     const locationStep = !!(ctx.locationUrl && ctx.locationUrl.trim());
     const photosTotal = ctx.chatShots.length;
@@ -1179,6 +1193,19 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             markIds: ctx.markIds,
             idemKey: ctx.idemKey,
             onProgress: (p) => {
+              if (p.type === "caption") {
+                if (p.status === "start") appendSendLog(ctx.idemKey, { kind: "step", label: "Mengirim caption…" });
+                else if (p.status === "ok") appendSendLog(ctx.idemKey, { kind: "step", label: "Caption terkirim" });
+                else if (p.status === "fail") appendSendLog(ctx.idemKey, { kind: "error", label: "Caption gagal", detail: p.error });
+              } else if (p.type === "photo") {
+                if (p.status === "start") appendSendLog(ctx.idemKey, { kind: "step", label: `Mengirim foto ${p.index + 1}/${p.total}…` });
+                else if (p.status === "ok") appendSendLog(ctx.idemKey, { kind: "step", label: `Foto ${p.index + 1}/${p.total} terkirim` });
+                else if (p.status === "fail") appendSendLog(ctx.idemKey, { kind: "error", label: `Foto ${p.index + 1}/${p.total} gagal`, detail: p.error });
+              } else if (p.type === "location") {
+                if (p.status === "start") appendSendLog(ctx.idemKey, { kind: "step", label: "Mengirim link Maps…" });
+                else if (p.status === "ok") appendSendLog(ctx.idemKey, { kind: "step", label: "Link Maps terkirim" });
+                else if (p.status === "fail") appendSendLog(ctx.idemKey, { kind: "error", label: "Link Maps gagal", detail: p.error });
+              }
               setChatStatus((prev) => {
                 if (!prev) return prev;
                 const next = { ...prev };
@@ -1201,6 +1228,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       });
       setSendStatus("success");
       const msgCount = "messageCount" in res ? res.messageCount ?? 0 : 0;
+      appendSendLog(ctx.idemKey, { kind: "outcome", label: `Selesai · ${msgCount} pesan terkirim` });
       setChatStatus((prev) => prev ? {
         ...prev,
         outcome: {
@@ -1212,6 +1240,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       const msg = (err as Error).message;
       setSendStatus("failed");
       setSendError(msg);
+      appendSendLog(ctx.idemKey, { kind: "error", label: "Gagal mengirim ke chat", detail: msg });
       setChatStatus((prev) => prev ? {
         ...prev,
         outcome: { kind: "failed", messageCount: 0, error: msg },
@@ -1422,6 +1451,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         onRetry={() => { setChatStatus(null); void confirmChatSend(); }}
         duplicate={chatPreview?.duplicate ?? null}
         onForceSend={() => { void confirmChatSend({ force: true }); }}
+        previousLog={chatPreview?.previousLog ?? []}
       />
     </div>
   );

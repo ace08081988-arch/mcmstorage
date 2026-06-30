@@ -11,6 +11,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { MessageCircle, Image as ImageIcon, Link2, FileText, Send, Pencil, RotateCcw, MapPin, AlertTriangle, Loader2, RefreshCw, ShieldAlert } from "lucide-react";
 import { toast } from "sonner";
+import { SendLogViewer } from "@/components/SendLogViewer";
+import type { SendLogEntry } from "@/lib/send-log";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
@@ -37,6 +39,7 @@ type Request = {
   retryMissing?: () => Promise<File[]>;
   /** Info klik ganda (idempotency hit) saat dialog dibuka. */
   duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string } | null;
+  previousLog?: SendLogEntry[];
   resolve: (result: { ok: boolean; text?: string; force?: boolean }) => void;
 };
 
@@ -55,6 +58,7 @@ export function confirmWaShare(input: {
   expectedCount?: number;
   retryMissing?: () => Promise<File[]>;
   duplicate?: { at: number; status: "in-flight" | "done" | "failed"; destination?: string } | null;
+  previousLog?: SendLogEntry[];
 }): Promise<{ ok: boolean; text?: string; force?: boolean }> {
   // Tampilkan pratinjau saat klik ganda terdeteksi, meski user pernah meminta "jangan
   // tampilkan lagi" — operator perlu lihat peringatan duplikat & tombol force.
@@ -210,6 +214,9 @@ export function WaPreviewHost() {
                 </dl>
               </div>
             </div>
+          ) : null}
+          {current?.previousLog && current.previousLog.length > 0 ? (
+            <SendLogViewer entries={current.previousLog} defaultOpen={dupActive && dup!.status !== "in-flight"} />
           ) : null}
           <div className="rounded-lg border bg-muted/30 p-3">
             <div className="mb-1.5 flex items-center justify-between gap-2">

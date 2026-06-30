@@ -1,5 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { CheckCircle2, Loader2, MapPin, Send, XCircle, AlertTriangle, RefreshCw, ShieldAlert } from "lucide-react";
+import { SendLogViewer } from "@/components/SendLogViewer";
+import type { SendLogEntry } from "@/lib/send-log";
 
 export type ChatSharePreviewData = {
   conversationTitle: string;
@@ -69,6 +71,7 @@ export function ChatSharePreviewDialog({
   onRetry,
   duplicate,
   onForceSend,
+  previousLog,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -79,6 +82,7 @@ export function ChatSharePreviewDialog({
   onRetry?: () => void;
   duplicate?: ChatShareDuplicateInfo | null;
   onForceSend?: () => void;
+  previousLog?: SendLogEntry[];
 }) {
   const progressActive = !!status && (sending || !!status.outcome);
   const totalSteps = (status?.captionStep ? 1 : 0) + (status?.photosTotal ?? 0) + (status?.locationStep ? 1 : 0);
@@ -129,6 +133,9 @@ export function ChatSharePreviewDialog({
                   </dl>
                 </div>
               </div>
+            ) : null}
+            {previousLog && previousLog.length > 0 ? (
+              <SendLogViewer entries={previousLog} defaultOpen={!!duplicate && duplicate.status !== "in-flight"} />
             ) : null}
             <section>
               <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Caption</h3>
