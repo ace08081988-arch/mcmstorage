@@ -885,7 +885,8 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 <AlertDialogFooter>
                   <AlertDialogCancel>Batal</AlertDialogCancel>
                   <AlertDialogAction
-                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    disabled={removable.length === 0}
+                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90 disabled:opacity-50"
                     onClick={() => {
                       if (confirmDelete === "all") removeAllPending();
                       else if (confirmDelete === "selected") removeSelectedPending();
