@@ -2,6 +2,7 @@ import { Pin, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import type { MessageRow } from "@/lib/chat";
 import { usePinMessage } from "@/lib/chat-extras";
+import { isDeleted, messagePreviewText } from "@/lib/chat-deleted";
 
 export function PinnedBanner({
   conversationId,
@@ -19,10 +20,8 @@ export function PinnedBanner({
   return (
     <div className="border-b bg-amber-50 dark:bg-amber-950/30">
       {pinned.map((m) => {
-        const deleted = !!m.deleted_at;
-        const text = deleted
-          ? "(pesan dihapus)"
-          : m.body?.trim() || (m.attachment_name ? `📎 ${m.attachment_name}` : "Lampiran");
+        const deleted = isDeleted(m);
+        const text = messagePreviewText(m) || "Lampiran";
         return (
           <div key={m.id} className="flex items-center gap-2 px-3 py-1.5 text-xs">
             <Pin className="h-3.5 w-3.5 shrink-0 text-amber-600" />
