@@ -14,6 +14,54 @@ export type Database = {
   }
   public: {
     Tables: {
+      address_book: {
+        Row: {
+          created_at: string
+          device_contact_id: string | null
+          email: string | null
+          email_norm: string | null
+          id: string
+          linked_user_id: string | null
+          name: string
+          note: string | null
+          phone: string | null
+          phone_norm: string | null
+          source: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          device_contact_id?: string | null
+          email?: string | null
+          email_norm?: string | null
+          id?: string
+          linked_user_id?: string | null
+          name: string
+          note?: string | null
+          phone?: string | null
+          phone_norm?: string | null
+          source?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          device_contact_id?: string | null
+          email?: string | null
+          email_norm?: string | null
+          id?: string
+          linked_user_id?: string | null
+          name?: string
+          note?: string | null
+          phone?: string | null
+          phone_norm?: string | null
+          source?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           bank_account_holder: string
@@ -2433,6 +2481,15 @@ export type Database = {
         Args: { _conv: string; _user: string }
         Returns: boolean
       }
+      match_address_book_profiles: {
+        Args: { _emails?: string[]; _phones?: string[] }
+        Returns: {
+          display_name: string
+          match_key: string
+          match_kind: string
+          user_id: string
+        }[]
+      }
       message_delete_all_mine: { Args: { _conv: string }; Returns: string[] }
       message_delete_for_all: { Args: { _msg: string }; Returns: string }
       message_edit: {
@@ -2455,6 +2512,7 @@ export type Database = {
         }
         Returns: number
       }
+      normalize_phone: { Args: { _p: string }; Returns: string }
       prep_create_task: {
         Args: {
           _items: Json

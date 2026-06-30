@@ -20,12 +20,12 @@
     "test:security:sql": "psql -v ON_ERROR_STOP=1 -f supabase/tests/security_rls_authz.sql -f supabase/tests/security_definer_authz.sql",
     "test:security:integration": "vitest run tests/integration/security-rls.test.ts",
     "test:security": "npm run test:security:sql && npm run test:security:integration",
-    "test:chat-deleted": "vitest run src/lib/chat-deleted.test.tsx src/lib/chat-deleted-ui.test.tsx src/lib/chat-deleted-snapshots.test.tsx"
-    ,
+    "test:chat-deleted": "vitest run src/lib/chat-deleted.test.tsx src/lib/chat-deleted-ui.test.tsx src/lib/chat-deleted-snapshots.test.tsx",
     "test:worker-portal-config": "vitest run src/lib/worker-portal-config.test.ts"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
+    "@capacitor-community/contacts": "^7.2.0",
     "@capacitor/android": "^8.4.0",
     "@capacitor/app-launcher": "^8.0.1",
     "@capacitor/camera": "^8.2.0",
