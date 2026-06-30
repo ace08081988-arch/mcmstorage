@@ -642,8 +642,8 @@ function DetailHero({
           value={<span className="font-mono text-xs">{ref}</span>} />
         {title.note && (
           <div className="py-2.5">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">Catatan</div>
-            <div className="mt-1.5 whitespace-pre-wrap text-xs leading-snug text-foreground">{title.note}</div>
+            <EcerLabel as="div">Catatan</EcerLabel>
+            <EcerBody as="div" className="mt-1.5 whitespace-pre-wrap">{title.note}</EcerBody>
           </div>
         )}
       </div>
