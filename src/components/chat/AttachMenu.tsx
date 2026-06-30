@@ -157,6 +157,8 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [selectMode, setSelectMode] = useState(false);
   const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Lacak id yang sedang dalam proses "Coba lagi" supaya tombol bisa menunjukkan spinner.
+  const [retryingIds, setRetryingIds] = useState<Set<string>>(new Set());
 
   // Ref agar loop upload selalu baca pending terbaru (penghapusan saat upload tetap konsisten).
   const pendingRef = useRef<PendingItem[] | null>(null);
@@ -405,6 +407,15 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       toast.error("Tidak ada lampiran valid untuk dikirim", { description: "Buang berkas yang ditolak terlebih dahulu." });
       return;
     }
+    // Item yang merupakan retry (sebelumnya sudah pernah error) → tandai supaya tombolnya menunjukkan spinner.
+    const retrySet = new Set(queueIds.filter((id) => statuses[id]?.state === "error"));
+    if (retrySet.size > 0) {
+      setRetryingIds((prev) => {
+        const next = new Set(prev);
+        retrySet.forEach((id) => next.add(id));
+        return next;
+      });
+    }
     let total = queueIds.length;
     let done = 0;
     setProgress({ done, total });
@@ -448,9 +459,26 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       }
       done += 1;
       setProgress({ done, total });
+      if (retrySet.has(id)) {
+        setRetryingIds((prev) => {
+          if (!prev.has(id)) return prev;
+          const next = new Set(prev);
+          next.delete(id);
+          return next;
+        });
+      }
     }
     setBusy(null);
     setProgress(null);
+    // Safety: bersihkan sisa retry flag bila ada item yang dilewati di loop.
+    if (retrySet.size > 0) {
+      setRetryingIds((prev) => {
+        if (prev.size === 0) return prev;
+        const next = new Set(prev);
+        retrySet.forEach((id) => next.delete(id));
+        return next;
+      });
+    }
     if (!anyError && okCount > 0) {
       toast.success(
         okCount > 1 ? `${okCount} lampiran terkirim` : "Lampiran terkirim",
@@ -643,17 +671,27 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       <div className="absolute right-7 top-1 rounded-full bg-emerald-500/95 p-0.5 text-white shadow">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                       </div>
-                    ) : st === "error" && !selectMode ? (
+                    ) : (st === "error" || retryingIds.has(p.id)) && !selectMode ? (
                       <button
                         type="button"
                         onClick={(e) => { e.stopPropagation(); confirmSendPending(false, [p.id]); }}
-                        disabled={!!busy}
-                        title={`Coba lagi: ${statuses[p.id]?.error ?? ""}`}
+                        disabled={!!busy || retryingIds.has(p.id)}
+                        title={retryingIds.has(p.id) ? "Sedang mengulang…" : `Coba lagi: ${statuses[p.id]?.error ?? ""}`}
                         aria-label={`Coba lagi ${p.file.name}`}
+                        aria-busy={retryingIds.has(p.id)}
                         className="absolute right-7 top-1 flex items-center gap-1 rounded-full bg-destructive/95 px-1.5 py-0.5 text-[10px] font-medium text-destructive-foreground shadow hover:bg-destructive disabled:opacity-60"
                       >
-                        <RefreshCw className="h-3 w-3" />
-                        Ulang
+                        {retryingIds.has(p.id) ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" />
+                            Mengulang…
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-3 w-3" />
+                            Ulang
+                          </>
+                        )}
                       </button>
                     ) : null}
                     <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[10px] text-white">
@@ -664,25 +702,42 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 })}
               </div>
               {/* Daftar error rinci agar pesan tidak terpotong di chip */}
-              {Object.values(statuses).some((s) => s?.state === "error") ? (
+              {pending.some((p) => statuses[p.id]?.state === "error" || retryingIds.has(p.id)) ? (
                 <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px]">
                   <div className="mb-1 flex items-center gap-1 font-medium text-destructive">
                     <AlertCircle className="h-3.5 w-3.5" /> Sebagian lampiran gagal
                   </div>
                   <ul className="space-y-1 text-destructive/90">
-                    {pending.map((p) => statuses[p.id]?.state === "error" ? (
-                      <li key={p.id} className="flex items-start justify-between gap-2">
-                        <span className="min-w-0 flex-1 truncate">• <span className="font-medium">{p.file.name}:</span> {statuses[p.id]?.error}</span>
-                        <button
-                          type="button"
-                          onClick={() => confirmSendPending(false, [p.id])}
-                          disabled={!!busy}
-                          className="shrink-0 inline-flex items-center gap-1 rounded border border-destructive/40 bg-background px-1.5 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
-                        >
-                          <RefreshCw className="h-3 w-3" /> Coba lagi
-                        </button>
-                      </li>
-                    ) : null)}
+                    {pending.map((p) => {
+                      const isErr = statuses[p.id]?.state === "error";
+                      const isRetrying = retryingIds.has(p.id);
+                      if (!isErr && !isRetrying) return null;
+                      return (
+                        <li key={p.id} className="flex items-start justify-between gap-2">
+                          <span className="min-w-0 flex-1 truncate">
+                            • <span className="font-medium">{p.file.name}:</span>{" "}
+                            {isRetrying ? "Sedang mengulang…" : statuses[p.id]?.error}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => confirmSendPending(false, [p.id])}
+                            disabled={!!busy || isRetrying}
+                            aria-busy={isRetrying}
+                            className="shrink-0 inline-flex items-center gap-1 rounded border border-destructive/40 bg-background px-1.5 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
+                          >
+                            {isRetrying ? (
+                              <>
+                                <Loader2 className="h-3 w-3 animate-spin" /> Mengulang…
+                              </>
+                            ) : (
+                              <>
+                                <RefreshCw className="h-3 w-3" /> Coba lagi
+                              </>
+                            )}
+                          </button>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ) : null}
@@ -728,10 +783,21 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                 Buang yang ditolak ({Object.values(statuses).filter((s) => s?.preflight).length})
               </Button>
             ) : null}
-            {Object.values(statuses).some((s) => s?.state === "error" && !s?.preflight) && !busy ? (
-              <Button variant="secondary" onClick={() => confirmSendPending(true)}>
-                <RotateCcw className="mr-1 h-4 w-4" />
-                Coba lagi ({Object.values(statuses).filter((s) => s?.state === "error" && !s?.preflight).length})
+            {Object.values(statuses).some((s) => s?.state === "error" && !s?.preflight) ? (
+              <Button
+                variant="secondary"
+                onClick={() => confirmSendPending(true)}
+                disabled={!!busy}
+                aria-busy={busy === "upload" && retryingIds.size > 0}
+              >
+                {busy === "upload" && retryingIds.size > 0 ? (
+                  <Loader2 className="mr-1 h-4 w-4 animate-spin" />
+                ) : (
+                  <RotateCcw className="mr-1 h-4 w-4" />
+                )}
+                {busy === "upload" && retryingIds.size > 0
+                  ? `Mengulang (${retryingIds.size})…`
+                  : `Coba lagi (${Object.values(statuses).filter((s) => s?.state === "error" && !s?.preflight).length})`}
               </Button>
             ) : null}
             <Button onClick={() => confirmSendPending(false)} disabled={!!busy || (pending?.length ?? 0) === 0 || (pending ?? []).every((p) => statuses[p.id]?.state === "sent" || statuses[p.id]?.preflight)}>
