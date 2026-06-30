@@ -564,18 +564,24 @@ function PublicPrepPage() {
   // Fragment tidak dikirim ke server, jadi PIN tetap aman dari log.
   useEffect(() => {
     if (authed || autoTriedRef.current || typeof window === "undefined") return;
+    // Prioritas 1: fragment URL (#p=1234) — link share/QR pertama kali.
+    // Prioritas 2: sessionStorage — WebView yang dire-create setelah user
+    //              kembali dari kamera/galeri/share/lock screen.
     const hash = window.location.hash || "";
     const m = hash.match(/(?:^#|[#&])p=(\d{4,8})/);
-    if (!m) return;
+    const session = readSession();
+    const autoPin = m?.[1] ?? session?.pin ?? null;
+    if (!autoPin) return;
     autoTriedRef.current = true;
-    const autoPin = m[1];
     setPin(autoPin);
     void fetchTask(autoPin);
-    // Bersihkan fragment dari address bar agar PIN tidak terlihat lagi.
-    try {
-      const { pathname, search } = window.location;
-      window.history.replaceState(null, "", `${pathname}${search}`);
-    } catch { /* noop */ }
+    if (m) {
+      // Bersihkan fragment dari address bar agar PIN tidak terlihat lagi.
+      try {
+        const { pathname, search } = window.location;
+        window.history.replaceState(null, "", `${pathname}${search}`);
+      } catch { /* noop */ }
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
