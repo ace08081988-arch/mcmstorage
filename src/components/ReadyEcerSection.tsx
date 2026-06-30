@@ -940,6 +940,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       return;
     }
     const take = shots.slice(0, 6);
+    const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
     const idemKey = buildSendKey({ channel: "wa", ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
     const duplicateRec: IdemRecord | null = existing && existing.status !== "failed" ? existing : null;
@@ -1016,6 +1017,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             duplicate,
             previousLog,
             currentFingerprint: waFingerprint,
+            idemIdsKey,
           });
       // Saat duplikat aktif: bypass withIdempotency agar pratinjau (yang sekarang
       // memuat peringatan "Klik ganda terdeteksi") selalu tampil. Jika operator
