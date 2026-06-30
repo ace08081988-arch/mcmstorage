@@ -965,6 +965,24 @@ function PublicPrepPage() {
                 </div>
               </div>
             )}
+            {sessionJustExpired && !isLocked && (
+              <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-300" role="alert">
+                <div className="flex items-start gap-2">
+                  <Clock className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="text-xs font-semibold">Sesi PIN sudah berakhir</div>
+                    <div className="mt-0.5 text-[11px] opacity-90">Masukkan PIN lagi untuk melanjutkan tugas yang tadi.</div>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => { setSessionJustExpired(false); focusPinInput(); }}
+                  className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-amber-600 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-700"
+                >
+                  <Lock className="h-4 w-4" /> Re-login sekarang
+                </button>
+              </div>
+            )}
             <input
               ref={pinInputRef}
               inputMode="numeric" maxLength={8} value={pin}
