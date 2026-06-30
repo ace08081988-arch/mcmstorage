@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { z } from "zod";
-import { Loader2, RotateCcw, Save, ShieldCheck, ArrowLeft } from "lucide-react";
+import { Loader2, RotateCcw, Save, ShieldCheck, ArrowLeft, FlaskConical, CheckCircle2, AlertTriangle } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { friendlyError } from "@/lib/friendly-error";
 import { Button } from "@/components/ui/button";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import {
   WORKER_PORTAL_DEFAULTS,
   WORKER_PORTAL_CONFIG_FIELDS,
+  sanitizeWorkerPortalConfig,
   type WorkerPortalConfig,
 } from "@/lib/worker-portal-config";
 
@@ -60,6 +61,13 @@ function AdminWorkerPortalPage() {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState<FormState>(() => toFormState({}));
   const [errors, setErrors] = useState<Partial<Record<keyof WorkerPortalConfig, string>>>({});
+  const [testResult, setTestResult] = useState<{
+    ok: boolean;
+    issues: Array<{ key?: keyof WorkerPortalConfig; message: string }>;
+    effective: WorkerPortalConfig;
+    sources: Record<keyof WorkerPortalConfig, "form" | "default">;
+    invariantsAdjusted: string[];
+  } | null>(null);
   const schema = useMemo(buildSchema, []);
 
   useEffect(() => {
@@ -92,6 +100,60 @@ function AdminWorkerPortalPage() {
   function resetToDefaults() {
     setForm(toFormState({}));
     setErrors({});
+    setTestResult(null);
+  }
+
+  function testConfig() {
+    const parsedRaw: Record<string, number> = {};
+    for (const f of WORKER_PORTAL_CONFIG_FIELDS) {
+      parsedRaw[f.key] = Number(form[f.key]);
+    }
+    const parsed = schema.safeParse(parsedRaw);
+    const issues: Array<{ key?: keyof WorkerPortalConfig; message: string }> = [];
+    const nextErrors: Partial<Record<keyof WorkerPortalConfig, string>> = {};
+    if (!parsed.success) {
+      for (const issue of parsed.error.issues) {
+        const k = issue.path[0] as keyof WorkerPortalConfig | undefined;
+        issues.push({ key: k, message: issue.message });
+        if (k && !nextErrors[k]) nextErrors[k] = issue.message;
+      }
+    }
+    setErrors(nextErrors);
+
+    // Hitung config efektif dengan alur yang sama seperti runtime: nilai
+    // tidak valid otomatis disaring → fallback ke default, lalu invariants.
+    const sanitized = sanitizeWorkerPortalConfig(parsedRaw as Partial<WorkerPortalConfig>);
+    const sources = {} as Record<keyof WorkerPortalConfig, "form" | "default">;
+    const effective = { ...WORKER_PORTAL_DEFAULTS } as WorkerPortalConfig;
+    for (const f of WORKER_PORTAL_CONFIG_FIELDS) {
+      if (sanitized[f.key] !== undefined) {
+        effective[f.key] = sanitized[f.key] as number;
+        sources[f.key] = "form";
+      } else {
+        sources[f.key] = "default";
+      }
+    }
+    const invariantsAdjusted: string[] = [];
+    if (effective.lagThresholdSec >= effective.staleThresholdSec) {
+      effective.lagThresholdSec = WORKER_PORTAL_DEFAULTS.lagThresholdSec;
+      effective.staleThresholdSec = WORKER_PORTAL_DEFAULTS.staleThresholdSec;
+      sources.lagThresholdSec = "default";
+      sources.staleThresholdSec = "default";
+      invariantsAdjusted.push("lag ≥ stale → kedua ambang dikembalikan ke default.");
+    }
+    if (effective.staleCooldownBaseMs > effective.staleCooldownMaxMs) {
+      effective.staleCooldownBaseMs = WORKER_PORTAL_DEFAULTS.staleCooldownBaseMs;
+      effective.staleCooldownMaxMs = WORKER_PORTAL_DEFAULTS.staleCooldownMaxMs;
+      sources.staleCooldownBaseMs = "default";
+      sources.staleCooldownMaxMs = "default";
+      invariantsAdjusted.push("cooldown awal > maksimum → kedua nilai cooldown dikembalikan ke default.");
+    }
+    setTestResult({ ok: issues.length === 0, issues, effective, sources, invariantsAdjusted });
+    if (issues.length === 0 && invariantsAdjusted.length === 0) {
+      toast.success("Konfigurasi valid. Lihat ringkasan efektif di bawah.");
+    } else {
+      toast.message("Uji selesai dengan catatan — lihat hasil di bawah.");
+    }
   }
 
   async function save() {
@@ -189,10 +251,87 @@ function AdminWorkerPortalPage() {
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Simpan konfigurasi
         </Button>
+        <Button variant="secondary" onClick={testConfig} disabled={saving}>
+          <FlaskConical className="mr-2 h-4 w-4" /> Uji konfigurasi
+        </Button>
         <Button variant="outline" onClick={resetToDefaults} disabled={saving}>
           <RotateCcw className="mr-2 h-4 w-4" /> Pulihkan default
         </Button>
       </div>
+
+      {testResult ? (
+        <div className="space-y-3 rounded-lg border bg-card p-4 shadow-sm">
+          <div className="flex items-center gap-2">
+            {testResult.ok ? (
+              <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+            ) : (
+              <AlertTriangle className="h-5 w-5 text-amber-600" />
+            )}
+            <h2 className="text-base font-semibold">
+              {testResult.ok ? "Validasi lolos" : "Ada nilai tidak valid"}
+            </h2>
+          </div>
+          {testResult.issues.length > 0 ? (
+            <ul className="list-disc space-y-1 pl-5 text-sm text-destructive">
+              {testResult.issues.map((i, idx) => (
+                <li key={idx}>
+                  {i.key ? <code className="mr-1">{i.key}</code> : null}
+                  {i.message}
+                </li>
+              ))}
+            </ul>
+          ) : null}
+          {testResult.invariantsAdjusted.length > 0 ? (
+            <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
+              <strong>Invariant antar-field disesuaikan:</strong>
+              <ul className="mt-1 list-disc space-y-0.5 pl-5">
+                {testResult.invariantsAdjusted.map((m, i) => <li key={i}>{m}</li>)}
+              </ul>
+            </div>
+          ) : null}
+          <div>
+            <h3 className="mb-2 text-sm font-semibold">Konfigurasi efektif</h3>
+            <p className="mb-2 text-xs text-muted-foreground">
+              Nilai inilah yang akan dipakai portal pegawai dengan input saat ini. Kolom <em>Sumber</em> menunjukkan apakah nilai berasal dari form atau fallback ke default.
+            </p>
+            <div className="overflow-hidden rounded-md border">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-xs uppercase text-muted-foreground">
+                  <tr>
+                    <th className="px-2 py-1.5 text-left">Field</th>
+                    <th className="px-2 py-1.5 text-right">Nilai efektif</th>
+                    <th className="px-2 py-1.5 text-right">Default</th>
+                    <th className="px-2 py-1.5 text-right">Sumber</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {WORKER_PORTAL_CONFIG_FIELDS.map((f) => {
+                    const src = testResult.sources[f.key];
+                    return (
+                      <tr key={f.key} className="border-t">
+                        <td className="px-2 py-1.5"><code>{f.key}</code> <span className="text-xs text-muted-foreground">({f.unit})</span></td>
+                        <td className="px-2 py-1.5 text-right font-mono">{String(testResult.effective[f.key])}</td>
+                        <td className="px-2 py-1.5 text-right font-mono text-muted-foreground">{String(WORKER_PORTAL_DEFAULTS[f.key])}</td>
+                        <td className="px-2 py-1.5 text-right">
+                          <span className={
+                            src === "form"
+                              ? "rounded bg-primary/10 px-1.5 py-0.5 text-xs text-primary"
+                              : "rounded bg-muted px-1.5 py-0.5 text-xs text-muted-foreground"
+                          }>{src}</span>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </div>
+          <details className="text-xs">
+            <summary className="cursor-pointer text-muted-foreground">Lihat JSON</summary>
+            <pre className="mt-2 overflow-auto rounded-md bg-muted p-3 text-xs">{JSON.stringify(testResult.effective, null, 2)}</pre>
+          </details>
+        </div>
+      ) : null}
 
       <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-xs text-amber-900 dark:border-amber-900/40 dark:bg-amber-950/30 dark:text-amber-100">
         <strong>Catatan:</strong> Nilai berlaku saat portal pegawai (mis. <code>/t/&lt;token&gt;</code>) dimount ulang. Pegawai yang sudah membuka halaman akan mengambil nilai baru ketika tab dibuka kembali atau halaman di-refresh.
