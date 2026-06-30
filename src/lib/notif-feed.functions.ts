@@ -166,15 +166,9 @@ export const getRecentNotifications = createServerFn({ method: "GET" })
 
     items.sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
     const page = items.slice(0, pageSize);
-    // Cursor hanya disediakan jika kemungkinan masih ada data berikutnya:
-    // ambil ketika halaman penuh DAN salah satu sumber juga penuh.
-    const sourceMaxed =
-      (msgsCount === perSource) ||
-      (subsCount === perSource) ||
-      (alertsCount === perSource) ||
-      (eventsCount === perSource);
+    // Halaman penuh ⇒ kemungkinan masih ada item lebih lama.
     const nextCursor =
-      page.length === pageSize && sourceMaxed ? page[page.length - 1].createdAt : null;
+      page.length === pageSize ? page[page.length - 1].createdAt : null;
     return {
       items: page,
       nextCursor,
