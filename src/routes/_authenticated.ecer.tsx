@@ -583,23 +583,28 @@ function DetailHero({
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       {/* Brand strip */}
-      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-5 pb-6 pt-5 text-primary-foreground">
+      <div className="relative bg-gradient-to-br from-primary/95 via-primary to-primary/80 px-4 pb-5 pt-4 text-primary-foreground sm:px-5 sm:pb-6 sm:pt-5">
         <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-400 via-primary-foreground/40 to-emerald-400" />
-        <div className="flex items-start justify-between gap-3">
+        <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
           <div className="min-w-0">
             <div className="flex items-center gap-1.5 text-[10.5px] font-semibold uppercase tracking-[0.18em] text-primary-foreground/80">
-              <Scale className="h-3 w-3" /> Detail penyiapan ecer
+              <Scale className="h-3 w-3 shrink-0" />
+              <span className="truncate">Detail penyiapan ecer</span>
             </div>
-            <h2 className="mt-1.5 truncate text-xl font-bold leading-tight">{title.name}</h2>
-            <div className="mt-1 flex flex-wrap items-center gap-1.5 text-[11px] text-primary-foreground/85">
-              <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 backdrop-blur-sm">
-                <Package className="h-3 w-3" /> {item.name}
+            <h2 className="mt-1.5 break-words text-lg font-bold leading-tight sm:text-xl">{title.name}</h2>
+            <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] text-primary-foreground/85">
+              <span className="inline-flex max-w-full items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 backdrop-blur-sm">
+                <Package className="h-3 w-3 shrink-0" />
+                <span className="truncate">{item.name}</span>
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 backdrop-blur-sm">
                 Target <b className="ml-0.5">{title.target_grams} {unit}</b>
               </span>
               <span className="inline-flex items-center gap-1 rounded-full bg-emerald-400/25 px-2 py-0.5 font-semibold text-emerald-50 ring-1 ring-emerald-300/50 backdrop-blur-sm">
-                <CheckCircle2 className="h-3 w-3" /> Aktif
+                <CheckCircle2 className="h-3 w-3 shrink-0" /> Aktif
+              </span>
+              <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 font-mono text-[10.5px] text-primary-foreground/90 backdrop-blur-sm sm:hidden">
+                <Hash className="h-3 w-3 shrink-0" /> {ref}
               </span>
             </div>
           </div>
@@ -611,7 +616,7 @@ function DetailHero({
       </div>
 
       {/* Detail rows */}
-      <div className="divide-y bg-card px-5">
+      <div className="divide-y bg-card px-4 sm:px-5">
         <DetailRow icon={<Package className="h-3.5 w-3.5" />} label="Produk gudang"
           value={<span className="font-semibold">{item.name}</span>}
           sub={`Stok: ${fmtItemQty(item.stock_base, { ...item, base_unit: item.base_unit as "g" | "pcs" })}`}
@@ -643,11 +648,11 @@ function DetailHero({
       </div>
 
       {/* Action footer */}
-      <div className="flex flex-wrap items-center justify-between gap-2 border-t bg-muted/40 px-5 py-3">
+      <div className="flex flex-col items-stretch gap-2 border-t bg-muted/40 px-4 py-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-5">
         <div className="text-[10.5px] uppercase tracking-wider text-muted-foreground">
           Simpan halaman ini sebagai referensi penyiapan.
         </div>
-        <div className="flex flex-wrap items-center gap-1.5">
+        <div className="-mx-1 flex flex-wrap items-center gap-1.5 sm:mx-0 sm:justify-end">
           {onCreateTitle && (
             <Button size="sm" variant="outline" onClick={onCreateTitle} title="Judul ecer baru untuk produk yang sama">
               <Plus className="h-4 w-4" /> Judul lain
@@ -672,14 +677,14 @@ function DetailHero({
 
 function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
   return (
-    <div className="flex items-start justify-between gap-3 py-2.5">
-      <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
-        <span className="text-muted-foreground/70">{icon}</span>
-        {label}
+    <div className="grid grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-start gap-3 py-2.5 sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
+      <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+        <span className="shrink-0 text-muted-foreground/70">{icon}</span>
+        <span className="truncate">{label}</span>
       </div>
       <div className="min-w-0 text-right text-xs text-foreground">
-        <div>{value}</div>
-        {sub && <div className="mt-0.5 text-[10.5px] text-muted-foreground">{sub}</div>}
+        <div className="break-words">{value}</div>
+        {sub && <div className="mt-0.5 break-words text-[10.5px] text-muted-foreground">{sub}</div>}
       </div>
     </div>
   );
