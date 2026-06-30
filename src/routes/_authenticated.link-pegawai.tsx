@@ -110,6 +110,7 @@ function LinkPegawaiPage() {
   const [busy, setBusy] = useState(false);
   const [regenId, setRegenId] = useState<string | null>(null);
   const [regenAt, setRegenAt] = useState<Record<string, number>>({});
+  const [extendedAt, setExtendedAt] = useState<Record<string, number>>({});
   const [resetTask, setResetTask] = useState<Task | null>(null);
   const [resetPin, setResetPin] = useState("");
   const [resetBusy, setResetBusy] = useState(false);
