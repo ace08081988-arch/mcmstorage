@@ -41,7 +41,7 @@ function makeText<DefaultTag extends React.ElementType>(
 
 export const EcerTitle = makeText(
   "h2",
-  "break-words text-base font-bold leading-tight sm:text-xl",
+  "break-words text-base font-bold leading-snug sm:text-xl",
 );
 
 export const EcerSection = makeText(

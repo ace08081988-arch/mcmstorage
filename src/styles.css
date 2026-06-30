@@ -276,3 +276,16 @@ html.reduce-motion set {
   stroke-dashoffset: 28;
   animation: success-check-draw 0.45s ease-out 0.18s forwards;
 }
+
+/*
+ * Scope tipografi global untuk halaman detail ecer.
+ * Mengunci line-height default ke 1.375 (≈ leading-snug) bagi semua
+ * elemen turunan yang tidak punya utility leading-* eksplisit, sehingga
+ * tidak ada override yang membuat baris tampak loncat-loncat di HP.
+ * Utility leading-none / leading-snug pada chip atau elemen khusus
+ * tetap menang karena di-set langsung di elemennya.
+ */
+@utility ecer-detail {
+  line-height: 1.375;
+  font-variant-numeric: tabular-nums;
+}
