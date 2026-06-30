@@ -266,6 +266,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
 
   const [confirmDelete, setConfirmDelete] = useState<null | "selected" | "all">(null);
   const [showAllDelete, setShowAllDelete] = useState(false);
+  const [deleteSnapshot, setDeleteSnapshot] = useState<{ count: number; bytes: number } | null>(null);
 
   async function runTile(id: TileId) {
     persistLast(id);
