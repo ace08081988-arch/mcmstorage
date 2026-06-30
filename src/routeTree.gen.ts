@@ -43,6 +43,7 @@ import { Route as AuthenticatedCatatanRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authenticated.balas-cepat'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
+import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
@@ -228,6 +229,12 @@ const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedChatRoute,
 } as any)
+const LovableVisualChatDeletedRoute =
+  LovableVisualChatDeletedRouteImport.update({
+    id: '/lovable/visual/chat-deleted',
+    path: '/lovable/visual/chat-deleted',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPrepRealtimeTokenRoute =
   ApiPublicPrepRealtimeTokenRouteImport.update({
     id: '/api/public/prep-realtime-token',
@@ -319,6 +326,7 @@ export interface FileRoutesByFullPath {
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -362,6 +370,7 @@ export interface FileRoutesByTo {
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -408,6 +417,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -454,6 +464,7 @@ export interface FileRouteTypes {
     | '/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
+    | '/lovable/visual/chat-deleted'
     | '/chat/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -497,6 +508,7 @@ export interface FileRouteTypes {
     | '/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
+    | '/lovable/visual/chat-deleted'
     | '/chat'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -542,6 +554,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
+    | '/lovable/visual/chat-deleted'
     | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -564,6 +577,7 @@ export interface RootRouteChildren {
   TTokenRoute: typeof TTokenRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
+  LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -809,6 +823,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
       parentRoute: typeof AuthenticatedChatRoute
     }
+    '/lovable/visual/chat-deleted': {
+      id: '/lovable/visual/chat-deleted'
+      path: '/lovable/visual/chat-deleted'
+      fullPath: '/lovable/visual/chat-deleted'
+      preLoaderRoute: typeof LovableVisualChatDeletedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/prep-realtime-token': {
       id: '/api/public/prep-realtime-token'
       path: '/api/public/prep-realtime-token'
@@ -985,6 +1006,7 @@ const rootRouteChildren: RootRouteChildren = {
   TTokenRoute: TTokenRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
+  LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
