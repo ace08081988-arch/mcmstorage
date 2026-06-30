@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker, X, Send, FileText, Search } from "lucide-react";
+import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker, X, Send, FileText, Search, CheckCircle2, AlertCircle, RotateCcw } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -88,7 +89,9 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     ? TILES.filter((t) => norm(t.label).includes(q) || t.keywords.some((k) => k.includes(q)))
     : TILES;
   type PendingItem = { file: File; previewUrl: string | null };
+  type ItemStatus = "idle" | "uploading" | "sent" | "error";
   const [pending, setPending] = useState<PendingItem[] | null>(null);
+  const [statuses, setStatuses] = useState<Array<{ state: ItemStatus; error?: string }>>([]);
   const [caption, setCaption] = useState("");
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
@@ -138,6 +141,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       file: f,
       previewUrl: (f.type.startsWith("image/") || f.type.startsWith("video/")) ? URL.createObjectURL(f) : null,
     })));
+    setStatuses(arr.map(() => ({ state: "idle" as ItemStatus })));
   }
 
   function removePendingAt(idx: number) {
@@ -148,17 +152,34 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       const next = prev.filter((_, i) => i !== idx);
       return next.length ? next : null;
     });
+    setStatuses((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  async function confirmSendPending() {
+  async function confirmSendPending(retryOnly = false) {
     if (!pending || pending.length === 0) return;
     setBusy("upload");
-    setProgress({ done: 0, total: pending.length });
     const cap = caption.trim();
-    try {
-      for (let i = 0; i < pending.length; i++) {
+    // Indeks yang akan dikirim: semua (atau hanya yang error / belum) saat retry.
+    const indices = retryOnly
+      ? pending.map((_, i) => i).filter((i) => statuses[i]?.state !== "sent")
+      : pending.map((_, i) => i);
+    const total = indices.length;
+    let done = 0;
+    setProgress({ done, total });
+    let anyError = false;
+    let firstCaptionConsumed = retryOnly
+      ? statuses.findIndex((s) => s?.state === "sent") !== -1 // caption sudah ikut item pertama yang sukses
+      : false;
+    for (const i of indices) {
+      setStatuses((prev) => {
+        const next = [...prev];
+        next[i] = { state: "uploading" };
+        return next;
+      });
+      try {
         const item = pending[i];
         const up = await uploadChatFile({ conversationId, file: item.file });
+        const includeCaption = !firstCaptionConsumed && !!cap;
         await sendMessage({
           data: {
             conversationId,
@@ -166,20 +187,39 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             attachmentMime: up.mime,
             attachmentName: up.name,
             attachmentSize: up.size,
-            // Caption hanya pada lampiran pertama agar tidak duplikat
-            ...(i === 0 && cap ? { body: cap } : {}),
+            ...(includeCaption ? { body: cap } : {}),
           },
         });
-        setProgress({ done: i + 1, total: pending.length });
+        if (includeCaption) firstCaptionConsumed = true;
+        setStatuses((prev) => {
+          const next = [...prev];
+          next[i] = { state: "sent" };
+          return next;
+        });
+        onSent?.();
+      } catch (e) {
+        anyError = true;
+        const msg = e instanceof Error ? e.message : "Gagal mengunggah";
+        setStatuses((prev) => {
+          const next = [...prev];
+          next[i] = { state: "error", error: msg };
+          return next;
+        });
       }
-      setPending(null);
-      setCaption("");
-      onSent?.();
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Gagal mengirim lampiran");
-    } finally {
-      setBusy(null);
-      setProgress(null);
+      done += 1;
+      setProgress({ done, total });
+    }
+    setBusy(null);
+    setProgress(null);
+    if (!anyError) {
+      // Semua berhasil → tutup dialog setelah jeda kecil supaya status terlihat.
+      setTimeout(() => {
+        setPending(null);
+        setCaption("");
+        setStatuses([]);
+      }, 300);
+    } else {
+      toast.error(`${statuses.filter((s) => s?.state === "error").length || "Beberapa"} lampiran gagal — tekan "Coba lagi"`);
     }
   }
 
@@ -276,8 +316,10 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           {pending && pending.length > 0 ? (
             <div className="space-y-3">
               <div className="grid max-h-72 grid-cols-3 gap-2 overflow-y-auto">
-                {pending.map((p, i) => (
-                  <div key={i} className="relative aspect-square overflow-hidden rounded-lg border bg-muted/30">
+                {pending.map((p, i) => {
+                  const st = statuses[i]?.state ?? "idle";
+                  return (
+                  <div key={i} className={`relative aspect-square overflow-hidden rounded-lg border bg-muted/30 ${st === "error" ? "ring-2 ring-destructive" : st === "sent" ? "ring-2 ring-emerald-500/70" : ""}`}>
                     {p.previewUrl && p.file.type.startsWith("image/") ? (
                       <img src={p.previewUrl} alt={p.file.name} className="h-full w-full object-cover" />
                     ) : p.previewUrl && p.file.type.startsWith("video/") ? (
@@ -289,7 +331,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         <div className="text-[10px] text-muted-foreground">{formatBytes(p.file.size)}</div>
                       </div>
                     )}
-                    {pending.length > 1 ? (
+                    {pending.length > 1 && !busy ? (
                       <button
                         type="button"
                         onClick={() => removePendingAt(i)}
@@ -300,32 +342,70 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         <X className="h-3 w-3" />
                       </button>
                     ) : null}
+                    {st === "uploading" ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-background/60">
+                        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                      </div>
+                    ) : st === "sent" ? (
+                      <div className="absolute right-1 top-1 rounded-full bg-emerald-500/95 p-0.5 text-white shadow">
+                        <CheckCircle2 className="h-3.5 w-3.5" />
+                      </div>
+                    ) : st === "error" ? (
+                      <div className="absolute right-1 top-1 rounded-full bg-destructive/95 p-0.5 text-destructive-foreground shadow" title={statuses[i]?.error}>
+                        <AlertCircle className="h-3.5 w-3.5" />
+                      </div>
+                    ) : null}
                     <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[10px] text-white">
                       {p.file.name}
                     </div>
                   </div>
-                ))}
+                  );
+                })}
               </div>
+              {/* Daftar error rinci agar pesan tidak terpotong di chip */}
+              {statuses.some((s) => s?.state === "error") ? (
+                <div className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px]">
+                  <div className="mb-1 flex items-center gap-1 font-medium text-destructive">
+                    <AlertCircle className="h-3.5 w-3.5" /> Sebagian lampiran gagal
+                  </div>
+                  <ul className="space-y-0.5 text-destructive/90">
+                    {pending.map((p, i) => statuses[i]?.state === "error" ? (
+                      <li key={i} className="truncate">• <span className="font-medium">{p.file.name}:</span> {statuses[i]?.error}</li>
+                    ) : null)}
+                  </ul>
+                </div>
+              ) : null}
               <div>
                 <Label className="text-[11px] uppercase text-muted-foreground">
                   Caption {pending.length > 1 ? "(berlaku pada berkas pertama)" : "(opsional)"}
                 </Label>
                 <Textarea rows={2} maxLength={1000} placeholder="Tulis caption…"
                   value={caption}
+                  disabled={!!busy}
                   onChange={(e) => setCaption(e.target.value)} />
               </div>
               {progress ? (
-                <div className="text-[11px] text-muted-foreground">
-                  Mengirim {progress.done}/{progress.total}…
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+                    <span className="flex items-center gap-1"><Loader2 className="h-3 w-3 animate-spin" /> Mengunggah {progress.done}/{progress.total}…</span>
+                    <span>{Math.round((progress.done / Math.max(progress.total, 1)) * 100)}%</span>
+                  </div>
+                  <Progress value={(progress.done / Math.max(progress.total, 1)) * 100} className="h-1.5" />
                 </div>
               ) : null}
             </div>
           ) : null}
           <DialogFooter className="gap-2 sm:gap-2">
-            <Button variant="ghost" onClick={() => setPending(null)} disabled={!!busy}>
+            <Button variant="ghost" onClick={() => { setPending(null); setStatuses([]); }} disabled={!!busy}>
               <X className="mr-1 h-4 w-4" /> Batal
             </Button>
-            <Button onClick={confirmSendPending} disabled={!!busy}>
+            {statuses.some((s) => s?.state === "error") && !busy ? (
+              <Button variant="secondary" onClick={() => confirmSendPending(true)}>
+                <RotateCcw className="mr-1 h-4 w-4" />
+                Coba lagi ({statuses.filter((s) => s?.state !== "sent").length})
+              </Button>
+            ) : null}
+            <Button onClick={() => confirmSendPending(false)} disabled={!!busy || (pending?.length ?? 0) === 0 || statuses.every((s) => s?.state === "sent")}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
               Kirim{pending && pending.length > 1 ? ` (${pending.length})` : ""}
             </Button>
