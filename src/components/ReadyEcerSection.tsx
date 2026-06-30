@@ -389,6 +389,7 @@ export function ReadyEcerSection() {
   const [syncFilter, setSyncFilter] = useStateSyncFilter();
   const [view, setView] = useState<"active" | "sent">("active");
   const sentMap = useSentShots();
+  const sentDetails = useSentDetails();
   // Split each row's shots into active vs sent based on local history.
   const rowsForView = (filtered ?? []).map((r) => {
     const active: WorkerShot[] = [];
@@ -628,7 +629,7 @@ export function ReadyEcerSection() {
             </div>
           ) : (
             visible.map((r) => (
-              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={r._lastSentAt} />
+              <EcerCard key={r.id} row={r} onRefresh={handleRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={r._lastSentAt} sentDetails={sentDetails} />
             ))
           )}
         </div>
