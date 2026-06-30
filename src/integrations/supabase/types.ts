@@ -2482,6 +2482,7 @@ export type Database = {
         }
         Returns: Json
       }
+      email_queue_dispatch: { Args: never; Returns: undefined }
       email_queue_health: { Args: never; Returns: Json }
       enqueue_email: {
         Args: { payload: Json; queue_name: string }
