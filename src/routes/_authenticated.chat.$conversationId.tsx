@@ -1,9 +1,10 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { scheduleUndo } from "@/lib/undo-action";
 import { logChatDelete } from "@/lib/chat-delete-audit";
+import { optimisticDeleteMessages } from "@/lib/chat-optimistic-delete";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
   Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
@@ -110,6 +111,7 @@ function ChatRoomPage() {
   useChatHeartbeat();
   const { conversationId } = Route.useParams();
   const navigate = useNavigate();
+  const qc = useQueryClient();
   const { data: myId } = useMyUserId();
   const { data: messages, isLoading } = useConversationMessages(conversationId);
   const deleteMsg = useDeleteMessage(conversationId);
@@ -952,16 +954,20 @@ function ChatRoomPage() {
                                 className="text-destructive focus:text-destructive"
                                 disabled={deleteMsg.isPending}
                                 onSelect={() => {
+                                  const restore = optimisticDeleteMessages(qc, conversationId, [m.id]);
                                   scheduleUndo({
                                     label: "Pesan akan dihapus untuk semua",
+                                    onCancel: restore,
                                     onCommit: () =>
                                       deleteMsg.mutate(
                                         { id: m.id, attachment_path: m.attachment_path },
                                         {
                                           onSuccess: () =>
                                             void logChatDelete({ conversationId, action: "for_all", messageId: m.id }),
-                                          onError: (e) =>
-                                            toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
+                                          onError: (e) => {
+                                            restore();
+                                            toast.error(e instanceof Error ? e.message : "Gagal menghapus");
+                                          },
                                         },
                                       ),
                                   });
@@ -1217,8 +1223,10 @@ function ChatRoomPage() {
                   const target = longPressMsg;
                   if (!target) return;
                   setLongPressMsg(null);
+                  const restore = optimisticDeleteMessages(qc, conversationId, [target.id]);
                   scheduleUndo({
                     label: "Pesan akan dihapus untuk semua",
+                    onCancel: restore,
                     onCommit: () =>
                       deleteMsg.mutate(
                         { id: target.id, attachment_path: target.attachment_path },
@@ -1227,8 +1235,10 @@ function ChatRoomPage() {
                             toast.success("Pesan dihapus untuk semua");
                             void logChatDelete({ conversationId, action: "for_all", messageId: target.id });
                           },
-                          onError: (e) =>
-                            toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
+                          onError: (e) => {
+                            restore();
+                            toast.error(e instanceof Error ? e.message : "Gagal menghapus");
+                          },
                         },
                       ),
                   });
@@ -1306,17 +1316,31 @@ function ChatRoomPage() {
                   const items = [...selectedMessages];
                   setBulkDeleteOpen(false);
                   clearSelection();
+                  const restore = optimisticDeleteMessages(
+                    qc,
+                    conversationId,
+                    items.map((m) => m.id),
+                  );
                   scheduleUndo({
                     label: `${items.length} pesan akan dihapus untuk semua`,
+                    onCancel: restore,
                     onCommit: async () => {
+                      let failed = false;
                       for (const m of items) {
                         await new Promise<void>((resolve) =>
                           deleteMsg.mutate(
                             { id: m.id, attachment_path: m.attachment_path },
-                            { onSuccess: () => resolve(), onError: () => resolve() },
+                            {
+                              onSuccess: () => resolve(),
+                              onError: () => {
+                                failed = true;
+                                resolve();
+                              },
+                            },
                           ),
                         );
                       }
+                      if (failed) restore();
                       toast.success(`${items.length} pesan dihapus`);
                       void logChatDelete({
                         conversationId,
