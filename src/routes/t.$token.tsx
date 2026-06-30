@@ -108,6 +108,18 @@ function PublicPrepPage() {
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
   const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found" | "expired" | "closed">(null);
+  // Hasil pengecekan otomatis status link saat halaman dibuka (sebelum PIN).
+  // Memberi tahu pegawai segera kalau link tidak valid, kedaluwarsa, ditutup,
+  // atau aksesnya sedang dikunci karena terlalu banyak salah PIN.
+  const [peekStatus, setPeekStatus] = useState<
+    | { state: "checking" }
+    | { state: "ok"; title?: string; expiresAt?: string | null }
+    | { state: "not_found" }
+    | { state: "expired"; expiresAt?: string | null }
+    | { state: "closed"; status?: string | null }
+    | { state: "rate_limited"; retryAfter: number }
+    | { state: "network"; message: string }
+  >({ state: "checking" });
   // Pesan error terakhir dari proses verifikasi PIN; ditampilkan inline di kartu PIN.
   const [lastError, setLastError] = useState<null | {
     kind: "bad_pin" | "rate_limited" | "not_found" | "expired" | "closed" | "network" | "no_task";
@@ -510,6 +522,40 @@ function PublicPrepPage() {
     } catch { /* noop */ }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Auto-validasi status link saat halaman dibuka. Tidak perlu PIN —
+  // memanggil RPC `prep_peek_task` yang hanya mengembalikan status aman
+  // (ok / not_found / expired / closed / rate_limited).
+  useEffect(() => {
+    let cancelled = false;
+    async function check() {
+      setPeekStatus({ state: "checking" });
+      const { data, error } = await publicSupabase.rpc("prep_peek_task", { _token: token });
+      if (cancelled) return;
+      if (error) {
+        setPeekStatus({ state: "network", message: error.message });
+        return;
+      }
+      const res = data as { ok: boolean; error?: string; retry_after?: number; expires_at?: string; status?: string; title?: string };
+      if (res?.ok) {
+        setPeekStatus({ state: "ok", title: res.title, expiresAt: res.expires_at ?? null });
+        return;
+      }
+      if (res?.error === "rate_limited") {
+        const secs = Math.max(1, res.retry_after ?? 600);
+        setPeekStatus({ state: "rate_limited", retryAfter: secs });
+        setLockedUntil(Date.now() + secs * 1000);
+        return;
+      }
+      if (res?.error === "expired") { setPeekStatus({ state: "expired", expiresAt: res.expires_at ?? null }); return; }
+      if (res?.error === "closed") { setPeekStatus({ state: "closed", status: res.status ?? null }); return; }
+      if (res?.error === "not_found") { setPeekStatus({ state: "not_found" }); return; }
+      setPeekStatus({ state: "network", message: `Kode tidak dikenal: ${res?.error ?? "unknown"}` });
+    }
+    void check();
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   if (!authed) {
     return (
