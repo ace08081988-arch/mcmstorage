@@ -133,6 +133,7 @@ function ChatRoomPage() {
   const [infoOpen, setInfoOpen] = useState(false);
   const [securityOpen, setSecurityOpen] = useState(false);
   const [translateSource, setTranslateSource] = useState<string | null>(null);
+  const [editStickerMsg, setEditStickerMsg] = useState<{ id: string; body: string } | null>(null);
   const [noteSource, setNoteSource] = useState<MessageRow | null>(null);
   const [qrSource, setQrSource] = useState<string | null>(null);
   const starMut = useStarMessage(conversationId);
