@@ -471,6 +471,22 @@ function ChatRoomPage() {
     return out;
   }, [visibleMessages]);
 
+  // Pinned messages (sorted by pinned_at desc, max 3)
+  const pinnedMessages = useMemo(() => {
+    return (visibleMessages ?? [])
+      .filter((m) => !!m.pinned_at && !m.deleted_at)
+      .sort((a, b) => (b.pinned_at ?? "").localeCompare(a.pinned_at ?? ""))
+      .slice(0, 3);
+  }, [visibleMessages]);
+
+  const selectedMessages = useMemo(
+    () => (messages ?? []).filter((m) => selectedIds.has(m.id)),
+    [messages, selectedIds],
+  );
+  const oneSelected = selectedMessages.length === 1;
+  const onlyOne = oneSelected ? selectedMessages[0] : null;
+  const allMineSelected = selectedMessages.length > 0 && selectedMessages.every((m) => m.sender_id === myId);
+
   // Re-scroll when outbox changes too.
   useEffect(() => {
     const el = scrollerRef.current;
