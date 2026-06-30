@@ -717,9 +717,9 @@ function RealtimeBadge({ status, syncing }: { status: "connecting" | "live" | "o
   );
 }
 
-function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null }) {
+function EcerCard({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null; sentDetails: Map<string, SentEntry> }) {
   void 0;
-  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={lastSentAt} />;
+  return <EcerCardImpl row={r} onRefresh={onRefresh} refreshing={refreshing} syncing={syncing} realtimeStatus={realtimeStatus} view={view} lastSentAt={lastSentAt} sentDetails={sentDetails} />;
 }
 
 const SYNC_META: Record<SyncLevel, { label: string; cls: string; dot: string }> = {
@@ -842,7 +842,7 @@ function SyncBadge({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null }) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails }: { row: Row; onRefresh: () => void; refreshing: boolean; syncing: boolean; realtimeStatus: "connecting" | "live" | "offline"; view: "active" | "sent"; lastSentAt: number | null; sentDetails: Map<string, SentEntry> }) {
   const [sending, setSending] = useState(false);
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
