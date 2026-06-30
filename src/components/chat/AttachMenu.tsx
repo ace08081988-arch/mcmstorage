@@ -226,7 +226,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     setPending(nextPending.length ? nextPending : null);
     // Jika dialog konfirmasi sedang terbuka, segarkan baseline snapshot supaya delta
     // dihitung relatif ke daftar setelah penghapusan ini.
-    if (confirmDeleteRef.current !== null) rebaseDeleteSnapshot();
+    if (confirmDelete !== null) rebaseDeleteSnapshot();
     setStatuses((prev) => {
       const next = { ...prev };
       for (const id of removed) delete next[id];
