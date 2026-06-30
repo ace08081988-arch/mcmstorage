@@ -150,11 +150,14 @@ function PublicPrepPage() {
   }
   function writeSession(pin: string) {
     if (typeof window === "undefined") return;
-    try { window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, ts: Date.now() })); } catch {}
+    const ts = Date.now();
+    try { window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, ts })); } catch {}
+    setSessionStartedAt(ts);
   }
   function clearSession() {
     if (typeof window === "undefined") return;
     try { window.sessionStorage.removeItem(SESSION_KEY); } catch {}
+    setSessionStartedAt(null);
   }
   // Counter kegagalan berturut-turut untuk silentRefresh; baru flip ke layar
   // closedReason setelah 2x kegagalan kategori sama agar transient error
