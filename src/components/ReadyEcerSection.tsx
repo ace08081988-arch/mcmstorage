@@ -1150,7 +1150,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         conversationId,
         caption,
         locationUrl: firstLocation ?? null,
-        shotIds: ctxShotIds(chatShots),
+        shotIds: [...chatShots.map((s) => s.id)].sort(),
       });
       setChatPreview({
         conversationId,
