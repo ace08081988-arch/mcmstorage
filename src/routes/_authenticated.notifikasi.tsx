@@ -506,11 +506,17 @@ function RecentNotificationsCard({
   }
 
   async function handleMarkAll() {
-    const allIds = new Set(localRead);
-    for (const it of allItems) allIds.add(it.id);
-    persistLocalRead(allIds);
+    // Hanya proses notifikasi yang sesuai filter aktif (enabledKinds)
+    const activeKinds = (Object.keys(enabledKinds) as NotifKind[]).filter(
+      (k) => enabledKinds[k],
+    );
+    const nextLocal = new Set(localRead);
+    for (const it of allItems) {
+      if (enabledKinds[it.kind]) nextLocal.add(it.id);
+    }
+    persistLocalRead(nextLocal);
     try {
-      await markAll();
+      await markAll({ data: { kinds: activeKinds } });
     } catch {
       /* ignore */
     }
@@ -540,11 +546,11 @@ function RecentNotificationsCard({
               size="sm"
               variant="ghost"
               onClick={handleMarkAll}
-              title="Tandai semua sudah dibaca"
+              title={`Tandai ${unreadCount} notifikasi sesuai filter aktif sebagai dibaca`}
               className="h-8 px-2 text-xs"
             >
               <Check className="mr-1 size-3.5" />
-              Tandai dibaca
+              Tandai dibaca ({unreadCount})
             </Button>
           )}
           <Button

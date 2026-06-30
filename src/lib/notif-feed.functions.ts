@@ -234,22 +234,36 @@ export const markNotificationRead = createServerFn({ method: "POST" })
 /** Tandai semua percakapan dibaca + acknowledge semua peringatan PIN. */
 export const markAllNotificationsRead = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }) => {
+  .inputValidator((input: { kinds?: Array<"chat" | "tugas" | "order" | "system"> } | undefined) => input ?? {})
+  .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const nowIso = new Date().toISOString();
-    const [c, s] = await Promise.all([
-      supabase
-        .from("conversation_members")
-        .update({ last_read_at: nowIso })
-        .eq("user_id", userId)
-        .is("archived_at", null),
-      supabase
-        .from("prep_pin_alerts")
-        .update({ acknowledged_at: nowIso })
-        .eq("owner_user_id", userId)
-        .is("acknowledged_at", null),
-    ]);
-    if (c.error) throw c.error;
-    if (s.error) throw s.error;
+    // Bila kinds tidak diberikan, perlakukan sebagai "semua" untuk backward-compat.
+    const all = !data?.kinds || data.kinds.length === 0;
+    const wantChat = all || data.kinds!.includes("chat");
+    const wantSystem = all || data.kinds!.includes("system");
+    const tasks: Array<Promise<{ error: unknown }>> = [];
+    if (wantChat) {
+      tasks.push(
+        supabase
+          .from("conversation_members")
+          .update({ last_read_at: nowIso })
+          .eq("user_id", userId)
+          .is("archived_at", null) as unknown as Promise<{ error: unknown }>,
+      );
+    }
+    if (wantSystem) {
+      tasks.push(
+        supabase
+          .from("prep_pin_alerts")
+          .update({ acknowledged_at: nowIso })
+          .eq("owner_user_id", userId)
+          .is("acknowledged_at", null) as unknown as Promise<{ error: unknown }>,
+      );
+    }
+    const results = await Promise.all(tasks);
+    for (const r of results) {
+      if (r.error) throw r.error;
+    }
     return { ok: true };
   });
