@@ -54,8 +54,6 @@ import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
 import { EditContactNameDialog } from "@/components/chat/EditContactNameDialog";
 import { usePeerAlias } from "@/lib/contact-alias";
-import { useEntitlement } from "@/hooks/useEntitlement";
-import { ProPaywall } from "@/components/ProPaywall";
 import { AttachMenu } from "@/components/chat/AttachMenu";
 import { MessageAttachment, CardBlock, decodeCard } from "@/components/chat/MessageAttachment";
 import { previewText } from "@/lib/chat-cards";
@@ -76,16 +74,6 @@ import {
 } from "@/lib/chat-deleted";
 
 const safePreview = messagePreviewText;
-
-function ChatProGate() {
-  const ent = useEntitlement();
-  if (ent.loading || ent.isPro) return null;
-  return (
-    <div className="mb-2">
-      <ProPaywall feature="Kirim pesan chat" compact />
-    </div>
-  );
-}
 
 export const Route = createFileRoute("/_authenticated/chat/$conversationId")({
   component: ChatRoomPage,
@@ -190,8 +178,7 @@ function ChatRoomPage() {
       longPressTimer.current = null;
     }
   }, []);
-  const entitlement = useEntitlement();
-  const chatBlocked = !entitlement.loading && !entitlement.isPro;
+  const chatBlocked = false;
 
   const meta = useQuery({
     queryKey: ["chat", "conv-meta", conversationId],
@@ -1099,7 +1086,6 @@ function ChatRoomPage() {
       </div>
 
       <form onSubmit={onSubmit} className="sticky bottom-0 z-10 border-t bg-background/95 p-2 backdrop-blur">
-        <ChatProGate />
         {editing ? (
           <div className="mb-2 flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 px-2 py-1 text-xs">
             <Pencil className="mt-0.5 h-3.5 w-3.5 text-primary" />

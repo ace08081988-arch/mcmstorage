@@ -17,7 +17,6 @@ import {
 import { AppLockScreen } from "@/components/AppLockScreen";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
-import { SubscriptionBanner } from "@/components/SubscriptionBanner";
 
 function AuthLock() {
   const [uid, setUid] = useState<string | null>(null);
@@ -113,7 +112,6 @@ function AuthLock() {
       <div className="flex min-h-screen w-full">
         <AppSidebar />
         <SidebarInset className="flex min-w-0 flex-1 flex-col">
-          <SubscriptionBanner />
           <header className="sticky top-0 z-20 flex h-10 items-center gap-2 border-b bg-background/95 px-2 backdrop-blur">
             <SidebarTrigger />
             <span className="text-xs text-muted-foreground">Menu</span>
