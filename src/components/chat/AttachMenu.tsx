@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker, X, Send, FileText, Search, CheckCircle2, AlertCircle, RotateCcw, Trash2, CheckSquare, Square } from "lucide-react";
+import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker, X, Send, FileText, Search, CheckCircle2, AlertCircle, RotateCcw, RefreshCw, Trash2, CheckSquare, Square } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -373,14 +373,14 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     removeIds(ids);
   }
 
-  async function confirmSendPending(retryOnly = false) {
+  async function confirmSendPending(retryOnly = false, onlyIds?: string[]) {
     if (!pending || pending.length === 0) return;
     setBusy("upload");
     const cap = caption.trim();
     // ID yang akan dikirim: lewati yang sudah sukses dan yang gagal validasi (preflight).
     const queueIds = pending
       .filter((p) => statuses[p.id]?.state !== "sent" && !statuses[p.id]?.preflight)
-      .filter((p) => (retryOnly ? statuses[p.id]?.state === "error" : true))
+      .filter((p) => (onlyIds ? onlyIds.includes(p.id) : retryOnly ? statuses[p.id]?.state === "error" : true))
       .map((p) => p.id);
     if (queueIds.length === 0) {
       setBusy(null);
@@ -392,7 +392,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
     setProgress({ done, total });
     let anyError = false;
     let failedCount = 0;
-    let firstCaptionConsumed = retryOnly
+    let firstCaptionConsumed = retryOnly || !!onlyIds
       ? Object.values(statuses).some((s) => s?.state === "sent")
       : false;
     let okCount = 0;
@@ -626,9 +626,17 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         <CheckCircle2 className="h-3.5 w-3.5" />
                       </div>
                     ) : st === "error" && !selectMode ? (
-                      <div className="absolute right-7 top-1 rounded-full bg-destructive/95 p-0.5 text-destructive-foreground shadow" title={statuses[p.id]?.error}>
-                        <AlertCircle className="h-3.5 w-3.5" />
-                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => { e.stopPropagation(); confirmSendPending(false, [p.id]); }}
+                        disabled={!!busy}
+                        title={`Coba lagi: ${statuses[p.id]?.error ?? ""}`}
+                        aria-label={`Coba lagi ${p.file.name}`}
+                        className="absolute right-7 top-1 flex items-center gap-1 rounded-full bg-destructive/95 px-1.5 py-0.5 text-[10px] font-medium text-destructive-foreground shadow hover:bg-destructive disabled:opacity-60"
+                      >
+                        <RefreshCw className="h-3 w-3" />
+                        Ulang
+                      </button>
                     ) : null}
                     <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[10px] text-white">
                       {p.file.name}
@@ -643,9 +651,19 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                   <div className="mb-1 flex items-center gap-1 font-medium text-destructive">
                     <AlertCircle className="h-3.5 w-3.5" /> Sebagian lampiran gagal
                   </div>
-                  <ul className="space-y-0.5 text-destructive/90">
+                  <ul className="space-y-1 text-destructive/90">
                     {pending.map((p) => statuses[p.id]?.state === "error" ? (
-                      <li key={p.id} className="truncate">• <span className="font-medium">{p.file.name}:</span> {statuses[p.id]?.error}</li>
+                      <li key={p.id} className="flex items-start justify-between gap-2">
+                        <span className="min-w-0 flex-1 truncate">• <span className="font-medium">{p.file.name}:</span> {statuses[p.id]?.error}</span>
+                        <button
+                          type="button"
+                          onClick={() => confirmSendPending(false, [p.id])}
+                          disabled={!!busy}
+                          className="shrink-0 inline-flex items-center gap-1 rounded border border-destructive/40 bg-background px-1.5 py-0.5 text-[10px] font-medium text-destructive hover:bg-destructive/10 disabled:opacity-60"
+                        >
+                          <RefreshCw className="h-3 w-3" /> Coba lagi
+                        </button>
+                      </li>
                     ) : null)}
                   </ul>
                 </div>
