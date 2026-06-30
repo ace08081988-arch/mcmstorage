@@ -1,5 +1,5 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
-import { Loader2, MapPin, Send } from "lucide-react";
+import { CheckCircle2, Loader2, MapPin, Send, XCircle, AlertTriangle, RefreshCw } from "lucide-react";
 
 export type ChatSharePreviewData = {
   conversationTitle: string;
@@ -14,9 +14,42 @@ export type ChatSharePreviewData = {
   mapsUrl: string | null;
 };
 
+/** Status hidup pengiriman ke chat — dipakai untuk menampilkan progres di dialog. */
+export type ChatShareLiveStatus = {
+  /** Apakah caption teks dikirim. */
+  captionStep: boolean;
+  captionStatus: "pending" | "running" | "ok" | "fail";
+  /** Total foto yang akan dikirim (= totalPhotos di data). */
+  photosTotal: number;
+  photosSent: number;
+  photosFailed: number;
+  photoCurrent: number | null;
+  locationStep: boolean;
+  locationStatus: "pending" | "running" | "ok" | "fail";
+  /** Status akhir, null saat masih berjalan / belum dimulai. */
+  outcome: null | { kind: "success" | "partial" | "failed" | "cancelled"; messageCount: number; error?: string };
+};
+
+function StepRow({ label, status, hint }: { label: string; status: "pending" | "running" | "ok" | "fail"; hint?: string }) {
+  const icon =
+    status === "ok" ? <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+    : status === "fail" ? <XCircle className="h-3.5 w-3.5 text-destructive" />
+    : status === "running" ? <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+    : <span className="inline-block h-3.5 w-3.5 rounded-full border border-muted-foreground/40" />;
+  return (
+    <div className="flex items-center gap-2 text-[12px]">
+      <span className="shrink-0">{icon}</span>
+      <span className="flex-1 truncate">{label}</span>
+      {hint ? <span className="text-[11px] text-muted-foreground">{hint}</span> : null}
+    </div>
+  );
+}
+
 /**
  * Dialog konfirmasi sebelum mengirim paket eceran ke chat aplikasi.
  * Menampilkan caption persis seperti yang akan dikirim, jumlah foto, dan link Maps.
+ * Setelah klik "Kirim sekarang", panel progres tampil dan diakhiri dengan status
+ * berhasil / sebagian gagal / gagal sehingga operator tahu hasilnya tanpa menebak.
  */
 export function ChatSharePreviewDialog({
   open,
@@ -24,13 +57,25 @@ export function ChatSharePreviewDialog({
   data,
   sending,
   onConfirm,
+  status,
+  onRetry,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   data: ChatSharePreviewData | null;
   sending: boolean;
   onConfirm: () => void;
+  status?: ChatShareLiveStatus | null;
+  onRetry?: () => void;
 }) {
+  const progressActive = !!status && (sending || !!status.outcome);
+  const totalSteps = (status?.captionStep ? 1 : 0) + (status?.photosTotal ?? 0) + (status?.locationStep ? 1 : 0);
+  const doneSteps = (status?.captionStatus === "ok" ? 1 : 0)
+    + (status?.photosSent ?? 0) + (status?.photosFailed ?? 0)
+    + (status?.locationStatus === "ok" || status?.locationStatus === "fail" ? 1 : 0);
+  const pct = totalSteps > 0 ? Math.min(100, Math.round((doneSteps / totalSteps) * 100)) : 0;
+  const outcome = status?.outcome ?? null;
+
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!sending) onOpenChange(o); }}>
       <DialogContent className="max-w-md">
@@ -93,24 +138,114 @@ export function ChatSharePreviewDialog({
           </div>
         )}
 
+        {progressActive && status ? (
+          <div className="space-y-2 rounded-md border bg-muted/30 p-3">
+            <div className="flex items-center justify-between gap-2">
+              <h3 className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {outcome ? "Hasil pengiriman" : "Mengirim…"}
+              </h3>
+              <span className="text-[11px] text-muted-foreground">{doneSteps}/{totalSteps} langkah</span>
+            </div>
+            <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+              <div
+                className={
+                  outcome?.kind === "failed" ? "h-full bg-destructive transition-all"
+                  : outcome?.kind === "partial" ? "h-full bg-amber-500 transition-all"
+                  : outcome?.kind === "success" ? "h-full bg-emerald-600 transition-all"
+                  : "h-full bg-primary transition-all"
+                }
+                style={{ width: `${outcome ? 100 : pct}%` }}
+              />
+            </div>
+            <div className="space-y-1">
+              {status.captionStep && (
+                <StepRow label="Caption teks" status={status.captionStatus} />
+              )}
+              {status.photosTotal > 0 && (
+                <StepRow
+                  label="Foto"
+                  status={
+                    status.photosSent + status.photosFailed >= status.photosTotal
+                      ? (status.photosFailed === 0 ? "ok" : status.photosSent === 0 ? "fail" : "ok")
+                      : status.photoCurrent !== null ? "running" : "pending"
+                  }
+                  hint={`${status.photosSent}/${status.photosTotal}${status.photosFailed > 0 ? ` · ${status.photosFailed} gagal` : ""}`}
+                />
+              )}
+              {status.locationStep && (
+                <StepRow label="Link Maps" status={status.locationStatus} />
+              )}
+            </div>
+            {outcome ? (
+              <div
+                className={
+                  "flex items-start gap-2 rounded-md border p-2 text-[12px] " +
+                  (outcome.kind === "success" ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                  : outcome.kind === "partial" ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200"
+                  : outcome.kind === "cancelled" ? "border-muted-foreground/30 bg-muted text-muted-foreground"
+                  : "border-destructive/40 bg-destructive/10 text-destructive")
+                }
+              >
+                {outcome.kind === "success" ? <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" />
+                : outcome.kind === "partial" ? <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                : outcome.kind === "cancelled" ? <XCircle className="mt-0.5 h-4 w-4 shrink-0" />
+                : <XCircle className="mt-0.5 h-4 w-4 shrink-0" />}
+                <div className="min-w-0 flex-1">
+                  <div className="font-medium">
+                    {outcome.kind === "success" ? `Berhasil dikirim (${outcome.messageCount} pesan).`
+                    : outcome.kind === "partial" ? `Sebagian terkirim (${outcome.messageCount} pesan, ${status.photosFailed} foto gagal).`
+                    : outcome.kind === "cancelled" ? "Pengiriman dibatalkan."
+                    : "Gagal mengirim."}
+                  </div>
+                  {outcome.error ? <div className="mt-0.5 break-words opacity-80">{outcome.error}</div> : null}
+                </div>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+
         <DialogFooter className="gap-2 sm:gap-2">
-          <button
-            type="button"
-            onClick={() => onOpenChange(false)}
-            disabled={sending}
-            className="inline-flex h-9 items-center justify-center rounded-md border bg-card px-3 text-sm font-medium hover:bg-accent disabled:opacity-50"
-          >
-            Batal
-          </button>
-          <button
-            type="button"
-            onClick={onConfirm}
-            disabled={sending || !data}
-            className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
-          >
-            {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-            {sending ? "Mengirim…" : "Kirim sekarang"}
-          </button>
+          {outcome ? (
+            <>
+              {(outcome.kind === "failed" || outcome.kind === "partial") && onRetry ? (
+                <button
+                  type="button"
+                  onClick={onRetry}
+                  disabled={sending}
+                  className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md border bg-card px-3 text-sm font-medium hover:bg-accent disabled:opacity-50"
+                >
+                  <RefreshCw className="h-4 w-4" /> Coba lagi
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                className="inline-flex h-9 items-center justify-center rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90"
+              >
+                Tutup
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                type="button"
+                onClick={() => onOpenChange(false)}
+                disabled={sending}
+                className="inline-flex h-9 items-center justify-center rounded-md border bg-card px-3 text-sm font-medium hover:bg-accent disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={onConfirm}
+                disabled={sending || !data}
+                className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+              >
+                {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                {sending ? "Mengirim…" : "Kirim sekarang"}
+              </button>
+            </>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>
