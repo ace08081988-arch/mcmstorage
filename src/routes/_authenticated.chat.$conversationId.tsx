@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { scheduleUndo } from "@/lib/undo-action";
 import { logChatDelete } from "@/lib/chat-delete-audit";
 import { optimisticDeleteMessages } from "@/lib/chat-optimistic-delete";
+import { Linkify } from "@/lib/linkify";
 import {
   ArrowLeft, Send, Loader2, MessageCircle, MoreVertical, Trash2, Share2, Copy, Users,
   Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
@@ -808,7 +809,9 @@ function ChatRoomPage() {
                                 ) : null}
                                 {card ? <CardBlock card={card} mine={mine} /> : null}
                                 {!card && m.body ? (
-                                  <div className="whitespace-pre-wrap break-words">{m.body}</div>
+                                  <div className="whitespace-pre-wrap break-words">
+                                    <Linkify text={m.body} />
+                                  </div>
                                 ) : null}
                               </div>
                             );
@@ -1041,7 +1044,9 @@ function ChatRoomPage() {
                         : "bg-primary/80 text-primary-foreground"
                     }`}
                   >
-                    <div className="whitespace-pre-wrap break-words">{o.body}</div>
+                    <div className="whitespace-pre-wrap break-words">
+                      <Linkify text={o.body} />
+                    </div>
                     <div className="mt-0.5 flex items-center justify-end gap-1 text-[10px] opacity-90">
                       <span>{fmtTime(o.createdAt)}</span>
                       {o.status === "sending" ? (
