@@ -1142,6 +1142,16 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         missingPhotos: Math.max(0, attemptedPaths - chatShots.length),
         mapsUrl: firstLocation,
       };
+      // Fingerprint payload Chat: caption + conv + lokasi + daftar id foto.
+      // Dipakai untuk membandingkan dengan payload kiriman sebelumnya agar
+      // tombol "Kirim ulang (paksa)" hanya aktif saat konten benar-benar sama.
+      const chatFingerprint = payloadFingerprint({
+        channel: "chat",
+        conversationId,
+        caption,
+        locationUrl: firstLocation ?? null,
+        shotIds: ctxShotIds(chatShots),
+      });
       setChatPreview({
         conversationId,
         conversationTitle: convTitle,
@@ -1153,6 +1163,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         preview,
         duplicate,
         previousLog,
+        fingerprint: chatFingerprint,
       });
       setChatPreviewOpen(true);
     } catch (err) {
