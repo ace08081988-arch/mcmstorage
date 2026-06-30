@@ -861,6 +861,21 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             const shown = showAllDelete ? targets : targets.slice(0, previewLimit);
             const extra = targets.length - shown.length;
             const totalBytes = removable.reduce((sum, p) => sum + (p.file.size || 0), 0);
+            const tally = (list: typeof targets) => {
+              let pendingN = 0, uploadingN = 0, errorN = 0, sentN = 0, rejectedN = 0;
+              for (const p of list) {
+                const st = statuses[p.id]?.state ?? "idle";
+                const pre = statuses[p.id]?.preflight;
+                if (pre) rejectedN++;
+                else if (st === "uploading") uploadingN++;
+                else if (st === "error") errorN++;
+                else if (st === "sent") sentN++;
+                else pendingN++;
+              }
+              return { pendingN, uploadingN, errorN, sentN, rejectedN };
+            };
+            const tSel = tally(targets);
+            const tAll = tally(pending ?? []);
             return (
               <>
                 <AlertDialogHeader>
@@ -888,6 +903,26 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                     ) : null}
                   </AlertDialogDescription>
                 </AlertDialogHeader>
+                <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                  <span className="font-medium text-muted-foreground">Terpilih:</span>
+                  <span className="rounded-full border border-muted-foreground/30 bg-background px-1.5 py-0.5">menunggu {tSel.pendingN}</span>
+                  <span className="rounded-full border border-amber-400/50 bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-400">uploading {tSel.uploadingN}</span>
+                  <span className="rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-destructive">gagal {tSel.errorN}</span>
+                  {tSel.rejectedN > 0 ? (
+                    <span className="rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-destructive">ditolak {tSel.rejectedN}</span>
+                  ) : null}
+                  {tSel.sentN > 0 ? (
+                    <span className="rounded-full border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-0.5 text-emerald-700 dark:text-emerald-400">terkirim {tSel.sentN}</span>
+                  ) : null}
+                </div>
+                {confirmDelete !== "all" && (pending?.length ?? 0) > targets.length ? (
+                  <div className="flex flex-wrap items-center gap-1.5 text-[10px]">
+                    <span className="font-medium text-muted-foreground">Total antrean ({(pending ?? []).length}):</span>
+                    <span className="rounded-full border border-muted-foreground/30 bg-background px-1.5 py-0.5">menunggu {tAll.pendingN}</span>
+                    <span className="rounded-full border border-amber-400/50 bg-amber-500/10 px-1.5 py-0.5 text-amber-700 dark:text-amber-400">uploading {tAll.uploadingN}</span>
+                    <span className="rounded-full border border-destructive/40 bg-destructive/10 px-1.5 py-0.5 text-destructive">gagal {tAll.errorN}</span>
+                  </div>
+                ) : null}
                 {targets.length > 0 ? (
                   <ul className={`${showAllDelete ? "max-h-64" : "max-h-44"} overflow-y-auto rounded-md border bg-muted/30 p-2 text-[12px]`}>
                     {shown.map((p) => {
