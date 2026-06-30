@@ -772,6 +772,11 @@ function LinkPegawaiPage() {
                       <span className={`inline-flex shrink-0 items-center rounded-full px-1.5 py-0.5 text-[10px] font-medium ring-1 ${badge.cls}`}>
                         {badge.label}
                       </span>
+                      {justExtended && (
+                        <span className="inline-flex shrink-0 animate-fade-in items-center gap-0.5 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 ring-1 ring-emerald-500/30 dark:text-emerald-400">
+                          <Sparkles className="h-3 w-3" /> Baru diperpanjang
+                        </span>
+                      )}
                       {testMode && (
                         <>
                           {tokenState.kind === "valid" && (
