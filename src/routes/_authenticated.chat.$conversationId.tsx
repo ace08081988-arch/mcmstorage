@@ -923,6 +923,71 @@ function ChatRoomPage() {
         </AlertDialogContent>
       </AlertDialog>
 
+      <AlertDialog open={!!longPressMsg} onOpenChange={(v) => { if (!v) setLongPressMsg(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus pesan?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {longPressMsg?.sender_id === myId
+                ? "Pilih cara menghapus pesan ini. \"Hapus untuk semua orang\" akan menghapus pesan dari sisi lawan chat juga."
+                : "Pesan ini bukan milik Anda, jadi hanya bisa disembunyikan di perangkat Anda."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-2">
+            <Button
+              variant="outline"
+              className="w-full justify-start"
+              disabled={hideMsg.isPending}
+              onClick={() => {
+                const target = longPressMsg;
+                if (!target) return;
+                hideMsg.mutate(target.id, {
+                  onSuccess: () => {
+                    toast.success("Pesan disembunyikan untuk Anda");
+                    setLongPressMsg(null);
+                  },
+                  onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
+                });
+              }}
+            >
+              <EyeOff className="mr-2 h-4 w-4" />
+              Hapus untuk saya
+            </Button>
+            {longPressMsg?.sender_id === myId ? (
+              <Button
+                variant="destructive"
+                className="w-full justify-start"
+                disabled={deleteMsg.isPending}
+                onClick={() => {
+                  const target = longPressMsg;
+                  if (!target) return;
+                  deleteMsg.mutate(
+                    { id: target.id, attachment_path: target.attachment_path },
+                    {
+                      onSuccess: () => {
+                        toast.success("Pesan dihapus untuk semua");
+                        setLongPressMsg(null);
+                      },
+                      onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal menghapus"),
+                    },
+                  );
+                }}
+              >
+                {deleteMsg.isPending ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Trash2 className="mr-2 h-4 w-4" />
+                )}
+                Hapus untuk semua orang
+              </Button>
+            ) : null}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
       {meta.data?.kind === "group" ? (
         <ManageGroupDialog
           open={manageOpen}
