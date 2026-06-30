@@ -230,6 +230,20 @@ export function WaPreviewHost() {
                   <dt className="font-medium opacity-80">Status</dt>
                   <dd className="break-words">{dupStatusLabel}</dd>
                 </dl>
+                {dup!.status !== "in-flight" ? (
+                  <div
+                    className={
+                      "mt-2 rounded-md border px-2 py-1.5 text-[11px] " +
+                      (payloadMatches
+                        ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-200"
+                        : "border-rose-500/40 bg-rose-500/10 text-rose-800 dark:text-rose-200")
+                    }
+                  >
+                    {payloadMatches
+                      ? "Payload identik dengan kiriman sebelumnya — aman untuk dikirim ulang bila perlu."
+                      : forceDisabledReason}
+                  </div>
+                ) : null}
               </div>
             </div>
           ) : null}
@@ -377,8 +391,14 @@ export function WaPreviewHost() {
                 type="button"
                 size="sm"
                 onClick={() => finish(true, true)}
-                disabled={dup!.status === "in-flight"}
-                title={dup!.status === "in-flight" ? "Kiriman sebelumnya masih berjalan" : "Kirim ulang meski klik ganda terdeteksi"}
+                disabled={dup!.status === "in-flight" || !payloadMatches}
+                title={
+                  dup!.status === "in-flight"
+                    ? "Kiriman sebelumnya masih berjalan"
+                    : !payloadMatches
+                      ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
+                      : "Kirim ulang meski klik ganda terdeteksi"
+                }
                 className="bg-amber-500 text-white hover:bg-amber-600 disabled:opacity-50"
               >
                 <ShieldAlert className="mr-1.5 h-3.5 w-3.5" />
