@@ -1108,7 +1108,9 @@ function Index() {
                         else
                           setItems((arr) =>
                             arr.map((i) =>
-                              i.id === p.id ? { ...i, status: "Belum Dikirim" } : i,
+                              i.id === p.id
+                                ? { ...i, status: "Belum Dikirim", sent_at: undefined }
+                                : i,
                             ),
                           );
                       }}
@@ -1179,7 +1181,9 @@ function Index() {
                           else
                             setItems((arr) =>
                               arr.map((i) =>
-                                i.id === p.id ? { ...i, status: "Belum Dikirim" } : i,
+                                i.id === p.id
+                                  ? { ...i, status: "Belum Dikirim", sent_at: undefined }
+                                  : i,
                               ),
                             );
                         }}
