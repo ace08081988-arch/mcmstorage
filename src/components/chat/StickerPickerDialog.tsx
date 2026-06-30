@@ -15,8 +15,6 @@ import { uploadChatFile } from "@/lib/chat-attachments";
 import { StickerView } from "@/components/chat/StickerView";
 import { sendMessage } from "@/lib/chat.functions";
 import { generateAiSticker } from "@/lib/sticker-ai.functions";
-import { supabase } from "@/integrations/supabase/client";
-import { useQuery } from "@tanstack/react-query";
 
 const ARROW_DIRS: StickerArrowDir[] = [
   "up-left", "up", "up-right",
@@ -242,34 +240,8 @@ function ArrowGlyph({ dir }: { dir: StickerArrowDir }) {
 function BankPanel({
   card, onChange,
 }: { card: Extract<StickerCard, { kind: "bank" }>; onChange: (c: StickerCard) => void }) {
-  const saved = useQuery({
-    queryKey: ["sticker", "bank-accounts"],
-    queryFn: async () => {
-      // best-effort: only used if a 'bank_accounts' table exists for this org
-      const { data } = await supabase
-        .from("bank_accounts")
-        .select("bank, account_number, account_name")
-        .order("bank")
-        .limit(10);
-      return (data ?? []) as Array<{ bank: string; account_number: string; account_name: string }>;
-    },
-    staleTime: 60_000,
-  });
   return (
     <div className="space-y-2">
-      {saved.data && saved.data.length > 0 ? (
-        <div>
-          <Label className="text-[11px] uppercase text-muted-foreground">Pakai rekening tersimpan</Label>
-          <div className="mt-1 flex flex-wrap gap-1">
-            {saved.data.map((s, i) => (
-              <button key={i} type="button" className="rounded border px-2 py-1 text-[11px] hover:bg-accent"
-                onClick={() => onChange({ ...card, bank: s.bank, account_number: s.account_number, account_name: s.account_name })}>
-                {s.bank} · {s.account_number.slice(-4)}
-              </button>
-            ))}
-          </div>
-        </div>
-      ) : null}
       <div className="grid grid-cols-2 gap-2">
         <div>
           <Label>Bank</Label>
