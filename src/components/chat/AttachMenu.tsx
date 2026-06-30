@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import {
-  pickFromCamera, pickViaInput, uploadChatFile,
+  pickFromCamera, pickViaInput, pickMultipleViaInput, uploadChatFile,
 } from "@/lib/chat-attachments";
 import { encodeCard } from "@/lib/chat-cards";
 import { getCurrentLocation, toGeoError } from "@/lib/get-location";
@@ -48,47 +48,68 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const [openContact, setOpenContact] = useState(false);
   const [openProduct, setOpenProduct] = useState(false);
   const [openSticker, setOpenSticker] = useState(false);
-  const [pending, setPending] = useState<{ file: File; previewUrl: string | null; caption: string } | null>(null);
+  type PendingItem = { file: File; previewUrl: string | null };
+  const [pending, setPending] = useState<PendingItem[] | null>(null);
+  const [caption, setCaption] = useState("");
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
 
   // Bersihkan object URL saat pratinjau ditutup / ganti.
   useEffect(() => {
-    return () => { if (pending?.previewUrl) URL.revokeObjectURL(pending.previewUrl); };
-  }, [pending?.previewUrl]);
+    return () => { pending?.forEach((p) => { if (p.previewUrl) URL.revokeObjectURL(p.previewUrl); }); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pending]);
 
-  /** Setelah file dipilih, JANGAN langsung kirim — buka pratinjau dulu. */
-  function stageFile(file: File | null) {
-    if (!file) return;
+  function stageFiles(files: File[] | File | null) {
+    const arr = Array.isArray(files) ? files : files ? [files] : [];
+    if (arr.length === 0) return;
     setOpenSheet(false);
-    const isPreviewable = file.type.startsWith("image/") || file.type.startsWith("video/");
-    setPending({
-      file,
-      previewUrl: isPreviewable ? URL.createObjectURL(file) : null,
-      caption: "",
+    setCaption("");
+    setPending(arr.map((f) => ({
+      file: f,
+      previewUrl: (f.type.startsWith("image/") || f.type.startsWith("video/")) ? URL.createObjectURL(f) : null,
+    })));
+  }
+
+  function removePendingAt(idx: number) {
+    setPending((prev) => {
+      if (!prev) return prev;
+      const removed = prev[idx];
+      if (removed?.previewUrl) URL.revokeObjectURL(removed.previewUrl);
+      const next = prev.filter((_, i) => i !== idx);
+      return next.length ? next : null;
     });
   }
 
   async function confirmSendPending() {
-    if (!pending) return;
+    if (!pending || pending.length === 0) return;
     setBusy("upload");
+    setProgress({ done: 0, total: pending.length });
+    const cap = caption.trim();
     try {
-      const up = await uploadChatFile({ conversationId, file: pending.file });
-      const caption = pending.caption.trim();
-      await sendMessage({
-        data: {
-          conversationId,
-          attachmentPath: up.path,
-          attachmentMime: up.mime,
-          attachmentName: up.name,
-          attachmentSize: up.size,
-          ...(caption ? { body: caption } : {}),
-        },
-      });
+      for (let i = 0; i < pending.length; i++) {
+        const item = pending[i];
+        const up = await uploadChatFile({ conversationId, file: item.file });
+        await sendMessage({
+          data: {
+            conversationId,
+            attachmentPath: up.path,
+            attachmentMime: up.mime,
+            attachmentName: up.name,
+            attachmentSize: up.size,
+            // Caption hanya pada lampiran pertama agar tidak duplikat
+            ...(i === 0 && cap ? { body: cap } : {}),
+          },
+        });
+        setProgress({ done: i + 1, total: pending.length });
+      }
       setPending(null);
+      setCaption("");
       onSent?.();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal mengirim lampiran");
     } finally {
       setBusy(null);
+      setProgress(null);
     }
   }
 
@@ -129,13 +150,13 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           </SheetHeader>
           <div className="grid grid-cols-4 gap-3 pt-2">
             <Tile color="bg-violet-500/15 text-violet-500" icon={Paperclip} label="Dokumen"
-              onClick={async () => stageFile(await pickViaInput({ accept: "*/*" }))} />
+              onClick={async () => stageFiles(await pickMultipleViaInput({ accept: "*/*" }))} />
             <Tile color="bg-fuchsia-500/15 text-fuchsia-500" icon={ImageIcon} label="Galeri"
-              onClick={async () => stageFile(await pickViaInput({ accept: "image/*" }))} />
+              onClick={async () => stageFiles(await pickMultipleViaInput({ accept: "image/*" }))} />
             <Tile color="bg-sky-500/15 text-sky-500" icon={Camera} label="Kamera"
-              onClick={async () => stageFile(await pickFromCamera())} />
+              onClick={async () => stageFiles(await pickFromCamera())} />
             <Tile color="bg-rose-500/15 text-rose-500" icon={Film} label="Video"
-              onClick={async () => stageFile(await pickViaInput({ accept: "video/*" }))} />
+              onClick={async () => stageFiles(await pickMultipleViaInput({ accept: "video/*" }))} />
             <Tile color="bg-emerald-500/15 text-emerald-500" icon={MapPin} label="Lokasi"
               onClick={() => { setOpenSheet(false); setOpenLoc(true); }} />
             <Tile color="bg-blue-500/15 text-blue-500" icon={UserRound} label="Kontak"
@@ -154,35 +175,56 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       <Dialog open={!!pending} onOpenChange={(v) => { if (!v && !busy) setPending(null); }}>
         <DialogContent className="max-w-md">
           <DialogHeader>
-            <DialogTitle>Pratinjau lampiran</DialogTitle>
+            <DialogTitle>
+              Pratinjau lampiran{pending && pending.length > 1 ? ` · ${pending.length} berkas` : ""}
+            </DialogTitle>
           </DialogHeader>
-          {pending ? (
+          {pending && pending.length > 0 ? (
             <div className="space-y-3">
-              <div className="flex items-center justify-center overflow-hidden rounded-lg border bg-muted/30">
-                {pending.previewUrl && pending.file.type.startsWith("image/") ? (
-                  <img src={pending.previewUrl} alt={pending.file.name} className="max-h-72 w-full object-contain" />
-                ) : pending.previewUrl && pending.file.type.startsWith("video/") ? (
-                  <video src={pending.previewUrl} controls className="max-h-72 w-full" />
-                ) : (
-                  <div className="flex w-full items-center gap-3 p-4 text-left">
-                    <FileText className="h-10 w-10 shrink-0 text-muted-foreground" />
-                    <div className="min-w-0">
-                      <div className="truncate text-sm font-medium">{pending.file.name}</div>
-                      <div className="text-[11px] text-muted-foreground">{formatBytes(pending.file.size)} · {pending.file.type || "berkas"}</div>
+              <div className="grid max-h-72 grid-cols-3 gap-2 overflow-y-auto">
+                {pending.map((p, i) => (
+                  <div key={i} className="relative aspect-square overflow-hidden rounded-lg border bg-muted/30">
+                    {p.previewUrl && p.file.type.startsWith("image/") ? (
+                      <img src={p.previewUrl} alt={p.file.name} className="h-full w-full object-cover" />
+                    ) : p.previewUrl && p.file.type.startsWith("video/") ? (
+                      <video src={p.previewUrl} className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full flex-col items-center justify-center p-2 text-center">
+                        <FileText className="h-8 w-8 text-muted-foreground" />
+                        <div className="mt-1 line-clamp-2 text-[10px] font-medium">{p.file.name}</div>
+                        <div className="text-[10px] text-muted-foreground">{formatBytes(p.file.size)}</div>
+                      </div>
+                    )}
+                    {pending.length > 1 ? (
+                      <button
+                        type="button"
+                        onClick={() => removePendingAt(i)}
+                        disabled={!!busy}
+                        aria-label={`Hapus ${p.file.name}`}
+                        className="absolute right-1 top-1 rounded-full bg-background/80 p-1 shadow hover:bg-background disabled:opacity-50"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    ) : null}
+                    <div className="absolute inset-x-0 bottom-0 truncate bg-gradient-to-t from-black/70 to-transparent px-1.5 py-1 text-[10px] text-white">
+                      {p.file.name}
                     </div>
                   </div>
-                )}
-              </div>
-              <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-                <span className="truncate">{pending.file.name}</span>
-                <span>{formatBytes(pending.file.size)}</span>
+                ))}
               </div>
               <div>
-                <Label className="text-[11px] uppercase text-muted-foreground">Caption (opsional)</Label>
+                <Label className="text-[11px] uppercase text-muted-foreground">
+                  Caption {pending.length > 1 ? "(berlaku pada berkas pertama)" : "(opsional)"}
+                </Label>
                 <Textarea rows={2} maxLength={1000} placeholder="Tulis caption…"
-                  value={pending.caption}
-                  onChange={(e) => setPending((p) => p ? { ...p, caption: e.target.value } : p)} />
+                  value={caption}
+                  onChange={(e) => setCaption(e.target.value)} />
               </div>
+              {progress ? (
+                <div className="text-[11px] text-muted-foreground">
+                  Mengirim {progress.done}/{progress.total}…
+                </div>
+              ) : null}
             </div>
           ) : null}
           <DialogFooter className="gap-2 sm:gap-2">
@@ -191,7 +233,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
             </Button>
             <Button onClick={confirmSendPending} disabled={!!busy}>
               {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
-              Kirim
+              Kirim{pending && pending.length > 1 ? ` (${pending.length})` : ""}
             </Button>
           </DialogFooter>
         </DialogContent>
