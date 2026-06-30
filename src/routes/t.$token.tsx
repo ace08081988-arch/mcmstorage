@@ -497,7 +497,7 @@ function PublicPrepPage() {
       // sedang rotate PIN / replikasi DB belum sinkron sepersekian detik.
       if (silentFailRef.current.kind === kind) silentFailRef.current.count += 1;
       else silentFailRef.current = { kind, count: 1 };
-      if (silentFailRef.current.count < 2) {
+      if (silentFailRef.current.count < cfg.silentFailTolerance) {
         // eslint-disable-next-line no-console
         console.warn("[t.$token] silentRefresh non-ok (tolerated)", res);
         return;
