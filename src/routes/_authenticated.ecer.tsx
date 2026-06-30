@@ -699,12 +699,24 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const [preps, setPreps] = useState<EcerPreparation[]>([]);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [loadError, setLoadError] = useState<{ message: string; code?: string; hint?: string } | null>(null);
 
   async function load() {
     setLoading(true);
+    setLoadError(null);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data } = await (supabase.from as any)("ecer_preparations")
+    const { data, error } = await (supabase.from as any)("ecer_preparations")
       .select("*").eq("title_id", title.id).order("created_at", { ascending: false });
+    if (error) {
+      setLoadError({
+        message: error.message ?? "Gagal memuat daftar penyiapan.",
+        code: error.code,
+        hint: error.hint,
+      });
+      setPreps([]);
+      setLoading(false);
+      return;
+    }
     setPreps((data ?? []) as EcerPreparation[]);
     setLoading(false);
   }
@@ -752,10 +764,56 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         </CardHeader>
         <CardContent>
           {loading ? (
-            <div className="py-6 text-center text-xs text-muted-foreground"><Loader2 className="inline h-4 w-4 animate-spin" /> Memuat…</div>
+            <div className="space-y-3">
+              <div className="flex items-center justify-center gap-2 py-2 text-xs text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Memuat daftar penyiapan…
+              </div>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                {Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="aspect-square animate-pulse rounded-md border bg-muted/40" />
+                ))}
+              </div>
+            </div>
+          ) : loadError ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/5 p-4">
+              <div className="flex items-start gap-2.5">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <div className="text-sm font-semibold text-destructive">Gagal memuat daftar penyiapan</div>
+                  <div className="space-y-1 rounded-md border bg-background/60 p-2 text-[11px] leading-relaxed">
+                    <div><span className="text-muted-foreground">Pesan:</span> <span className="break-words font-mono">{loadError.message}</span></div>
+                    {loadError.code && <div><span className="text-muted-foreground">Kode:</span> <span className="font-mono">{loadError.code}</span></div>}
+                    {loadError.hint && <div><span className="text-muted-foreground">Hint:</span> <span className="font-mono">{loadError.hint}</span></div>}
+                  </div>
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Button size="sm" onClick={() => void load()}>
+                      <RotateCw className="mr-1 h-4 w-4" /> Coba lagi
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={() => {
+                      const txt = JSON.stringify(loadError, null, 2);
+                      if (navigator.clipboard) {
+                        void navigator.clipboard.writeText(txt).then(() => toast.success("Detail error disalin"));
+                      } else toast.message(txt);
+                    }}>Salin detail</Button>
+                  </div>
+                </div>
+              </div>
+            </div>
           ) : preps.length === 0 ? (
-            <div className="rounded-md border border-dashed p-6 text-center text-xs text-muted-foreground">
-              Belum ada penyiapan. Tekan <b>+ Penyiapan</b> untuk menambah kotak baru.
+            <div className="rounded-md border border-dashed bg-muted/20 px-4 py-8 text-center">
+              <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                <Boxes className="h-6 w-6 text-primary" />
+              </div>
+              <div className="text-sm font-semibold">Belum ada penyiapan</div>
+              <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">
+                Tambahkan kotak penyiapan pertama untuk judul <b className="break-words">{title.name}</b>.
+                Setiap kotak berisi foto, lokasi, dan berat aktual yang ditimbang.
+              </p>
+              <div className="mt-4 flex flex-wrap justify-center gap-2">
+                <Button size="sm" onClick={() => setAdding(true)}>
+                  <Plus className="mr-1 h-4 w-4" /> Tambah penyiapan
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
