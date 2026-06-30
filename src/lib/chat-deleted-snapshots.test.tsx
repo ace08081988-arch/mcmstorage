@@ -363,4 +363,117 @@ describe("snapshots: deleted message rendering", () => {
       expect(renderToStaticMarkup(<MessagePreview message={undefined} />)).toMatchSnapshot();
     });
   });
+
+  describe("Sequence rendering: 10–20 deleted items, mixed bodies & attachments", () => {
+    // Deterministic fixture builder: pick body length & attachment shape by index.
+    const bodyVariants = [
+      "rahasia",
+      "x",
+      "Halo " + "panjang ".repeat(40), // ~280 chars
+      "A".repeat(2000),
+      "   ", // whitespace-only
+      "",
+      "Pesan dengan emoji 🚀🔥 dan unicode: ümlaut, 中文, العربية",
+      "B".repeat(50),
+    ] as const;
+
+    type AttachShape =
+      | "none"
+      | "name-only"
+      | "path-only"
+      | "mime-only"
+      | "name+path"
+      | "name+path+mime";
+
+    const attachShapes: AttachShape[] = [
+      "none",
+      "name-only",
+      "path-only",
+      "mime-only",
+      "name+path",
+      "name+path+mime",
+    ];
+
+    function mkSeqItem(i: number, deleted: boolean) {
+      const body = bodyVariants[i % bodyVariants.length];
+      const shape = attachShapes[i % attachShapes.length];
+      const name = `file-${i}.pdf`;
+      const path = `uploads/${i}/blob`;
+      const mime = i % 2 === 0 ? "application/pdf" : "image/png";
+      const over: Partial<DeletableMessage> = { body, deleted_at: deleted ? `now-${i}` : null };
+      if (shape === "name-only") over.attachment_name = name;
+      if (shape === "path-only") over.attachment_path = path;
+      if (shape === "mime-only") over.attachment_mime = mime;
+      if (shape === "name+path") {
+        over.attachment_name = name;
+        over.attachment_path = path;
+      }
+      if (shape === "name+path+mime") {
+        over.attachment_name = name;
+        over.attachment_path = path;
+        over.attachment_mime = mime;
+      }
+      return mkMessage(over);
+    }
+
+    function SequenceList({
+      count,
+      mode,
+    }: {
+      count: number;
+      mode: "all-deleted" | "mixed";
+    }) {
+      const items = Array.from({ length: count }, (_, i) =>
+        mkSeqItem(i, mode === "all-deleted" ? true : i % 2 === 0),
+      );
+      return (
+        <ul>
+          {items.map((m, i) => (
+            <li key={i} data-i={i}>
+              <MessagePreview message={m} />
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    function DeletedSequenceList({ count }: { count: number }) {
+      const items = Array.from({ length: count }, (_, i) => mkSeqItem(i, true));
+      return (
+        <ul>
+          {items.map((m, i) => (
+            <li key={i} data-i={i}>
+              <DeletedPreview message={m} />
+            </li>
+          ))}
+        </ul>
+      );
+    }
+
+    it("snapshot: MessagePreview sequence — 10 items, all deleted, mixed bodies & attachments", () => {
+      expect(
+        renderToStaticMarkup(<SequenceList count={10} mode="all-deleted" />),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview sequence — 15 items, mixed live/deleted", () => {
+      expect(
+        renderToStaticMarkup(<SequenceList count={15} mode="mixed" />),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: MessagePreview sequence — 20 items, all deleted (max)", () => {
+      expect(
+        renderToStaticMarkup(<SequenceList count={20} mode="all-deleted" />),
+      ).toMatchSnapshot();
+    });
+
+    it("snapshot: DeletedPreview sequence — 10 items, mixed attachment shapes", () => {
+      expect(renderToStaticMarkup(<DeletedSequenceList count={10} />)).toMatchSnapshot();
+    });
+
+    it("snapshot: DeletedPreview sequence — 20 items, mixed attachment shapes (max)", () => {
+      expect(renderToStaticMarkup(<DeletedSequenceList count={20} />)).toMatchSnapshot();
+    });
+  });
 });
