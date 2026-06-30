@@ -109,12 +109,18 @@ function PublicPrepPage() {
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
   const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found" | "expired" | "closed">(null);
+  // Konfigurasi runtime (TTL sesi, retry, ambang stale). Dibaca via
+  // useRef agar tidak bikin re-render saat dipakai dari callback dan
+  // tidak berubah di tengah lifecycle satu mount. Override bisa via
+  // `window.__WORKER_PORTAL_CONFIG__` atau env `VITE_WORKER_PORTAL_*`.
+  const cfgRef = useRef(getWorkerPortalConfig());
+  const cfg = cfgRef.current;
   // Persistensi sesi pegawai (PIN + flag authed) di sessionStorage.
   // Tujuan: WebView Android yang dire-create setelah kembali dari aplikasi
   // kamera / galeri / share / pengunci layar TIDAK memantulkan pegawai
   // kembali ke layar PIN. PIN disimpan dalam scope per-token, TTL singkat.
   const SESSION_KEY = `prep_session:${token}`;
-  const SESSION_TTL_MS = 30 * 60 * 1000; // 30 menit
+  const SESSION_TTL_MS = cfg.sessionTtlMs;
   function readSession(): { pin: string; ts: number } | null {
     if (typeof window === "undefined") return null;
     try {
@@ -230,8 +236,8 @@ function PublicPrepPage() {
   // Data disimpan di localStorage per-token agar reload halaman tidak
   // mem-bypass pembatasan. Server juga punya rate-limit terpisah
   // (mengembalikan "rate_limited" + retry_after).
-  const MAX_ATTEMPTS = 3;
-  const LOCK_SECONDS = 60;
+  const MAX_ATTEMPTS = cfg.maxAttempts;
+  const LOCK_SECONDS = cfg.lockSeconds;
   const STORAGE_KEY = `prep_pin_attempts:${token}`;
   const [attempts, setAttempts] = useState(0);
   const [justUnlocked, setJustUnlocked] = useState(false);
