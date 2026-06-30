@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation } from "lucide-react";
+import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
@@ -17,6 +17,7 @@ import {
 import { encodeCard } from "@/lib/chat-cards";
 import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 import { sendMessage } from "@/lib/chat.functions";
+import { StickerPickerDialog } from "@/components/chat/StickerPickerDialog";
 
 type Props = {
   conversationId: string;
@@ -29,6 +30,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const [openLoc, setOpenLoc] = useState(false);
   const [openContact, setOpenContact] = useState(false);
   const [openProduct, setOpenProduct] = useState(false);
+  const [openSticker, setOpenSticker] = useState(false);
 
   async function handleUpload(file: File | null) {
     if (!file) return;
@@ -107,6 +109,9 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           <DropdownMenuItem onSelect={() => setOpenProduct(true)}>
             <Package className="mr-2 h-4 w-4" /> Produk
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setOpenSticker(true)}>
+            <Sticker className="mr-2 h-4 w-4" /> Stiker (panah, rekening, AI)
+          </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
 
@@ -144,6 +149,12 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
         open={openProduct}
         onOpenChange={setOpenProduct}
         onSent={() => { onSent?.(); setOpenProduct(false); }}
+      />
+      <StickerPickerDialog
+        conversationId={conversationId}
+        open={openSticker}
+        onOpenChange={setOpenSticker}
+        onSent={() => { onSent?.(); setOpenSticker(false); }}
       />
     </>
   );
