@@ -38,10 +38,11 @@ function buildSchema() {
   const shape: Record<string, z.ZodTypeAny> = {};
   for (const f of WORKER_PORTAL_CONFIG_FIELDS) {
     shape[f.key] = z
-      .number({ invalid_type_error: `${f.label} harus angka` })
-      .int(`${f.label} harus bilangan bulat`)
-      .min(f.min, `${f.label} minimum ${f.min} ${f.unit}`)
-      .max(f.max, `${f.label} maksimum ${f.max} ${f.unit}`);
+      .number({ invalid_type_error: `${f.label} harus berupa angka (bukan kosong/teks).` })
+      .finite(`${f.label} tidak boleh tak hingga.`)
+      .int(`${f.label} harus bilangan bulat tanpa desimal.`)
+      .min(f.min, `${f.label} minimum ${f.min.toLocaleString("id-ID")} ${f.unit}.`)
+      .max(f.max, `${f.label} maksimum ${f.max.toLocaleString("id-ID")} ${f.unit}.`);
   }
   return z
     .object(shape)
@@ -69,6 +70,31 @@ function AdminWorkerPortalPage() {
     invariantsAdjusted: string[];
   } | null>(null);
   const schema = useMemo(buildSchema, []);
+
+  // Validasi live: tiap perubahan form langsung dihitung supaya tombol
+  // Simpan ter-disable & banner ringkasan error muncul sebelum klik.
+  const validation = useMemo(() => {
+    const raw: Record<string, number> = {};
+    for (const f of WORKER_PORTAL_CONFIG_FIELDS) {
+      const s = form[f.key];
+      raw[f.key] = s.trim() === "" ? Number.NaN : Number(s);
+    }
+    const parsed = schema.safeParse(raw);
+    if (parsed.success) {
+      return { ok: true as const, fieldErrors: {} as Partial<Record<keyof WorkerPortalConfig, string>>, list: [] as Array<{ key?: keyof WorkerPortalConfig; label: string; message: string }> };
+    }
+    const fieldErrors: Partial<Record<keyof WorkerPortalConfig, string>> = {};
+    const list: Array<{ key?: keyof WorkerPortalConfig; label: string; message: string }> = [];
+    for (const issue of parsed.error.issues) {
+      const k = issue.path[0] as keyof WorkerPortalConfig | undefined;
+      const meta = k ? WORKER_PORTAL_CONFIG_FIELDS.find((x) => x.key === k) : undefined;
+      if (k && !fieldErrors[k]) fieldErrors[k] = issue.message;
+      list.push({ key: k, label: meta?.label ?? "Form", message: issue.message });
+    }
+    return { ok: false as const, fieldErrors, list };
+  }, [form, schema]);
+
+  const hasErrors = !validation.ok;
 
   useEffect(() => {
     void (async () => {
@@ -157,21 +183,27 @@ function AdminWorkerPortalPage() {
   }
 
   async function save() {
+    // Tolak submit lebih awal sebelum sentuh jaringan.
+    if (!validation.ok) {
+      setErrors(validation.fieldErrors);
+      toast.error(
+        `Tidak bisa menyimpan: ${validation.list.length} kesalahan input. Perbaiki dulu kolom yang ditandai merah.`,
+      );
+      // Fokuskan field pertama yang bermasalah.
+      const firstKey = validation.list.find((x) => x.key)?.key;
+      if (firstKey) {
+        const el = document.getElementById(firstKey) as HTMLInputElement | null;
+        el?.focus();
+        el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      return;
+    }
     const parsedRaw: Record<string, number> = {};
     for (const f of WORKER_PORTAL_CONFIG_FIELDS) {
       parsedRaw[f.key] = Number(form[f.key]);
     }
     const parsed = schema.safeParse(parsedRaw);
-    if (!parsed.success) {
-      const nextErrors: Partial<Record<keyof WorkerPortalConfig, string>> = {};
-      for (const issue of parsed.error.issues) {
-        const k = issue.path[0] as keyof WorkerPortalConfig | undefined;
-        if (k && !nextErrors[k]) nextErrors[k] = issue.message;
-      }
-      setErrors(nextErrors);
-      toast.error("Periksa kembali nilai yang ditandai.");
-      return;
-    }
+    if (!parsed.success) return; // pengaman ganda — seharusnya tidak terjadi
     setSaving(true);
     const { error } = await supabase
       .from("app_settings")
@@ -217,7 +249,7 @@ function AdminWorkerPortalPage() {
 
       <div className="grid gap-4 rounded-lg border bg-card p-4 shadow-sm sm:grid-cols-2">
         {WORKER_PORTAL_CONFIG_FIELDS.map((f) => {
-          const err = errors[f.key];
+          const err = errors[f.key] ?? validation.fieldErrors[f.key];
           const def = WORKER_PORTAL_DEFAULTS[f.key];
           return (
             <div key={f.key} className="space-y-1.5">
@@ -234,20 +266,50 @@ function AdminWorkerPortalPage() {
                 value={form[f.key]}
                 onChange={(e) => setField(f.key, e.target.value)}
                 aria-invalid={err ? true : undefined}
+                aria-describedby={err ? `${f.key}-err` : undefined}
                 className={err ? "border-destructive focus-visible:ring-destructive" : undefined}
               />
               <p className="text-xs text-muted-foreground">{f.help}</p>
               <p className="text-xs text-muted-foreground">
                 Rentang valid: {f.min.toLocaleString("id-ID")}–{f.max.toLocaleString("id-ID")} · Default: {String(def)}
               </p>
-              {err ? <p className="text-xs font-medium text-destructive">{err}</p> : null}
+              {err ? (
+                <p id={`${f.key}-err`} role="alert" className="text-xs font-medium text-destructive">
+                  {err}
+                </p>
+              ) : null}
             </div>
           );
         })}
       </div>
 
+      {hasErrors ? (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-lg border border-destructive/40 bg-destructive/5 p-3 text-sm text-destructive"
+        >
+          <div className="flex items-center gap-2 font-semibold">
+            <AlertTriangle className="h-4 w-4" />
+            {validation.list.length} input tidak valid · Simpan dinonaktifkan
+          </div>
+          <ul className="mt-2 list-disc space-y-1 pl-5 text-xs">
+            {validation.list.slice(0, 8).map((i, idx) => (
+              <li key={idx}>
+                <strong>{i.label}:</strong> {i.message}
+              </li>
+            ))}
+            {validation.list.length > 8 ? (
+              <li className="text-muted-foreground">
+                …dan {validation.list.length - 8} lagi.
+              </li>
+            ) : null}
+          </ul>
+        </div>
+      ) : null}
+
       <div className="flex flex-wrap items-center gap-2">
-        <Button onClick={save} disabled={saving}>
+        <Button onClick={save} disabled={saving || hasErrors} aria-disabled={hasErrors || undefined}>
           {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
           Simpan konfigurasi
         </Button>
