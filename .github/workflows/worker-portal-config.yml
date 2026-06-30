@@ -1,0 +1,61 @@
+name: Worker Portal Config Sanitization Tests
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lib/worker-portal-config.ts'
+      - 'src/lib/worker-portal-config.test.ts'
+      - 'package.json'
+      - 'bun.lock'
+      - 'bun.lockb'
+      - '.github/workflows/worker-portal-config.yml'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  worker-portal-config:
+    name: Sanitize hash override unit tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Cache Bun global store
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: ${{ runner.os }}-bun-store-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-store-
+
+      - name: Cache node_modules
+        id: cache-node-modules
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: ${{ runner.os }}-node-modules-${{ hashFiles('bun.lockb', 'bun.lock', 'package.json') }}
+
+      - name: Install dependencies
+        if: steps.cache-node-modules.outputs.cache-hit != 'true'
+        run: bun install --frozen-lockfile
+
+      - name: Run worker-portal-config sanitization tests
+        env:
+          CI: "true"
+        run: |
+          mkdir -p artifacts
+          bun run test:worker-portal-config -- --reporter=verbose --no-color 2>&1 | tee artifacts/worker-portal-config.log
+
+      - name: Upload test log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: worker-portal-config-log
+          path: artifacts/**
+          retention-days: 14

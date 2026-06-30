@@ -21,6 +21,8 @@
     "test:security:integration": "vitest run tests/integration/security-rls.test.ts",
     "test:security": "npm run test:security:sql && npm run test:security:integration",
     "test:chat-deleted": "vitest run src/lib/chat-deleted.test.tsx src/lib/chat-deleted-ui.test.tsx src/lib/chat-deleted-snapshots.test.tsx"
+    ,
+    "test:worker-portal-config": "vitest run src/lib/worker-portal-config.test.ts"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
