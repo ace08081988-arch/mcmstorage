@@ -495,6 +495,78 @@ function ChatRoomPage() {
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col">
+      {selectionMode ? (
+        <SelectionToolbar
+          count={selectedIds.size}
+          oneSelected={oneSelected}
+          allMine={allMineSelected}
+          onClose={clearSelection}
+          onReply={() => {
+            if (onlyOne) {
+              setReplyTo(onlyOne);
+              setEditing(null);
+            }
+            clearSelection();
+          }}
+          onInfo={() => {
+            if (onlyOne) setInfoOpen(true);
+          }}
+          onDelete={() => setBulkDeleteOpen(true)}
+          onCopy={() => {
+            const text = selectedMessages
+              .map((m) => previewText(m.body) ?? (m.attachment_name ? `📎 ${m.attachment_name}` : ""))
+              .filter(Boolean)
+              .join("\n\n");
+            navigator.clipboard?.writeText(text).then(
+              () => toast.success(`${selectedMessages.length} pesan disalin`),
+              () => toast.error("Gagal menyalin"),
+            );
+            clearSelection();
+          }}
+          onForward={async () => {
+            const text = selectedMessages
+              .map((m) => {
+                const sp = profiles.data?.get(m.sender_id);
+                const name = sp?.display_name || sp?.email || "Pengguna";
+                return `${name}: ${previewText(m.body) ?? "(lampiran)"}`;
+              })
+              .join("\n");
+            const res = await shareToWhatsApp({ text });
+            notifyShareResult(res);
+            clearSelection();
+          }}
+          onSecurityCode={() => setSecurityOpen(true)}
+          onStar={() => {
+            const turnOn = selectedMessages.some((m) => !(m.starred_by ?? []).includes(myId ?? ""));
+            selectedMessages.forEach((m) => {
+              starMut.mutate({ messageId: m.id, on: turnOn });
+            });
+            toast.success(turnOn ? "Diberi bintang" : "Bintang dilepas");
+            clearSelection();
+          }}
+          onPin={() => {
+            if (!onlyOne) return;
+            const turnOn = !onlyOne.pinned_at;
+            pinMut.mutate(
+              { messageId: onlyOne.id, on: turnOn },
+              {
+                onSuccess: () => toast.success(turnOn ? "Pesan disematkan" : "Pin dilepas"),
+                onError: (e) => toast.error(e instanceof Error ? e.message : "Gagal"),
+              },
+            );
+            clearSelection();
+          }}
+          onSaveNote={() => {
+            if (onlyOne) setNoteSource(onlyOne);
+          }}
+          onSaveQuickReply={() => {
+            if (onlyOne) setQrSource(previewText(onlyOne.body) ?? "");
+          }}
+          onTranslate={() => {
+            if (onlyOne) setTranslateSource(previewText(onlyOne.body) ?? "");
+          }}
+        />
+      ) : (
       <header className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background/95 px-3 py-2 backdrop-blur">
         <Button
           variant="ghost"
@@ -552,6 +624,14 @@ function ChatRoomPage() {
           </DropdownMenuContent>
         </DropdownMenu>
       </header>
+      )}
+
+      <PinnedBanner
+        conversationId={conversationId}
+        pinned={pinnedMessages}
+        onJump={jumpToMessage}
+        canUnpin
+      />
 
       <div ref={scrollerRef} className="flex-1 space-y-3 overflow-y-auto p-3">
         {isLoading ? (
