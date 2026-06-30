@@ -279,6 +279,28 @@ function ChatRoomPage() {
     return meta.data.title || (meta.data.kind === "order" ? "Diskusi pesanan" : "Grup");
   }, [meta.data, profiles.data, members.data, myId]);
 
+  // === Edit nama kontak (alias) untuk DM, tersinkron ke address_book ===
+  const dmPeer = useMemo(() => {
+    if (!meta.data || meta.data.kind !== "dm" || !myId) return null;
+    const other = (members.data ?? []).find((u) => u !== myId);
+    if (!other) return null;
+    const p = profiles.data?.get(other) ?? null;
+    return {
+      peerUserId: other,
+      peerPhone: p?.phone ?? null,
+      peerEmail: p?.email ?? null,
+      fallbackName: p?.display_name || p?.phone || p?.email || "Kontak",
+    };
+  }, [meta.data, members.data, profiles.data, myId]);
+
+  const peerAlias = usePeerAlias({
+    peerUserId: dmPeer?.peerUserId ?? null,
+    peerPhone: dmPeer?.peerPhone ?? null,
+    peerEmail: dmPeer?.peerEmail ?? null,
+  });
+  const displayedPeerName = peerAlias.data?.name?.trim() || dmPeer?.fallbackName || "Kontak";
+  const [editNameOpen, setEditNameOpen] = useState(false);
+
   const dmPresence = useMemo(() => {
     if (!meta.data || meta.data.kind !== "dm" || !myId || !profiles.data) return null;
     const other = (members.data ?? []).find((u) => u !== myId);
