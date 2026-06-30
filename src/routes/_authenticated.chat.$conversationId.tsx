@@ -64,15 +64,14 @@ import { SaveAsNoteDialog } from "@/components/chat/SaveAsNoteDialog";
 import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog";
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
+import {
+  DELETED_PLACEHOLDER,
+  DeletedPreview,
+  MessagePreview,
+  messagePreviewText,
+} from "@/lib/chat-deleted";
 
-const DELETED_PLACEHOLDER = "(pesan dihapus)";
-const DELETED_ATTACHMENT_PLACEHOLDER = "(lampiran dihapus)";
-
-function safePreview(m: { body?: string | null; attachment_name?: string | null; deleted_at?: string | null } | null | undefined): string {
-  if (!m) return "";
-  if (m.deleted_at) return DELETED_PLACEHOLDER;
-  return previewText(m.body ?? null) ?? (m.attachment_name ? `📎 ${m.attachment_name}` : "(lampiran)");
-}
+const safePreview = messagePreviewText;
 
 function ChatProGate() {
   const ent = useEntitlement();
@@ -737,13 +736,7 @@ function ChatRoomPage() {
                               {replyMsg.sender_id === myId ? "Anda" : replySenderName}
                             </div>
                             <div className="line-clamp-2 opacity-80">
-                              {replyMsg.deleted_at ? (
-                                <span className="inline-flex items-center gap-1 italic">
-                                  <Ban className="h-3 w-3 opacity-80" />
-                                  {DELETED_PLACEHOLDER}
-                                  {(replyMsg.attachment_path || replyMsg.attachment_name) ? ` · ${DELETED_ATTACHMENT_PLACEHOLDER}` : ""}
-                                </span>
-                              ) : (previewText(replyMsg.body) ?? (replyMsg.attachment_name ? `📎 ${replyMsg.attachment_name}` : "(lampiran)"))}
+                              <MessagePreview message={replyMsg} />
                             </div>
                           </div>
                         ) : null}
@@ -1078,13 +1071,7 @@ function ChatRoomPage() {
                 Balas {replyTo.sender_id === myId ? "Anda" : (profiles.data?.get(replyTo.sender_id)?.display_name || "Pengguna")}
               </div>
               <div className="line-clamp-2 text-muted-foreground">
-                {replyTo.deleted_at ? (
-                  <span className="inline-flex items-center gap-1 italic">
-                    <Ban className="h-3 w-3 opacity-80" />
-                    {DELETED_PLACEHOLDER}
-                    {(replyTo.attachment_path || replyTo.attachment_name) ? ` · ${DELETED_ATTACHMENT_PLACEHOLDER}` : ""}
-                  </span>
-                ) : (previewText(replyTo.body) ?? (replyTo.attachment_name ? `📎 ${replyTo.attachment_name}` : "(lampiran)"))}
+                <MessagePreview message={replyTo} />
               </div>
             </div>
             <Button
