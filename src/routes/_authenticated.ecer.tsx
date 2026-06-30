@@ -594,7 +594,10 @@ function DetailHero({
             </div>
             <h2 className="mt-2 break-words text-base font-bold leading-snug sm:text-xl">{title.name}</h2>
             <div className="mt-2 flex flex-wrap items-center gap-1.5 text-[11px] leading-none text-primary-foreground/85">
-              <span className="inline-flex h-6 min-w-0 max-w-full items-center gap-1 rounded-full bg-white/15 px-2 leading-none backdrop-blur-sm">
+              <span
+                className="inline-flex h-6 min-w-0 max-w-full items-center gap-1 rounded-full bg-white/15 px-2 leading-none backdrop-blur-sm"
+                title={item.name}
+              >
                 <Package className="h-3 w-3 shrink-0" />
                 <span className="truncate">{item.name}</span>
               </span>
@@ -724,13 +727,16 @@ function DetailHero({
 function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: string; value: React.ReactNode; sub?: string }) {
   return (
     <div className="grid min-h-[40px] grid-cols-[minmax(0,7rem)_minmax(0,1fr)] items-center gap-2 py-2 leading-snug sm:grid-cols-[minmax(0,10rem)_minmax(0,1fr)]">
-      <EcerLabel className="flex min-w-0 items-center gap-1.5 leading-snug">
+      <EcerLabel className="flex min-w-0 items-center gap-1.5 leading-snug" title={label}>
         <span className="inline-flex h-4 w-4 shrink-0 items-center justify-center text-muted-foreground/70 [&_svg]:h-3.5 [&_svg]:w-3.5">
           {icon}
         </span>
         <span className="truncate">{label}</span>
       </EcerLabel>
-      <div className="flex min-w-0 items-center justify-end gap-x-1.5 text-right text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]">
+      <div
+        className="flex min-w-0 items-center justify-end gap-x-1.5 text-right text-sm font-semibold leading-snug text-foreground [overflow-wrap:anywhere]"
+        title={[typeof value === "string" ? value : undefined, sub].filter(Boolean).join(" · ") || undefined}
+      >
         <span className="min-w-0 truncate [overflow-wrap:anywhere]">{value}</span>
         {sub && (
           <EcerMeta as="span" className="min-w-0 shrink-0 truncate whitespace-nowrap font-normal leading-snug">

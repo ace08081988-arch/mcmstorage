@@ -454,7 +454,7 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
           {customers.map((c) => (
             <li key={c.id} className="flex items-start justify-between gap-2 rounded-lg border bg-card p-3">
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold">{c.name}</div>
+                <div className="truncate text-sm font-semibold" title={c.name}>{c.name}</div>
                 {c.contact && <div className="text-[11px] text-muted-foreground">📞 {c.contact}</div>}
                 {c.notes && <div className="text-[11px] text-muted-foreground">{c.notes}</div>}
               </div>
@@ -543,7 +543,7 @@ function PiutangTab({
           <div key={g.customer.id} className="space-y-2 rounded-lg border bg-card p-3">
             <div className="flex items-center justify-between gap-2">
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold">{g.customer.name}</div>
+                <div className="truncate text-sm font-semibold" title={g.customer.name}>{g.customer.name}</div>
                 <div className="text-[11px] text-muted-foreground">
                   Hutang {rupiah(g.totalHutang)} · Bayar {rupiah(g.totalBayar)}
                 </div>
@@ -573,7 +573,7 @@ function PiutangTab({
                     <li key={s.id} className="rounded border bg-background p-2 text-xs">
                       <div className="flex items-start justify-between gap-2">
                         <div className="min-w-0">
-                          <div className="truncate font-semibold">{it?.name || "(barang dihapus)"}</div>
+                          <div className="truncate font-semibold" title={it?.name || "(barang dihapus)"}>{it?.name || "(barang dihapus)"}</div>
                           <div className="text-[11px] text-muted-foreground">
                             {new Date(s.created_at).toLocaleDateString("id-ID")} · {fmtItemQty(Number(s.qty_base), it)}
                           </div>
@@ -1123,7 +1123,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                       aria-hidden
                       className={`inline-block h-2 w-2 shrink-0 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
                     />
-                    <span className="min-w-0 flex-1 truncate font-medium">{cat}</span>
+                    <span className="min-w-0 flex-1 truncate font-medium" title={cat}>{cat}</span>
                     <span
                       className="inline-flex h-5 max-w-[7rem] shrink-0 items-center rounded-full border bg-background px-1.5 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
                       title={`${count} item`}
@@ -1174,7 +1174,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                   aria-hidden
                   className={`inline-block h-2 w-2 shrink-0 rounded-full ${cat === "Tanpa Kategori" ? "bg-muted-foreground/50" : "bg-primary"}`}
                 />
-                <h3 className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug">{cat}</h3>
+                <h3 className="min-w-0 flex-1 truncate text-sm font-semibold leading-snug" title={cat}>{cat}</h3>
                 <span
                   className="inline-flex h-5 max-w-[7rem] shrink-0 items-center rounded-full border bg-background px-1.5 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
                   title={`${list.length} item`}
@@ -1518,7 +1518,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
           {suppliers.map((s) => (
             <li key={s.id} className="flex items-start justify-between gap-2 rounded-lg border bg-card p-3">
               <div className="min-w-0">
-                <div className="truncate text-sm font-semibold">{s.name}</div>
+                <div className="truncate text-sm font-semibold" title={s.name}>{s.name}</div>
                 {s.contact && (
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
                     <span className="text-[11px] text-muted-foreground">📞 {s.contact}</span>
@@ -1552,7 +1552,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                 )}
                 {s.email && (
                   <div className="mt-1 flex flex-wrap items-center gap-1.5">
-                    <span className="truncate text-[11px] text-muted-foreground">📧 {s.email}</span>
+                    <span className="truncate text-[11px] text-muted-foreground" title={s.email}>📧 {s.email}</span>
                     <a
                       href={buildMailto({ to: s.email, cc: s.email_cc, bcc: s.email_bcc }).href}
                       className="rounded border border-indigo-500 px-1.5 py-0.5 text-[11px] font-semibold text-indigo-600 hover:bg-indigo-500/10 dark:text-indigo-400"
@@ -2109,7 +2109,7 @@ function RiwayatTab({
                 <li key={s.id} className="rounded-lg border bg-card p-3 text-xs">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate font-semibold">{it?.name || "(barang dihapus)"}</div>
+                      <div className="truncate font-semibold" title={it?.name || "(barang dihapus)"}>{it?.name || "(barang dihapus)"}</div>
                       <div className="text-[11px] text-muted-foreground">
                         {new Date(s.created_at).toLocaleString("id-ID")} {s.note && `· ${s.note}`}
                       </div>
@@ -2138,7 +2138,7 @@ function RiwayatTab({
                 <li key={p.id} className="rounded-lg border bg-card p-3 text-xs">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate font-semibold">{it?.name || "(barang dihapus)"}</div>
+                      <div className="truncate font-semibold" title={it?.name || "(barang dihapus)"}>{it?.name || "(barang dihapus)"}</div>
                       <div className="text-[11px] text-muted-foreground">
                         {new Date(p.created_at).toLocaleString("id-ID")} · dari {sup?.name || "—"}
                       </div>
@@ -2298,7 +2298,7 @@ function HutangTab({
                 <li key={d.id} className="rounded-md border bg-background p-2 text-xs">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <div className="truncate font-semibold">{it?.name || "(barang dihapus)"}</div>
+                      <div className="truncate font-semibold" title={it?.name || "(barang dihapus)"}>{it?.name || "(barang dihapus)"}</div>
                       <div className="text-[11px] text-muted-foreground">
                         {new Date(d.created_at).toLocaleDateString("id-ID")} · {Number(d.package_qty)} × {rupiah(Number(d.price_per_package))}
                       </div>
@@ -2740,7 +2740,7 @@ function PesananTab({
               <li key={o.id} className="rounded-lg border bg-card p-3 space-y-2">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <div className="truncate text-sm font-semibold">{it?.name ?? "?"}</div>
+                    <div className="truncate text-sm font-semibold" title={it?.name ?? "?"}>{it?.name ?? "?"}</div>
                     <div className="text-[11px] text-muted-foreground">
                       {cust?.name ?? "Tanpa pelanggan"} · {new Date(o.created_at).toLocaleString("id-ID")}
                     </div>
