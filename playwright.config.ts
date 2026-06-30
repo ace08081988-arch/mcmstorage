@@ -55,6 +55,14 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E fungsional portal pegawai (bukan visual regression).
+      // Memakai mobile viewport karena pegawai mengakses lewat HP/APK.
+      name: "worker-portal-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /worker-portal-rehydrate\.spec\.ts/,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
