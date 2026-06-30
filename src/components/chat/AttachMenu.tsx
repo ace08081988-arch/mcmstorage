@@ -1,9 +1,7 @@
 import { useState } from "react";
 import { Plus, Image as ImageIcon, Camera, Film, Paperclip, MapPin, UserRound, Package, Loader2, Navigation, Sticker } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator,
-} from "@/components/ui/dropdown-menu";
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -18,6 +16,18 @@ import { encodeCard } from "@/lib/chat-cards";
 import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 import { sendMessage } from "@/lib/chat.functions";
 import { StickerPickerDialog } from "@/components/chat/StickerPickerDialog";
+import type { LucideIcon } from "lucide-react";
+
+function Tile({ icon: Icon, label, color, onClick }: { icon: LucideIcon; label: string; color: string; onClick: () => void | Promise<void> }) {
+  return (
+    <button type="button" onClick={onClick} className="flex flex-col items-center gap-1.5 rounded-xl p-2 text-center transition hover:bg-accent active:scale-95">
+      <span className={`flex h-12 w-12 items-center justify-center rounded-full ${color}`}>
+        <Icon className="h-6 w-6" />
+      </span>
+      <span className="text-[11px] font-medium text-foreground">{label}</span>
+    </button>
+  );
+}
 
 type Props = {
   conversationId: string;
@@ -27,6 +37,7 @@ type Props = {
 
 export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   const [busy, setBusy] = useState<string | null>(null);
+  const [openSheet, setOpenSheet] = useState(false);
   const [openLoc, setOpenLoc] = useState(false);
   const [openContact, setOpenContact] = useState(false);
   const [openProduct, setOpenProduct] = useState(false);
@@ -35,6 +46,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
   async function handleUpload(file: File | null) {
     if (!file) return;
     setBusy("upload");
+    setOpenSheet(false);
     try {
       const up = await uploadChatFile({ conversationId, file });
       await sendMessage({
@@ -67,6 +79,7 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
       });
       await sendMessage({ data: { conversationId, body: card } });
       setOpenLoc(false);
+      setOpenSheet(false);
       onSent?.();
     } catch (e) {
       const ge = toGeoError(e);
@@ -78,42 +91,39 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
 
   return (
     <>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+      <Sheet open={openSheet} onOpenChange={(v) => !busy && setOpenSheet(v)}>
+        <SheetTrigger asChild>
           <Button type="button" variant="ghost" size="icon" disabled={disabled || !!busy} aria-label="Lampirkan">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-5 w-5" />}
           </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" side="top" className="w-56">
-          <DropdownMenuLabel className="text-[10px] uppercase">Media</DropdownMenuLabel>
-          <DropdownMenuItem onSelect={async () => handleUpload(await pickViaInput({ accept: "image/*" }))}>
-            <ImageIcon className="mr-2 h-4 w-4" /> Foto dari galeri
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={async () => handleUpload(await pickFromCamera())}>
-            <Camera className="mr-2 h-4 w-4" /> Ambil foto (kamera)
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={async () => handleUpload(await pickViaInput({ accept: "video/*" }))}>
-            <Film className="mr-2 h-4 w-4" /> Video
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={async () => handleUpload(await pickViaInput({ accept: "*/*" }))}>
-            <Paperclip className="mr-2 h-4 w-4" /> Berkas (PDF, dll.)
-          </DropdownMenuItem>
-          <DropdownMenuSeparator />
-          <DropdownMenuLabel className="text-[10px] uppercase">Bagikan</DropdownMenuLabel>
-          <DropdownMenuItem onSelect={() => setOpenLoc(true)}>
-            <MapPin className="mr-2 h-4 w-4" /> Lokasi / Live location
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setOpenContact(true)}>
-            <UserRound className="mr-2 h-4 w-4" /> Kontak
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setOpenProduct(true)}>
-            <Package className="mr-2 h-4 w-4" /> Produk
-          </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setOpenSticker(true)}>
-            <Sticker className="mr-2 h-4 w-4" /> Stiker (panah, rekening, AI)
-          </DropdownMenuItem>
-        </DropdownMenuContent>
-      </DropdownMenu>
+        </SheetTrigger>
+        <SheetContent side="bottom" className="rounded-t-2xl pb-8">
+          <SheetHeader className="pb-2">
+            <SheetTitle className="text-base">Lampirkan</SheetTitle>
+          </SheetHeader>
+          <div className="grid grid-cols-4 gap-3 pt-2">
+            <Tile color="bg-violet-500/15 text-violet-500" icon={Paperclip} label="Dokumen"
+              onClick={async () => handleUpload(await pickViaInput({ accept: "*/*" }))} />
+            <Tile color="bg-fuchsia-500/15 text-fuchsia-500" icon={ImageIcon} label="Galeri"
+              onClick={async () => handleUpload(await pickViaInput({ accept: "image/*" }))} />
+            <Tile color="bg-sky-500/15 text-sky-500" icon={Camera} label="Kamera"
+              onClick={async () => handleUpload(await pickFromCamera())} />
+            <Tile color="bg-rose-500/15 text-rose-500" icon={Film} label="Video"
+              onClick={async () => handleUpload(await pickViaInput({ accept: "video/*" }))} />
+            <Tile color="bg-emerald-500/15 text-emerald-500" icon={MapPin} label="Lokasi"
+              onClick={() => { setOpenSheet(false); setOpenLoc(true); }} />
+            <Tile color="bg-blue-500/15 text-blue-500" icon={UserRound} label="Kontak"
+              onClick={() => { setOpenSheet(false); setOpenContact(true); }} />
+            <Tile color="bg-amber-500/15 text-amber-500" icon={Package} label="Produk"
+              onClick={() => { setOpenSheet(false); setOpenProduct(true); }} />
+            <Tile color="bg-pink-500/15 text-pink-500" icon={Sticker} label="Stiker"
+              onClick={() => { setOpenSheet(false); setOpenSticker(true); }} />
+          </div>
+          <p className="mt-4 text-center text-[11px] text-muted-foreground">
+            Stiker: panah, no. rekening, teks, AI · Lokasi mendukung live · Produk = kartu siap kirim
+          </p>
+        </SheetContent>
+      </Sheet>
 
       <Dialog open={openLoc} onOpenChange={(v) => !busy && setOpenLoc(v)}>
         <DialogContent className="max-w-sm">
