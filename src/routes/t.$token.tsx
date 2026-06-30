@@ -134,6 +134,20 @@ function PublicPrepPage() {
   // kembali ke layar PIN. PIN disimpan dalam scope per-token, TTL singkat.
   const SESSION_KEY = `prep_session:${token}`;
   const SESSION_TTL_MS = cfg.sessionTtlMs;
+  // BroadcastChannel untuk sinkron antar-tab: countdown sesi PIN dan
+  // status lock berlaku real-time tanpa reload. localStorage hanya bicara
+  // antar-tab via `storage` event (cocok utk lock), tapi sessionStorage
+  // per-tab — jadi countdown sesi butuh BroadcastChannel.
+  const bcRef = useRef<BroadcastChannel | null>(null);
+  const authedRef = useRef(false);
+  useEffect(() => { authedRef.current = authed; }, [authed]);
+  type PortalMsg =
+    | { type: "session"; pin: string; ts: number }
+    | { type: "session-clear" }
+    | { type: "attempts"; attempts: number; lockedUntil: number | null };
+  function broadcast(msg: PortalMsg) {
+    try { bcRef.current?.postMessage(msg); } catch { /* noop */ }
+  }
   function readSession(): { pin: string; ts: number } | null {
     if (typeof window === "undefined") return null;
     try {
@@ -153,11 +167,13 @@ function PublicPrepPage() {
     const ts = Date.now();
     try { window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, ts })); } catch {}
     setSessionStartedAt(ts);
+    broadcast({ type: "session", pin, ts });
   }
   function clearSession() {
     if (typeof window === "undefined") return;
     try { window.sessionStorage.removeItem(SESSION_KEY); } catch {}
     setSessionStartedAt(null);
+    broadcast({ type: "session-clear" });
   }
   // Counter kegagalan berturut-turut untuk silentRefresh; baru flip ke layar
   // closedReason setelah 2x kegagalan kategori sama agar transient error
@@ -284,6 +300,7 @@ function PublicPrepPage() {
       if (!state.attempts && !state.lockedUntil) window.localStorage.removeItem(STORAGE_KEY);
       else window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
     } catch { /* ignore quota */ }
+    broadcast({ type: "attempts", attempts: state.attempts, lockedUntil: state.lockedUntil });
   }
   // Reset total: state in-memory + localStorage benar-benar dibersihkan.
   // Dipanggil saat PIN benar agar refresh browser memulai dari 0 percobaan.
@@ -316,12 +333,63 @@ function PublicPrepPage() {
       if (e.newValue == null) {
         setAttempts(0);
         setLockedUntil(null);
+        return;
       }
+      // Tab lain memperbarui status lock (mis. salah PIN / dikunci server).
+      try {
+        const parsed = JSON.parse(e.newValue) as AttemptState;
+        setAttempts(Number(parsed.attempts) || 0);
+        const until = parsed.lockedUntil && parsed.lockedUntil > Date.now() ? parsed.lockedUntil : null;
+        setLockedUntil(until);
+      }
+      catch { /* ignore corrupt payload */ }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // BroadcastChannel: sinkron sesi (countdown PIN) dan status lock antar-tab.
+  useEffect(() => {
+    if (typeof window === "undefined" || typeof BroadcastChannel === "undefined") return;
+    const bc = new BroadcastChannel(`prep-portal:${token}`);
+    bcRef.current = bc;
+    bc.onmessage = (ev: MessageEvent<PortalMsg>) => {
+      const msg = ev.data;
+      if (!msg || typeof msg !== "object") return;
+      if (msg.type === "session") {
+        // Tab lain berhasil login / refresh sesi → samakan countdown.
+        setSessionStartedAt(msg.ts);
+        pinRef.current = msg.pin;
+        setPin(msg.pin);
+        setClosedReason(null);
+        if (!authedRef.current) {
+          // Belum punya data tugas di tab ini → ambil senyap.
+          setAuthed(true);
+          void silentRefresh();
+        }
+      } else if (msg.type === "session-clear") {
+        // Tab lain sign-out → ikut kembali ke layar PIN.
+        setSessionStartedAt(null);
+        if (authedRef.current) {
+          setAuthed(false);
+          setTask(null);
+          setItems([]);
+          setPin("");
+          pinRef.current = "";
+        }
+      } else if (msg.type === "attempts") {
+        setAttempts(Number(msg.attempts) || 0);
+        const until = msg.lockedUntil && msg.lockedUntil > Date.now() ? msg.lockedUntil : null;
+        setLockedUntil(until);
+      }
+    };
+    return () => {
+      try { bc.close(); } catch { /* noop */ }
+      if (bcRef.current === bc) bcRef.current = null;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   useEffect(() => {
     if (lockedUntil == null) return;
