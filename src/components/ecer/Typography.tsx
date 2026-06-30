@@ -66,10 +66,10 @@ export const EcerMeta = makeText(
 
 export const EcerLabel = makeText(
   "span",
-  "text-[11px] font-medium uppercase tracking-wider text-muted-foreground",
+  "text-[11px] font-medium uppercase leading-snug tracking-wider text-muted-foreground",
 );
 
 export const EcerMono = makeText(
   "span",
-  "font-mono text-[11px]",
+  "font-mono text-[11px] leading-snug",
 );
