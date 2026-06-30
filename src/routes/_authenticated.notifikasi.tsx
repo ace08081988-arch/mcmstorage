@@ -661,11 +661,16 @@ function RecentNotificationsCard({
               size="sm"
               variant="ghost"
               onClick={() => setConfirmOpen(true)}
-              title={`Tandai ${unreadCount} notifikasi sesuai filter aktif sebagai dibaca`}
+              disabled={markingAll}
+              title={markingAll ? "Sedang menandai…" : `Tandai ${unreadCount} notifikasi sesuai filter aktif sebagai dibaca`}
               className="h-8 px-2 text-xs"
             >
-              <Check className="mr-1 size-3.5" />
-              Tandai dibaca ({unreadCount})
+              {markingAll ? (
+                <RefreshCw className="mr-1 size-3.5 animate-spin" />
+              ) : (
+                <Check className="mr-1 size-3.5" />
+              )}
+              {markingAll ? "Menandai…" : `Tandai dibaca (${unreadCount})`}
             </Button>
           )}
           <Button
