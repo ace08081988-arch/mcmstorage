@@ -28,10 +28,16 @@ export type ShareInput = {
      *  `currentFingerprint` agar tombol "Kirim ulang (paksa)" hanya aktif
      *  jika konten benar-benar sama. */
     fingerprint?: string;
+    /** Ringkasan payload kiriman sebelumnya untuk menampilkan detail PERBEDAAN
+     *  field (caption, foto, lokasi, tujuan) saat fingerprint tidak cocok. */
+    summary?: import("./idempotency").SendPayloadSummary;
   } | null;
   /** Fingerprint payload yang akan dikirim sekarang. Diteruskan ke pratinjau
    *  untuk membandingkan dengan `duplicate.fingerprint`. */
   currentFingerprint?: string;
+  /** Ringkasan payload yang akan dikirim sekarang — dipakai pratinjau untuk
+   *  membandingkan field-per-field dengan `duplicate.summary`. */
+  currentSummary?: import("./idempotency").SendPayloadSummary;
   /** Log langkah dari kiriman sebelumnya untuk tombol "Lihat log" di pratinjau. */
   previousLog?: import("./send-log").SendLogEntry[];
   /** Daftar shot ID (sorted, koma) untuk sinkronisasi idempotency lintas channel. */
@@ -132,13 +138,13 @@ export type ShareResult =
 
 export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   let { text } = input;
-  const { title, url, files, phone, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, idemIdsKey } = input;
+  const { title, url, files, phone, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey } = input;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
   // Pratinjau pesan + daftar foto sebelum benar-benar membuka WA. Pratinjau
   // dapat menambah file via retryMissing (memutasi array `files`), jadi cek
   // `hasFiles` SETELAH konfirmasi.
-  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, idemIdsKey });
+  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey });
   if (!approved.ok) return { status: "cancelled" };
   if (typeof approved.text === "string") text = approved.text;
   const hasFiles = !!(files && files.length > 0);
