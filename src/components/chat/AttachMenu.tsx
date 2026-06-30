@@ -471,11 +471,46 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
           </DialogHeader>
           {pending && pending.length > 0 ? (
             <div className="space-y-3">
+              {/* Toolbar: mode pilih + pilih semua + hapus semua */}
+              <div className="flex flex-wrap items-center gap-2 text-[11px]">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant={selectMode ? "secondary" : "outline"}
+                  className="h-7 px-2"
+                  disabled={!!busy}
+                  onClick={() => { setSelectMode((v) => !v); setSelected(new Set()); }}
+                >
+                  {selectMode ? <CheckSquare className="mr-1 h-3.5 w-3.5" /> : <Square className="mr-1 h-3.5 w-3.5" />}
+                  {selectMode ? "Selesai" : "Pilih"}
+                </Button>
+                {selectMode ? (
+                  <>
+                    <Button type="button" size="sm" variant="outline" className="h-7 px-2" disabled={!!busy} onClick={selectAllPending}>
+                      Pilih semua
+                    </Button>
+                    {selected.size > 0 ? (
+                      <Button type="button" size="sm" variant="outline" className="h-7 px-2" disabled={!!busy} onClick={clearSelection}>
+                        Bersihkan
+                      </Button>
+                    ) : null}
+                    <span className="ml-auto text-muted-foreground">{selected.size}/{pending.length} dipilih</span>
+                  </>
+                ) : (
+                  <span className="ml-auto text-muted-foreground">{pending.length} berkas</span>
+                )}
+              </div>
               <div className="grid max-h-72 grid-cols-3 gap-2 overflow-y-auto">
                 {pending.map((p, i) => {
                   const st = statuses[i]?.state ?? "idle";
+                  const isSelected = selected.has(i);
                   return (
-                  <div key={i} className={`relative aspect-square overflow-hidden rounded-lg border bg-muted/30 ${st === "error" ? "ring-2 ring-destructive" : st === "sent" ? "ring-2 ring-emerald-500/70" : ""}`}>
+                  <div
+                    key={i}
+                    role={selectMode ? "button" : undefined}
+                    onClick={selectMode && !busy ? () => toggleSelected(i) : undefined}
+                    className={`relative aspect-square overflow-hidden rounded-lg border bg-muted/30 ${selectMode ? "cursor-pointer" : ""} ${isSelected ? "ring-2 ring-primary" : st === "error" ? "ring-2 ring-destructive" : st === "sent" ? "ring-2 ring-emerald-500/70" : ""}`}
+                  >
                     {p.previewUrl && p.file.type.startsWith("image/") ? (
                       <img src={p.previewUrl} alt={p.file.name} className="h-full w-full object-cover" />
                     ) : p.previewUrl && p.file.type.startsWith("video/") ? (
@@ -487,13 +522,18 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                         <div className="text-[10px] text-muted-foreground">{formatBytes(p.file.size)}</div>
                       </div>
                     )}
-                    {pending.length > 1 && !busy ? (
+                    {selectMode ? (
+                      <span className={`absolute left-1 top-1 flex h-5 w-5 items-center justify-center rounded-full border bg-background/85 shadow ${isSelected ? "border-primary text-primary" : "border-muted-foreground/40 text-muted-foreground"}`}>
+                        {isSelected ? <CheckSquare className="h-3.5 w-3.5" /> : <Square className="h-3.5 w-3.5" />}
+                      </span>
+                    ) : null}
+                    {!selectMode && !busy ? (
                       <button
                         type="button"
-                        onClick={() => removePendingAt(i)}
+                        onClick={(e) => { e.stopPropagation(); removePendingAt(i); }}
                         disabled={!!busy}
                         aria-label={`Hapus ${p.file.name}`}
-                        className="absolute right-1 top-1 rounded-full bg-background/80 p-1 shadow hover:bg-background disabled:opacity-50"
+                        className="absolute right-1 top-1 rounded-full bg-background/85 p-1 shadow hover:bg-background disabled:opacity-50"
                       >
                         <X className="h-3 w-3" />
                       </button>
@@ -502,12 +542,12 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
                       <div className="absolute inset-0 flex items-center justify-center bg-background/60">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
                       </div>
-                    ) : st === "sent" ? (
-                      <div className="absolute right-1 top-1 rounded-full bg-emerald-500/95 p-0.5 text-white shadow">
+                    ) : st === "sent" && !selectMode ? (
+                      <div className="absolute right-7 top-1 rounded-full bg-emerald-500/95 p-0.5 text-white shadow">
                         <CheckCircle2 className="h-3.5 w-3.5" />
                       </div>
-                    ) : st === "error" ? (
-                      <div className="absolute right-1 top-1 rounded-full bg-destructive/95 p-0.5 text-destructive-foreground shadow" title={statuses[i]?.error}>
+                    ) : st === "error" && !selectMode ? (
+                      <div className="absolute right-7 top-1 rounded-full bg-destructive/95 p-0.5 text-destructive-foreground shadow" title={statuses[i]?.error}>
                         <AlertCircle className="h-3.5 w-3.5" />
                       </div>
                     ) : null}
