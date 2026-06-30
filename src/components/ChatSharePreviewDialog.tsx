@@ -3,6 +3,8 @@ import { CheckCircle2, Loader2, MapPin, Send, XCircle, AlertTriangle, RefreshCw,
 import { SendLogViewer } from "@/components/SendLogViewer";
 import type { SendLogEntry } from "@/lib/send-log";
 import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
+import { useLiveSendLog } from "@/lib/send-log";
+import { InflightStepProgress } from "@/components/InflightStepProgress";
 import type { SendPayloadSummary } from "@/lib/idempotency";
 import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
