@@ -238,12 +238,12 @@ function EcerPage() {
           </div>
 
           {loadError.diagnosis && (
-            <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-xs leading-relaxed text-amber-700 dark:text-amber-400">
+            <div className="mb-3 rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-xs leading-snug text-amber-700 dark:text-amber-400">
               <b>Kemungkinan penyebab:</b> {loadError.diagnosis}
             </div>
           )}
 
-          <div className="space-y-1.5 rounded-md border bg-background/60 p-2.5 text-[11px] leading-relaxed">
+          <div className="space-y-1.5 rounded-md border bg-background/60 p-2.5 text-[11px] leading-snug">
             <div><span className="text-muted-foreground">Pesan:</span> <span className="break-words font-mono">{loadError.message}</span></div>
             {loadError.code && <div><span className="text-muted-foreground">Kode:</span> <span className="font-mono">{loadError.code}</span></div>}
             {loadError.status !== undefined && <div><span className="text-muted-foreground">HTTP:</span> <span className="font-mono">{String(loadError.status)}</span></div>}
@@ -317,7 +317,7 @@ function EcerPage() {
         <Scale className="h-5 w-5 text-primary" />
         <h1 className="text-lg font-semibold">Penyiapan Ecer</h1>
       </div>
-      <p className="text-xs leading-relaxed text-muted-foreground">
+      <p className="text-xs leading-snug text-muted-foreground">
         Buat <b>Judul Ecer</b> per produk (mis. <i>KRISTAL 1 gram</i>), lalu tambahkan kotak-kotak penyiapan
         berisi foto + lokasi + berat aktual yang ditimbang. Stok produk otomatis berkurang setiap penyiapan disimpan.
       </p>
@@ -826,7 +826,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                 <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
                 <div className="min-w-0 flex-1 space-y-2">
                   <div className="text-sm font-semibold text-destructive">Gagal memuat daftar penyiapan</div>
-                  <div className="space-y-1 rounded-md border bg-background/60 p-2 text-[11px] leading-relaxed">
+                  <div className="space-y-1 rounded-md border bg-background/60 p-2 text-[11px] leading-snug">
                     <div><span className="text-muted-foreground">Pesan:</span> <span className="break-words font-mono">{loadError.message}</span></div>
                     {loadError.code && <div><span className="text-muted-foreground">Kode:</span> <span className="font-mono">{loadError.code}</span></div>}
                     {loadError.hint && <div><span className="text-muted-foreground">Hint:</span> <span className="font-mono">{loadError.hint}</span></div>}
@@ -851,7 +851,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                 <Boxes className="h-6 w-6 text-primary" />
               </div>
               <div className="text-sm font-semibold">Belum ada penyiapan</div>
-              <p className="mx-auto mt-1 max-w-xs text-xs leading-relaxed text-muted-foreground">
+              <p className="mx-auto mt-1 max-w-xs text-xs leading-snug text-muted-foreground">
                 Tambahkan kotak penyiapan pertama untuk judul <b className="break-words">{title.name}</b>.
                 Setiap kotak berisi foto, lokasi, dan berat aktual yang ditimbang.
               </p>
@@ -1806,7 +1806,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
               </div>
             )}
             {locProblem && (
-              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-[11px] leading-relaxed text-destructive">
+              <div className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2.5 text-[11px] leading-snug text-destructive">
                 <div className="font-semibold">GPS gagal: {locProblem.message}</div>
                 {locProblem.hint && <div className="mt-1 text-destructive/90">{locProblem.hint}</div>}
                 <div className="mt-2 flex flex-wrap gap-2">
