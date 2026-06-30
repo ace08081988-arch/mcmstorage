@@ -1,6 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { messagePreviewText } from "@/lib/chat-deleted";
 
 export type ConversationRow = {
   id: string;
@@ -218,7 +219,7 @@ export function useConversations() {
       for (const m of lastMsgs ?? []) {
         if (!lastByConv.has(m.conversation_id)) {
           lastByConv.set(m.conversation_id, {
-            body: m.deleted_at ? "(pesan dihapus)" : (m.body ?? (m.attachment_name ? `📎 ${m.attachment_name}` : "Lampiran")),
+            body: messagePreviewText(m) || "Lampiran",
             created_at: m.created_at,
             sender_id: m.sender_id,
           });
