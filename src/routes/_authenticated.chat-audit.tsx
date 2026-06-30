@@ -87,9 +87,15 @@ function AuditPage() {
     <div className="mx-auto w-full max-w-3xl space-y-4 p-4">
       <div className="flex items-center gap-2">
         <Button asChild variant="ghost" size="icon" aria-label="Kembali">
-          <Link to={c ? "/chat/$conversationId" : "/chat"} params={c ? { conversationId: c } : undefined as never}>
-            <ArrowLeft className="h-5 w-5" />
-          </Link>
+          {c ? (
+            <Link to="/chat/$conversationId" params={{ conversationId: c }}>
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          ) : (
+            <Link to="/chat">
+              <ArrowLeft className="h-5 w-5" />
+            </Link>
+          )}
         </Button>
         <div className="flex flex-1 items-center gap-2">
           <History className="h-5 w-5 text-primary" />

@@ -37,6 +37,7 @@ import { Route as AuthenticatedEmailQueueRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.ecer'
 import { Route as AuthenticatedDiagnosticsRouteImport } from './routes/_authenticated.diagnostics'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
+import { Route as AuthenticatedChatAuditRouteImport } from './routes/_authenticated.chat-audit'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
 import { Route as AuthenticatedCatatanRouteImport } from './routes/_authenticated.catatan'
 import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authenticated.balas-cepat'
@@ -197,6 +198,11 @@ const AuthenticatedDeviceVerifyRoute =
     path: '/device-verify',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedChatAuditRoute = AuthenticatedChatAuditRouteImport.update({
+  id: '/chat-audit',
+  path: '/chat-audit',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedChatRoute = AuthenticatedChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -291,6 +297,7 @@ export interface FileRoutesByFullPath {
   '/balas-cepat': typeof AuthenticatedBalasCepatRoute
   '/catatan': typeof AuthenticatedCatatanRoute
   '/chat': typeof AuthenticatedChatRouteWithChildren
+  '/chat-audit': typeof AuthenticatedChatAuditRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
@@ -332,6 +339,7 @@ export interface FileRoutesByTo {
   '/audit': typeof AuthenticatedAuditRoute
   '/balas-cepat': typeof AuthenticatedBalasCepatRoute
   '/catatan': typeof AuthenticatedCatatanRoute
+  '/chat-audit': typeof AuthenticatedChatAuditRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
@@ -377,6 +385,7 @@ export interface FileRoutesById {
   '/_authenticated/balas-cepat': typeof AuthenticatedBalasCepatRoute
   '/_authenticated/catatan': typeof AuthenticatedCatatanRoute
   '/_authenticated/chat': typeof AuthenticatedChatRouteWithChildren
+  '/_authenticated/chat-audit': typeof AuthenticatedChatAuditRoute
   '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/_authenticated/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/_authenticated/ecer': typeof AuthenticatedEcerRoute
@@ -423,6 +432,7 @@ export interface FileRouteTypes {
     | '/balas-cepat'
     | '/catatan'
     | '/chat'
+    | '/chat-audit'
     | '/device-verify'
     | '/diagnostics'
     | '/ecer'
@@ -464,6 +474,7 @@ export interface FileRouteTypes {
     | '/audit'
     | '/balas-cepat'
     | '/catatan'
+    | '/chat-audit'
     | '/device-verify'
     | '/diagnostics'
     | '/ecer'
@@ -508,6 +519,7 @@ export interface FileRouteTypes {
     | '/_authenticated/balas-cepat'
     | '/_authenticated/catatan'
     | '/_authenticated/chat'
+    | '/_authenticated/chat-audit'
     | '/_authenticated/device-verify'
     | '/_authenticated/diagnostics'
     | '/_authenticated/ecer'
@@ -755,6 +767,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeviceVerifyRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/chat-audit': {
+      id: '/_authenticated/chat-audit'
+      path: '/chat-audit'
+      fullPath: '/chat-audit'
+      preLoaderRoute: typeof AuthenticatedChatAuditRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/chat': {
       id: '/_authenticated/chat'
       path: '/chat'
@@ -901,6 +920,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedBalasCepatRoute: typeof AuthenticatedBalasCepatRoute
   AuthenticatedCatatanRoute: typeof AuthenticatedCatatanRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRouteWithChildren
+  AuthenticatedChatAuditRoute: typeof AuthenticatedChatAuditRoute
   AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
   AuthenticatedDiagnosticsRoute: typeof AuthenticatedDiagnosticsRoute
   AuthenticatedEcerRoute: typeof AuthenticatedEcerRoute
@@ -926,6 +946,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedBalasCepatRoute: AuthenticatedBalasCepatRoute,
   AuthenticatedCatatanRoute: AuthenticatedCatatanRoute,
   AuthenticatedChatRoute: AuthenticatedChatRouteWithChildren,
+  AuthenticatedChatAuditRoute: AuthenticatedChatAuditRoute,
   AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
   AuthenticatedDiagnosticsRoute: AuthenticatedDiagnosticsRoute,
   AuthenticatedEcerRoute: AuthenticatedEcerRoute,
