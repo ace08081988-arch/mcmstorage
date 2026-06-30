@@ -1323,6 +1323,20 @@ function ChatRoomPage() {
         />
       ) : null}
 
+      {dmPeer ? (
+        <EditContactNameDialog
+          open={editNameOpen}
+          onOpenChange={setEditNameOpen}
+          peerKey={{
+            peerUserId: dmPeer.peerUserId,
+            peerPhone: dmPeer.peerPhone,
+            peerEmail: dmPeer.peerEmail,
+          }}
+          initialName={displayedPeerName}
+          fromAlias={!!peerAlias.data?.name}
+        />
+      ) : null}
+
       <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
