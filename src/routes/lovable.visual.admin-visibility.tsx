@@ -23,7 +23,7 @@ import {
 } from "@/lib/admin-sidebar-visibility";
 import { classifyApkAdminView } from "@/lib/apk-admin-visibility";
 
-type Search = { admin?: "true" | "false" };
+type Search = { admin: boolean };
 
 export const Route = createFileRoute("/lovable/visual/admin-visibility")({
   head: () => ({
@@ -34,9 +34,9 @@ export const Route = createFileRoute("/lovable/visual/admin-visibility")({
   }),
   validateSearch: (raw: Record<string, unknown>): Search => {
     const v = raw.admin;
-    return {
-      admin: v === "true" ? "true" : v === "false" ? "false" : "false",
-    };
+    // Terima "true"/"false" (string) & boolean (hasil default JSON parser
+    // TanStack Router). Semua nilai lain → non-admin.
+    return { admin: v === true || v === "true" };
   },
   component: AdminVisibilityHarness,
 });
@@ -62,7 +62,7 @@ function slug(url: string): string {
 
 function AdminVisibilityHarness() {
   const search = Route.useSearch();
-  const isAdmin = search.admin === "true";
+  const isAdmin = search.admin;
 
   const visible = filterSidebarItemsForAdmin(ITEMS, isAdmin);
   const visibleUrls = new Set(visible.map((i) => i.url));
