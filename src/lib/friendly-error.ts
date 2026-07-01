@@ -13,7 +13,7 @@ export function friendlyError(
 
   switch (e.code) {
     case "23505": return "Data ini sudah ada.";
-    case "23503": return "Data terkait tidak ditemukan.";
+    case "23503": return "Masih ada data terkait yang menghalangi. Hapus dulu data yang mengacu ke barang ini.";
     case "23514": return "Input tidak valid.";
     case "23502": return "Ada kolom wajib yang belum diisi.";
     case "22P02": return "Format input tidak valid.";
