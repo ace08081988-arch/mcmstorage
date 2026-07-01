@@ -397,6 +397,40 @@ function metaFor(rule: string): RuleMeta {
   return RULE_META[rule] ?? { code: "PA000", docs: DOCS_BASE };
 }
 
+/** Deskripsi singkat rule utk UI/docs. Kunci = nama rule internal. */
+const RULE_DESCRIPTIONS: Record<string, string> = {
+  "radix-animated-surface":
+    "Surface Radix (Dialog/Sheet/Popover/DropdownMenu) yang beranimasi sendiri terbentrok dengan reaksi press-scope. Tambahkan data-no-press pada Content/Overlay.",
+  "motion-whiletap-wraps-button":
+    "motion.div dengan whileTap membungkus shadcn Button — dua sistem animasi tumpang tindih. Pasang data-no-press pada wrapper motion.",
+  "sortable-handle":
+    "Handle drag pada item sortable (dnd-kit / react-sortable) ikut ter-scale saat disentuh sehingga drag terasa geser. Beri data-no-press pada handle.",
+  "destructive-menuitem":
+    "MenuItem destruktif (variant destructive) kehilangan warna merah karena shading press. Tambahkan data-no-press pada item.",
+};
+
+export type PressAuditRuleEntry = {
+  rule: string;
+  code: string;
+  docs: string;
+  description: string;
+};
+
+/** Registry publik untuk UI dev (halaman Daftar Kode PA00X). */
+export function getPressAuditRegistry(): PressAuditRuleEntry[] {
+  return Object.entries(RULE_META)
+    .map(([rule, meta]) => ({
+      rule,
+      code: meta.code,
+      docs: meta.docs,
+      description:
+        RULE_DESCRIPTIONS[rule] ?? "Belum ada deskripsi singkat.",
+    }))
+    .sort((a, b) => a.code.localeCompare(b.code));
+}
+
+export const PRESS_AUDIT_DOCS_BASE = DOCS_BASE;
+
 function describeEl(el: Element): {
   tag: string;
   id: string | null;

@@ -74,6 +74,7 @@ import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovab
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
 import { Route as AuthenticatedKontakPermintaanRouteImport } from './routes/_authenticated.kontak.permintaan'
+import { Route as AuthenticatedDevPressAuditCodesRouteImport } from './routes/_authenticated.dev.press-audit-codes'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -432,6 +433,12 @@ const AuthenticatedKontakPermintaanRoute =
     path: '/permintaan',
     getParentRoute: () => AuthenticatedKontakRoute,
   } as any)
+const AuthenticatedDevPressAuditCodesRoute =
+  AuthenticatedDevPressAuditCodesRouteImport.update({
+    id: '/dev/press-audit-codes',
+    path: '/dev/press-audit-codes',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedChatConversationIdRoute =
   AuthenticatedChatConversationIdRouteImport.update({
     id: '/$conversationId',
@@ -527,6 +534,7 @@ export interface FileRoutesByFullPath {
   '/t/$token': typeof TTokenRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
@@ -599,6 +607,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
@@ -674,6 +683,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/_authenticated/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/_authenticated/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
@@ -749,6 +759,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
+    | '/dev/press-audit-codes'
     | '/kontak/permintaan'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
@@ -821,6 +832,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
+    | '/dev/press-audit-codes'
     | '/kontak/permintaan'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
@@ -895,6 +907,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/admin/worker-portal'
     | '/_authenticated/chat/$conversationId'
+    | '/_authenticated/dev/press-audit-codes'
     | '/_authenticated/kontak/permintaan'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
@@ -1404,6 +1417,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedKontakPermintaanRouteImport
       parentRoute: typeof AuthenticatedKontakRoute
     }
+    '/_authenticated/dev/press-audit-codes': {
+      id: '/_authenticated/dev/press-audit-codes'
+      path: '/dev/press-audit-codes'
+      fullPath: '/dev/press-audit-codes'
+      preLoaderRoute: typeof AuthenticatedDevPressAuditCodesRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/chat/$conversationId': {
       id: '/_authenticated/chat/$conversationId'
       path: '/$conversationId'
@@ -1547,6 +1567,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedUndangRoute: typeof AuthenticatedUndangRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
+  AuthenticatedDevPressAuditCodesRoute: typeof AuthenticatedDevPressAuditCodesRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -1594,6 +1615,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedUndangRoute: AuthenticatedUndangRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
+  AuthenticatedDevPressAuditCodesRoute: AuthenticatedDevPressAuditCodesRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
