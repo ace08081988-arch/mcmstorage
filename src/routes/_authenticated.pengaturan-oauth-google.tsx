@@ -96,6 +96,23 @@ function saveChecks(next: Record<StepId, boolean>) {
   }
 }
 
+function loadClientId(): string {
+  try {
+    return localStorage.getItem(CLIENT_ID_KEY) ?? "";
+  } catch {
+    return "";
+  }
+}
+
+function saveClientId(value: string) {
+  try {
+    if (value) localStorage.setItem(CLIENT_ID_KEY, value);
+    else localStorage.removeItem(CLIENT_ID_KEY);
+  } catch {
+    /* storage penuh — abaikan */
+  }
+}
+
 function OAuthGooglePage() {
   const { isAdmin, isCheckingAdmin: adminLoading } = useAdminStatus();
 
