@@ -606,7 +606,20 @@ export function useHideMessageForMe(conversationId: string) {
       const { error } = await supabase.rpc("message_hide_for_me", { _msg: messageId });
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (messageId: string) => {
+      // Optimistically add to the hidden set so the message disappears
+      // immediately, even before the RPC round-trip or the SELECT refetch.
+      await qc.cancelQueries({ queryKey: ["chat", "hidden"] });
+      const prev = qc.getQueryData<Set<string>>(["chat", "hidden"]);
+      const next = new Set(prev ?? []);
+      next.add(messageId);
+      qc.setQueryData<Set<string>>(["chat", "hidden"], next);
+      return { prev };
+    },
+    onError: (_e, _v, ctx) => {
+      if (ctx?.prev) qc.setQueryData(["chat", "hidden"], ctx.prev);
+    },
+    onSettled: () => {
       qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
       qc.invalidateQueries({ queryKey: ["chat", "hidden"] });
     },
