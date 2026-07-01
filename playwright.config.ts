@@ -476,5 +476,20 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: fuzz PIN MCM lintas hingga 5 DM acak — header + transkrip
+      // wajib bebas nomor telp Indonesia mentah pada fase awal, setelah
+      // reload, dan setelah scroll load-more; setiap token "PIN <...>"
+      // yang tampil wajib berformat `xxxx-xxxx`; identitas antar konvo
+      // berbeda wajib unik.
+      name: "chat-pin-mcm-random-multi-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-random-multi\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
