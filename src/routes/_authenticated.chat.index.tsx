@@ -523,6 +523,7 @@ function ChatListPage() {
       )}
       </div>
       {selecting ? null : <AddContactFab />}
+      <ChatBottomNav />
     </main>
   );
 }
