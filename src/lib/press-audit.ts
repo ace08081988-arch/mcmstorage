@@ -56,8 +56,34 @@ export type PressAuditConfig = {
   rules: { allow: string[]; deny: string[] };
   scope: { allow: string[]; deny: string[] };
 };
+export type PressAuditPersist = "memory" | "session";
+export type PressAuditSetOptions = {
+  /**
+   * "memory" (default) — konfigurasi hidup selama halaman ini saja.
+   *   Refresh/navigasi hard reload = kembali ke DEFAULT_CONFIG.
+   * "session"          — bertahan selama tab masih dibuka (survive
+   *   refresh dalam tab yang sama), otomatis hilang saat tab ditutup.
+   *
+   * Konfigurasi TIDAK PERNAH ditulis ke localStorage. Ini memastikan
+   * flag debug tidak bocor lintas sesi / lintas perangkat.
+   */
+  persist?: PressAuditPersist;
+  /**
+   * Auto-reset setelah `ttlMs` (default 30 menit untuk mode debug).
+   * Kirim `0`/`Infinity` untuk menonaktifkan TTL.
+   */
+  ttlMs?: number;
+  /**
+   * Auto-reset saat SPA navigation (`popstate`, `pushState`,
+   * `replaceState`). Default `true` supaya penyisiran section
+   * tertentu tidak nyangkut ke halaman berikutnya.
+   */
+  resetOnNavigate?: boolean;
+};
 
-const CONFIG_KEY = "press-audit:config";
+const LEGACY_LS_KEY = "press-audit:config"; // dibersihkan on init
+const SESSION_KEY = "press-audit:config";   // sessionStorage saja
+const DEFAULT_TTL_MS = 30 * 60 * 1000;      // 30 menit
 const DEFAULT_CONFIG: PressAuditConfig = {
   mode: "log",
   rules: { allow: [], deny: [] },
@@ -65,37 +91,137 @@ const DEFAULT_CONFIG: PressAuditConfig = {
 };
 
 let config: PressAuditConfig = DEFAULT_CONFIG;
+let ttlTimer: ReturnType<typeof setTimeout> | 0 = 0;
+let navUnbind: (() => void) | null = null;
+let runSweep: (() => void) | null = null;
+
+function requestRun() {
+  if (runSweep) {
+    try { runSweep(); } catch { /* ignore */ }
+  }
+}
+
+function normalize(parsed: Partial<PressAuditConfig> | null | undefined): PressAuditConfig {
+  if (!parsed) return DEFAULT_CONFIG;
+  return {
+    mode: parsed.mode ?? DEFAULT_CONFIG.mode,
+    rules: {
+      allow: parsed.rules?.allow ?? [],
+      deny: parsed.rules?.deny ?? [],
+    },
+    scope: {
+      allow: parsed.scope?.allow ?? [],
+      deny: parsed.scope?.deny ?? [],
+    },
+  };
+}
 
 function loadConfig(): PressAuditConfig {
   if (typeof window === "undefined") return DEFAULT_CONFIG;
+  // Migrasi diam-diam: hapus jejak localStorage lama supaya flag debug
+  // tidak lintas-sesi lagi.
   try {
-    const raw = window.localStorage.getItem(CONFIG_KEY);
+    window.localStorage.removeItem(LEGACY_LS_KEY);
+  } catch {
+    /* ignore */
+  }
+  try {
+    const raw = window.sessionStorage.getItem(SESSION_KEY);
     if (!raw) return DEFAULT_CONFIG;
-    const parsed = JSON.parse(raw) as Partial<PressAuditConfig>;
-    return {
-      mode: parsed.mode ?? DEFAULT_CONFIG.mode,
-      rules: {
-        allow: parsed.rules?.allow ?? [],
-        deny: parsed.rules?.deny ?? [],
-      },
-      scope: {
-        allow: parsed.scope?.allow ?? [],
-        deny: parsed.scope?.deny ?? [],
-      },
-    };
+    return normalize(JSON.parse(raw) as Partial<PressAuditConfig>);
   } catch {
     return DEFAULT_CONFIG;
   }
 }
 
-function saveConfig(next: PressAuditConfig) {
-  config = next;
+function clearTtl() {
+  if (ttlTimer) {
+    clearTimeout(ttlTimer as ReturnType<typeof setTimeout>);
+    ttlTimer = 0;
+  }
+}
+
+function unbindNav() {
+  if (navUnbind) {
+    navUnbind();
+    navUnbind = null;
+  }
+}
+
+function bindNavReset() {
+  if (typeof window === "undefined" || navUnbind) return;
+  const onNav = () => resetConfig();
+  window.addEventListener("popstate", onNav);
+  // Patch history untuk SPA (idempotent — tandai supaya tak dobel patch).
+  const h = window.history as History & { __pressAuditPatched?: boolean };
+  const origPush = h.pushState;
+  const origReplace = h.replaceState;
+  if (!h.__pressAuditPatched) {
+    h.__pressAuditPatched = true;
+    h.pushState = function (...args) {
+      const r = origPush.apply(this, args as never);
+      window.dispatchEvent(new Event("press-audit:navigate"));
+      return r;
+    };
+    h.replaceState = function (...args) {
+      const r = origReplace.apply(this, args as never);
+      window.dispatchEvent(new Event("press-audit:navigate"));
+      return r;
+    };
+  }
+  window.addEventListener("press-audit:navigate", onNav);
+  navUnbind = () => {
+    window.removeEventListener("popstate", onNav);
+    window.removeEventListener("press-audit:navigate", onNav);
+  };
+}
+
+function persistConfig(next: PressAuditConfig, persist: PressAuditPersist) {
   if (typeof window === "undefined") return;
   try {
-    window.localStorage.setItem(CONFIG_KEY, JSON.stringify(next));
+    if (persist === "session") {
+      window.sessionStorage.setItem(SESSION_KEY, JSON.stringify(next));
+    } else {
+      window.sessionStorage.removeItem(SESSION_KEY);
+    }
   } catch {
-    /* storage penuh / disabled — abaikan */
+    /* ignore */
   }
+}
+
+function resetConfig() {
+  config = DEFAULT_CONFIG;
+  clearTtl();
+  unbindNav();
+  if (typeof window !== "undefined") {
+    try {
+      window.sessionStorage.removeItem(SESSION_KEY);
+    } catch {
+      /* ignore */
+    }
+  }
+  dedupe.clear();
+  // schedule sweep dengan config bersih (aman kalau run belum ada)
+  requestRun();
+}
+
+function applyConfig(
+  next: PressAuditConfig,
+  opts: PressAuditSetOptions | undefined,
+) {
+  config = next;
+  const persist = opts?.persist ?? "memory";
+  persistConfig(next, persist);
+
+  clearTtl();
+  const ttl = opts?.ttlMs ?? DEFAULT_TTL_MS;
+  if (ttl && Number.isFinite(ttl) && ttl > 0 && typeof window !== "undefined") {
+    ttlTimer = setTimeout(() => resetConfig(), ttl);
+  }
+
+  const shouldBindNav = opts?.resetOnNavigate ?? true;
+  if (shouldBindNav) bindNavReset();
+  else unbindNav();
 }
 
 function ruleMatches(list: string[], rule: string, code: string): boolean {
@@ -394,6 +520,8 @@ export function installPressAudit(): () => void {
   });
   mo.observe(document.body, { childList: true, subtree: true });
 
+  runSweep = run;
+
   // API manual untuk audit ad-hoc dari console.
   (window as any).__pressAudit = () => {
     dedupe.clear();
@@ -404,25 +532,30 @@ export function installPressAudit(): () => void {
   // API konfigurasi runtime — bisa dipanggil dari devtools console tanpa reload.
   (window as any).__pressAuditConfig = {
     get: (): PressAuditConfig => ({ ...config }),
-    set: (patch: Partial<PressAuditConfig>) => {
-      saveConfig({
-        mode: patch.mode ?? config.mode,
-        rules: {
-          allow: patch.rules?.allow ?? config.rules.allow,
-          deny: patch.rules?.deny ?? config.rules.deny,
-        },
-        scope: {
-          allow: patch.scope?.allow ?? config.scope.allow,
-          deny: patch.scope?.deny ?? config.scope.deny,
-        },
-      });
+    set: (
+      patch: Partial<PressAuditConfig>,
+      opts?: PressAuditSetOptions,
+    ) => {
+      applyConfig(
+        normalize({
+          mode: patch.mode ?? config.mode,
+          rules: {
+            allow: patch.rules?.allow ?? config.rules.allow,
+            deny: patch.rules?.deny ?? config.rules.deny,
+          },
+          scope: {
+            allow: patch.scope?.allow ?? config.scope.allow,
+            deny: patch.scope?.deny ?? config.scope.deny,
+          },
+        }),
+        opts,
+      );
       dedupe.clear();
       run();
       return config;
     },
     reset: () => {
-      saveConfig(DEFAULT_CONFIG);
-      dedupe.clear();
+      resetConfig();
       run();
       return config;
     },
