@@ -13,10 +13,25 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Copy, ExternalLink, ShieldAlert, Check, Eye, EyeOff, Save, Trash2 } from "lucide-react";
+import {
+  Copy,
+  ExternalLink,
+  ShieldAlert,
+  Check,
+  Eye,
+  EyeOff,
+  Save,
+  Trash2,
+  PlayCircle,
+  Loader2,
+  CheckCircle2,
+  XCircle,
+} from "lucide-react";
 import { toast } from "sonner";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { useAdminStatus } from "@/hooks/use-is-admin";
+import { lovable } from "@/integrations/lovable";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-oauth-google")({
   head: () => ({
