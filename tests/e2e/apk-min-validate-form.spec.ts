@@ -15,6 +15,22 @@ import { test, expect } from "@playwright/test";
 const URL = "/lovable/visual/min-supported-form";
 
 test.describe("Pengaturan APK · form minSupported", () => {
+  // Pesan sumber kebenaran dari `src/lib/apk-min-validate.ts`.
+  const MSG = {
+    namePrefixV: "Jangan pakai prefix 'v' (mis. tulis 1.2.0)",
+    nameSuffix:
+      "Tidak boleh ada suffix prerelease/build (mis. -beta, +build)",
+    nameFormat: "Format harus MAJOR.MINOR[.PATCH] angka saja (mis. 1.2.3)",
+    nameRange: "Setiap segmen harus 0–99999",
+    codeInt: "Harus bilangan bulat non-negatif (mis. 45)",
+    codeMax: "Melebihi batas versionCode Android (≤ 2.100.000.000)",
+    reasonMax: "Alasan maksimum 200 karakter",
+    reasonWithoutMin:
+      "Alasan hanya berlaku bila minimum versi atau build diisi",
+    toastInvalid: "Perbaiki input yang tidak valid dulu",
+    toastSaved: "Tersimpan",
+  } as const;
+
   test("input tidak valid → error inline, Simpan disabled", async ({
     page,
   }) => {
@@ -68,10 +84,11 @@ test.describe("Pengaturan APK · form minSupported", () => {
     // Tombol paksa memanggil handler yang sama tanpa memblokir disabled.
     await page.getByTestId("mf-save-force").click();
 
-    // Toast error muncul (sonner mount di root, top-center).
-    await expect(
-      page.getByText(/Perbaiki input yang tidak valid dulu/i),
-    ).toBeVisible({ timeout: 3_000 });
+    // Toast error muncul (sonner mount di root, top-center) dengan teks
+    // persis sesuai handler harness.
+    await expect(page.getByText(MSG.toastInvalid, { exact: true })).toBeVisible({
+      timeout: 3_000,
+    });
 
     // Tidak ada tersimpan.
     await expect(page.getByTestId("mf-saved-count")).toHaveText("saved=0");
@@ -86,8 +103,88 @@ test.describe("Pengaturan APK · form minSupported", () => {
 
     const formErr = page.getByTestId("mf-form-error");
     await expect(formErr).toBeVisible();
-    await expect(formErr).toContainText(/Alasan hanya berlaku/i);
+    await expect(formErr).toHaveText(MSG.reasonWithoutMin);
     await expect(page.getByTestId("mf-save")).toBeDisabled();
+
+    // Tekan paksa → toast error dengan teks persis.
+    await page.getByTestId("mf-save-force").click();
+    await expect(page.getByText(MSG.toastInvalid, { exact: true })).toBeVisible({
+      timeout: 3_000,
+    });
+    await expect(page.getByTestId("mf-saved-count")).toHaveText("saved=0");
+  });
+
+  test("pesan inline name: prefix v, suffix, format, range", async ({
+    page,
+  }) => {
+    await page.goto(URL);
+    const name = page.getByTestId("mf-name");
+    const err = page.getByTestId("mf-name-error");
+
+    await name.fill("v1.2.0");
+    await name.blur();
+    await expect(err).toHaveText(MSG.namePrefixV);
+
+    await name.fill("1.2.0-beta");
+    await expect(err).toHaveText(MSG.nameSuffix);
+
+    await name.fill("1.2.0+build");
+    await expect(err).toHaveText(MSG.nameSuffix);
+
+    await name.fill("1.2.x");
+    await expect(err).toHaveText(MSG.nameFormat);
+
+    await name.fill("1");
+    await expect(err).toHaveText(MSG.nameFormat);
+
+    await name.fill("1.2.3.4.5");
+    await expect(err).toHaveText(MSG.nameFormat);
+
+    await name.fill("1.100000.0");
+    await expect(err).toHaveText(MSG.nameRange);
+  });
+
+  test("pesan inline code: non-integer & melebihi batas Android", async ({
+    page,
+  }) => {
+    await page.goto(URL);
+    const code = page.getByTestId("mf-code");
+    const err = page.getByTestId("mf-code-error");
+
+    await code.fill("abc");
+    await code.blur();
+    await expect(err).toHaveText(MSG.codeInt);
+
+    await code.fill("-5");
+    await expect(err).toHaveText(MSG.codeInt);
+
+    await code.fill("4.5");
+    await expect(err).toHaveText(MSG.codeInt);
+
+    await code.fill("2100000001");
+    await expect(err).toHaveText(MSG.codeMax);
+  });
+
+  test("pesan inline reason: >200 karakter", async ({ page }) => {
+    await page.goto(URL);
+    const reason = page.getByTestId("mf-reason");
+    // Isi min agar tidak memicu form-level 'reason tanpa min'.
+    await page.getByTestId("mf-name").fill("1.2.0");
+    await reason.fill("x".repeat(201));
+    await reason.blur();
+    await expect(page.getByTestId("mf-reason-error")).toHaveText(
+      MSG.reasonMax,
+    );
+  });
+
+  test("toast sukses saat simpan valid", async ({ page }) => {
+    await page.goto(URL);
+    await page.getByTestId("mf-name").fill("1.2.0");
+    await page.getByTestId("mf-code").fill("45");
+    await page.getByTestId("mf-save").click();
+    await expect(page.getByText(MSG.toastSaved, { exact: true })).toBeVisible({
+      timeout: 3_000,
+    });
   });
 
   test("input valid tersimpan → toast sukses & badge 'lawas' menyesuaikan data", async ({
