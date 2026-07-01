@@ -93,6 +93,21 @@ function formatTimeShort(iso: string): string {
   return d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" });
 }
 
+/**
+ * Token reaksi sentuh terpadu:
+ *  - durasi 150ms, easing ease-out (sinkron dengan micro-interactions lain).
+ *  - properti yang dianimasikan dibatasi eksplisit agar tidak "wobble" saat
+ *    kelas lain berubah.
+ *  - varian scale disesuaikan dengan luas hit-area (ikon vs kartu besar).
+ */
+const PRESS_BASE =
+  "transition-[transform,background-color,filter,box-shadow,opacity] duration-150 ease-out will-change-transform";
+const PRESS_ICON = `${PRESS_BASE} active:scale-95`;
+const PRESS_CHIP = `${PRESS_BASE} active:scale-95`;
+const PRESS_CARD = `${PRESS_BASE} active:scale-[0.97]`;
+const PRESS_ROW = `${PRESS_BASE} active:scale-[0.98]`;
+const PRESS_FAB = `${PRESS_BASE} active:scale-95`;
+
 function initials(text: string): string {
   return text
     .split(/\s+/)
