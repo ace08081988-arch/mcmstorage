@@ -1638,6 +1638,30 @@ function ChatRoomPage() {
         />
       ) : null}
 
+      {dmPeer?.peerUserId ? (
+        <PeerProfileDialog
+          open={peerProfileOpen}
+          onOpenChange={setPeerProfileOpen}
+          peerUserId={dmPeer.peerUserId}
+          displayName={displayedPeerName}
+          onEditName={() => setEditNameOpen(true)}
+          onOpenAddressBook={() => {
+            try {
+              sessionStorage.setItem(
+                "mcm.buku-alamat.prefill",
+                JSON.stringify({
+                  phone: dmPeer.peerPhone ?? "",
+                  name: displayedPeerName,
+                }),
+              );
+            } catch {
+              /* ignore */
+            }
+            navigate({ to: "/buku-alamat" });
+          }}
+        />
+      ) : null}
+
       <ConversationSearchDialog
         open={searchOpen}
         onOpenChange={setSearchOpen}
