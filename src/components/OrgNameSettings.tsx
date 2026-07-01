@@ -442,6 +442,37 @@ export function OrgNameSettings() {
                 <ImagePlus className="h-3 w-3" aria-hidden="true" />
                 Pratinjau logo baru — belum disimpan
               </div>
+              <div className="mb-2 grid grid-cols-2 gap-2">
+                <figure className="rounded-md border bg-muted/30 p-1.5">
+                  <div className="mb-1 flex items-center justify-between text-[10px]">
+                    <span className="font-semibold uppercase tracking-wide text-muted-foreground">Lama</span>
+                    <span className="text-muted-foreground">
+                      {savedLogo ? "tersimpan" : "kosong"}
+                    </span>
+                  </div>
+                  <div className="flex aspect-square items-center justify-center overflow-hidden rounded bg-background">
+                    {savedLogo ? (
+                      <img src={savedLogo} alt="Logo lama" className="max-h-full max-w-full object-contain" />
+                    ) : (
+                      <span
+                        className="flex h-full w-full items-center justify-center font-semibold text-primary"
+                        style={{ backgroundColor: brand || undefined }}
+                      >
+                        {(short || "MCM").slice(0, 3)}
+                      </span>
+                    )}
+                  </div>
+                </figure>
+                <figure className="rounded-md border border-primary/60 bg-primary/5 p-1.5 ring-1 ring-primary/40">
+                  <div className="mb-1 flex items-center justify-between text-[10px]">
+                    <span className="font-semibold uppercase tracking-wide text-primary">Baru</span>
+                    <span className="text-primary/80">akan disimpan</span>
+                  </div>
+                  <div className="flex aspect-square items-center justify-center overflow-hidden rounded bg-background">
+                    <img src={pendingLogo.url} alt="Logo baru" className="max-h-full max-w-full object-contain" />
+                  </div>
+                </figure>
+              </div>
               <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-muted-foreground">
                 <dt>Format</dt>
                 <dd className="font-mono text-foreground">{pendingLogo.mime.replace("image/", "").toUpperCase()}</dd>
