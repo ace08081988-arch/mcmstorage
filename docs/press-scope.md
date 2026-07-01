@@ -624,3 +624,100 @@ meski rule-nya diizinkan secara global.
    kehilangan atribut sarannya secara otomatis pada sweep berikutnya.
 5. Selesai: `window.__pressAuditConfig.reset()` untuk membersihkan
    konfigurasi dari `localStorage`.
+
+#### Menolak rekomendasi rule tertentu per section (`data-press-audit-skip="PA00X"`)
+
+Saat berjalan di `mode: "suggest"`, `data-press-audit-skip` bertindak
+sebagai **filter saran per subtree**: rule yang tercantum tidak akan
+menempelkan `data-press-audit-suggest` / `data-press-audit-fix` di node
+anak, dan tidak akan muncul di `console.warn` untuk elemen di dalam
+subtree tsb — sekaligus di section lain rule yang sama tetap
+disarankan.
+
+Nilai atribut menerima **kode `PA00X`**, **nama rule**, atau campuran
+keduanya, dipisah koma/spasi. Case-insensitive untuk kode.
+
+##### Aktifkan suggest global, tolak rule per section
+
+```ts
+// devtools console — aktifkan sekali di awal investigasi
+window.__pressAuditConfig.set({ mode: "suggest" });
+```
+
+```tsx
+{/* Chat: composer memang perlu whileTap → tolak PA002 di sini saja */}
+<section data-page="chat" data-press-audit-skip="PA002">
+  <MessageList />                       {/* PA001/PA004 tetap diusulkan */}
+  <motion.div whileTap={{ scale: 0.97 }}>
+    <Button>Kirim</Button>              {/* PA002 tidak diusulkan */}
+  </motion.div>
+</section>
+
+{/* Produk: sortable disengaja pakai handle native → tolak PA003 */}
+<section data-page="produk" data-press-audit-skip="PA003">
+  <SortableList />
+</section>
+
+{/* Pengaturan: DropdownMenu destruktif adalah pola resmi → tolak PA004 */}
+<section data-page="pengaturan" data-press-audit-skip="PA004">
+  <DangerZoneMenu />                    {/* PA001 tetap diusulkan */}
+</section>
+```
+
+##### Kombinasi beberapa kode dalam satu section
+
+```tsx
+{/* Preview builder: banyak overlay Radix + motion — tolak PA001 & PA002,
+    tapi PA003/PA004 tetap disarankan bila muncul. */}
+<section data-page="builder" data-press-audit-skip="PA001, PA002">
+  <DesignCanvas />
+</section>
+
+{/* Setara — nama rule boleh dicampur dengan kode */}
+<section data-press-audit-skip="radix-animated-surface PA002">
+  <DesignCanvas />
+</section>
+```
+
+##### Nested skip: parent luas, child menambah tolakan
+
+`data-press-audit-skip` di ancestor terdekat berlaku kumulatif dari
+atas ke bawah. Child boleh **menambah** rule yang ditolak, tapi tidak
+bisa meng-*undo* skip parent — untuk itu pakai `data-press-audit="on"`
+eksplisit di child (mengaktifkan kembali audit di subtree tsb, lalu
+skip ulang selektif).
+
+```tsx
+<main data-press-audit-skip="PA001">     {/* seluruh halaman tolak PA001 */}
+  <ProfileHeader />
+
+  <section data-press-audit-skip="PA004">
+    {/* subtree ini tolak PA001 + PA004 */}
+    <DangerMenu />
+  </section>
+
+  <section data-press-audit="on" data-press-audit-skip="PA002">
+    {/* audit aktif kembali di sini; hanya PA002 yang ditolak */}
+    <ExperimentalArea />
+  </section>
+</main>
+```
+
+##### Verifikasi cepat di DevTools
+
+Setelah sweep, jalankan di Console:
+
+```js
+// Node yang MASIH menerima saran (skip berhasil = tidak muncul di sini)
+document.querySelectorAll("[data-press-audit-suggest]")
+  .forEach(el => console.log(
+    el.getAttribute("data-press-audit-suggest"), el,
+  ));
+
+// Cek ancestor terdekat yang men-skip sebuah node
+$0?.closest("[data-press-audit-skip]")?.getAttribute("data-press-audit-skip");
+```
+
+> Aturan penting: `data-press-audit-skip` **tidak** menonaktifkan
+> reaksi press-scope — hanya menekan saran auditor. Untuk mematikan
+> reaksi press-nya, tetap pakai `data-no-press` di elemen target.
