@@ -677,9 +677,24 @@ export function useHideMessageForMe(conversationId: string) {
         description: "Pesan disembunyikan dari perangkat kamu.",
       });
     },
-    onSettled: () => {
-      qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
-      qc.invalidateQueries({ queryKey: ["chat", "hidden"] });
+    onSettled: async () => {
+      // Refetch hidden set immediately so any stale UI (e.g. other tabs of the
+      // same conversation, forwards dialog, media panel) picks up the new id
+      // in the same tick as the toast. `refetchType: "active"` targets only
+      // mounted observers to avoid thrash on backgrounded routes.
+      await Promise.all([
+        qc.invalidateQueries({
+          queryKey: ["chat", "hidden"],
+          refetchType: "active",
+        }),
+        qc.invalidateQueries({
+          queryKey: ["chat", "messages", conversationId],
+          refetchType: "active",
+        }),
+      ]);
+      // Conversation list preview may reference the hidden message as the
+      // "last message"; refresh it so the row snaps to the next visible one.
+      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
     },
   });
 }
