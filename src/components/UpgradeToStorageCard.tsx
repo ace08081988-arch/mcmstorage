@@ -124,20 +124,46 @@ export function UpgradeToStorageCard() {
 
   const doUpgrade = async () => {
     setSubmitting(true);
+    const attemptToast = toast.loading("Memproses upgrade akun…");
     try {
       const res = await upgradeFn({ data: { password } });
       if (!res.ok) {
-        toast.error(res.error ?? "Gagal upgrade akun");
+        const msg = res.error ?? "Gagal upgrade akun";
+        toast.error("Upgrade gagal", {
+          id: attemptToast,
+          description: msg,
+          duration: 8000,
+          action: {
+            label: "Coba lagi",
+            onClick: () => {
+              void doUpgrade();
+            },
+          },
+        });
         return;
       }
-      toast.success("Akun berhasil di-upgrade ke MCM Storage");
+      toast.success("Akun berhasil di-upgrade ke MCM Storage", {
+        id: attemptToast,
+        description: "Semua fitur storage kini terbuka. Mengalihkan ke Beranda…",
+      });
       setChatOnly(false);
       setPassword("");
       setConfirmOpen(false);
       // Refresh ke Beranda supaya sidebar & rute ikut menyesuaikan.
       navigate({ to: "/", replace: true });
     } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Terjadi kesalahan tak terduga");
+      const msg = e instanceof Error ? e.message : "Terjadi kesalahan tak terduga";
+      toast.error("Upgrade gagal", {
+        id: attemptToast,
+        description: msg,
+        duration: 8000,
+        action: {
+          label: "Coba lagi",
+          onClick: () => {
+            void doUpgrade();
+          },
+        },
+      });
     } finally {
       setSubmitting(false);
     }
