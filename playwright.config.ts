@@ -91,6 +91,20 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E visibilitas menu admin. Harness publik no-auth memverifikasi
+      // (a) `filterSidebarItemsForAdmin` menyembunyikan `/pengaturan-apk`
+      // & `/email-queue` dari non-admin, (b) klasifikasi halaman APK
+      // jatuh ke "notice" tanpa crash, dan (c) tidak ada request ke
+      // server-fn admin dari halaman ini.
+      name: "admin-visibility-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /admin-visibility\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+      },
+    },
+    {
       // E2E RLS/GRANT: pastikan role `authenticated` bisa SELECT
       // `message_hidden` + memanggil RPC `message_hide_for_me` tanpa
       // permission denied. Butuh storage state hasil global-setup;

@@ -60,6 +60,7 @@ import { Route as LovableVisualMessageHiddenRlsRouteImport } from './routes/lova
 import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/lovable.visual.message-hidden-persist'
 import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovable.visual.komponen-review'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
+import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
@@ -342,6 +343,12 @@ const LovableVisualChatDeletedRoute =
     path: '/lovable/visual/chat-deleted',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualAdminVisibilityRoute =
+  LovableVisualAdminVisibilityRouteImport.update({
+    id: '/lovable/visual/admin-visibility',
+    path: '/lovable/visual/admin-visibility',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPrepRealtimeTokenRoute =
   ApiPublicPrepRealtimeTokenRouteImport.update({
     id: '/api/public/prep-realtime-token',
@@ -444,6 +451,7 @@ export interface FileRoutesByFullPath {
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
@@ -504,6 +512,7 @@ export interface FileRoutesByTo {
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
@@ -567,6 +576,7 @@ export interface FileRoutesById {
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
@@ -630,6 +640,7 @@ export interface FileRouteTypes {
     | '/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
+    | '/lovable/visual/admin-visibility'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
     | '/lovable/visual/message-hidden-persist'
@@ -690,6 +701,7 @@ export interface FileRouteTypes {
     | '/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
+    | '/lovable/visual/admin-visibility'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
     | '/lovable/visual/message-hidden-persist'
@@ -752,6 +764,7 @@ export interface FileRouteTypes {
     | '/_authenticated/chat/$conversationId'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
+    | '/lovable/visual/admin-visibility'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
     | '/lovable/visual/message-hidden-persist'
@@ -780,6 +793,7 @@ export interface RootRouteChildren {
   TTokenRoute: typeof TTokenRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
+  LovableVisualAdminVisibilityRoute: typeof LovableVisualAdminVisibilityRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
   LovableVisualKomponenReviewRoute: typeof LovableVisualKomponenReviewRoute
   LovableVisualMessageHiddenPersistRoute: typeof LovableVisualMessageHiddenPersistRoute
@@ -1150,6 +1164,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualChatDeletedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/admin-visibility': {
+      id: '/lovable/visual/admin-visibility'
+      path: '/lovable/visual/admin-visibility'
+      fullPath: '/lovable/visual/admin-visibility'
+      preLoaderRoute: typeof LovableVisualAdminVisibilityRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/prep-realtime-token': {
       id: '/api/public/prep-realtime-token'
       path: '/api/public/prep-realtime-token'
@@ -1362,6 +1383,7 @@ const rootRouteChildren: RootRouteChildren = {
   TTokenRoute: TTokenRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
+  LovableVisualAdminVisibilityRoute: LovableVisualAdminVisibilityRoute,
   LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
   LovableVisualKomponenReviewRoute: LovableVisualKomponenReviewRoute,
   LovableVisualMessageHiddenPersistRoute:
@@ -1376,3 +1398,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
