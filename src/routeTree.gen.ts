@@ -25,6 +25,7 @@ import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
+import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
@@ -135,6 +136,12 @@ const AuthenticatedProfilRoute = AuthenticatedProfilRouteImport.update({
   path: '/profil',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPengaturanScrollGuardRoute =
+  AuthenticatedPengaturanScrollGuardRouteImport.update({
+    id: '/pengaturan-scroll-guard',
+    path: '/pengaturan-scroll-guard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPengaturanKunciRoute =
   AuthenticatedPengaturanKunciRouteImport.update({
     id: '/pengaturan-kunci',
@@ -329,6 +336,7 @@ export interface FileRoutesByFullPath {
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
@@ -374,6 +382,7 @@ export interface FileRoutesByTo {
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
@@ -423,6 +432,7 @@ export interface FileRoutesById {
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/_authenticated/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/sesi': typeof AuthenticatedSesiRoute
@@ -473,6 +483,7 @@ export interface FileRouteTypes {
     | '/link-pegawai'
     | '/notifikasi'
     | '/pengaturan-kunci'
+    | '/pengaturan-scroll-guard'
     | '/profil'
     | '/request'
     | '/sesi'
@@ -518,6 +529,7 @@ export interface FileRouteTypes {
     | '/link-pegawai'
     | '/notifikasi'
     | '/pengaturan-kunci'
+    | '/pengaturan-scroll-guard'
     | '/profil'
     | '/request'
     | '/sesi'
@@ -566,6 +578,7 @@ export interface FileRouteTypes {
     | '/_authenticated/link-pegawai'
     | '/_authenticated/notifikasi'
     | '/_authenticated/pengaturan-kunci'
+    | '/_authenticated/pengaturan-scroll-guard'
     | '/_authenticated/profil'
     | '/_authenticated/request'
     | '/_authenticated/sesi'
@@ -721,6 +734,13 @@ declare module '@tanstack/react-router' {
       path: '/profil'
       fullPath: '/profil'
       preLoaderRoute: typeof AuthenticatedProfilRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-scroll-guard': {
+      id: '/_authenticated/pengaturan-scroll-guard'
+      path: '/pengaturan-scroll-guard'
+      fullPath: '/pengaturan-scroll-guard'
+      preLoaderRoute: typeof AuthenticatedPengaturanScrollGuardRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-kunci': {
@@ -994,6 +1014,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
+  AuthenticatedPengaturanScrollGuardRoute: typeof AuthenticatedPengaturanScrollGuardRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
   AuthenticatedSesiRoute: typeof AuthenticatedSesiRoute
@@ -1021,6 +1042,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
+  AuthenticatedPengaturanScrollGuardRoute:
+    AuthenticatedPengaturanScrollGuardRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
   AuthenticatedSesiRoute: AuthenticatedSesiRoute,
