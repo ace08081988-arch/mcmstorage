@@ -203,6 +203,29 @@ function ChatListPage() {
         </div>
       ) : null}
 
+      {pendingRequests > 0 ? (
+        <Link
+          to={"/kontak/permintaan" as never}
+          className="mt-2 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-3 py-2 text-sm hover:bg-primary/10"
+          aria-label="Buka permintaan pertemanan"
+        >
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
+            <UserPlus className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-medium">
+              {pendingRequests} permintaan pertemanan baru
+            </div>
+            <div className="truncate text-xs text-muted-foreground">
+              Terima dulu supaya bisa chat & panggilan.
+            </div>
+          </div>
+          <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+            {pendingRequests}
+          </span>
+        </Link>
+      ) : null}
+
       {q.trim().length >= 2 ? (
         <div className="rounded-lg border">
           {search.isLoading ? (
