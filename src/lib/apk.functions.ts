@@ -471,64 +471,77 @@ function computeStatus(
   return "published";
 }
 
-export const listApkReleaseAdmin = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<AdminApkListResult> => {
-    // Non-admin: return an empty payload with a flag instead of throwing.
-    // Throwing di sini menyebabkan blank screen & runtime-error report untuk
-    // user biasa yang tanpa sengaja membuka /pengaturan-apk. Aksi tulis
-    // (`upsertApkReleaseMeta`, `setApkMinSupported`) tetap dijaga strict.
-    const isAdmin = await checkAdmin(context);
-    if (!isAdmin) {
-      return {
-        isAdmin: false,
-        entries: [],
-        minSupported: { storage: null, chat: null },
-      };
-    }
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-    const BUCKET = "apk-releases";
-    const { data: files } = await supabaseAdmin.storage
-      .from(BUCKET)
-      .list("", {
-        limit: 500,
-        sortBy: { column: "updated_at", order: "desc" },
-      });
-    const apks = (files ?? []).filter((f) => /\.apk$/i.test(f.name));
-    const meta = await loadReleaseMetaMap();
-    const mins = await loadMinSupportedMap();
-    const entries = apks.map<AdminApkEntry>((f) => {
-      const row = meta.get(f.name);
-      const variant: ApkVariant = isChatName(f.name) ? "chat" : "storage";
-      const enabled = row?.enabled ?? true;
-      const publish_at = row?.publish_at ?? null;
-      const size = (f.metadata as { size?: number } | null)?.size ?? null;
-      const parsed = parseApkFileName(f.name);
-      return {
-        file_name: f.name,
-        variant,
-        sizeMB: size ? Math.round((size / (1024 * 1024)) * 10) / 10 : null,
-        uploadedAt: f.updated_at ?? f.created_at ?? null,
-        versionName: parsed.versionName,
-        versionCode: parsed.versionCode,
-        enabled,
-        publish_at,
-        notes: row?.notes ?? null,
-        status: computeStatus(enabled, publish_at),
-        belowMinimum: isBelowMinimum(parsed, mins[variant] ?? null),
-      };
-    });
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function buildAdminApkList(context: any): Promise<AdminApkListResult> {
+  // Non-admin: return an empty payload with a flag instead of throwing.
+  // Throwing di sini menyebabkan blank screen & runtime-error report untuk
+  // user biasa yang tanpa sengaja membuka /pengaturan-apk. Aksi tulis
+  // (`upsertApkReleaseMeta`, `setApkMinSupported`) tetap dijaga strict.
+  const isAdmin = await checkAdmin(context);
+  if (!isAdmin) {
     return {
-      isAdmin: true,
-      entries,
-      minSupported: {
-        storage: mins.storage ?? null,
-        chat: mins.chat ?? null,
-      },
+      isAdmin: false,
+      entries: [],
+      minSupported: { storage: null, chat: null },
+    };
+  }
+  const { supabaseAdmin } = await import(
+    "@/integrations/supabase/client.server"
+  );
+  const BUCKET = "apk-releases";
+  const { data: files } = await supabaseAdmin.storage
+    .from(BUCKET)
+    .list("", {
+      limit: 500,
+      sortBy: { column: "updated_at", order: "desc" },
+    });
+  const apks = (files ?? []).filter((f) => /\.apk$/i.test(f.name));
+  const meta = await loadReleaseMetaMap();
+  const mins = await loadMinSupportedMap();
+  const entries = apks.map<AdminApkEntry>((f) => {
+    const row = meta.get(f.name);
+    const variant: ApkVariant = isChatName(f.name) ? "chat" : "storage";
+    const enabled = row?.enabled ?? true;
+    const publish_at = row?.publish_at ?? null;
+    const size = (f.metadata as { size?: number } | null)?.size ?? null;
+    const parsed = parseApkFileName(f.name);
+    return {
+      file_name: f.name,
+      variant,
+      sizeMB: size ? Math.round((size / (1024 * 1024)) * 10) / 10 : null,
+      uploadedAt: f.updated_at ?? f.created_at ?? null,
+      versionName: parsed.versionName,
+      versionCode: parsed.versionCode,
+      enabled,
+      publish_at,
+      notes: row?.notes ?? null,
+      status: computeStatus(enabled, publish_at),
+      belowMinimum: isBelowMinimum(parsed, mins[variant] ?? null),
     };
   });
+  return {
+    isAdmin: true,
+    entries,
+    minSupported: {
+      storage: mins.storage ?? null,
+      chat: mins.chat ?? null,
+    },
+  };
+}
+
+export const listApkReleaseAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminApkListResult> =>
+    buildAdminApkList(context),
+  );
+
+// Export baru supaya route memakai manifest server-function segar dan tidak
+// tersangkut cache handler lama yang masih memanggil requireAdmin untuk read.
+export const listApkReleaseAdminPanel = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminApkListResult> =>
+    buildAdminApkList(context),
+  );
 
 export const upsertApkReleaseMeta = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
