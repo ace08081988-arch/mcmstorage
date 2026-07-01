@@ -28,6 +28,39 @@ if (typeof window !== "undefined" && !(window as any).__navScrollGuard) {
  * berpindah, bukan mengira menu-nya rusak. Throttle 900ms per hint.
  */
 let __lastHintAt = 0;
+/**
+ * Live region persisten untuk pembaca layar. Kita simpan satu <div>
+ * `role="status"` `aria-live="polite"` di DOM sepanjang sesi, lalu
+ * update `textContent`-nya saat guard menolak tap. Membuat elemen baru
+ * setiap kali TIDAK reliabel di NVDA/JAWS/VoiceOver — perubahan
+ * `textContent` pada region yang sudah ada jauh lebih konsisten
+ * di-announce.
+ */
+function ensureLiveRegion(): HTMLElement | null {
+  if (typeof document === "undefined") return null;
+  let node = document.getElementById("mcm-scroll-guard-live") as HTMLElement | null;
+  if (node) return node;
+  node = document.createElement("div");
+  node.id = "mcm-scroll-guard-live";
+  node.setAttribute("role", "status");
+  node.setAttribute("aria-live", "polite");
+  node.setAttribute("aria-atomic", "true");
+  // Visually hidden tapi tetap ter-render supaya AT membacanya.
+  node.style.cssText = [
+    "position:fixed",
+    "width:1px",
+    "height:1px",
+    "padding:0",
+    "margin:-1px",
+    "overflow:hidden",
+    "clip:rect(0 0 0 0)",
+    "white-space:nowrap",
+    "border:0",
+  ].join(";");
+  document.body.appendChild(node);
+  return node;
+}
+
 function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
   if (typeof window === "undefined" || typeof document === "undefined") return;
   const now = Date.now();
@@ -36,9 +69,23 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
   const cfg = getScrollGuardConfig();
   const text = reason === "scroll" ? cfg.hintScrollText : cfg.hintDriftText;
   if (!text) return; // teks kosong = matikan hint sepenuhnya
+
+  // 1) Update live region persisten — inilah yang dibaca screen reader.
+  //    Prefix "Navigasi ditolak:" memberi konteks kenapa fokus tidak
+  //    berpindah, karena user AT tidak melihat pil visual di dekat jari.
+  const live = ensureLiveRegion();
+  if (live) {
+    // Kosongkan dulu supaya perubahan terdeteksi walau teks identik.
+    live.textContent = "";
+    window.setTimeout(() => {
+      live.textContent = `Navigasi ditolak: ${text}`;
+    }, 30);
+  }
+
+  // 2) Pil visual — MURNI dekoratif, disembunyikan dari AT supaya
+  //    tidak menduplikasi pengumuman dari live region di atas.
   const el = document.createElement("div");
-  el.setAttribute("role", "status");
-  el.setAttribute("aria-live", "polite");
+  el.setAttribute("aria-hidden", "true");
   el.setAttribute("data-testid", "scroll-guard-hint");
   el.setAttribute("data-reason", reason);
   el.textContent = text;
@@ -79,6 +126,12 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
   window.setTimeout(() => {
     el.remove();
   }, hold + fade + 20);
+
+  // 3) Untuk pengguna yang mengaktifkan `prefers-reduced-motion`,
+  //    ganti transisi jadi instan supaya tidak ada slide/fade.
+  if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
+    el.style.transition = "opacity 0ms, transform 0ms";
+  }
 }
 import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
