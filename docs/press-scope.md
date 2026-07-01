@@ -1,5 +1,28 @@
 # Reaksi sentuh (`data-press-scope`) & opt-out
 
+## Daftar isi kode `PA00X`
+
+Loncat cepat dari kode di console ke bagian docs yang relevan. Tiap
+kode punya tiga anchor kanonis: **baris tabel ringkasan**, **cheat-sheet
+anchor**, dan **checklist implementasi** (bila ada).
+
+| Kode  | Rule                           | Ringkasan                                                                 | Cheat-sheet                                                                                              | Checklist / bacaan lain                                                                                       |
+| ----- | ------------------------------ | ------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| [PA001](#ringkasan-cepat) | `radix-animated-surface`         | [row tabel](#ringkasan-cepat)                                              | [`#radix-dialog--sheet--popover`](#radix-dialog--sheet--popover) · [`#dropdownmenu--select`](#dropdownmenu--select) | [Checklist Radix Dialog](#radix-dialog--sheet--alertdialog--popover) · [Checklist DropdownMenu](#radix-dropdownmenu--select--contextmenu) |
+| [PA002](#ringkasan-cepat) | `motion-whiletap-wraps-button`   | [row tabel](#ringkasan-cepat)                                              | [`#shadcn-button-di-scope-press`](#shadcn-button-di-scope-press) · [`#shadcn-button-di-dalam-motiondiv-framer-motion`](#shadcn-button-di-dalam-motiondiv-framer-motion) | [Checklist Button + motion](#shadcn-button-di-dalam-motiondiv-framer-motion)                                   |
+| [PA003](#ringkasan-cepat) | `sortable-handle`                | [row tabel](#ringkasan-cepat)                                              | [`#sortable--drag-handle`](#sortable--drag-handle) · [`#sortable--drag-handle-dnd-kit-react-sortable-dll`](#sortable--drag-handle-dnd-kit-react-sortable-dll) | [Checklist Sortable](#sortable--drag-handle-dnd-kit-react-sortable-dll)                                        |
+| [PA004](#ringkasan-cepat) | `destructive-menuitem`           | [row tabel](#ringkasan-cepat)                                              | [`#dropdownmenu--select`](#dropdownmenu--select) · [`#radix-dropdownmenu--select--contextmenu`](#radix-dropdownmenu--select--contextmenu) | [Checklist DropdownMenu](#radix-dropdownmenu--select--contextmenu)                                             |
+| PA005+ | *belum dialokasikan*             | —                                                                          | —                                                                                                        | [Menambahkan rule baru (PA005+)](#menambahkan-rule-baru-pa005)                                                 |
+| [PA000](#kode-error-press-audit) | `unknown-rule` *(fallback)*     | [Kode error press-audit](#kode-error-press-audit)                          | —                                                                                                        | [Menambahkan rule baru (PA005+)](#menambahkan-rule-baru-pa005)                                                 |
+
+> Bagian pendukung: [Ringkasan cepat](#ringkasan-cepat) ·
+> [Anchor cheat-sheet](#anchor-cheat-sheet-klik-ke-bagian-docs) ·
+> [Format warning console](#kode-error-press-audit) ·
+> [Tuning per section](#tuning-per-section-allowlistdenylist--mode) ·
+> [Mode `suggest`](#mode-suggest-auto-usul-perbaikan-per-section).
+
+---
+
 Utilitas press MCM memberi feedback taktil (skala + shading) untuk elemen
 interaktif. Ada dua cara aktivasi:
 
