@@ -14,6 +14,7 @@ import {
   hashSecret,
   checkBiometricStatus,
   openBiometricEnrollment,
+  openAppPermissionSettings,
   randomSalt,
   requestLockNow,
   setLockConfig,
@@ -93,6 +94,7 @@ function PengaturanKunci() {
   const [bioStatus, setBioStatus] = useState<BiometricStatus>({ available: false, native: false });
   const [bioChecking, setBioChecking] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [openingPerm, setOpeningPerm] = useState(false);
   const [bioCheckedAt, setBioCheckedAt] = useState<number | null>(null);
   const [bioTick, setBioTick] = useState(0);
   const prevBioRef = useRef<BiometricStatus | null>(null);
@@ -237,6 +239,21 @@ function PengaturanKunci() {
       );
     } else {
       toast.message("Buka Pengaturan Sistem. Kembali ke aplikasi setelah sidik jari terdaftar.");
+    }
+  };
+
+  const handleOpenPerm = async () => {
+    setOpeningPerm(true);
+    const opened = await openAppPermissionSettings();
+    setOpeningPerm(false);
+    if (!opened) {
+      toast.error(
+        bioStatus.native
+          ? "Tidak bisa membuka halaman izin. Buka manual: Setelan → Aplikasi → MCM Storage → Izin."
+          : "Hanya tersedia di APK Android",
+      );
+    } else {
+      toast.message("Ubah izin lalu kembali ke aplikasi — status akan diperbarui otomatis.");
     }
   };
 
@@ -529,6 +546,19 @@ function PengaturanKunci() {
               {bioChecking ? "Memeriksa…" : "Refresh"}
             </button>
           </div>
+          {bioStatus.native && (
+            <div className="mb-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-[11px]"
+                onClick={handleOpenPerm}
+                disabled={openingPerm}
+              >
+                {openingPerm ? "Membuka…" : "Buka pengaturan izin"}
+              </Button>
+            </div>
+          )}
           <ul className="grid grid-cols-1 gap-1 text-[11px] sm:grid-cols-2">
             <StatusRow
               label="Platform"
@@ -606,7 +636,7 @@ function PengaturanKunci() {
                 recs.push({
                   key: "perm",
                   text: "Izin sidik jari ditolak. Buka Pengaturan Sistem → Aplikasi → izinkan Biometrik untuk MCM Storage.",
-                  action: { label: "Buka Pengaturan", onClick: handleEnroll, disabled: enrolling },
+                  action: { label: openingPerm ? "Membuka…" : "Buka pengaturan izin", onClick: handleOpenPerm, disabled: openingPerm },
                 });
               }
               if (bioStatus.enrolled === false) {
