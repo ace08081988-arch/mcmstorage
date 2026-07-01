@@ -502,3 +502,28 @@ html[data-reduce-motion="on"] *::after {
     box-shadow: 0 4px 10px -4px hsl(var(--foreground) / 0.25);
   }
 }
+
+/*
+ * Scoped auto-press: setiap elemen dengan atribut `data-press-scope="on"`
+ * akan otomatis memberi reaksi sentuh pada `button`, `a[href]`, dan elemen
+ * ber-`role="button"` di dalamnya — tanpa perlu menambah kelas satu-per-satu
+ * di halaman besar (Beranda, daftar produk, dsb).
+ *
+ * Opt-out per elemen dengan `data-no-press`; berguna untuk drag handle,
+ * tombol di dalam dialog Radix yang punya animasi sendiri, atau tombol
+ * yang harus tetap statis (mis. label toggle di form multi-langkah).
+ */
+[data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
+  transition-property: transform, background-color, filter, box-shadow, opacity;
+  transition-duration: 150ms;
+  transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
+  will-change: transform;
+}
+[data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
+  transform: scale(0.97);
+  filter: brightness(0.96);
+}
+[data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
+}
