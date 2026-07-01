@@ -868,6 +868,7 @@ function PressAuditDemoPage() {
           variant="secondary"
           onClick={() => {
             setRunAll((n) => n + 1);
+            setCardResults({});
             (window as any).__pressAuditDemoVerify?.();
           }}
         >
