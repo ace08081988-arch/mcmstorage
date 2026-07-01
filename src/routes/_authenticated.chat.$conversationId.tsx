@@ -137,6 +137,10 @@ function ChatRoomPage() {
   const [qrSource, setQrSource] = useState<string | null>(null);
   const starMut = useStarMessage(conversationId);
   const pinMut = usePinMessage(conversationId);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const [muteOpen, setMuteOpen] = useState(false);
+  const { prefs: convPrefs, mutedNow } = useConvPrefs(myId ?? undefined, conversationId);
 
   const toggleSelect = useCallback((m: MessageRow) => {
     if (m.deleted_at) return;
