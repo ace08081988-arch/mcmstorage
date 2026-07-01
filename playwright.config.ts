@@ -624,5 +624,40 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    // ── Lintas-browser: skenario PIN MCM inti dijalankan di Chromium,
+    //   Firefox, dan WebKit untuk memastikan hasil rendering `PIN
+    //   xxxx-xxxx` konsisten dan bebas nomor telp mentah di ketiga
+    //   engine (perbedaan normalisasi innerText, whitespace, dan
+    //   fallback font tidak boleh memicu regresi).
+    {
+      name: "chat-pin-mcm-cross-browser-chromium-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-cross-browser\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 900 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
+      name: "chat-pin-mcm-cross-browser-firefox-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-cross-browser\.spec\.ts/,
+      use: {
+        ...devices["Desktop Firefox"],
+        viewport: { width: 1280, height: 900 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
+      name: "chat-pin-mcm-cross-browser-webkit-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-cross-browser\.spec\.ts/,
+      use: {
+        ...devices["Desktop Safari"],
+        viewport: { width: 1280, height: 900 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
