@@ -152,4 +152,63 @@ test.describe("Pengaturan APK · form minSupported", () => {
       "0",
     );
   });
+
+  test("boundary: versi+build tepat sama dengan minimum → tidak 'lawas'", async ({
+    page,
+  }) => {
+    await page.goto(URL);
+
+    // Set minimum tepat sama dengan r-mid (1.2.0 / 45).
+    await page.getByTestId("mf-name").fill("1.2.0");
+    await page.getByTestId("mf-code").fill("45");
+    await expect(page.getByTestId("mf-save")).toBeEnabled();
+    await page.getByTestId("mf-save").click();
+    await expect(page.getByText(/^Tersimpan$/)).toBeVisible({
+      timeout: 3_000,
+    });
+
+    // r-mid berada tepat di boundary → harus dianggap kompatibel (bukan lawas).
+    await expect(page.getByTestId("mf-rel-r-mid")).toHaveAttribute(
+      "data-below",
+      "0",
+    );
+    await expect(page.getByTestId("mf-rel-r-mid-badge")).toHaveCount(0);
+
+    // r-new (2.0.0/80) di atas boundary → tetap ok.
+    await expect(page.getByTestId("mf-rel-r-new")).toHaveAttribute(
+      "data-below",
+      "0",
+    );
+
+    // r-old (1.0.0/10) di bawah boundary → 'lawas'.
+    await expect(page.getByTestId("mf-rel-r-old")).toHaveAttribute(
+      "data-below",
+      "1",
+    );
+
+    // Boundary hanya-name: build min dikosongkan, name tetap 1.2.0.
+    // r-mid name = 1.2.0 → tetap tidak lawas.
+    await page.getByTestId("mf-code").fill("");
+    await page.getByTestId("mf-save").click();
+    await expect(page.getByTestId("mf-saved-count")).toHaveText("saved=2");
+    await expect(page.getByTestId("mf-rel-r-mid")).toHaveAttribute(
+      "data-below",
+      "0",
+    );
+
+    // Boundary hanya-build: name min dikosongkan, build min = 45.
+    // r-mid build = 45 → tetap tidak lawas; r-old build=10 → lawas.
+    await page.getByTestId("mf-name").fill("");
+    await page.getByTestId("mf-code").fill("45");
+    await page.getByTestId("mf-save").click();
+    await expect(page.getByTestId("mf-saved-count")).toHaveText("saved=3");
+    await expect(page.getByTestId("mf-rel-r-mid")).toHaveAttribute(
+      "data-below",
+      "0",
+    );
+    await expect(page.getByTestId("mf-rel-r-old")).toHaveAttribute(
+      "data-below",
+      "1",
+    );
+  });
 });
