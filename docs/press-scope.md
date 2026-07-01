@@ -481,3 +481,100 @@ atribut dapat dipasang di elemen mana pun (`<section>`, `<div>`,
 > Aturan urutan evaluasi: `data-press-audit="off"` ▶ `scope.deny` ▶
 > `scope.allow` (bila diisi) ▶ `rules.allow` (bila diisi) ▶ `rules.deny`
 > ▶ `data-press-audit-skip`. Temuan hanya lolos bila lulus semua tahap.
+
+### Mode `suggest`: auto-usul perbaikan per section
+
+`mode: "suggest"` memperluas `mode: "log"`: audit tetap menulis
+`console.warn` terstruktur, TAPI juga menempelkan atribut
+`data-press-audit-suggest="PA00X"` dan `data-press-audit-fix="…"` di
+node yang match. Nilai `fix` diturunkan dari rule yang cocok pada
+section tersebut, jadi tiap section hanya menerima saran untuk rule
+yang RELEVAN — rule yang di-deny atau di-skip via
+`data-press-audit-skip` tidak dijadikan saran.
+
+#### Aktivasi
+
+```ts
+window.__pressAuditConfig.set({ mode: "suggest" });
+window.__pressAudit();               // trigger sweep manual
+// DevTools → Elements → Ctrl/⌘+F: cari `data-press-audit-suggest`
+// atau di Console:
+document.querySelectorAll("[data-press-audit-suggest]")
+  .forEach(el => console.log(
+    el.getAttribute("data-press-audit-suggest"),
+    el.getAttribute("data-press-audit-fix"),
+    el,
+  ));
+```
+
+#### Mapping rule → saran fix
+
+| Kode  | Rule                     | Saran otomatis yang ditempel                                    |
+| ----- | ------------------------ | --------------------------------------------------------------- |
+| PA001 | radix-animated-surface   | `add data-no-press pada trigger + Content`                      |
+| PA002 | motion-whileTap          | `hapus whileTap ATAU data-no-press di child button`             |
+| PA003 | sortable-handle          | `data-no-press pada handle (jangan di container sortable)`      |
+| PA004 | destructive-menuitem     | `data-no-press pada MenuItem (Radix sudah punya highlight)`     |
+
+#### Menyempitkan saran ke satu section
+
+Gabungkan `mode: "suggest"` dengan `scope.allow` atau
+`rules.allow` — hanya rule yang lolos filter yang menghasilkan
+atribut saran. Rule lain tetap dilewatkan diam-diam.
+
+```ts
+// Section produk (sortable) — hanya usulkan fix PA003
+window.__pressAuditConfig.set({
+  mode: "suggest",
+  scope: { allow: ["[data-page='produk']"] },
+  rules: { allow: ["PA003"] },
+});
+
+// Section chat — usulkan PA001 & PA004, abaikan motion di composer
+window.__pressAuditConfig.set({
+  mode: "suggest",
+  scope: { allow: ["[data-page='chat']"] },
+  rules: { allow: ["PA001", "PA004"], deny: ["PA002"] },
+});
+
+// Section pengaturan — usul semua kecuali destructive-menuitem
+window.__pressAuditConfig.set({
+  mode: "suggest",
+  scope: { allow: ["[data-page='pengaturan']"] },
+  rules: { deny: ["PA004"] },
+});
+```
+
+#### Pola pemakaian di markup
+
+Tandai section supaya `scope.allow` di atas mengunci sweep, dan pakai
+`data-press-audit-skip` untuk subtree yang tidak perlu disarankan
+meski rule-nya diizinkan secara global.
+
+```tsx
+<section data-page="chat">
+  {/* Composer motion di sini SENGAJA — jangan disarankan */}
+  <div data-press-audit-skip="PA002">
+    <motion.div whileTap={{ scale: 0.97 }}>
+      <Button>Kirim</Button>
+    </motion.div>
+  </div>
+
+  {/* Sisa halaman: PA001/PA004 tetap dapat saran otomatis */}
+  <MessageList />
+  <ContextMenu />
+</section>
+```
+
+#### Alur kerja yang direkomendasikan
+
+1. Set `mode: "suggest"` + `scope.allow` untuk section yang sedang
+   dikerjakan.
+2. Jalankan `window.__pressAudit()` (atau reload dengan flag
+   `?pressAudit=1`).
+3. Di DevTools filter `data-press-audit-suggest` — tiap node punya
+   `data-press-audit-fix` berisi instruksi copy-paste.
+4. Terapkan fix, jalankan audit ulang. Node yang sudah benar akan
+   kehilangan atribut sarannya secara otomatis pada sweep berikutnya.
+5. Selesai: `window.__pressAuditConfig.reset()` untuk membersihkan
+   konfigurasi dari `localStorage`.
