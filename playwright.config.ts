@@ -899,5 +899,19 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    // ── Alur "scroll list → buka detail baris yang baru dimount →
+    //   history.back → scroll lagi": token PIN xxxx-xxxx pada header
+    //   detail wajib identik dengan baris list, dan tetap identik
+    //   setelah baris di-remount pasca navigasi kembali.
+    {
+      name: "chat-pin-mcm-scroll-detail-return-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-scroll-detail-return\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
