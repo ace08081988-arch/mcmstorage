@@ -779,5 +779,21 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: konsistensi format `PIN xxxx-xxxx` di DAFTAR PERCAKAPAN
+      // (`/chat`) SETELAH scroll berulang (simulasi paginasi / infinite
+      // scroll), pindah tab Aktif↔Arsip, dan `reload()`. Token PIN per
+      // baris (`href`) wajib IDENTIK di seluruh fase; tidak ada baris
+      // yang bocor nomor telp Indonesia mentah di judul, snippet, atau
+      // aria-label.
+      name: "chat-pin-mcm-list-pagination-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-list-pagination\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
