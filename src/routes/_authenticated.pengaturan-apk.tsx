@@ -31,6 +31,10 @@ import {
   hasAnyError,
 } from "@/lib/apk-min-validate";
 import { useAdminStatus } from "@/hooks/use-is-admin";
+import {
+  classifyApkAdminView,
+  isAdminRequiredError,
+} from "@/lib/apk-admin-visibility";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -56,11 +60,6 @@ const emptyNonAdminApkList: AdminApkListResult = {
   entries: [],
   minSupported: { storage: null, chat: null },
 };
-
-function isAdminRequiredError(error: unknown) {
-  const message = error instanceof Error ? error.message : String(error ?? "");
-  return /Forbidden:\s*admin diperlukan|admin diperlukan/i.test(message);
-}
 
 function PengaturanApkPage() {
   const { isAdmin, isCheckingAdmin } = useAdminStatus();
