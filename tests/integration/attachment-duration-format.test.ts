@@ -36,6 +36,15 @@ function walk(dir: string): string[] {
 // Pola formatter mm:ss ad-hoc yang wajib DIHAPUS di komponen attachment.
 // - `padStart(2, "0")` pada literal template yang juga memuat `:`
 // - `Math.floor(x / 60)` dikombinasikan dengan `% 60`
+// Allowlist: file yang secara sengaja memakai format waktu berbeda dan
+// BUKAN durasi media attachment. Tambahkan alasannya agar reviewer
+// paham mengapa diabaikan dari audit ini.
+const ADHOC_ALLOWLIST: Record<string, string> = {
+  // AttachMenu memformat "elapsed upload time" ("Xm Xd") — bukan durasi
+  // media, jadi tidak boleh dipaksa mm:ss.
+  "AttachMenu.tsx": "elapsed upload time, bukan durasi media",
+};
+
 const ADHOC_PATTERNS: Array<{ re: RegExp; why: string }> = [
   {
     re: /`\$\{[^`]*padStart\(\s*2[^`]*\}:\$\{[^`]*padStart\(\s*2[^`]*\}`/s,
@@ -53,6 +62,8 @@ describe("attachment duration format — util tersentralisasi", () => {
     expect(files.length).toBeGreaterThan(0);
     const violations: string[] = [];
     for (const file of files) {
+      const base = file.split(/[\\/]/).pop() ?? file;
+      if (base in ADHOC_ALLOWLIST) continue;
       const src = readFileSync(file, "utf8");
       for (const { re, why } of ADHOC_PATTERNS) {
         if (re.test(src)) violations.push(`${file}: ${why}`);
