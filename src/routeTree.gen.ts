@@ -64,6 +64,7 @@ import { Route as LovableVisualMessageHiddenRlsRouteImport } from './routes/lova
 import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/lovable.visual.message-hidden-persist'
 import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovable.visual.komponen-review'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
+import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from './routes/lovable.visual.attachment-duration-consistency'
 import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
@@ -370,6 +371,12 @@ const LovableVisualChatDeletedRoute =
     path: '/lovable/visual/chat-deleted',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualAttachmentDurationConsistencyRoute =
+  LovableVisualAttachmentDurationConsistencyRouteImport.update({
+    id: '/lovable/visual/attachment-duration-consistency',
+    path: '/lovable/visual/attachment-duration-consistency',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualAdminVisibilityRoute =
   LovableVisualAdminVisibilityRouteImport.update({
     id: '/lovable/visual/admin-visibility',
@@ -489,6 +496,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
+  '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
@@ -555,6 +563,7 @@ export interface FileRoutesByTo {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
+  '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
@@ -624,6 +633,7 @@ export interface FileRoutesById {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
+  '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
@@ -693,6 +703,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
+    | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
     | '/lovable/visual/message-hidden-persist'
@@ -759,6 +770,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
+    | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
     | '/lovable/visual/message-hidden-persist'
@@ -827,6 +839,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
+    | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
     | '/lovable/visual/message-hidden-persist'
@@ -857,6 +870,7 @@ export interface RootRouteChildren {
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
   LovableVisualAdminVisibilityRoute: typeof LovableVisualAdminVisibilityRoute
+  LovableVisualAttachmentDurationConsistencyRoute: typeof LovableVisualAttachmentDurationConsistencyRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
   LovableVisualKomponenReviewRoute: typeof LovableVisualKomponenReviewRoute
   LovableVisualMessageHiddenPersistRoute: typeof LovableVisualMessageHiddenPersistRoute
@@ -1256,6 +1270,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualChatDeletedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/attachment-duration-consistency': {
+      id: '/lovable/visual/attachment-duration-consistency'
+      path: '/lovable/visual/attachment-duration-consistency'
+      fullPath: '/lovable/visual/attachment-duration-consistency'
+      preLoaderRoute: typeof LovableVisualAttachmentDurationConsistencyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/admin-visibility': {
       id: '/lovable/visual/admin-visibility'
       path: '/lovable/visual/admin-visibility'
@@ -1500,6 +1521,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
   LovableVisualAdminVisibilityRoute: LovableVisualAdminVisibilityRoute,
+  LovableVisualAttachmentDurationConsistencyRoute:
+    LovableVisualAttachmentDurationConsistencyRoute,
   LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
   LovableVisualKomponenReviewRoute: LovableVisualKomponenReviewRoute,
   LovableVisualMessageHiddenPersistRoute:
@@ -1515,13 +1538,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
