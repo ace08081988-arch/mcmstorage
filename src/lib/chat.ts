@@ -25,6 +25,7 @@ export type ConversationListItem = ConversationRow & {
   pinned_at: string | null;
   archived_at: string | null;
   muted_until: string | null;
+  cleared_at: string | null;
 };
 
 export type MessageRow = {
@@ -148,7 +149,7 @@ export function useConversations() {
     queryFn: async (): Promise<ConversationListItem[]> => {
       const { data: members, error: mErr } = await supabase
         .from("conversation_members")
-        .select("conversation_id, last_read_at, pinned_at, archived_at, notifications_muted_until")
+        .select("conversation_id, last_read_at, pinned_at, archived_at, notifications_muted_until, cleared_at")
         .eq("user_id", myId!);
       if (mErr) throw mErr;
       const ids = (members ?? []).map((m) => m.conversation_id);
@@ -161,6 +162,7 @@ export function useConversations() {
             pinned_at: (m as { pinned_at?: string | null }).pinned_at ?? null,
             archived_at: (m as { archived_at?: string | null }).archived_at ?? null,
             muted_until: (m as { notifications_muted_until?: string | null }).notifications_muted_until ?? null,
+            cleared_at: (m as { cleared_at?: string | null }).cleared_at ?? null,
           },
         ]),
       );
