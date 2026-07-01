@@ -23,6 +23,108 @@ anchor**, dan **checklist implementasi** (bila ada).
 
 ---
 
+## Cheat-sheet atribut: `data-press-audit-skip` & `data-press-audit`
+
+Ringkasan terpisah supaya bisa disalin cepat tanpa membaca seluruh
+dokumen. Referensi lengkap tetap di
+[Opt-out via atribut DOM (per section)](#opt-out-via-atribut-dom-per-section)
+dan [Prioritas evaluasi](#prioritas-evaluasi-satu-section-banyak-atribut).
+
+### `data-press-audit-skip` — tolak rule tertentu di sub-pohon
+
+Nilai: satu atau beberapa kode `PA00X` (dipisah spasi/koma). Efek: **union**
+dengan skip dari parent (aditif — tidak bisa "unskip"). Kode tak dikenal
+memicu `console.warn` `PA000`.
+
+```tsx
+// 1) Satu rule di satu section — matikan warning Radix animated surface saja.
+<section data-press-audit-skip="PA001">
+  <Dialog>…</Dialog>
+</section>
+
+// 2) Beberapa rule sekaligus (spasi atau koma sama-sama valid).
+<main data-press-audit-skip="PA001 PA003">
+  <SortableList />
+  <SettingsDialog />
+</main>
+
+// 3) Nested — child menambah tolakan tanpa menghapus milik parent.
+<div data-press-audit-skip="PA002">        {/* parent: skip PA002 */}
+  <div data-press-audit-skip="PA004">      {/* efektif: {PA002, PA004} */}
+    <DangerMenu />
+  </div>
+</div>
+
+// 4) Kombinasi dengan mode `suggest`: tetap suggest, kecuali PA003 di list ini.
+<ul data-press-audit="suggest" data-press-audit-skip="PA003">
+  <SortableRow />
+</ul>
+```
+
+**Anti-pola:**
+
+```tsx
+// ❌ Format non-PA### → warning PA000 "invalid token".
+<div data-press-audit-skip="pa1, radix" />
+
+// ❌ Kode belum dialokasikan (PA005+) → warning PA000 "unknown code".
+<div data-press-audit-skip="PA042" />
+
+// ❌ "Unskip" tidak didukung — parent PA001 tetap aktif di child.
+<div data-press-audit-skip="PA001">
+  <div data-press-audit-skip="">…</div>
+</div>
+```
+
+### `data-press-audit` — mode per section
+
+Nilai: `off` | `log` | `suggest` | `on` (alias `log`). Mengoverride
+`window.__pressAuditConfig.mode` untuk sub-pohon. Tidak menghapus skip
+yang diwarisi dari parent.
+
+```tsx
+// 1) Matikan audit sepenuhnya di satu section (mis. iframe preview / sandbox).
+<section data-press-audit="off">
+  <PreviewFrame />
+</section>
+
+// 2) Paksa mode `log` walau global di `off` — dipakai saat investigasi lokal.
+<div data-press-audit="log">
+  <ChatComposer />
+</div>
+
+// 3) Mode `suggest` — console + saran fix per rule (lihat mapping di docs).
+<div data-press-audit="suggest">
+  <UpdatesCarousel />
+</div>
+
+// 4) Kombinasi: suggest global untuk section, kecuali PA001 (Radix) & PA004.
+<article data-press-audit="suggest" data-press-audit-skip="PA001 PA004">
+  <ProductSettings />
+</article>
+
+// 5) Nested override — child mematikan audit di dalam parent yang `suggest`.
+<div data-press-audit="suggest">
+  <Sandbox data-press-audit="off" />
+</div>
+```
+
+### Tabel keputusan cepat
+
+| Tujuan                                              | Atribut yang dipakai                                              |
+| --------------------------------------------------- | ----------------------------------------------------------------- |
+| Matikan **satu rule** di sub-pohon                  | `data-press-audit-skip="PA00X"`                                   |
+| Matikan **beberapa rule** di sub-pohon              | `data-press-audit-skip="PA001 PA003"` (spasi/koma)                |
+| Matikan **audit total** di sub-pohon                | `data-press-audit="off"`                                          |
+| Paksa mode berbeda dari global                      | `data-press-audit="log"` / `"suggest"`                            |
+| Suggest global, tapi tolak rule tertentu di section | `data-press-audit="suggest"` + `data-press-audit-skip="PA00X"`    |
+| Nonaktifkan permanen di komponen                    | Gunakan `data-no-press` (bukan skip audit) — lihat [Opt-out per elemen](#opt-out-per-elemen-data-no-press) |
+
+> Prioritas lengkap kalau atribut bertumpuk (parent vs child, DOM vs global
+> config) ada di [Prioritas evaluasi](#prioritas-evaluasi-satu-section-banyak-atribut).
+
+---
+
 Utilitas press MCM memberi feedback taktil (skala + shading) untuk elemen
 interaktif. Ada dua cara aktivasi:
 
