@@ -41,13 +41,14 @@ describe("ESLint chat duration rule", () => {
   it("mendeteksi ekspresi `% 60` di src/components/chat", async () => {
     const errs = await lint(CHAT_FILE, MOD_60);
     expect(errs.length).toBeGreaterThanOrEqual(1);
-    expect(errs.some((e) => /Aritmetika detik/.test(e.message))).toBe(true);
+    expect(errs.some((e) => /%\s*60/.test(e.message) && /formatDurationMMSS/.test(e.message))).toBe(true);
   });
 
   it("mendeteksi padStart(2, \"0\") di src/components/chat", async () => {
     const errs = await lint(CHAT_FILE, PAD_START);
     expect(errs.length).toBeGreaterThanOrEqual(1);
     expect(errs.some((e) => /padStart/.test(e.message))).toBe(true);
+    expect(errs.some((e) => /codemod:mmss/.test(e.message))).toBe(true);
   });
 
   it("mendeteksi ketiga pola bersamaan dalam satu file chat", async () => {
