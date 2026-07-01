@@ -201,10 +201,8 @@ function resetConfig() {
     }
   }
   dedupe.clear();
-  // schedule sweep dengan config bersih
-  if (typeof window !== "undefined") {
-    try { run(); } catch { /* run belum siap saat modul load — abaikan */ }
-  }
+  // schedule sweep dengan config bersih (aman kalau run belum ada)
+  requestRun();
 }
 
 function applyConfig(
