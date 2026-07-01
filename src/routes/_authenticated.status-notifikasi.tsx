@@ -19,6 +19,7 @@ import {
   type ImportResult,
   type NormalizedSnapshot,
 } from "@/lib/notif-snapshot-import";
+import type { CompatibilityInfo } from "@/lib/notif-snapshot-import";
 import { diffJsonLines, type DiffLine } from "@/lib/json-line-diff";
 
 export const Route = createFileRoute("/_authenticated/status-notifikasi")({
@@ -1256,6 +1257,7 @@ function ImportResultView({ result }: { result: ImportResult }) {
     rawBefore,
     rawAfter,
     fieldIssues,
+    compatibility,
   } = result;
   const hasMigrations = appliedMigrations.length > 0;
   const errorCount = fieldIssues.filter((f) => f.severity === "error").length;
@@ -1274,13 +1276,14 @@ function ImportResultView({ result }: { result: ImportResult }) {
                 → v{snapshot.schemaVersion} ({appliedMigrations.length} migrasi)
               </Badge>
             )}
-            {sourceVersion > CURRENT_SCHEMA_VERSION && (
-              <Badge variant="destructive">lebih baru</Badge>
+            {compatibility.mode === "backward_partial" && (
+              <Badge variant="destructive">kompat. parsial</Badge>
             )}
           </div>
         </div>
         <SnapshotSummary snapshot={snapshot} />
       </div>
+      <CompatibilityBanner info={compatibility} />
       {appliedMigrations.length > 0 && (
         <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-1">
           <div className="font-medium">
@@ -1406,6 +1409,74 @@ function SnapshotSummary({ snapshot }: { snapshot: NormalizedSnapshot }) {
 }
 
 function MigrationDiffView({
+  before,
+  after,
+}: {
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+}) {
+  return _MigrationDiffViewImpl({ before, after });
+}
+
+function CompatibilityBanner({ info }: { info: CompatibilityInfo }) {
+  const isPartial = info.mode === "backward_partial";
+  const isForward = info.mode === "forward_migrated";
+  const isExact = info.mode === "exact";
+  const tone = isPartial
+    ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-200"
+    : isForward
+      ? "border-border bg-muted/50 text-foreground"
+      : "border-border bg-muted/30 text-muted-foreground";
+  const label = isPartial
+    ? "Mode kompatibilitas parsial (backward)"
+    : isForward
+      ? "Migrasi maju berhasil"
+      : "Versi cocok persis";
+  return (
+    <div className={`rounded-md border p-3 text-xs space-y-1 ${tone}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <span className="font-medium">{label}</span>
+        <div className="flex gap-1">
+          <Badge variant="outline">
+            v{info.sourceVersion} → v{info.targetVersion}
+          </Badge>
+          {info.versionGap > 0 && (
+            <Badge variant="destructive">jeda {info.versionGap} versi</Badge>
+          )}
+        </div>
+      </div>
+      {isPartial && (
+        <p className="leading-snug">
+          File berasal dari skema masa depan. Sistem membaca field yang
+          dikenali versi ini; field baru disimpan di{" "}
+          <code className="text-[10px]">snapshot.extra</code> agar tidak hilang.
+          Tampilan/aksi tertentu bisa jadi menunjukkan data yang belum lengkap.
+        </p>
+      )}
+      {isExact && (
+        <p className="leading-snug text-muted-foreground">
+          Tidak ada migrasi diperlukan.
+        </p>
+      )}
+      {info.unknownTopLevelFields.length > 0 && (
+        <div className="pt-1">
+          <div className="text-[11px] font-medium">
+            Field masa depan dipertahankan ({info.unknownTopLevelFields.length})
+          </div>
+          <div className="flex flex-wrap gap-1 pt-1">
+            {info.unknownTopLevelFields.map((k) => (
+              <Badge key={k} variant="secondary" className="text-[10px]">
+                {k}
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function _MigrationDiffViewImpl({
   before,
   after,
 }: {
