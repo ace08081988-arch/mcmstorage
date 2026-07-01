@@ -15,7 +15,17 @@ export default defineConfig({
   snapshotDir: "./tests/visual/__screenshots__",
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 1 : 0,
+  retries: process.env.PWTEST_RETRIES
+    ? Number(process.env.PWTEST_RETRIES)
+    : process.env.CI
+      ? 1
+      : 0,
+  // Fail-fast opsional dari env — dipakai workflow `chat-pin-mcm-e2e.yml`
+  // supaya regresi format PIN / kebocoran nomor telp segera menghentikan
+  // run tanpa menunggu proyek lain. Default: tidak ada batas.
+  maxFailures: process.env.PWTEST_MAX_FAILURES
+    ? Number(process.env.PWTEST_MAX_FAILURES)
+    : 0,
   reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
   globalSetup: "./tests/visual/global-setup.ts",
   use: {
