@@ -13,7 +13,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Copy, ExternalLink, ShieldAlert, Check } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
-import { useIsAdmin } from "@/hooks/use-is-admin";
+import { useAdminStatus } from "@/hooks/use-is-admin";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-oauth-google")({
   head: () => ({
@@ -70,7 +70,7 @@ function saveChecks(next: Record<StepId, boolean>) {
 }
 
 function OAuthGooglePage() {
-  const { data: isAdmin, isLoading: adminLoading } = useIsAdmin();
+  const { isAdmin, isLoading: adminLoading } = useAdminStatus();
 
   const [origin, setOrigin] = useState<string>("");
   useEffect(() => {
