@@ -35,10 +35,8 @@ export type EmailQueueStatus = {
  * non-admin (harus return `{isAdmin:false,…}` — TIDAK throw
  * "Forbidden: admin diperlukan") bisa diuji tanpa middleware/HTTP.
  */
-export async function buildEmailQueueStatus(context: {
-  supabase: { rpc: (fn: string, args: { _user_id: string; _role: string }) => Promise<{ data: unknown; error: unknown }> }
-  userId: string
-}): Promise<EmailQueueStatus> {
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function buildEmailQueueStatus(context: any): Promise<EmailQueueStatus> {
   const { supabase, userId } = context
   const { data: isAdmin } = await supabase.rpc('has_role', {
     _user_id: userId,
