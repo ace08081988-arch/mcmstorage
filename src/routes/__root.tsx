@@ -293,8 +293,9 @@ function RootComponent() {
     applyReduceMotion();
     // Terapkan warna brand organisasi + tarik ulang dari backend agar konsisten
     // lintas perangkat/login.
-    import("@/lib/org-name").then(({ applyBrandColor, hydrateOrgBrandingFromRemote }) => {
+    import("@/lib/org-name").then(({ applyBrandColor, hydrateOrgBrandingFromRemote, watchThemeForBrand }) => {
       applyBrandColor();
+      watchThemeForBrand();
       hydrateOrgBrandingFromRemote().catch(() => {});
     }).catch(() => {});
     // Re-hydrate saat login/logout berubah
