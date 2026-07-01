@@ -54,6 +54,7 @@ function makeWavBlobUrl(sec: number): string {
 
 function VoiceNotePlayerHarness() {
   const [url, setUrl] = useState<string | null>(null);
+  const [mountKey, setMountKey] = useState(0);
   useEffect(() => {
     const u = makeWavBlobUrl(3);
     setUrl(u);
@@ -64,6 +65,14 @@ function VoiceNotePlayerHarness() {
   return (
     <div className="min-h-screen bg-background p-4">
       <h1 className="mb-3 text-sm font-semibold">Voice note preview list</h1>
+      <button
+        type="button"
+        data-testid="vn-remount"
+        onClick={() => setMountKey((k) => k + 1)}
+        className="mb-2 rounded border px-2 py-1 text-xs"
+      >
+        Remount rows
+      </button>
       <div
         data-testid="vn-scroll"
         className="flex flex-col gap-2 overflow-y-auto rounded border p-2"
@@ -72,7 +81,7 @@ function VoiceNotePlayerHarness() {
         {url ? (
           rows.map((i) => (
             <div
-              key={i}
+              key={`${mountKey}-${i}`}
               data-vn-index={i}
               className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}
             >
