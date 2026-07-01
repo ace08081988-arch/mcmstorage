@@ -181,6 +181,52 @@ function winnerColor(step: PressAuditTraceStep): string {
 }
 
 /**
+ * Serialize trace untuk ekspor JSON. `hostEl` dibuang (non-serializable);
+ * tag pemenang tetap disertakan agar bisa dibaca ulang.
+ */
+function serializeTracesForExport(
+  exampleId: string,
+  presetLabel: string,
+  presetAttrs: Record<string, string>,
+  triggeredCodes: string[],
+  traces: PressAuditTrace[],
+) {
+  return {
+    schemaVersion: 1,
+    exportedAt: new Date().toISOString(),
+    example: exampleId,
+    preset: { label: presetLabel, attrs: presetAttrs },
+    triggeredCodes,
+    traces: traces.map((t) => {
+      const winner = pickWinnerStep(t);
+      return {
+        code: t.code,
+        rule: t.rule,
+        allowed: t.allowed,
+        winner: winner
+          ? {
+              step: winner.step,
+              name: winner.name,
+              outcome: winner.outcome,
+              reason: winner.reason,
+              hostTag: winner.hostTag ?? null,
+              tokens: winner.tokens ?? [],
+            }
+          : null,
+        steps: t.steps.map((s) => ({
+          step: s.step,
+          name: s.name,
+          outcome: s.outcome,
+          reason: s.reason,
+          hostTag: s.hostTag ?? null,
+          tokens: s.tokens ?? [],
+        })),
+      };
+    }),
+  };
+}
+
+/**
  * Hitung diff antara hasil efektif yang diharapkan (dari preset) vs
  * hasil aktual (dari `traces`). "Effective" = kode yang tetap dilaporkan.
  */
@@ -401,6 +447,39 @@ function ExampleCard({ example }: { example: Example }) {
               }}
             >
               Bersihkan sorotan
+            </Button>
+          )}
+          {traces && traces.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid={`pa-demo-${example.id}-export`}
+              onClick={() => {
+                const payload = serializeTracesForExport(
+                  example.id,
+                  activePreset.label,
+                  attrs,
+                  example.triggeredCodes,
+                  traces,
+                );
+                const blob = new Blob(
+                  [JSON.stringify(payload, null, 2)],
+                  { type: "application/json" },
+                );
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                const ts = new Date()
+                  .toISOString()
+                  .replace(/[:.]/g, "-");
+                a.href = url;
+                a.download = `press-audit-trace-${example.id}-${ts}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}
+            >
+              Ekspor JSON
             </Button>
           )}
           {results && (
