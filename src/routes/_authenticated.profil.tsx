@@ -42,6 +42,7 @@ import { COUNTRIES, LANGUAGES, DATE_FORMATS, findCountry } from "@/lib/countries
 import { formatCurrency, formatDate } from "@/lib/format";
 import { PushNotificationSettings } from "@/components/chat/PushNotificationSettings";
 import { OrgNameSettings } from "@/components/OrgNameSettings";
+import { UpgradeToStorageCard } from "@/components/UpgradeToStorageCard";
 
 export const Route = createFileRoute("/_authenticated/profil")({
   component: ProfilPage,
@@ -471,6 +472,10 @@ function ProfilPage() {
       <Separator />
 
       <OrgNameSettings />
+
+      <Separator />
+
+      <UpgradeToStorageCard />
     </main>
   );
 }
