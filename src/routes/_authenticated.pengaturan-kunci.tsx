@@ -556,7 +556,7 @@ function PengaturanKunci() {
                 size="sm"
                 variant="outline"
                 className="h-7 px-2 text-[11px]"
-                onClick={handleOpenPerm}
+                onClick={() => handleOpenPerm(false)}
                 disabled={openingPerm}
               >
                 {openingPerm ? "Membuka…" : "Buka pengaturan izin"}
