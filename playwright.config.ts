@@ -359,6 +359,21 @@ export default defineConfig({
       },
     },
     {
+      // E2E: setelah `reload()` pada DM eksisting, meng-Edit pesan
+      // sendiri (menu bubble → Edit → ubah body → simpan) wajib
+      // mempertahankan `PIN xxxx-xxxx` di header + transkrip dan label
+      // "diedit" muncul pada bubble hasil edit, tanpa nomor telp
+      // Indonesia mentah — konsisten juga setelah reload kedua.
+      name: "chat-pin-mcm-edit-message-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-edit-message\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // E2E: fitur "Cari di percakapan" pada DM yang sudah ada — dialog,
       // list hits, header, dan transkrip di belakang dialog wajib memakai
       // `PIN xxxx-xxxx` dan bebas nomor telp Indonesia mentah. Source
