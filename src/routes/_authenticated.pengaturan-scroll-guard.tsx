@@ -6,6 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RotateCcw, CheckCircle2, Bell } from "lucide-react";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   DEFAULT_SCROLL_GUARD,
   SCROLL_GUARD_BOUNDS,
   useScrollGuardConfig,
@@ -121,6 +132,15 @@ function PengaturanScrollGuardPage() {
         holdMs={cfg.hintHoldMs}
         onChange={(patch) => {
           set(patch);
+          flashSaved();
+        }}
+        onResetAll={() => {
+          set({
+            hintScrollText: DEFAULT_SCROLL_GUARD.hintScrollText,
+            hintDriftText: DEFAULT_SCROLL_GUARD.hintDriftText,
+            hintFadeMs: DEFAULT_SCROLL_GUARD.hintFadeMs,
+            hintHoldMs: DEFAULT_SCROLL_GUARD.hintHoldMs,
+          });
           flashSaved();
         }}
       />
