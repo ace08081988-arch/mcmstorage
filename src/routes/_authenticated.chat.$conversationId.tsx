@@ -1418,6 +1418,26 @@ function ChatRoomPage() {
         />
       ) : null}
 
+      <ConversationSearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        messages={visibleMessages}
+        onJump={jumpToMessage}
+      />
+      <MediaLinksDialog
+        open={mediaOpen}
+        onOpenChange={setMediaOpen}
+        messages={visibleMessages}
+      />
+      <MuteDialog
+        open={muteOpen}
+        onOpenChange={setMuteOpen}
+        onPick={(until) => {
+          setConvPrefs(myId ?? undefined, conversationId, { mutedUntil: until });
+          toast.success("Notifikasi disenyapkan");
+        }}
+      />
+
       <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
