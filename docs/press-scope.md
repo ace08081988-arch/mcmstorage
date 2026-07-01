@@ -379,6 +379,22 @@ tanpa menyentuh `localStorage`:
 </section>
 ```
 
+**Validasi token.** Auditor memeriksa isi `data-press-audit-skip` saat
+dievaluasi dan menulis `console.warn` sekali per host + token unik bila
+menemukan:
+
+- Format tidak cocok pola `PA###` — contoh: `PA01`, `pa-002`, `PA1`.
+  Pesan: `token dengan format salah: "PA01". Pakai pola PA### (tiga
+  digit, mis. PA001) atau nama rule terdaftar.`
+- Kode `PA###` yang valid formatnya tetapi belum dialokasikan — contoh:
+  `PA042`. Pesan menyertakan daftar kode yang dikenal saat ini.
+- Nama rule yang tidak terdaftar — contoh: `radix-animatd-surface`
+  (salah ketik). Pesan menyertakan daftar rule terdaftar.
+
+Semua warning memakai kode `PA000` supaya bisa difilter di devtools dan
+tetap membawa link ke bagian docs yang relevan
+([kode error](#kode-error-press-audit) · [menambahkan rule baru](#menambahkan-rule-baru-pa005)).
+
 ### Prioritas evaluasi (satu section, banyak atribut)
 
 Kalau satu subtree memasang lebih dari satu mekanisme (mis. `data-press-audit="on"`
