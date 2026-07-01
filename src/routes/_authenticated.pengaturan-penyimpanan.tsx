@@ -317,21 +317,7 @@ function PenyimpananPage() {
                   Pengaturan aksesibilitas, bahasa, penyimpanan, dan URL sosial saat ini akan
                   ditimpa oleh isi cadangan.
                 </p>
-                {pending && (
-                  <div className="rounded-md border bg-muted/30 p-2 font-mono text-[11px] text-foreground">
-                    <div>Diekspor: {new Date(pending.exportedAt).toLocaleString()}</div>
-                    <div>
-                      Bahasa {pending.prefs.language.toUpperCase()} · Font{" "}
-                      {Math.round(pending.prefs.fontScale * 100)}% · Kontras{" "}
-                      {pending.prefs.highContrast ? "tinggi" : "normal"} · Motion{" "}
-                      {pending.prefs.reduceMotion ? "reduced" : "normal"}
-                    </div>
-                    <div>
-                      Wi-Fi {pending.prefs.autoDownloadWifi ? "on" : "off"} · Seluler{" "}
-                      {pending.prefs.autoDownloadCellular ? "on" : "off"}
-                    </div>
-                  </div>
-                )}
+                {pending && <BackupSummary pending={pending} current={prefs} />}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
