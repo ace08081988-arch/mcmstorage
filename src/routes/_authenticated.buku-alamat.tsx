@@ -417,6 +417,7 @@ function EditDialog({
   const [phone, setPhone] = useState("");
   const [email, setEmail] = useState("");
   const [note, setNote] = useState("");
+  const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -425,11 +426,13 @@ function EditDialog({
       setPhone("");
       setEmail("");
       setNote("");
+      setPin("");
     } else if (row) {
       setName(row.name);
       setPhone(row.phone ?? "");
       setEmail(row.email ?? "");
       setNote(row.note ?? "");
+      setPin("");
     }
   }, [target]);
 
@@ -440,6 +443,10 @@ function EditDialog({
     }
     setBusy(true);
     try {
+      if (isNew && pin.trim()) {
+        const { addContactByInviteCode } = await import("@/lib/invite");
+        await addContactByInviteCode(pin.trim());
+      }
       await upsertManualEntry({
         id: row?.id,
         name,
@@ -462,8 +469,9 @@ function EditDialog({
         <DialogHeader>
           <DialogTitle>{isNew ? "Tambah kontak" : "Edit kontak"}</DialogTitle>
           <DialogDescription>
-            Simpan nama, nomor telepon, dan email. Sistem akan otomatis mencari akun
-            terdaftar yang cocok.
+            {isNew
+              ? "Masukkan nama dan PIN undangan teman untuk menautkan akun terdaftar. Nomor telepon & email opsional."
+              : "Simpan nama, nomor telepon, dan email."}
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-2">
@@ -473,10 +481,20 @@ function EditDialog({
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
+          {isNew && (
+            <Input
+              inputMode="text"
+              autoCapitalize="characters"
+              placeholder="PIN undangan (8 karakter)"
+              value={pin}
+              onChange={(e) => setPin(e.target.value.toUpperCase())}
+              maxLength={12}
+            />
+          )}
           <Input
             type="tel"
             inputMode="tel"
-            placeholder="Nomor telepon (mis. 0812…)"
+            placeholder={isNew ? "Nomor telepon (opsional)" : "Nomor telepon (mis. 0812…)"}
             value={phone}
             onChange={(e) => setPhone(e.target.value)}
           />
