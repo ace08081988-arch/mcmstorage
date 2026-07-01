@@ -142,16 +142,43 @@ function ChatRoomPage() {
   const [muteOpen, setMuteOpen] = useState(false);
   const { prefs: convPrefs, mutedNow } = useConvPrefs(myId ?? undefined, conversationId);
 
-  // Toast saat pin/mute/arsip berubah dari tab/perangkat lain
+  // Toast saat pin/mute/arsip berubah dari tab/perangkat lain.
+  // Beberapa perubahan yang datang beruntun (mis. pin + mute dalam <500ms)
+  // digabung jadi satu toast ringkas agar tidak terasa spam.
   useEffect(() => {
+    const COALESCE_MS = 500;
+    let buffer: string[] = [];
+    let timer: ReturnType<typeof setTimeout> | null = null;
+    const flush = () => {
+      timer = null;
+      if (!buffer.length) return;
+      // Dedupe berurutan (mis. dua kali "disematkan") sambil pertahankan urutan
+      const seen = new Set<string>();
+      const uniq = buffer.filter((c) => (seen.has(c) ? false : (seen.add(c), true)));
+      buffer = [];
+      const msg =
+        uniq.length <= 2
+          ? uniq.join(", ")
+          : `${uniq.length} perubahan (${uniq.slice(0, 2).join(", ")}, …)`;
+      toast.success(`Disinkronkan dari perangkat lain: ${msg}`);
+    };
     const onRemote = (e: Event) => {
       const d = (e as CustomEvent).detail as { cid?: string; changes?: string[] } | undefined;
       if (!d || d.cid !== conversationId) return;
-      const list = (d.changes ?? []).join(", ");
-      if (list) toast.success(`Disinkronkan dari perangkat lain: ${list}`);
+      const changes = d.changes ?? [];
+      if (!changes.length) return;
+      buffer.push(...changes);
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(flush, COALESCE_MS);
     };
     window.addEventListener("mcm:conv-prefs-remote", onRemote);
-    return () => window.removeEventListener("mcm:conv-prefs-remote", onRemote);
+    return () => {
+      window.removeEventListener("mcm:conv-prefs-remote", onRemote);
+      if (timer) {
+        clearTimeout(timer);
+        flush();
+      }
+    };
   }, [conversationId]);
 
   const toggleSelect = useCallback((m: MessageRow) => {
