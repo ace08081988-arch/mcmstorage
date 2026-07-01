@@ -212,6 +212,7 @@ function AuthPage() {
       return;
     }
     toast.success("Berhasil masuk");
+    clearPrefs();
     navigate({ to: "/", replace: true });
   };
 
