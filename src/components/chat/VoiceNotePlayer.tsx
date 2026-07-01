@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, Pause, Mic } from "lucide-react";
+import { formatDurationMMSS } from "@/lib/format-duration";
 
 // Konsisten dengan attachment_duration_sec di DB / attachmentDurationSec di serverFn:
 // bilangan bulat, minimal 1 detik, dibulatkan ke atas dari sumber apa pun.
@@ -9,12 +10,8 @@ export function normalizeDurationSec(input: number | null | undefined): number |
   return Math.max(1, Math.round(input));
 }
 
-function fmt(sec: number): string {
-  if (!isFinite(sec) || sec < 0) return "0:00";
-  const m = Math.floor(sec / 60);
-  const s = Math.floor(sec % 60);
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
+// Format durasi tersentralisasi di src/lib/format-duration.ts agar konsisten
+// antara VoiceNotePlayer, VoiceRecorderButton, dan lampiran lain.
 
 export function VoiceNotePlayer({
   url,
@@ -97,7 +94,9 @@ export function VoiceNotePlayer({
   };
 
   const progress = duration > 0 ? Math.min(1000, Math.round((current / duration) * 1000)) : 0;
-  const label = ready && duration > 0 ? fmt(playing || current > 0 ? current : duration) : "0:00";
+  const label = ready && duration > 0
+    ? formatDurationMMSS(playing || current > 0 ? current : duration)
+    : formatDurationMMSS(0);
 
   return (
     <div
