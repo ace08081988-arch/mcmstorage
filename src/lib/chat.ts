@@ -325,6 +325,7 @@ export function useConversations() {
           pinned_at: mine?.pinned_at ?? null,
           archived_at: mine?.archived_at ?? null,
           muted_until: mine?.muted_until ?? null,
+          cleared_at: mine?.cleared_at ?? null,
         };
       });
     },
