@@ -132,15 +132,51 @@ export async function verifySecret(
   return h === cfg.hash;
 }
 
-// Biometric (Capacitor native). Returns false on web/unsupported.
-export async function isBiometricAvailable(): Promise<boolean> {
+// Biometric (Capacitor native). Returns detailed status so UI dapat
+// menjelaskan alasan tidak tersedia (tidak terdaftar / hanya web / dsb).
+export type BiometricStatus = {
+  available: boolean;
+  native: boolean;
+  reason?: string;
+  code?: string;
+  biometryType?: number;
+};
+
+function isNative(): boolean {
   try {
-    const { BiometricAuth } = await import("@aparajita/capacitor-biometric-auth");
-    const info = await BiometricAuth.checkBiometry();
-    return !!info.isAvailable;
+    const w = window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } };
+    return !!w.Capacitor?.isNativePlatform?.();
   } catch {
     return false;
   }
+}
+
+export async function checkBiometricStatus(): Promise<BiometricStatus> {
+  const native = isNative();
+  if (!native) {
+    return { available: false, native: false, reason: "Hanya tersedia di APK Android (bukan preview browser)" };
+  }
+  try {
+    const { BiometricAuth } = await import("@aparajita/capacitor-biometric-auth");
+    const info = await BiometricAuth.checkBiometry();
+    return {
+      available: !!info.isAvailable,
+      native: true,
+      reason: info.reason,
+      code: info.code,
+      biometryType: info.biometryType as unknown as number,
+    };
+  } catch (e) {
+    return {
+      available: false,
+      native: true,
+      reason: e instanceof Error ? e.message : "Plugin biometrik gagal dimuat",
+    };
+  }
+}
+
+export async function isBiometricAvailable(): Promise<boolean> {
+  return (await checkBiometricStatus()).available;
 }
 
 export async function authenticateBiometric(reason: string): Promise<boolean> {
