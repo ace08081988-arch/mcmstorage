@@ -200,20 +200,23 @@ html[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, m
 html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-serif; }
 
 /* ==========================================================================
-   WhatsApp-Business inspired chat surface (dark-first, light fallback)
-   Dipakai di halaman /chat, /chat/$conversationId, /profil-chat agar UI
-   terasa familier seperti aplikasi WA Business.
+   MCM chat surface (dark-first, light fallback).
+   Dipakai di halaman /chat, /chat/$conversationId, /profil-chat.
+   Palet aksen memakai warna brand MCM (teal) supaya konsisten dengan label
+   "MCM" — token --wa-* dipertahankan sebagai alias agar file lain tetap kompatibel.
    ========================================================================== */
 :root {
+  --mcm-brand: #0f766e;
+  --mcm-brand-strong: #0b5f57;
   --wa-surface: #ffffff;
   --wa-surface-2: #f0f2f5;
   --wa-header: #ffffff;
   --wa-text: #111b21;
   --wa-text-muted: #667781;
   --wa-border: #e9edef;
-  --wa-green: #00a884;
-  --wa-green-strong: #008069;
-  --wa-bubble-out: #d9fdd3;
+  --wa-green: var(--mcm-brand);
+  --wa-green-strong: var(--mcm-brand-strong);
+  --wa-bubble-out: #d4efe6;
   --wa-bubble-out-fg: #111b21;
   --wa-bubble-in: #ffffff;
   --wa-bubble-in-fg: #111b21;
@@ -221,15 +224,17 @@ html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-
   --wa-check: #53bdeb;
 }
 .dark {
+  --mcm-brand: #14b8a6;
+  --mcm-brand-strong: #2dd4bf;
   --wa-surface: #0b141a;
   --wa-surface-2: #111b21;
   --wa-header: #1f2c34;
   --wa-text: #e9edef;
   --wa-text-muted: #8696a0;
   --wa-border: rgba(134,150,160,0.15);
-  --wa-green: #00a884;
-  --wa-green-strong: #21b193;
-  --wa-bubble-out: #005c4b;
+  --wa-green: var(--mcm-brand);
+  --wa-green-strong: var(--mcm-brand-strong);
+  --wa-bubble-out: #0b5f57;
   --wa-bubble-out-fg: #e9edef;
   --wa-bubble-in: #1f2c34;
   --wa-bubble-in-fg: #e9edef;
