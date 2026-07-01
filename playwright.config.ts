@@ -343,6 +343,22 @@ export default defineConfig({
       },
     },
     {
+      // E2E: preview baris DM di halaman daftar `/chat` — judul peer,
+      // snippet pesan terakhir, dan aria-label wajib memakai
+      // `PIN xxxx-xxxx` dan BEBAS nomor telp Indonesia mentah, dengan
+      // konsistensi bertahan sebelum & sesudah `reload()`. Source guard
+      // mengunci `chat.index` memakai `<Link to="/chat/$conversationId">`
+      // tanpa fallback `.phone` sebagai teks tampilan.
+      name: "chat-pin-mcm-list-preview-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-list-preview\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // E2E: fitur "Cari di percakapan" pada DM yang sudah ada — dialog,
       // list hits, header, dan transkrip di belakang dialog wajib memakai
       // `PIN xxxx-xxxx` dan bebas nomor telp Indonesia mentah. Source
