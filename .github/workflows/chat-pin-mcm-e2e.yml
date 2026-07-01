@@ -1,0 +1,118 @@
+name: Chat PIN MCM E2E
+
+# Menjalankan seluruh suite guard `chat-pin-mcm-*` di CI dengan
+# fail-fast pada regresi format PIN dan retry terbatas untuk fluke
+# runtime. Static source guards + helper smoke selalu jalan (tidak
+# butuh storageState). Blok runtime yang butuh login akan self-skip
+# bila secrets belum ada — tetap aman dijalankan di PR eksternal.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.chat*.tsx"
+      - "src/routes/_authenticated.chat/**"
+      - "src/lib/chat.ts"
+      - "src/lib/chat-*.ts"
+      - "src/components/chat/**"
+      - "tests/e2e/chat-pin-mcm-*.spec.ts"
+      - "tests/e2e/chat-pin-assertions-helper.smoke.spec.ts"
+      - "tests/e2e/_helpers/chat-pin-assertions.ts"
+      - "playwright.config.ts"
+      - ".github/workflows/chat-pin-mcm-e2e.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  # Batalkan run lama saat PR di-push ulang — hemat CI, fail lebih cepat.
+  group: chat-pin-mcm-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  chat-pin-mcm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      BASE_URL: http://localhost:4173
+      # Retry: 2 total attempt untuk fase runtime yang bergantung
+      # jaringan/hidrasi. Static guards deterministik — retry tidak
+      # menyembunyikan regresi karena hasilnya stabil.
+      PWTEST_RETRIES: "1"
+      # Fail-fast: hentikan seluruh run pada kegagalan pertama sehingga
+      # regresi format PIN atau kebocoran nomor telp langsung terlihat
+      # tanpa menunggu proyek lain selesai.
+      PWTEST_MAX_FAILURES: "1"
+      # Kredensial opsional untuk global-setup memint storage state;
+      # bila kosong, blok runtime self-skip via `hasAuthState()`.
+      TEST_EMAIL: ${{ secrets.PLAYWRIGHT_TEST_EMAIL }}
+      TEST_PASSWORD: ${{ secrets.PLAYWRIGHT_TEST_PASSWORD }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright browsers
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: bunx vite preview --port 4173 --host 127.0.0.1 &
+
+      - name: Wait for server
+        run: |
+          for i in {1..60}; do
+            if curl -sf http://localhost:4173 > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          echo "Preview server did not become ready in 60s" >&2
+          exit 1
+
+      - name: Run Chat PIN MCM suite (fail-fast, retry=1)
+        # `--max-failures=1` menghentikan run segera setelah satu test
+        # gagal — kontrak PIN xxxx-xxxx & bebas nomor telp harus mutlak.
+        # `--retries=1` hanya melindungi flake runtime (network idle,
+        # hidrasi realtime); static source guards tidak terpengaruh.
+        run: |
+          bunx playwright test \
+            --reporter=list,html \
+            --max-failures=1 \
+            --retries=1 \
+            --project=chat-pin-assertions-helper-e2e \
+            --project=chat-pin-mcm-e2e \
+            --project=chat-pin-mcm-from-kontak-e2e \
+            --project=chat-pin-mcm-pagination-e2e \
+            --project=chat-pin-mcm-attachment-e2e \
+            --project=chat-pin-mcm-existing-dm-e2e \
+            --project=chat-pin-mcm-switch-dm-e2e \
+            --project=chat-pin-mcm-switch-via-list-e2e \
+            --project=chat-pin-mcm-post-refresh-send-e2e \
+            --project=chat-pin-mcm-deep-link-e2e \
+            --project=chat-pin-mcm-deep-link-multi-e2e \
+            --project=chat-pin-mcm-send-then-loadmore-e2e \
+            --project=chat-pin-mcm-copy-export-e2e \
+            --project=chat-pin-mcm-list-preview-e2e \
+            --project=chat-pin-mcm-edit-message-e2e \
+            --project=chat-pin-mcm-search-e2e \
+            --project=chat-pin-mcm-back-forward-e2e \
+            --project=chat-pin-mcm-invalid-deep-link-e2e \
+            --project=chat-pin-mcm-random-multi-e2e \
+            --project=chat-pin-mcm-incomplete-pin-e2e \
+            --project=chat-pin-mcm-multi-viewport-mobile-e2e \
+            --project=chat-pin-mcm-multi-viewport-tablet-e2e \
+            --project=chat-pin-mcm-multi-viewport-desktop-e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-chat-pin-mcm
+          path: playwright-report
+          retention-days: 14
