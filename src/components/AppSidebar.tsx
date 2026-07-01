@@ -154,6 +154,7 @@ import { CompactModeToggle } from "@/components/CompactModeToggle";
 import { ReduceMotionToggle } from "@/components/ReduceMotionToggle";
 import { useConversations } from "@/lib/chat";
 import { useOrgName } from "@/lib/org-name";
+import { isChatOnly, CHAT_ONLY_GROUP_LABELS } from "@/lib/app-mode";
 
 /**
  * Tap-safe navigation link. On mobile WebViews (411px APK) a plain
