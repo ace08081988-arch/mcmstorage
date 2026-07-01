@@ -191,33 +191,36 @@ function PembaruanPage() {
       </a>
       {/* Header */}
       <header className="sticky top-0 z-20 flex items-center gap-2 bg-background/95 px-4 pb-2 pt-4 backdrop-blur">
-        <h1 className="mr-auto text-2xl font-semibold tracking-tight">Pembaruan</h1>
+        <h1 id="pembaruan-title" className="mr-auto text-2xl font-semibold tracking-tight">
+          Pembaruan
+        </h1>
         <button
           type="button"
-          aria-label="Kamera"
+          aria-label="Buka kamera untuk membuat status baru"
           onClick={tellUnavailable}
           onPointerDown={onPressStart("light")}
           className={`grid size-9 place-items-center rounded-full text-foreground hover:bg-muted active:bg-muted/80 ${PRESS_ICON}`}
         >
-          <Camera className="size-5" />
+          <Camera className="size-5" aria-hidden="true" focusable="false" />
         </button>
         <Link
           to="/chat"
-          aria-label="Cari"
+          aria-label="Cari percakapan"
           onPointerDown={onPressStart("light")}
           className={`grid size-9 place-items-center rounded-full text-foreground hover:bg-muted active:bg-muted/80 ${PRESS_ICON}`}
         >
-          <Search className="size-5" />
+          <Search className="size-5" aria-hidden="true" focusable="false" />
         </Link>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <button
               type="button"
-              aria-label="Menu"
+              aria-label="Menu lainnya"
+              aria-haspopup="menu"
               onPointerDown={onPressStart("light")}
               className={`grid size-9 place-items-center rounded-full text-foreground hover:bg-muted active:bg-muted/80 ${PRESS_ICON}`}
             >
-              <MoreVertical className="size-5" />
+              <MoreVertical className="size-5" aria-hidden="true" focusable="false" />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end">
@@ -233,12 +236,15 @@ function PembaruanPage() {
 
       <main id="pembaruan-main" tabIndex={-1} className="outline-none">
       {/* Status */}
-      <section className="px-4">
-        <h2 className="mb-2 text-lg font-semibold">Status</h2>
+      <section className="px-4" aria-labelledby="pembaruan-status-h">
+        <h2 id="pembaruan-status-h" className="mb-2 text-lg font-semibold">
+          Status
+        </h2>
         <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Tambah Status card */}
           <button
             type="button"
+            aria-label="Tambah status baru"
             onClick={tellUnavailable}
             onPointerDown={onPressStart("medium")}
             className={`relative flex h-40 w-28 shrink-0 snap-start flex-col justify-end rounded-2xl bg-muted/40 p-2 text-left ring-1 ring-inset ring-border/50 hover:bg-muted/60 active:bg-muted/70 ${PRESS_CARD}`}
