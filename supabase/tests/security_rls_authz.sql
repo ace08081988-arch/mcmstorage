@@ -515,4 +515,131 @@ BEGIN
   RAISE NOTICE 'PASS 9c: accepted status is terminal for recipient';
 END $$;
 
+-- ---------------------------------------------------------------------
+-- 10) start_dm gate. Tampering with friend_requests must NOT unlock a DM.
+--     Only a genuine recipient-accepted transition can make start_dm succeed.
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE
+  v_a uuid; v_b uuid; v_c uuid;
+  v_id uuid; v_dm uuid; v_rows int; v_status text;
+  v_sqlstate text; v_msg text;
+BEGIN
+  IF NOT current_setting('test.can_switch')::boolean THEN
+    RAISE NOTICE 'SKIP 10: role switching unavailable';
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_a FROM auth.users ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_b FROM auth.users WHERE id <> v_a ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_c FROM auth.users WHERE id NOT IN (v_a, v_b) ORDER BY created_at LIMIT 1;
+  IF v_a IS NULL OR v_b IS NULL OR v_c IS NULL THEN
+    RAISE NOTICE 'SKIP 10: need at least 3 auth.users';
+    RETURN;
+  END IF;
+
+  -- Clean slate: no friendship, no contact link, no existing DM.
+  DELETE FROM public.friend_requests
+   WHERE (from_user, to_user) IN ((v_a,v_b),(v_b,v_a));
+  DELETE FROM public.customers
+   WHERE (user_id=v_a AND account_user_id=v_b) OR (user_id=v_b AND account_user_id=v_a);
+  DELETE FROM public.suppliers
+   WHERE (user_id=v_a AND account_user_id=v_b) OR (user_id=v_b AND account_user_id=v_a);
+
+  -- A → B pending.
+  PERFORM pg_temp.as_user(v_a);
+  INSERT INTO public.friend_requests(from_user, to_user, status)
+  VALUES (v_a, v_b, 'pending') RETURNING id INTO v_id;
+
+  -- 10a) start_dm while pending must raise 'not_allowed'.
+  BEGIN
+    v_dm := public.start_dm(v_b);
+    v_msg := NULL;
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS v_sqlstate = RETURNED_SQLSTATE, v_msg = MESSAGE_TEXT;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_dm IS NOT NULL OR v_msg IS DISTINCT FROM 'not_allowed' THEN
+    RAISE EXCEPTION 'FAIL 10a: start_dm did not reject pending (dm=%, msg=%)', v_dm, v_msg;
+  END IF;
+  RAISE NOTICE 'PASS 10a: start_dm blocked while status=pending';
+
+  -- 10b) Sender tries to self-accept (must fail) → start_dm still blocked.
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL;
+  END;
+  v_dm := NULL; v_msg := NULL;
+  BEGIN
+    v_dm := public.start_dm(v_b);
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS v_msg = MESSAGE_TEXT;
+  END;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status = 'accepted' THEN
+    RAISE EXCEPTION 'FAIL 10b: sender self-accept succeeded (guards broken)';
+  END IF;
+  IF v_dm IS NOT NULL OR v_msg IS DISTINCT FROM 'not_allowed' THEN
+    RAISE EXCEPTION 'FAIL 10b: start_dm allowed after tampered self-accept (dm=%, msg=%)', v_dm, v_msg;
+  END IF;
+  RAISE NOTICE 'PASS 10b: sender tamper (self-accept) does not unlock start_dm';
+
+  -- 10c) Third party C tries to accept → RLS blocks → start_dm still not_allowed.
+  PERFORM pg_temp.as_user(v_c);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  v_dm := NULL; v_msg := NULL;
+  BEGIN
+    v_dm := public.start_dm(v_a);   -- C tries to DM A (unrelated)
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS v_msg = MESSAGE_TEXT;
+  END;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_rows > 0 OR v_status = 'accepted' THEN
+    RAISE EXCEPTION 'FAIL 10c: third-party accept succeeded (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  IF v_dm IS NOT NULL OR v_msg IS DISTINCT FROM 'not_allowed' THEN
+    RAISE EXCEPTION 'FAIL 10c: third-party opened DM (dm=%, msg=%)', v_dm, v_msg;
+  END IF;
+  RAISE NOTICE 'PASS 10c: third-party tamper does not unlock start_dm';
+
+  -- 10d) Sender attempts to swap to_user to themself (immutability) → guard rejects
+  --      → start_dm still blocked for A↔B.
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests SET to_user = v_a, status = 'accepted' WHERE id = v_id;
+  EXCEPTION WHEN others THEN NULL;
+  END;
+  v_dm := NULL; v_msg := NULL;
+  BEGIN
+    v_dm := public.start_dm(v_b);
+  EXCEPTION WHEN others THEN
+    GET STACKED DIAGNOSTICS v_msg = MESSAGE_TEXT;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_dm IS NOT NULL OR v_msg IS DISTINCT FROM 'not_allowed' THEN
+    RAISE EXCEPTION 'FAIL 10d: participant swap unlocked start_dm (dm=%, msg=%)', v_dm, v_msg;
+  END IF;
+  RAISE NOTICE 'PASS 10d: participant swap does not unlock start_dm';
+
+  -- 10e) Genuine recipient acceptance → start_dm now succeeds for both sides.
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  v_dm := public.start_dm(v_a);
+  IF v_dm IS NULL THEN
+    PERFORM pg_temp.as_postgres();
+    RAISE EXCEPTION 'FAIL 10e: recipient accept did not unlock start_dm';
+  END IF;
+  PERFORM pg_temp.as_user(v_a);
+  v_dm := public.start_dm(v_b);
+  PERFORM pg_temp.as_postgres();
+  IF v_dm IS NULL THEN
+    RAISE EXCEPTION 'FAIL 10e: reverse direction start_dm failed after accept';
+  END IF;
+  RAISE NOTICE 'PASS 10e: recipient accept is the ONLY path that opens start_dm';
+END $$;
+
 ROLLBACK;
