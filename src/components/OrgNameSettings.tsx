@@ -21,6 +21,48 @@ import {
   DEFAULT_ORG_SHORT,
 } from "@/lib/org-name";
 
+async function compressRaster(
+  img: HTMLImageElement,
+  srcMime: string,
+  maxDim: number,
+  maxBytes: number,
+): Promise<{ dataUrl: string; mime: string; width: number; height: number; size: number }> {
+  const w0 = img.naturalWidth;
+  const h0 = img.naturalHeight;
+  // Target MIME: PNG stays PNG (preserve alpha); JPG/WEBP → WEBP (kompresi paling efisien).
+  const targetMime = srcMime === "image/png" ? "image/png" : "image/webp";
+  // Skala awal agar sisi terpanjang ≤ maxDim.
+  const initialScale = Math.min(1, maxDim / Math.max(w0, h0));
+  const attempts: Array<{ scale: number; quality: number }> = [];
+  const scales = [initialScale, initialScale * 0.85, initialScale * 0.7, initialScale * 0.55, initialScale * 0.4];
+  const qualities = targetMime === "image/png" ? [1] : [0.9, 0.8, 0.7, 0.6, 0.5];
+  for (const s of scales) {
+    for (const q of qualities) attempts.push({ scale: s, quality: q });
+  }
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) throw new Error("Canvas 2D tidak tersedia");
+  let last: { dataUrl: string; mime: string; width: number; height: number; size: number } | null = null;
+  for (const { scale, quality } of attempts) {
+    const w = Math.max(MIN_DIM_FLOOR, Math.round(w0 * scale));
+    const h = Math.max(MIN_DIM_FLOOR, Math.round(h0 * scale));
+    canvas.width = w;
+    canvas.height = h;
+    ctx.clearRect(0, 0, w, h);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(img, 0, 0, w, h);
+    const dataUrl = canvas.toDataURL(targetMime, quality);
+    const size = Math.ceil((dataUrl.length - dataUrl.indexOf(",") - 1) * 3 / 4);
+    last = { dataUrl, mime: targetMime, width: w, height: h, size };
+    if (size <= maxBytes) return last;
+  }
+  if (!last) throw new Error("Kompresi gagal");
+  return last;
+}
+
+const MIN_DIM_FLOOR = 64;
+
 const BRAND_PRESETS: { label: string; value: string }[] = [
   { label: "Emerald", value: "oklch(0.696 0.17 162.48)" },
   { label: "Biru", value: "oklch(0.623 0.214 259.815)" },
