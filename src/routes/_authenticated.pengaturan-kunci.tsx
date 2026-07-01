@@ -548,6 +548,14 @@ function PengaturanKunci() {
               · {bioStatus.reason}
             </div>
           )}
+          <Recommendations
+            status={bioStatus}
+            hasLock={!!(cfg?.pinHash || cfg?.patternHash)}
+            enrolling={enrolling}
+            onEnroll={handleEnroll}
+            onRecheck={() => runBioCheck(true)}
+            onCreateLock={() => setEditor("pin")}
+          />
         </div>
 
         <div className="flex items-center justify-between gap-3">
