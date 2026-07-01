@@ -59,14 +59,75 @@ export const Route = createFileRoute("/auth")({
 
 function AuthPage() {
   const navigate = useNavigate();
-  const [mode, setMode] = useState<"login" | "signup">("login");
-  const [intent, setIntent] = useState<"storage" | "chat" | null>(null);
-  const [email, setEmail] = useState("");
+  // Simpan pilihan intent/mode/email supaya konsisten saat user reload
+  // aplikasi atau berpindah tab Masuk/Daftar. Password TIDAK disimpan.
+  const LS_KEY = "mcm.authPrefs";
+  type AuthPrefs = {
+    intent: "storage" | "chat" | null;
+    mode: "login" | "signup";
+    email: string;
+  };
+  const readPrefs = (): AuthPrefs => {
+    if (typeof window === "undefined") return { intent: null, mode: "login", email: "" };
+    try {
+      const raw = window.localStorage.getItem(LS_KEY);
+      if (!raw) return { intent: null, mode: "login", email: "" };
+      const p = JSON.parse(raw) as Partial<AuthPrefs>;
+      return {
+        intent: p.intent === "storage" || p.intent === "chat" ? p.intent : null,
+        mode: p.mode === "signup" ? "signup" : "login",
+        email: typeof p.email === "string" ? p.email : "",
+      };
+    } catch {
+      return { intent: null, mode: "login", email: "" };
+    }
+  };
+  const initial = readPrefs();
+  const [mode, setMode] = useState<"login" | "signup">(initial.mode);
+  const [intent, setIntent] = useState<"storage" | "chat" | null>(initial.intent);
+  const [email, setEmail] = useState(initial.email);
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+
+  // Persist perubahan intent/mode/email — sync juga antar tab lewat StorageEvent.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      window.localStorage.setItem(
+        LS_KEY,
+        JSON.stringify({ intent, mode, email } satisfies AuthPrefs),
+      );
+    } catch {
+      /* storage penuh / diblokir — abaikan */
+    }
+  }, [intent, mode, email]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== LS_KEY || !e.newValue) return;
+      try {
+        const p = JSON.parse(e.newValue) as Partial<AuthPrefs>;
+        if (p.intent === "storage" || p.intent === "chat" || p.intent === null) {
+          setIntent(p.intent);
+        }
+        if (p.mode === "login" || p.mode === "signup") setMode(p.mode);
+        if (typeof p.email === "string") setEmail(p.email);
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, []);
+
+  const clearPrefs = () => {
+    if (typeof window === "undefined") return;
+    try { window.localStorage.removeItem(LS_KEY); } catch { /* ignore */ }
+  };
 
   useEffect(() => {
     if (resendCooldown <= 0) return;
