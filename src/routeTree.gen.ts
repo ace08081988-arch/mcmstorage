@@ -25,6 +25,7 @@ import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
 import { Route as AuthenticatedUndangRouteImport } from './routes/_authenticated.undang'
 import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
+import { Route as AuthenticatedStatusNotifikasiRouteImport } from './routes/_authenticated.status-notifikasi'
 import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authenticated.profil-chat'
@@ -156,6 +157,12 @@ const AuthenticatedTugasRoute = AuthenticatedTugasRouteImport.update({
   path: '/tugas',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedStatusNotifikasiRoute =
+  AuthenticatedStatusNotifikasiRouteImport.update({
+    id: '/status-notifikasi',
+    path: '/status-notifikasi',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSesiRoute = AuthenticatedSesiRouteImport.update({
   id: '/sesi',
   path: '/sesi',
@@ -484,6 +491,7 @@ export interface FileRoutesByFullPath {
   '/profil-chat': typeof AuthenticatedProfilChatRoute
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
+  '/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/undang': typeof AuthenticatedUndangRoute
@@ -550,6 +558,7 @@ export interface FileRoutesByTo {
   '/profil-chat': typeof AuthenticatedProfilChatRoute
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
+  '/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/undang': typeof AuthenticatedUndangRoute
@@ -620,6 +629,7 @@ export interface FileRoutesById {
   '/_authenticated/profil-chat': typeof AuthenticatedProfilChatRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/sesi': typeof AuthenticatedSesiRoute
+  '/_authenticated/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/_authenticated/undang': typeof AuthenticatedUndangRoute
@@ -691,6 +701,7 @@ export interface FileRouteTypes {
     | '/profil-chat'
     | '/request'
     | '/sesi'
+    | '/status-notifikasi'
     | '/tugas'
     | '/tugas-baru'
     | '/undang'
@@ -757,6 +768,7 @@ export interface FileRouteTypes {
     | '/profil-chat'
     | '/request'
     | '/sesi'
+    | '/status-notifikasi'
     | '/tugas'
     | '/tugas-baru'
     | '/undang'
@@ -826,6 +838,7 @@ export interface FileRouteTypes {
     | '/_authenticated/profil-chat'
     | '/_authenticated/request'
     | '/_authenticated/sesi'
+    | '/_authenticated/status-notifikasi'
     | '/_authenticated/tugas'
     | '/_authenticated/tugas-baru'
     | '/_authenticated/undang'
@@ -995,6 +1008,13 @@ declare module '@tanstack/react-router' {
       path: '/tugas'
       fullPath: '/tugas'
       preLoaderRoute: typeof AuthenticatedTugasRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/status-notifikasi': {
+      id: '/_authenticated/status-notifikasi'
+      path: '/status-notifikasi'
+      fullPath: '/status-notifikasi'
+      preLoaderRoute: typeof AuthenticatedStatusNotifikasiRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/sesi': {
@@ -1440,6 +1460,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedProfilChatRoute: typeof AuthenticatedProfilChatRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
   AuthenticatedSesiRoute: typeof AuthenticatedSesiRoute
+  AuthenticatedStatusNotifikasiRoute: typeof AuthenticatedStatusNotifikasiRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
   AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
   AuthenticatedUndangRoute: typeof AuthenticatedUndangRoute
@@ -1483,6 +1504,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedProfilChatRoute: AuthenticatedProfilChatRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
   AuthenticatedSesiRoute: AuthenticatedSesiRoute,
+  AuthenticatedStatusNotifikasiRoute: AuthenticatedStatusNotifikasiRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
   AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
   AuthenticatedUndangRoute: AuthenticatedUndangRoute,
