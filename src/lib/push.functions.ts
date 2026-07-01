@@ -44,6 +44,48 @@ export const unregisterPushSubscription = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
+// ---- Native (FCM) token registration ----
+
+const fcmRegisterSchema = z.object({
+  token: z.string().min(20).max(4096),
+  platform: z.enum(["android", "ios", "web"]).default("android"),
+  deviceInfo: z.string().max(512).optional().nullable(),
+});
+
+export const registerFcmToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => fcmRegisterSchema.parse(data))
+  .handler(async ({ data, context }) => {
+    const { supabase, userId } = context;
+    const { error } = await supabase
+      .from("fcm_tokens")
+      .upsert(
+        {
+          user_id: userId,
+          token: data.token,
+          platform: data.platform,
+          device_info: data.deviceInfo ?? null,
+          last_used_at: new Date().toISOString(),
+        },
+        { onConflict: "token" },
+      );
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
+export const unregisterFcmToken = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => z.object({ token: z.string().min(10) }).parse(data))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase
+      .from("fcm_tokens")
+      .delete()
+      .eq("token", data.token)
+      .eq("user_id", context.userId);
+    if (error) throw new Error(error.message);
+    return { ok: true };
+  });
+
 /** Self-test: send a push to the caller's own subscriptions. */
 export const sendTestPush = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])

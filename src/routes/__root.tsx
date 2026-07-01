@@ -266,6 +266,18 @@ function RootComponent() {
     bootstrapNativePermissions().catch((e) =>
       console.warn("[perm-bootstrap]", e),
     );
+    // Aktifkan notifikasi native (FCM) — hanya di APK/native, no-op di web
+    import("@/lib/native-push").then(({ startNativePush }) => {
+      startNativePush({
+        onOpenUrl: (url) => {
+          try {
+            router.navigate({ to: url.startsWith("/") ? url : `/${url}` });
+          } catch {
+            window.location.assign(url);
+          }
+        },
+      }).catch((e) => console.warn("[native-push]", e));
+    }).catch(() => {});
     applyCompactMode();
     applyReduceMotion();
     // Kirim preferensi notifikasi ke service worker + tarik versi terbaru dari cloud
