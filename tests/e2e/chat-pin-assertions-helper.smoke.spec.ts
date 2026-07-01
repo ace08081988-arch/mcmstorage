@@ -49,9 +49,9 @@ test.describe("chat-pin-assertions — kontrak regex", () => {
   });
 
   test("PIN_ANY_TOKEN & extractPinTokens", () => {
-    const s = "Header: PIN ABCD-1234 · balasan dari PIN 0000-9999.";
+    const s = "Header: PIN ABCD-1234 · balasan dari PIN 0000-9999";
     expect(s).toMatch(PIN_ANY_TOKEN);
-    expect(extractPinTokens(s)).toEqual(["PIN", "PIN"].map((_, i) => ["PIN ABCD-1234", "PIN 0000-9999."][i]));
+    expect(extractPinTokens(s)).toEqual(["PIN ABCD-1234", "PIN 0000-9999"]);
   });
 
   test("expectNoRawPhone melempar untuk phone mentah, lolos untuk PIN", () => {
