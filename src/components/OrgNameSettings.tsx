@@ -185,7 +185,7 @@ export function OrgNameSettings() {
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            PNG/JPG persegi disarankan, maks. 512 KB.
+            PNG, JPG, WEBP, atau SVG. Maks. 512 KB, dimensi ≤ 1024×1024 px. Persegi disarankan.
           </p>
         </div>
 
