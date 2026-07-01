@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type LatestApk = {
   name: string;
@@ -35,6 +36,44 @@ export type ApkVariantDetail = {
 };
 
 const isChatName = (n: string) => /(^|[-_.])chat([-_.]|$)/i.test(n);
+
+export type ApkReleaseMeta = {
+  file_name: string;
+  variant: ApkVariant;
+  enabled: boolean;
+  publish_at: string | null;
+  notes: string | null;
+  updated_at: string;
+};
+
+type MetaMap = Map<string, ApkReleaseMeta>;
+
+async function loadReleaseMetaMap(): Promise<MetaMap> {
+  const { supabaseAdmin } = await import(
+    "@/integrations/supabase/client.server"
+  );
+  const { data } = await supabaseAdmin
+    .from("apk_release_meta")
+    .select("file_name, variant, enabled, publish_at, notes, updated_at");
+  const m: MetaMap = new Map();
+  for (const row of (data ?? []) as ApkReleaseMeta[]) {
+    m.set(row.file_name, row);
+  }
+  return m;
+}
+
+/**
+ * Sebuah berkas APK "terlihat publik" jika:
+ *   - tidak ada meta (default aktif), ATAU
+ *   - enabled=true DAN (publish_at IS NULL atau publish_at <= now)
+ */
+function isPublic(name: string, meta: MetaMap): boolean {
+  const row = meta.get(name);
+  if (!row) return true;
+  if (!row.enabled) return false;
+  if (row.publish_at && Date.parse(row.publish_at) > Date.now()) return false;
+  return true;
+}
 
 /**
  * Ekstrak versionName + versionCode dari nama berkas APK.
