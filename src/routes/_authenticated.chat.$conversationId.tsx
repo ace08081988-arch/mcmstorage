@@ -11,7 +11,7 @@ import {
   Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
   History as HistoryIcon,
   Sticker as StickerIcon,
-  Search as SearchIcon, Image as ImageIcon, Link as LinkIcon2, BellOff, BellRing,
+  Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
   Pin as PinIcon, Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus,
 } from "lucide-react";
 
