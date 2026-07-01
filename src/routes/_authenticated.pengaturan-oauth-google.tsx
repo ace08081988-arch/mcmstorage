@@ -87,6 +87,17 @@ const STEPS = [
   { id: "test", label: "Uji sign-in di preview & domain produksi" },
 ] as const;
 
+// Deep-link ke halaman Google Cloud Console yang relevan untuk tiap langkah.
+// "paste" & "test" tidak dibuka di Cloud Console (paste di Backend, test lokal).
+const STEP_CONSOLE_URL: Partial<Record<StepId, string>> = {
+  consent: "https://console.cloud.google.com/apis/credentials/consent",
+  scopes: "https://console.cloud.google.com/apis/credentials/consent/edit",
+  domains: "https://console.cloud.google.com/apis/credentials/consent/edit",
+  origins: "https://console.cloud.google.com/apis/credentials",
+  redirect: "https://console.cloud.google.com/apis/credentials",
+  credentials: "https://console.cloud.google.com/apis/credentials",
+};
+
 type StepId = (typeof STEPS)[number]["id"];
 
 // Kategori "block" yang bisa disorot pada bagian "Nilai untuk Google Cloud Console".
@@ -490,6 +501,18 @@ function OAuthGooglePage() {
                 <span className="flex-1 text-sm leading-snug">
                   <span className="mr-1 text-muted-foreground">{i + 1}.</span>
                   {s.label}
+                  {flaggedSteps.has(s.id) && STEP_CONSOLE_URL[s.id] && (
+                    <a
+                      href={STEP_CONSOLE_URL[s.id]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      onClick={(e) => e.stopPropagation()}
+                      className="ml-2 inline-flex items-center gap-1 rounded border border-amber-500/60 bg-background px-1.5 py-0.5 text-[11px] font-medium text-amber-700 hover:bg-amber-500/10 dark:text-amber-400"
+                    >
+                      <ExternalLink className="h-3 w-3" />
+                      Buka Cloud Console
+                    </a>
+                  )}
                 </span>
                 {flaggedSteps.has(s.id) && (
                   <Badge
