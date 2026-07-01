@@ -1,12 +1,29 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { HardDrive, Trash2, RefreshCw } from "lucide-react";
+import { HardDrive, Trash2, RefreshCw, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { useAppPrefs } from "@/lib/app-prefs";
+import {
+  downloadBackup,
+  parseBackup,
+  applyBackup,
+  readFileAsText,
+  type PrefsBackup,
+} from "@/lib/prefs-backup";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-penyimpanan")({
   head: () => ({ meta: [{ title: "Penyimpanan dan Data · MCM Storage" }] }),
@@ -40,6 +57,9 @@ function PenyimpananPage() {
   const [snapshot, setSnapshot] = useState(() => estimateLocalStorage());
   const [quotaMB, setQuotaMB] = useState<number | null>(null);
   const [usedMB, setUsedMB] = useState<number | null>(null);
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [pending, setPending] = useState<PrefsBackup | null>(null);
+  const [lastExportAt, setLastExportAt] = useState<string | null>(null);
 
   const refresh = async () => {
     setSnapshot(estimateLocalStorage());
@@ -55,6 +75,52 @@ function PenyimpananPage() {
   useEffect(() => {
     refresh();
   }, []);
+
+  const onExport = () => {
+    try {
+      const b = downloadBackup();
+      setLastExportAt(b.exportedAt);
+      toast.success("Cadangan preferensi diunduh.");
+    } catch (e) {
+      toast.error("Gagal membuat cadangan.", {
+        description: e instanceof Error ? e.message : "Coba lagi.",
+      });
+    }
+  };
+
+  const onPickFile = () => fileRef.current?.click();
+
+  const onFileChange = async (ev: React.ChangeEvent<HTMLInputElement>) => {
+    const file = ev.target.files?.[0];
+    ev.target.value = ""; // allow re-selecting same file
+    if (!file) return;
+    try {
+      const text = await readFileAsText(file);
+      const parsed = parseBackup(text);
+      if (!parsed.ok) {
+        toast.error("File cadangan tidak valid.", { description: parsed.error });
+        return;
+      }
+      setPending(parsed.backup);
+    } catch (e) {
+      toast.error("Gagal membaca file.", {
+        description: e instanceof Error ? e.message : "Coba lagi.",
+      });
+    }
+  };
+
+  const confirmRestore = () => {
+    if (!pending) return;
+    try {
+      applyBackup(pending);
+      toast.success("Preferensi dipulihkan dari cadangan.");
+      setPending(null);
+    } catch (e) {
+      toast.error("Gagal memulihkan.", {
+        description: e instanceof Error ? e.message : "Coba lagi.",
+      });
+    }
+  };
 
   const clearNamespace = (prefix: string, label: string) => {
     if (!confirm(`Hapus semua data ${label}?`)) return;
@@ -159,7 +225,97 @@ function PenyimpananPage() {
             />
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">Cadangan & pulihkan preferensi</CardTitle>
+            <CardDescription className="text-xs">
+              Ekspor aksesibilitas, bahasa aplikasi, penyimpanan, dan URL integrasi sosial ke satu
+              file JSON. Impor kapan saja untuk memulihkan.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="rounded-md border bg-muted/30 p-3 text-[11px] leading-snug text-muted-foreground">
+              <div>
+                Bahasa: <span className="font-medium text-foreground">{prefs.language.toUpperCase()}</span>
+                {" · "}
+                Skala font: <span className="font-medium text-foreground">{Math.round(prefs.fontScale * 100)}%</span>
+                {" · "}
+                Kontras: <span className="font-medium text-foreground">{prefs.highContrast ? "tinggi" : "normal"}</span>
+                {" · "}
+                Gerakan: <span className="font-medium text-foreground">{prefs.reduceMotion ? "dikurangi" : "normal"}</span>
+              </div>
+              <div>
+                Wi-Fi otomatis:{" "}
+                <span className="font-medium text-foreground">{prefs.autoDownloadWifi ? "on" : "off"}</span>
+                {" · "}
+                Data seluler:{" "}
+                <span className="font-medium text-foreground">
+                  {prefs.autoDownloadCellular ? "on" : "off"}
+                </span>
+              </div>
+              {lastExportAt && (
+                <div className="mt-1">
+                  Terakhir diekspor:{" "}
+                  <span className="text-foreground">{new Date(lastExportAt).toLocaleString()}</span>
+                </div>
+              )}
+            </div>
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" variant="outline" onClick={onExport}>
+                <Download className="mr-1.5 h-3.5 w-3.5" />
+                Ekspor JSON
+              </Button>
+              <Button size="sm" variant="outline" onClick={onPickFile}>
+                <Upload className="mr-1.5 h-3.5 w-3.5" />
+                Impor dari file
+              </Button>
+              <input
+                ref={fileRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={onFileChange}
+              />
+            </div>
+          </CardContent>
+        </Card>
       </div>
+
+      <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pulihkan preferensi dari cadangan?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-xs">
+                <p>
+                  Pengaturan aksesibilitas, bahasa, penyimpanan, dan URL sosial saat ini akan
+                  ditimpa oleh isi cadangan.
+                </p>
+                {pending && (
+                  <div className="rounded-md border bg-muted/30 p-2 font-mono text-[11px] text-foreground">
+                    <div>Diekspor: {new Date(pending.exportedAt).toLocaleString()}</div>
+                    <div>
+                      Bahasa {pending.prefs.language.toUpperCase()} · Font{" "}
+                      {Math.round(pending.prefs.fontScale * 100)}% · Kontras{" "}
+                      {pending.prefs.highContrast ? "tinggi" : "normal"} · Motion{" "}
+                      {pending.prefs.reduceMotion ? "reduced" : "normal"}
+                    </div>
+                    <div>
+                      Wi-Fi {pending.prefs.autoDownloadWifi ? "on" : "off"} · Seluler{" "}
+                      {pending.prefs.autoDownloadCellular ? "on" : "off"}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmRestore}>Pulihkan</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
