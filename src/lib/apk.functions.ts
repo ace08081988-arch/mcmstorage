@@ -126,7 +126,10 @@ export const getLatestApk = createServerFn({ method: "GET" }).handler(
         sortBy: { column: "updated_at", order: "desc" },
       });
     if (error || !data) return null;
-    const apks = data.filter((f) => /\.apk$/i.test(f.name));
+    const meta = await loadReleaseMetaMap();
+    const apks = data
+      .filter((f) => /\.apk$/i.test(f.name))
+      .filter((f) => isPublic(f.name, meta));
     if (apks.length === 0) return null;
     const latest = apks[0];
     const { data: signed, error: signErr } = await supabaseAdmin.storage
@@ -159,7 +162,10 @@ export const getLatestApkVariants = createServerFn({ method: "GET" }).handler(
         sortBy: { column: "updated_at", order: "desc" },
       });
     if (error || !data) return { storage: null, chat: null };
-    const apks = data.filter((f) => /\.apk$/i.test(f.name));
+    const meta = await loadReleaseMetaMap();
+    const apks = data
+      .filter((f) => /\.apk$/i.test(f.name))
+      .filter((f) => isPublic(f.name, meta));
     const chatFile = apks.find((f) => isChatName(f.name)) ?? null;
     const storageFile = apks.find((f) => !isChatName(f.name)) ?? null;
     const toResult = async (f: typeof apks[number] | null): Promise<LatestApk> => {
@@ -221,11 +227,13 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
       });
     let releases: ApkRelease[] = [];
     if (!error && files) {
+      const meta = await loadReleaseMetaMap();
       const apks = files
         .filter((f) => /\.apk$/i.test(f.name))
         .filter((f) =>
           data.variant === "chat" ? isChatName(f.name) : !isChatName(f.name),
-        );
+        )
+        .filter((f) => isPublic(f.name, meta));
       releases = await Promise.all(
         apks.map(async (f) => {
           const { data: signed } = await supabaseAdmin.storage
