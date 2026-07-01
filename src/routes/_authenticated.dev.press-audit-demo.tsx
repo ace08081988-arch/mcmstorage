@@ -280,14 +280,20 @@ function ExampleCard({ example }: { example: Example }) {
     () => (diffRows ? diffRows.every((r) => r.match) : true),
     [diffRows],
   );
-  const highlightedRef = useRef<Element[]>([]);
+  const highlightedRef = useRef<
+    Array<{ el: Element; prevTitle: string | null }>
+  >([]);
 
   const clearHighlights = useCallback(() => {
-    for (const el of highlightedRef.current) {
+    for (const { el, prevTitle } of highlightedRef.current) {
       (el as HTMLElement).style.removeProperty("outline");
       (el as HTMLElement).style.removeProperty("outline-offset");
       (el as HTMLElement).style.removeProperty("box-shadow");
+      (el as HTMLElement).style.removeProperty("cursor");
       el.removeAttribute("data-pa-winner");
+      el.removeAttribute("data-pa-tooltip");
+      if (prevTitle === null) el.removeAttribute("title");
+      else el.setAttribute("title", prevTitle);
     }
     highlightedRef.current = [];
   }, []);
@@ -378,21 +384,64 @@ function ExampleCard({ example }: { example: Example }) {
       out.push(tracePressAuditDecision(el, rule));
     }
     setTraces(out);
-    // Sorot elemen ancestor "pemenang" untuk tiap jejak.
-    const applied: Element[] = [];
+    // Sorot elemen ancestor "pemenang" untuk tiap jejak +
+    // pasang tooltip yang menjelaskan alasan efektif.
+    const applied: Array<{ el: Element; prevTitle: string | null }> = [];
+    // Kelompokkan pemenang per elemen sehingga elemen yang sama
+    // (mis. wrapper) menampilkan alasan gabungan untuk semua kode.
+    const byEl = new Map<
+      Element,
+      Array<{ trace: PressAuditTrace; step: PressAuditTraceStep }>
+    >();
     for (const t of out) {
       const step = pickWinnerStep(t);
-      const winnerEl = step?.hostEl;
-      if (!winnerEl) continue;
-      const color = winnerColor(step!);
+      if (!step?.hostEl) continue;
+      const list = byEl.get(step.hostEl) ?? [];
+      list.push({ trace: t, step });
+      byEl.set(step.hostEl, list);
+    }
+    for (const [winnerEl, entries] of byEl.entries()) {
+      // Warna: block > allow (jika campur, tetap merah karena block final).
+      const primaryStep =
+        entries.find((e) => e.step.outcome === "block")?.step ??
+        entries[entries.length - 1].step;
+      const color = winnerColor(primaryStep);
       (winnerEl as HTMLElement).style.outline = `2px dashed ${color}`;
       (winnerEl as HTMLElement).style.outlineOffset = "3px";
       (winnerEl as HTMLElement).style.boxShadow = `0 0 0 4px ${color}22`;
+      (winnerEl as HTMLElement).style.cursor = "help";
+      const tag = (winnerEl.tagName || "").toLowerCase();
+      const auditAttrs = [
+        "data-press-audit",
+        "data-press-audit-skip",
+        "data-press-audit-allow",
+        "data-press-audit-deny",
+        "data-no-press",
+        "data-press-scope",
+      ]
+        .filter((k) => winnerEl.hasAttribute(k))
+        .map((k) => `${k}="${winnerEl.getAttribute(k)}"`)
+        .join(" ");
+      const header = `<${tag}>${auditAttrs ? " " + auditAttrs : ""}`;
+      const lines = entries.map(({ trace, step }) => {
+        const verdict = trace.allowed ? "ALLOW" : "BLOCK";
+        return `• ${trace.code} (${trace.rule}) — ${verdict} via ${step.name}: ${step.reason}`;
+      });
+      const tooltip = [header, ...lines].join("\n");
+      const prevTitle = winnerEl.getAttribute("title");
+      winnerEl.setAttribute("title", tooltip);
+      winnerEl.setAttribute("data-pa-tooltip", "1");
+      // data-pa-winner: gabung semua kode:step:verdict untuk elemen ini.
       winnerEl.setAttribute(
         "data-pa-winner",
-        `${t.code}:${step!.name}:${t.allowed ? "allow" : "block"}`,
+        entries
+          .map(
+            ({ trace, step }) =>
+              `${trace.code}:${step.name}:${trace.allowed ? "allow" : "block"}`,
+          )
+          .join("|"),
       );
-      applied.push(winnerEl);
+      applied.push({ el: winnerEl, prevTitle });
     }
     highlightedRef.current = applied;
   }, [example.triggeredCodes, clearHighlights]);
