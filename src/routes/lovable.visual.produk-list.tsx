@@ -160,7 +160,7 @@ function DetailRows() {
 function VisualHarness() {
   const { part } = Route.useSearch();
   return (
-    <div className="min-h-screen bg-background p-3 text-foreground">
+    <div className="min-h-screen bg-background p-3 text-foreground" data-press-scope="on">
       <div className="mx-auto max-w-3xl space-y-4">
         {(part === "all" || part === "hero") && (
           <section data-visual-part="hero" className="space-y-3">
