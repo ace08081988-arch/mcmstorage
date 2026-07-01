@@ -13,6 +13,10 @@ type Props = {
   phone: string | null;
   userId: string | null;
   avatarUrl?: string | null;
+  /** Nomor khusus SMS; kalau kosong dipakai `phone`. */
+  smsPhone?: string | null;
+  /** Pesan awal yang akan mengisi kolom SMS saat pemindai membuka `sms:`. */
+  smsMessage?: string | null;
 };
 
 /**
@@ -36,7 +40,22 @@ function isValidEmail(raw: string): boolean {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw.trim());
 }
 
-function buildVCard(name: string, email: string | null, phone: string | null, url: string): string {
+function buildSmsUri(number: string, message: string): string {
+  // iOS: sms:+62...&body=..., Android: sms:+62...?body=... — kedua bentuk
+  // umumnya diterima. Pakai `?` sebagai pemisah utama (lebih luas didukung).
+  const num = normalizePhoneForTel(number);
+  if (!num) return "";
+  return message ? `sms:${num}?body=${encodeURIComponent(message)}` : `sms:${num}`;
+}
+
+function buildVCard(
+  name: string,
+  email: string | null,
+  phone: string | null,
+  url: string,
+  smsPhone: string | null,
+  smsMessage: string | null,
+): string {
   const esc = (s: string) => s.replace(/([,;\\])/g, "\\$1");
   const lines: string[] = [
     "BEGIN:VCARD",
@@ -51,6 +70,26 @@ function buildVCard(name: string, email: string | null, phone: string | null, ur
     lines.push(`TEL;TYPE=CELL,VOICE:${esc(telNumber)}`);
     // vCard 4-style URI (banyak pemindai modern memakainya untuk memicu tel:).
     lines.push(`TEL;TYPE=CELL,VOICE;VALUE=uri:tel:${esc(telNumber)}`);
+  }
+
+  const smsNumber = smsPhone ? normalizePhoneForTel(smsPhone) : telNumber;
+  const smsBody = (smsMessage ?? "").trim().slice(0, 500);
+  if (smsNumber) {
+    // Tandai nomor sebagai SMS-capable (TYPE=TEXT/MSG) supaya kartu kontak
+    // yang tersimpan menampilkan tombol Kirim Pesan di iOS/Android.
+    lines.push(`TEL;TYPE=CELL,TEXT,MSG:${esc(smsNumber)}`);
+    const uri = buildSmsUri(smsNumber, smsBody);
+    if (uri) {
+      lines.push(`TEL;TYPE=CELL,TEXT;VALUE=uri:${esc(uri)}`);
+      // Baris URL cadangan: kalau pemindai memilih membuka "link" alih-alih
+      // menyimpan kontak, tautan ini langsung memicu aplikasi SMS.
+      lines.push(`URL;TYPE=sms:${esc(uri)}`);
+    }
+    if (smsBody) {
+      // Simpan pesan awal sebagai catatan supaya pemilik kontak juga bisa
+      // melihat konteks pesan yang direncanakan.
+      lines.push(`NOTE:${esc(`SMS: ${smsBody}`)}`);
+    }
   }
 
   const emailAddr = email && isValidEmail(email) ? email.trim() : "";
@@ -69,7 +108,16 @@ function buildVCard(name: string, email: string | null, phone: string | null, ur
   return lines.join("\r\n");
 }
 
-export function ProfileQrDialog({ open, onOpenChange, name, email, phone, userId }: Props) {
+export function ProfileQrDialog({
+  open,
+  onOpenChange,
+  name,
+  email,
+  phone,
+  userId,
+  smsPhone,
+  smsMessage,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
@@ -82,8 +130,8 @@ export function ProfileQrDialog({ open, onOpenChange, name, email, phone, userId
   }, [userId]);
 
   const payload = useMemo(
-    () => buildVCard(name, email, phone, profileUrl),
-    [name, email, phone, profileUrl],
+    () => buildVCard(name, email, phone, profileUrl, smsPhone ?? null, smsMessage ?? null),
+    [name, email, phone, profileUrl, smsPhone, smsMessage],
   );
 
   useEffect(() => {
