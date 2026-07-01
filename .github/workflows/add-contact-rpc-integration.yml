@@ -6,6 +6,8 @@ on:
     paths:
       - "tests/fixtures/add_contact_by_invite_code.sql"
       - "tests/integration/add-contact-by-invite-code-sql.test.ts"
+      - "tests/fixtures/message_delete_for_all.sql"
+      - "tests/integration/message-delete-for-all-sql.test.ts"
       - "tests/integration/**"
       - "supabase/migrations/**"
       - ".github/workflows/add-contact-rpc-integration.yml"
@@ -14,6 +16,8 @@ on:
     paths:
       - "tests/fixtures/add_contact_by_invite_code.sql"
       - "tests/integration/add-contact-by-invite-code-sql.test.ts"
+      - "tests/fixtures/message_delete_for_all.sql"
+      - "tests/integration/message-delete-for-all-sql.test.ts"
       - "tests/integration/**"
       - "supabase/migrations/**"
       - ".github/workflows/add-contact-rpc-integration.yml"
