@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { HardDrive, Trash2, RefreshCw, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { useAppPrefs } from "@/lib/app-prefs";
 import {
@@ -66,6 +67,7 @@ function PenyimpananPage() {
     keys: Array<{ key: string; bytes: number }>;
     totalBytes: number;
   } | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 
   const refresh = async () => {
     setSnapshot(estimateLocalStorage());
@@ -145,17 +147,24 @@ function PenyimpananPage() {
       return;
     }
     setPendingClear({ prefix, label, keys, totalBytes: total });
+    setSelectedKeys(new Set(keys.map((k) => k.key)));
   };
 
   const confirmClear = () => {
     if (!pendingClear) return;
     const { keys, label } = pendingClear;
-    keys.forEach((e) => localStorage.removeItem(e.key));
-    const totalKB = formatKB(pendingClear.totalBytes);
+    const chosen = keys.filter((e) => selectedKeys.has(e.key));
+    if (chosen.length === 0) {
+      toast.info("Tidak ada entri yang dipilih.");
+      return;
+    }
+    const freed = chosen.reduce((s, e) => s + e.bytes, 0);
+    chosen.forEach((e) => localStorage.removeItem(e.key));
     toast.success(`${label} dihapus`, {
-      description: `${keys.length} entri · ${totalKB} dibebaskan.`,
+      description: `${chosen.length} dari ${keys.length} entri · ${formatKB(freed)} dibebaskan.`,
     });
     setPendingClear(null);
+    setSelectedKeys(new Set());
     refresh();
   };
 
