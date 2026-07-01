@@ -600,7 +600,7 @@ function HutangPiutangPage() {
                             onClick={() => void sendPartyReportWA(group)}
                             title="Kirim laporan via MCM"
                           >
-                            Kirim laporan WA
+                            Kirim laporan MCM
                           </Button>
                         </header>
                         <ul className="divide-y">
@@ -681,7 +681,7 @@ function HutangPiutangPage() {
                               onClick={() => void sendReminderWA(d)}
                               title="Kirim pengingat via MCM"
                             >
-                              Tagih via WA
+                              Tagih via MCM
                             </Button>
                           )}
                           {d.source === "manual" && (
@@ -926,7 +926,7 @@ function PaymentsReport({
             onClick={onSendWA}
             title="Kirim laporan via MCM"
           >
-            Kirim laporan WA
+            Kirim laporan MCM
           </Button>
         </div>
         <div className="mt-3 grid grid-cols-3 gap-2 text-center text-xs">
