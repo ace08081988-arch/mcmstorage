@@ -308,14 +308,15 @@ export type AdminApkEntry = {
   status: "published" | "scheduled" | "disabled";
 };
 
-async function requireAdmin(context: {
-  supabase: { rpc: (fn: "has_role", args: { _user_id: string; _role: "admin" }) => Promise<{ data: unknown }> };
-  userId: string;
-}) {
-  const { data } = await context.supabase.rpc("has_role", {
+// Menggunakan `any` di sini karena tipe context dari middleware
+// tidak diekspor & bervariasi; RPC tetap type-safe via nama literal.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function requireAdmin(context: any) {
+  const { data, error } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
   });
+  if (error) throw new Error(error.message);
   if (!data) throw new Error("Forbidden: admin diperlukan");
 }
 
