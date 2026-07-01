@@ -70,7 +70,7 @@ function saveChecks(next: Record<StepId, boolean>) {
 }
 
 function OAuthGooglePage() {
-  const { isAdmin, isLoading: adminLoading } = useAdminStatus();
+  const { isAdmin, isCheckingAdmin: adminLoading } = useAdminStatus();
 
   const [origin, setOrigin] = useState<string>("");
   useEffect(() => {
