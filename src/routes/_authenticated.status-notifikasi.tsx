@@ -511,6 +511,25 @@ function StatusNotifikasiPage() {
           />
           <Row label="Same-origin dengan parent" value={frame.sameOrigin ? "Ya" : "Tidak (cross-origin)"} />
           <Row label="Origin" value={<code className="text-xs">{typeof window !== "undefined" ? window.location.origin : "-"}</code>} />
+          <div className="rounded-md border bg-muted/40 p-2 text-xs space-y-1 font-mono">
+            <div className="font-sans text-muted-foreground mb-1">Bukti mentah</div>
+            <Evidence k="window.self !== window.top" v={String(frame.selfNeTop)} />
+            <Evidence k="window.parent !== window" v={String(frame.hasParent)} />
+            <Evidence
+              k="location.ancestorOrigins.length"
+              v={frame.ancestorCount === null ? "n/a" : String(frame.ancestorCount)}
+            />
+            <Evidence
+              k="ancestorOrigins[0]"
+              v={frame.ancestorOrigin ?? "—"}
+            />
+            <Evidence k="window.frameElement" v={frame.frameElementAccessible ? "<element>" : "null / SecurityError"} />
+            <Evidence
+              k="top.location access"
+              v={frame.topAccessError ? `throws ${frame.topAccessError}` : "ok (same-origin)"}
+            />
+            <Evidence k="document.referrer" v={frame.referrer || "(kosong)"} />
+          </div>
           {frame.inIframe && (
             <p className="text-xs text-muted-foreground">
               Browser umumnya memblokir prompt izin notifikasi di dalam iframe editor.
