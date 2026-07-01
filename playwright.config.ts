@@ -950,5 +950,16 @@ export default defineConfig({
         viewport: { width: 411, height: 893 },
       },
     },
+    // Konsistensi label durasi setelah remount + scroll bolak-balik di
+    // daftar virtualized-like. Harness sama, no-auth, no-network.
+    {
+      name: "voice-note-duration-remount-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /voice-note-duration-remount\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+      },
+    },
   ],
 });
