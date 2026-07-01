@@ -72,20 +72,17 @@ function AdminVisibilityHarness() {
   // `listApkReleaseAdminPanel` (itu memerlukan auth). Ini bukti bahwa
   // route ini bisa merender fallback "Hanya admin" tanpa menyentuh
   // server fn admin sama sekali.
-  const apkView = classifyApkAdminView(
-    isAdmin
-      ? {
-          isAdmin: true,
-          entries: [],
-          minSupported: { storage: null, chat: null },
-        }
-      : {
-          isAdmin: false,
-          entries: [],
-          minSupported: { storage: null, chat: null },
-        },
-    null,
-  );
+  const apkView = classifyApkAdminView({
+    isCheckingAdmin: false,
+    isAdmin,
+    isLoadingApk: false,
+    isError: false,
+    data: {
+      isAdmin,
+      entries: [],
+      minSupported: { storage: null, chat: null },
+    },
+  });
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 p-6 text-sm">
@@ -152,7 +149,7 @@ function AdminVisibilityHarness() {
           data-testid="apk-view-kind"
           className="rounded-md border border-border px-3 py-2"
         >
-          {apkView.kind}
+          {apkView}
         </div>
       </section>
     </div>
