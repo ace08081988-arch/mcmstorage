@@ -72,12 +72,16 @@ function AuditPage() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, email")
+        .select("id, display_name, invite_code")
         .in("id", actorIds);
       if (error) throw error;
       const map = new Map<string, { name: string }>();
       for (const p of data ?? []) {
-        map.set(p.id as string, { name: (p as { display_name?: string; email?: string }).display_name || (p as { email?: string }).email || "Pengguna" });
+        const row = p as { display_name?: string | null; invite_code?: string | null };
+        const pin = row.invite_code
+          ? `PIN ${row.invite_code.toUpperCase().replace(/(.{4})(.{4})/, "$1-$2")}`
+          : null;
+        map.set(p.id as string, { name: row.display_name || pin || "Pengguna" });
       }
       return map;
     },
