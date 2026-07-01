@@ -1837,10 +1837,63 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         </div>
       </div>
 
-      <div className="rounded-md bg-muted/50 p-2 text-[11px]">
-        <div>Total tambahan stok: <b>{selectedItem ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, baseUnit)}</b></div>
-        <div>Total biaya: <b>{rupiah(totalCost)}</b> ({paymentMethod === "hutang" ? "hutang ke supplier" : "lunas tunai"})</div>
-        {baseAdded > 0 && <div>Modal per {baseUnit}: <b>{rupiah(totalCost / baseAdded)}</b></div>}
+      <div
+        className="rounded-md border bg-muted/50 p-2 text-[11px] space-y-1"
+        aria-live="polite"
+        aria-label="Ringkasan pembelian"
+      >
+        <div className="mb-1 flex items-center justify-between">
+          <span className="font-semibold text-foreground">Ringkasan</span>
+          {selectedItem ? (
+            <span className="text-[10px] text-muted-foreground">
+              {selectedItem.name} · {effPackageType}
+              {effPackageType !== "pcs" ? ` ${effectivePkgSize} ${baseUnit}` : ""}
+            </span>
+          ) : (
+            <span className="text-[10px] text-muted-foreground">
+              Barang baru · {effPackageType}
+              {effPackageType !== "pcs" ? ` ${effectivePkgSize} ${baseUnit}` : ""}
+            </span>
+          )}
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Jumlah kemasan</span>
+          <b>
+            {pkgQ.toLocaleString("id-ID")} {effPackageType}
+            {kartonActive ? ` (${(pkgQ / BOTOL_PER_KARTON).toLocaleString("id-ID")} karton)` : ""}
+          </b>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Tambahan stok</span>
+          <b>{selectedItem ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, baseUnit)}</b>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-muted-foreground">Harga per {effPackageType}</span>
+          <b>{rupiah(price)}</b>
+        </div>
+        {effPackageType !== "pcs" && baseAdded > 0 && (
+          <div className="flex justify-between">
+            <span className="text-muted-foreground">Harga per {baseUnit}</span>
+            <b>{rupiah(totalCost / baseAdded)}</b>
+          </div>
+        )}
+        <div className="mt-1 flex justify-between border-t pt-1">
+          <span className="text-muted-foreground">Total biaya</span>
+          <b>
+            {rupiah(totalCost)}{" "}
+            <span className="text-[10px] font-normal text-muted-foreground">
+              ({paymentMethod === "hutang" ? "hutang" : "lunas"})
+            </span>
+          </b>
+        </div>
+        {selectedItem && Number(selectedItem.avg_cost_per_base) > 0 && baseAdded > 0 && (
+          <div className="flex justify-between text-[10px] text-muted-foreground">
+            <span>Rata-rata modal item</span>
+            <span>
+              {rupiah(selectedItem.avg_cost_per_base)}/{selectedItem.base_unit}
+            </span>
+          </div>
+        )}
       </div>
 
       {warnings.length > 0 && (
