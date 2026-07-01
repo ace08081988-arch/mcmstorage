@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Download, QrCode as QrIcon } from "lucide-react";
+import { Download, QrCode as QrIcon, Camera } from "lucide-react";
+import { QrScannerDialog, handleScannedText } from "@/components/QrScannerDialog";
 
 /**
  * Tampilkan QR code untuk link tugas (opsional ditempel PIN sebagai teks).
@@ -11,6 +12,7 @@ export function TaskQrCode({ url, pin, title }: { url: string; pin?: string; tit
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [dataUrl, setDataUrl] = useState<string>("");
   const [err, setErr] = useState<string>("");
+  const [scanOpen, setScanOpen] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -76,6 +78,21 @@ export function TaskQrCode({ url, pin, title }: { url: string; pin?: string; tit
       >
         <Download className="h-3.5 w-3.5" /> Unduh PNG
       </button>
+      <button
+        type="button"
+        onClick={() => setScanOpen(true)}
+        className="ml-1 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+        aria-label="Pindai QR dengan kamera"
+      >
+        <Camera className="h-3.5 w-3.5" /> Pindai QR
+      </button>
+      <QrScannerDialog
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        onResult={(text) => void handleScannedText(text)}
+        title="Pindai QR tugas"
+        description="Arahkan kamera ke QR link pegawai untuk membukanya."
+      />
     </div>
   );
 }
