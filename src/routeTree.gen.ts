@@ -32,6 +32,7 @@ import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authentic
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
 import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes/_authenticated.pengaturan-penyimpanan'
+import { Route as AuthenticatedPengaturanOauthGoogleRouteImport } from './routes/_authenticated.pengaturan-oauth-google'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedPengaturanIntegrasiSosialRouteImport } from './routes/_authenticated.pengaturan-integrasi-sosial'
 import { Route as AuthenticatedPengaturanBahasaRouteImport } from './routes/_authenticated.pengaturan-bahasa'
@@ -193,6 +194,12 @@ const AuthenticatedPengaturanPenyimpananRoute =
   AuthenticatedPengaturanPenyimpananRouteImport.update({
     id: '/pengaturan-penyimpanan',
     path: '/pengaturan-penyimpanan',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanOauthGoogleRoute =
+  AuthenticatedPengaturanOauthGoogleRouteImport.update({
+    id: '/pengaturan-oauth-google',
+    path: '/pengaturan-oauth-google',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPengaturanKunciRoute =
@@ -485,6 +492,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
   '/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
@@ -552,6 +560,7 @@ export interface FileRoutesByTo {
   '/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
   '/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
@@ -623,6 +632,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
   '/_authenticated/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/_authenticated/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/_authenticated/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/_authenticated/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
@@ -695,6 +705,7 @@ export interface FileRouteTypes {
     | '/pengaturan-bahasa'
     | '/pengaturan-integrasi-sosial'
     | '/pengaturan-kunci'
+    | '/pengaturan-oauth-google'
     | '/pengaturan-penyimpanan'
     | '/pengaturan-scroll-guard'
     | '/profil'
@@ -762,6 +773,7 @@ export interface FileRouteTypes {
     | '/pengaturan-bahasa'
     | '/pengaturan-integrasi-sosial'
     | '/pengaturan-kunci'
+    | '/pengaturan-oauth-google'
     | '/pengaturan-penyimpanan'
     | '/pengaturan-scroll-guard'
     | '/profil'
@@ -832,6 +844,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-bahasa'
     | '/_authenticated/pengaturan-integrasi-sosial'
     | '/_authenticated/pengaturan-kunci'
+    | '/_authenticated/pengaturan-oauth-google'
     | '/_authenticated/pengaturan-penyimpanan'
     | '/_authenticated/pengaturan-scroll-guard'
     | '/_authenticated/profil'
@@ -1057,6 +1070,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-penyimpanan'
       fullPath: '/pengaturan-penyimpanan'
       preLoaderRoute: typeof AuthenticatedPengaturanPenyimpananRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-oauth-google': {
+      id: '/_authenticated/pengaturan-oauth-google'
+      path: '/pengaturan-oauth-google'
+      fullPath: '/pengaturan-oauth-google'
+      preLoaderRoute: typeof AuthenticatedPengaturanOauthGoogleRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-kunci': {
@@ -1454,6 +1474,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanBahasaRoute: typeof AuthenticatedPengaturanBahasaRoute
   AuthenticatedPengaturanIntegrasiSosialRoute: typeof AuthenticatedPengaturanIntegrasiSosialRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
+  AuthenticatedPengaturanOauthGoogleRoute: typeof AuthenticatedPengaturanOauthGoogleRoute
   AuthenticatedPengaturanPenyimpananRoute: typeof AuthenticatedPengaturanPenyimpananRoute
   AuthenticatedPengaturanScrollGuardRoute: typeof AuthenticatedPengaturanScrollGuardRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
@@ -1496,6 +1517,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPengaturanIntegrasiSosialRoute:
     AuthenticatedPengaturanIntegrasiSosialRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
+  AuthenticatedPengaturanOauthGoogleRoute:
+    AuthenticatedPengaturanOauthGoogleRoute,
   AuthenticatedPengaturanPenyimpananRoute:
     AuthenticatedPengaturanPenyimpananRoute,
   AuthenticatedPengaturanScrollGuardRoute:

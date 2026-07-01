@@ -135,7 +135,7 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
     el.style.transition = "opacity 0ms, transform 0ms";
   }
 }
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -327,6 +327,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
       { title: "Antrian Email", url: "/email-queue", icon: Mail },
       { title: "Rilis APK", url: "/pengaturan-apk", icon: Package },
       { title: "Log Penolakan Admin", url: "/admin-denial-log", icon: ShieldAlert },
+      { title: "OAuth Google (BYOK)", url: "/pengaturan-oauth-google", icon: KeyRound },
     ],
   },
 ];
