@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Building2, Save, ImagePlus, Trash2, Palette } from "lucide-react";
+import { Building2, Save, ImagePlus, Trash2, Palette, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
