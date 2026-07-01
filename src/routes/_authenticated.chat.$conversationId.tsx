@@ -60,6 +60,10 @@ import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
 import { EditContactNameDialog } from "@/components/chat/EditContactNameDialog";
 import { EmojiPickerPopover } from "@/components/chat/EmojiPickerPopover";
 import { VoiceRecorderButton } from "@/components/chat/VoiceRecorderButton";
+import { Phone, Video as VideoIcon } from "lucide-react";
+import { createCallRow } from "@/lib/calls";
+import { ringUser } from "@/lib/webrtc";
+import { dispatchStartCall } from "@/components/chat/CallHost";
 import { usePeerAlias } from "@/lib/contact-alias";
 import { AttachMenu } from "@/components/chat/AttachMenu";
 import { MessageAttachment, CardBlock, decodeCard } from "@/components/chat/MessageAttachment";
@@ -740,6 +744,70 @@ function ChatRoomPage() {
             )}
           </div>
         </div>
+        {meta.data?.kind === "dm" && dmPeer?.peerUserId && myId ? (
+          <>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Panggilan suara"
+              disabled={!online}
+              onClick={async () => {
+                if (!dmPeer?.peerUserId || !myId) return;
+                try {
+                  const row = await createCallRow({
+                    conversationId,
+                    callerId: myId,
+                    calleeId: dmPeer.peerUserId,
+                    kind: "audio",
+                  });
+                  dispatchStartCall({ callId: row.id, kind: "audio", peerName: displayedPeerName });
+                  void ringUser({
+                    calleeId: dmPeer.peerUserId,
+                    callId: row.id,
+                    callerId: myId,
+                    kind: "audio",
+                    conversationId,
+                    callerName: displayedPeerName,
+                  }).catch(() => { /* ring gagal — UI tetap jalan */ });
+                } catch (e) {
+                  toast.error((e as { message?: string })?.message ?? "Gagal memulai panggilan");
+                }
+              }}
+            >
+              <Phone className="h-5 w-5" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Panggilan video"
+              disabled={!online}
+              onClick={async () => {
+                if (!dmPeer?.peerUserId || !myId) return;
+                try {
+                  const row = await createCallRow({
+                    conversationId,
+                    callerId: myId,
+                    calleeId: dmPeer.peerUserId,
+                    kind: "video",
+                  });
+                  dispatchStartCall({ callId: row.id, kind: "video", peerName: displayedPeerName });
+                  void ringUser({
+                    calleeId: dmPeer.peerUserId,
+                    callId: row.id,
+                    callerId: myId,
+                    kind: "video",
+                    conversationId,
+                    callerName: displayedPeerName,
+                  }).catch(() => { /* ring gagal — UI tetap jalan */ });
+                } catch (e) {
+                  toast.error((e as { message?: string })?.message ?? "Gagal memulai panggilan");
+                }
+              }}
+            >
+              <VideoIcon className="h-5 w-5" />
+            </Button>
+          </>
+        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="ghost" size="icon" aria-label="Opsi percakapan">
