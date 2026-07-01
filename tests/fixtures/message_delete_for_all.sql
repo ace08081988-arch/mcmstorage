@@ -43,3 +43,40 @@ BEGIN
    WHERE id = _msg;
   RETURN v_path;
 END $$;
+
+-- Bulk soft-delete: menghapus semua pesan yang dikirim caller di 1 conversation.
+-- Harus konsisten dengan message_delete_for_all: NULL-kan body & attachment*,
+-- set deleted_at = now(). Constraint messages_check yang direlaksasi WAJIB
+-- mengizinkan hasil UPDATE ini untuk ketiga varian input:
+--   (a) hanya body,
+--   (b) hanya attachment,
+--   (c) keduanya.
+CREATE OR REPLACE FUNCTION public.message_delete_all_mine(_conv uuid)
+RETURNS SETOF text
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path TO 'public'
+AS $$
+DECLARE
+  v_uid uuid := auth.uid();
+BEGIN
+  IF v_uid IS NULL THEN RAISE EXCEPTION 'unauthenticated'; END IF;
+  IF NOT public.is_conversation_member(_conv, v_uid) THEN RAISE EXCEPTION 'forbidden'; END IF;
+  RETURN QUERY
+  WITH targets AS (
+    SELECT id, attachment_path FROM public.messages
+     WHERE conversation_id = _conv AND sender_id = v_uid AND deleted_at IS NULL
+  ), upd AS (
+    UPDATE public.messages m
+       SET deleted_at = now(),
+           body = NULL,
+           attachment_path = NULL,
+           attachment_name = NULL,
+           attachment_mime = NULL,
+           attachment_size = NULL
+      FROM targets t
+     WHERE m.id = t.id
+     RETURNING t.attachment_path
+  )
+  SELECT attachment_path FROM upd WHERE attachment_path IS NOT NULL;
+END $$;
