@@ -648,6 +648,11 @@ bersifat aditif dan tidak pernah dihapus oleh child.
 | `-skip` (parent) vs `data-press-audit="on"` (child)  | `-skip` tetap diwariskan             | `on` hanya membalik `off`, bukan `skip`          | (H)    |
 | `mode="off"` global vs atribut DOM                   | `mode` global (tanpa output)         | Evaluasi tetap berjalan, tapi tak ada log/DOM    | (I)    |
 | Kombinasi penuh: `off→on`, `skip`, `deny`, `allow`   | Urutan 1→6 (lihat kolom "Hasil")     | 1) off/on 2) skip 3) deny 4) allow 5) scope 6) mode | (J) |
+| DOM `-allow` vs DOM `-deny` (section yang sama)      | `-deny`                              | Kode di-deny dibuang meski masuk `-allow`        | (K)    |
+| DOM `-allow` (child) vs DOM `-deny` (parent)         | `-deny` ancestor                     | Child tak bisa meng-unlock kode yang di-deny di atas | (L) |
+| DOM `-allow` vs `denyRules` global                   | `denyRules`                          | Allow DOM menambah kode, tapi deny global tetap memotong | (M) |
+| DOM `-allow` bertumpuk (parent+child)                | Union allowlist; `-deny` menang      | Allowlist di-union sepanjang ancestor path       | (N)    |
+| `-allow=""` (nilai kosong, eksplisit)                | Allowlist = ∅                        | Section senyap total (hapus atribut untuk reset) | (O)    |
 
 > Contoh (A)–(J) ada di blok HTML tepat di bawah tabel ini. Setiap blok
 > membawa komentar `efektif:` yang menyebut kode PA00X final yang
@@ -788,6 +793,74 @@ bersifat aditif dan tidak pernah dihapus oleh child.
       <!-- efektif: hanya PA001 & PA004 yang muncul sebagai suggest. -->
     </div>
   </div>
+</section>
+```
+
+```html
+<!-- (K) DOM allow vs DOM deny di section yang sama → deny menang -->
+<section
+  data-press-audit-allow="PA001 PA004"
+  data-press-audit-deny="PA004"
+>
+  <div role="dialog">…</div>
+  <div role="menu">
+    <div role="menuitem" class="text-destructive">Hapus akun</div>
+  </div>
+  <!-- efektif: hanya PA001 yang lolos. PA004 ditolak `-deny` meski
+       terdaftar di `-allow`. PA002/PA003 di luar allowlist ⇒ senyap. -->
+</section>
+```
+
+```html
+<!-- (L) DOM allow (child) vs DOM deny (parent) → deny ancestor menang -->
+<section data-press-audit-deny="PA001">
+  <article data-press-audit-allow="PA001 PA002">
+    <div role="dialog">…</div>              <!-- PA001 tetap ditolak parent deny -->
+    <div data-whiletap="1"><button>Kirim</button></div>
+    <!-- efektif: hanya PA002 yang lolos. Deny ancestor selalu
+         dikumulasikan ke child; child tak bisa meng-unlock kode
+         yang sudah di-deny di atasnya. -->
+  </article>
+</section>
+```
+
+```html
+<!-- (M) DOM allow (section) vs global allowRules → union, deny mana pun menang -->
+<script>
+  window.__pressAuditConfig?.set({
+    mode: "log",
+    allowRules: ["PA002"],
+    denyRules:  ["PA002"],   // global deny memotong allow globalnya sendiri
+  });
+</script>
+<section data-press-audit-allow="PA001 PA002">
+  <div role="dialog">…</div>              <!-- PA001 lolos (allow DOM), PA002 ditolak deny global -->
+  <div data-whiletap="1"><button>Kirim</button></div>
+  <!-- efektif: hanya PA001. Allow DOM menambah PA001 (tidak ada di
+       global allow); PA002 masuk ke allow (DOM+global) tapi dibuang
+       `denyRules` global. -->
+</section>
+```
+
+```html
+<!-- (N) DOM allow bertumpuk (parent + child) → union allowlist, deny tetap prioritas -->
+<section data-press-audit-allow="PA001">
+  <article data-press-audit-allow="PA003" data-press-audit-deny="PA001">
+    <div role="dialog">…</div>              <!-- PA001 di-deny walau di allow parent -->
+    <div data-dnd-handle aria-roledescription="sortable">⋮⋮</div>
+    <!-- efektif: hanya PA003 yang lolos. Union allowlist = {PA001, PA003};
+         deny child memotong PA001. -->
+  </article>
+</section>
+```
+
+```html
+<!-- (O) allow kosong ("") tidak menganggap "semua lolos" — allowlist tetap kosong -->
+<section data-press-audit-allow="">
+  <div role="dialog">…</div>
+  <!-- efektif: TIDAK ada rule yang lolos di section ini. Nilai kosong
+       diperlakukan sebagai "allowlist eksplisit = ∅". Untuk kembali ke
+       perilaku default, hapus atributnya sepenuhnya. -->
 </section>
 ```
 
