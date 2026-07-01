@@ -117,7 +117,8 @@ export function AddContactFab() {
         type="button"
         onClick={() => setOpen(true)}
         aria-label="Tambah kontak PIN MCM"
-        className="fixed bottom-6 right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-95"
+        className="fixed bottom-20 right-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg shadow-primary/30 transition active:scale-95"
+        style={{ bottom: "calc(env(safe-area-inset-bottom, 0px) + 5rem)" }}
       >
         <Plus className="h-6 w-6" />
       </button>

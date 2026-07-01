@@ -17,6 +17,7 @@ import { usePendingIncomingCount } from "@/lib/friend-requests";
 import { NewDmDialog } from "@/components/chat/NewDmDialog";
 import { NewGroupDialog } from "@/components/chat/NewGroupDialog";
 import { AddContactFab } from "@/components/chat/AddContactFab";
+import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -52,6 +53,8 @@ function ChatListPage() {
   const archive = useArchiveConversation();
   const mute = useMuteConversation();
   const [grupOpen, setGrupOpen] = useState(false);
+  // Filter chip aktif — meniru gaya WhatsApp (Semua/Belum dibaca/Grup/Favorit).
+  const [filter, setFilter] = useState<"all" | "unread" | "group" | "favorite">("all");
   // Mode seleksi multi-percakapan (tekan lama untuk aktif).
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [deleting, setDeleting] = useState(false);
@@ -84,6 +87,32 @@ function ChatListPage() {
     });
     return { active: act, archived: arc };
   }, [conversations]);
+
+  // Terapkan filter chip pada daftar aktif.
+  const filteredActive = useMemo(() => {
+    switch (filter) {
+      case "unread":
+        return active.filter((c) => (c.unread ?? 0) > 0);
+      case "group":
+        return active.filter((c) => c.kind === "group");
+      case "favorite":
+        return active.filter((c) => !!c.pinned_at);
+      default:
+        return active;
+    }
+  }, [active, filter]);
+  const unreadCount = useMemo(
+    () => active.reduce((n, c) => n + ((c.unread ?? 0) > 0 ? 1 : 0), 0),
+    [active],
+  );
+  const groupCount = useMemo(
+    () => active.reduce((n, c) => n + (c.kind === "group" ? 1 : 0), 0),
+    [active],
+  );
+  const favCount = useMemo(
+    () => active.reduce((n, c) => n + (c.pinned_at ? 1 : 0), 0),
+    [active],
+  );
 
   const currentVisibleIds = useMemo(() => {
     // Untuk aksi "Pilih semua" — pilih dari gabungan aktif+arsip yang tampil.
@@ -315,11 +344,40 @@ function ChatListPage() {
       </div>
 
       {q.trim().length < 2 ? (
-        <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="wa-chip wa-chip-active font-medium">Semua</span>
-          <span className="wa-chip"><span className="inline-block h-2 w-2 rounded-full bg-[var(--wa-green)]" />Aktif {active.length ? active.length : ""}</span>
-          <span className="wa-chip"><span className="inline-block h-2 w-2 rounded-full bg-rose-500" />Arsip {archived.length ? archived.length : ""}</span>
-          <span className="wa-chip">Belum dibaca</span>
+        <div
+          role="tablist"
+          aria-label="Filter percakapan"
+          className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {([
+            { id: "all" as const, label: "Semua" },
+            { id: "unread" as const, label: "Belum dibaca", count: unreadCount, dot: "bg-[var(--wa-green)]" },
+            { id: "group" as const, label: "Grup", count: groupCount, dot: "bg-rose-500" },
+            { id: "favorite" as const, label: "Favorit", count: favCount },
+          ]).map((chip) => {
+            const isActive = filter === chip.id;
+            return (
+              <button
+                key={chip.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setFilter(chip.id)}
+                className={
+                  "wa-chip whitespace-nowrap " +
+                  (isActive ? "wa-chip-active font-medium" : "")
+                }
+              >
+                {chip.dot ? (
+                  <span className={`inline-block h-2 w-2 rounded-full ${chip.dot}`} />
+                ) : null}
+                {chip.label}
+                {"count" in chip && chip.count ? (
+                  <span className="ml-1 opacity-80">{chip.count}</span>
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
@@ -392,7 +450,7 @@ function ChatListPage() {
           </TabsList>
           <TabsContent value="active">
             <ConvList
-              list={active}
+              list={filteredActive}
               isLoading={isLoading}
               selecting={selecting}
               selectedIds={selectedIds}
@@ -465,6 +523,7 @@ function ChatListPage() {
       )}
       </div>
       {selecting ? null : <AddContactFab />}
+      <ChatBottomNav />
     </main>
   );
 }
