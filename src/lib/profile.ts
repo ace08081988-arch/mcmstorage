@@ -51,6 +51,7 @@ export async function getMyProfile(): Promise<MyProfile | null> {
       email: user.email ?? null,
       phone: user.phone ?? null,
       avatar_url: null,
+      invite_code: null,
       ...DEFAULT_PREFS,
     };
   }
