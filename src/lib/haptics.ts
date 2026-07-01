@@ -33,7 +33,10 @@ function loadCapacitorHaptics() {
     const cap = window.Capacitor;
     if (!cap?.isNativePlatform?.()) return null;
     try {
-      const mod = await import(/* @vite-ignore */ "@capacitor/haptics");
+      // Import via variable expression agar TS tidak resolve module secara statis
+      // (paket opsional, hanya ada di build native).
+      const specifier = "@capacitor/haptics";
+      const mod = await import(/* @vite-ignore */ specifier);
       const { Haptics, ImpactStyle } = mod as {
         Haptics: {
           impact: (o: { style: unknown }) => Promise<void>;
