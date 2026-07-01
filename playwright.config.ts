@@ -731,5 +731,20 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: simulasi OFFLINE lalu kembali ONLINE pada beberapa DM.
+      // Reload di kondisi offline tidak boleh membocorkan nomor telp
+      // Indonesia mentah (cache basi), dan setelah reconnect identitas
+      // peer wajib berformat `PIN xxxx-xxxx` — konsisten dengan baseline
+      // online sebelumnya. Emulasi offline via CDP → hanya Chromium.
+      name: "chat-pin-mcm-offline-reconnect-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-offline-reconnect\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
