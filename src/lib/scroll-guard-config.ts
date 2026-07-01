@@ -129,6 +129,8 @@ export function setScrollGuardConfig(next: Partial<ScrollGuardConfig>): ScrollGu
     window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
   }
   cached = merged;
+  // Fire-and-forget: sinkron ke Lovable Cloud agar bertahan lintas perangkat.
+  void syncToCloud(merged);
   return merged;
 }
 
@@ -150,11 +152,105 @@ export function subscribeScrollGuard(cb: (cfg: ScrollGuardConfig) => void): () =
 }
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
+
+// ---------------------------------------------------------------------------
+// Sinkronisasi ke Lovable Cloud (tabel public.scroll_guard_config)
+// ---------------------------------------------------------------------------
+// Alur:
+//   1) Saat modul dimuat / user login → hidrasi cache dari server (kalau ada
+//      baris untuk user), timpa localStorage, broadcast CHANGE_EVENT.
+//   2) Saat setScrollGuardConfig dipanggil → upsert baris user (fire-and-forget).
+//   3) Saat user logout / berganti akun → reload dari server berikutnya.
+// Anonymous user (belum login) tetap pakai localStorage saja.
+
+let hydratedForUser: string | null = null;
+let hydrating: Promise<void> | null = null;
+
+async function hydrateFromCloud(userId: string): Promise<void> {
+  if (hydratedForUser === userId) return;
+  try {
+    const { data, error } = await supabase
+      .from("scroll_guard_config")
+      .select("config")
+      .eq("user_id", userId)
+      .maybeSingle();
+    if (error) return;
+    hydratedForUser = userId;
+    if (!data) return;
+    const merged = sanitize(data.config);
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(merged));
+      } catch {
+        // ignore
+      }
+      cached = merged;
+      window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
+    }
+  } catch {
+    // offline / RLS → localStorage tetap jadi sumber kebenaran lokal
+  }
+}
+
+async function syncToCloud(cfg: ScrollGuardConfig): Promise<void> {
+  try {
+    const { data: sess } = await supabase.auth.getUser();
+    const userId = sess?.user?.id;
+    if (!userId) return;
+    await supabase
+      .from("scroll_guard_config")
+      .upsert(
+        { user_id: userId, config: cfg, updated_at: new Date().toISOString() },
+        { onConflict: "user_id" },
+      );
+    hydratedForUser = userId;
+  } catch {
+    // best-effort: gagal jaringan tidak mempengaruhi UI
+  }
+}
+
+/** Paksa muat ulang dari server untuk user aktif. Aman dipanggil berulang. */
+export function ensureScrollGuardHydrated(): Promise<void> {
+  if (typeof window === "undefined") return Promise.resolve();
+  if (hydrating) return hydrating;
+  hydrating = (async () => {
+    try {
+      const { data } = await supabase.auth.getUser();
+      const uid = data?.user?.id;
+      if (uid) await hydrateFromCloud(uid);
+    } finally {
+      hydrating = null;
+    }
+  })();
+  return hydrating;
+}
+
+if (typeof window !== "undefined" && !(window as any).__scrollGuardCloudBind) {
+  (window as any).__scrollGuardCloudBind = true;
+  // Hidrasi pertama (non-blocking).
+  void ensureScrollGuardHydrated();
+  // Re-hidrasi setiap kali sesi berubah (login/logout/refresh).
+  supabase.auth.onAuthStateChange((_evt, session) => {
+    if (!session?.user) {
+      hydratedForUser = null;
+      return;
+    }
+    if (hydratedForUser !== session.user.id) {
+      hydratedForUser = null;
+      void hydrateFromCloud(session.user.id);
+    }
+  });
+}
 
 /** Hook React: konfigurasi hidup + setter praktis. */
 export function useScrollGuardConfig() {
   const [cfg, setCfg] = useState<ScrollGuardConfig>(() => getScrollGuardConfig());
-  useEffect(() => subscribeScrollGuard(setCfg), []);
+  useEffect(() => {
+    // Pastikan cache sinkron dengan server saat komponen mount (mis. sehabis reload).
+    void ensureScrollGuardHydrated();
+    return subscribeScrollGuard(setCfg);
+  }, []);
   return {
     cfg,
     set: (patch: Partial<ScrollGuardConfig>) => setCfg(setScrollGuardConfig(patch)),
