@@ -16,6 +16,25 @@ export const Route = createFileRoute("/_authenticated/status-notifikasi")({
 
 type PermState = "granted" | "denied" | "default" | "unsupported";
 
+type PushDetails = {
+  endpoint: string | null;
+  expirationTime: number | null;
+  hasP256dh: boolean;
+  hasAuth: boolean;
+};
+
+type PermReason = {
+  code:
+    | "granted"
+    | "denied_by_user"
+    | "blocked_by_iframe"
+    | "insecure_context"
+    | "unsupported_api"
+    | "not_prompted"
+    | "unknown";
+  detail: string;
+};
+
 function readPermission(): PermState {
   if (typeof window === "undefined") return "unsupported";
   if (!("Notification" in window)) return "unsupported";
@@ -35,21 +54,91 @@ function detectFrame() {
   return { inIframe, sameOrigin };
 }
 
+function explainPermission(
+  perm: PermState,
+  inIframe: boolean,
+  secure: boolean,
+): PermReason {
+  if (perm === "unsupported")
+    return {
+      code: "unsupported_api",
+      detail:
+        "Browser/WebView ini tidak expose objek `Notification`. Umum di WebView lama atau mode privat tertentu.",
+    };
+  if (perm === "granted")
+    return { code: "granted", detail: "Izin sudah diberikan pengguna untuk origin ini." };
+  if (!secure)
+    return {
+      code: "insecure_context",
+      detail:
+        "Halaman tidak berjalan di secure context (HTTPS/localhost). Browser memblokir prompt izin.",
+    };
+  if (perm === "denied")
+    return {
+      code: "denied_by_user",
+      detail:
+        "Pengguna menolak izin sebelumnya, atau browser memblokir otomatis (mis. terlalu sering diminta). Reset lewat site settings.",
+    };
+  if (perm === "default" && inIframe)
+    return {
+      code: "blocked_by_iframe",
+      detail:
+        "Halaman berjalan di iframe. Chromium hanya mengizinkan prompt saat parent memberi `allow=\"notifications\"` — editor Lovable tidak mengizinkannya.",
+    };
+  if (perm === "default")
+    return {
+      code: "not_prompted",
+      detail: "Belum pernah meminta izin di origin ini. Klik tombol untuk memicu prompt browser.",
+    };
+  return { code: "unknown", detail: "Status permission tidak dikenal." };
+}
+
+async function queryPermissionApi(): Promise<string | null> {
+  try {
+    if (typeof navigator === "undefined" || !("permissions" in navigator)) return null;
+    const p = await navigator.permissions.query({ name: "notifications" as PermissionName });
+    return p.state; // 'granted' | 'denied' | 'prompt'
+  } catch {
+    return null;
+  }
+}
+
 function StatusNotifikasiPage() {
   const [perm, setPerm] = useState<PermState>(() => readPermission());
   const [frame, setFrame] = useState(() => detectFrame());
   const [swReady, setSwReady] = useState<boolean | null>(null);
   const [pushSub, setPushSub] = useState<boolean | null>(null);
+  const [pushDetails, setPushDetails] = useState<PushDetails | null>(null);
+  const [permApiState, setPermApiState] = useState<string | null>(null);
+  const [secure, setSecure] = useState(true);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     setPerm(readPermission());
     setFrame(detectFrame());
+    setSecure(typeof window !== "undefined" ? window.isSecureContext !== false : true);
+    void queryPermissionApi().then(setPermApiState);
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.getRegistration().then(async (reg) => {
         setSwReady(!!reg);
         if (reg && "pushManager" in reg) {
           const sub = await reg.pushManager.getSubscription().catch(() => null);
           setPushSub(!!sub);
+          if (sub) {
+            const json = sub.toJSON() as {
+              endpoint?: string;
+              expirationTime?: number | null;
+              keys?: { p256dh?: string; auth?: string };
+            };
+            setPushDetails({
+              endpoint: sub.endpoint ?? json.endpoint ?? null,
+              expirationTime: json.expirationTime ?? sub.expirationTime ?? null,
+              hasP256dh: !!json.keys?.p256dh,
+              hasAuth: !!json.keys?.auth,
+            });
+          } else {
+            setPushDetails(null);
+          }
         } else {
           setPushSub(false);
         }
@@ -64,6 +153,7 @@ function StatusNotifikasiPage() {
     if (!("Notification" in window)) return;
     const res = await Notification.requestPermission();
     setPerm(res as PermState);
+    void queryPermissionApi().then(setPermApiState);
   };
 
   const permVariant: Record<PermState, "default" | "secondary" | "destructive" | "outline"> = {
@@ -74,6 +164,23 @@ function StatusNotifikasiPage() {
   };
 
   const canPrompt = perm === "default" && !frame.inIframe;
+  const reason = explainPermission(perm, frame.inIframe, secure);
+
+  const maskEndpoint = (ep: string) => {
+    if (ep.length <= 32) return ep;
+    return `${ep.slice(0, 24)}…${ep.slice(-12)}`;
+  };
+
+  const copyEndpoint = async () => {
+    if (!pushDetails?.endpoint) return;
+    try {
+      await navigator.clipboard.writeText(pushDetails.endpoint);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      /* ignore */
+    }
+  };
 
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto">
@@ -89,15 +196,76 @@ function StatusNotifikasiPage() {
             label="Permission"
             value={<Badge variant={permVariant[perm]}>{perm}</Badge>}
           />
+          <Row
+            label="Permissions API"
+            value={permApiState ? <code className="text-xs">{permApiState}</code> : <span className="text-xs text-muted-foreground">tidak tersedia</span>}
+          />
+          <Row label="Secure context" value={secure ? "Ya (HTTPS/localhost)" : "Tidak"} />
           <Row label="Service worker" value={swReady === null ? "…" : swReady ? "Terdaftar" : "Belum terdaftar"} />
           <Row label="Push subscription" value={pushSub === null ? "…" : pushSub ? "Aktif" : "Tidak ada"} />
           {canPrompt && (
             <Button size="sm" onClick={requestPerm}>Minta izin notifikasi</Button>
           )}
-          {perm === "denied" && (
+          <div className="rounded-md border bg-muted/40 p-2 text-xs space-y-1">
+            <div className="flex items-center gap-2">
+              <span className="font-medium">Alasan:</span>
+              <code className="text-[11px]">{reason.code}</code>
+            </div>
+            <p className="text-muted-foreground leading-snug">{reason.detail}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Detail push subscription</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          {!pushSub || !pushDetails ? (
             <p className="text-xs text-muted-foreground">
-              Izin diblokir. Buka pengaturan situs di browser untuk mengaktifkan ulang.
+              Belum ada push subscription aktif di perangkat/browser ini.
             </p>
+          ) : (
+            <>
+              <Row
+                label="Provider"
+                value={
+                  <span className="text-xs">
+                    {pushDetails.endpoint
+                      ? new URL(pushDetails.endpoint).host
+                      : "-"}
+                  </span>
+                }
+              />
+              <div className="space-y-1">
+                <div className="text-muted-foreground">Endpoint</div>
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 truncate rounded bg-muted px-2 py-1 text-[11px]">
+                    {maskEndpoint(pushDetails.endpoint ?? "")}
+                  </code>
+                  <Button size="sm" variant="outline" className="h-7 text-xs" onClick={copyEndpoint}>
+                    {copied ? "Tersalin" : "Salin"}
+                  </Button>
+                </div>
+              </div>
+              <Row
+                label="Expiration"
+                value={
+                  pushDetails.expirationTime
+                    ? new Date(pushDetails.expirationTime).toLocaleString()
+                    : "Tidak diatur"
+                }
+              />
+              <Row
+                label="Kunci enkripsi"
+                value={
+                  <span className="text-xs">
+                    p256dh: {pushDetails.hasP256dh ? "ok" : "—"} · auth:{" "}
+                    {pushDetails.hasAuth ? "ok" : "—"}
+                  </span>
+                }
+              />
+            </>
           )}
         </CardContent>
       </Card>
