@@ -280,6 +280,7 @@ function ChatRoomPage() {
           display_name: string | null;
           email: string | null;
           phone: string | null;
+          invite_code: string | null;
           last_seen_at?: string | null;
           show_last_seen?: boolean | null;
         }>).map(
