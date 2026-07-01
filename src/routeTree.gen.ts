@@ -24,6 +24,7 @@ import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authentica
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
 import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
+import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authenticated.profil-chat'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
@@ -129,6 +130,11 @@ const AuthenticatedSesiRoute = AuthenticatedSesiRouteImport.update({
 const AuthenticatedRequestRoute = AuthenticatedRequestRouteImport.update({
   id: '/request',
   path: '/request',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedProfilChatRoute = AuthenticatedProfilChatRouteImport.update({
+  id: '/profil-chat',
+  path: '/profil-chat',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProfilRoute = AuthenticatedProfilRouteImport.update({
@@ -338,6 +344,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
+  '/profil-chat': typeof AuthenticatedProfilChatRoute
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
   '/tugas': typeof AuthenticatedTugasRoute
@@ -384,6 +391,7 @@ export interface FileRoutesByTo {
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
+  '/profil-chat': typeof AuthenticatedProfilChatRoute
   '/request': typeof AuthenticatedRequestRoute
   '/sesi': typeof AuthenticatedSesiRoute
   '/tugas': typeof AuthenticatedTugasRoute
@@ -434,6 +442,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/_authenticated/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
+  '/_authenticated/profil-chat': typeof AuthenticatedProfilChatRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
   '/_authenticated/sesi': typeof AuthenticatedSesiRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
@@ -485,6 +494,7 @@ export interface FileRouteTypes {
     | '/pengaturan-kunci'
     | '/pengaturan-scroll-guard'
     | '/profil'
+    | '/profil-chat'
     | '/request'
     | '/sesi'
     | '/tugas'
@@ -531,6 +541,7 @@ export interface FileRouteTypes {
     | '/pengaturan-kunci'
     | '/pengaturan-scroll-guard'
     | '/profil'
+    | '/profil-chat'
     | '/request'
     | '/sesi'
     | '/tugas'
@@ -580,6 +591,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-kunci'
     | '/_authenticated/pengaturan-scroll-guard'
     | '/_authenticated/profil'
+    | '/_authenticated/profil-chat'
     | '/_authenticated/request'
     | '/_authenticated/sesi'
     | '/_authenticated/tugas'
@@ -727,6 +739,13 @@ declare module '@tanstack/react-router' {
       path: '/request'
       fullPath: '/request'
       preLoaderRoute: typeof AuthenticatedRequestRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/profil-chat': {
+      id: '/_authenticated/profil-chat'
+      path: '/profil-chat'
+      fullPath: '/profil-chat'
+      preLoaderRoute: typeof AuthenticatedProfilChatRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/profil': {
@@ -1016,6 +1035,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
   AuthenticatedPengaturanScrollGuardRoute: typeof AuthenticatedPengaturanScrollGuardRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
+  AuthenticatedProfilChatRoute: typeof AuthenticatedProfilChatRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
   AuthenticatedSesiRoute: typeof AuthenticatedSesiRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
@@ -1045,6 +1065,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPengaturanScrollGuardRoute:
     AuthenticatedPengaturanScrollGuardRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
+  AuthenticatedProfilChatRoute: AuthenticatedProfilChatRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
   AuthenticatedSesiRoute: AuthenticatedSesiRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
