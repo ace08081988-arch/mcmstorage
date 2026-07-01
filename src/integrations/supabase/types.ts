@@ -62,6 +62,36 @@ export type Database = {
         }
         Relationships: []
       }
+      apk_min_supported: {
+        Row: {
+          created_at: string
+          min_version_code: number | null
+          min_version_name: string | null
+          reason: string | null
+          updated_at: string
+          updated_by: string | null
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          min_version_code?: number | null
+          min_version_name?: string | null
+          reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          variant: string
+        }
+        Update: {
+          created_at?: string
+          min_version_code?: number | null
+          min_version_name?: string | null
+          reason?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          variant?: string
+        }
+        Relationships: []
+      }
       apk_release_meta: {
         Row: {
           created_at: string
