@@ -1100,4 +1100,159 @@ BEGIN
   PERFORM pg_temp.as_postgres();
 END $$;
 
+-- =====================================================================
+-- 13) SELECT visibility on friend_requests
+--     Policy fr_select_self: (from_user = auth.uid() OR to_user = auth.uid()).
+--     Verify:
+--       - sender sees rows where they are from_user
+--       - recipient sees rows where they are to_user
+--       - third party sees NOTHING
+--       - anon sees NOTHING
+--       - visibility survives across every terminal status
+-- =====================================================================
+DO $$
+DECLARE
+  v_a uuid := current_setting('test.user_a')::uuid;   -- sender
+  v_b uuid := current_setting('test.user_b')::uuid;   -- recipient
+  v_c uuid := current_setting('test.user_c')::uuid;   -- third party
+  v_pending  uuid;
+  v_accepted uuid;
+  v_rejected uuid;
+  v_cancelled uuid;
+  v_unrelated uuid;   -- request between B and C (v_a must NOT see it)
+  v_seen int;
+  v_qual text;
+BEGIN
+  -- ---- 13-static) Confirm the SELECT policy shape hasn't drifted. ----
+  SELECT qual INTO v_qual
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='friend_requests' AND cmd='SELECT';
+  IF v_qual IS NULL THEN
+    RAISE EXCEPTION 'FAIL 13-static: no SELECT policy on friend_requests';
+  END IF;
+  IF v_qual !~ 'from_user = auth\.uid\(\)' OR v_qual !~ 'to_user = auth\.uid\(\)' THEN
+    RAISE EXCEPTION 'FAIL 13-static: SELECT policy no longer scopes to participants: %', v_qual;
+  END IF;
+  -- Reject any additional SELECT policy that could broaden visibility.
+  IF (SELECT count(*) FROM pg_policies
+        WHERE schemaname='public' AND tablename='friend_requests'
+          AND cmd IN ('SELECT','ALL')) > 1 THEN
+    RAISE EXCEPTION 'FAIL 13-static: extra SELECT/ALL policies on friend_requests may leak rows';
+  END IF;
+  RAISE NOTICE 'PASS 13-static: fr_select_self is the only SELECT policy and scoped to participants';
+
+  IF NOT pg_temp.can_switch_roles() THEN
+    RAISE NOTICE 'SKIP 13 runtime: cannot switch roles in this session';
+    RETURN;
+  END IF;
+
+  -- Seed rows in every relevant status as service_role.
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending')   RETURNING id INTO v_pending;
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'accepted')  RETURNING id INTO v_accepted;
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'rejected')  RETURNING id INTO v_rejected;
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'cancelled') RETURNING id INTO v_cancelled;
+  -- Unrelated row (B ↔ C): v_a must never see this.
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_b,v_c,'pending')   RETURNING id INTO v_unrelated;
+
+  ----------------------------------------------------------------
+  -- 13a) Sender (from_user = v_a) sees the four A→B rows
+  --      and does NOT see the B→C row.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_a);
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests
+   WHERE id IN (v_pending, v_accepted, v_rejected, v_cancelled);
+  IF v_seen <> 4 THEN
+    RAISE EXCEPTION 'FAIL 13a: sender saw % of 4 own rows', v_seen;
+  END IF;
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests WHERE id = v_unrelated;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 13a: sender leaked into unrelated row (B↔C)';
+  END IF;
+  RAISE NOTICE 'PASS 13a: sender sees only rows where from_user=self';
+
+  ----------------------------------------------------------------
+  -- 13b) Recipient (to_user = v_b) sees the four A→B rows AND the
+  --      B→C row (as its from_user), but no rows unrelated to them.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_b);
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests
+   WHERE id IN (v_pending, v_accepted, v_rejected, v_cancelled);
+  IF v_seen <> 4 THEN
+    RAISE EXCEPTION 'FAIL 13b: recipient saw % of 4 rows where they are to_user', v_seen;
+  END IF;
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests WHERE id = v_unrelated;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 13b: recipient could not see own outgoing row (B→C)';
+  END IF;
+  -- Full table scan must yield exactly 5 rows for v_b (4 as to_user + 1 as from_user).
+  SELECT count(*) INTO v_seen FROM public.friend_requests
+    WHERE id IN (v_pending, v_accepted, v_rejected, v_cancelled, v_unrelated);
+  IF v_seen <> 5 THEN
+    RAISE EXCEPTION 'FAIL 13b: recipient row count mismatch (%)', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 13b: recipient sees exactly its participant rows';
+
+  ----------------------------------------------------------------
+  -- 13c) Third party (v_c) sees only the row where they are to_user,
+  --      and NONE of the A↔B rows (regardless of status).
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_c);
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests
+   WHERE id IN (v_pending, v_accepted, v_rejected, v_cancelled);
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 13c: third party leaked into A↔B rows (saw %)', v_seen;
+  END IF;
+  SELECT count(*) INTO v_seen
+    FROM public.friend_requests WHERE id = v_unrelated;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 13c: third party could not see own incoming row';
+  END IF;
+  RAISE NOTICE 'PASS 13c: third party sees only its own participant rows';
+
+  ----------------------------------------------------------------
+  -- 13d) Attribute leakage guard: even for rows they can see,
+  --      SELECT * must not expose columns of other rows via a
+  --      broad WHERE. Verified by counting all rows via unfiltered
+  --      SELECT and expecting participant-only visibility.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_c);
+  SELECT count(*) INTO v_seen FROM public.friend_requests;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 13d: third party unfiltered SELECT returned % rows (expected 1)', v_seen;
+  END IF;
+  PERFORM pg_temp.as_user(v_a);
+  SELECT count(*) INTO v_seen FROM public.friend_requests;
+  IF v_seen <> 4 THEN
+    RAISE EXCEPTION 'FAIL 13d: sender unfiltered SELECT returned % rows (expected 4)', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 13d: unfiltered SELECT respects participant scope';
+
+  ----------------------------------------------------------------
+  -- 13e) anon must see nothing.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_anon();
+  BEGIN
+    SELECT count(*) INTO v_seen FROM public.friend_requests;
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_seen := 0;   -- anon lacks SELECT grant → also acceptable
+  END;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 13e: anon SELECT returned % rows', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 13e: anon sees zero friend_requests rows';
+
+  PERFORM pg_temp.as_postgres();
+END $$;
+
 ROLLBACK;
