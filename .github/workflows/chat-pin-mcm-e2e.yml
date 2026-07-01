@@ -107,7 +107,8 @@ jobs:
             --project=chat-pin-mcm-incomplete-pin-e2e \
             --project=chat-pin-mcm-multi-viewport-mobile-e2e \
             --project=chat-pin-mcm-multi-viewport-tablet-e2e \
-            --project=chat-pin-mcm-multi-viewport-desktop-e2e
+            --project=chat-pin-mcm-multi-viewport-desktop-e2e \
+            --project=chat-pin-mcm-input-variations-e2e
 
       - name: Upload Playwright report
         if: always()
