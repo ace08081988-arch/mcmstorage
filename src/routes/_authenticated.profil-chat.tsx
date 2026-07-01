@@ -4,7 +4,7 @@ import {
   Bell, RefreshCcw, Link as LinkIcon, Accessibility, Languages, ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
-import { useMyProfile, useAvatarSignedUrl } from "@/lib/profile";
+import { useMyProfile, useAvatarSignedUrl, useMyProfileRealtime } from "@/lib/profile";
 import { useState } from "react";
 import { ProfileQrDialog } from "@/components/chat/ProfileQrDialog";
 
@@ -40,6 +40,8 @@ function initialOf(name: string | null | undefined): string {
 
 function ProfilChatPage() {
   const router = useRouter();
+  // Jaga avatar & nama tetap sinkron dengan perubahan lintas-tab/lintas-perangkat.
+  useMyProfileRealtime();
   const { data: profile } = useMyProfile();
   const { data: avatarUrl } = useAvatarSignedUrl(profile?.avatar_url ?? null);
 
