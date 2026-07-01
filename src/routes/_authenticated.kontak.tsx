@@ -47,6 +47,28 @@ type Row = {
   account_user_id: string | null;
 };
 
+// Beberapa row bisa merujuk ke pelanggan/pemasok yang sama (duplikat import
+// atau tertaut ke akun sama). Gabungkan tampilan; operasi berlaku ke semua id.
+type GroupedRow = Row & { ids: string[]; dupCount: number };
+
+function groupRows(rows: Row[]): GroupedRow[] {
+  const map = new Map<string, GroupedRow>();
+  for (const r of rows) {
+    const key = r.account_user_id
+      ? `acc:${r.account_user_id}`
+      : `nc:${r.name.trim().toLowerCase()}|${(r.contact ?? "").trim().toLowerCase()}`;
+    const existing = map.get(key);
+    if (existing) {
+      existing.ids.push(r.id);
+      existing.dupCount = existing.ids.length;
+      if (!existing.contact && r.contact) existing.contact = r.contact;
+    } else {
+      map.set(key, { ...r, ids: [r.id], dupCount: 1 });
+    }
+  }
+  return Array.from(map.values());
+}
+
 type Contact = {
   user_id: string;
   display_name: string | null;
