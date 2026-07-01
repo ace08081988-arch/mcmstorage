@@ -17,6 +17,7 @@ import { usePendingIncomingCount } from "@/lib/friend-requests";
 import { NewDmDialog } from "@/components/chat/NewDmDialog";
 import { NewGroupDialog } from "@/components/chat/NewGroupDialog";
 import { AddContactFab } from "@/components/chat/AddContactFab";
+import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -52,6 +53,8 @@ function ChatListPage() {
   const archive = useArchiveConversation();
   const mute = useMuteConversation();
   const [grupOpen, setGrupOpen] = useState(false);
+  // Filter chip aktif — meniru gaya WhatsApp (Semua/Belum dibaca/Grup/Favorit).
+  const [filter, setFilter] = useState<"all" | "unread" | "group" | "favorite">("all");
   // Mode seleksi multi-percakapan (tekan lama untuk aktif).
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [deleting, setDeleting] = useState(false);
