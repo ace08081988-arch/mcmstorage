@@ -2,11 +2,13 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   ArrowLeft, Search, QrCode, Smile, KeyRound, Lock, Users, MessageSquare,
   Bell, RefreshCcw, Link as LinkIcon, Accessibility, Languages, ChevronRight,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyProfile, useAvatarSignedUrl, useMyProfileRealtime } from "@/lib/profile";
 import { useState } from "react";
 import { ProfileQrDialog } from "@/components/chat/ProfileQrDialog";
+import { formatInviteCode } from "@/lib/invite";
 
 export const Route = createFileRoute("/_authenticated/profil-chat")({
   component: ProfilChatPage,
@@ -21,6 +23,7 @@ type Row = {
 };
 
 const ROWS: Row[] = [
+  { icon: UserPlus, title: "Undang teman", desc: "Bagikan PIN atau QR seperti BBM", to: "/undang" },
   { icon: KeyRound, title: "Akun", desc: "Notifikasi keamanan, ganti nomor", to: "/sesi" },
   { icon: Lock, title: "Privasi", desc: "Akun diblokir, pesan sementara", to: "/pengaturan-kunci" },
   { icon: Users, title: "Daftar", desc: "Kelola orang dan grup", to: "/buku-alamat" },

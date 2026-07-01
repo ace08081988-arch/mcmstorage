@@ -20,6 +20,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
+import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
 import { Route as AuthenticatedUndangRouteImport } from './routes/_authenticated.undang'
 import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
@@ -118,6 +119,11 @@ const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
 const TTokenRoute = TTokenRouteImport.update({
   id: '/t/$token',
   path: '/t/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ICodeRoute = ICodeRouteImport.update({
+  id: '/i/$code',
+  path: '/i/$code',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DownloadVariantRoute = DownloadVariantRouteImport.update({
@@ -411,6 +417,7 @@ export interface FileRoutesByFullPath {
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/undang': typeof AuthenticatedUndangRoute
   '/download/$variant': typeof DownloadVariantRoute
+  '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
@@ -466,6 +473,7 @@ export interface FileRoutesByTo {
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/undang': typeof AuthenticatedUndangRoute
   '/download/$variant': typeof DownloadVariantRoute
+  '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
@@ -525,6 +533,7 @@ export interface FileRoutesById {
   '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/_authenticated/undang': typeof AuthenticatedUndangRoute
   '/download/$variant': typeof DownloadVariantRoute
+  '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
@@ -585,6 +594,7 @@ export interface FileRouteTypes {
     | '/tugas-baru'
     | '/undang'
     | '/download/$variant'
+    | '/i/$code'
     | '/t/$token'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
@@ -640,6 +650,7 @@ export interface FileRouteTypes {
     | '/tugas-baru'
     | '/undang'
     | '/download/$variant'
+    | '/i/$code'
     | '/t/$token'
     | '/'
     | '/admin/worker-portal'
@@ -698,6 +709,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tugas-baru'
     | '/_authenticated/undang'
     | '/download/$variant'
+    | '/i/$code'
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/admin/worker-portal'
@@ -725,6 +737,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   TrustRoute: typeof TrustRoute
+  ICodeRoute: typeof ICodeRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
@@ -813,6 +826,13 @@ declare module '@tanstack/react-router' {
       path: '/t/$token'
       fullPath: '/t/$token'
       preLoaderRoute: typeof TTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/i/$code': {
+      id: '/i/$code'
+      path: '/i/$code'
+      fullPath: '/i/$code'
+      preLoaderRoute: typeof ICodeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/download/$variant': {
@@ -1275,6 +1295,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   TrustRoute: TrustRoute,
+  ICodeRoute: ICodeRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
