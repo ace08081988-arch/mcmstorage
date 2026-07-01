@@ -21,8 +21,14 @@ const checkMatch = sql.match(
 
 // Ambil body plpgsql RPC message_delete_for_all.
 const rpcStart = sql.indexOf("CREATE OR REPLACE FUNCTION public.message_delete_for_all");
-const rpcBody = sql.slice(rpcStart);
+const rpcSingleEnd = sql.indexOf("CREATE OR REPLACE FUNCTION public.message_delete_all_mine");
+const rpcBody = sql.slice(rpcStart, rpcSingleEnd > 0 ? rpcSingleEnd : undefined);
 const updateStmt = (rpcBody.match(/UPDATE public\.messages[\s\S]*?WHERE id = _msg;/i) ?? [""])[0];
+
+// Ambil body plpgsql RPC message_delete_all_mine (bulk).
+const bulkStart = sql.indexOf("CREATE OR REPLACE FUNCTION public.message_delete_all_mine");
+const bulkBody = bulkStart >= 0 ? sql.slice(bulkStart) : "";
+const bulkUpdate = (bulkBody.match(/UPDATE public\.messages[\s\S]*?RETURNING t\.attachment_path/i) ?? [""])[0];
 
 function evalCheck(expr: string, row: { body: string | null; attachment_path: string | null; deleted_at: string | null }): boolean {
   // Terjemahkan CHECK ke boolean JS: (deleted_at IS NOT NULL) OR (body IS NOT NULL) OR (attachment_path IS NOT NULL)
@@ -100,6 +106,51 @@ describe("messages_check truth table — body & attachment NULL hanya lolos saat
   it("body & attachment NULL: ditolak saat deleted_at NULL, diterima saat deleted_at terisi", () => {
     expect(evalCheck(expr, { body: null, attachment_path: null, deleted_at: null })).toBe(false);
     expect(evalCheck(expr, { body: null, attachment_path: null, deleted_at: D })).toBe(true);
+  });
+});
+
+describe("message_delete_all_mine (bulk) — konsisten dengan constraint yang direlaksasi", () => {
+  it("men-NULL-kan body + semua kolom attachment sekaligus mengeset deleted_at", () => {
+    expect(bulkUpdate, "UPDATE bulk tidak ditemukan").toBeTruthy();
+    expect(bulkUpdate).toMatch(/deleted_at\s*=\s*now\(\)/i);
+    expect(bulkUpdate).toMatch(/body\s*=\s*NULL/i);
+    expect(bulkUpdate).toMatch(/attachment_path\s*=\s*NULL/i);
+    expect(bulkUpdate).toMatch(/attachment_name\s*=\s*NULL/i);
+    expect(bulkUpdate).toMatch(/attachment_mime\s*=\s*NULL/i);
+    expect(bulkUpdate).toMatch(/attachment_size\s*=\s*NULL/i);
+  });
+
+  it("hanya menyasar pesan milik caller yang belum ter-soft-delete", () => {
+    expect(bulkBody).toMatch(/sender_id\s*=\s*v_uid/i);
+    expect(bulkBody).toMatch(/deleted_at IS NULL/i);
+  });
+
+  it("gate keanggotaan conversation dijalankan sebelum UPDATE", () => {
+    // Urutan penting: cek member → baru UPDATE. Kalau kebalik, non-member bisa ikut menghapus.
+    const memberIdx = bulkBody.search(/is_conversation_member/i);
+    const updIdx = bulkBody.search(/UPDATE public\.messages/i);
+    expect(memberIdx).toBeGreaterThan(-1);
+    expect(updIdx).toBeGreaterThan(-1);
+    expect(memberIdx).toBeLessThan(updIdx);
+  });
+
+  it.each([
+    ["body saja", "halo", null],
+    ["attachment saja", null, "a/b.jpg"],
+    ["body + attachment", "halo", "a/b.jpg"],
+  ] as const)(
+    "varian input '%s': hasil UPDATE (body=NULL, attachment=NULL, deleted_at=now()) tetap lolos messages_check",
+    (_label, bodyBefore, attBefore) => {
+      const expr = checkMatch![1];
+      // Sebelum bulk delete: baris hidup → harus lolos (guard sanity).
+      expect(evalCheck(expr, { body: bodyBefore, attachment_path: attBefore, deleted_at: null })).toBe(true);
+      // Sesudah bulk delete: RPC NULL-kan body + attachment, isi deleted_at.
+      expect(evalCheck(expr, { body: null, attachment_path: null, deleted_at: "2026-07-01T00:00:00Z" })).toBe(true);
+    },
+  );
+
+  it("RETURNING hanya mengembalikan attachment_path non-null untuk cleanup storage", () => {
+    expect(bulkBody).toMatch(/SELECT attachment_path FROM upd WHERE attachment_path IS NOT NULL/i);
   });
 });
 
