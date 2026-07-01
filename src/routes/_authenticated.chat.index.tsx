@@ -12,6 +12,7 @@ import {
 import { usePendingIncomingCount } from "@/lib/friend-requests";
 import { NewDmDialog } from "@/components/chat/NewDmDialog";
 import { NewGroupDialog } from "@/components/chat/NewGroupDialog";
+import { AddContactFab } from "@/components/chat/AddContactFab";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -336,6 +337,7 @@ function ChatListPage() {
         </Tabs>
       )}
       </div>
+      <AddContactFab />
     </main>
   );
 }
