@@ -432,6 +432,9 @@ function EditDialog({
   const [note, setNote] = useState("");
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [pinPreview, setPinPreview] = useState<InviteProfile | null>(null);
+  const [pinChecking, setPinChecking] = useState(false);
 
   useEffect(() => {
     if (isNew) {
@@ -448,6 +451,37 @@ function EditDialog({
       setPin("");
     }
   }, [target]);
+
+  // Debounced preview PIN — hanya di mode "tambah kontak baru".
+  useEffect(() => {
+    if (!isNew) {
+      setPinPreview(null);
+      setPinChecking(false);
+      return;
+    }
+    const cleaned = normalizeInviteCode(pin);
+    if (!isLikelyInviteCode(cleaned)) {
+      setPinPreview(null);
+      setPinChecking(false);
+      return;
+    }
+    let cancelled = false;
+    setPinChecking(true);
+    const t = setTimeout(async () => {
+      try {
+        const p = await resolveInviteCode(cleaned);
+        if (!cancelled) setPinPreview(p);
+      } catch {
+        if (!cancelled) setPinPreview(null);
+      } finally {
+        if (!cancelled) setPinChecking(false);
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [pin, isNew]);
 
   const normPhone = (s: string) => s.replace(/\D/g, "");
   const normEmail = (s: string) => s.trim().toLowerCase();
@@ -476,6 +510,10 @@ function EditDialog({
   const save = async () => {
     if (!name.trim()) {
       toast.error("Nama wajib diisi.");
+      return;
+    }
+    if (isNew && !isLikelyInviteCode(normalizeInviteCode(pin))) {
+      toast.error("PIN undangan wajib diisi (8 karakter) atau pindai QR.");
       return;
     }
     if (duplicate) {
