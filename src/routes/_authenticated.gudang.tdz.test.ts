@@ -91,14 +91,14 @@ function extractDepArray(pattern: RegExp): string[] {
 describe("gudang.tsx — dependency arrays selectedItem/derived/warnings", () => {
   it("selectedItem = useMemo(..., [mode, items, itemId])", () => {
     const deps = extractDepArray(
-      /const\s+selectedItem\s*:\s*WItem\s*\|\s*null\s*=\s*useMemo\(\s*\(\)\s*=>[\s\S]*?,\s*\[([^\]]*)\]\s*\)/,
+      /const\s+selectedItem\s*:\s*WItem\s*\|\s*null\s*=\s*useMemo\(\s*\(\)\s*=>[\s\S]*?,\s*\[([^\]]*)\]\s*,?\s*\)/,
     );
     expect(deps.sort()).toEqual(["items", "itemId", "mode"].sort());
   });
 
   it("derived = useMemo mencakup SEMUA input computeBeliDerived", () => {
     const deps = extractDepArray(
-      /const\s+derived\s*=\s*useMemo\(\s*\(\)\s*=>\s*[\s\S]*?computeBeliDerived\(\{[\s\S]*?\}\)\s*,\s*\[([^\]]*)\]\s*\)/,
+      /const\s+derived\s*=\s*useMemo\(\s*\(\)\s*=>\s*[\s\S]*?computeBeliDerived\(\{[\s\S]*?\}\)\s*,\s*\[([^\]]*)\]\s*,?\s*\)/,
     );
     // Semua state dan input yang dipakai computeBeliDerived harus muncul —
     // menghapus salah satu = risiko ringkasan stale.
@@ -120,7 +120,7 @@ describe("gudang.tsx — dependency arrays selectedItem/derived/warnings", () =>
 
   it("warnings = useMemo(..., [mode, selectedItem, derived, priceMode, inputKarton])", () => {
     const deps = extractDepArray(
-      /const\s+warnings\s*=\s*useMemo\(\s*\(\)\s*=>\s*[\s\S]*?computeBeliWarnings\(\{[\s\S]*?\}\)[\s\S]*?,\s*\[([^\]]*)\]\s*\)/,
+      /const\s+warnings\s*=\s*useMemo\(\s*\(\)\s*=>\s*[\s\S]*?computeBeliWarnings\(\{[\s\S]*?\}\)[\s\S]*?,\s*\[([^\]]*)\]\s*,?\s*\)/,
     );
     expect(deps.sort()).toEqual(
       ["mode", "selectedItem", "derived", "priceMode", "inputKarton"].sort(),
