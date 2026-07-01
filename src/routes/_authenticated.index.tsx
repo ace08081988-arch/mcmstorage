@@ -29,10 +29,27 @@ import { ReadyEcerSection } from "@/components/ReadyEcerSection";
 import { ReadyRequestSection } from "@/components/ReadyRequestSection";
 
 export const Route = createFileRoute("/_authenticated/")({
-  beforeLoad: () => {
-    // Mode chat-only: beranda langsung menuju /chat sehingga user tidak
-    // pernah melihat halaman operasional yang disembunyikan dari sidebar.
+  beforeLoad: async () => {
+    // Mode chat-only via build flag / localStorage override.
     if (isChatOnly()) throw redirect({ to: "/chat" });
+    // Akun yang ditandai chat_only di database juga selalu diarahkan ke /chat,
+    // walau saat ini berjalan di APK full — supaya tidak mendarat di halaman
+    // storage yang sudah diblokir RLS.
+    try {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      if (uid) {
+        const { data: prof } = await supabase
+          .from("profiles")
+          .select("chat_only")
+          .eq("id", uid)
+          .maybeSingle();
+        if (prof?.chat_only) throw redirect({ to: "/chat" });
+      }
+    } catch (e) {
+      // rethrow redirect; abaikan error lain agar halaman tetap termuat.
+      if (e && typeof e === "object" && "to" in (e as Record<string, unknown>)) throw e;
+    }
   },
   head: () => ({
     meta: [
