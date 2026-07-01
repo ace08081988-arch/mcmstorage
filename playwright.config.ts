@@ -82,6 +82,15 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
+      // E2E form validasi minSupported (Pengaturan APK). Harness publik
+      // di /lovable/visual/min-supported-form — no-auth. Menguji pesan
+      // inline per-field, banner form-level, dan teks toast sukses/error.
+      name: "apk-min-validate-form-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /apk-min-validate-form\.spec\.ts/,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
