@@ -23,15 +23,24 @@ import { useConversations } from "@/lib/chat";
 import { useOrgName } from "@/lib/org-name";
 
 function OrgHeader() {
-  const { full, short } = useOrgName();
+  const { full, short, logo } = useOrgName();
   return (
     <div className="flex items-center gap-2.5">
-      <span
-        aria-hidden
-        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-[12px] font-bold tracking-tight text-primary-foreground shadow-sm ring-1 ring-primary/20"
-      >
-        {short}
-      </span>
+      {logo ? (
+        <img
+          src={logo}
+          alt=""
+          aria-hidden
+          className="h-8 w-8 shrink-0 rounded-md object-cover ring-1 ring-border shadow-sm"
+        />
+      ) : (
+        <span
+          aria-hidden
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-[12px] font-bold tracking-tight text-primary-foreground shadow-sm ring-1 ring-primary/20"
+        >
+          {short}
+        </span>
+      )}
       <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
         <div className="truncate text-[13px] font-semibold leading-tight tracking-tight">
           {full}
