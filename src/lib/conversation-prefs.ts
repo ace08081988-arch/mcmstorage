@@ -23,15 +23,58 @@ const DEFAULT: ConversationPrefs = {
 const EVT = "mcm:conv-prefs-changed";
 const keyOf = (uid: string, cid: string) => `mcm.conv-prefs.${uid}.${cid}`;
 
+// ID unik per tab; dipakai untuk menandai penulis perubahan agar tab asal
+// tidak menampilkan toast "sinkron dari perangkat lain" atas aksinya sendiri.
+const TAB_ID =
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+// Dedupe window: sinyal (cid + changes-signature) yang sudah ditoast dalam
+// jendela ini akan diabaikan agar tidak dobel bila StorageEvent terpicu
+// beberapa kali beruntun (mis. dua patch dalam 1 tick).
+const DEDUPE_MS = 1500;
+const recentSignals = new Map<string, number>();
+function shouldEmit(cid: string, sig: string): boolean {
+  const key = `${cid}::${sig}`;
+  const now = Date.now();
+  const last = recentSignals.get(key) ?? 0;
+  if (now - last < DEDUPE_MS) return false;
+  recentSignals.set(key, now);
+  // GC
+  if (recentSignals.size > 64) {
+    for (const [k, t] of recentSignals) if (now - t > DEDUPE_MS * 4) recentSignals.delete(k);
+  }
+  return true;
+}
+
+type StoredPrefs = ConversationPrefs & { __by?: string; __at?: number };
+
 function safeRead(k: string): ConversationPrefs {
   if (typeof window === "undefined") return DEFAULT;
   try {
     const raw = window.localStorage.getItem(k);
     if (!raw) return DEFAULT;
-    const p = JSON.parse(raw) as Partial<ConversationPrefs>;
-    return { ...DEFAULT, ...p };
+    const p = JSON.parse(raw) as Partial<StoredPrefs>;
+    // Buang metadata sebelum mengembalikan ke consumer
+    const { __by: _b, __at: _a, ...clean } = p;
+    void _b;
+    void _a;
+    return { ...DEFAULT, ...clean };
   } catch {
     return DEFAULT;
+  }
+}
+
+function readStoredMeta(k: string): { by?: string; at?: number } {
+  if (typeof window === "undefined") return {};
+  try {
+    const raw = window.localStorage.getItem(k);
+    if (!raw) return {};
+    const p = JSON.parse(raw) as Partial<StoredPrefs>;
+    return { by: p.__by, at: p.__at };
+  } catch {
+    return {};
   }
 }
 
@@ -49,7 +92,8 @@ export function setConvPrefs(
   const k = keyOf(uid, cid);
   const next = { ...safeRead(k), ...patch };
   try {
-    window.localStorage.setItem(k, JSON.stringify(next));
+    const stored: StoredPrefs = { ...next, __by: TAB_ID, __at: Date.now() };
+    window.localStorage.setItem(k, JSON.stringify(stored));
   } catch {
     /* ignore quota */
   }
@@ -68,6 +112,13 @@ export function useConvPrefs(uid: string | undefined, cid: string) {
     };
     const onStorage = (e: StorageEvent) => {
       if (uid && e.key === keyOf(uid, cid)) {
+        // Abaikan jika penulis adalah tab ini (StorageEvent normalnya tak
+        // menyala di tab asal, tapi kita perkeras terhadap kasus edge).
+        const meta = readStoredMeta(keyOf(uid, cid));
+        if (meta.by === TAB_ID) {
+          setPrefs(getConvPrefs(uid, cid));
+          return;
+        }
         const next = getConvPrefs(uid, cid);
         setPrefs((prev) => {
           // Diff → beri tahu subscriber bahwa perubahan datang dari tab lain
@@ -79,7 +130,8 @@ export function useConvPrefs(uid: string | undefined, cid: string) {
               changes.push(next.mutedUntil ? "disenyapkan" : "notifikasi aktif");
             if (prev.archived !== next.archived)
               changes.push(next.archived ? "diarsipkan" : "dikeluarkan arsip");
-            if (changes.length) {
+            const sig = changes.join("|");
+            if (changes.length && shouldEmit(cid, sig)) {
               window.dispatchEvent(
                 new CustomEvent("mcm:conv-prefs-remote", {
                   detail: { cid, changes },
