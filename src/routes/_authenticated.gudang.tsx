@@ -1702,15 +1702,28 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // Kunci/reset state saat pengguna cepat mengganti item atau mode agar
   // sisa state (karton, priceMode, harga, qty, nilai "barang baru") dari
   // pilihan sebelumnya tidak ikut terbawa ke item/mode berikutnya.
+  // `resetKey` di-memoize sehingga identitas string-nya STABIL selama trigger
+  // (mode, itemId, packageType) tidak berubah. Ini yang membuat effect di
+  // bawah bisa hanya bergantung pada `resetKey` — tidak ada alokasi/kompute
+  // ulang saat render biasa (mis. items refetch dengan identitas baru).
   const resetKey = useMemo(
     () => beliResetKey({ mode, itemId, packageType }),
     [mode, itemId, packageType],
   );
-  const resetKeyRef = useRef<string>(resetKey);
+  // Nilai priceMode default dibaca via ref agar effect tidak perlu menaruh
+  // `selectedItem`/`mode`/`packageType` di dep array — jadi effect benar-benar
+  // hanya jalan saat `resetKey` berubah, bukan setiap kali `selectedItem`
+  // dapat identitas baru dari refetch items.
+  const nextPriceModeRef = useRef<"package" | "base">("package");
+  nextPriceModeRef.current =
+    mode === "existing"
+      ? isWItem(selectedItem) && selectedItem.package_type === "pcs"
+        ? "base"
+        : "package"
+      : packageType === "pcs"
+        ? "base"
+        : "package";
   useEffect(() => {
-    if (resetKeyRef.current === resetKey) return;
-    resetKeyRef.current = resetKey;
-
     // Angka pembelian selalu direset agar tidak terbawa lintas item.
     setPackageQty("1");
     setPricePerPackage("");
@@ -1718,18 +1731,9 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     // Karton hanya masuk akal untuk item botol; matikan default.
     setInputKarton(false);
     // priceMode default: "package" untuk item non-pcs, "base" untuk pcs.
-    // Sumber tunggal: pakai `selectedItem` yang sudah tersempit lewat guard,
-    // agar tidak duplikasi `items.find(...)` (rentan drift bila daftar items
-    // di-refetch tepat pada tick yang sama).
-    if (mode === "existing") {
-      setPriceMode(isWItem(selectedItem) && selectedItem.package_type === "pcs" ? "base" : "package");
-    } else {
-      setPriceMode(packageType === "pcs" ? "base" : "package");
-    }
-    // resetKey mengenkode (mode, itemId, packageType), sehingga trigger tunggal.
-    // selectedItem dibaca di dalam body dan HARUS ada di dep array agar
-    // pembacaan tidak stale bila resetKey berubah bersamaan dengan refetch items.
-  }, [resetKey, mode, packageType, selectedItem]);
+    // Dibaca via ref (di-refresh tiap render) agar dep effect tetap minimal.
+    setPriceMode(nextPriceModeRef.current);
+  }, [resetKey]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
