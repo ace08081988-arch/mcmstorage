@@ -449,6 +449,39 @@ function ExampleCard({ example }: { example: Example }) {
               Bersihkan sorotan
             </Button>
           )}
+          {traces && traces.length > 0 && (
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid={`pa-demo-${example.id}-export`}
+              onClick={() => {
+                const payload = serializeTracesForExport(
+                  example.id,
+                  activePreset.label,
+                  attrs,
+                  example.triggeredCodes,
+                  traces,
+                );
+                const blob = new Blob(
+                  [JSON.stringify(payload, null, 2)],
+                  { type: "application/json" },
+                );
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                const ts = new Date()
+                  .toISOString()
+                  .replace(/[:.]/g, "-");
+                a.href = url;
+                a.download = `press-audit-trace-${example.id}-${ts}.json`;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                setTimeout(() => URL.revokeObjectURL(url), 1000);
+              }}
+            >
+              Ekspor JSON
+            </Button>
+          )}
           {results && (
             <Badge variant={allPass ? "default" : "destructive"}>
               {allPass
