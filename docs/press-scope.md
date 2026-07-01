@@ -413,6 +413,35 @@ window.__pressAudit();                   // trigger sweep manual
 > allow/deny). Konfigurasi persist di `localStorage`, jadi tanpa reset
 > pengaturan debug bisa kebawa ke sesi normal.
 
+> **Update:** konfigurasi `__pressAuditConfig` **tidak lagi ditulis ke
+> `localStorage`**. Default-nya `persist: "memory"` — hanya bertahan di
+> halaman saat ini, ikut hangus saat refresh atau navigasi SPA. Jejak
+> `localStorage` lama otomatis dibersihkan saat modul di-mount.
+>
+> Opsi tambahan pada `set(patch, opts)`:
+>
+> ```ts
+> // hanya untuk halaman ini (default) — refresh = kembali default
+> __pressAuditConfig.set({ mode: "suggest" });
+>
+> // bertahan selama tab masih terbuka (survive refresh, hilang saat close tab)
+> __pressAuditConfig.set({ mode: "suggest" }, { persist: "session" });
+>
+> // TTL manual (default 30 menit) — auto reset setelahnya
+> __pressAuditConfig.set({ mode: "suggest" }, { ttlMs: 5 * 60_000 });
+>
+> // matikan TTL & auto-reset saat navigasi
+> __pressAuditConfig.set(
+>   { mode: "suggest" },
+>   { ttlMs: 0, resetOnNavigate: false },
+> );
+> ```
+>
+> Auto-reset dipicu oleh: (1) refresh / hard reload, (2) navigasi SPA
+> (`pushState` / `replaceState` / `popstate`) kecuali
+> `resetOnNavigate: false`, (3) TTL habis, (4) `close tab` untuk mode
+> `session`.
+
 ### Cheat sheet allowlist / denylist
 
 Kedua daftar menerima **nama rule** (`sortable-handle`) maupun **kode
