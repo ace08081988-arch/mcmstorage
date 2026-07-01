@@ -621,10 +621,16 @@ function ListBlock({
   label,
   values,
   onCopyAll,
+  onCopyItem,
+  primaryIndex = -1,
+  emptyText,
 }: {
   label: string;
   values: string[];
   onCopyAll: () => void;
+  onCopyItem?: (value: string) => void;
+  primaryIndex?: number;
+  emptyText?: string;
 }) {
   return (
     <div>
@@ -636,21 +642,46 @@ function ListBlock({
           variant="ghost"
           className="h-7 gap-1.5 px-2"
           onClick={onCopyAll}
+          disabled={values.length === 0}
         >
           <Copy className="h-3.5 w-3.5" />
           Salin semua
         </Button>
       </div>
       <div className="space-y-1">
-        {values.map((v) => (
+        {values.length === 0 && emptyText && (
+          <div className="rounded-md border border-border/50 bg-muted/50 px-2 py-1.5 text-xs text-muted-foreground">
+            {emptyText}
+          </div>
+        )}
+        {values.map((v, i) => (
           <div
             key={v}
             className="flex items-center justify-between gap-2 rounded-md border border-border/50 bg-muted/50 px-2 py-1.5"
           >
             <code className="break-all text-xs">{v}</code>
-            <Badge variant="outline" className="shrink-0 text-[11px]">
-              siap
-            </Badge>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {i === primaryIndex && (
+                <Badge className="text-[11px]">wajib</Badge>
+              )}
+              {onCopyItem ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 gap-1 px-1.5"
+                  onClick={() => onCopyItem(v)}
+                  aria-label={`Salin ${v}`}
+                >
+                  <Copy className="h-3 w-3" />
+                  <span className="text-[11px]">Salin</span>
+                </Button>
+              ) : (
+                <Badge variant="outline" className="text-[11px]">
+                  siap
+                </Badge>
+              )}
+            </div>
           </div>
         ))}
       </div>
