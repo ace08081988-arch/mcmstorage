@@ -79,8 +79,23 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           handlers: {
             onRemoteStream: (stream) => {
               setRemoteReady(true);
-              if (remoteVideoRef.current) remoteVideoRef.current.srcObject = stream;
-              if (remoteAudioRef.current) remoteAudioRef.current.srcObject = stream;
+              // Set srcObject di elemen video dan audio remote. Autoplay
+              // dengan MediaStream sering diblokir kebijakan browser
+              // (terutama Android WebView & iOS Safari) walau ada atribut
+              // `autoPlay` — kita harus memanggil `.play()` eksplisit.
+              const vid = remoteVideoRef.current;
+              const aud = remoteAudioRef.current;
+              if (vid && vid.srcObject !== stream) {
+                vid.srcObject = stream;
+                vid.muted = false;
+                void vid.play().catch(() => { /* akan retry saat user tap */ });
+              }
+              if (aud && aud.srcObject !== stream) {
+                aud.srcObject = stream;
+                aud.muted = false;
+                aud.volume = 1;
+                void aud.play().catch(() => { /* akan retry saat user tap */ });
+              }
             },
             onIceState: (s) => {
               if (s === "failed" || s === "disconnected") {
@@ -186,6 +201,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return () => { mounted = false; };
   }, [callId, role]);
 
+  // Retry `.play()` pada elemen remote setiap kali user menyentuh
+  // layar panggilan — mengatasi autoplay yang diblokir sebelum ada
+  // interaksi. Aman dipanggil berkali-kali (idempotent).
+  const resumePlayback = useCallback(() => {
+    const v = remoteVideoRef.current;
+    const a = remoteAudioRef.current;
+    if (v && v.paused && v.srcObject) void v.play().catch(() => { /* ignore */ });
+    if (a && a.paused && a.srcObject) void a.play().catch(() => { /* ignore */ });
+  }, []);
+
   const status = useMemo(() => {
     if (errorMsg && phase === "ended") return errorMsg;
     if (phase === "connecting") return "Menghubungkan…";
@@ -195,7 +220,10 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   }, [phase, seconds, errorMsg]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-black text-white">
+    <div
+      className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
+      onPointerDown={resumePlayback}
+    >
       {/* Remote video / avatar besar */}
       <div className="relative flex-1 overflow-hidden">
         {kind === "video" ? (
@@ -206,8 +234,15 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
-          <audio ref={remoteAudioRef} autoPlay />
+          <audio ref={remoteAudioRef} autoPlay playsInline />
         )}
+        {/* Elemen audio remote tambahan untuk mode video — beberapa
+            browser (Android WebView) tidak selalu memutar audio track
+            lewat <video>. Menyediakan sink audio terpisah menjamin
+            suara terdengar. */}
+        {kind === "video" ? (
+          <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+        ) : null}
         {!remoteReady && kind === "video" ? (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-neutral-900 to-black">
             <div className="flex flex-col items-center gap-3 text-center">
