@@ -3,16 +3,38 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Loader2, Package, CalendarClock, CheckCircle2, XCircle } from "lucide-react";
+import {
+  Loader2,
+  Package,
+  CalendarClock,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+  ShieldAlert,
+} from "lucide-react";
 import {
   listApkReleaseAdmin,
   upsertApkReleaseMeta,
   type AdminApkEntry,
 } from "@/lib/apk.functions";
+import {
+  validateApkFileName,
+  type ApkNameValidation,
+} from "@/lib/apk-name-validate";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-apk")({
   head: () => ({ meta: [{ title: "Pengaturan rilis APK — MCM" }] }),
@@ -112,6 +134,14 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
     entry.publish_at ? toLocalInput(entry.publish_at) : "",
   );
   const [notes, setNotes] = useState(entry.notes ?? "");
+  const [confirmOpen, setConfirmOpen] = useState(false);
+
+  const validation: ApkNameValidation = useMemo(
+    () => validateApkFileName(entry.file_name, entry.variant),
+    [entry.file_name, entry.variant],
+  );
+  const hasError = validation.severity === "error";
+  const hasWarn = validation.severity !== "ok";
 
   const dirty =
     enabled !== entry.enabled ||
@@ -144,6 +174,15 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
     },
   });
 
+  const requestSave = () => {
+    // Blokir keras jika aktif + nama bermasalah — user harus konfirmasi.
+    if (enabled && hasWarn) {
+      setConfirmOpen(true);
+      return;
+    }
+    save.mutate();
+  };
+
   return (
     <div className="rounded-xl border bg-card p-3 shadow-sm">
       <div className="flex items-start justify-between gap-3">
@@ -163,6 +202,35 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
         </div>
         <StatusBadge status={entry.status} />
       </div>
+
+      {hasWarn && (
+        <div
+          className={`mt-3 rounded-lg border p-2.5 text-[11px] leading-snug ${
+            hasError
+              ? "border-red-300 bg-red-50 text-red-800 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+              : "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
+          }`}
+        >
+          <div className="flex items-start gap-1.5 font-semibold">
+            {hasError ? (
+              <ShieldAlert className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            ) : (
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            )}
+            <span>
+              {hasError
+                ? "Nama berkas tidak sesuai konvensi"
+                : "Peringatan nama berkas"}
+            </span>
+          </div>
+          <ul className="mt-1.5 list-disc space-y-0.5 pl-4">
+            {validation.issues.map((i) => (
+              <li key={i.code}>{i.message}</li>
+            ))}
+          </ul>
+          <p className="mt-1.5 opacity-80">{validation.suggestion}</p>
+        </div>
+      )}
 
       <div className="mt-3 space-y-2 border-t pt-3">
         <label className="flex items-center justify-between gap-3 text-xs">
@@ -242,7 +310,7 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
             type="button"
             size="sm"
             disabled={!dirty || save.isPending}
-            onClick={() => save.mutate()}
+            onClick={requestSave}
           >
             {save.isPending ? (
               <Loader2 className="h-3.5 w-3.5 animate-spin" />
@@ -252,6 +320,62 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
           </Button>
         </div>
       </div>
+
+      <AlertDialog open={confirmOpen} onOpenChange={setConfirmOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {hasError ? (
+                <ShieldAlert className="h-4 w-4 text-red-600" />
+              ) : (
+                <AlertTriangle className="h-4 w-4 text-amber-600" />
+              )}
+              Rilis berkas dengan nama bermasalah?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-xs">
+                <p className="font-mono break-all">{entry.file_name}</p>
+                <ul className="list-disc space-y-0.5 pl-4">
+                  {validation.issues.map((i) => (
+                    <li key={i.code}>
+                      <span
+                        className={
+                          i.severity === "error"
+                            ? "text-red-700 dark:text-red-300"
+                            : "text-amber-700 dark:text-amber-300"
+                        }
+                      >
+                        {i.message}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="text-muted-foreground">
+                  {hasError
+                    ? "Berkas ini kemungkinan besar akan salah dikelompokkan di halaman /download. Rekomendasi: rename berkas di bucket sebelum dirilis."
+                    : "Rilis tetap bisa dilanjutkan, namun sebagian info versi mungkin tidak tampil."}
+                </p>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className={
+                hasError
+                  ? "bg-red-600 text-white hover:bg-red-700"
+                  : undefined
+              }
+              onClick={() => {
+                setConfirmOpen(false);
+                save.mutate();
+              }}
+            >
+              {hasError ? "Rilis paksa" : "Tetap simpan"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
