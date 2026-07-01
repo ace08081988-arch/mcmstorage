@@ -223,6 +223,22 @@ export default defineConfig({
       },
     },
     {
+      // E2E: DM yang sudah ada tetap memakai identitas `PIN xxxx-xxxx`
+      // dan histori pesan tetap terbaca setelah `page.reload()` — bukti
+      // useConversationMessages mem-fetch dari server via useQuery,
+      // bukan sekadar bertahan lewat state realtime. Static source
+      // guard selalu jalan; runtime self-skip bila storageState kosong
+      // atau akun test belum punya DM/pesan.
+      name: "chat-pin-mcm-existing-dm-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-existing-dm\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
