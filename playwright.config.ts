@@ -461,5 +461,20 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: deep link `/chat/<uuid>` yang tidak ada / tidak berizin
+      // wajib menampilkan banner "Percakapan tidak ditemukan"
+      // (role="alert", data-testid="chat-not-found") dengan CTA balik
+      // ke `/chat`, dan bebas nomor telp Indonesia mentah pada banner
+      // maupun body halaman.
+      name: "chat-pin-mcm-invalid-deep-link-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-invalid-deep-link\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
