@@ -555,3 +555,50 @@ function SuggestionRow({
 
 // Keep Compass import used for tree-shake safety in future edits.
 void Compass;
+
+function StatusTile({
+  status,
+  thumbUrl,
+  likes,
+  label,
+  onPressStart,
+}: {
+  status: StatusRow;
+  thumbUrl?: string;
+  likes: number;
+  label?: string;
+  onPressStart: (i?: HapticIntensity) => () => void;
+}) {
+  const caption = status.caption?.trim();
+  return (
+    <Link
+      to="/status/$id"
+      params={{ id: status.id }}
+      aria-label={`Buka status${caption ? ` ${caption}` : ""}`}
+      onPointerDown={onPressStart("selection")}
+      className="relative flex h-40 w-28 shrink-0 snap-start overflow-hidden rounded-2xl bg-muted/40 ring-1 ring-inset ring-primary/50"
+    >
+      {status.media_type === "image" && thumbUrl && (
+        <img src={thumbUrl} alt="" className="size-full object-cover" />
+      )}
+      {status.media_type === "video" && thumbUrl && (
+        <video src={thumbUrl} muted playsInline className="size-full object-cover" />
+      )}
+      {status.media_type === "text" && (
+        <div
+          className="flex size-full items-center justify-center p-2 text-center text-xs font-semibold text-white"
+          style={{ background: status.bg_color || "#0f172a" }}
+        >
+          <span className="line-clamp-4">{caption}</span>
+        </div>
+      )}
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5 text-[11px] font-medium text-white">
+        <span className="truncate">{label ?? "Status"}</span>
+        <span className="flex items-center gap-0.5">
+          <Heart className="size-3" />
+          {likes}
+        </span>
+      </div>
+    </Link>
+  );
+}
