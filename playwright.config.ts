@@ -687,5 +687,19 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: rotasi orientasi portrait↔landscape antar DM + reload.
+      // Menguji layout responsif dan rehidrasi setelah setViewportSize
+      // — identitas peer tidak boleh flip ke nomor telp mentah, token
+      // PIN wajib tetap berformat `xxxx-xxxx` di kedua orientasi.
+      name: "chat-pin-mcm-orientation-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-orientation\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
