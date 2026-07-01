@@ -357,7 +357,7 @@ function HutangPiutangPage() {
   };
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background" data-press-scope="on">
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center gap-3 px-3 py-3 sm:px-6">
           <Link
