@@ -79,8 +79,23 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           handlers: {
             onRemoteStream: (stream) => {
               setRemoteReady(true);
-              if (remoteVideoRef.current) remoteVideoRef.current.srcObject = stream;
-              if (remoteAudioRef.current) remoteAudioRef.current.srcObject = stream;
+              // Set srcObject di elemen video dan audio remote. Autoplay
+              // dengan MediaStream sering diblokir kebijakan browser
+              // (terutama Android WebView & iOS Safari) walau ada atribut
+              // `autoPlay` — kita harus memanggil `.play()` eksplisit.
+              const vid = remoteVideoRef.current;
+              const aud = remoteAudioRef.current;
+              if (vid && vid.srcObject !== stream) {
+                vid.srcObject = stream;
+                vid.muted = false;
+                void vid.play().catch(() => { /* akan retry saat user tap */ });
+              }
+              if (aud && aud.srcObject !== stream) {
+                aud.srcObject = stream;
+                aud.muted = false;
+                aud.volume = 1;
+                void aud.play().catch(() => { /* akan retry saat user tap */ });
+              }
             },
             onIceState: (s) => {
               if (s === "failed" || s === "disconnected") {
