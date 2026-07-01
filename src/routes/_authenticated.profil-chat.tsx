@@ -2,11 +2,13 @@ import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import {
   ArrowLeft, Search, QrCode, Smile, KeyRound, Lock, Users, MessageSquare,
   Bell, RefreshCcw, Link as LinkIcon, Accessibility, Languages, ChevronRight,
+  UserPlus,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyProfile, useAvatarSignedUrl, useMyProfileRealtime } from "@/lib/profile";
 import { useState } from "react";
 import { ProfileQrDialog } from "@/components/chat/ProfileQrDialog";
+import { formatInviteCode } from "@/lib/invite";
 
 export const Route = createFileRoute("/_authenticated/profil-chat")({
   component: ProfilChatPage,
@@ -21,6 +23,7 @@ type Row = {
 };
 
 const ROWS: Row[] = [
+  { icon: UserPlus, title: "Undang teman", desc: "Bagikan PIN atau QR seperti BBM", to: "/undang" },
   { icon: KeyRound, title: "Akun", desc: "Notifikasi keamanan, ganti nomor", to: "/sesi" },
   { icon: Lock, title: "Privasi", desc: "Akun diblokir, pesan sementara", to: "/pengaturan-kunci" },
   { icon: Users, title: "Daftar", desc: "Kelola orang dan grup", to: "/buku-alamat" },
@@ -90,14 +93,25 @@ function ProfilChatPage() {
         </div>
         <div className="min-w-0 flex-1">
           <div className="truncate text-xl font-medium">{name}</div>
-          <button
-            type="button"
-            onClick={() => toast.info("Status kustom segera hadir.")}
-            className="mt-1.5 inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent"
-          >
-            <Smile className="h-3.5 w-3.5" />
-            Saat ini saya sedang…
-          </button>
+          <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => toast.info("Status kustom segera hadir.")}
+              className="inline-flex items-center gap-1.5 rounded-full bg-muted px-2.5 py-1 text-xs text-muted-foreground hover:bg-accent"
+            >
+              <Smile className="h-3.5 w-3.5" />
+              Saat ini saya sedang…
+            </button>
+            {profile?.invite_code ? (
+              <Link
+                to="/undang"
+                className="inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-2.5 py-1 font-mono text-xs tabular-nums tracking-widest text-primary hover:bg-primary/20"
+                aria-label="Undang teman lewat PIN"
+              >
+                PIN {formatInviteCode(profile.invite_code)}
+              </Link>
+            ) : null}
+          </div>
         </div>
         <button
           type="button"

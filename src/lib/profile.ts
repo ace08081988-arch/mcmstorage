@@ -12,10 +12,11 @@ export type MyProfile = {
   currency: string;
   date_format: string;
   avatar_url: string | null;
+  invite_code: string | null;
 };
 
 const PROFILE_COLS: string =
-  "id, display_name, email, phone, country_code, language, currency, date_format, avatar_url";
+  "id, display_name, email, phone, country_code, language, currency, date_format, avatar_url, invite_code";
 
 const DEFAULT_PREFS = {
   country_code: "ID",
@@ -50,6 +51,7 @@ export async function getMyProfile(): Promise<MyProfile | null> {
       email: user.email ?? null,
       phone: user.phone ?? null,
       avatar_url: null,
+      invite_code: null,
       ...DEFAULT_PREFS,
     };
   }

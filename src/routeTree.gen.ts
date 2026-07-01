@@ -20,7 +20,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
+import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
+import { Route as AuthenticatedUndangRouteImport } from './routes/_authenticated.undang'
 import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
 import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
@@ -119,10 +121,20 @@ const TTokenRoute = TTokenRouteImport.update({
   path: '/t/$token',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ICodeRoute = ICodeRouteImport.update({
+  id: '/i/$code',
+  path: '/i/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DownloadVariantRoute = DownloadVariantRouteImport.update({
   id: '/$variant',
   path: '/$variant',
   getParentRoute: () => DownloadRoute,
+} as any)
+const AuthenticatedUndangRoute = AuthenticatedUndangRouteImport.update({
+  id: '/undang',
+  path: '/undang',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedTugasBaruRoute = AuthenticatedTugasBaruRouteImport.update({
   id: '/tugas-baru',
@@ -403,7 +415,9 @@ export interface FileRoutesByFullPath {
   '/sesi': typeof AuthenticatedSesiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/undang': typeof AuthenticatedUndangRoute
   '/download/$variant': typeof DownloadVariantRoute
+  '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
@@ -457,7 +471,9 @@ export interface FileRoutesByTo {
   '/sesi': typeof AuthenticatedSesiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/undang': typeof AuthenticatedUndangRoute
   '/download/$variant': typeof DownloadVariantRoute
+  '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
@@ -515,7 +531,9 @@ export interface FileRoutesById {
   '/_authenticated/sesi': typeof AuthenticatedSesiRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/_authenticated/undang': typeof AuthenticatedUndangRoute
   '/download/$variant': typeof DownloadVariantRoute
+  '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
@@ -574,7 +592,9 @@ export interface FileRouteTypes {
     | '/sesi'
     | '/tugas'
     | '/tugas-baru'
+    | '/undang'
     | '/download/$variant'
+    | '/i/$code'
     | '/t/$token'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
@@ -628,7 +648,9 @@ export interface FileRouteTypes {
     | '/sesi'
     | '/tugas'
     | '/tugas-baru'
+    | '/undang'
     | '/download/$variant'
+    | '/i/$code'
     | '/t/$token'
     | '/'
     | '/admin/worker-portal'
@@ -685,7 +707,9 @@ export interface FileRouteTypes {
     | '/_authenticated/sesi'
     | '/_authenticated/tugas'
     | '/_authenticated/tugas-baru'
+    | '/_authenticated/undang'
     | '/download/$variant'
+    | '/i/$code'
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/admin/worker-portal'
@@ -713,6 +737,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   TermsRoute: typeof TermsRoute
   TrustRoute: typeof TrustRoute
+  ICodeRoute: typeof ICodeRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
@@ -803,12 +828,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof TTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/i/$code': {
+      id: '/i/$code'
+      path: '/i/$code'
+      fullPath: '/i/$code'
+      preLoaderRoute: typeof ICodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/download/$variant': {
       id: '/download/$variant'
       path: '/$variant'
       fullPath: '/download/$variant'
       preLoaderRoute: typeof DownloadVariantRouteImport
       parentRoute: typeof DownloadRoute
+    }
+    '/_authenticated/undang': {
+      id: '/_authenticated/undang'
+      path: '/undang'
+      fullPath: '/undang'
+      preLoaderRoute: typeof AuthenticatedUndangRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tugas-baru': {
       id: '/_authenticated/tugas-baru'
@@ -1185,6 +1224,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSesiRoute: typeof AuthenticatedSesiRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
   AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
+  AuthenticatedUndangRoute: typeof AuthenticatedUndangRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
 }
@@ -1224,6 +1264,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSesiRoute: AuthenticatedSesiRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
   AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
+  AuthenticatedUndangRoute: AuthenticatedUndangRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
 }
@@ -1254,6 +1295,7 @@ const rootRouteChildren: RootRouteChildren = {
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   TermsRoute: TermsRoute,
   TrustRoute: TrustRoute,
+  ICodeRoute: ICodeRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,

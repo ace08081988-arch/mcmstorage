@@ -1397,6 +1397,7 @@ export type Database = {
           display_name: string | null
           email: string | null
           id: string
+          invite_code: string
           language: string
           last_seen_at: string | null
           phone: string | null
@@ -1413,6 +1414,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id: string
+          invite_code?: string
           language?: string
           last_seen_at?: string | null
           phone?: string | null
@@ -1429,6 +1431,7 @@ export type Database = {
           display_name?: string | null
           email?: string | null
           id?: string
+          invite_code?: string
           language?: string
           last_seen_at?: string | null
           phone?: string | null
@@ -2516,6 +2519,16 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_contact_by_invite_code: {
+        Args: { _code: string }
+        Returns: {
+          already_existed: boolean
+          avatar_url: string
+          contact_id: string
+          display_name: string
+          linked_user_id: string
+        }[]
+      }
       add_group_member: {
         Args: { _conv: string; _user: string }
         Returns: undefined
@@ -2601,6 +2614,7 @@ export type Database = {
       }
       ensure_order_conversation: { Args: { _order: string }; Returns: string }
       expire_subscriptions: { Args: never; Returns: number }
+      gen_invite_code: { Args: never; Returns: string }
       get_chat_member_profiles: {
         Args: { _user_ids: string[] }
         Returns: {
@@ -2776,6 +2790,16 @@ export type Database = {
             }
             Returns: Json
           }
+      resolve_invite_code: {
+        Args: { _code: string }
+        Returns: {
+          avatar_url: string
+          chat_only: boolean
+          display_name: string
+          id: string
+          invite_code: string
+        }[]
+      }
       run_internal_security_scan: { Args: never; Returns: Json }
       search_chat_contacts: {
         Args: { _q: string }
