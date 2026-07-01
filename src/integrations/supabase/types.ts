@@ -2681,6 +2681,7 @@ export type Database = {
           display_name: string
           email: string
           id: string
+          invite_code: string
           last_seen_at: string
           phone: string
           show_last_seen: boolean
@@ -2865,6 +2866,7 @@ export type Database = {
         Args: { _q: string }
         Returns: {
           display_name: string
+          invite_code: string
           kind: string
           label: string
           phone: string
