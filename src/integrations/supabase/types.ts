@@ -958,6 +958,36 @@ export type Database = {
         }
         Relationships: []
       }
+      friend_requests: {
+        Row: {
+          created_at: string
+          from_user: string
+          id: string
+          responded_at: string | null
+          status: Database["public"]["Enums"]["friend_request_status"]
+          to_user: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          from_user: string
+          id?: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["friend_request_status"]
+          to_user: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          from_user?: string
+          id?: string
+          responded_at?: string | null
+          status?: Database["public"]["Enums"]["friend_request_status"]
+          to_user?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       message_hidden: {
         Row: {
           hidden_at: string
@@ -2617,7 +2647,15 @@ export type Database = {
         Args: { _grant: boolean; _target: string }
         Returns: boolean
       }
+      are_friends: { Args: { _a: string; _b: string }; Returns: boolean }
       can_chat: { Args: { _a: string; _b: string }; Returns: boolean }
+      cancel_friend_request: {
+        Args: { _request_id: string }
+        Returns: {
+          request_id: string
+          status: Database["public"]["Enums"]["friend_request_status"]
+        }[]
+      }
       chat_heartbeat: { Args: never; Returns: undefined }
       chat_mute: { Args: { _conv: string; _until: string }; Returns: undefined }
       chat_search_messages: {
@@ -2704,6 +2742,22 @@ export type Database = {
       is_conversation_owner: {
         Args: { _conv: string; _user: string }
         Returns: boolean
+      }
+      list_friend_requests: {
+        Args: { _direction?: string; _only_pending?: boolean }
+        Returns: {
+          created_at: string
+          direction: string
+          from_user: string
+          id: string
+          peer_avatar_url: string
+          peer_display_name: string
+          peer_id: string
+          peer_invite_code: string
+          responded_at: string
+          status: Database["public"]["Enums"]["friend_request_status"]
+          to_user: string
+        }[]
       }
       match_address_book_profiles: {
         Args: { _emails?: string[]; _phones?: string[] }
@@ -2861,6 +2915,13 @@ export type Database = {
           invite_code: string
         }[]
       }
+      respond_friend_request: {
+        Args: { _accept: boolean; _request_id: string }
+        Returns: {
+          request_id: string
+          status: Database["public"]["Enums"]["friend_request_status"]
+        }[]
+      }
       run_internal_security_scan: { Args: never; Returns: Json }
       search_chat_contacts: {
         Args: { _q: string }
@@ -2885,6 +2946,19 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: number
       }
+      send_friend_request: {
+        Args: { _code: string }
+        Returns: {
+          already_friends: boolean
+          avatar_url: string
+          display_name: string
+          incoming_reverse_id: string
+          request_id: string
+          status: Database["public"]["Enums"]["friend_request_status"]
+          to_user: string
+          was_existing: boolean
+        }[]
+      }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       start_dm: { Args: { _partner: string }; Returns: string }
@@ -2898,6 +2972,7 @@ export type Database = {
         | "for_me_bulk"
         | "for_all_bulk"
         | "all_mine"
+      friend_request_status: "pending" | "accepted" | "rejected" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3033,6 +3108,7 @@ export const Constants = {
         "for_all_bulk",
         "all_mine",
       ],
+      friend_request_status: ["pending", "accepted", "rejected", "cancelled"],
     },
   },
 } as const
