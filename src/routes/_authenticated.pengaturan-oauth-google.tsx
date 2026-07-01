@@ -127,6 +127,26 @@ function OAuthGooglePage() {
     "";
   const callbackUrl = supabaseUrl ? `${supabaseUrl.replace(/\/$/, "")}/auth/v1/callback` : "";
 
+  // Daftar Authorized redirect URIs yang perlu ditempel ke Google Cloud
+  // Console. Yang wajib adalah callback broker Supabase; sisanya adalah
+  // callback per-origin yang dipakai oleh flow `signInWithOAuth` di
+  // preview & domain produksi supaya tidak pernah tertolak "redirect_uri_mismatch".
+  const redirectUris = useMemo(() => {
+    const set = new Set<string>();
+    if (callbackUrl) set.add(callbackUrl);
+    const origins = [
+      "https://mcmstorage.biz",
+      "https://www.mcmstorage.biz",
+      "https://mcmstorage.lovable.app",
+      origin,
+    ].filter(Boolean);
+    for (const o of origins) {
+      set.add(`${o}/auth/callback`);
+      set.add(`${o}/`);
+    }
+    return Array.from(set);
+  }, [callbackUrl, origin]);
+
   const authorizedDomains = useMemo(() => {
     const set = new Set<string>();
     // Domain publik proyek.
@@ -328,26 +348,31 @@ function OAuthGooglePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FieldBlock
-              label="Authorized redirect URI (Callback URL)"
-              value={callbackUrl}
-              placeholder="URL callback belum tersedia — pastikan Backend aktif"
-              onCopy={() => copy(callbackUrl, "Callback URL")}
+            <ListBlock
+              label="Authorized redirect URIs"
+              values={redirectUris}
+              onCopyAll={() => copy(redirectUris.join("\n"), "Redirect URIs")}
+              onCopyItem={(v) => copy(v, "Redirect URI")}
+              primaryIndex={callbackUrl ? 0 : -1}
+              emptyText="Belum tersedia — pastikan Backend aktif"
             />
             <ListBlock
               label="Authorized JavaScript origins"
               values={jsOrigins}
               onCopyAll={() => copy(jsOrigins.join("\n"), "JavaScript origins")}
+              onCopyItem={(v) => copy(v, "Origin")}
             />
             <ListBlock
               label="Authorized domains (OAuth consent screen)"
               values={authorizedDomains}
               onCopyAll={() => copy(authorizedDomains.join("\n"), "Authorized domains")}
+              onCopyItem={(v) => copy(v, "Domain")}
             />
             <ListBlock
               label="Scope non-sensitive"
               values={scopes}
               onCopyAll={() => copy(scopes.join("\n"), "Scope")}
+              onCopyItem={(v) => copy(v, "Scope")}
             />
           </CardContent>
         </Card>
@@ -596,10 +621,16 @@ function ListBlock({
   label,
   values,
   onCopyAll,
+  onCopyItem,
+  primaryIndex = -1,
+  emptyText,
 }: {
   label: string;
   values: string[];
   onCopyAll: () => void;
+  onCopyItem?: (value: string) => void;
+  primaryIndex?: number;
+  emptyText?: string;
 }) {
   return (
     <div>
@@ -611,21 +642,46 @@ function ListBlock({
           variant="ghost"
           className="h-7 gap-1.5 px-2"
           onClick={onCopyAll}
+          disabled={values.length === 0}
         >
           <Copy className="h-3.5 w-3.5" />
           Salin semua
         </Button>
       </div>
       <div className="space-y-1">
-        {values.map((v) => (
+        {values.length === 0 && emptyText && (
+          <div className="rounded-md border border-border/50 bg-muted/50 px-2 py-1.5 text-xs text-muted-foreground">
+            {emptyText}
+          </div>
+        )}
+        {values.map((v, i) => (
           <div
             key={v}
             className="flex items-center justify-between gap-2 rounded-md border border-border/50 bg-muted/50 px-2 py-1.5"
           >
             <code className="break-all text-xs">{v}</code>
-            <Badge variant="outline" className="shrink-0 text-[11px]">
-              siap
-            </Badge>
+            <div className="flex shrink-0 items-center gap-1.5">
+              {i === primaryIndex && (
+                <Badge className="text-[11px]">wajib</Badge>
+              )}
+              {onCopyItem ? (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 gap-1 px-1.5"
+                  onClick={() => onCopyItem(v)}
+                  aria-label={`Salin ${v}`}
+                >
+                  <Copy className="h-3 w-3" />
+                  <span className="text-[11px]">Salin</span>
+                </Button>
+              ) : (
+                <Badge variant="outline" className="text-[11px]">
+                  siap
+                </Badge>
+              )}
+            </div>
           </div>
         ))}
       </div>
