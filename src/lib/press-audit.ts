@@ -30,6 +30,130 @@ type Finding = {
 };
 
 /**
+ * Konfigurasi runtime auditor.
+ *
+ * - `mode`:
+ *   - `"off"`     — audit dimatikan sepenuhnya (tidak scan, tidak log).
+ *   - `"log"`     — hanya `console.warn` (default, tanpa side-effect DOM).
+ *   - `"suggest"` — selain log, tandai elemen dengan atribut
+ *                   `data-press-audit-suggest="<code>"` supaya devtools /
+ *                   overlay bisa memfilter visual. Tidak pernah mengubah
+ *                   perilaku press — murni marker.
+ * - `rules.allow` — bila diisi, HANYA rule dalam daftar yang dilaporkan.
+ * - `rules.deny`  — rule dalam daftar diabaikan (dievaluasi setelah allow).
+ * - `scope.allow` — CSS selectors; temuan HANYA dilaporkan bila elemen
+ *                   berada di dalam salah satu selector (mis. `'main'`).
+ * - `scope.deny`  — CSS selectors; temuan diabaikan bila cocok ancestor.
+ *
+ * Selain config global, tiap section boleh opt-out lokal:
+ * - `data-press-audit="off"`        pada ancestor → skip seluruh rule.
+ * - `data-press-audit-skip="a,b"`   pada ancestor → skip rule tertentu
+ *   (comma-separated nama rule atau kode `PA00X`).
+ */
+export type PressAuditMode = "off" | "log" | "suggest";
+export type PressAuditConfig = {
+  mode: PressAuditMode;
+  rules: { allow: string[]; deny: string[] };
+  scope: { allow: string[]; deny: string[] };
+};
+
+const CONFIG_KEY = "press-audit:config";
+const DEFAULT_CONFIG: PressAuditConfig = {
+  mode: "log",
+  rules: { allow: [], deny: [] },
+  scope: { allow: [], deny: [] },
+};
+
+let config: PressAuditConfig = DEFAULT_CONFIG;
+
+function loadConfig(): PressAuditConfig {
+  if (typeof window === "undefined") return DEFAULT_CONFIG;
+  try {
+    const raw = window.localStorage.getItem(CONFIG_KEY);
+    if (!raw) return DEFAULT_CONFIG;
+    const parsed = JSON.parse(raw) as Partial<PressAuditConfig>;
+    return {
+      mode: parsed.mode ?? DEFAULT_CONFIG.mode,
+      rules: {
+        allow: parsed.rules?.allow ?? [],
+        deny: parsed.rules?.deny ?? [],
+      },
+      scope: {
+        allow: parsed.scope?.allow ?? [],
+        deny: parsed.scope?.deny ?? [],
+      },
+    };
+  } catch {
+    return DEFAULT_CONFIG;
+  }
+}
+
+function saveConfig(next: PressAuditConfig) {
+  config = next;
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(CONFIG_KEY, JSON.stringify(next));
+  } catch {
+    /* storage penuh / disabled — abaikan */
+  }
+}
+
+function ruleMatches(list: string[], rule: string, code: string): boolean {
+  return list.some((k) => k === rule || k.toUpperCase() === code);
+}
+
+function scopeAllows(el: Element): boolean {
+  // Section-level opt-out via atribut DOM
+  const off = el.closest('[data-press-audit="off"]');
+  if (off) return false;
+  // Scope allow/deny berbasis selector konfigurasi
+  if (config.scope.deny.length) {
+    for (const sel of config.scope.deny) {
+      try {
+        if (el.closest(sel)) return false;
+      } catch {
+        /* selector invalid — abaikan */
+      }
+    }
+  }
+  if (config.scope.allow.length) {
+    let ok = false;
+    for (const sel of config.scope.allow) {
+      try {
+        if (el.closest(sel)) {
+          ok = true;
+          break;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!ok) return false;
+  }
+  return true;
+}
+
+function ruleAllows(el: Element, rule: string, code: string): boolean {
+  // Global allow: bila diisi, hanya rule yang tercantum yang lolos
+  if (
+    config.rules.allow.length &&
+    !ruleMatches(config.rules.allow, rule, code)
+  ) {
+    return false;
+  }
+  if (ruleMatches(config.rules.deny, rule, code)) return false;
+  // Section-level skip pada ancestor
+  const skipHost = el.closest("[data-press-audit-skip]");
+  if (skipHost) {
+    const list = (skipHost.getAttribute("data-press-audit-skip") || "")
+      .split(/[\s,]+/)
+      .filter(Boolean);
+    if (list.some((k) => k === rule || k.toUpperCase() === code)) return false;
+  }
+  return true;
+}
+
+/**
  * Metadata terstruktur per rule. Format `PA###` sengaja stabil supaya
  * mudah di-grep dari log, di-filter di devtools ("PA002"), dan
  * dijadikan tautan langsung ke bagian dokumentasi terkait.
@@ -172,6 +296,9 @@ function scan(root: ParentNode): Finding[] {
 function report(findings: Finding[]) {
   if (!findings.length) return;
   const fresh = findings.filter((f) => {
+    const meta = metaFor(f.rule);
+    if (!ruleAllows(f.el, f.rule, meta.code)) return false;
+    if (!scopeAllows(f.el)) return false;
     if (seen.has(f.el)) return false;
     const s = sig(f.el, f.rule);
     if (dedupe.has(s)) return false;
@@ -180,6 +307,20 @@ function report(findings: Finding[]) {
     return true;
   });
   if (!fresh.length) return;
+  // Mode `suggest`: pasang marker DOM (tidak mengubah styling) supaya
+  // devtools/overlay bisa memfilter visual berdasar kode error.
+  if (config.mode === "suggest") {
+    for (const f of fresh) {
+      try {
+        (f.el as HTMLElement).setAttribute(
+          "data-press-audit-suggest",
+          metaFor(f.rule).code,
+        );
+      } catch {
+        /* elemen non-HTML — abaikan */
+      }
+    }
+  }
   // Kelompokkan per rule agar mudah dibaca.
   const byRule = new Map<string, Finding[]>();
   for (const f of fresh) {
@@ -195,7 +336,7 @@ function report(findings: Finding[]) {
     .join(",");
   // eslint-disable-next-line no-console
   console.groupCollapsed(
-    `%c[press-audit]%c ${fresh.length} temuan tanpa \`data-no-press\` · kode: ${codes} · docs: ${DOCS_BASE}`,
+    `%c[press-audit]%c ${fresh.length} temuan tanpa \`data-no-press\` · mode: ${config.mode} · kode: ${codes} · docs: ${DOCS_BASE}`,
     "color:#f59e0b;font-weight:600",
     "color:inherit",
   );
@@ -214,7 +355,8 @@ function report(findings: Finding[]) {
   // eslint-disable-next-line no-console
   console.info(
     `Dokumentasi lengkap: ${DOCS_BASE} — bagian "Checklist implementasi per komponen". ` +
-      `Filter cepat di devtools: ketik "press-audit" atau kode (PA001-PA004).`,
+      `Filter cepat di devtools: ketik "press-audit" atau kode (PA001-PA004). ` +
+      `Konfigurasi: window.__pressAuditConfig.set({ mode, rules, scope }).`,
   );
   // eslint-disable-next-line no-console
   console.groupEnd();
@@ -226,8 +368,10 @@ export function installPressAudit(): () => void {
   if (typeof window === "undefined") return () => {};
   if (started) return () => {};
   started = true;
+  config = loadConfig();
 
   const run = () => {
+    if (config.mode === "off") return;
     try {
       report(scan(document.body));
     } catch {
@@ -255,6 +399,33 @@ export function installPressAudit(): () => void {
     dedupe.clear();
     // WeakSet tak bisa di-clear; buat sweep dianggap fresh dgn signature baru.
     run();
+  };
+
+  // API konfigurasi runtime — bisa dipanggil dari devtools console tanpa reload.
+  (window as any).__pressAuditConfig = {
+    get: (): PressAuditConfig => ({ ...config }),
+    set: (patch: Partial<PressAuditConfig>) => {
+      saveConfig({
+        mode: patch.mode ?? config.mode,
+        rules: {
+          allow: patch.rules?.allow ?? config.rules.allow,
+          deny: patch.rules?.deny ?? config.rules.deny,
+        },
+        scope: {
+          allow: patch.scope?.allow ?? config.scope.allow,
+          deny: patch.scope?.deny ?? config.scope.deny,
+        },
+      });
+      dedupe.clear();
+      run();
+      return config;
+    },
+    reset: () => {
+      saveConfig(DEFAULT_CONFIG);
+      dedupe.clear();
+      run();
+      return config;
+    },
   };
 
   return () => {

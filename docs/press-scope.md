@@ -256,3 +256,49 @@ Format tiap baris warning:
   ↳ arg ke-2: elemen DOM asli (klik untuk highlight di Elements panel)
   ↳ arg ke-3: { code, rule, docs, tag, id, testid, role, cls }
 ```
+
+## Tuning per section (allowlist/denylist & mode)
+
+Auditor bisa disetel runtime tanpa reload. Konfigurasi disimpan di
+`localStorage["press-audit:config"]`.
+
+```ts
+// Panggil dari devtools console
+window.__pressAuditConfig.get();      // baca konfigurasi aktif
+window.__pressAuditConfig.set({ mode: "off" });          // matikan
+window.__pressAuditConfig.set({ mode: "suggest" });      // + marker DOM
+window.__pressAuditConfig.set({
+  rules: { allow: ["PA002", "sortable-handle"] },        // whitelist
+});
+window.__pressAuditConfig.set({
+  rules: { deny: ["destructive-menuitem"] },             // blacklist
+});
+window.__pressAuditConfig.set({
+  scope: { allow: ["main"], deny: ['[data-lovable-preview]'] },
+});
+window.__pressAuditConfig.reset();    // kembali ke default
+```
+
+### Mode
+
+| Mode      | Efek                                                                 |
+| --------- | -------------------------------------------------------------------- |
+| `off`     | Tidak scan, tidak log — biaya nol.                                   |
+| `log`     | Default. Hanya `console.warn` terstruktur, tidak menyentuh DOM.      |
+| `suggest` | Selain log, memasang `data-press-audit-suggest="<PA00X>"` pada tiap  |
+|           | elemen yang bermasalah — memudahkan filter visual di Elements panel. |
+
+### Opt-out via atribut DOM (per section)
+
+Selain konfigurasi global, section tertentu bisa mematikan auditor
+tanpa menyentuh `localStorage`:
+
+```tsx
+// Skip semua rule di dalam subtree ini
+<section data-press-audit="off"> ... </section>
+
+// Skip rule tertentu (nama rule atau kode PA00X, dipisah koma/spasi)
+<section data-press-audit-skip="PA001, motion-whiletap-wraps-button">
+  ...
+</section>
+```
