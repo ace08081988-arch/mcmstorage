@@ -3,9 +3,19 @@
  *
  * Kontrak:
  *   - `PHONE_ID_LIKE`: pola nomor telp Indonesia mentah — HP `08…` atau
- *     `+628…` / `62…`. Cukup ketat untuk menangkap kebocoran umum tanpa
- *     mem-false-positive PIN `xxxx-xxxx` (yang hanya A–Z & 0–9 tanpa
- *     awalan `08` / `62` diikuti 7+ digit).
+ *     `+628…` / `62…`, TOLERAN terhadap separator umum (`-`, `.`,
+ *     spasi biasa, NBSP, zero-width) yang sering muncul di render UI
+ *     jaringan lambat. Awalan `08` / `+62 8` / `62 8` + minimal 7 digit
+ *     lanjutan (dengan separator opsional di antara tiap digit)
+ *     memastikan PIN `xxxx-xxxx` (max 6 digit lanjutan setelah `08`)
+ *     tidak false-positive.
+ *   - `PHONE_ID_TEL_URI`: menangkap `href="tel:…"` / `tel:…` mentah
+ *     yang kadang bocor lewat anchor eksplisit.
+ *   - `PHONE_ID_LIKE_ANY`: gabungan strict + tel-URI + hasil normalisasi
+ *     (strip zero-width / NBSP / separator) — inilah yang dipakai
+ *     `assertChatBrandingClean` supaya bocoran di jaringan lambat
+ *     (skeleton, hydration, cache basi) tidak lolos hanya karena UI
+ *     menyelipkan spasi/entity di tengah nomor.
  *   - `PIN_MCM_FORMAT`: pola resmi `PIN XXXX-XXXX` (huruf/angka uppercase
  *     4-4). Ini yang selalu wajib bila UI memilih menampilkan token PIN.
  *   - `PIN_ANY_TOKEN`: pola loose `PIN <nonspace>` — dipakai untuk
@@ -16,9 +26,61 @@
  */
 import { expect, type Page, type Locator } from "@playwright/test";
 
-export const PHONE_ID_LIKE = /(?:\+?62|0)8\d{7,12}/;
+/**
+ * Pola nomor telp Indonesia mentah, TOLERAN separator.
+ *
+ * Struktur:
+ *   - Awalan: `+62`, `62`, atau `0` (leading-word-boundary untuk `0`
+ *     supaya angka tengah kalimat seperti "harga 08 ribu…" tidak
+ *     terjebak — meskipun `08` tanpa 7 digit lanjutan pun tidak match).
+ *   - `8` wajib sebagai prefix HP.
+ *   - 7–12 grup `<separator opsional><digit>`. Separator: `-`, `.`,
+ *     spasi biasa, NBSP (`\u00A0`), zero-width (`\u200B-\u200D`, `\uFEFF`).
+ *
+ * Catatan false-positive:
+ *   - PIN `0812-XXXX` (huruf setelah dash) → gagal karena membutuhkan
+ *     min. 7 digit lanjutan setelah `08`.
+ *   - PIN 4-4 all-digit `0812-3456` → hanya 6 digit lanjutan → juga gagal.
+ */
+export const PHONE_ID_LIKE =
+  /(?:\+?62|\b0)8(?:[\s.\u00A0\u200B-\u200D\uFEFF\-]?\d){7,12}/;
+
+/**
+ * Anchor `tel:` URI (dan varian dengan spasi/plus) — sering muncul di
+ * `<a href>` atau atribut yang bocor ke innerText via screen reader.
+ */
+export const PHONE_ID_TEL_URI = /tel:\s*\+?(?:62|0)8\d{7,12}/i;
+
+/**
+ * Union pattern yang dipakai `assertChatBrandingClean`. Dites terpisah
+ * di smoke spec dan juga lewat normalisasi (strip separator/zero-width)
+ * di helper `containsRawIndoPhone`.
+ */
+export const PHONE_ID_LIKE_ANY = new RegExp(
+  `${PHONE_ID_LIKE.source}|${PHONE_ID_TEL_URI.source}`,
+  "i",
+);
+
 export const PIN_MCM_FORMAT = /PIN\s+[A-Z0-9]{4}-[A-Z0-9]{4}/;
 export const PIN_ANY_TOKEN = /PIN\s+\S+/;
+
+/**
+ * Deteksi menyeluruh nomor telp Indonesia mentah, termasuk kasus
+ * obfuscation yang lazim muncul di jaringan lambat:
+ *   1. Bentuk mentah (`PHONE_ID_LIKE_ANY`).
+ *   2. Bentuk dengan zero-width / NBSP / entity ditengahnya — dinormalisasi
+ *      terlebih dulu (semua whitespace/zero-width → spasi tunggal, semua
+ *      separator angka umum dilepas) lalu diuji regex compact klasik
+ *      `(?:\+?62|0)8\d{7,12}`.
+ */
+export function containsRawIndoPhone(text: string): boolean {
+  if (!text) return false;
+  if (PHONE_ID_LIKE_ANY.test(text)) return true;
+  const stripped = text
+    .replace(/[\u200B-\u200D\uFEFF\u00A0]/g, " ")
+    .replace(/[\s.\-]/g, "");
+  return /(?:\+?62|0)8\d{7,12}/.test(stripped);
+}
 
 /**
  * Ambil semua token yang diawali `PIN ` dari `text` (bisa 0 hasil).
@@ -56,13 +118,17 @@ export function extractPinTokens(text: string): string[] {
 }
 
 /**
- * Tegas: `text` tidak boleh memuat nomor telepon Indonesia mentah.
- * `label` muncul di pesan kegagalan untuk kemudahan triase.
+ * Tegas: `text` tidak boleh memuat nomor telepon Indonesia mentah,
+ * termasuk varian dengan separator (`0812-3456-7890`, `+62 812 3456
+ * 7890`), `tel:` URI, dan obfuscation zero-width/NBSP. `label` muncul
+ * di pesan kegagalan untuk kemudahan triase.
  */
 export function expectNoRawPhone(text: string, label = "text"): void {
-  expect(text, `${label} wajib bebas nomor telp Indonesia mentah`).not.toMatch(
-    PHONE_ID_LIKE,
-  );
+  const leaked = containsRawIndoPhone(text);
+  expect(
+    leaked,
+    `${label} wajib bebas nomor telp Indonesia mentah (termasuk varian separator/tel:/zero-width)`,
+  ).toBe(false);
 }
 
 /**
