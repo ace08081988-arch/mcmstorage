@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { formatInviteCode } from "@/lib/invite";
 import {
   getConversationMeta,
   markConversationRead,
@@ -280,6 +281,7 @@ function ChatRoomPage() {
           display_name: string | null;
           email: string | null;
           phone: string | null;
+          invite_code: string | null;
           last_seen_at?: string | null;
           show_last_seen?: boolean | null;
         }>).map(
@@ -328,7 +330,10 @@ function ChatRoomPage() {
     if (meta.data.kind === "dm" && myId && profiles.data) {
       const other = (members.data ?? []).find((u) => u !== myId);
       const p = other ? profiles.data.get(other) : null;
-      return p?.display_name || p?.phone || p?.email || "Kontak";
+      return p?.display_name
+        || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
+        || p?.email
+        || "Kontak";
     }
     return meta.data.title || (meta.data.kind === "order" ? "Diskusi pesanan" : "Grup");
   }, [meta.data, profiles.data, members.data, myId]);
@@ -343,7 +348,11 @@ function ChatRoomPage() {
       peerUserId: other,
       peerPhone: p?.phone ?? null,
       peerEmail: p?.email ?? null,
-      fallbackName: p?.display_name || p?.phone || p?.email || "Kontak",
+      fallbackName:
+        p?.display_name
+        || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
+        || p?.email
+        || "Kontak",
     };
   }, [meta.data, members.data, profiles.data, myId]);
 
@@ -400,7 +409,11 @@ function ChatRoomPage() {
       const uid = (msg.payload as { userId?: string } | undefined)?.userId;
       if (!uid || uid === myId) return;
       const p = profiles.data?.get(uid);
-      const name = p?.display_name || p?.phone || p?.email || "Seseorang";
+      const name =
+        p?.display_name
+        || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
+        || p?.email
+        || "Seseorang";
       setTypingNames((prev) => (prev.includes(name) ? prev : [...prev, name]));
       const prevT = typingTimers.current.get(uid);
       if (prevT) clearTimeout(prevT);
