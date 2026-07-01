@@ -791,6 +791,23 @@ function StatusNotifikasiPage() {
       </Card>
 
       <TestNotificationCard perm={perm} sub={pushSub} />
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base">Ekspor snapshot</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <p className="text-xs text-muted-foreground leading-snug">
+            Ringkasan permission, service worker, dan detail push subscription (endpoint dimasker) dalam format JSON.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={downloadSnapshot}>Unduh JSON</Button>
+            <Button size="sm" variant="outline" onClick={copySnapshot}>
+              {exportCopied ? "Tersalin" : "Salin JSON"}
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }
