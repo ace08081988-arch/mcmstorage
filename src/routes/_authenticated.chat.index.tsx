@@ -127,10 +127,10 @@ function ChatListPage() {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
     const ok = await confirm({
-      title: `Hapus pesan di ${ids.length} percakapan?`,
+      title: `Bersihkan ${ids.length} percakapan?`,
       description:
-        "Pesan akan dihapus hanya di perangkatmu. Percakapan tetap ada, kamu bisa mulai chat lagi kapan saja.",
-      confirmText: "Hapus",
+        "Semua pesan lama akan hilang dari daftar dan riwayatmu. Percakapan akan muncul lagi bila ada pesan baru.",
+      confirmText: "Bersihkan",
       cancelText: "Batal",
       destructive: true,
     });
@@ -139,7 +139,7 @@ function ChatListPage() {
     let failed = 0;
     for (const convId of ids) {
       try {
-        const { data, error } = await supabase.rpc("message_delete_all_mine", { _conv: convId });
+        const { data, error } = await supabase.rpc("chat_clear_conversation_for_me", { _conv: convId });
         if (error) throw error;
         const paths = ((data ?? []) as string[]).filter((p): p is string => !!p);
         if (paths.length > 0) {
