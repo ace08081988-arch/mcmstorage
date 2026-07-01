@@ -144,9 +144,8 @@ export type BiometricStatus = {
 
 function isNative(): boolean {
   try {
-    // @ts-expect-error Capacitor global
-    return !!(window as { Capacitor?: { isNativePlatform?: () => boolean } })
-      ?.Capacitor?.isNativePlatform?.();
+    const w = window as unknown as { Capacitor?: { isNativePlatform?: () => boolean } };
+    return !!w.Capacitor?.isNativePlatform?.();
   } catch {
     return false;
   }
