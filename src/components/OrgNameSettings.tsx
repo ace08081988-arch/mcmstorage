@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Building2, Save, ImagePlus, Trash2, Palette, RotateCcw } from "lucide-react";
+import { Building2, Save, ImagePlus, Trash2, Palette, RotateCcw, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,16 @@ export function OrgNameSettings() {
   const [brand, setBrand] = useState(savedBrand);
   const [hex, setHex] = useState(savedBrand.startsWith("#") ? savedBrand : "#10b981");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = window.localStorage.getItem("app-org-saved-at");
+    return v ? Number(v) || null : null;
+  });
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     setFull(savedFull);
@@ -58,6 +68,9 @@ export function OrgNameSettings() {
   const onSave = () => {
     setOrgName(full, short);
     setOrgBrand(brand);
+    const ts = Date.now();
+    try { window.localStorage.setItem("app-org-saved-at", String(ts)); } catch { /* ignore */ }
+    setLastSavedAt(ts);
     toast.success("Nama organisasi disimpan");
   };
 
@@ -76,6 +89,9 @@ export function OrgNameSettings() {
     setBrand("");
     setHex("#10b981");
     applyBrandColor();
+    const ts = Date.now();
+    try { window.localStorage.setItem("app-org-saved-at", String(ts)); } catch { /* ignore */ }
+    setLastSavedAt(ts);
     toast.success("Logo & warna direset ke bawaan");
   };
 
@@ -390,17 +406,49 @@ export function OrgNameSettings() {
           >
             Reset ke bawaan
           </Button>
-          <Button
-            type="button"
-            onClick={onSave}
-            disabled={!dirty || !full.trim()}
-            className="gap-2"
-          >
-            <Save className="h-4 w-4" aria-hidden="true" />
-            Simpan
-          </Button>
+          <div className="flex items-center gap-3">
+            {lastSavedAt && !dirty && (
+              <span
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-500"
+                title={new Date(lastSavedAt).toLocaleString("id-ID")}
+              >
+                <Check className="h-3 w-3" aria-hidden="true" />
+                Tersimpan · {formatRelative(now - lastSavedAt)}
+              </span>
+            )}
+            <Button
+              type="button"
+              onClick={onSave}
+              disabled={!dirty || !full.trim()}
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" aria-hidden="true" />
+              Simpan
+            </Button>
+          </div>
         </div>
+        {lastSavedAt && (
+          <p className="text-[11px] text-muted-foreground">
+            Terakhir diperbarui{" "}
+            <time dateTime={new Date(lastSavedAt).toISOString()}>
+              {new Date(lastSavedAt).toLocaleString("id-ID", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </time>
+          </p>
+        )}
       </CardContent>
     </Card>
   );
+}
+
+function formatRelative(msAgo: number): string {
+  if (msAgo < 45_000) return "baru saja";
+  const min = Math.round(msAgo / 60_000);
+  if (min < 60) return `${min} menit lalu`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `${hr} jam lalu`;
+  const d = Math.round(hr / 24);
+  return `${d} hari lalu`;
 }
