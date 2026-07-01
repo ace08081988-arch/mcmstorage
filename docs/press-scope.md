@@ -542,6 +542,153 @@ Tabel keputusan cepat:
 > tingkatan **`deny`/`off`/`skip` > `allow`/`on`**. `skip` bersifat aditif,
 > tidak pernah menghapus skip dari ancestor.
 
+#### Contoh HTML lengkap untuk tiap kombinasi prioritas
+
+Semua contoh di bawah bisa disalin apa adanya ke DevTools > Elements
+untuk memverifikasi urutan prioritas. Setiap blok menyertakan komentar
+`efektif:` yang menyimpulkan hasil audit pada elemen target.
+
+```html
+<!-- (A) off terdekat menang atas skip di child -->
+<!-- Global: mode="log", allowRules=[], denyRules=[] -->
+<section data-press-audit="off">
+  <div data-press-audit-skip="PA002">
+    <button class="press">Simpan</button>
+    <!-- efektif: SEMUA rule OFF (langkah 1). skip PA002 tak dievaluasi. -->
+  </div>
+</section>
+```
+
+```html
+<!-- (B) child menyalakan ulang audit di dalam parent off -->
+<section data-press-audit="off">
+  <aside data-press-audit="on" data-press-audit-skip="PA001">
+    <div role="dialog">…</div>
+    <!-- efektif: audit ON, skip={PA001}. PA002/PA003/PA004 tetap jalan. -->
+  </aside>
+</section>
+```
+
+```html
+<!-- (C) skip aditif (union) antara parent dan child, tanpa unskip -->
+<div data-press-audit-skip="PA001">
+  <div data-press-audit-skip="PA002 PA004">
+    <div data-press-audit-skip="">
+      <button class="press">Hapus</button>
+      <!-- efektif: skip={PA001, PA002, PA004}. String kosong TIDAK meng-unskip. -->
+    </div>
+  </div>
+</div>
+```
+
+```html
+<!-- (D) denyRules global menang atas allowRules global -->
+<script>
+  window.__pressAuditConfig?.set({
+    mode: "log",
+    allowRules: ["PA001", "PA002"],
+    denyRules:  ["PA001"],
+  });
+</script>
+<main>
+  <div role="dialog">…</div>
+  <!-- efektif: hanya PA002 diaudit. PA001 di-deny, PA003/PA004 di luar allow. -->
+</main>
+```
+
+```html
+<!-- (E) atribut DOM menang atas allowRules global -->
+<script>
+  window.__pressAuditConfig?.set({ mode: "log", allowRules: ["PA001"] });
+</script>
+<section data-press-audit-skip="PA001">
+  <div role="dialog">…</div>
+  <!-- efektif: skip PA001 (DOM) + allow hanya PA001 (global)
+       → tidak ada rule yang lolos. Section senyap. -->
+</section>
+```
+
+```html
+<!-- (F) allowScopes + denyScopes (selector CSS) -->
+<script>
+  window.__pressAuditConfig?.set({
+    mode: "log",
+    allowScopes: ["main[data-page='chat']"],
+    denyScopes:  ["[data-preview-frame]"],
+  });
+</script>
+<main data-page="chat">
+  <div role="dialog">…</div>              <!-- diaudit (masuk allowScope) -->
+  <iframe data-preview-frame>
+    <div role="dialog">…</div>            <!-- di-skip (denyScope menang) -->
+  </iframe>
+</main>
+<main data-page="settings">
+  <div role="dialog">…</div>              <!-- di-skip (di luar allowScope) -->
+</main>
+```
+
+```html
+<!-- (G) suggest global + skip per section (mempertahankan saran fix untuk sisanya) -->
+<script>
+  window.__pressAuditConfig?.set({ mode: "suggest" });
+</script>
+<article data-press-audit-skip="PA001 PA004">
+  <div role="dialog">…</div>              <!-- PA001 di-skip; sisanya suggest -->
+  <div role="menu">
+    <div role="menuitem" class="text-destructive">Hapus akun</div>
+    <!-- PA004 di-skip; PA002/PA003 tetap menghasilkan console.warn + saran -->
+  </div>
+</article>
+```
+
+```html
+<!-- (H) on di child tidak meng-unskip ancestor; hanya membalik "off" -->
+<div data-press-audit-skip="PA001">
+  <div data-press-audit="on">
+    <div role="dialog">…</div>
+    <!-- efektif: audit ON, tapi PA001 tetap di-skip (skip diwariskan). -->
+  </div>
+</div>
+```
+
+```html
+<!-- (I) mode=off global — atribut DOM tetap dievaluasi tapi tanpa efek -->
+<script>
+  window.__pressAuditConfig?.set({ mode: "off" });
+</script>
+<section data-press-audit="on" data-press-audit-skip="PA002">
+  <div role="dialog">…</div>
+  <!-- efektif: keputusan filter berjalan, tapi mode=off ⇒ tak ada console/DOM output. -->
+</section>
+```
+
+```html
+<!-- (J) prioritas penuh: off (parent) → on (child) → skip → deny → allow → mode -->
+<script>
+  window.__pressAuditConfig?.set({
+    mode: "suggest",
+    allowRules: ["PA001","PA002","PA003","PA004"],
+    denyRules:  ["PA003"],
+  });
+</script>
+<section data-press-audit="off">                          <!-- (1) OFF -->
+  <div data-press-audit="on" data-press-audit-skip="PA002"><!-- (1) ON kembali, (2) skip PA002 -->
+    <div>
+      <!-- (3) denyRules → PA003 dibuang -->
+      <!-- (4) allowRules → sisanya (PA001, PA004) lolos -->
+      <!-- (6) mode=suggest → warn + data-press-audit-suggest -->
+      <div role="dialog">…</div>
+      <!-- efektif: hanya PA001 & PA004 yang muncul sebagai suggest. -->
+    </div>
+  </div>
+</section>
+```
+
+> Verifikasi cepat: buka DevTools > Console, filter `PA00`, lalu hover
+> tiap contoh. Jumlah warning yang muncul harus sesuai komentar
+> `efektif:` di setiap blok.
+
 ### Resep per section (siap salin)
 
 Skenario nyata di aplikasi + kombinasi atribut DOM dan
