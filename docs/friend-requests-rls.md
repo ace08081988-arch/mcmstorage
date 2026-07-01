@@ -345,3 +345,103 @@ Format: `FAIL <blok>: <alasan> (sqlstate=… msg=… detail=… hint=…)`.
 > Jika CI merah tetapi lokal hijau, biasanya karena `test.can_switch`
 > tidak diaktifkan di lokal (blok runtime di-skip). Reproduksi dengan
 > `PGOPTIONS="-c test.can_switch=on"` sebelum menuduh flakiness.
+
+## 10. Katalog alasan SKIP di subset test participant RLS
+
+Baris `NOTICE:  SKIP …` **bukan** kegagalan — tapi setiap SKIP wajib
+punya alasan yang eksplisit supaya CI tidak menyembunyikan regresi di
+balik "hijau semu". Berikut alasan SKIP yang legal beserta contoh
+output singkat dari `bun run test:security:sql:verbose`.
+
+### 10.1 Dependency runtime belum aktif
+
+Muncul saat sesi Postgres tidak diizinkan `SET LOCAL ROLE` (mis. runner
+lokal tanpa `PGOPTIONS`, atau CI yang lupa mengaktifkan GUC). Blok
+runtime di-skip tapi **static drift check tetap wajib PASS**.
+
+```text
+NOTICE:  SKIP 11a-11h: cannot switch roles (set PGOPTIONS="-c test.can_switch=on")
+NOTICE:  SKIP 12a-12g: cannot switch roles (set PGOPTIONS="-c test.can_switch=on")
+NOTICE:  SKIP 13a-13e: cannot switch roles (set PGOPTIONS="-c test.can_switch=on")
+NOTICE:  PASS 13-static: exactly 1 SELECT/ALL policy on friend_requests (fr_select_self)
+```
+
+Aksi: jalankan ulang dengan `PGOPTIONS="-c test.can_switch=on"` atau
+`bun run test:security:sql:verbose --can-switch`.
+
+### 10.2 Kondisi block tidak terpenuhi (fixture kosong)
+
+Blok tertentu men-skip diri sendiri saat fixture tidak menyediakan
+baris untuk skenario itu — mis. blok 11f (delete cancelled by sender)
+butuh minimal satu baris `cancelled` untuk pasangan A→B. Kalau seed
+diubah dan status hilang, skenario tidak dites diam-diam.
+
+```text
+NOTICE:  SKIP 11f: no cancelled row A->B in fixture (adjust seed if intentional)
+NOTICE:  SKIP 12e: no rejected row to attempt un-reject (fixture drift)
+```
+
+Aksi: kembalikan seed di header blok 11/12 supaya semua status
+(pending / accepted / rejected / cancelled) terisi, atau perbarui
+dokumentasi §4 jika transisi memang sengaja dihapus.
+
+### 10.3 Slice `--block=N` sengaja melewati blok lain
+
+Runner verbose men-skip blok di luar filter dengan penanda eksplisit —
+ini alasan SKIP paling sering muncul saat triage lokal.
+
+```text
+$ bun run test:security:sql:verbose --block=13
+NOTICE:  SKIP 11: filtered out by --block=13
+NOTICE:  SKIP 12: filtered out by --block=13
+NOTICE:  PASS 13-static: …
+NOTICE:  PASS 13a: sender sees 4 own rows …
+```
+
+Aksi: none — hilangkan `--block` untuk menjalankan full suite sebelum
+merge.
+
+### 10.4 Drift tidak relevan untuk skenario ini
+
+Beberapa blok punya guard "policy tidak ada" (mis. saat policy
+dihapus sengaja pada migrasi terkait). SKIP ini sah **hanya bila**
+§3.x di dokumen ini sudah diperbarui pada commit yang sama.
+
+```text
+NOTICE:  SKIP 11g: policy fr_update_sender_cancel_only not present (post-migration state)
+NOTICE:  SKIP 12c: guard branch removed by migration 2026xxxx_relax_reject.sql
+```
+
+Aksi: cek `bun run check:friend-requests-docs` — guard checklist akan
+menggagalkan PR bila migrasi menyentuh policy/trigger tanpa update
+dokumentasi + tabel §4 + audit. Kalau checklist hijau, SKIP ini
+legitimate.
+
+### 10.5 Ekstensi / RPC prasyarat belum di-deploy
+
+Blok yang memvalidasi jalur RPC `SECURITY DEFINER`
+(`respond_friend_request`, `cancel_friend_request`) men-skip dirinya
+bila fungsi belum ada di schema — biasanya terjadi saat menjalankan
+subset di database preview yang tertinggal migrasi.
+
+```text
+NOTICE:  SKIP 11h: rpc respond_friend_request(uuid, text) not installed on this database
+```
+
+Aksi: jalankan migrasi terbaru (`supabase db push` di lingkungan lokal
+setara), atau reset preview DB. **Jangan** merge selagi RPC hilang di
+production target.
+
+### 10.6 Ringkasan: SKIP yang boleh vs SKIP yang harus difail-kan
+
+| Kategori SKIP | Boleh hijau? | Kondisi wajib |
+|---|---|---|
+| 10.1 Role switch off | ✅ lokal, ❌ CI utama | Static drift check tetap PASS; CI utama harus set `test.can_switch=on` |
+| 10.2 Fixture kosong | ⚠️ hanya sementara | Seed diperbaiki sebelum merge |
+| 10.3 `--block=` filter | ✅ | Full suite dijalankan sebelum merge |
+| 10.4 Policy sengaja dihapus | ✅ | `check:friend-requests-docs` hijau + §3.x diupdate |
+| 10.5 RPC belum ter-deploy | ❌ | Migrasi harus disinkronkan sebelum lanjut |
+
+> Aturan singkat: kalau baris SKIP tidak muncul di tabel di atas,
+> perlakukan sebagai **FAIL**. SKIP yang tidak terdokumentasi = kontrak
+> test bocor.
