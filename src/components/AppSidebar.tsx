@@ -22,6 +22,74 @@ import { ReduceMotionToggle } from "@/components/ReduceMotionToggle";
 import { useConversations } from "@/lib/chat";
 import { useOrgName } from "@/lib/org-name";
 
+/**
+ * Tap-safe navigation link. On mobile WebViews (411px APK) a plain
+ * `onPointerDown` handler navigated on the very first touch — so scrolling
+ * the sidebar with a finger that happened to start on a menu item would
+ * instantly change halaman. Kita pantau posisi pointerdown lalu hanya
+ * memicu navigasi pada pointerup jika gerakan < 10px (bukan scroll).
+ */
+function NavLinkItem({
+  item,
+  isMobile,
+  pathname,
+  setOpenMobile,
+  navigate,
+  children,
+}: {
+  item: { title: string; url: string; icon: typeof Home };
+  isMobile: boolean;
+  pathname: string;
+  setOpenMobile: (open: boolean) => void;
+  navigate: ReturnType<typeof useNavigate>;
+  children: React.ReactNode;
+}) {
+  const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
+  return (
+    <Link
+      to={item.url}
+      preload="intent"
+      className="flex items-center gap-2.5"
+      onPointerDown={(e) => {
+        if (!isMobile) return;
+        if (e.pointerType === "mouse") return;
+        startRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+      }}
+      onPointerMove={(e) => {
+        const s = startRef.current;
+        if (!s) return;
+        const dx = Math.abs(e.clientX - s.x);
+        const dy = Math.abs(e.clientY - s.y);
+        // Gerakan > 10px = user sedang scroll, batalkan intent tap.
+        if (dx > 10 || dy > 10) startRef.current = null;
+      }}
+      onPointerCancel={() => {
+        startRef.current = null;
+      }}
+      onPointerUp={(e) => {
+        if (!isMobile) return;
+        if (e.pointerType === "mouse") return;
+        const s = startRef.current;
+        startRef.current = null;
+        if (!s) return;
+        const dx = Math.abs(e.clientX - s.x);
+        const dy = Math.abs(e.clientY - s.y);
+        const dt = Date.now() - s.t;
+        // Bukan tap kalau ada scroll drift atau tekan-lama.
+        if (dx > 10 || dy > 10 || dt > 600) return;
+        if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
+        e.preventDefault();
+        setOpenMobile(false);
+        if (pathname !== item.url) {
+          void navigate({ to: item.url });
+        }
+      }}
+    >
+      {children}
+    </Link>
+  );
+}
+
 function OrgHeader() {
   const { full, short, logo } = useOrgName();
   return (
