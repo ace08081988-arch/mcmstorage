@@ -481,8 +481,9 @@ tanpa menyentuh `localStorage`:
 </section>
 ```
 
-**Validasi token.** Auditor memeriksa isi `data-press-audit-skip` saat
-dievaluasi dan menulis `console.warn` sekali per host + token unik bila
+**Validasi token.** Auditor memeriksa isi `data-press-audit-skip`,
+`data-press-audit-allow`, dan `data-press-audit-deny` saat dievaluasi
+dan menulis `console.warn` sekali per host + (atribut, token) unik bila
 menemukan:
 
 - Format tidak cocok pola `PA###` — contoh: `PA01`, `pa-002`, `PA1`.
@@ -496,6 +497,14 @@ menemukan:
 Semua warning memakai kode `PA000` supaya bisa difilter di devtools dan
 tetap membawa link ke bagian docs yang relevan
 ([kode error](#kode-error-press-audit) · [menambahkan rule baru](#menambahkan-rule-baru-pa005)).
+
+Pesan warning selalu mencantumkan nama atribut sumbernya, jadi salah
+ketik di `-allow`/`-deny` tidak menyamar sebagai warning `-skip`. Contoh:
+
+```
+[press-audit PA000] data-press-audit-allow="PA042" merujuk kode PA### yang
+belum dialokasikan: "PA042". Kode yang dikenal: PA001, PA002, PA003, PA004.
+```
 
 ### Prioritas evaluasi (satu section, banyak atribut)
 
