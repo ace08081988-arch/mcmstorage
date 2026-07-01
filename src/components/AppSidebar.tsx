@@ -2,6 +2,7 @@ import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/reac
 import { useEffect, useRef, useState } from "react";
 import { getScrollGuardConfig } from "@/lib/scroll-guard-config";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { ADMIN_ONLY_URLS, filterSidebarItemsForAdmin } from "@/lib/admin-sidebar-visibility";
 
 /**
  * Global "scroll aktif" flag. Sekali ada scroll event dari elemen apapun
@@ -348,14 +349,14 @@ export function AppSidebar() {
     ? groups.filter((g) => CHAT_ONLY_GROUP_LABELS.has(g.label))
     : groups;
   // Sembunyikan menu admin-only dari non-admin supaya mereka tidak jatuh ke
-  // halaman kosong / runtime error saat memanggil server fn admin.
-  const ADMIN_ONLY_URLS = new Set<string>(["/pengaturan-apk", "/email-queue"]);
+  // halaman kosong / runtime error saat memanggil server fn admin. Daftar
+  // URL & fungsi filter di-share dengan harness E2E supaya kontraknya
+  // tidak drift; lihat `src/lib/admin-sidebar-visibility.ts`.
+  void ADMIN_ONLY_URLS;
   const visibleGroups = baseGroups
     .map((g) => ({
       ...g,
-      items: g.items.filter(
-        (it) => isAdmin || !ADMIN_ONLY_URLS.has(it.url),
-      ),
+      items: filterSidebarItemsForAdmin(g.items, isAdmin),
     }))
     .filter((g) => g.items.length > 0);
   void modeTick;
