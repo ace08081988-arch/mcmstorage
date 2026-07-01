@@ -5,10 +5,10 @@ import { test, expect, type Locator } from "@playwright/test";
  *
  *  1. Setelah scroll bolak-balik di daftar virtualized-like (kontainer
  *     scrollable dengan banyak baris). Label tidak boleh sesaat berubah
- *     ke "0:00" saat baris masuk/keluar viewport.
+ *     ke "00:00" saat baris masuk/keluar viewport.
  *  2. Setelah baris di-remount (React key berubah). `attachmentDurationSec`
  *     diteruskan sebagai prop `durationSec`, sehingga `VoiceNotePlayer`
- *     wajib menampilkan durasi kanonik ("0:03" pada harness) segera pada
+ *     wajib menampilkan durasi kanonik ("00:03" pada harness) segera pada
  *     mount pertama — sebelum metadata audio termuat.
  *
  * Harness publik `/lovable/visual/voice-note-player` menyediakan 40 baris
@@ -16,7 +16,8 @@ import { test, expect, type Locator } from "@playwright/test";
  * setiap baris dilepas & dipasang ulang lewat key.
  */
 
-const CANONICAL_LABEL = "0:03";
+const CANONICAL_LABEL = "00:03";
+const ZERO_LABEL = "00:00";
 const SAMPLE_INTERVAL_MS = 60;
 const SAMPLE_WINDOW_MS = 700;
 
@@ -24,7 +25,7 @@ async function readLabel(row: Locator): Promise<string> {
   // Label durasi adalah span terakhir dalam bubble; ambil semua teks
   // baris lalu ekstrak token m:ss terakhir agar tahan terhadap markup.
   const text = (await row.innerText().catch(() => "")) || "";
-  const matches = text.match(/\d+:\d{2}/g);
+  const matches = text.match(/\d{1,2}:\d{2}/g);
   return matches ? matches[matches.length - 1] : "";
 }
 
@@ -34,9 +35,9 @@ async function assertAllRowsCanonical(page: import("@playwright/test").Page, pha
     const row = page.locator(`[data-vn-index="${i}"]`);
     const label = await readLabel(row);
     // Baris yang belum sempat render label penuh boleh kosong; TIDAK
-    // boleh menampilkan "0:00" karena prop `durationSec=3` seharusnya
+    // boleh menampilkan "00:00" karena prop `durationSec=3` seharusnya
     // langsung menandai player siap.
-    expect(label, `${phase} row#${i} label tidak boleh "0:00"`).not.toBe("0:00");
+    expect(label, `${phase} row#${i} label tidak boleh "${ZERO_LABEL}"`).not.toBe(ZERO_LABEL);
     if (label) {
       expect(label, `${phase} row#${i} label wajib ${CANONICAL_LABEL}`).toBe(CANONICAL_LABEL);
     }
@@ -80,7 +81,7 @@ test.describe("voice note — durasi konsisten pada remount + scroll bolak-balik
     await pollLabelsDuring(page, "scroll-to-top");
 
     // Fase 2 — rapid oscillation, memaksa reflow & re-mount lokal saat
-    // scroll cepat bolak-balik. Label tidak boleh flash ke "0:00".
+    // scroll cepat bolak-balik. Label tidak boleh flash ke "00:00".
     for (let wave = 0; wave < 6; wave += 1) {
       await scroll.evaluate((el, w) => {
         el.scrollTop = w % 2 === 0 ? el.scrollHeight : 0;

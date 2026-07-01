@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { uploadChatFile } from "@/lib/chat-attachments";
 import { sendMessage } from "@/lib/chat.functions";
 import { normalizeDurationSec } from "@/components/chat/VoiceNotePlayer";
+import { formatDurationMMSS } from "@/lib/format-duration";
 
 /**
  * Voice note recorder untuk komposer chat.
@@ -40,11 +41,8 @@ function extFromMime(mime: string): string {
   return "webm";
 }
 
-function fmt(sec: number): string {
-  const m = Math.floor(sec / 60);
-  const s = sec % 60;
-  return `${m}:${s.toString().padStart(2, "0")}`;
-}
+// Format durasi tersentralisasi (mm:ss) — lihat src/lib/format-duration.ts.
+const fmt = formatDurationMMSS;
 
 type Props = {
   conversationId: string;
