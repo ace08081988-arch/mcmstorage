@@ -1247,7 +1247,7 @@ function ImportResultView({ result }: { result: ImportResult }) {
       </div>
     );
   }
-  const { snapshot, sourceVersion, warnings } = result;
+  const { snapshot, sourceVersion, warnings, appliedMigrations } = result;
   return (
     <div className="space-y-2">
       <div className="rounded-md border p-3 text-xs space-y-1">
@@ -1257,6 +1257,11 @@ function ImportResultView({ result }: { result: ImportResult }) {
             <Badge variant={sourceVersion === 0 ? "secondary" : "default"}>
               schema v{sourceVersion === 0 ? "0 (legacy)" : sourceVersion}
             </Badge>
+            {appliedMigrations.length > 0 && (
+              <Badge variant="outline">
+                → v{snapshot.schemaVersion} ({appliedMigrations.length} migrasi)
+              </Badge>
+            )}
             {sourceVersion > CURRENT_SCHEMA_VERSION && (
               <Badge variant="destructive">lebih baru</Badge>
             )}
@@ -1264,6 +1269,23 @@ function ImportResultView({ result }: { result: ImportResult }) {
         </div>
         <SnapshotSummary snapshot={snapshot} />
       </div>
+      {appliedMigrations.length > 0 && (
+        <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-1">
+          <div className="font-medium">
+            Migrasi otomatis diterapkan ({appliedMigrations.length})
+          </div>
+          <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground leading-snug">
+            {appliedMigrations.map((m, i) => (
+              <li key={`${m.from}-${m.to}-${i}`}>
+                <code className="text-[10px]">
+                  v{m.from} → v{m.to}
+                </code>{" "}
+                — {m.description}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       {warnings.length > 0 && (
         <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-1">
           <div className="font-medium">Catatan validasi ({warnings.length})</div>
