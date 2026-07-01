@@ -1121,7 +1121,7 @@ function ContactDialog({ conversationId, open, onOpenChange, onSent }: { convers
         ) : null}
         <div className="space-y-2">
           <div><Label>Nama</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Nomor WhatsApp</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="62812..." /></div>
+          <div><Label>Nomor MCM</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="62812..." /></div>
           <div><Label>Catatan (opsional)</Label><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></div>
         </div>
         <DialogFooter>
