@@ -44,6 +44,7 @@ import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authent
 import { Route as AuthenticatedKontakRouteImport } from './routes/_authenticated.kontak'
 import { Route as AuthenticatedHutangPiutangRouteImport } from './routes/_authenticated.hutang-piutang'
 import { Route as AuthenticatedGudangRouteImport } from './routes/_authenticated.gudang'
+import { Route as AuthenticatedFiturRouteImport } from './routes/_authenticated.fitur'
 import { Route as AuthenticatedEmailQueueRouteImport } from './routes/_authenticated.email-queue'
 import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.ecer'
 import { Route as AuthenticatedDiagnosticsRouteImport } from './routes/_authenticated.diagnostics'
@@ -260,6 +261,11 @@ const AuthenticatedGudangRoute = AuthenticatedGudangRouteImport.update({
   path: '/gudang',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedFiturRoute = AuthenticatedFiturRouteImport.update({
+  id: '/fitur',
+  path: '/fitur',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedEmailQueueRoute = AuthenticatedEmailQueueRouteImport.update({
   id: '/email-queue',
   path: '/email-queue',
@@ -451,6 +457,7 @@ export interface FileRoutesByFullPath {
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
   '/email-queue': typeof AuthenticatedEmailQueueRoute
+  '/fitur': typeof AuthenticatedFiturRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/kontak': typeof AuthenticatedKontakRouteWithChildren
@@ -515,6 +522,7 @@ export interface FileRoutesByTo {
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
   '/email-queue': typeof AuthenticatedEmailQueueRoute
+  '/fitur': typeof AuthenticatedFiturRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/kontak': typeof AuthenticatedKontakRouteWithChildren
@@ -583,6 +591,7 @@ export interface FileRoutesById {
   '/_authenticated/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/_authenticated/ecer': typeof AuthenticatedEcerRoute
   '/_authenticated/email-queue': typeof AuthenticatedEmailQueueRoute
+  '/_authenticated/fitur': typeof AuthenticatedFiturRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
   '/_authenticated/kontak': typeof AuthenticatedKontakRouteWithChildren
@@ -652,6 +661,7 @@ export interface FileRouteTypes {
     | '/diagnostics'
     | '/ecer'
     | '/email-queue'
+    | '/fitur'
     | '/gudang'
     | '/hutang-piutang'
     | '/kontak'
@@ -716,6 +726,7 @@ export interface FileRouteTypes {
     | '/diagnostics'
     | '/ecer'
     | '/email-queue'
+    | '/fitur'
     | '/gudang'
     | '/hutang-piutang'
     | '/kontak'
@@ -783,6 +794,7 @@ export interface FileRouteTypes {
     | '/_authenticated/diagnostics'
     | '/_authenticated/ecer'
     | '/_authenticated/email-queue'
+    | '/_authenticated/fitur'
     | '/_authenticated/gudang'
     | '/_authenticated/hutang-piutang'
     | '/_authenticated/kontak'
@@ -1104,6 +1116,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedGudangRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/fitur': {
+      id: '/_authenticated/fitur'
+      path: '/fitur'
+      fullPath: '/fitur'
+      preLoaderRoute: typeof AuthenticatedFiturRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/email-queue': {
       id: '/_authenticated/email-queue'
       path: '/email-queue'
@@ -1380,6 +1399,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedDiagnosticsRoute: typeof AuthenticatedDiagnosticsRoute
   AuthenticatedEcerRoute: typeof AuthenticatedEcerRoute
   AuthenticatedEmailQueueRoute: typeof AuthenticatedEmailQueueRoute
+  AuthenticatedFiturRoute: typeof AuthenticatedFiturRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
   AuthenticatedKontakRoute: typeof AuthenticatedKontakRouteWithChildren
@@ -1418,6 +1438,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedDiagnosticsRoute: AuthenticatedDiagnosticsRoute,
   AuthenticatedEcerRoute: AuthenticatedEcerRoute,
   AuthenticatedEmailQueueRoute: AuthenticatedEmailQueueRoute,
+  AuthenticatedFiturRoute: AuthenticatedFiturRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
   AuthenticatedKontakRoute: AuthenticatedKontakRouteWithChildren,

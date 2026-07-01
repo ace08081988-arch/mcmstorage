@@ -3,7 +3,7 @@ import { MessageCircle, Phone, Bell, LayoutGrid } from "lucide-react";
 import { useUnreadTotal } from "@/lib/chat";
 
 type Item = {
-  to: "/chat" | "/panggilan" | "/notifikasi" | "/";
+  to: "/chat" | "/panggilan" | "/notifikasi" | "/fitur";
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
   badge?: number;
@@ -20,7 +20,7 @@ export function ChatBottomNav() {
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread },
     { to: "/panggilan", label: "Panggilan", Icon: Phone },
     { to: "/notifikasi", label: "Pembaruan", Icon: Bell },
-    { to: "/", label: "Fitur", Icon: LayoutGrid },
+    { to: "/fitur", label: "Fitur", Icon: LayoutGrid },
   ];
   return (
     <nav
@@ -29,10 +29,7 @@ export function ChatBottomNav() {
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)" }}
     >
       {items.map(({ to, label, Icon, badge }) => {
-        const active =
-          to === "/"
-            ? path === "/"
-            : path === to || path.startsWith(`${to}/`);
+        const active = path === to || path.startsWith(`${to}/`);
         return (
           <Link
             key={to}
