@@ -17,19 +17,23 @@
  * Pakai:  bun run codemod:mmss              # tulis perubahan
  *         bun run codemod:mmss --dry        # tampilkan diff, tidak menulis
  */
-import { readFileSync, writeFileSync } from "node:fs";
-import { globSync } from "node:fs";
-import { execSync } from "node:child_process";
+import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
+import { join } from "node:path";
 
 const DRY = process.argv.includes("--dry");
-const files = execSync(
-  `git ls-files 'src/components/chat/*.ts' 'src/components/chat/*.tsx'`,
-  { encoding: "utf8" },
-)
-  .split("\n")
-  .filter(Boolean)
-  .filter((f) => !/\.test\.tsx?$/.test(f))
-  .filter((f) => !/AttachMenu\.tsx$/.test(f));
+function walk(dir) {
+  const out = [];
+  for (const name of readdirSync(dir)) {
+    const p = join(dir, name);
+    const st = statSync(p);
+    if (st.isDirectory()) out.push(...walk(p));
+    else if (/\.tsx?$/.test(name) && !/\.test\.tsx?$/.test(name) && name !== "AttachMenu.tsx") {
+      out.push(p);
+    }
+  }
+  return out;
+}
+const files = walk("src/components/chat");
 
 const IMPORT_LINE = `import { formatDurationMMSS } from "@/lib/format-duration";`;
 
