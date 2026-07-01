@@ -208,6 +208,38 @@ export function useConversations() {
         }
       }
 
+      // Contact aliases from address_book (nama kontak lokal) — prefer over profile display_name.
+      const aliasByUser = new Map<string, string>();
+      const aliasByPhone = new Map<string, string>();
+      const aliasByEmail = new Map<string, string>();
+      if (otherIds.size > 0) {
+        try {
+          const idsArr = Array.from(otherIds);
+          const phones = idsArr
+            .map((u) => profileMap.get(u)?.phone)
+            .filter((p): p is string => !!p);
+          const emails = idsArr
+            .map((u) => profileMap.get(u)?.email?.toLowerCase().trim())
+            .filter((e): e is string => !!e);
+          const orParts: string[] = [];
+          orParts.push(`linked_user_id.in.(${idsArr.join(",")})`);
+          if (phones.length) orParts.push(`phone_norm.in.(${phones.map((p) => p.replace(/[^\d+]/g, "")).join(",")})`);
+          if (emails.length) orParts.push(`email_norm.in.(${emails.join(",")})`);
+          const { data: aliases } = await supabase
+            .from("address_book")
+            .select("name, linked_user_id, phone_norm, email_norm")
+            .or(orParts.join(","));
+          for (const a of (aliases ?? []) as Array<{ name: string | null; linked_user_id: string | null; phone_norm: string | null; email_norm: string | null }>) {
+            if (!a.name) continue;
+            if (a.linked_user_id) aliasByUser.set(a.linked_user_id, a.name);
+            if (a.phone_norm) aliasByPhone.set(a.phone_norm, a.name);
+            if (a.email_norm) aliasByEmail.set(a.email_norm, a.name);
+          }
+        } catch (err) {
+          console.warn("[chat] address_book alias lookup failed:", err);
+        }
+      }
+
       // Last messages
       const { data: lastMsgs } = await supabase
         .from("messages")
@@ -238,7 +270,12 @@ export function useConversations() {
           const m = memberMap.get(c.id) ?? [];
           const other = m.find((u) => u !== myId);
           const p = other ? profileMap.get(other) : null;
-          display = p?.display_name || p?.phone || p?.email || "Kontak";
+          const alias =
+            (other && aliasByUser.get(other)) ||
+            (p?.phone && aliasByPhone.get(p.phone.replace(/[^\d+]/g, ""))) ||
+            (p?.email && aliasByEmail.get(p.email.toLowerCase().trim())) ||
+            null;
+          display = alias || p?.display_name || p?.phone || p?.email || "Kontak";
         } else if (!display) {
           display = c.kind === "order" ? "Diskusi pesanan" : "Grup";
         }
