@@ -554,6 +554,76 @@ function StatusNotifikasiPage() {
               </span>
             </div>
           </div>
+
+          <div className="rounded-md border p-2 text-xs space-y-2">
+            <div className="flex items-center justify-between gap-2">
+              <span className="font-medium">Versi & pembaruan</span>
+              <Badge
+                variant={
+                  updateState === "waiting"
+                    ? "secondary"
+                    : updateState === "error"
+                      ? "destructive"
+                      : updateState === "no-update" || updateState === "activated"
+                        ? "default"
+                        : "outline"
+                }
+              >
+                {updateState === "idle" && "belum diperiksa"}
+                {updateState === "checking" && "memeriksa…"}
+                {updateState === "no-update" && "terbaru"}
+                {updateState === "waiting" && "versi baru menunggu"}
+                {updateState === "activated" && "mengaktifkan…"}
+                {updateState === "error" && "gagal"}
+              </Badge>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">Versi worker</span>
+              <code className="text-[11px] break-all">
+                {swDetails?.version ?? "—"}
+              </code>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">Script ETag</span>
+              <code className="text-[11px] break-all">
+                {swDetails?.scriptEtag ?? "—"}
+              </code>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">Last-Modified</span>
+              <span className="text-[11px]">{swDetails?.scriptLastModified ?? "—"}</span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">Cek pembaruan terakhir</span>
+              <span title={lastUpdateCheck ? new Date(lastUpdateCheck).toLocaleString() : ""}>
+                {formatRelative(lastUpdateCheck)}
+              </span>
+            </div>
+            {updateMsg && (
+              <p className="text-[11px] text-muted-foreground leading-snug">{updateMsg}</p>
+            )}
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 text-xs"
+                onClick={requestSwUpdate}
+                disabled={updateState === "checking" || !swDetails}
+              >
+                {updateState === "checking" ? "Memeriksa…" : "Perbarui pendaftaran"}
+              </Button>
+              {swDetails?.hasWaiting && (
+                <Button
+                  size="sm"
+                  className="h-7 text-xs"
+                  onClick={activateWaiting}
+                  disabled={updateState === "activated"}
+                >
+                  Aktifkan versi baru
+                </Button>
+              )}
+            </div>
+          </div>
         </CardContent>
       </Card>
 
