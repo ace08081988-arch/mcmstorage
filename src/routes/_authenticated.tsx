@@ -18,6 +18,7 @@ import { AppLockScreen } from "@/components/AppLockScreen";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
 import { CallHost } from "@/components/chat/CallHost";
+import { NotificationBell } from "@/components/NotificationBell";
 
 function AuthLock() {
   const [uid, setUid] = useState<string | null>(null);
@@ -116,6 +117,9 @@ function AuthLock() {
           <header className="sticky top-0 z-20 flex h-10 items-center gap-2 border-b bg-background/95 px-2 backdrop-blur">
             <SidebarTrigger />
             <span className="text-xs text-muted-foreground">Menu</span>
+            <div className="ml-auto flex items-center">
+              <NotificationBell />
+            </div>
           </header>
           <div className="min-w-0 flex-1">
             <Outlet />
