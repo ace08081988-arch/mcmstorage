@@ -73,6 +73,15 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
+      // E2E scroll-guard sidebar: verifikasi tap navigation dibatalkan
+      // selama gesture scroll aktif (mobile touch + desktop wheel).
+      // Harness self-contained via page.setContent — tidak butuh auth.
+      name: "sidebar-scroll-guard-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /sidebar-scroll-guard\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
