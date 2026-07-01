@@ -9,6 +9,35 @@ import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { useOrgName } from "@/lib/org-name";
 
+function AuthBrand() {
+  const { full, logo } = useOrgName();
+  return (
+    <>
+      {logo ? (
+        <img
+          src={logo}
+          alt={full}
+          width={64}
+          height={64}
+          className="mx-auto h-16 w-16 rounded-2xl object-cover"
+        />
+      ) : (
+        <img
+          src="/icon-512.png"
+          alt={full}
+          width={64}
+          height={64}
+          fetchPriority="high"
+          className="mx-auto h-16 w-16 rounded-2xl"
+        />
+      )}
+      <h1 className="mt-3 text-lg font-semibold tracking-tight">
+        Masuk ke {full}
+      </h1>
+    </>
+  );
+}
+
 export const Route = createFileRoute("/auth")({
   ssr: false,
   head: () => ({
