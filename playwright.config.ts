@@ -874,5 +874,30 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    // ── Lintas-browser: gabungan search-filter + infinite scroll /
+    //   load-more. PIN xxxx-xxxx tiap hit harus tetap identik saat
+    //   halaman hasil bertambah, di Firefox maupun WebKit (bukan hanya
+    //   Chromium) — perbedaan scheduling IntersectionObserver / rAF
+    //   tidak boleh memicu regresi token PIN atau kebocoran nomor telp.
+    {
+      name: "chat-pin-mcm-search-scroll-pagination-firefox-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-search-scroll-pagination\.spec\.ts/,
+      use: {
+        ...devices["Desktop Firefox"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
+      name: "chat-pin-mcm-search-scroll-pagination-webkit-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-search-scroll-pagination\.spec\.ts/,
+      use: {
+        ...devices["Desktop Safari"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
