@@ -1736,6 +1736,8 @@ function ChatRoomPage() {
             : { kind: "create" }
         }
       />
+      </>
+      )}
     </div>
   );
 }
