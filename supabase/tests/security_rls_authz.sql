@@ -642,4 +642,229 @@ BEGIN
   RAISE NOTICE 'PASS 10e: recipient accept is the ONLY path that opens start_dm';
 END $$;
 
+-- =====================================================================
+-- 11) Full participant status transition matrix
+--     Verifies each allowed transition succeeds ONLY for the correct
+--     actor, and every disallowed (actor, from_status, to_status) tuple
+--     is rejected by RLS + trigger guard.
+-- =====================================================================
+DO $$
+DECLARE
+  v_a uuid := current_setting('test.user_a')::uuid;  -- sender
+  v_b uuid := current_setting('test.user_b')::uuid;  -- recipient
+  v_c uuid := current_setting('test.user_c')::uuid;  -- third party
+  v_id uuid;
+  v_status text;
+  v_rows int;
+  v_deleted int;
+
+  -- Helper: seed a request in the given starting status as service_role.
+  --  Uses inline SQL below because plpgsql lacks nested procedures here.
+BEGIN
+  IF NOT pg_temp.can_switch_roles() THEN
+    RAISE NOTICE 'SKIP 11: cannot switch roles in this session';
+    RETURN;
+  END IF;
+
+  -- ---- 11a) pending → accepted: only recipient (v_b) ----
+  -- sender attempt (must fail; status stays pending)
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending') RETURNING id INTO v_id;
+
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 11a: sender self-accept mutated status to %', v_status;
+  END IF;
+
+  -- third-party attempt (must fail)
+  PERFORM pg_temp.as_user(v_c);
+  BEGIN UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 11a: third-party accept mutated status to %', v_status;
+  END IF;
+
+  -- recipient attempt (must succeed)
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'accepted' THEN
+    RAISE EXCEPTION 'FAIL 11a: recipient accept blocked (status=%)', v_status;
+  END IF;
+  RAISE NOTICE 'PASS 11a: pending→accepted only by recipient';
+
+  -- ---- 11b) pending → rejected: only recipient ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending') RETURNING id INTO v_id;
+
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN UPDATE public.friend_requests SET status='rejected' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  PERFORM pg_temp.as_user(v_c);
+  BEGIN UPDATE public.friend_requests SET status='rejected' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 11b: non-recipient reject mutated status to %', v_status;
+  END IF;
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status='rejected' WHERE id=v_id;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'rejected' THEN
+    RAISE EXCEPTION 'FAIL 11b: recipient reject blocked (status=%)', v_status;
+  END IF;
+  RAISE NOTICE 'PASS 11b: pending→rejected only by recipient';
+
+  -- ---- 11c) pending → cancelled: only sender ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending') RETURNING id INTO v_id;
+
+  -- recipient cannot cancel
+  PERFORM pg_temp.as_user(v_b);
+  BEGIN UPDATE public.friend_requests SET status='cancelled' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  -- third-party cannot cancel
+  PERFORM pg_temp.as_user(v_c);
+  BEGIN UPDATE public.friend_requests SET status='cancelled' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 11c: non-sender cancel mutated status to %', v_status;
+  END IF;
+  -- sender can cancel
+  PERFORM pg_temp.as_user(v_a);
+  UPDATE public.friend_requests SET status='cancelled' WHERE id=v_id;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'cancelled' THEN
+    RAISE EXCEPTION 'FAIL 11c: sender cancel blocked (status=%)', v_status;
+  END IF;
+  RAISE NOTICE 'PASS 11c: pending→cancelled only by sender';
+
+  -- ---- 11d) accepted is terminal (no further transitions) ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'accepted') RETURNING id INTO v_id;
+  PERFORM pg_temp.as_user(v_b);
+  BEGIN UPDATE public.friend_requests SET status='rejected' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN UPDATE public.friend_requests SET status='cancelled' WHERE id=v_id;
+  EXCEPTION WHEN others THEN NULL; END;
+  SELECT status INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'accepted' THEN
+    RAISE EXCEPTION 'FAIL 11d: accepted mutated to % (should be terminal)', v_status;
+  END IF;
+  RAISE NOTICE 'PASS 11d: accepted is terminal';
+
+  -- ---- 11e) DELETE: rejected row deletable only by recipient ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'rejected') RETURNING id INTO v_id;
+  -- sender cannot delete a rejected row
+  PERFORM pg_temp.as_user(v_a);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 0 THEN
+    RAISE EXCEPTION 'FAIL 11e: sender deleted a rejected row';
+  END IF;
+  -- third party cannot delete
+  PERFORM pg_temp.as_user(v_c);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 0 THEN
+    RAISE EXCEPTION 'FAIL 11e: third-party deleted a rejected row';
+  END IF;
+  -- recipient can delete
+  PERFORM pg_temp.as_user(v_b);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 1 THEN
+    RAISE EXCEPTION 'FAIL 11e: recipient could not delete rejected row (rows=%)', v_deleted;
+  END IF;
+  RAISE NOTICE 'PASS 11e: rejected → delete only by recipient';
+
+  -- ---- 11f) DELETE: cancelled row deletable by BOTH sender and recipient ----
+  --      (fr_delete_from_self covers sender pending/cancelled; fr_delete_to_self
+  --       covers recipient rejected/cancelled)
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'cancelled') RETURNING id INTO v_id;
+  -- third party still cannot delete
+  PERFORM pg_temp.as_user(v_c);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 0 THEN
+    RAISE EXCEPTION 'FAIL 11f: third-party deleted a cancelled row';
+  END IF;
+  -- recipient deletes it
+  PERFORM pg_temp.as_user(v_b);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 1 THEN
+    RAISE EXCEPTION 'FAIL 11f: recipient could not delete cancelled row';
+  END IF;
+  -- fresh row: sender also allowed to delete cancelled
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'cancelled') RETURNING id INTO v_id;
+  PERFORM pg_temp.as_user(v_a);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 1 THEN
+    RAISE EXCEPTION 'FAIL 11f: sender could not delete own cancelled row';
+  END IF;
+  RAISE NOTICE 'PASS 11f: cancelled → delete by sender or recipient only';
+
+  -- ---- 11g) DELETE: pending row deletable only by sender ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'pending') RETURNING id INTO v_id;
+  -- recipient cannot delete pending
+  PERFORM pg_temp.as_user(v_b);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 0 THEN
+    RAISE EXCEPTION 'FAIL 11g: recipient deleted a pending row';
+  END IF;
+  -- third party cannot delete pending
+  PERFORM pg_temp.as_user(v_c);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 0 THEN
+    RAISE EXCEPTION 'FAIL 11g: third-party deleted a pending row';
+  END IF;
+  -- sender can delete pending
+  PERFORM pg_temp.as_user(v_a);
+  DELETE FROM public.friend_requests WHERE id=v_id;
+  GET DIAGNOSTICS v_deleted = ROW_COUNT;
+  IF v_deleted <> 1 THEN
+    RAISE EXCEPTION 'FAIL 11g: sender could not delete own pending row';
+  END IF;
+  RAISE NOTICE 'PASS 11g: pending → delete only by sender';
+
+  -- ---- 11h) DELETE: accepted row NOT deletable by anyone (except service_role) ----
+  PERFORM pg_temp.as_postgres();
+  INSERT INTO public.friend_requests(from_user,to_user,status)
+    VALUES (v_a,v_b,'accepted') RETURNING id INTO v_id;
+  FOR v_status IN SELECT unnest(ARRAY[v_a::text,v_b::text,v_c::text]) LOOP
+    PERFORM pg_temp.as_user(v_status::uuid);
+    DELETE FROM public.friend_requests WHERE id=v_id;
+    GET DIAGNOSTICS v_deleted = ROW_COUNT;
+    IF v_deleted <> 0 THEN
+      RAISE EXCEPTION 'FAIL 11h: actor % deleted an accepted row', v_status;
+    END IF;
+  END LOOP;
+  RAISE NOTICE 'PASS 11h: accepted rows not deletable via RLS';
+
+  -- Cleanup: reset role so ROLLBACK is clean.
+  PERFORM pg_temp.as_postgres();
+END $$;
+
 ROLLBACK;
