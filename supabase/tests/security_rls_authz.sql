@@ -240,4 +240,98 @@ BEGIN
   RAISE NOTICE 'PASS has_role denies cross-user lookup';
 END $$;
 
+-- ---------------------------------------------------------------------
+-- 8) friend_requests: sender may only cancel, only recipient may accept.
+--    Guards against fr_update_self_accept (sender self-acceptance).
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE v_a uuid := nullif(current_setting('test.user_a', true),'')::uuid;
+        v_b uuid := nullif(current_setting('test.user_b', true),'')::uuid;
+        v_id uuid;
+        v_status text;
+        v_rows int;
+BEGIN
+  IF v_a IS NULL OR v_b IS NULL OR NOT current_setting('test.can_switch')::boolean THEN
+    RAISE NOTICE 'SKIP friend_requests policy tests: no test users or role switching';
+    RETURN;
+  END IF;
+
+  -- Clean any prior pair rows so INSERT can proceed under unique(from_user,to_user).
+  DELETE FROM public.friend_requests
+   WHERE (from_user = v_a AND to_user = v_b) OR (from_user = v_b AND to_user = v_a);
+
+  -- A (sender) creates a pending request to B (recipient).
+  PERFORM pg_temp.as_user(v_a);
+  INSERT INTO public.friend_requests(from_user, to_user, status)
+  VALUES (v_a, v_b, 'pending')
+  RETURNING id INTO v_id;
+  IF v_id IS NULL THEN
+    PERFORM pg_temp.as_postgres();
+    RAISE EXCEPTION 'FAIL friend_requests: sender could not INSERT pending request';
+  END IF;
+
+  -- 8a) Sender must NOT be able to self-accept. RLS filters the row out of
+  --     the UPDATE's target set, so the statement affects 0 rows.
+  UPDATE public.friend_requests SET status = 'accepted' WHERE id = v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id = v_id;
+  IF v_rows > 0 OR v_status = 'accepted' THEN
+    RAISE EXCEPTION 'FAIL friend_requests: sender was able to self-accept (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: sender cannot self-accept';
+
+  -- 8b) Sender must NOT be able to set status to anything other than cancelled
+  --     (e.g. 'rejected' / 'blocked' equivalents). Any non-cancelled target is
+  --     rejected by WITH CHECK on fr_update_sender_cancel_only.
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests SET status = 'rejected' WHERE id = v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN check_violation OR insufficient_privilege THEN
+    v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id = v_id;
+  IF v_rows > 0 OR v_status = 'rejected' THEN
+    RAISE EXCEPTION 'FAIL friend_requests: sender was able to set status=rejected';
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: sender cannot set non-cancelled status';
+
+  -- 8c) Sender CAN cancel their own pending request.
+  PERFORM pg_temp.as_user(v_a);
+  UPDATE public.friend_requests SET status = 'cancelled' WHERE id = v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id = v_id;
+  IF v_rows <> 1 OR v_status <> 'cancelled' THEN
+    RAISE EXCEPTION 'FAIL friend_requests: sender could not cancel own pending (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: sender can cancel own pending';
+
+  -- 8d) Reset to pending and verify recipient CAN accept.
+  UPDATE public.friend_requests SET status = 'pending' WHERE id = v_id;
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status = 'accepted' WHERE id = v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id = v_id;
+  IF v_rows <> 1 OR v_status <> 'accepted' THEN
+    RAISE EXCEPTION 'FAIL friend_requests: recipient could not accept (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: recipient can accept';
+
+  -- 8e) A third party C (postgres role acting as random uuid) must not be able
+  --     to touch the row via authenticated. Simulate by switching to a fresh uuid.
+  PERFORM pg_temp.as_user(gen_random_uuid());
+  UPDATE public.friend_requests SET status = 'cancelled' WHERE id = v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id = v_id;
+  IF v_rows > 0 OR v_status <> 'accepted' THEN
+    RAISE EXCEPTION 'FAIL friend_requests: third-party mutated row (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: third-party cannot mutate';
+END $$;
+
 ROLLBACK;
