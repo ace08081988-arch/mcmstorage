@@ -476,11 +476,15 @@ function EditDialog({
     try {
       let linkedName: string | null = null;
       let alreadyExisted = false;
+      let pendingRequest = false;
+      let alreadyFriends = false;
       if (isNew && pin.trim()) {
         const { addContactByInviteCode } = await import("@/lib/invite");
         const res = await addContactByInviteCode(pin.trim());
         linkedName = res.displayName;
         alreadyExisted = res.alreadyExisted;
+        pendingRequest = res.pending;
+        alreadyFriends = res.alreadyFriends;
       }
       await upsertManualEntry({
         id: row?.id,
@@ -490,9 +494,16 @@ function EditDialog({
         note: note || null,
       });
       if (isNew) {
+        const description = linkedName
+          ? alreadyFriends
+            ? `Berteman dengan ${linkedName}.`
+            : pendingRequest
+              ? `Permintaan pertemanan terkirim ke ${linkedName}. Chat aktif setelah diterima.`
+              : `Tertaut ke akun: ${linkedName}`
+          : undefined;
         toast.success(
-          alreadyExisted ? "Kontak sudah ada, diperbarui" : "Kontak berhasil ditambahkan",
-          linkedName ? { description: `Tertaut ke akun: ${linkedName}` } : undefined,
+          alreadyExisted && !pendingRequest ? "Kontak sudah ada, diperbarui" : "Kontak berhasil ditambahkan",
+          description ? { description } : undefined,
         );
       } else {
         toast.success("Kontak berhasil diperbarui");
