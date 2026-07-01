@@ -348,6 +348,13 @@ function RootComponent() {
     import("@/lib/sw-auto-update").then(({ installSwAutoUpdate }) => {
       installSwAutoUpdate();
     }).catch(() => {});
+    // Dev-mode: audit komponen interaktif yang berpotensi bentrok dengan
+    // reaksi press tapi belum diberi `data-no-press`.
+    if (import.meta.env.DEV) {
+      import("@/lib/press-audit").then(({ installPressAudit }) => {
+        installPressAudit();
+      }).catch(() => {});
+    }
     // Terapkan preferensi aplikasi (skala teks, kontras, reduce-motion, lang).
     import("@/lib/app-prefs").then(({ applyAppPrefs }) => applyAppPrefs()).catch(() => {});
     // Terapkan warna brand organisasi + tarik ulang dari backend agar konsisten

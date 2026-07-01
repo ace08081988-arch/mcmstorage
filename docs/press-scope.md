@@ -131,6 +131,27 @@ press. Untuk mematikan seluruh sub-tree, cabut scope-nya:
 
 ## Debugging cepat
 
+### Auditor otomatis (dev-mode)
+
+`src/lib/press-audit.ts` dipasang otomatis saat `import.meta.env.DEV`.
+Auditor memindai DOM (idle + `MutationObserver`) dan menulis peringatan
+`[press-audit]` di console bila menemukan:
+
+- Radix Overlay/Content bersuara `data-state` di dalam `data-press-scope="on"`.
+- Elemen `motion.*` dengan `whileTap` (marker `data-whiletap="1"`) yang
+  membungkus `<button>` tanpa `data-no-press`.
+- Sortable/drag handle (`[data-dnd-handle]` atau
+  `aria-roledescription*="sortable"`) tanpa `data-no-press`.
+- Menu item destruktif (Hapus / Logout) tanpa `data-no-press`.
+
+Panggil ulang manual dari console: `window.__pressAudit()`. Peringatan
+di-dedupe per elemen — perbaiki dengan menambahkan atribut sesuai
+checklist di atas.
+
+> Tandai `motion.div` / `motion.button` yang punya `whileTap` dengan
+> `data-whiletap="1"` supaya auditor bisa mendeteksinya (Framer Motion
+> tidak mengekspos prop tsb ke DOM secara default).
+
 - Tekan tombol, tapi tidak ada skala? Cek `getComputedStyle(el).transitionDuration`
   di DevTools — kalau `0s`, kemungkinan elemen ber-`disabled`, `aria-disabled="true"`,
   `data-no-press`, atau bukan salah satu tag/role yang dicakup.
