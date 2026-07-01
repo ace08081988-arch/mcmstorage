@@ -1,7 +1,7 @@
 {
-  "name": "MCM Storage",
-  "short_name": "MCM Storage",
-  "description": "Kelola pesanan, status pengiriman, dan kirim WA dalam satu halaman.",
+  "name": "MCM",
+  "short_name": "MCM",
+  "description": "MCM — kelola pesanan, chat, dan kirim cepat dalam satu aplikasi.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
@@ -10,7 +10,7 @@
   "theme_color": "#0a7a4a",
   "icons": [
     {
-      "src": "/icon-512.png",
+      "src": "/icon-mcm.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
