@@ -73,6 +73,8 @@ function PengaturanKunci() {
   const [bioStatus, setBioStatus] = useState<BiometricStatus>({ available: false, native: false });
   const [bioChecking, setBioChecking] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [bioCheckedAt, setBioCheckedAt] = useState<number | null>(null);
+  const [bioTick, setBioTick] = useState(0);
   const bioAvailable = bioStatus.available;
   const [autoLock, setAutoLock] = useState(false);
 
@@ -133,20 +135,30 @@ function PengaturanKunci() {
     const onVisible = () => {
       if (document.visibilityState === "visible") runBioCheck(true);
     };
+    const onPageShow = () => runBioCheck(enrolling);
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
+    window.addEventListener("pageshow", onPageShow);
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, cfg?.biometric, enrolling]);
+
+  // Ticker untuk memperbarui label "Diperbarui …" secara relatif.
+  useEffect(() => {
+    const id = window.setInterval(() => setBioTick((t) => t + 1), 15000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const runBioCheck = (interactive: boolean) => {
     setBioChecking(true);
     checkBiometricStatus().then((s) => {
       setBioStatus(s);
       setBioChecking(false);
+      setBioCheckedAt(Date.now());
       if (!interactive) return;
       if (s.available) {
         // Setelah pendaftaran berhasil, langsung aktifkan bila sudah ada kunci.
