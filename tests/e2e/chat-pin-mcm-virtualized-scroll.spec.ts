@@ -5,6 +5,10 @@ import {
   containsRawIndoPhone,
   extractPinTokens,
 } from "./_helpers/chat-pin-assertions";
+import {
+  armPinChangeTracing,
+  capturePinChangeArtifacts,
+} from "./_helpers/pin-change-capture";
 
 /**
  * E2E — konsistensi `PIN xxxx-xxxx` pada BARIS YANG BARU DIMOUNT saat
@@ -89,18 +93,28 @@ function enforceRows(snapshot: RowSnapshot[], phase: string): void {
   });
 }
 
-function reconcileCanonical(
+async function reconcileCanonical(
+  page: Page,
+  testInfo: import("@playwright/test").TestInfo,
   canonical: Map<string, string>,
   snapshot: RowSnapshot[],
   phase: string,
-): void {
+): Promise<void> {
   for (const row of snapshot) {
     if (!row.pinToken) continue;
     const existing = canonical.get(row.href);
     if (existing === undefined) {
-      // Baris baru dimount → jadikan kanonik.
       canonical.set(row.href, row.pinToken);
       continue;
+    }
+    if (row.pinToken !== existing) {
+      // Artefak lebih dulu — expect di bawah akan menggagalkan test.
+      await capturePinChangeArtifacts(page, testInfo, {
+        href: row.href,
+        prev: existing,
+        next: row.pinToken,
+        phase,
+      });
     }
     expect(
       row.pinToken,
@@ -111,6 +125,7 @@ function reconcileCanonical(
 
 async function pollBrandingDuringScroll(
   page: Page,
+  testInfo: import("@playwright/test").TestInfo,
   rows: Locator,
   canonical: Map<string, string>,
   phase: string,
@@ -119,7 +134,7 @@ async function pollBrandingDuringScroll(
   while (Date.now() - start < SAMPLE_WINDOW_MS) {
     const snap = await snapshotVisibleRows(rows);
     enforceRows(snap, `${phase} @${Date.now() - start}ms`);
-    reconcileCanonical(canonical, snap, `${phase} @${Date.now() - start}ms`);
+    await reconcileCanonical(page, testInfo, canonical, snap, `${phase} @${Date.now() - start}ms`);
     await page.waitForTimeout(SAMPLE_INTERVAL_MS);
   }
 }
@@ -129,7 +144,8 @@ test.describe("chat list virtualized — PIN xxxx-xxxx stabil pada baris yang ba
 
   test("scroll cepat bolak-balik → tidak ada token PIN yang berubah, tidak ada phone leak", async ({
     page,
-  }) => {
+  }, testInfo) => {
+    await armPinChangeTracing(page, testInfo);
     await page.goto("/chat");
     await page.waitForLoadState("networkidle");
 
@@ -148,19 +164,19 @@ test.describe("chat list virtualized — PIN xxxx-xxxx stabil pada baris yang ba
     await page.waitForTimeout(150);
     const sweepTop = await snapshotVisibleRows(rows);
     enforceRows(sweepTop, "sweep top");
-    reconcileCanonical(canonical, sweepTop, "sweep top");
+    await reconcileCanonical(page, testInfo, canonical, sweepTop, "sweep top");
 
     await scrollContainer(page, "bottom");
     await page.waitForTimeout(250);
     const sweepBottom = await snapshotVisibleRows(rows);
     enforceRows(sweepBottom, "sweep bottom");
-    reconcileCanonical(canonical, sweepBottom, "sweep bottom");
+    await reconcileCanonical(page, testInfo, canonical, sweepBottom, "sweep bottom");
 
     await scrollContainer(page, 0);
     await page.waitForTimeout(150);
     const sweepBack = await snapshotVisibleRows(rows);
     enforceRows(sweepBack, "sweep back-to-top");
-    reconcileCanonical(canonical, sweepBack, "sweep back-to-top");
+    await reconcileCanonical(page, testInfo, canonical, sweepBack, "sweep back-to-top");
 
     // ── Fase 2: rapid oscillation — memaksa unmount/remount virtual
     //           dengan target scroll yang berpindah cepat. Antar wave
@@ -169,7 +185,7 @@ test.describe("chat list virtualized — PIN xxxx-xxxx stabil pada baris yang ba
     for (let wave = 1; wave <= OSCILLATION_WAVES; wave += 1) {
       const target = wave % 2 === 0 ? 0 : "bottom";
       await scrollContainer(page, target as number | "bottom");
-      await pollBrandingDuringScroll(page, rows, canonical, `oscillation wave ${wave}`);
+      await pollBrandingDuringScroll(page, testInfo, rows, canonical, `oscillation wave ${wave}`);
     }
 
     // ── Fase 3: konfirmasi akhir — kembali ke atas, verifikasi baris
@@ -178,7 +194,7 @@ test.describe("chat list virtualized — PIN xxxx-xxxx stabil pada baris yang ba
     await page.waitForTimeout(200);
     const finalSnap = await snapshotVisibleRows(rows);
     enforceRows(finalSnap, "final settle");
-    reconcileCanonical(canonical, finalSnap, "final settle");
+    await reconcileCanonical(page, testInfo, canonical, finalSnap, "final settle");
 
     expect(
       canonical.size,
