@@ -373,12 +373,15 @@ function HintCustomization({
         />
 
         <div className="rounded-lg border bg-muted/30 p-3">
-          <div className="mb-2 text-xs font-medium text-muted-foreground">Pratinjau</div>
+          <div className="mb-2 text-xs font-medium text-muted-foreground" id="hint-preview-label">
+            Pratinjau
+          </div>
           <div className="relative h-16 overflow-hidden rounded-md bg-background/60">
             {preview && (
               <div
                 key={preview.key}
                 data-testid="hint-preview"
+                aria-hidden="true"
                 className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-3 py-1.5 text-[11px] font-medium leading-tight shadow-md"
                 style={{
                   background: "hsl(var(--foreground) / 0.92)",
@@ -389,6 +392,16 @@ function HintCustomization({
                 {preview.text}
               </div>
             )}
+            {/* Live region agar pembaca layar juga menerima pratinjau. */}
+            <span
+              role="status"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-labelledby="hint-preview-label"
+              className="sr-only"
+            >
+              {preview ? `Pratinjau tooltip: ${preview.text}` : ""}
+            </span>
           </div>
           <style>{`@keyframes mcmHintPreview {
             0%   { opacity: 0; transform: translate(-50%, -46%); }
