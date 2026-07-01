@@ -1,5 +1,6 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { getScrollGuardConfig } from "@/lib/scroll-guard-config";
 
 /**
  * Global "scroll aktif" flag. Sekali ada scroll event dari elemen apapun
@@ -14,7 +15,7 @@ function isScrollActive() {
 if (typeof window !== "undefined" && !(window as any).__navScrollGuard) {
   (window as any).__navScrollGuard = true;
   const bump = () => {
-    __scrollActiveUntil = Date.now() + 250;
+    __scrollActiveUntil = Date.now() + getScrollGuardConfig().cooldownMs;
   };
   window.addEventListener("scroll", bump, { capture: true, passive: true });
   window.addEventListener("wheel", bump, { capture: true, passive: true });
@@ -141,8 +142,9 @@ function NavLinkItem({
         if (!s) return;
         const dx = Math.abs(e.clientX - s.x);
         const dy = Math.abs(e.clientY - s.y);
-        // Gerakan > 10px = user sedang scroll, batalkan intent tap.
-        if (dx > 10 || dy > 10) startRef.current = null;
+        // Gerakan > driftPx = user sedang scroll, batalkan intent tap.
+        const { driftPx } = getScrollGuardConfig();
+        if (dx > driftPx || dy > driftPx) startRef.current = null;
       }}
       onPointerCancel={() => {
         startRef.current = null;
@@ -162,8 +164,9 @@ function NavLinkItem({
         const dy = Math.abs(e.clientY - s.y);
         const dt = Date.now() - s.t;
         // Bukan tap kalau ada scroll drift atau tekan-lama.
-        if (dx > 10 || dy > 10 || dt > 600) {
-          if (dx > 10 || dy > 10) showScrollGuardHint(e.clientX, e.clientY, "drift");
+        const { driftPx, longPressMs } = getScrollGuardConfig();
+        if (dx > driftPx || dy > driftPx || dt > longPressMs) {
+          if (dx > driftPx || dy > driftPx) showScrollGuardHint(e.clientX, e.clientY, "drift");
           return;
         }
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
