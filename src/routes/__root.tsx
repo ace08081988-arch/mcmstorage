@@ -305,6 +305,11 @@ function RootComponent() {
     }).catch(() => {});
     applyCompactMode();
     applyReduceMotion();
+    // Auto-update service worker: manifest & ikon selalu ambil versi terbaru
+    // tanpa perlu uninstall/install ulang.
+    import("@/lib/sw-auto-update").then(({ installSwAutoUpdate }) => {
+      installSwAutoUpdate();
+    }).catch(() => {});
     // Terapkan preferensi aplikasi (skala teks, kontras, reduce-motion, lang).
     import("@/lib/app-prefs").then(({ applyAppPrefs }) => applyAppPrefs()).catch(() => {});
     // Terapkan warna brand organisasi + tarik ulang dari backend agar konsisten
