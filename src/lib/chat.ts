@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { messagePreviewText } from "@/lib/chat-deleted";
 
@@ -616,8 +617,23 @@ export function useHideMessageForMe(conversationId: string) {
       qc.setQueryData<Set<string>>(["chat", "hidden"], next);
       return { prev };
     },
-    onError: (_e, _v, ctx) => {
-      if (ctx?.prev) qc.setQueryData(["chat", "hidden"], ctx.prev);
+    onError: (e, messageId, ctx) => {
+      // Rollback: restore previous set, or remove the optimistic entry if there
+      // was no prior cache to snapshot.
+      if (ctx && "prev" in ctx) {
+        if (ctx.prev) {
+          qc.setQueryData(["chat", "hidden"], ctx.prev);
+        } else {
+          const current = qc.getQueryData<Set<string>>(["chat", "hidden"]);
+          if (current) {
+            const rolled = new Set(current);
+            rolled.delete(messageId);
+            qc.setQueryData<Set<string>>(["chat", "hidden"], rolled);
+          }
+        }
+      }
+      const msg = e instanceof Error ? e.message : String(e ?? "Gagal menyembunyikan pesan");
+      toast.error("Gagal menyembunyikan pesan", { description: msg });
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
