@@ -490,7 +490,11 @@ function StatusNotifikasiPage() {
     const blob = new Blob([json], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    const ts = new Date().toISOString().replace(/[:.]/g, "-");
+    const d = new Date();
+    const p = (n: number) => String(n).padStart(2, "0");
+    const ts =
+      `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}` +
+      `-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
     a.href = url;
     a.download = `notifikasi-status-${ts}.json`;
     document.body.appendChild(a);
