@@ -81,7 +81,7 @@ export function NewDmDialog() {
       toast.error("Popup diblokir browser. Izinkan popup lalu coba lagi.");
       return;
     }
-    toast.success("Undangan WA dibuka untuk " + invitePhone);
+    toast.success("Undangan MCM dibuka untuk " + invitePhone);
   }
 
   const onPick = async (uid: string) => {
@@ -153,7 +153,7 @@ export function NewDmDialog() {
               ) : (
                 <>
                   <div className="text-xs text-muted-foreground">
-                    Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok, atau ketik nomor WA untuk mengundang.
+                    Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok, atau ketik nomor MCM untuk mengundang.
                   </div>
                   <Button
                     type="button"
