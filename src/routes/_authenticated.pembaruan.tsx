@@ -322,7 +322,7 @@ function PembaruanPage() {
                     className={`grid size-12 shrink-0 place-items-center rounded-full ${KIND_TONE[ch.kind]}`}
                     aria-hidden
                   >
-                    <Icon className="size-5" aria-hidden="true" focusable="false" />
+                    <Icon className="size-5" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
