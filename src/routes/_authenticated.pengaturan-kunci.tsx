@@ -41,6 +41,16 @@ export const Route = createFileRoute("/_authenticated/pengaturan-kunci")({
   component: PengaturanKunci,
 });
 
+function relTime(ts: number): string {
+  const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
+  if (s < 5) return "baru saja";
+  if (s < 60) return `${s}d lalu`;
+  const m = Math.round(s / 60);
+  if (m < 60) return `${m}m lalu`;
+  const h = Math.round(m / 60);
+  return `${h}j lalu`;
+}
+
 function StatusRow({
   label,
   value,
@@ -73,6 +83,8 @@ function PengaturanKunci() {
   const [bioStatus, setBioStatus] = useState<BiometricStatus>({ available: false, native: false });
   const [bioChecking, setBioChecking] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [bioCheckedAt, setBioCheckedAt] = useState<number | null>(null);
+  const [bioTick, setBioTick] = useState(0);
   const bioAvailable = bioStatus.available;
   const [autoLock, setAutoLock] = useState(false);
 
@@ -133,20 +145,30 @@ function PengaturanKunci() {
     const onVisible = () => {
       if (document.visibilityState === "visible") runBioCheck(true);
     };
+    const onPageShow = () => runBioCheck(enrolling);
     document.addEventListener("visibilitychange", onVisible);
     window.addEventListener("focus", onVisible);
+    window.addEventListener("pageshow", onPageShow);
     return () => {
       document.removeEventListener("visibilitychange", onVisible);
       window.removeEventListener("focus", onVisible);
+      window.removeEventListener("pageshow", onPageShow);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, cfg?.biometric, enrolling]);
+
+  // Ticker untuk memperbarui label "Diperbarui …" secara relatif.
+  useEffect(() => {
+    const id = window.setInterval(() => setBioTick((t) => t + 1), 15000);
+    return () => window.clearInterval(id);
+  }, []);
 
   const runBioCheck = (interactive: boolean) => {
     setBioChecking(true);
     checkBiometricStatus().then((s) => {
       setBioStatus(s);
       setBioChecking(false);
+      setBioCheckedAt(Date.now());
       if (!interactive) return;
       if (s.available) {
         // Setelah pendaftaran berhasil, langsung aktifkan bila sudah ada kunci.
@@ -445,7 +467,20 @@ function PengaturanKunci() {
 
         <div className="rounded-md border bg-muted/30 p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <div className="text-[12px] font-medium">Status Perangkat</div>
+            <div className="flex items-center gap-2">
+              <div className="text-[12px] font-medium">Status Perangkat</div>
+              <span
+                key={bioTick}
+                className="text-[10px] text-muted-foreground"
+                aria-live="polite"
+              >
+                {bioChecking
+                  ? "Memeriksa…"
+                  : bioCheckedAt
+                    ? `Diperbarui ${relTime(bioCheckedAt)}`
+                    : "Belum diperiksa"}
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => runBioCheck(true)}
