@@ -57,6 +57,7 @@ import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authentica
 import { Route as LovableVisualProdukListRouteImport } from './routes/lovable.visual.produk-list'
 import { Route as LovableVisualMinSupportedFormRouteImport } from './routes/lovable.visual.min-supported-form'
 import { Route as LovableVisualMessageHiddenRlsRouteImport } from './routes/lovable.visual.message-hidden-rls'
+import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/lovable.visual.message-hidden-persist'
 import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovable.visual.komponen-review'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
@@ -323,6 +324,12 @@ const LovableVisualMessageHiddenRlsRoute =
     path: '/lovable/visual/message-hidden-rls',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualMessageHiddenPersistRoute =
+  LovableVisualMessageHiddenPersistRouteImport.update({
+    id: '/lovable/visual/message-hidden-persist',
+    path: '/lovable/visual/message-hidden-persist',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualKomponenReviewRoute =
   LovableVisualKomponenReviewRouteImport.update({
     id: '/lovable/visual/komponen-review',
@@ -439,6 +446,7 @@ export interface FileRoutesByFullPath {
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
+  '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
@@ -498,6 +506,7 @@ export interface FileRoutesByTo {
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
+  '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
@@ -560,6 +569,7 @@ export interface FileRoutesById {
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
+  '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
@@ -622,6 +632,7 @@ export interface FileRouteTypes {
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
+    | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
     | '/lovable/visual/produk-list'
@@ -681,6 +692,7 @@ export interface FileRouteTypes {
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
+    | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
     | '/lovable/visual/produk-list'
@@ -742,6 +754,7 @@ export interface FileRouteTypes {
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
+    | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
     | '/lovable/visual/produk-list'
@@ -769,6 +782,7 @@ export interface RootRouteChildren {
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
   LovableVisualKomponenReviewRoute: typeof LovableVisualKomponenReviewRoute
+  LovableVisualMessageHiddenPersistRoute: typeof LovableVisualMessageHiddenPersistRoute
   LovableVisualMessageHiddenRlsRoute: typeof LovableVisualMessageHiddenRlsRoute
   LovableVisualMinSupportedFormRoute: typeof LovableVisualMinSupportedFormRoute
   LovableVisualProdukListRoute: typeof LovableVisualProdukListRoute
@@ -1115,6 +1129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualMessageHiddenRlsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/message-hidden-persist': {
+      id: '/lovable/visual/message-hidden-persist'
+      path: '/lovable/visual/message-hidden-persist'
+      fullPath: '/lovable/visual/message-hidden-persist'
+      preLoaderRoute: typeof LovableVisualMessageHiddenPersistRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/komponen-review': {
       id: '/lovable/visual/komponen-review'
       path: '/lovable/visual/komponen-review'
@@ -1343,6 +1364,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
   LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
   LovableVisualKomponenReviewRoute: LovableVisualKomponenReviewRoute,
+  LovableVisualMessageHiddenPersistRoute:
+    LovableVisualMessageHiddenPersistRoute,
   LovableVisualMessageHiddenRlsRoute: LovableVisualMessageHiddenRlsRoute,
   LovableVisualMinSupportedFormRoute: LovableVisualMinSupportedFormRoute,
   LovableVisualProdukListRoute: LovableVisualProdukListRoute,
