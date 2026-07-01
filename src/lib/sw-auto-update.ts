@@ -17,6 +17,52 @@ const SW_URL = "/sw-push.js";
 const SW_SCOPE = "/";
 const UPDATE_INTERVAL_MS = 30 * 60 * 1000; // 30 menit
 const RELOAD_GUARD_KEY = "__mcm_sw_reload_at";
+const CLEANUP_GUARD_KEY = "__mcm_sw_cleanup_at";
+
+/**
+ * Nama cache yang MASIH dipakai versi terbaru. Semua cache lain akan
+ * dibersihkan saat aplikasi dibuka supaya ikon/manifest lama tidak
+ * tertahan di storage browser (mis. saat rebrand ke MCM).
+ */
+const KNOWN_CACHE_PREFIXES = ["mcm-"];
+
+function isKnownCache(name: string): boolean {
+  return KNOWN_CACHE_PREFIXES.some((p) => name.startsWith(p));
+}
+
+/**
+ * Unregister service worker lama yang script-nya bukan `SW_URL` saat ini
+ * (mis. `/sw.js`, `/service-worker.js`, `/firebase-messaging-sw.js` versi
+ * usang), lalu hapus cache yang tidak dikenali. Dipanggil sekali per sesi.
+ */
+async function cleanupStaleServiceWorkers(currentScriptUrl: string) {
+  try {
+    if (sessionStorage.getItem(CLEANUP_GUARD_KEY)) return;
+    sessionStorage.setItem(CLEANUP_GUARD_KEY, "1");
+  } catch { /* ignore */ }
+
+  try {
+    const regs = await navigator.serviceWorker.getRegistrations();
+    await Promise.allSettled(
+      regs.map(async (r) => {
+        const active = r.active?.scriptURL || r.waiting?.scriptURL || r.installing?.scriptURL || "";
+        // Simpan hanya registrasi yang mengarah ke SW MCM saat ini.
+        if (active && active !== currentScriptUrl) {
+          try { await r.unregister(); } catch { /* ignore */ }
+        }
+      }),
+    );
+  } catch { /* ignore */ }
+
+  try {
+    if ("caches" in self) {
+      const names = await caches.keys();
+      await Promise.allSettled(
+        names.filter((n) => !isKnownCache(n)).map((n) => caches.delete(n)),
+      );
+    }
+  } catch { /* ignore */ }
+}
 
 function shouldReload(): boolean {
   try {
@@ -56,6 +102,10 @@ export function installSwAutoUpdate(): (() => void) | void {
   let reg: ServiceWorkerRegistration | null = null;
   let intervalId: number | null = null;
   let hadController = !!navigator.serviceWorker.controller;
+
+  // Bersihkan SW lama & cache basi begitu app dibuka.
+  const currentScriptUrl = new URL(SW_URL, window.location.origin).href;
+  cleanupStaleServiceWorkers(currentScriptUrl);
 
   const doUpdate = () => {
     if (!reg) return;
