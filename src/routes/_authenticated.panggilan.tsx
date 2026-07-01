@@ -9,6 +9,7 @@ import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
 import { listMyCalls, formatCallDuration, type CallRow } from "@/lib/calls";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyUserId } from "@/lib/chat";
+import { formatInviteCode } from "@/lib/invite";
 
 export const Route = createFileRoute("/_authenticated/panggilan")({
   component: PanggilanPage,
@@ -62,7 +63,7 @@ function PanggilanPage() {
           .order("updated_at", { ascending: false }),
         supabase
           .from("profiles")
-          .select("id, display_name")
+          .select("id, display_name, invite_code")
           .in("id", peerIds),
       ]);
       const aliasMap: Record<string, string> = {};
@@ -77,16 +78,31 @@ function PanggilanPage() {
         if (!aliasMap[key]) aliasMap[key] = name;
       }
       const map: Record<string, string> = {};
+      const pinFallback = (id: string, invite?: string | null): string => {
+        // Prioritas fallback: PIN (invite_code) → cuplikan ID → "Kontak".
+        // JANGAN tampilkan nomor telepon mentah — sesuai kebijakan branding
+        // PIN xxxx-xxxx (lihat tests/e2e/pin-branding-*.spec.ts).
+        const clean = (invite ?? "").trim();
+        if (clean) return `PIN ${formatInviteCode(clean)}`;
+        const short = id.replace(/-/g, "").slice(0, 8).toUpperCase();
+        return short ? `PIN ${formatInviteCode(short)}` : "Kontak";
+      };
       for (const p of (profRes.data ?? []) as {
         id: string;
         display_name: string | null;
+        invite_code: string | null;
       }[]) {
         const alias = aliasMap[p.id];
-        map[p.id] = alias || p.display_name?.trim() || "Kontak";
+        map[p.id] =
+          alias ||
+          p.display_name?.trim() ||
+          pinFallback(p.id, p.invite_code);
       }
-      // Peer tanpa row profil pun tetap dapat alias bila ada.
+      // Peer tanpa row profil: pakai alias bila ada, jika tidak fallback
+      // ke cuplikan ID (masih dibungkus format PIN agar konsisten UI).
       for (const id of peerIds) {
-        if (!map[id] && aliasMap[id]) map[id] = aliasMap[id];
+        if (map[id]) continue;
+        map[id] = aliasMap[id] || pinFallback(id, null);
       }
       return map;
     },
