@@ -1,5 +1,25 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+
+/**
+ * Global "scroll aktif" flag. Sekali ada scroll event dari elemen apapun
+ * (SidebarContent, body, sheet overlay), semua NavLinkItem yang sedang
+ * memegang startRef akan membatalkan tap sampai 250ms setelah scroll
+ * terakhir — supaya inertial scroll tidak "mendarat" jadi klik.
+ */
+let __scrollActiveUntil = 0;
+function isScrollActive() {
+  return Date.now() < __scrollActiveUntil;
+}
+if (typeof window !== "undefined" && !(window as any).__navScrollGuard) {
+  (window as any).__navScrollGuard = true;
+  const bump = () => {
+    __scrollActiveUntil = Date.now() + 250;
+  };
+  window.addEventListener("scroll", bump, { capture: true, passive: true });
+  window.addEventListener("wheel", bump, { capture: true, passive: true });
+  window.addEventListener("touchmove", bump, { capture: true, passive: true });
+}
 import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
@@ -53,6 +73,10 @@ function NavLinkItem({
       onPointerDown={(e) => {
         if (!isMobile) return;
         if (e.pointerType === "mouse") return;
+        if (isScrollActive()) {
+          startRef.current = null;
+          return;
+        }
         startRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
       }}
       onPointerMove={(e) => {
@@ -72,6 +96,8 @@ function NavLinkItem({
         const s = startRef.current;
         startRef.current = null;
         if (!s) return;
+        // Scroll sempat aktif selama gesture — jangan pernah navigasi.
+        if (isScrollActive()) return;
         const dx = Math.abs(e.clientX - s.x);
         const dy = Math.abs(e.clientY - s.y);
         const dt = Date.now() - s.t;
