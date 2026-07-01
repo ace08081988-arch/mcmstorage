@@ -538,8 +538,15 @@ function StatusNotifikasiPage() {
       const ts =
         `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}` +
         `-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+      // Zona waktu: WIB/WITA/WIT untuk Indonesia, lainnya UTC±HHMM.
+      const offsetMin = -d.getTimezoneOffset(); // menit ke arah timur UTC
+      const idLabel: Record<number, string> = { 420: "WIB", 480: "WITA", 540: "WIT" };
+      const sign = offsetMin >= 0 ? "+" : "-";
+      const abs = Math.abs(offsetMin);
+      const utcLabel = `UTC${sign}${p(Math.floor(abs / 60))}${p(abs % 60)}`;
+      const tz = idLabel[offsetMin] ?? utcLabel;
       a.href = url;
-      a.download = `notifikasi-status-${ts}.json`;
+      a.download = `notifikasi-status-${ts}-${tz}.json`;
       a.rel = "noopener";
       document.body.appendChild(a);
       a.click();
