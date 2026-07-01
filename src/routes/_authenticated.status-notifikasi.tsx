@@ -592,3 +592,88 @@ function Readiness({
   if (!sub) return <p>Izin granted & service worker aktif, tapi push subscription belum dibuat.</p>;
   return <p className="text-green-600 dark:text-green-400">Siap menerima notifikasi push.</p>;
 }
+
+type TestResult = {
+  ok: boolean;
+  sent: number;
+  message: string;
+  at: number;
+};
+
+function TestNotificationCard({
+  perm,
+  sub,
+}: {
+  perm: PermState;
+  sub: boolean | null;
+}) {
+  const [sending, setSending] = useState(false);
+  const [result, setResult] = useState<TestResult | null>(null);
+  const disabled = sending || perm !== "granted" || !sub;
+
+  const send = async () => {
+    setSending(true);
+    try {
+      const r = await sendTestNotification();
+      setResult({
+        ok: r.sent > 0,
+        sent: r.sent,
+        message: r.message,
+        at: Date.now(),
+      });
+    } catch (e) {
+      setResult({
+        ok: false,
+        sent: 0,
+        message: e instanceof Error ? e.message : "Gagal mengirim notifikasi uji.",
+        at: Date.now(),
+      });
+    } finally {
+      setSending(false);
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Kirim notifikasi uji</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <p className="text-muted-foreground">
+          Kirim satu banner uji ke semua perangkat yang telah berlangganan push
+          milik akun ini. Butuh izin <b>granted</b> dan push subscription aktif.
+        </p>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button onClick={send} disabled={disabled}>
+            {sending ? "Mengirim…" : "Kirim notifikasi uji"}
+          </Button>
+          {disabled && !sending && (
+            <span className="text-xs text-muted-foreground">
+              {perm !== "granted"
+                ? "Aktifkan izin notifikasi dulu."
+                : "Aktifkan push subscription dulu."}
+            </span>
+          )}
+        </div>
+        {result && (
+          <div
+            className={
+              "rounded-md border p-3 text-xs " +
+              (result.ok
+                ? "border-green-500/40 bg-green-500/10 text-green-700 dark:text-green-400"
+                : "border-destructive/40 bg-destructive/10 text-destructive")
+            }
+          >
+            <div className="font-medium">
+              {result.ok ? "Berhasil" : "Gagal"} · {new Date(result.at).toLocaleTimeString("id-ID")}
+            </div>
+            <div className="mt-1">{result.message}</div>
+            <div className="mt-1 text-muted-foreground">
+              Perangkat terkirim: <b>{result.sent}</b>
+            </div>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
