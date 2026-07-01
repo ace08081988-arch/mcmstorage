@@ -53,10 +53,10 @@ export const Route = createFileRoute("/_authenticated/")({
   },
   head: () => ({
     meta: [
-      { title: "Beranda — Kelola Pesanan & Kirim WhatsApp · MCM Storage" },
-      { name: "description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke WhatsApp pelanggan dalam satu halaman." },
-      { property: "og:title", content: "Beranda — Kelola Pesanan & Kirim WhatsApp · MCM Storage" },
-      { property: "og:description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke WhatsApp pelanggan dalam satu halaman." },
+      { title: "Beranda — Kelola Pesanan & Kirim via MCM" },
+      { name: "description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via MCM dalam satu halaman." },
+      { property: "og:title", content: "Beranda — Kelola Pesanan & Kirim via MCM" },
+      { property: "og:description", content: "Catat pesanan harian, lampirkan foto & lokasi, tandai status pengiriman, dan kirim detail ke pelanggan via MCM dalam satu halaman." },
       { property: "og:type", content: "website" },
       { property: "og:url", content: "https://mcmstorage.lovable.app/" },
     ],
@@ -1198,7 +1198,7 @@ function Index() {
                       className="shrink-0 rounded-md bg-[#25D366] px-2 py-1 text-[11px] font-semibold text-white hover:opacity-90"
                       onClick={(e) => e.stopPropagation()}
                     >
-                      WA
+                      MCM
                     </a>
                   )}
                   {!selectMode && (
@@ -1486,7 +1486,7 @@ function Index() {
                           rel="noreferrer"
                           className="inline-flex items-center rounded-md bg-[#25D366] px-2.5 py-1 text-[11px] font-semibold text-white hover:opacity-90"
                         >
-                          KIRIM WA
+                          KIRIM MCM
                         </a>
                       )}
                       <button
@@ -1578,7 +1578,7 @@ function Index() {
                   selected.size === 0 ? "pointer-events-none opacity-40" : "hover:opacity-90"
                 }`}
               >
-                KIRIM WA MASSAL ({selected.size})
+                KIRIM MCM MASSAL ({selected.size})
               </a>
             </div>
           </div>
