@@ -160,6 +160,8 @@ function PenyimpananPage() {
     }
     setPendingClear({ prefix, label, keys, totalBytes: total });
     setSelectedKeys(new Set(keys.map((k) => k.key)));
+    setClearPage(1);
+    setClearExpanded(false);
   };
 
   const confirmClear = async () => {
