@@ -289,3 +289,36 @@ html.reduce-motion set {
   line-height: 1.375;
   font-variant-numeric: tabular-nums;
 }
+
+/*
+ * Preferensi aplikasi (Aksesibilitas):
+ * - --app-font-scale mengalikan ukuran font root (memengaruhi seluruh rem).
+ * - data-high-contrast="on" memperkuat border & ring fokus.
+ * - data-reduce-motion="on" menetralkan transisi/animasi non-esensial.
+ */
+:root {
+  --app-font-scale: 1;
+}
+html {
+  font-size: calc(16px * var(--app-font-scale));
+}
+html[data-high-contrast="on"] {
+  --border: 0 0% 20%;
+  --ring: 210 90% 45%;
+}
+html[data-high-contrast="on"].dark {
+  --border: 0 0% 85%;
+  --ring: 210 100% 70%;
+}
+html[data-high-contrast="on"] *:focus-visible {
+  outline: 2px solid hsl(var(--ring));
+  outline-offset: 2px;
+}
+html[data-reduce-motion="on"] *,
+html[data-reduce-motion="on"] *::before,
+html[data-reduce-motion="on"] *::after {
+  animation-duration: 0.001ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.001ms !important;
+  scroll-behavior: auto !important;
+}

@@ -291,6 +291,8 @@ function RootComponent() {
     }).catch(() => {});
     applyCompactMode();
     applyReduceMotion();
+    // Terapkan preferensi aplikasi (skala teks, kontras, reduce-motion, lang).
+    import("@/lib/app-prefs").then(({ applyAppPrefs }) => applyAppPrefs()).catch(() => {});
     // Terapkan warna brand organisasi + tarik ulang dari backend agar konsisten
     // lintas perangkat/login.
     import("@/lib/org-name").then(({ applyBrandColor, hydrateOrgBrandingFromRemote, watchThemeForBrand }) => {
