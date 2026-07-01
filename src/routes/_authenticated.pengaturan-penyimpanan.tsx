@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { HardDrive, Trash2, RefreshCw, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { useAppPrefs } from "@/lib/app-prefs";
 import {
@@ -68,6 +70,13 @@ function PenyimpananPage() {
     totalBytes: number;
   } | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [clearProgress, setClearProgress] = useState<{
+    phase: "idle" | "processing" | "done";
+    done: number;
+    total: number;
+    currentKey: string;
+    freedBytes: number;
+  }>({ phase: "idle", done: 0, total: 0, currentKey: "", freedBytes: 0 });
 
   const refresh = async () => {
     setSnapshot(estimateLocalStorage());
@@ -150,7 +159,7 @@ function PenyimpananPage() {
     setSelectedKeys(new Set(keys.map((k) => k.key)));
   };
 
-  const confirmClear = () => {
+  const confirmClear = async () => {
     if (!pendingClear) return;
     const { keys, label } = pendingClear;
     const chosen = keys.filter((e) => selectedKeys.has(e.key));
@@ -158,14 +167,43 @@ function PenyimpananPage() {
       toast.info("Tidak ada entri yang dipilih.");
       return;
     }
-    const freed = chosen.reduce((s, e) => s + e.bytes, 0);
-    chosen.forEach((e) => localStorage.removeItem(e.key));
+    setClearProgress({
+      phase: "processing",
+      done: 0,
+      total: chosen.length,
+      currentKey: chosen[0]?.key ?? "",
+      freedBytes: 0,
+    });
+    let freed = 0;
+    // Chunk deletion so the UI can paint progress between batches.
+    const batchSize = Math.max(1, Math.ceil(chosen.length / 20));
+    for (let i = 0; i < chosen.length; i += batchSize) {
+      const slice = chosen.slice(i, i + batchSize);
+      for (const e of slice) {
+        localStorage.removeItem(e.key);
+        freed += e.bytes;
+      }
+      const done = Math.min(i + batchSize, chosen.length);
+      setClearProgress({
+        phase: "processing",
+        done,
+        total: chosen.length,
+        currentKey: slice[slice.length - 1]?.key ?? "",
+        freedBytes: freed,
+      });
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+    }
+    setClearProgress((p) => ({ ...p, phase: "done", currentKey: "" }));
     toast.success(`${label} dihapus`, {
       description: `${chosen.length} dari ${keys.length} entri · ${formatKB(freed)} dibebaskan.`,
     });
-    setPendingClear(null);
-    setSelectedKeys(new Set());
-    refresh();
+    await refresh();
+    // Show "selesai" briefly before closing.
+    setTimeout(() => {
+      setPendingClear(null);
+      setSelectedKeys(new Set());
+      setClearProgress({ phase: "idle", done: 0, total: 0, currentKey: "", freedBytes: 0 });
+    }, 900);
   };
 
   return (
