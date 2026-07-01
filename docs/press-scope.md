@@ -302,3 +302,113 @@ tanpa menyentuh `localStorage`:
   ...
 </section>
 ```
+
+### Resep per section (siap salin)
+
+Skenario nyata di aplikasi + kombinasi atribut DOM dan
+`window.__pressAuditConfig.set(...)` yang direkomendasikan.
+
+#### 1. Halaman Chat — banyak Radix Dialog & motion overlay
+
+Radix Content di Dialog attachment picker dan Sheet media viewer sering
+memicu `PA001`. Overlay-nya sudah punya animasi sendiri, jadi audit
+cukup dinonaktifkan di subtree tersebut, sementara rule lain tetap
+jalan untuk seluruh halaman.
+
+```tsx
+// src/routes/_authenticated.chat.$conversationId.tsx
+<main>
+  <ChatHeader />
+  <MessageList />
+  {/* Skip hanya di subtree picker; halaman lain tetap diaudit */}
+  <section data-press-audit-skip="PA001, PA004">
+    <AttachmentPickerDialog />
+    <MediaViewerSheet />
+  </section>
+</main>
+```
+
+#### 2. Halaman Pembaruan — carousel status pakai Framer Motion
+
+Setiap card di carousel dibungkus `motion.div` dengan `whileTap` +
+Button di dalamnya. Semua sudah punya `data-no-press`, tapi kalau nanti
+ada card baru yang lupa, matikan `PA002` khusus di section itu supaya
+dev tidak digangu peringatan berulang.
+
+```tsx
+// src/routes/_authenticated.pembaruan.tsx
+<section aria-label="Status" data-press-audit-skip="PA002">
+  <StatusCarousel />
+</section>
+```
+
+#### 3. Halaman Produk — daftar sortable (dnd-kit)
+
+Handle sortable secara sengaja tidak punya reaksi press. `PA003` masih
+berguna sebagai reminder saat menambah handle baru, jadi biarkan aktif —
+tapi kalau list panjang dan console berisik, batasi audit ke root
+kontainer saja lewat `scope.allow`.
+
+```ts
+// Panggil sekali dari devtools untuk sesi debug halaman produk
+window.__pressAuditConfig.set({
+  scope: { allow: ["#produk-list"] },   // hanya scan subtree ini
+  rules: { allow: ["PA003"] },          // fokus ke sortable handle
+});
+```
+
+```tsx
+// src/routes/_authenticated.produk.tsx
+<main>
+  <ProdukFilter />
+  <ul id="produk-list">{/* dnd-kit sortable rows */}</ul>
+</main>
+```
+
+#### 4. Halaman Pengaturan — banyak DropdownMenu destruktif
+
+Menu "Hapus akun / Logout" memicu `PA004`. Kalau sudah dipastikan aman
+dengan review manual, matikan aturan itu global tanpa menyentuh kode:
+
+```ts
+window.__pressAuditConfig.set({
+  rules: { deny: ["PA004"] },
+});
+```
+
+#### 5. Preview iframe Lovable — matikan audit di sandbox
+
+Editor Lovable membungkus app di iframe dengan atribut khusus.
+Skip domain itu supaya audit tidak jalan saat preview di editor,
+tapi tetap aktif di build production/preview publik:
+
+```ts
+window.__pressAuditConfig.set({
+  scope: { deny: ["[data-lovable-preview]", "[data-lovable-editor]"] },
+});
+```
+
+#### 6. Investigasi fokus — hanya satu rule di satu section
+
+Kombinasi atribut + config untuk sesi debugging singkat:
+
+```tsx
+<section id="qa-target" data-press-audit-skip="PA001,PA004">
+  <ComponentUnderTest />
+</section>
+```
+
+```ts
+window.__pressAuditConfig.set({
+  mode: "suggest",                       // pasang marker DOM
+  rules: { allow: ["PA002"] },           // fokus 1 rule
+  scope: { allow: ["#qa-target"] },      // fokus 1 subtree
+});
+window.__pressAudit();                   // trigger sweep manual
+// Elements panel → filter attribute `data-press-audit-suggest="PA002"`
+```
+
+> Tip: jalankan `window.__pressAuditConfig.reset()` setelah selesai
+> supaya sesi berikutnya kembali ke default (`mode: "log"`, tanpa
+> allow/deny). Konfigurasi persist di `localStorage`, jadi tanpa reset
+> pengaturan debug bisa kebawa ke sesi normal.
