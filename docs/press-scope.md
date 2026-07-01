@@ -379,6 +379,51 @@ tanpa menyentuh `localStorage`:
 </section>
 ```
 
+### Prioritas evaluasi (satu section, banyak atribut)
+
+Kalau satu subtree memasang lebih dari satu mekanisme (mis. `data-press-audit="on"`
+di root section, `data-press-audit-skip="PA002"` di list-nya, plus
+`allow/deny` dari `window.__pressAuditConfig`), auditor mengevaluasi dari
+**paling spesifik ke paling umum** dan **berhenti pada keputusan pertama**.
+
+Urutan pasti (tertinggi menang):
+
+1. **`data-press-audit="off"` terdekat** — mematikan seluruh audit di subtree.
+   Nilai `"on"` di ancestor tidak bisa meng-override `"off"` yang lebih dekat
+   ke node. `"on"` hanya berguna untuk *menyalakan kembali* di dalam scope
+   yang sebelumnya `"off"`.
+2. **`data-press-audit-skip="PA00X"` gabungan** — semua atribut skip dari
+   node target sampai root **di-union**. Nested skip menambah, tidak
+   menimpa. Contoh: parent `skip="PA001"` + child `skip="PA002"` → child
+   melewati `PA001` DAN `PA002`.
+3. **Global `denyRules` (`window.__pressAuditConfig`)** — kode/nama rule di
+   `denyRules` selalu diabaikan, walaupun ada di `allowRules`.
+4. **Global `allowRules`** — kalau `allowRules` ter-set (non-empty), hanya
+   rule di daftar itu yang dievaluasi; sisanya di-skip. Kosong = semua rule
+   aktif (kecuali yang di-deny).
+5. **Global `denyScopes` / `allowScopes`** — filter berbasis selector CSS,
+   diuji terhadap `element.closest(selector)`. Aturan sama seperti
+   rule: `deny` menang atas `allow`.
+6. **Mode (`off` / `log` / `suggest`)** — kalau semua filter di atas
+   meloloskan rule, mode menentukan efek akhir (senyap, `console.warn`, atau
+   `console.warn` + atribut `data-press-audit-suggest`/`-fix`).
+
+Tabel keputusan cepat:
+
+| Situasi                                                                 | Hasil                                              |
+| ----------------------------------------------------------------------- | -------------------------------------------------- |
+| Parent `data-press-audit="off"`, child `data-press-audit-skip="PA002"`  | Semua rule OFF (langkah 1 menang, skip tak dipakai) |
+| Parent `data-press-audit="off"`, child `data-press-audit="on"`          | Child audit ON kembali; skip/allow/deny berlaku    |
+| `denyRules: ["PA002"]` + `data-press-audit-skip="PA001"` di section     | Section skip PA001 & PA002; rule lain jalan        |
+| `allowRules: ["PA001"]` + section tanpa atribut                         | Hanya PA001 diaudit                                |
+| `allowRules: ["PA001"]` + `denyRules: ["PA001"]`                        | PA001 di-skip (deny menang)                        |
+| `data-press-audit-skip="PA001"` di parent + child punya `skip="PA002"`  | Child skip PA001 + PA002 (union, bukan override)   |
+| `mode: "off"` global                                                    | Semua langkah di atas tetap dievaluasi, tapi tanpa efek konsol/DOM |
+
+> Ringkas: **atribut DOM > konfigurasi global**, dan dalam masing-masing
+> tingkatan **`deny`/`off`/`skip` > `allow`/`on`**. `skip` bersifat aditif,
+> tidak pernah menghapus skip dari ancestor.
+
 ### Resep per section (siap salin)
 
 Skenario nyata di aplikasi + kombinasi atribut DOM dan
