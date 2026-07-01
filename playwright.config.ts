@@ -327,6 +327,22 @@ export default defineConfig({
       },
     },
     {
+      // E2E: setelah `reload()` di DM eksisting, aksi Salin (Copy) via
+      // SelectionToolbar menghasilkan payload clipboard yang BEBAS
+      // nomor telp Indonesia mentah — hanya body pesan / `PIN xxxx-xxxx`.
+      // Static guard mengunci handler `onCopy` di chat.$conversationId
+      // memakai `safePreview` (= `messagePreviewText`) dan tidak
+      // menyentuh `.phone`.
+      name: "chat-pin-mcm-copy-export-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-copy-export\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // E2E: fitur "Cari di percakapan" pada DM yang sudah ada — dialog,
       // list hits, header, dan transkrip di belakang dialog wajib memakai
       // `PIN xxxx-xxxx` dan bebas nomor telp Indonesia mentah. Source
