@@ -19,6 +19,7 @@ import {
   type ImportResult,
   type NormalizedSnapshot,
 } from "@/lib/notif-snapshot-import";
+import type { CompatibilityInfo } from "@/lib/notif-snapshot-import";
 import { diffJsonLines, type DiffLine } from "@/lib/json-line-diff";
 
 export const Route = createFileRoute("/_authenticated/status-notifikasi")({
