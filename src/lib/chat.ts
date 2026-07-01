@@ -648,6 +648,7 @@ export function useEditMessage(conversationId: string) {
 
 export function useHideMessageForMe(conversationId: string) {
   const qc = useQueryClient();
+  const { data: myId } = useMyUserId();
   return useMutation({
     mutationFn: async (messageId: string) => {
       const { error } = await supabase.rpc("message_hide_for_me", { _msg: messageId });
@@ -661,7 +662,32 @@ export function useHideMessageForMe(conversationId: string) {
       const next = new Set(prev ?? []);
       next.add(messageId);
       qc.setQueryData<Set<string>>(["chat", "hidden"], next);
-      return { prev };
+
+      // Optimistically shrink the conversation badge if the hidden message
+      // was actually contributing to unread (not mine + newer than last_read).
+      const prevConvs = qc.getQueriesData<ConversationListItem[]>({ queryKey: ["chat", "conversations"] });
+      const msgs = qc.getQueryData<MessageRow[]>(["chat", "messages", conversationId]);
+      const hidden = msgs?.find((m) => m.id === messageId);
+      if (hidden && myId && hidden.sender_id !== myId) {
+        for (const [key, list] of prevConvs) {
+          if (!Array.isArray(list)) continue;
+          const patched = list.map((c) => {
+            if (c.id !== conversationId) return c;
+            const lrMs = c.last_at ? 0 : 0; // fallback; we don't have last_read_at here
+            void lrMs;
+            const nextUnread = Math.max(0, (c.unread ?? 0) - 1);
+            const isLastPreview = hidden.created_at === c.last_at;
+            return {
+              ...c,
+              unread: nextUnread,
+              // Clear preview if the hidden msg was the last one; refetch will backfill.
+              last_body: isLastPreview ? null : c.last_body,
+            };
+          });
+          qc.setQueryData(key, patched);
+        }
+      }
+      return { prev, prevConvs };
     },
     onError: (e, messageId, ctx) => {
       // Rollback: restore previous set, or remove the optimistic entry if there
@@ -676,6 +702,12 @@ export function useHideMessageForMe(conversationId: string) {
             rolled.delete(messageId);
             qc.setQueryData<Set<string>>(["chat", "hidden"], rolled);
           }
+        }
+      }
+      // Roll back conversation badge patches
+      if (ctx && "prevConvs" in ctx && ctx.prevConvs) {
+        for (const [key, list] of ctx.prevConvs) {
+          qc.setQueryData(key, list);
         }
       }
       const msg = e instanceof Error ? e.message : String(e ?? "Gagal menyembunyikan pesan");
@@ -701,9 +733,16 @@ export function useHideMessageForMe(conversationId: string) {
           refetchType: "active",
         }),
       ]);
-      // Conversation list preview may reference the hidden message as the
-      // "last message"; refresh it so the row snaps to the next visible one.
-      qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+      // Refresh conversation list so unread count + last-message preview
+      // (both derived from message_hidden server-side) resync from source
+      // of truth. `refetchType: "active"` ensures the list badge updates
+      // instantly for the visible chat index.
+      await qc.invalidateQueries({
+        queryKey: ["chat", "conversations"],
+        refetchType: "active",
+      });
+      // Unread total badge (sidebar) also depends on this.
+      qc.invalidateQueries({ queryKey: ["chat", "unread-total"] });
     },
   });
 }
