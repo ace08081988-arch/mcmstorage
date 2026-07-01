@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Pencil, BookUser, Phone as PhoneIcon, X } from "lucide-react";
+import { Pencil, BookUser, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,6 @@ type PeerProfileRow = {
   display_name: string | null;
   avatar_url: string | null;
   invite_code: string | null;
-  phone: string | null;
 };
 
 function initialOf(name: string): string {
