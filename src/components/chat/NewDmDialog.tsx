@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input";
 import { useChatContacts, useStartDm } from "@/lib/chat";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
+import { formatInviteCode } from "@/lib/invite";
 import { z } from "zod";
 
 // Normalisasi nomor → digit-only E.164 (tanpa "+").
@@ -110,7 +111,7 @@ export function NewDmDialog() {
           <Input
             value={q}
             onChange={(e) => setQ(e.target.value)}
-            placeholder="Cari nama atau nomor telepon…"
+            placeholder="Cari nama atau PIN MCM…"
             className="pl-8"
             autoFocus
           />
@@ -128,7 +129,7 @@ export function NewDmDialog() {
               {looksLikePhone ? (
                 <>
                   <div className="text-xs text-muted-foreground">
-                    Nomor <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat MCM agar dapat diajak chat.
+                    <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat MCM agar dapat diajak chat.
                   </div>
                   {invitePhone && (
                     <div className="text-[11px] text-muted-foreground">
@@ -153,7 +154,7 @@ export function NewDmDialog() {
               ) : (
                 <>
                   <div className="text-xs text-muted-foreground">
-                    Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok, atau ketik nomor MCM untuk mengundang.
+                    Belum ada kontak yang dapat diajak chat. Tautkan akun pelanggan/pemasok, atau ketik PIN MCM untuk mengundang.
                   </div>
                   <Button
                     type="button"
@@ -184,10 +185,10 @@ export function NewDmDialog() {
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="truncate text-sm font-medium">
-                    {c.display_name || c.phone || "Pengguna"}
+                    {c.display_name || (c.invite_code ? `PIN ${formatInviteCode(c.invite_code)}` : "Pengguna")}
                   </div>
                   <div className="truncate text-[11px] text-muted-foreground">
-                    {c.phone ? `${c.phone} · ` : ""}{c.label ?? c.kind}
+                    {c.invite_code ? `PIN ${formatInviteCode(c.invite_code)} · ` : ""}{c.label ?? c.kind}
                   </div>
                 </div>
               </button>
