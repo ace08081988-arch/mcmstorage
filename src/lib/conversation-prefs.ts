@@ -67,7 +67,31 @@ export function useConvPrefs(uid: string | undefined, cid: string) {
       if (!detail || detail.cid === cid) setPrefs(getConvPrefs(uid, cid));
     };
     const onStorage = (e: StorageEvent) => {
-      if (uid && e.key === keyOf(uid, cid)) setPrefs(getConvPrefs(uid, cid));
+      if (uid && e.key === keyOf(uid, cid)) {
+        const next = getConvPrefs(uid, cid);
+        setPrefs((prev) => {
+          // Diff → beri tahu subscriber bahwa perubahan datang dari tab lain
+          try {
+            const changes: string[] = [];
+            if (prev.pinned !== next.pinned)
+              changes.push(next.pinned ? "disematkan" : "dilepas sematan");
+            if ((prev.mutedUntil ?? 0) !== (next.mutedUntil ?? 0))
+              changes.push(next.mutedUntil ? "disenyapkan" : "notifikasi aktif");
+            if (prev.archived !== next.archived)
+              changes.push(next.archived ? "diarsipkan" : "dikeluarkan arsip");
+            if (changes.length) {
+              window.dispatchEvent(
+                new CustomEvent("mcm:conv-prefs-remote", {
+                  detail: { cid, changes },
+                }),
+              );
+            }
+          } catch {
+            /* noop */
+          }
+          return next;
+        });
+      }
     };
     window.addEventListener(EVT, onChange);
     window.addEventListener("storage", onStorage);
