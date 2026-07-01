@@ -25,6 +25,10 @@ import {
   validateApkFileName,
   type ApkNameValidation,
 } from "@/lib/apk-name-validate";
+import {
+  validateMinSupportedForm,
+  hasAnyError,
+} from "@/lib/apk-min-validate";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -138,6 +142,17 @@ function MinSupportedCard({
       : "",
   );
   const [reason, setReason] = useState(current?.reason ?? "");
+  const [touched, setTouched] = useState({
+    name: false,
+    code: false,
+    reason: false,
+  });
+
+  const errors = useMemo(
+    () => validateMinSupportedForm({ name, code, reason }),
+    [name, code, reason],
+  );
+  const invalid = hasAnyError(errors);
 
   const dirty =
     (name || null) !== (current?.min_version_name ?? null) ||
@@ -167,6 +182,15 @@ function MinSupportedCard({
     },
   });
 
+  const attemptSave = () => {
+    setTouched({ name: true, code: true, reason: true });
+    if (invalid) {
+      toast.error("Perbaiki input yang tidak valid dulu");
+      return;
+    }
+    save.mutate();
+  };
+
   return (
     <section className="rounded-xl border bg-card p-3 shadow-sm">
       <header className="flex items-center gap-2">
@@ -188,9 +212,20 @@ function MinSupportedCard({
           <Input
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onBlur={() => setTouched((t) => ({ ...t, name: true }))}
             placeholder="mis. 1.2.0"
-            className="h-8 font-mono text-xs"
+            className={`h-8 font-mono text-xs ${
+              touched.name && errors.name
+                ? "border-red-500 focus-visible:ring-red-500"
+                : ""
+            }`}
+            aria-invalid={touched.name && !!errors.name}
           />
+          {touched.name && errors.name && (
+            <p className="mt-1 text-[11px] leading-snug text-red-600 dark:text-red-400">
+              {errors.name}
+            </p>
+          )}
         </div>
         <div>
           <label className="text-[11px] font-medium">Min. build</label>
@@ -198,9 +233,20 @@ function MinSupportedCard({
             value={code}
             inputMode="numeric"
             onChange={(e) => setCode(e.target.value.replace(/[^\d]/g, ""))}
+            onBlur={() => setTouched((t) => ({ ...t, code: true }))}
             placeholder="mis. 45"
-            className="h-8 font-mono text-xs"
+            className={`h-8 font-mono text-xs ${
+              touched.code && errors.code
+                ? "border-red-500 focus-visible:ring-red-500"
+                : ""
+            }`}
+            aria-invalid={touched.code && !!errors.code}
           />
+          {touched.code && errors.code && (
+            <p className="mt-1 text-[11px] leading-snug text-red-600 dark:text-red-400">
+              {errors.code}
+            </p>
+          )}
         </div>
       </div>
       <div className="mt-2">
@@ -210,11 +256,28 @@ function MinSupportedCard({
         <Input
           value={reason}
           onChange={(e) => setReason(e.target.value)}
+          onBlur={() => setTouched((t) => ({ ...t, reason: true }))}
           placeholder="mis. Perbaikan keamanan penting"
-          className="h-8 text-xs"
+          className={`h-8 text-xs ${
+            touched.reason && errors.reason
+              ? "border-red-500 focus-visible:ring-red-500"
+              : ""
+          }`}
+          aria-invalid={touched.reason && !!errors.reason}
           maxLength={200}
         />
+        {touched.reason && errors.reason && (
+          <p className="mt-1 text-[11px] leading-snug text-red-600 dark:text-red-400">
+            {errors.reason}
+          </p>
+        )}
       </div>
+      {errors.form && (touched.name || touched.code || touched.reason) && (
+        <div className="mt-2 flex items-start gap-1.5 rounded-lg border border-red-300 bg-red-50 p-2 text-[11px] leading-snug text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>{errors.form}</span>
+        </div>
+      )}
       <div className="mt-2 flex items-center justify-between gap-2">
         <p className="text-[11px] text-muted-foreground">
           {current
@@ -228,8 +291,8 @@ function MinSupportedCard({
         <Button
           type="button"
           size="sm"
-          disabled={!dirty || save.isPending}
-          onClick={() => save.mutate()}
+          disabled={!dirty || save.isPending || invalid}
+          onClick={attemptSave}
         >
           {save.isPending ? (
             <Loader2 className="h-3.5 w-3.5 animate-spin" />
