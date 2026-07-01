@@ -27,6 +27,7 @@ import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authenticated.profil-chat'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
+import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes/_authenticated.pengaturan-penyimpanan'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedPengaturanBahasaRouteImport } from './routes/_authenticated.pengaturan-bahasa'
 import { Route as AuthenticatedPengaturanAksesibilitasRouteImport } from './routes/_authenticated.pengaturan-aksesibilitas'
@@ -148,6 +149,12 @@ const AuthenticatedPengaturanScrollGuardRoute =
   AuthenticatedPengaturanScrollGuardRouteImport.update({
     id: '/pengaturan-scroll-guard',
     path: '/pengaturan-scroll-guard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanPenyimpananRoute =
+  AuthenticatedPengaturanPenyimpananRouteImport.update({
+    id: '/pengaturan-penyimpanan',
+    path: '/pengaturan-penyimpanan',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPengaturanKunciRoute =
@@ -358,6 +365,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
   '/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/profil-chat': typeof AuthenticatedProfilChatRoute
@@ -407,6 +415,7 @@ export interface FileRoutesByTo {
   '/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
   '/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/profil-chat': typeof AuthenticatedProfilChatRoute
@@ -460,6 +469,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
   '/_authenticated/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
+  '/_authenticated/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/_authenticated/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/profil-chat': typeof AuthenticatedProfilChatRoute
@@ -514,6 +524,7 @@ export interface FileRouteTypes {
     | '/pengaturan-aksesibilitas'
     | '/pengaturan-bahasa'
     | '/pengaturan-kunci'
+    | '/pengaturan-penyimpanan'
     | '/pengaturan-scroll-guard'
     | '/profil'
     | '/profil-chat'
@@ -563,6 +574,7 @@ export interface FileRouteTypes {
     | '/pengaturan-aksesibilitas'
     | '/pengaturan-bahasa'
     | '/pengaturan-kunci'
+    | '/pengaturan-penyimpanan'
     | '/pengaturan-scroll-guard'
     | '/profil'
     | '/profil-chat'
@@ -615,6 +627,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-aksesibilitas'
     | '/_authenticated/pengaturan-bahasa'
     | '/_authenticated/pengaturan-kunci'
+    | '/_authenticated/pengaturan-penyimpanan'
     | '/_authenticated/pengaturan-scroll-guard'
     | '/_authenticated/profil'
     | '/_authenticated/profil-chat'
@@ -786,6 +799,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-scroll-guard'
       fullPath: '/pengaturan-scroll-guard'
       preLoaderRoute: typeof AuthenticatedPengaturanScrollGuardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-penyimpanan': {
+      id: '/_authenticated/pengaturan-penyimpanan'
+      path: '/pengaturan-penyimpanan'
+      fullPath: '/pengaturan-penyimpanan'
+      preLoaderRoute: typeof AuthenticatedPengaturanPenyimpananRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-kunci': {
@@ -1075,6 +1095,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanAksesibilitasRoute: typeof AuthenticatedPengaturanAksesibilitasRoute
   AuthenticatedPengaturanBahasaRoute: typeof AuthenticatedPengaturanBahasaRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
+  AuthenticatedPengaturanPenyimpananRoute: typeof AuthenticatedPengaturanPenyimpananRoute
   AuthenticatedPengaturanScrollGuardRoute: typeof AuthenticatedPengaturanScrollGuardRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedProfilChatRoute: typeof AuthenticatedProfilChatRoute
@@ -1107,6 +1128,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedPengaturanAksesibilitasRoute,
   AuthenticatedPengaturanBahasaRoute: AuthenticatedPengaturanBahasaRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
+  AuthenticatedPengaturanPenyimpananRoute:
+    AuthenticatedPengaturanPenyimpananRoute,
   AuthenticatedPengaturanScrollGuardRoute:
     AuthenticatedPengaturanScrollGuardRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
