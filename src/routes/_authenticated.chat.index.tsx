@@ -3,6 +3,7 @@ import { useMemo, useState } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff,
+  Settings2,
 } from "lucide-react";
 
 import {
@@ -67,6 +68,11 @@ function ChatListPage() {
           <h1 className="text-lg font-semibold">Chat</h1>
         </div>
         <div className="flex gap-2">
+          <Button asChild variant="outline" size="sm" className="gap-1.5" aria-label="Pengaturan profil chat">
+            <Link to="/profil-chat">
+              <Settings2 className="h-4 w-4" />
+            </Link>
+          </Button>
           <Button asChild variant="outline" size="sm" className="gap-1.5">
             <Link to="/kontak">
               <Link2 className="h-4 w-4" /> Siapkan kontak chat
