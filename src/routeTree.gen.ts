@@ -62,6 +62,7 @@ import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authe
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as LovableVisualVoiceNotePlayerRouteImport } from './routes/lovable.visual.voice-note-player'
 import { Route as LovableVisualProdukListRouteImport } from './routes/lovable.visual.produk-list'
+import { Route as LovableVisualPressScopeRouteImport } from './routes/lovable.visual.press-scope'
 import { Route as LovableVisualMinSupportedFormRouteImport } from './routes/lovable.visual.min-supported-form'
 import { Route as LovableVisualMessageHiddenRlsRouteImport } from './routes/lovable.visual.message-hidden-rls'
 import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/lovable.visual.message-hidden-persist'
@@ -361,6 +362,11 @@ const LovableVisualProdukListRoute = LovableVisualProdukListRouteImport.update({
   path: '/lovable/visual/produk-list',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LovableVisualPressScopeRoute = LovableVisualPressScopeRouteImport.update({
+  id: '/lovable/visual/press-scope',
+  path: '/lovable/visual/press-scope',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableVisualMinSupportedFormRoute =
   LovableVisualMinSupportedFormRouteImport.update({
     id: '/lovable/visual/min-supported-form',
@@ -525,6 +531,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
+  '/lovable/visual/press-scope': typeof LovableVisualPressScopeRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
@@ -595,6 +602,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
+  '/lovable/visual/press-scope': typeof LovableVisualPressScopeRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/chat': typeof AuthenticatedChatIndexRoute
@@ -668,6 +676,7 @@ export interface FileRoutesById {
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
+  '/lovable/visual/press-scope': typeof LovableVisualPressScopeRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
@@ -741,6 +750,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
+    | '/lovable/visual/press-scope'
     | '/lovable/visual/produk-list'
     | '/lovable/visual/voice-note-player'
     | '/chat/'
@@ -811,6 +821,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
+    | '/lovable/visual/press-scope'
     | '/lovable/visual/produk-list'
     | '/lovable/visual/voice-note-player'
     | '/chat'
@@ -883,6 +894,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
+    | '/lovable/visual/press-scope'
     | '/lovable/visual/produk-list'
     | '/lovable/visual/voice-note-player'
     | '/_authenticated/chat/'
@@ -914,6 +926,7 @@ export interface RootRouteChildren {
   LovableVisualMessageHiddenPersistRoute: typeof LovableVisualMessageHiddenPersistRoute
   LovableVisualMessageHiddenRlsRoute: typeof LovableVisualMessageHiddenRlsRoute
   LovableVisualMinSupportedFormRoute: typeof LovableVisualMinSupportedFormRoute
+  LovableVisualPressScopeRoute: typeof LovableVisualPressScopeRoute
   LovableVisualProdukListRoute: typeof LovableVisualProdukListRoute
   LovableVisualVoiceNotePlayerRoute: typeof LovableVisualVoiceNotePlayerRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -1294,6 +1307,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualProdukListRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/press-scope': {
+      id: '/lovable/visual/press-scope'
+      path: '/lovable/visual/press-scope'
+      fullPath: '/lovable/visual/press-scope'
+      preLoaderRoute: typeof LovableVisualPressScopeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/min-supported-form': {
       id: '/lovable/visual/min-supported-form'
       path: '/lovable/visual/min-supported-form'
@@ -1595,6 +1615,7 @@ const rootRouteChildren: RootRouteChildren = {
     LovableVisualMessageHiddenPersistRoute,
   LovableVisualMessageHiddenRlsRoute: LovableVisualMessageHiddenRlsRoute,
   LovableVisualMinSupportedFormRoute: LovableVisualMinSupportedFormRoute,
+  LovableVisualPressScopeRoute: LovableVisualPressScopeRoute,
   LovableVisualProdukListRoute: LovableVisualProdukListRoute,
   LovableVisualVoiceNotePlayerRoute: LovableVisualVoiceNotePlayerRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
