@@ -234,8 +234,24 @@ export function OrgNameSettings() {
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            PNG, JPG, WEBP, atau SVG. Maks. 512 KB, dimensi ≤ 1024×1024 px. Persegi disarankan.
+            PNG, JPG, WEBP, atau SVG. Maks. 512 KB, dimensi 64–1024 px, rasio 1:2 s.d. 2:1 (persegi paling ideal).
           </p>
+          {logoError && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive"
+            >
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <div className="flex-1 leading-snug">{logoError}</div>
+              <button
+                type="button"
+                onClick={() => setLogoError(null)}
+                className="text-[10px] font-medium underline underline-offset-2 opacity-80 hover:opacity-100"
+              >
+                Tutup
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="space-y-1.5">
