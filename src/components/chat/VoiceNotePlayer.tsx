@@ -13,6 +13,33 @@ export function normalizeDurationSec(input: number | null | undefined): number |
 // Format durasi tersentralisasi di src/lib/format-duration.ts agar konsisten
 // antara VoiceNotePlayer, VoiceRecorderButton, dan lampiran lain.
 
+/**
+ * Hitung label durasi voice note secara murni (tanpa React state) sehingga
+ * bisa diuji unit dan konsisten di semua situs pemanggilan.
+ *
+ * Aturan:
+ * - Saat memutar / sudah bergerak → tampilkan posisi saat ini.
+ * - Diam & ada durasi server ternormalisasi (`initial > 0`) → pakai itu,
+ *   walau audio belum siap. Ini mencegah label "melompat" ke "00:00" saat
+ *   `durationSec` berubah setelah remount atau sebelum metadata termuat.
+ * - Diam & metadata audio siap (`ready` & `duration > 0`) → pakai durasi.
+ * - Tidak ada info sama sekali → "—:—" (bukan "00:00").
+ */
+export function computeVoiceNoteLabel(args: {
+  playing: boolean;
+  current: number;
+  ready: boolean;
+  duration: number;
+  initial: number;
+}): string {
+  const { playing, current, ready, duration, initial } = args;
+  const showCurrent = playing || current > 0;
+  const fallback = initial > 0 ? initial : (ready && duration > 0 ? duration : null);
+  if (showCurrent) return formatDurationMMSS(current);
+  if (fallback != null) return formatDurationMMSS(fallback);
+  return "—:—";
+}
+
 export function VoiceNotePlayer({
   url,
   mine,
@@ -94,19 +121,7 @@ export function VoiceNotePlayer({
   };
 
   const progress = duration > 0 ? Math.min(1000, Math.round((current / duration) * 1000)) : 0;
-  // Label durasi:
-  // - Saat memutar / sedang berjalan → posisi saat ini.
-  // - Diam & metadata audio siap → durasi audio.
-  // - Diam & belum siap tapi ada nilai server ternormalisasi → tampilkan itu
-  //   supaya tidak pernah muncul "00:00" saat loading.
-  // - Tidak ada info sama sekali → tampilkan em dash, bukan "00:00".
-  const showCurrent = playing || current > 0;
-  const fallback = initial > 0 ? initial : (ready && duration > 0 ? duration : null);
-  const label = showCurrent
-    ? formatDurationMMSS(current)
-    : fallback != null
-      ? formatDurationMMSS(fallback)
-      : "—:—";
+  const label = computeVoiceNoteLabel({ playing, current, ready, duration, initial });
 
   return (
     <div
