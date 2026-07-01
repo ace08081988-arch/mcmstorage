@@ -44,6 +44,8 @@ export function OrgNameSettings() {
   const [hex, setHex] = useState(savedBrand.startsWith("#") ? savedBrand : "#10b981");
   const fileRef = useRef<HTMLInputElement>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
+  type PendingLogo = { url: string; size: number; width: number; height: number; mime: string };
+  const [pendingLogo, setPendingLogo] = useState<PendingLogo | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const v = window.localStorage.getItem("app-org-saved-at");
@@ -64,11 +66,16 @@ export function OrgNameSettings() {
   const dirty =
     full.trim() !== savedFull ||
     short.trim() !== savedShort ||
-    brand !== savedBrand;
+    brand !== savedBrand ||
+    pendingLogo !== null;
 
   const onSave = () => {
     setOrgName(full, short);
     setOrgBrand(brand);
+    if (pendingLogo) {
+      setOrgLogo(pendingLogo.url);
+      setPendingLogo(null);
+    }
     const ts = Date.now();
     try { window.localStorage.setItem("app-org-saved-at", String(ts)); } catch { /* ignore */ }
     setLastSavedAt(ts);
@@ -80,6 +87,7 @@ export function OrgNameSettings() {
     setOrgBrand("");
     setOrgLogo("");
     setBrand("");
+    setPendingLogo(null);
     applyBrandColor();
     toast.success("Dikembalikan ke bawaan");
   };
@@ -89,6 +97,7 @@ export function OrgNameSettings() {
     setOrgBrand("");
     setBrand("");
     setHex("#10b981");
+    setPendingLogo(null);
     applyBrandColor();
     const ts = Date.now();
     try { window.localStorage.setItem("app-org-saved-at", String(ts)); } catch { /* ignore */ }
@@ -132,8 +141,8 @@ export function OrgNameSettings() {
         return;
       }
       if (mime === "image/svg+xml") {
-        setOrgLogo(url);
-        toast.success("Logo diperbarui");
+        setPendingLogo({ url, size: file.size, width: 0, height: 0, mime });
+        toast.success("Logo siap — tekan Simpan untuk menerapkan");
         return;
       }
       const img = new Image();
@@ -158,11 +167,11 @@ export function OrgNameSettings() {
           fail(`Rasio ${r} terlalu ekstrem. Gunakan rasio antara 1:2 dan 2:1 (persegi paling ideal).`);
           return;
         }
-        setOrgLogo(url);
+        setPendingLogo({ url, size: file.size, width: w, height: h, mime });
         toast.success(
           Math.abs(ratio - 1) < 0.05
-            ? "Logo diperbarui"
-            : `Logo diperbarui (${w}×${h}, rasio ${ratio.toFixed(2)}:1 — persegi tetap paling ideal).`,
+            ? "Logo siap — tekan Simpan untuk menerapkan"
+            : `Logo siap (${w}×${h}, rasio ${ratio.toFixed(2)}:1) — tekan Simpan.`,
         );
       };
       img.onerror = () => fail("Gambar rusak atau format tidak dikenali.");
@@ -186,17 +195,27 @@ export function OrgNameSettings() {
         {/* Logo */}
         <div className="space-y-2">
           <Label>Logo</Label>
-          <div className="flex items-center gap-3">
-            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md border bg-muted flex items-center justify-center">
-              {savedLogo ? (
+          <div className="flex items-start gap-3">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md border bg-muted flex items-center justify-center">
+              {pendingLogo ? (
+                <img src={pendingLogo.url} alt="Pratinjau logo baru" className="h-full w-full object-cover" />
+              ) : savedLogo ? (
                 <img src={savedLogo} alt="Logo" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-[11px] font-bold tracking-wider text-muted-foreground">
                   {short || DEFAULT_ORG_SHORT}
                 </span>
               )}
+              {pendingLogo && (
+                <span
+                  className="absolute inset-x-0 bottom-0 bg-amber-500/90 text-center text-[9px] font-semibold uppercase tracking-wider text-white"
+                  aria-hidden="true"
+                >
+                  Baru
+                </span>
+              )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-1 flex-wrap gap-2">
               <input
                 ref={fileRef}
                 type="file"
@@ -217,7 +236,22 @@ export function OrgNameSettings() {
               >
                 <ImagePlus className="h-3.5 w-3.5" /> Pilih logo
               </Button>
-              {savedLogo && (
+              {pendingLogo && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setPendingLogo(null);
+                    setLogoError(null);
+                    toast.message("Pratinjau logo dibatalkan");
+                  }}
+                  className="gap-1.5"
+                >
+                  Batalkan pratinjau
+                </Button>
+              )}
+              {!pendingLogo && savedLogo && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -233,6 +267,34 @@ export function OrgNameSettings() {
               )}
             </div>
           </div>
+          {pendingLogo && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px]">
+              <div className="mb-1 flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-500">
+                <ImagePlus className="h-3 w-3" aria-hidden="true" />
+                Pratinjau logo baru — belum disimpan
+              </div>
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-muted-foreground">
+                <dt>Format</dt>
+                <dd className="font-mono text-foreground">{pendingLogo.mime.replace("image/", "").toUpperCase()}</dd>
+                <dt>Ukuran file</dt>
+                <dd className="font-mono text-foreground">{formatBytes(pendingLogo.size)}</dd>
+                <dt>Dimensi</dt>
+                <dd className="font-mono text-foreground">
+                  {pendingLogo.width > 0
+                    ? `${pendingLogo.width} × ${pendingLogo.height} px`
+                    : "Vektor (SVG)"}
+                </dd>
+                {pendingLogo.width > 0 && (
+                  <>
+                    <dt>Rasio</dt>
+                    <dd className="font-mono text-foreground">
+                      {(pendingLogo.width / pendingLogo.height).toFixed(2)}:1
+                    </dd>
+                  </>
+                )}
+              </dl>
+            </div>
+          )}
           <p className="text-[11px] text-muted-foreground">
             PNG, JPG, WEBP, atau SVG. Maks. 512 KB, dimensi 64–1024 px, rasio 1:2 s.d. 2:1 (persegi paling ideal).
           </p>
@@ -491,4 +553,11 @@ function formatRelative(msAgo: number): string {
   if (hr < 24) return `${hr} jam lalu`;
   const d = Math.round(hr / 24);
   return `${d} hari lalu`;
+}
+
+function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} B`;
+  const kb = bytes / 1024;
+  if (kb < 1024) return `${kb.toFixed(kb >= 100 ? 0 : 1)} KB`;
+  return `${(kb / 1024).toFixed(2)} MB`;
 }
