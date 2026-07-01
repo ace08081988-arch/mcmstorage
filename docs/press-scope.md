@@ -648,6 +648,11 @@ bersifat aditif dan tidak pernah dihapus oleh child.
 | `-skip` (parent) vs `data-press-audit="on"` (child)  | `-skip` tetap diwariskan             | `on` hanya membalik `off`, bukan `skip`          | (H)    |
 | `mode="off"` global vs atribut DOM                   | `mode` global (tanpa output)         | Evaluasi tetap berjalan, tapi tak ada log/DOM    | (I)    |
 | Kombinasi penuh: `off→on`, `skip`, `deny`, `allow`   | Urutan 1→6 (lihat kolom "Hasil")     | 1) off/on 2) skip 3) deny 4) allow 5) scope 6) mode | (J) |
+| DOM `-allow` vs DOM `-deny` (section yang sama)      | `-deny`                              | Kode di-deny dibuang meski masuk `-allow`        | (K)    |
+| DOM `-allow` (child) vs DOM `-deny` (parent)         | `-deny` ancestor                     | Child tak bisa meng-unlock kode yang di-deny di atas | (L) |
+| DOM `-allow` vs `denyRules` global                   | `denyRules`                          | Allow DOM menambah kode, tapi deny global tetap memotong | (M) |
+| DOM `-allow` bertumpuk (parent+child)                | Union allowlist; `-deny` menang      | Allowlist di-union sepanjang ancestor path       | (N)    |
+| `-allow=""` (nilai kosong, eksplisit)                | Allowlist = ∅                        | Section senyap total (hapus atribut untuk reset) | (O)    |
 
 > Contoh (A)–(J) ada di blok HTML tepat di bawah tabel ini. Setiap blok
 > membawa komentar `efektif:` yang menyebut kode PA00X final yang
