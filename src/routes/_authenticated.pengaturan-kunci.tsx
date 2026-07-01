@@ -548,14 +548,91 @@ function PengaturanKunci() {
               · {bioStatus.reason}
             </div>
           )}
-          <Recommendations
-            status={bioStatus}
-            hasLock={!!(cfg?.pinHash || cfg?.patternHash)}
-            enrolling={enrolling}
-            onEnroll={handleEnroll}
-            onRecheck={() => runBioCheck(true)}
-            onCreateLock={() => setEditor("pin")}
-          />
+          {(() => {
+            const hasLock = !!cfg?.hash;
+            const recs: { key: string; text: string; action?: { label: string; onClick: () => void; disabled?: boolean } }[] = [];
+            if (!bioStatus.native) {
+              recs.push({
+                key: "web",
+                text: "Sidik jari hanya bisa dipakai di APK Android. Buka aplikasi terpasang untuk mengaktifkan.",
+              });
+            } else if (!bioStatus.pluginLoaded) {
+              recs.push({
+                key: "plugin",
+                text: "Plugin biometrik tidak termuat. Perbarui APK ke versi terbaru, lalu buka halaman ini kembali.",
+                action: { label: "Cek ulang", onClick: () => runBioCheck(true), disabled: bioChecking },
+              });
+            } else {
+              if (bioStatus.permission === "denied") {
+                recs.push({
+                  key: "perm",
+                  text: "Izin sidik jari ditolak. Buka Pengaturan Sistem → Aplikasi → izinkan Biometrik untuk MCM Storage.",
+                  action: { label: "Buka Pengaturan", onClick: handleEnroll, disabled: enrolling },
+                });
+              }
+              if (bioStatus.enrolled === false) {
+                recs.push({
+                  key: "enroll",
+                  text: "Belum ada sidik jari terdaftar di perangkat. Daftarkan dulu di Pengaturan Sistem.",
+                  action: { label: enrolling ? "Membuka…" : "Daftarkan sidik jari", onClick: handleEnroll, disabled: enrolling },
+                });
+              }
+              if (!hasLock) {
+                recs.push({
+                  key: "pin",
+                  text: "Buat PIN cadangan dulu — sidik jari butuh kunci utama sebagai fallback.",
+                  action: { label: "Buat PIN", onClick: () => setEditor("pin") },
+                });
+              }
+              if (bioAvailable && hasLock && !cfg?.biometric) {
+                recs.push({
+                  key: "toggle",
+                  text: "Semua siap. Aktifkan switch Sidik jari di bawah untuk mulai memakainya.",
+                });
+              }
+            }
+            if (recs.length === 0 && bioAvailable && cfg?.biometric) {
+              return (
+                <div className="mt-2 rounded border border-emerald-500/30 bg-emerald-500/5 px-2 py-1.5 text-[11px] text-emerald-700 dark:text-emerald-300">
+                  Sidik jari aktif dan siap dipakai.
+                </div>
+              );
+            }
+            if (recs.length === 0) return null;
+            return (
+              <div className="mt-3 space-y-1.5">
+                <div className="text-[11px] font-medium text-muted-foreground">
+                  Rekomendasi langkah
+                </div>
+                <ol className="space-y-1.5">
+                  {recs.map((r, i) => (
+                    <li
+                      key={r.key}
+                      className="flex items-start gap-2 rounded border bg-background px-2 py-1.5 text-[11px]"
+                    >
+                      <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-amber-500/15 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                        {i + 1}
+                      </span>
+                      <div className="flex-1 space-y-1">
+                        <p className="leading-snug">{r.text}</p>
+                        {r.action && (
+                          <Button
+                            size="sm"
+                            variant="secondary"
+                            className="h-7 px-2 text-[11px]"
+                            onClick={r.action.onClick}
+                            disabled={r.action.disabled}
+                          >
+                            {r.action.label}
+                          </Button>
+                        )}
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+            );
+          })()}
         </div>
 
         <div className="flex items-center justify-between gap-3">
