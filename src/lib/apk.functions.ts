@@ -449,7 +449,11 @@ async function requireAdmin(context: any) {
     _role: "admin",
   });
   if (error) throw new Error(error.message);
-  if (!data) throw new Error("Forbidden: admin diperlukan");
+  if (!data) {
+    const { logAdminDenial } = await import("./admin-denial-telemetry");
+    logAdminDenial({ fn: "apk:requireAdmin", userId: context.userId });
+    throw new Error("Forbidden: admin diperlukan");
+  }
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
