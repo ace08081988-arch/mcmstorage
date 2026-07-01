@@ -3,6 +3,14 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { sendTestNotification } from "@/lib/push-client";
 
 export const Route = createFileRoute("/_authenticated/status-notifikasi")({
@@ -454,6 +462,18 @@ function StatusNotifikasiPage() {
 
   const [exportCopied, setExportCopied] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewJson, setPreviewJson] = useState("");
+
+  const openPreview = () => {
+    try {
+      setPreviewJson(serializeSnapshot());
+      setExportError(null);
+      setPreviewOpen(true);
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "Gagal membuat JSON.");
+    }
+  };
 
   const buildSnapshot = () => ({
     generatedAt: new Date().toISOString(),
@@ -893,6 +913,7 @@ function StatusNotifikasiPage() {
             );
           })()}
           <div className="flex flex-wrap gap-2">
+            <Button size="sm" variant="secondary" onClick={openPreview}>Pratinjau</Button>
             <Button size="sm" onClick={downloadSnapshot}>Unduh JSON</Button>
             <Button size="sm" variant="outline" onClick={copySnapshot}>
               {exportCopied ? "Tersalin" : "Salin JSON"}
@@ -905,6 +926,29 @@ function StatusNotifikasiPage() {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Pratinjau snapshot JSON</DialogTitle>
+            <DialogDescription>
+              Periksa isi sebelum diunduh atau disalin. {previewJson.length.toLocaleString("id-ID")} karakter.
+            </DialogDescription>
+          </DialogHeader>
+          <pre className="max-h-[55vh] overflow-auto rounded-md border bg-muted/40 p-3 text-[11px] leading-snug font-mono whitespace-pre-wrap break-all">
+            {previewJson}
+          </pre>
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button size="sm" variant="outline" onClick={() => setPreviewOpen(false)}>
+              Tutup
+            </Button>
+            <Button size="sm" variant="outline" onClick={copySnapshot}>
+              {exportCopied ? "Tersalin" : "Salin JSON"}
+            </Button>
+            <Button size="sm" onClick={downloadSnapshot}>Unduh JSON</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
