@@ -250,7 +250,13 @@ function computeDiff(
   });
 }
 
-function ExampleCard({ example }: { example: Example }) {
+function ExampleCard({
+  example,
+  onResults,
+}: {
+  example: Example;
+  onResults?: (res: VerifyResult[] | null) => void;
+}) {
   const [presetIdx, setPresetIdx] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [results, setResults] = useState<VerifyResult[] | null>(null);
@@ -334,8 +340,9 @@ function ExampleCard({ example }: { example: Example }) {
       for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
     }
     setResults(collected);
+    onResults?.(collected);
     setRunning(false);
-  }, [attrs, example.presets]);
+  }, [attrs, example.presets, onResults]);
 
   const allPass = useMemo(
     () => results && results.every((r) => r.pass),
