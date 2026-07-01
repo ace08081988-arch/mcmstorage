@@ -1097,7 +1097,16 @@ function ChatRoomPage() {
                               Salin teks
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onSelect={() =>
+                              onSelect={async () => {
+                                const ok = await confirm({
+                                  title: "Hapus untuk saya?",
+                                  description:
+                                    "Pesan ini akan disembunyikan di perangkat Anda. Lawan chat masih bisa melihatnya.",
+                                  confirmText: "Hapus",
+                                  cancelText: "Batal",
+                                  destructive: true,
+                                });
+                                if (!ok) return;
                                 scheduleUndo({
                                   label: "Pesan akan disembunyikan",
                                   onCommit: () =>
@@ -1108,8 +1117,8 @@ function ChatRoomPage() {
                                       },
                                       onError: (err) => toast.error(err instanceof Error ? err.message : "Gagal"),
                                     }),
-                                })
-                              }
+                                });
+                              }}
                             >
                               <EyeOff className="mr-2 h-4 w-4" />
                               Hapus untuk saya
@@ -1147,7 +1156,16 @@ function ChatRoomPage() {
                               <DropdownMenuItem
                                 className="text-destructive focus:text-destructive"
                                 disabled={deleteMsg.isPending}
-                                onSelect={() => {
+                                onSelect={async () => {
+                                  const ok = await confirm({
+                                    title: "Hapus untuk semua orang?",
+                                    description:
+                                      "Pesan akan dihapus dari sisi Anda dan lawan chat. Tindakan ini tidak bisa dibatalkan setelah beberapa detik.",
+                                    confirmText: "Hapus untuk semua",
+                                    cancelText: "Batal",
+                                    destructive: true,
+                                  });
+                                  if (!ok) return;
                                   const restore = optimisticDeleteMessages(qc, conversationId, [m.id]);
                                   scheduleUndo({
                                     label: "Pesan akan dihapus untuk semua",
