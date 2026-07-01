@@ -140,7 +140,7 @@ function InviteLandingPage() {
                   className="mt-4 gap-2"
                 >
                   <UserPlus className="h-4 w-4" />
-                  {adding ? "Menambah…" : "Tambah ke kontak saya"}
+                  {adding ? "Mengirim…" : "Kirim permintaan pertemanan"}
                 </Button>
               ) : (
                 <Button asChild className="mt-4 gap-2">
