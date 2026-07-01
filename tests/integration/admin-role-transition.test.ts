@@ -76,10 +76,14 @@ vi.mock("@/lib/apk.functions", () => ({
   setApkMinSupported: async () => ({}),
 }));
 
-function ssrPage(Comp: () => ReactElement): string {
+function ssrPage(
+  Comp: () => ReactElement,
+  seed?: { key: unknown[]; data: unknown },
+): string {
   const qc = new QueryClient({
     defaultOptions: { queries: { retry: false, refetchOnMount: false } },
   });
+  if (seed) qc.setQueryData(seed.key, seed.data);
   return renderToStaticMarkup(
     createElement(QueryClientProvider, { client: qc }, createElement(Comp)),
   );
@@ -170,8 +174,14 @@ describe("/pengaturan-apk — rerender saat role berubah", () => {
     setAdminState({ isAdmin: true, isCheckingAdmin: false });
     currentPayload = adminPayload;
 
-    // Snapshot #2: setelah promote — sama komponen, SSR baru.
-    const after = ssrPage(Comp);
+    // Snapshot #2: setelah promote — sama komponen, SSR baru. Cache di-seed
+    // agar useQuery langsung punya data (SSR = satu pass, tidak ada waktu
+    // untuk async refetch). Ini meniru state setelah `queryClient.invalidate`
+    // + fetch selesai.
+    const after = ssrPage(Comp, {
+      key: ["apk-release-admin"],
+      data: adminPayload,
+    });
     expect(after).not.toContain("Hanya admin");
     expect(after).toContain("Minimum versi kompatibel");
     expect(after).toContain("MCM Storage");
