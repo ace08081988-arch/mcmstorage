@@ -16,8 +16,7 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
-import { useQuery } from "@tanstack/react-query";
-import { listMyConversations, useMyUserId } from "@/lib/chat";
+import { useConversations } from "@/lib/chat";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/_authenticated/fitur")({
@@ -43,14 +42,7 @@ type Row = {
 };
 
 function FiturPage() {
-  const { data: myId } = useMyUserId();
-  const convs = useQuery({
-    queryKey: ["fitur-conv-count", myId ?? "_"],
-    queryFn: () => listMyConversations(200),
-    enabled: !!myId,
-    refetchOnWindowFocus: false,
-    staleTime: 30_000,
-  });
+  const convs = useConversations();
   const convCount = convs.data?.length;
 
   const bisnis: Row[] = [
