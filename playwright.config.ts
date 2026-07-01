@@ -297,6 +297,21 @@ export default defineConfig({
       },
     },
     {
+      // E2E: deep link multi-DM — `page.goto('/chat/<idA>')` diikuti
+      // `page.goto('/chat/<idB>')` (langsung, tanpa transit daftar),
+      // lalu balik ke `<idA>`. Setiap kunjungan wajib menampilkan
+      // `PIN xxxx-xxxx` peer yang benar di header + transkrip dan
+      // BEBAS nomor telp Indonesia mentah; identitas peer A ≠ peer B.
+      name: "chat-pin-mcm-deep-link-multi-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-deep-link-multi\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // E2E: fitur "Cari di percakapan" pada DM yang sudah ada — dialog,
       // list hits, header, dan transkrip di belakang dialog wajib memakai
       // `PIN xxxx-xxxx` dan bebas nomor telp Indonesia mentah. Source
