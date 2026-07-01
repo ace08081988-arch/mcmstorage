@@ -471,8 +471,10 @@ function computeStatus(
   return "published";
 }
 
+// Diekspor untuk uji regresi kontrak non-admin — lihat
+// `tests/integration/apk-admin-list-non-admin.test.ts`.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function buildAdminApkList(context: any): Promise<AdminApkListResult> {
+export async function buildAdminApkList(context: any): Promise<AdminApkListResult> {
   // Non-admin: return an empty payload with a flag instead of throwing.
   // Throwing di sini menyebabkan blank screen & runtime-error report untuk
   // user biasa yang tanpa sengaja membuka /pengaturan-apk. Aksi tulis
