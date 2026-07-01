@@ -107,7 +107,7 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
             <Phone className="h-3 w-3" /> Telepon
           </a>
           <a href={`https://wa.me/${waPhone}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 hover:bg-accent">
-            <MessageCircle className="h-3 w-3" /> WA
+            <MessageCircle className="h-3 w-3" /> Chat
           </a>
         </div>
       </div>
