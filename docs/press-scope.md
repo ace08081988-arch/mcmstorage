@@ -528,15 +528,30 @@ Urutan pasti (tertinggi menang):
 
 Tabel keputusan cepat:
 
-| Situasi                                                                 | Hasil                                              |
-| ----------------------------------------------------------------------- | -------------------------------------------------- |
-| Parent `data-press-audit="off"`, child `data-press-audit-skip="PA002"`  | Semua rule OFF (langkah 1 menang, skip tak dipakai) |
-| Parent `data-press-audit="off"`, child `data-press-audit="on"`          | Child audit ON kembali; skip/allow/deny berlaku    |
-| `denyRules: ["PA002"]` + `data-press-audit-skip="PA001"` di section     | Section skip PA001 & PA002; rule lain jalan        |
-| `allowRules: ["PA001"]` + section tanpa atribut                         | Hanya PA001 diaudit                                |
-| `allowRules: ["PA001"]` + `denyRules: ["PA001"]`                        | PA001 di-skip (deny menang)                        |
-| `data-press-audit-skip="PA001"` di parent + child punya `skip="PA002"`  | Child skip PA001 + PA002 (union, bukan override)   |
-| `mode: "off"` global                                                    | Semua langkah di atas tetap dievaluasi, tapi tanpa efek konsol/DOM |
+| Situasi                                                                                     | Hasil                                                                             |
+| ------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| Parent `data-press-audit="off"`, child `data-press-audit-skip="PA002"`                      | Semua rule OFF (langkah 1 menang, skip tak dipakai)                               |
+| Parent `data-press-audit="off"`, child `data-press-audit="on"`                              | Child audit ON kembali; skip/allow/deny berlaku                                   |
+| `denyRules: ["PA002"]` + `data-press-audit-skip="PA001"` di section                         | Section skip PA001 & PA002; rule lain jalan                                       |
+| `allowRules: ["PA001"]` + section tanpa atribut                                             | Hanya PA001 diaudit                                                               |
+| `allowRules: ["PA001"]` + `denyRules: ["PA001"]`                                            | PA001 di-skip (deny menang)                                                       |
+| `data-press-audit-skip="PA001"` di parent + child punya `skip="PA002"`                      | Child skip PA001 + PA002 (union, bukan override)                                  |
+| `data-press-audit-allow="PA001"` di section, tanpa atribut lain                             | Di subtree hanya PA001 lolos; PA002/PA003/PA004 di-skip                           |
+| `data-press-audit-allow="PA001 PA002"` + `data-press-audit-deny="PA001"` di section yg sama | PA001 di-skip (deny menang), hanya PA002 lolos                                    |
+| `data-press-audit-allow="PA001 PA002"` + `data-press-audit-skip="PA001"` di section yg sama | Sama seperti di atas — `skip` diperlakukan setara `deny` (union) → PA001 di-skip  |
+| Parent `data-press-audit-allow="PA001 PA002"` + child `data-press-audit-allow="PA002"`      | Union whitelist = {PA001, PA002}. Child TIDAK mempersempit (allow bersifat aditif) |
+| Parent `data-press-audit-allow="PA001"` + child `data-press-audit-deny="PA001"`             | PA001 di-skip di subtree child (deny menang di path), tak ada rule lain yg lolos  |
+| Parent `data-press-audit-deny="PA002"` + child `data-press-audit-allow="PA002"`             | PA002 tetap di-skip (deny ancestor menang atas allow lokal)                       |
+| `data-press-audit-allow="PA001"` di section + global `allowRules: ["PA002"]`                | Rule harus lolos DUA gerbang: hanya PA002 yg lolos global TAPI PA002 di luar allow DOM → **tidak ada** rule terpicu di section |
+| `data-press-audit-deny="PA001"` di section + global `allowRules: ["PA001"]`                 | Section senyap (PA001 di-deny DOM; rule lain di luar allow global)                |
+| `mode: "off"` global                                                                        | Semua langkah di atas tetap dievaluasi, tapi tanpa efek konsol/DOM                |
+
+> `data-press-audit-allow` dan `data-press-audit-deny` mengikuti aturan
+> yang sama dengan padanan globalnya: **deny ∪ skip menang atas allow**,
+> dan **semua atribut di sepanjang ancestor path di-union** (tidak ada
+> override / unskip / unallow). Untuk lolos, sebuah rule harus:
+> (a) tidak muncul di deny/skip mana pun di path, dan
+> (b) muncul di semua whitelist yang aktif (DOM allow + global `allowRules`).
 
 > Ringkas: **atribut DOM > konfigurasi global**, dan dalam masing-masing
 > tingkatan **`deny`/`off`/`skip` > `allow`/`on`**. `skip` bersifat aditif,
