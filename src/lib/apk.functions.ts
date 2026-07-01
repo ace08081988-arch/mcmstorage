@@ -290,3 +290,122 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
       changelog,
     };
   });
+
+// ============================================================================
+// Admin: kelola jadwal & status rilis
+// ============================================================================
+
+export type AdminApkEntry = {
+  file_name: string;
+  variant: ApkVariant;
+  sizeMB: number | null;
+  uploadedAt: string | null;
+  versionName: string | null;
+  versionCode: number | null;
+  enabled: boolean;
+  publish_at: string | null;
+  notes: string | null;
+  status: "published" | "scheduled" | "disabled";
+};
+
+async function requireAdmin(context: { supabase: { rpc: (n: string, a: unknown) => Promise<{ data: unknown }> }; userId: string }) {
+  const { data } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (!data) throw new Error("Forbidden: admin diperlukan");
+}
+
+function computeStatus(
+  enabled: boolean,
+  publish_at: string | null,
+): "published" | "scheduled" | "disabled" {
+  if (!enabled) return "disabled";
+  if (publish_at && Date.parse(publish_at) > Date.now()) return "scheduled";
+  return "published";
+}
+
+export const listApkReleaseAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminApkEntry[]> => {
+    await requireAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const BUCKET = "apk-releases";
+    const { data: files } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .list("", {
+        limit: 500,
+        sortBy: { column: "updated_at", order: "desc" },
+      });
+    const apks = (files ?? []).filter((f) => /\.apk$/i.test(f.name));
+    const meta = await loadReleaseMetaMap();
+    return apks.map<AdminApkEntry>((f) => {
+      const row = meta.get(f.name);
+      const variant: ApkVariant = isChatName(f.name) ? "chat" : "storage";
+      const enabled = row?.enabled ?? true;
+      const publish_at = row?.publish_at ?? null;
+      const size = (f.metadata as { size?: number } | null)?.size ?? null;
+      const parsed = parseApkFileName(f.name);
+      return {
+        file_name: f.name,
+        variant,
+        sizeMB: size ? Math.round((size / (1024 * 1024)) * 10) / 10 : null,
+        uploadedAt: f.updated_at ?? f.created_at ?? null,
+        versionName: parsed.versionName,
+        versionCode: parsed.versionCode,
+        enabled,
+        publish_at,
+        notes: row?.notes ?? null,
+        status: computeStatus(enabled, publish_at),
+      };
+    });
+  });
+
+export const upsertApkReleaseMeta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      file_name: string;
+      enabled: boolean;
+      publish_at: string | null;
+      notes?: string | null;
+    }) => {
+      if (!data.file_name || typeof data.file_name !== "string") {
+        throw new Error("file_name wajib diisi");
+      }
+      if (typeof data.enabled !== "boolean") {
+        throw new Error("enabled wajib boolean");
+      }
+      if (data.publish_at !== null && Number.isNaN(Date.parse(data.publish_at))) {
+        throw new Error("publish_at tidak valid");
+      }
+      return data;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    const variant: ApkVariant = isChatName(data.file_name) ? "chat" : "storage";
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { error } = await supabaseAdmin
+      .from("apk_release_meta")
+      .upsert(
+        {
+          file_name: data.file_name,
+          variant,
+          enabled: data.enabled,
+          publish_at: data.publish_at,
+          notes: data.notes ?? null,
+          updated_by: context.userId,
+        },
+        { onConflict: "file_name" },
+      );
+    if (error) throw new Error(error.message);
+    return {
+      ok: true,
+      status: computeStatus(data.enabled, data.publish_at),
+    };
+  });
