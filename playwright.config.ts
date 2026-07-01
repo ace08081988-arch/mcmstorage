@@ -146,6 +146,22 @@ export default defineConfig({
       },
     },
     {
+      // Regresi RPC `add_contact_by_invite_code`: WHERE ab.linked_user_id
+      // sudah di-qualify supaya tidak bentrok dengan OUT parameter. Spec
+      // memanggil RPC dari konteks browser user login dengan PIN valid
+      // dari user lain (dicari via psql) dan menegakkan error TIDAK
+      // mengandung "ambiguous". Self-skip bila storageState kosong atau
+      // tidak ada PIN target di DB.
+      name: "undang-add-contact-rpc-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /undang-add-contact-rpc\.spec\.ts/,
+      use: {
+        ...devices["iPhone 14"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
