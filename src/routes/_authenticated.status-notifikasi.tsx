@@ -1256,6 +1256,7 @@ function ImportResultView({ result }: { result: ImportResult }) {
     rawBefore,
     rawAfter,
     fieldIssues,
+    compatibility,
   } = result;
   const hasMigrations = appliedMigrations.length > 0;
   const errorCount = fieldIssues.filter((f) => f.severity === "error").length;
@@ -1274,13 +1275,14 @@ function ImportResultView({ result }: { result: ImportResult }) {
                 → v{snapshot.schemaVersion} ({appliedMigrations.length} migrasi)
               </Badge>
             )}
-            {sourceVersion > CURRENT_SCHEMA_VERSION && (
-              <Badge variant="destructive">lebih baru</Badge>
+            {compatibility.mode === "backward_partial" && (
+              <Badge variant="destructive">kompat. parsial</Badge>
             )}
           </div>
         </div>
         <SnapshotSummary snapshot={snapshot} />
       </div>
+      <CompatibilityBanner info={compatibility} />
       {appliedMigrations.length > 0 && (
         <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-1">
           <div className="font-medium">
