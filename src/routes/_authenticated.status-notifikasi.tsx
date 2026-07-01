@@ -452,6 +452,63 @@ function StatusNotifikasiPage() {
     }
   };
 
+  const [exportCopied, setExportCopied] = useState(false);
+
+  const buildSnapshot = () => ({
+    generatedAt: new Date().toISOString(),
+    origin: typeof window !== "undefined" ? window.location.origin : null,
+    userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
+    permission: {
+      state: perm,
+      permissionsApi: permApiState,
+      secureContext: secure,
+      canPrompt,
+      reason,
+    },
+    frame,
+    serviceWorker: swDetails
+      ? {
+          registered: true,
+          ready: swReady,
+          ...swDetails,
+          lastActiveAt: lastSwSetup ? new Date(lastSwSetup).toISOString() : null,
+          lastUpdateCheckAt: lastUpdateCheck ? new Date(lastUpdateCheck).toISOString() : null,
+          updateState,
+        }
+      : { registered: false, ready: swReady },
+    pushSubscription: pushDetails
+      ? {
+          active: !!pushSub,
+          ...pushDetails,
+          lastSubscribedAt: lastPushSetup ? new Date(lastPushSetup).toISOString() : null,
+        }
+      : { active: !!pushSub },
+  });
+
+  const downloadSnapshot = () => {
+    const json = JSON.stringify(buildSnapshot(), null, 2);
+    const blob = new Blob([json], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const ts = new Date().toISOString().replace(/[:.]/g, "-");
+    a.href = url;
+    a.download = `notifikasi-status-${ts}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  };
+
+  const copySnapshot = async () => {
+    try {
+      await navigator.clipboard.writeText(JSON.stringify(buildSnapshot(), null, 2));
+      setExportCopied(true);
+      setTimeout(() => setExportCopied(false), 1500);
+    } catch {
+      /* ignore */
+    }
+  };
+
   return (
     <div className="p-4 space-y-4 max-w-2xl mx-auto">
       <h1 className="text-xl font-semibold">Status Notifikasi</h1>
