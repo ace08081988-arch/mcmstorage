@@ -795,5 +795,21 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: konsistensi token `PIN xxxx-xxxx` di HEADER DM, BARIS HASIL
+      // PENCARIAN, dan PANEL DETAIL saat pengguna memakai search/filter
+      // di halaman daftar percakapan `/chat`. Token peer wajib identik
+      // dari baseline daftar → hit pencarian → header DM → daftar
+      // pasca-clear; tab Aktif↔Arsip serta panel "tidak ada hasil" tetap
+      // bebas nomor telp Indonesia mentah.
+      name: "chat-pin-mcm-list-search-filter-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-list-search-filter\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
