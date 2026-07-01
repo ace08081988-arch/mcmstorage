@@ -169,7 +169,7 @@ export function useMyProfileRealtime(): void {
         )
         .on(
           "postgres_changes",
-          { event: "*", schema: "public", table: "address_book", filter: `owner_user_id=eq.${uid}` },
+          { event: "*", schema: "public", table: "address_book", filter: `user_id=eq.${uid}` },
           () => {
             // Buku alamat memengaruhi alias nama kontak yang ditampilkan.
             qc.invalidateQueries({ queryKey: ["address-book"] });
