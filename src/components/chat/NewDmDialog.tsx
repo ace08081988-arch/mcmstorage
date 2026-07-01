@@ -27,7 +27,7 @@ function normalizeWaDigits(raw: string): string {
 const waPhoneSchema = z
   .string()
   .regex(/^[1-9]\d{7,14}$/, {
-    message: "Nomor WhatsApp harus 8–15 digit dan diawali kode negara yang valid.",
+    message: "Nomor MCM harus 8–15 digit dan diawali kode negara yang valid.",
   });
 
 type WaValidation =
@@ -128,7 +128,7 @@ export function NewDmDialog() {
               {looksLikePhone ? (
                 <>
                   <div className="text-xs text-muted-foreground">
-                    Nomor <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat WhatsApp agar dapat diajak chat.
+                    Nomor <span className="font-medium text-foreground">{q}</span> belum terdaftar di aplikasi. Undang lewat MCM agar dapat diajak chat.
                   </div>
                   {invitePhone && (
                     <div className="text-[11px] text-muted-foreground">
@@ -142,7 +142,7 @@ export function NewDmDialog() {
                     onClick={inviteByWhatsApp}
                     disabled={!validation.ok}
                   >
-                    <Send className="h-4 w-4" /> Undang via WhatsApp
+                    <Send className="h-4 w-4" /> Undang via MCM
                   </Button>
                   {!validation.ok && (
                     <p className="text-[11px] text-destructive">
