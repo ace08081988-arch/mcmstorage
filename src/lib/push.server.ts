@@ -91,5 +91,20 @@ export async function notifyUsers(opts: {
       .in("id", dead);
     if (!delErr) pruned = count ?? dead.length;
   }
-  return { sent, pruned };
+  // Fan out ke perangkat native (FCM) juga
+  let fcmSent = 0;
+  let fcmPruned = 0;
+  try {
+    const { sendFcmToUsers } = await import("./fcm.server");
+    const r = await sendFcmToUsers({
+      userIds: opts.userIds,
+      excludeUserId: opts.excludeUserId,
+      payload: opts.payload,
+    });
+    fcmSent = r.sent;
+    fcmPruned = r.pruned;
+  } catch (e) {
+    console.warn("[push] fcm fan-out gagal", e);
+  }
+  return { sent: sent + fcmSent, pruned: pruned + fcmPruned };
 }
