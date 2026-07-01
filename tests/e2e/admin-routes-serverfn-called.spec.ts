@@ -14,6 +14,8 @@ import { existsSync, readFileSync } from "node:fs";
 
 const STORAGE = "tests/visual/.auth/user.json";
 
+const FALLBACK_RE = /Hanya untuk admin|Hanya admin|Akses ditolak|Forbidden: admin/i;
+
 // URL → daftar nama server-fn yang WAJIB muncul di request log saat
 // route dibuka (subset match, cukup salah satu terlihat).
 // Fn name di-embed oleh TanStack Start di request URL/serialized RPC.
@@ -73,20 +75,42 @@ test.describe("admin — route admin memicu server-fn admin yang sesuai", () => 
         if (fnPatterns.some((re) => re.test(url))) hits.push(url);
       });
 
+      // Tahan response server-fn admin ~1.2s supaya kita bisa
+      // mem-poll UI SAAT request in-flight. Fallback admin-only tidak
+      // boleh berkedip walaupun cuma sekejap sebelum data tiba.
+      await page.route("**/*", async (routeReq) => {
+        const url = routeReq.request().url();
+        if (fnPatterns.some((re) => re.test(url))) {
+          await new Promise((r) => setTimeout(r, 1_200));
+        }
+        await routeReq.continue();
+      });
+
       await page.goto(route);
       // Tanda halaman ter-mount.
       await expect(
         page.locator('[data-sidebar="menu"] a[href="/chat"]').first(),
       ).toBeVisible({ timeout: 15_000 });
 
-      // Halaman TIDAK boleh menampilkan fallback admin-only.
-      await expect(
-        page.getByText(/Hanya untuk admin|Hanya admin|Akses ditolak/i),
-      ).toHaveCount(0);
+      // Halaman TIDAK boleh menampilkan fallback admin-only —
+      // termasuk SAAT server-fn masih pending. Poll ~1.5s.
+      const pollStart = Date.now();
+      while (Date.now() - pollStart < 1_500) {
+        const fallbackCount = await page.getByText(FALLBACK_RE).count();
+        expect(
+          fallbackCount,
+          `Route ${route} menampilkan fallback admin-only (mungkin saat server-fn in-flight).`,
+        ).toBe(0);
+        await page.waitForTimeout(100);
+      }
 
       // Tunggu tail request awal (loader + refetch mount effect).
       await page.waitForLoadState("networkidle").catch(() => {});
-      await page.waitForTimeout(1_500);
+      await page.waitForTimeout(500);
+
+      // Assert final juga — setelah request settle, fallback tetap
+      // tidak boleh muncul untuk admin sah.
+      await expect(page.getByText(FALLBACK_RE)).toHaveCount(0);
 
       expect(
         hits.length,
