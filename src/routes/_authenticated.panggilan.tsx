@@ -52,13 +52,41 @@ function PanggilanPage() {
     queryKey: ["chat-calls-profiles", peerIds.join(",")],
     queryFn: async () => {
       if (peerIds.length === 0) return {} as Record<string, string>;
-      const { data } = await supabase
-        .from("profiles")
-        .select("id, display_name")
-        .in("id", peerIds);
+      // Ambil alias kontak (nama yang diedit user di chat / address book) —
+      // ini prioritas utama, jatuh ke profil publik hanya bila alias kosong.
+      const [aliasRes, profRes] = await Promise.all([
+        supabase
+          .from("address_book")
+          .select("linked_user_id,name,updated_at")
+          .in("linked_user_id", peerIds)
+          .order("updated_at", { ascending: false }),
+        supabase
+          .from("profiles")
+          .select("id, display_name")
+          .in("id", peerIds),
+      ]);
+      const aliasMap: Record<string, string> = {};
+      for (const a of (aliasRes.data ?? []) as {
+        linked_user_id: string | null;
+        name: string | null;
+      }[]) {
+        const key = a.linked_user_id;
+        const name = a.name?.trim();
+        if (!key || !name) continue;
+        // Order desc → simpan hanya yang pertama (terbaru) untuk tiap peer.
+        if (!aliasMap[key]) aliasMap[key] = name;
+      }
       const map: Record<string, string> = {};
-      for (const p of (data ?? []) as { id: string; display_name: string | null }[]) {
-        map[p.id] = p.display_name?.trim() || "Kontak";
+      for (const p of (profRes.data ?? []) as {
+        id: string;
+        display_name: string | null;
+      }[]) {
+        const alias = aliasMap[p.id];
+        map[p.id] = alias || p.display_name?.trim() || "Kontak";
+      }
+      // Peer tanpa row profil pun tetap dapat alias bila ada.
+      for (const id of peerIds) {
+        if (!map[id] && aliasMap[id]) map[id] = aliasMap[id];
       }
       return map;
     },
