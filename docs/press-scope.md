@@ -868,6 +868,52 @@ bersifat aditif dan tidak pernah dihapus oleh child.
 > tiap contoh. Jumlah warning yang muncul harus sesuai komentar
 > `efektif:` di setiap blok.
 
+#### Debug mode: jejak keputusan per rule
+
+Untuk memverifikasi tabel prioritas di atas tanpa menebak, panggil
+`window.__pressAuditTrace(elemenAtauSelector, kodeAtauRule)` di DevTools.
+Helper ini **tidak** mengubah DOM atau log warning — hanya mencetak
+`console.groupCollapsed` berisi 7 langkah keputusan (scope.deny →
+scope.allow → attr off/on → global allowRules → global denyRules →
+union skip/deny DOM → allow DOM) dengan alasan tiap pass/block dan
+atribut ancestor yang berkontribusi.
+
+```js
+// Contoh (K) dari daftar A–O: allow PA001,PA004 + deny PA004
+window.__pressAuditTrace(
+  '[data-testid="pa-demo-destructive-menuitem"] [role="menuitem"]',
+  "PA004",
+);
+// Console:
+// ✓ (1) scope.deny — Tidak ada ancestor yang cocok scope.deny.
+// ✓ (2) scope.allow — scope.allow kosong ⇒ semua sub-pohon lolos.
+// ✓ (3) attr:audit — Tak ada data-press-audit="off" di ancestor path.
+// ✓ (4) global.allowRules — allowRules global kosong.
+// ✓ (5) global.denyRules — denyRules global kosong.
+// ✗ (6) attr:-skip/-deny — Union skip+deny memuat PA004 — menang atas -allow.
+//        tokens=[PA004] @section.pa-demo-destructive-menuitem
+// ⇒ BLOCKED
+```
+
+Halaman demo `/dev/press-audit-demo` juga punya tombol
+**"Tampilkan jejak keputusan"** pada tiap kartu; jejaknya dirender
+inline supaya kolom "Yang menang" di tabel di atas bisa dicocokkan
+langsung dengan langkah yang men-`block` (✗) pertama.
+
+API programatik (untuk unit/E2E test):
+
+```ts
+import { tracePressAuditDecision, formatPressAuditTrace } from "@/lib/press-audit";
+
+const trace = tracePressAuditDecision(el, "destructive-menuitem");
+expect(trace.allowed).toBe(false);
+// Langkah pertama yang memblokir harus "attr:-skip/-deny" untuk contoh (K).
+expect(trace.steps.find((s) => s.outcome === "block")?.name)
+  .toBe("attr:-skip/-deny");
+
+for (const line of formatPressAuditTrace(trace)) console.log(line);
+```
+
 ### Resep per section (siap salin)
 
 Skenario nyata di aplikasi + kombinasi atribut DOM dan
