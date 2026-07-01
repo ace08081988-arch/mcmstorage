@@ -260,13 +260,80 @@ if (typeof window !== "undefined" && !(window as any).__scrollGuardCloudBind) {
   supabase.auth.onAuthStateChange((_evt, session) => {
     if (!session?.user) {
       hydratedForUser = null;
+      teardownRealtime();
       return;
     }
     if (hydratedForUser !== session.user.id) {
       hydratedForUser = null;
       void hydrateFromCloud(session.user.id);
     }
+    setupRealtime(session.user.id);
   });
+  // Setup realtime kalau sudah ada sesi saat modul dimuat.
+  void (async () => {
+    const { data } = await supabase.auth.getUser();
+    if (data?.user?.id) setupRealtime(data.user.id);
+  })();
+}
+
+// ---------------------------------------------------------------------------
+// Realtime cross-device: dengarkan UPDATE/INSERT pada baris user aktif dan
+// terapkan ke cache lokal + broadcast CHANGE_EVENT tanpa reload.
+// ---------------------------------------------------------------------------
+let realtimeChannel: ReturnType<typeof supabase.channel> | null = null;
+let realtimeUserId: string | null = null;
+
+function applyRemoteConfig(raw: unknown) {
+  const merged = sanitize(raw);
+  if (typeof window === "undefined") return;
+  try {
+    const current = window.localStorage.getItem(STORAGE_KEY);
+    const nextStr = JSON.stringify(merged);
+    if (current === nextStr) return; // no-op
+    window.localStorage.setItem(STORAGE_KEY, nextStr);
+  } catch {
+    // ignore
+  }
+  cached = merged;
+  window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
+}
+
+function setupRealtime(userId: string) {
+  if (realtimeUserId === userId && realtimeChannel) return;
+  teardownRealtime();
+  realtimeUserId = userId;
+  try {
+    realtimeChannel = supabase
+      .channel(`scroll-guard-${userId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "scroll_guard_config",
+          filter: `user_id=eq.${userId}`,
+        },
+        (payload) => {
+          const row = (payload.new ?? payload.old) as { config?: unknown } | null;
+          if (row?.config) applyRemoteConfig(row.config);
+        },
+      )
+      .subscribe();
+  } catch {
+    realtimeChannel = null;
+  }
+}
+
+function teardownRealtime() {
+  if (realtimeChannel) {
+    try {
+      supabase.removeChannel(realtimeChannel);
+    } catch {
+      // ignore
+    }
+  }
+  realtimeChannel = null;
+  realtimeUserId = null;
 }
 
 /** Hook React: konfigurasi hidup + setter praktis. */
