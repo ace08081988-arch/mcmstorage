@@ -21,6 +21,7 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
+import { Route as AuthenticatedUndangRouteImport } from './routes/_authenticated.undang'
 import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
 import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
@@ -123,6 +124,11 @@ const DownloadVariantRoute = DownloadVariantRouteImport.update({
   id: '/$variant',
   path: '/$variant',
   getParentRoute: () => DownloadRoute,
+} as any)
+const AuthenticatedUndangRoute = AuthenticatedUndangRouteImport.update({
+  id: '/undang',
+  path: '/undang',
+  getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedTugasBaruRoute = AuthenticatedTugasBaruRouteImport.update({
   id: '/tugas-baru',
@@ -403,6 +409,7 @@ export interface FileRoutesByFullPath {
   '/sesi': typeof AuthenticatedSesiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/undang': typeof AuthenticatedUndangRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/t/$token': typeof TTokenRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
@@ -457,6 +464,7 @@ export interface FileRoutesByTo {
   '/sesi': typeof AuthenticatedSesiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/undang': typeof AuthenticatedUndangRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
@@ -515,6 +523,7 @@ export interface FileRoutesById {
   '/_authenticated/sesi': typeof AuthenticatedSesiRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/_authenticated/undang': typeof AuthenticatedUndangRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
@@ -574,6 +583,7 @@ export interface FileRouteTypes {
     | '/sesi'
     | '/tugas'
     | '/tugas-baru'
+    | '/undang'
     | '/download/$variant'
     | '/t/$token'
     | '/admin/worker-portal'
@@ -628,6 +638,7 @@ export interface FileRouteTypes {
     | '/sesi'
     | '/tugas'
     | '/tugas-baru'
+    | '/undang'
     | '/download/$variant'
     | '/t/$token'
     | '/'
@@ -685,6 +696,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sesi'
     | '/_authenticated/tugas'
     | '/_authenticated/tugas-baru'
+    | '/_authenticated/undang'
     | '/download/$variant'
     | '/t/$token'
     | '/_authenticated/'
@@ -809,6 +821,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/download/$variant'
       preLoaderRoute: typeof DownloadVariantRouteImport
       parentRoute: typeof DownloadRoute
+    }
+    '/_authenticated/undang': {
+      id: '/_authenticated/undang'
+      path: '/undang'
+      fullPath: '/undang'
+      preLoaderRoute: typeof AuthenticatedUndangRouteImport
+      parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tugas-baru': {
       id: '/_authenticated/tugas-baru'
@@ -1185,6 +1204,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSesiRoute: typeof AuthenticatedSesiRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
   AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
+  AuthenticatedUndangRoute: typeof AuthenticatedUndangRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
 }
@@ -1224,6 +1244,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSesiRoute: AuthenticatedSesiRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
   AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
+  AuthenticatedUndangRoute: AuthenticatedUndangRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
 }
