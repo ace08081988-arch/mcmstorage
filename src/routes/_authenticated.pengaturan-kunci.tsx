@@ -457,7 +457,20 @@ function PengaturanKunci() {
 
         <div className="rounded-md border bg-muted/30 p-3">
           <div className="mb-2 flex items-center justify-between gap-2">
-            <div className="text-[12px] font-medium">Status Perangkat</div>
+            <div className="flex items-center gap-2">
+              <div className="text-[12px] font-medium">Status Perangkat</div>
+              <span
+                key={bioTick}
+                className="text-[10px] text-muted-foreground"
+                aria-live="polite"
+              >
+                {bioChecking
+                  ? "Memeriksa…"
+                  : bioCheckedAt
+                    ? `Diperbarui ${relTime(bioCheckedAt)}`
+                    : "Belum diperiksa"}
+              </span>
+            </div>
             <button
               type="button"
               onClick={() => runBioCheck(true)}
