@@ -1,4 +1,5 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
+import { isChatOnly } from "@/lib/app-mode";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
@@ -28,6 +29,11 @@ import { ReadyEcerSection } from "@/components/ReadyEcerSection";
 import { ReadyRequestSection } from "@/components/ReadyRequestSection";
 
 export const Route = createFileRoute("/_authenticated/")({
+  beforeLoad: () => {
+    // Mode chat-only: beranda langsung menuju /chat sehingga user tidak
+    // pernah melihat halaman operasional yang disembunyikan dari sidebar.
+    if (isChatOnly()) throw redirect({ to: "/chat" });
+  },
   head: () => ({
     meta: [
       { title: "Beranda — Kelola Pesanan & Kirim WhatsApp · MCM Storage" },
