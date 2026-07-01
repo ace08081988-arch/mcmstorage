@@ -64,6 +64,10 @@ export type ImportResult =
       sourceVersion: number; // 0 untuk file legacy
       /** Rantai migrasi yang dijalankan berurutan dari `sourceVersion` ke `schemaVersion`. */
       appliedMigrations: AppliedMigration[];
+      /** Bentuk raw sebelum migrasi (untuk preview diff). */
+      rawBefore: Record<string, unknown>;
+      /** Bentuk raw setelah semua migrasi berjalan (sebelum validasi/normalisasi). */
+      rawAfter: Record<string, unknown>;
       warnings: ImportWarning[];
     }
   | { ok: false; error: string };
@@ -261,7 +265,15 @@ export function normalizeSnapshot(raw: Record<string, unknown>): ImportResult {
   };
   if (Object.keys(extra).length > 0) snapshot.extra = extra;
 
-  return { ok: true, snapshot, sourceVersion, appliedMigrations: applied, warnings };
+  return {
+    ok: true,
+    snapshot,
+    sourceVersion,
+    appliedMigrations: applied,
+    rawBefore: raw,
+    rawAfter: migrated,
+    warnings,
+  };
 }
 
 export async function readFileAsText(file: File): Promise<string> {
