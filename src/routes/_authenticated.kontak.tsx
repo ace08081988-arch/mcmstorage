@@ -280,14 +280,24 @@ function KontakPage() {
               </div>
             ) : (
               <ul className="space-y-2">
-                {rows.map((r) => (
+                {groupedRows.map((r) => (
                   <li
-                    key={r.id}
+                    key={r.ids[0]}
                     className="rounded-lg border bg-card p-3 text-sm"
                   >
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium">{r.name}</div>
+                        <div className="flex items-center gap-1.5 truncate font-medium">
+                          <span className="truncate">{r.name}</span>
+                          {r.dupCount > 1 ? (
+                            <span
+                              className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                              title={`${r.dupCount} entri digabung`}
+                            >
+                              ×{r.dupCount}
+                            </span>
+                          ) : null}
+                        </div>
                         {r.contact && (
                           <div className="truncate text-xs text-muted-foreground">
                             {r.contact}
@@ -309,7 +319,7 @@ function KontakPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setLinkFor({ kind: tab, row: r })}
+                          onClick={() => setLinkFor({ kind: tab, row: { id: r.ids[0], name: r.name, contact: r.contact, account_user_id: r.account_user_id } })}
                         >
                           {r.account_user_id ? "Ubah tautan" : "Tautkan akun"}
                         </Button>
@@ -329,12 +339,12 @@ function KontakPage() {
                             <Button
                               size="sm"
                               variant="secondary"
-                              disabled={chatting === r.id}
+                              disabled={chatting === r.ids[0]}
                               onClick={() => void openChat(r)}
                               title={`Chat dengan ${r.name}`}
                               className="bg-primary/10 text-primary hover:bg-primary/20"
                             >
-                              {chatting === r.id ? (
+                              {chatting === r.ids[0] ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <MessageSquare className="h-4 w-4" />
@@ -344,10 +354,10 @@ function KontakPage() {
                             <Button
                               size="sm"
                               variant="secondary"
-                              disabled={testing === r.id}
+                              disabled={testing === r.ids[0]}
                               onClick={() => void handleTest(tab, r)}
                             >
-                              {testing === r.id ? "Mengirim…" : "Kirim notifikasi uji"}
+                              {testing === r.ids[0] ? "Mengirim…" : "Kirim notifikasi uji"}
                             </Button>
                             <Button
                               size="sm"
