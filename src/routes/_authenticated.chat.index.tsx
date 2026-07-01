@@ -68,18 +68,46 @@ function ChatListPage() {
           <h1 className="text-lg font-semibold">Chat</h1>
         </div>
         <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm" className="gap-1.5" aria-label="Pengaturan profil chat">
-            <Link to="/profil-chat">
-              <Settings2 className="h-4 w-4" />
-            </Link>
-          </Button>
           <Button asChild variant="outline" size="sm" className="gap-1.5">
             <Link to="/kontak">
               <Link2 className="h-4 w-4" /> Siapkan kontak chat
             </Link>
           </Button>
-          <NewGroupDialog />
           <NewDmDialog />
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-1.5" aria-label="Menu lainnya">
+                <MoreVertical className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuItem onSelect={() => toast.info("Pasang iklan — segera hadir.")}>
+                Pasang iklan
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/chat">Grup baru</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => toast.info("Komunitas — segera hadir.")}>
+                Komunitas
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/buku-alamat">Daftar</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/sesi">Perangkat tertaut</Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem onSelect={() => toast.info("Berbintang — segera hadir.")}>
+                Berbintang
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link to="/chat-audit">Order</Link>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem asChild>
+                <Link to="/profil-chat">Pengaturan</Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
