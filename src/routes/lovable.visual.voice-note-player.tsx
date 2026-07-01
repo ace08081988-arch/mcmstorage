@@ -76,7 +76,7 @@ function VoiceNotePlayerHarness() {
               data-vn-index={i}
               className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}
             >
-              <VoiceNotePlayer url={url} mine={i % 2 === 1} />
+              <VoiceNotePlayer url={url} mine={i % 2 === 1} durationSec={3} />
             </div>
           ))
         ) : (
