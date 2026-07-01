@@ -332,6 +332,74 @@ BEGIN
     RAISE EXCEPTION 'FAIL friend_requests: third-party mutated row (rows=%, status=%)', v_rows, v_status;
   END IF;
   RAISE NOTICE 'PASS friend_requests: third-party cannot mutate';
+
+  -- 8f) Sender must NOT be able to swap participants (change to_user).
+  --     Reset to pending as postgres for clean state.
+  UPDATE public.friend_requests SET status = 'pending' WHERE id = v_id;
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests
+       SET to_user = gen_random_uuid()
+     WHERE id = v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN check_violation OR insufficient_privilege OR others THEN
+    v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_rows > 0 OR (SELECT to_user FROM public.friend_requests WHERE id = v_id) <> v_b THEN
+    RAISE EXCEPTION 'FAIL friend_requests: sender was able to swap to_user (rows=%)', v_rows;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: sender cannot swap to_user';
+
+  -- 8g) Sender must NOT be able to rewrite from_user (impersonation attempt).
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests
+       SET from_user = gen_random_uuid()
+     WHERE id = v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN check_violation OR insufficient_privilege OR others THEN
+    v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_rows > 0 OR (SELECT from_user FROM public.friend_requests WHERE id = v_id) <> v_a THEN
+    RAISE EXCEPTION 'FAIL friend_requests: sender was able to rewrite from_user (rows=%)', v_rows;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: sender cannot rewrite from_user';
+
+  -- 8h) Recipient must NOT be able to swap participants either (even while
+  --     legitimately transitioning status). Trigger enforces immutability.
+  PERFORM pg_temp.as_user(v_b);
+  BEGIN
+    UPDATE public.friend_requests
+       SET from_user = gen_random_uuid(), status = 'accepted'
+     WHERE id = v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN check_violation OR insufficient_privilege OR others THEN
+    v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_rows > 0 OR (SELECT from_user FROM public.friend_requests WHERE id = v_id) <> v_a THEN
+    RAISE EXCEPTION 'FAIL friend_requests: recipient was able to rewrite from_user (rows=%)', v_rows;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: recipient cannot rewrite participants';
+
+  -- 8i) Even direct swap of both participants at once must be rejected.
+  PERFORM pg_temp.as_user(v_a);
+  BEGIN
+    UPDATE public.friend_requests
+       SET from_user = v_b, to_user = v_a
+     WHERE id = v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN check_violation OR insufficient_privilege OR others THEN
+    v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  IF v_rows > 0 OR (SELECT from_user FROM public.friend_requests WHERE id = v_id) <> v_a
+     OR (SELECT to_user FROM public.friend_requests WHERE id = v_id) <> v_b THEN
+    RAISE EXCEPTION 'FAIL friend_requests: full participant swap succeeded (rows=%)', v_rows;
+  END IF;
+  RAISE NOTICE 'PASS friend_requests: full participant swap rejected';
 END $$;
 
 ROLLBACK;
