@@ -402,4 +402,117 @@ BEGIN
   RAISE NOTICE 'PASS friend_requests: full participant swap rejected';
 END $$;
 
+-- ---------------------------------------------------------------------
+-- 9) fr_update_participant / recipient-only status transitions.
+--    Verifies at the *policy* layer (not just trigger) that only the
+--    matching recipient (auth.uid() = to_user) can update status, and
+--    the sender identity (from_user) can NOT be tampered with.
+-- ---------------------------------------------------------------------
+
+-- 9-static) Assert the expected policies exist with correct qual/with_check.
+DO $$
+DECLARE v_qual text; v_check text;
+BEGIN
+  SELECT qual, with_check INTO v_qual, v_check
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='friend_requests'
+     AND policyname='fr_update_recipient';
+  IF v_qual IS NULL THEN
+    RAISE EXCEPTION 'FAIL fr_update_recipient policy missing';
+  END IF;
+  IF v_qual !~ 'to_user' OR v_check !~ 'to_user' THEN
+    RAISE EXCEPTION 'FAIL fr_update_recipient does not scope by to_user (qual=%, check=%)', v_qual, v_check;
+  END IF;
+  RAISE NOTICE 'PASS fr_update_recipient policy scoped by to_user=auth.uid()';
+
+  SELECT qual, with_check INTO v_qual, v_check
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='friend_requests'
+     AND policyname='fr_update_sender_cancel_only';
+  IF v_qual IS NULL THEN
+    RAISE EXCEPTION 'FAIL fr_update_sender_cancel_only policy missing';
+  END IF;
+  IF v_qual !~ 'from_user' OR v_check !~ 'cancelled' THEN
+    RAISE EXCEPTION 'FAIL fr_update_sender_cancel_only not restricted to sender→cancelled (qual=%, check=%)', v_qual, v_check;
+  END IF;
+  RAISE NOTICE 'PASS fr_update_sender_cancel_only restricted to sender cancel';
+
+  -- No permissive UPDATE policy may exist that lets from_user set arbitrary status.
+  IF EXISTS (
+    SELECT 1 FROM pg_policies
+     WHERE schemaname='public' AND tablename='friend_requests'
+       AND cmd='UPDATE'
+       AND policyname NOT IN ('fr_update_recipient','fr_update_sender_cancel_only')
+  ) THEN
+    RAISE EXCEPTION 'FAIL unexpected UPDATE policy on friend_requests — audit required';
+  END IF;
+  RAISE NOTICE 'PASS friend_requests has only the two vetted UPDATE policies';
+END $$;
+
+-- 9-runtime) Behavioural: only the true recipient can transition status.
+DO $$
+DECLARE
+  v_a uuid; v_b uuid; v_c uuid;
+  v_id uuid; v_rows int; v_status text; v_from uuid;
+BEGIN
+  IF NOT current_setting('test.can_switch')::boolean THEN
+    RAISE NOTICE 'SKIP 9-runtime: role switching unavailable';
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_a FROM auth.users ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_b FROM auth.users WHERE id <> v_a ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_c FROM auth.users WHERE id NOT IN (v_a, v_b) ORDER BY created_at LIMIT 1;
+  IF v_a IS NULL OR v_b IS NULL OR v_c IS NULL THEN
+    RAISE NOTICE 'SKIP 9-runtime: need at least 3 auth.users';
+    RETURN;
+  END IF;
+
+  DELETE FROM public.friend_requests
+   WHERE (from_user, to_user) IN ((v_a,v_b),(v_b,v_a),(v_a,v_c),(v_c,v_a),(v_b,v_c),(v_c,v_b));
+
+  -- A → B pending.
+  PERFORM pg_temp.as_user(v_a);
+  INSERT INTO public.friend_requests(from_user, to_user, status)
+  VALUES (v_a, v_b, 'pending') RETURNING id INTO v_id;
+  PERFORM pg_temp.as_postgres();
+
+  -- 9a) A third authenticated user C (not recipient) must NOT be able to accept.
+  PERFORM pg_temp.as_user(v_c);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_rows > 0 OR v_status <> 'pending' THEN
+    RAISE EXCEPTION 'FAIL 9a: non-recipient C accepted (rows=%, status=%)', v_rows, v_status;
+  END IF;
+  RAISE NOTICE 'PASS 9a: only the row-matched recipient can accept (C blocked)';
+
+  -- 9b) Recipient B accepts — must succeed AND from_user must remain v_a
+  --     (immutability guarded by trigger even during a legitimate status write).
+  PERFORM pg_temp.as_user(v_b);
+  UPDATE public.friend_requests SET status='accepted' WHERE id=v_id;
+  GET DIAGNOSTICS v_rows = ROW_COUNT;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text, from_user INTO v_status, v_from FROM public.friend_requests WHERE id=v_id;
+  IF v_rows <> 1 OR v_status <> 'accepted' OR v_from <> v_a THEN
+    RAISE EXCEPTION 'FAIL 9b: recipient accept broke invariants (rows=%, status=%, from=%)', v_rows, v_status, v_from;
+  END IF;
+  RAISE NOTICE 'PASS 9b: recipient accept preserves from_user identity';
+
+  -- 9c) Once accepted, even the recipient may not flip it back (only pending → accepted/rejected).
+  PERFORM pg_temp.as_user(v_b);
+  BEGIN
+    UPDATE public.friend_requests SET status='pending' WHERE id=v_id;
+    GET DIAGNOSTICS v_rows = ROW_COUNT;
+  EXCEPTION WHEN others THEN v_rows := 0;
+  END;
+  PERFORM pg_temp.as_postgres();
+  SELECT status::text INTO v_status FROM public.friend_requests WHERE id=v_id;
+  IF v_status <> 'accepted' THEN
+    RAISE EXCEPTION 'FAIL 9c: accepted request was reopened (status=%)', v_status;
+  END IF;
+  RAISE NOTICE 'PASS 9c: accepted status is terminal for recipient';
+END $$;
+
 ROLLBACK;
