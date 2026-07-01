@@ -177,6 +177,21 @@ export default defineConfig({
       },
     },
     {
+      // E2E: memulai DM dari halaman daftar kontak (`/kontak` &
+      // `/buku-alamat`) bukan dari `/chat`. Source guard mengunci wiring
+      // `startDm.mutateAsync` + `navigate(/chat/$conversationId)` supaya
+      // pesan mendarat di percakapan yang benar; runtime memverifikasi
+      // dialog "Chat baru" tetap memakai placeholder PIN MCM.
+      name: "chat-pin-mcm-from-kontak-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-from-kontak\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
