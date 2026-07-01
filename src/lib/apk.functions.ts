@@ -52,42 +52,68 @@ export type MinSupported = {
   updated_at: string;
 };
 
-/** Bandingkan semver kasar: "1.2.3" vs "1.10.0". Missing bagian = 0. */
+/**
+ * Bandingkan semver kasar. Contoh:
+ *   compareSemver("1.2.3", "1.10.0") < 0
+ *   compareSemver("1.2", "1.2.0")   === 0   // segmen hilang = 0
+ *   compareSemver("1.2.3-beta", "1.2.3") === 0  // prerelease diabaikan
+ * Non-digit dalam segmen di-strip; segmen kosong = 0.
+ */
 export function compareSemver(a: string, b: string): number {
-  const pa = a.split(".").map((x) => Number.parseInt(x, 10) || 0);
-  const pb = b.split(".").map((x) => Number.parseInt(x, 10) || 0);
+  const norm = (v: string) =>
+    v
+      .trim()
+      .replace(/^v/i, "")
+      .split(/[-+]/, 1)[0]
+      .split(".")
+      .map((seg) => {
+        const digits = seg.replace(/\D+/g, "");
+        return digits.length ? Number.parseInt(digits, 10) : 0;
+      });
+  const pa = norm(a);
+  const pb = norm(b);
   const len = Math.max(pa.length, pb.length);
   for (let i = 0; i < len; i++) {
     const va = pa[i] ?? 0;
     const vb = pb[i] ?? 0;
-    if (va !== vb) return va - vb;
+    if (va !== vb) return va < vb ? -1 : 1;
   }
   return 0;
 }
 
 /**
  * Apakah rilis dianggap di bawah minimum yang ditetapkan?
- * Prioritas: versionCode (build number) → versionName (semver).
- * Return false jika min tidak diset atau data rilis tidak cukup.
+ *
+ * Aturan ketat (AND-gabungan): untuk setiap field minimum yang di-set,
+ * rilis wajib memiliki nilai padanan DAN nilai itu ≥ minimum. Bila rilis
+ * kekurangan data padanan untuk sebuah field yang diminimumkan, rilis
+ * dianggap **di bawah minimum** (tidak dapat dibuktikan kompatibel).
+ *
+ * - Kedua field minimum kosong → tidak ada kebijakan → false.
+ * - min_version_code diset: butuh versionCode finite, integer, ≥ min.
+ * - min_version_name diset: butuh versionName valid, semver ≥ min.
+ * Bila keduanya diset, KEDUANYA harus lolos.
  */
 export function isBelowMinimum(
   release: { versionName: string | null; versionCode: number | null },
   min: MinSupported | null,
 ): boolean {
   if (!min) return false;
-  if (
-    min.min_version_code !== null &&
-    release.versionCode !== null &&
-    release.versionCode < min.min_version_code
-  ) {
-    return true;
+  const hasMinCode = min.min_version_code !== null;
+  const hasMinName = !!min.min_version_name;
+  if (!hasMinCode && !hasMinName) return false;
+
+  if (hasMinCode) {
+    const rc = release.versionCode;
+    if (rc === null || !Number.isFinite(rc) || !Number.isInteger(rc)) {
+      return true;
+    }
+    if (rc < (min.min_version_code as number)) return true;
   }
-  if (
-    min.min_version_name &&
-    release.versionName &&
-    compareSemver(release.versionName, min.min_version_name) < 0
-  ) {
-    return true;
+  if (hasMinName) {
+    const rn = release.versionName;
+    if (!rn || !/\d/.test(rn)) return true;
+    if (compareSemver(rn, min.min_version_name as string) < 0) return true;
   }
   return false;
 }
