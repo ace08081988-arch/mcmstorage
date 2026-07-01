@@ -41,8 +41,9 @@ function extFromMime(mime: string): string {
   return "webm";
 }
 
-// Format durasi tersentralisasi (mm:ss) — lihat src/lib/format-duration.ts.
-const fmt = formatDurationMMSS;
+// Format durasi tersentralisasi (mm:ss) — semua komponen attachment WAJIB
+// memakai `formatDurationMMSS` dari `@/lib/format-duration` agar label
+// (recorder timer, VoiceNotePlayer, dsb) identik lintas UI.
 
 type Props = {
   conversationId: string;
@@ -185,7 +186,7 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props)
     return (
       <div className="flex items-center gap-2 rounded-full border bg-destructive/10 px-2 py-1">
         <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-destructive" aria-hidden />
-        <span className="text-xs tabular-nums text-destructive-foreground/80">{fmt(seconds)}</span>
+        <span className="text-xs tabular-nums text-destructive-foreground/80">{formatDurationMMSS(seconds)}</span>
         <Button
           type="button"
           size="icon"
@@ -212,7 +213,7 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props)
   // preview / sending
   return (
     <div className="flex items-center gap-2 rounded-full border bg-accent/40 px-2 py-1">
-      <span className="text-xs tabular-nums text-muted-foreground">{fmt(seconds)}</span>
+      <span className="text-xs tabular-nums text-muted-foreground">{formatDurationMMSS(seconds)}</span>
       {previewUrl ? (
         <audio src={previewUrl} controls preload="metadata" className="h-8 max-w-[10rem]" />
       ) : null}
