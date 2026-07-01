@@ -1653,6 +1653,15 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   const baseAdded = pkgQ * effectivePkgSize;
   const totalCost = pkgQ * price;
 
+  // Bila item terpilih bukan botol, mode karton wajib mati agar tidak
+  // ×100 dari qty. Bila pindah ke item pcs, harga per-kemasan tidak
+  // punya arti — paksa priceMode ke "base".
+  useEffect(() => {
+    if (!selectedItem) return;
+    if (selectedItem.package_type !== "botol" && inputKarton) setInputKarton(false);
+    if (selectedItem.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
+  }, [selectedItem, inputKarton, priceMode]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!uid) return;
