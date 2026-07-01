@@ -295,7 +295,7 @@ function KontakPage() {
                             onClick={() => void sendWa(r)}
                             title={`Kirim via MCM ke ${r.contact}`}
                           >
-                            Kirim WA
+                            Kirim via MCM
                           </Button>
                         )}
                         {r.account_user_id && (
