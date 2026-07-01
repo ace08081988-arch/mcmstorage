@@ -293,6 +293,25 @@ const MIGRATIONS: Migration[] = [
   },
 ];
 
+/**
+ * Rantai downgrade opsional untuk file dari versi masa depan
+ * (`schemaVersion > CURRENT_SCHEMA_VERSION`). Sistem akan mencoba menurunkan
+ * versi selangkah demi selangkah. Bila tidak ada entry untuk versi tertentu,
+ * sisa perjalanan dianggap `backward_partial`: field yang tidak dikenali
+ * disimpan di `snapshot.extra` dan dilaporkan ke user.
+ */
+type Downgrade = {
+  from: number;
+  to: number; // to = from - 1
+  description: string;
+  migrate: (raw: Record<string, unknown>) => Record<string, unknown>;
+};
+
+const DOWNGRADES: Downgrade[] = [
+  // Kosong untuk sekarang — tambah entry mis. { from: 2, to: 1, ... } bila
+  // suatu saat perlu menerima file v2 di build lama.
+];
+
 function runMigrations(
   raw: Record<string, unknown>,
   from: number,
@@ -311,6 +330,25 @@ function runMigrations(
     version = step.to;
   }
   return { migrated: current, applied };
+}
+
+function runDowngrades(
+  raw: Record<string, unknown>,
+  from: number,
+): { migrated: Record<string, unknown>; applied: AppliedMigration[]; landedAt: number } {
+  let current = raw;
+  let version = from;
+  const applied: AppliedMigration[] = [];
+  const maxSteps = DOWNGRADES.length + 1;
+  for (let i = 0; i < maxSteps; i++) {
+    if (version <= CURRENT_SCHEMA_VERSION) break;
+    const step = DOWNGRADES.find((d) => d.from === version);
+    if (!step) break;
+    current = step.migrate(current);
+    applied.push({ from: step.from, to: step.to, description: step.description });
+    version = step.to;
+  }
+  return { migrated: current, applied, landedAt: version };
 }
 
 /**
