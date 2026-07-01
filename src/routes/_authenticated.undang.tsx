@@ -144,6 +144,12 @@ function UndangPage() {
           <ArrowLeft className="h-5 w-5" />
         </button>
         <h1 className="flex-1 text-lg font-semibold">Undang teman</h1>
+        <Link
+          to={"/kontak/permintaan" as never}
+          className="rounded-full px-3 py-1 text-xs font-medium text-primary hover:bg-accent"
+        >
+          Permintaan
+        </Link>
       </header>
 
       {/* Kartu PIN saya */}
