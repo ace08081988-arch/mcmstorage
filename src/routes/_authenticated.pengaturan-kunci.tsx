@@ -242,9 +242,9 @@ function PengaturanKunci() {
     }
   };
 
-  const handleOpenPerm = async () => {
+  const handleOpenPerm = async (preferBiometric = false) => {
     setOpeningPerm(true);
-    const opened = await openAppPermissionSettings();
+    const opened = await openAppPermissionSettings(undefined, { preferBiometric });
     setOpeningPerm(false);
     if (!opened) {
       toast.error(
@@ -253,7 +253,11 @@ function PengaturanKunci() {
           : "Hanya tersedia di APK Android",
       );
     } else {
-      toast.message("Ubah izin lalu kembali ke aplikasi — status akan diperbarui otomatis.");
+      toast.message(
+        preferBiometric
+          ? "Atur biometrik lalu kembali ke aplikasi — status akan diperbarui otomatis."
+          : "Ubah izin lalu kembali ke aplikasi — status akan diperbarui otomatis.",
+      );
     }
   };
 
