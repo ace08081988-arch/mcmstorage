@@ -134,16 +134,19 @@ describe("gudang.tsx — dependency arrays selectedItem/derived/warnings", () =>
     expect(deps.sort()).toEqual(["selectedItem", "inputKarton", "priceMode"].sort());
   });
 
-  it("effect reset dep menyertakan resetKey + selectedItem (bukan items) agar tidak stale", () => {
+  it("effect reset HANYA bergantung pada resetKey (nilai lain lewat ref) agar tidak refire", () => {
+    // Effect reset sekarang membaca priceMode default via `nextPriceModeRef`,
+    // sehingga dep array minimal — hanya `resetKey`. Ini memastikan reset
+    // benar-benar hanya jalan saat trigger (mode/itemId/packageType) berubah.
     const deps = extractDepArray(
-      /if\s*\(resetKeyRef\.current\s*===\s*resetKey\)\s*return;[\s\S]*?\}\s*,\s*\[([^\]]*)\]\s*\)/,
+      /setPriceMode\(nextPriceModeRef\.current\);\s*\}\s*,\s*\[([^\]]*)\]\s*\)/,
     );
-    // WAJIB: resetKey (trigger) + selectedItem (dibaca di dalam body).
-    expect(deps).toContain("resetKey");
-    expect(deps).toContain("selectedItem");
-    // Body tidak lagi memakai `items.find`, jadi `items` TIDAK boleh ikut —
-    // memasukkan `items` akan me-refire reset tiap kali daftar refetch dan
-    // menghapus input user secara diam-diam.
+    expect(deps).toEqual(["resetKey"]);
+    // Body tidak lagi memakai `items.find` / `selectedItem` / `mode` /
+    // `packageType` secara langsung, jadi TIDAK boleh masuk dep array.
     expect(deps).not.toContain("items");
+    expect(deps).not.toContain("selectedItem");
+    expect(deps).not.toContain("mode");
+    expect(deps).not.toContain("packageType");
   });
 });
