@@ -41,7 +41,52 @@ export const HUGE_BASE_ADDED = 1_000_000;
 /** Ambang qty tambahan relatif ke stok sekarang (mis. 100× stok saat ini). */
 export const HUGE_BASE_ADDED_RATIO = 100;
 
+/**
+ * Signature yang menutup semua field input warnings. Untuk `derived` kita
+ * pakai identitas objek — `computeBeliDerived` sudah memoize hasilnya, jadi
+ * derived yang "sama secara konten" akan menjadi referensi yang sama.
+ */
+function beliWarningsSig(input: BeliWarnInput): string {
+  const it = input.mode === "existing" && input.selectedItem
+    ? [
+        input.selectedItem.package_type ?? "",
+        input.selectedItem.package_size ?? 0,
+        input.selectedItem.base_unit ?? "",
+        input.selectedItem.stock_base ?? 0,
+        input.selectedItem.avg_cost_per_base ?? 0,
+      ].join("|")
+    : "-";
+  return [
+    input.mode,
+    it,
+    // identitas objek derived (referensi cukup — output memo dari
+    // computeBeliDerived stabil per konten).
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (input.derived as any).__id ?? refId(input.derived),
+    input.priceMode,
+    input.inputKarton ? "1" : "0",
+  ].join("::");
+}
+
+// Peta objek → id sintetis untuk signature. Tidak menahan referensi kuat.
+const _refIds = new WeakMap<object, number>();
+let _nextRefId = 1;
+function refId(o: object): number {
+  let id = _refIds.get(o);
+  if (id === undefined) {
+    id = _nextRefId++;
+    _refIds.set(o, id);
+  }
+  return id;
+}
+
+let lastWarnSig: string | null = null;
+let lastWarnOut: BeliWarning[] | null = null;
+
 export function computeBeliWarnings(input: BeliWarnInput): BeliWarning[] {
+  const sig = beliWarningsSig(input);
+  if (sig === lastWarnSig && lastWarnOut) return lastWarnOut;
+
   const { mode, selectedItem, derived, priceMode, inputKarton } = input;
   const {
     effPackageType,
@@ -134,9 +179,17 @@ export function computeBeliWarnings(input: BeliWarnInput): BeliWarning[] {
     }
   }
 
+  lastWarnSig = sig;
+  lastWarnOut = warnings;
   return warnings;
 }
 
 export function hasBlockingWarnings(list: BeliWarning[]): boolean {
   return list.some((w) => w.level === "error");
+}
+
+/** Untuk test: bersihkan cache internal antar-skenario. */
+export function __resetBeliWarningsMemo(): void {
+  lastWarnSig = null;
+  lastWarnOut = null;
 }

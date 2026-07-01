@@ -37,6 +37,33 @@ export type BeliDerivedOutput = {
 };
 
 /**
+ * Signature konten yang benar-benar mempengaruhi hasil derivation.
+ * `selectedItem` disederhanakan ke tuple field yang dipakai supaya refetch
+ * dengan referensi baru (isi sama) tetap menghasilkan signature yang sama.
+ */
+function beliDerivedSig(input: BeliDerivedInput): string {
+  const it = input.mode === "existing" && input.selectedItem
+    ? `${input.selectedItem.package_type}|${input.selectedItem.package_size}|${input.selectedItem.base_unit}`
+    : "-";
+  return [
+    input.mode,
+    it,
+    input.newPackageType,
+    String(input.newPackageSize),
+    String(input.packageQty),
+    String(input.pricePerPackage),
+    input.priceMode,
+    String(input.pricePerBase),
+    input.inputKarton ? "1" : "0",
+  ].join("::");
+}
+
+// Single-slot memo (size 1). Sudah cukup karena pemakai memanggil dengan
+// input yang stabil per render; hit rate tinggi setelah refetch identitas.
+let lastDerivedSig: string | null = null;
+let lastDerivedOut: BeliDerivedOutput | null = null;
+
+/**
  * Pure derivation of quantities/prices for the "Catat Pembelian" form.
  *
  * In "existing" mode every packaging attribute (jenis kemasan, ukuran, base
@@ -45,6 +72,9 @@ export type BeliDerivedOutput = {
  * defaults (e.g. a botol item appearing as "999 g").
  */
 export function computeBeliDerived(input: BeliDerivedInput): BeliDerivedOutput {
+  const sig = beliDerivedSig(input);
+  if (sig === lastDerivedSig && lastDerivedOut) return lastDerivedOut;
+
   const {
     mode,
     selectedItem,
@@ -82,7 +112,7 @@ export function computeBeliDerived(input: BeliDerivedInput): BeliDerivedOutput {
   const baseAdded = pkgQ * effectivePkgSize;
   const totalCost = pkgQ * price;
 
-  return {
+  const out: BeliDerivedOutput = {
     effPackageType,
     effBaseUnit,
     effectivePkgSize,
@@ -92,4 +122,13 @@ export function computeBeliDerived(input: BeliDerivedInput): BeliDerivedOutput {
     baseAdded,
     totalCost,
   };
+  lastDerivedSig = sig;
+  lastDerivedOut = out;
+  return out;
+}
+
+/** Untuk test: bersihkan cache internal antar-skenario. */
+export function __resetBeliDerivedMemo(): void {
+  lastDerivedSig = null;
+  lastDerivedOut = null;
 }
