@@ -1805,6 +1805,24 @@ export type Database = {
           },
         ]
       }
+      scroll_guard_config: {
+        Row: {
+          config: Json
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          config?: Json
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          config?: Json
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       security_ack_rate_limit: {
         Row: {
           called_at: string
