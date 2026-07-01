@@ -76,6 +76,19 @@ const KIND_TONE: Record<FeedItemKind, string> = {
   system: "bg-violet-500/15 text-violet-400",
 };
 
+/**
+ * Fallback jalur per jenis pembaruan bila feed item tidak menyertakan
+ * `href`. Tanpa ini, baris "Pesan baru" / "Pegawai mengirim penyiapan"
+ * hanya tampil sebagai teks — tidak bisa dibuka. Dengan fallback,
+ * seluruh baris selalu punya rute default sesuai jenisnya.
+ */
+const KIND_DEFAULT_HREF: Record<FeedItemKind, string> = {
+  chat: "/chat",
+  tugas: "/tugas",
+  order: "/pesanan",
+  system: "/notifikasi",
+};
+
 function formatTimeShort(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return "";
@@ -151,13 +164,13 @@ function PembaruanPage() {
           snippet: it.body,
           time: it.createdAt,
           unread: it.unread ? 1 : 0,
-          href: it.href,
+          href: it.href ?? KIND_DEFAULT_HREF[it.kind],
         });
       } else {
         if (new Date(it.createdAt) > new Date(existing.time)) {
           existing.time = it.createdAt;
           existing.snippet = it.body;
-          existing.href = it.href ?? existing.href;
+          existing.href = it.href ?? existing.href ?? KIND_DEFAULT_HREF[it.kind];
         }
         if (it.unread) existing.unread += 1;
       }
