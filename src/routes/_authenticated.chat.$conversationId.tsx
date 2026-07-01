@@ -58,6 +58,7 @@ import { sendMessage } from "@/lib/chat.functions";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
 import { EditContactNameDialog } from "@/components/chat/EditContactNameDialog";
+import { PeerProfileDialog } from "@/components/chat/PeerProfileDialog";
 import { EmojiPickerPopover } from "@/components/chat/EmojiPickerPopover";
 import { VoiceRecorderButton } from "@/components/chat/VoiceRecorderButton";
 import { Phone, Video as VideoIcon } from "lucide-react";
@@ -367,6 +368,7 @@ function ChatRoomPage() {
   });
   const displayedPeerName = peerAlias.data?.name?.trim() || dmPeer?.fallbackName || "Kontak";
   const [editNameOpen, setEditNameOpen] = useState(false);
+  const [peerProfileOpen, setPeerProfileOpen] = useState(false);
 
   const dmPresence = useMemo(() => {
     if (!meta.data || meta.data.kind !== "dm" || !myId || !profiles.data) return null;
@@ -704,9 +706,20 @@ function ChatRoomPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase">
-          {(meta.data?.kind === "dm" ? displayedPeerName : headerTitle || "?").trim().charAt(0) || "?"}
-        </div>
+        {meta.data?.kind === "dm" && dmPeer?.peerUserId ? (
+          <button
+            type="button"
+            aria-label={`Lihat profil ${displayedPeerName}`}
+            onClick={() => setPeerProfileOpen(true)}
+            className="grid h-10 w-10 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase transition hover:opacity-80 active:scale-95"
+          >
+            {displayedPeerName.trim().charAt(0) || "?"}
+          </button>
+        ) : (
+          <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase">
+            {(meta.data?.kind === "dm" ? displayedPeerName : headerTitle || "?").trim().charAt(0) || "?"}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
             <div className="truncate text-[15px] font-semibold">
