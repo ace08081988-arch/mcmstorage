@@ -281,9 +281,9 @@ function RequestPage() {
                     onClick={(e) => { e.stopPropagation(); sendTitleWA(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); sendTitleWA(); } }}
                     className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-2 py-0.5 text-[10px] text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
-                    aria-label="Kirim WA"
+                    aria-label="Kirim via MCM"
                   >
-                    <MessageCircle className="h-3 w-3" /> Kirim WA
+                    <MessageCircle className="h-3 w-3" /> Kirim via MCM
                   </div>
                   <div
                     role="button"
@@ -684,7 +684,7 @@ function PrepCard({
           <button
             onClick={sendWA}
             className="rounded-md border border-[#25D366]/40 bg-[#25D366]/15 p-1 text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
-            aria-label="Kirim WA"
+            aria-label="Kirim via MCM"
             title="Kirim ringkasan via MCM"
           >
             <MessageCircle className="h-3.5 w-3.5" />
@@ -780,13 +780,13 @@ function PrepEditorDialog({
    */
   function normalizeWaPhone(raw: string): { digits: string; error: string | null } {
     let d = (raw || "").replace(/\D/g, "");
-    if (!d) return { digits: "", error: "Nomor WA wajib diisi" };
+    if (!d) return { digits: "", error: "Nomor MCM wajib diisi" };
     if (d.startsWith("00")) d = d.slice(2);
     else if (d.startsWith("0")) d = "62" + d.slice(1);
     if (d.length < 8 || d.length > 15) {
-      return { digits: "", error: "Nomor WA harus 8–15 digit (format internasional)" };
+      return { digits: "", error: "Nomor MCM harus 8–15 digit (format internasional)" };
     }
-    if (/^0+$/.test(d)) return { digits: "", error: "Nomor WA tidak valid" };
+    if (/^0+$/.test(d)) return { digits: "", error: "Nomor MCM tidak valid" };
     return { digits: d, error: null };
   }
 
@@ -898,7 +898,7 @@ function PrepEditorDialog({
           });
           notifyShareResult(res);
         } catch (err) {
-          toast.error("Gagal kirim WA: " + (err as Error).message);
+          toast.error("Gagal kirim via MCM: " + (err as Error).message);
         }
       }
       onSaved(); onClose();
@@ -1046,7 +1046,7 @@ function PrepEditorDialog({
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" />
 
           <div>
-            <Label className="text-xs">Nomor WhatsApp tujuan</Label>
+            <Label className="text-xs">Nomor MCM / HP tujuan</Label>
             <Input
               type="tel"
               inputMode="tel"
@@ -1066,7 +1066,7 @@ function PrepEditorDialog({
         <DialogFooter className="flex-col gap-2 sm:flex-col">
           <Button size="sm" onClick={() => save({ sendWa: true })} disabled={busy || !!waNorm.error} className="w-full">
             {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Send className="mr-1 h-3 w-3" />}
-            Simpan &amp; Kirim WA
+            Simpan &amp; Kirim via MCM
           </Button>
           <div className="flex w-full gap-2">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy} className="flex-1">Batal</Button>

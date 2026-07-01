@@ -293,7 +293,7 @@ function KontakPage() {
                             variant="secondary"
                             className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
                             onClick={() => void sendWa(r)}
-                            title={`Kirim WA ke ${r.contact}`}
+                            title={`Kirim via MCM ke ${r.contact}`}
                           >
                             Kirim WA
                           </Button>

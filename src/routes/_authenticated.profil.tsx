@@ -105,7 +105,7 @@ function ProfilPage() {
     if (rawPhone) {
       const norm = normalizeWaNumber(rawPhone, countryCode);
       if (!norm) {
-        toast.error("Nomor WhatsApp tidak valid untuk negara terpilih (8–15 digit)");
+        toast.error("Nomor MCM tidak valid untuk negara terpilih (8–15 digit)");
         return;
       }
       phoneToSave = norm;
@@ -322,15 +322,15 @@ function ProfilPage() {
           <CardHeader className="space-y-1">
             <div className="flex items-center gap-2">
               <Phone className="h-4 w-4 text-primary" aria-hidden="true" />
-              <CardTitle className="text-base">Kontak WhatsApp</CardTitle>
+              <CardTitle className="text-base">Kontak MCM</CardTitle>
             </div>
             <CardDescription>
-              Nomor pengirim default untuk pesan WhatsApp & link pegawai.
+              Nomor pengirim default untuk pesan MCM & link pegawai.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="space-y-1.5">
-              <Label htmlFor="profil-hp">Nomor WhatsApp / HP</Label>
+              <Label htmlFor="profil-hp">Nomor MCM / HP</Label>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <select
                   aria-label="Kode negara"
