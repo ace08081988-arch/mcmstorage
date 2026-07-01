@@ -117,3 +117,19 @@ jobs:
           name: playwright-report-chat-pin-mcm
           path: playwright-report
           retention-days: 14
+
+      # Trace + video hanya diupload saat ada test yang gagal
+      # (retain-on-failure sudah aktif via CI=true di playwright.config).
+      # Artifact terpisah supaya bisa diunduh cepat tanpa mengunduh
+      # seluruh HTML report — buka `.zip` trace di https://trace.playwright.dev
+      # untuk mereplay langkah demi langkah regresi format PIN.
+      - name: Upload Playwright traces & videos (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-chat-pin-mcm
+          path: |
+            test-results/**/trace.zip
+            test-results/**/*.webm
+          retention-days: 14
+          if-no-files-found: ignore
