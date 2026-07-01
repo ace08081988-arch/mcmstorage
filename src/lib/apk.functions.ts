@@ -8,11 +8,16 @@ export type LatestApk = {
   updatedAt: string | null;
   versionName: string | null;
   versionCode: number | null;
+  belowMinimum: boolean;
 } | null;
 
 export type LatestApkVariants = {
   storage: LatestApk;
   chat: LatestApk;
+  minSupported: {
+    storage: MinSupported | null;
+    chat: MinSupported | null;
+  };
 };
 
 export type ApkVariant = "storage" | "chat";
