@@ -344,11 +344,40 @@ function ChatListPage() {
       </div>
 
       {q.trim().length < 2 ? (
-        <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
-          <span className="wa-chip wa-chip-active font-medium">Semua</span>
-          <span className="wa-chip"><span className="inline-block h-2 w-2 rounded-full bg-[var(--wa-green)]" />Aktif {active.length ? active.length : ""}</span>
-          <span className="wa-chip"><span className="inline-block h-2 w-2 rounded-full bg-rose-500" />Arsip {archived.length ? archived.length : ""}</span>
-          <span className="wa-chip">Belum dibaca</span>
+        <div
+          role="tablist"
+          aria-label="Filter percakapan"
+          className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          {([
+            { id: "all" as const, label: "Semua" },
+            { id: "unread" as const, label: "Belum dibaca", count: unreadCount, dot: "bg-[var(--wa-green)]" },
+            { id: "group" as const, label: "Grup", count: groupCount, dot: "bg-rose-500" },
+            { id: "favorite" as const, label: "Favorit", count: favCount },
+          ]).map((chip) => {
+            const isActive = filter === chip.id;
+            return (
+              <button
+                key={chip.id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setFilter(chip.id)}
+                className={
+                  "wa-chip whitespace-nowrap " +
+                  (isActive ? "wa-chip-active font-medium" : "")
+                }
+              >
+                {chip.dot ? (
+                  <span className={`inline-block h-2 w-2 rounded-full ${chip.dot}`} />
+                ) : null}
+                {chip.label}
+                {"count" in chip && chip.count ? (
+                  <span className="ml-1 opacity-80">{chip.count}</span>
+                ) : null}
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
