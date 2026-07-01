@@ -23,6 +23,48 @@ type PushDetails = {
   hasAuth: boolean;
 };
 
+type SwDetails = {
+  scope: string;
+  scriptURL: string;
+  state: "installing" | "waiting" | "active" | "redundant" | "none";
+  controlled: boolean;
+};
+
+const LS_SW_KEY = "notif.lastSwSetup";
+const LS_PUSH_KEY = "notif.lastPushSetup";
+
+function readTs(k: string): number | null {
+  try {
+    const v = localStorage.getItem(k);
+    if (!v) return null;
+    const n = Number(v);
+    return Number.isFinite(n) ? n : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeTs(k: string, v: number) {
+  try {
+    localStorage.setItem(k, String(v));
+  } catch {
+    /* ignore */
+  }
+}
+
+function formatRelative(ts: number | null): string {
+  if (!ts) return "Belum tercatat";
+  const diff = Date.now() - ts;
+  const sec = Math.floor(diff / 1000);
+  if (sec < 60) return `${sec} dtk lalu`;
+  const min = Math.floor(sec / 60);
+  if (min < 60) return `${min} mnt lalu`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return `${hr} jam lalu`;
+  const day = Math.floor(hr / 24);
+  return `${day} hari lalu`;
+}
+
 type PermReason = {
   code:
     | "granted"
@@ -109,44 +151,98 @@ function StatusNotifikasiPage() {
   const [swReady, setSwReady] = useState<boolean | null>(null);
   const [pushSub, setPushSub] = useState<boolean | null>(null);
   const [pushDetails, setPushDetails] = useState<PushDetails | null>(null);
+  const [swDetails, setSwDetails] = useState<SwDetails | null>(null);
+  const [lastSwSetup, setLastSwSetup] = useState<number | null>(null);
+  const [lastPushSetup, setLastPushSetup] = useState<number | null>(null);
+  const [checking, setChecking] = useState(false);
   const [permApiState, setPermApiState] = useState<string | null>(null);
   const [secure, setSecure] = useState(true);
   const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    setPerm(readPermission());
-    setFrame(detectFrame());
-    setSecure(typeof window !== "undefined" ? window.isSecureContext !== false : true);
-    void queryPermissionApi().then(setPermApiState);
-    if ("serviceWorker" in navigator) {
-      navigator.serviceWorker.getRegistration().then(async (reg) => {
-        setSwReady(!!reg);
-        if (reg && "pushManager" in reg) {
-          const sub = await reg.pushManager.getSubscription().catch(() => null);
-          setPushSub(!!sub);
-          if (sub) {
-            const json = sub.toJSON() as {
-              endpoint?: string;
-              expirationTime?: number | null;
-              keys?: { p256dh?: string; auth?: string };
-            };
-            setPushDetails({
-              endpoint: sub.endpoint ?? json.endpoint ?? null,
-              expirationTime: json.expirationTime ?? sub.expirationTime ?? null,
-              hasP256dh: !!json.keys?.p256dh,
-              hasAuth: !!json.keys?.auth,
-            });
-          } else {
-            setPushDetails(null);
-          }
+  const runChecks = async () => {
+    setChecking(true);
+    try {
+      setPerm(readPermission());
+      setFrame(detectFrame());
+      setSecure(typeof window !== "undefined" ? window.isSecureContext !== false : true);
+      setLastSwSetup(readTs(LS_SW_KEY));
+      setLastPushSetup(readTs(LS_PUSH_KEY));
+      void queryPermissionApi().then(setPermApiState);
+
+      if (!("serviceWorker" in navigator)) {
+        setSwReady(false);
+        setPushSub(false);
+        setSwDetails(null);
+        setPushDetails(null);
+        return;
+      }
+      const regs = await navigator.serviceWorker.getRegistrations().catch(() => []);
+      const reg =
+        (await navigator.serviceWorker.getRegistration().catch(() => null)) ??
+        regs[0] ??
+        null;
+      const active = reg?.active ?? null;
+      const worker = active ?? reg?.waiting ?? reg?.installing ?? null;
+      const state: SwDetails["state"] = active
+        ? "active"
+        : reg?.waiting
+          ? "waiting"
+          : reg?.installing
+            ? "installing"
+            : reg
+              ? "redundant"
+              : "none";
+      const isReady = !!reg && state === "active";
+      setSwReady(isReady);
+      setSwDetails(
+        reg
+          ? {
+              scope: reg.scope,
+              scriptURL: worker?.scriptURL ?? "",
+              state,
+              controlled: !!navigator.serviceWorker.controller,
+            }
+          : null,
+      );
+      if (isReady) {
+        const now = Date.now();
+        writeTs(LS_SW_KEY, now);
+        setLastSwSetup(now);
+      }
+
+      if (reg && "pushManager" in reg) {
+        const sub = await reg.pushManager.getSubscription().catch(() => null);
+        setPushSub(!!sub);
+        if (sub) {
+          const json = sub.toJSON() as {
+            endpoint?: string;
+            expirationTime?: number | null;
+            keys?: { p256dh?: string; auth?: string };
+          };
+          setPushDetails({
+            endpoint: sub.endpoint ?? json.endpoint ?? null,
+            expirationTime: json.expirationTime ?? sub.expirationTime ?? null,
+            hasP256dh: !!json.keys?.p256dh,
+            hasAuth: !!json.keys?.auth,
+          });
+          const now = Date.now();
+          writeTs(LS_PUSH_KEY, now);
+          setLastPushSetup(now);
         } else {
-          setPushSub(false);
+          setPushDetails(null);
         }
-      });
-    } else {
-      setSwReady(false);
-      setPushSub(false);
+      } else {
+        setPushSub(false);
+        setPushDetails(null);
+      }
+    } finally {
+      setChecking(false);
     }
+  };
+
+  useEffect(() => {
+    void runChecks();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const requestPerm = async () => {
@@ -154,6 +250,7 @@ function StatusNotifikasiPage() {
     const res = await Notification.requestPermission();
     setPerm(res as PermState);
     void queryPermissionApi().then(setPermApiState);
+    void runChecks();
   };
 
   const permVariant: Record<PermState, "default" | "secondary" | "destructive" | "outline"> = {
@@ -212,6 +309,77 @@ function StatusNotifikasiPage() {
               <code className="text-[11px]">{reason.code}</code>
             </div>
             <p className="text-muted-foreground leading-snug">{reason.detail}</p>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center justify-between">
+            <span>Kesiapan service worker & push</span>
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              onClick={() => void runChecks()}
+              disabled={checking}
+            >
+              {checking ? "Memeriksa…" : "Periksa ulang"}
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3 text-sm">
+          <Row
+            label="Service worker"
+            value={
+              <Badge variant={swReady ? "default" : "secondary"}>
+                {swDetails ? swDetails.state : swReady === null ? "…" : "none"}
+              </Badge>
+            }
+          />
+          {swDetails && (
+            <>
+              <Row
+                label="Scope"
+                value={<code className="text-[11px] break-all">{swDetails.scope}</code>}
+              />
+              <Row
+                label="Script"
+                value={
+                  <code className="text-[11px] break-all">
+                    {swDetails.scriptURL
+                      ? new URL(swDetails.scriptURL, location.origin).pathname
+                      : "-"}
+                  </code>
+                }
+              />
+              <Row
+                label="Page controlled"
+                value={swDetails.controlled ? "Ya" : "Belum (butuh reload)"}
+              />
+            </>
+          )}
+          <Row
+            label="Push subscription"
+            value={
+              <Badge variant={pushSub ? "default" : "secondary"}>
+                {pushSub === null ? "…" : pushSub ? "aktif" : "tidak ada"}
+              </Badge>
+            }
+          />
+          <div className="rounded-md border bg-muted/40 p-2 text-xs space-y-1">
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">SW terakhir aktif</span>
+              <span title={lastSwSetup ? new Date(lastSwSetup).toLocaleString() : ""}>
+                {formatRelative(lastSwSetup)}
+              </span>
+            </div>
+            <div className="flex justify-between gap-2">
+              <span className="text-muted-foreground">Push terakhir ter-subscribe</span>
+              <span title={lastPushSetup ? new Date(lastPushSetup).toLocaleString() : ""}>
+                {formatRelative(lastPushSetup)}
+              </span>
+            </div>
           </div>
         </CardContent>
       </Card>
