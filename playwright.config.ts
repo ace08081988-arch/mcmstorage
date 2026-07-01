@@ -91,6 +91,20 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E RLS/GRANT: pastikan role `authenticated` bisa SELECT
+      // `message_hidden` + memanggil RPC `message_hide_for_me` tanpa
+      // permission denied. Butuh storage state hasil global-setup;
+      // spec akan self-skip kalau storage kosong.
+      name: "message-hidden-rls-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /message-hidden-rls\.spec\.ts/,
+      use: {
+        ...devices["iPhone 14"],
+        viewport: { width: 390, height: 844 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
