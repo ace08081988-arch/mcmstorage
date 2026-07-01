@@ -631,7 +631,12 @@ function PengaturanKunci() {
             }[] = [];
             const permAction = {
               label: openingPerm ? "Membuka…" : "Buka pengaturan izin",
-              onClick: handleOpenPerm,
+              onClick: () => handleOpenPerm(false),
+              disabled: openingPerm,
+            };
+            const bioPageAction = {
+              label: openingPerm ? "Membuka…" : "Buka pengaturan izin",
+              onClick: () => handleOpenPerm(true),
               disabled: openingPerm,
             };
             if (!bioStatus.native) {
@@ -665,7 +670,7 @@ function PengaturanKunci() {
                   key: "enroll",
                   text: "Belum ada sidik jari terdaftar di perangkat. Daftarkan dulu di Pengaturan Sistem.",
                   action: { label: enrolling ? "Membuka…" : "Daftarkan sidik jari", onClick: handleEnroll, disabled: enrolling },
-                  secondary: permAction,
+                  secondary: bioPageAction,
                 });
               }
               if (!hasLock) {
