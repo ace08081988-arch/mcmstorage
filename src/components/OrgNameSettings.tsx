@@ -128,10 +128,6 @@ export function OrgNameSettings() {
       fail("File kosong — pilih file lain.");
       return;
     }
-    if (file.size > MAX_BYTES) {
-      fail(`Ukuran ${(file.size / 1024).toFixed(0)} KB melebihi batas 512 KB. Kompres dulu atau pilih file lebih kecil.`);
-      return;
-    }
     const reader = new FileReader();
     reader.onerror = () => fail("Gagal membaca file — coba lagi.");
     reader.onload = () => {
@@ -141,38 +137,71 @@ export function OrgNameSettings() {
         return;
       }
       if (mime === "image/svg+xml") {
+        if (file.size > MAX_BYTES) {
+          fail(`SVG ${(file.size / 1024).toFixed(0)} KB melebihi batas 512 KB (SVG tidak bisa dikompres otomatis).`);
+          return;
+        }
         setPendingLogo({ url, size: file.size, width: 0, height: 0, mime });
         toast.success("Logo siap — tekan Simpan untuk menerapkan");
         return;
       }
       const img = new Image();
-      img.onload = () => {
-        const w = img.naturalWidth;
-        const h = img.naturalHeight;
-        if (w === 0 || h === 0) {
+      img.onload = async () => {
+        const w0 = img.naturalWidth;
+        const h0 = img.naturalHeight;
+        if (w0 === 0 || h0 === 0) {
           fail("Gambar tidak valid — dimensi 0×0.");
           return;
         }
-        if (w < MIN_DIM || h < MIN_DIM) {
-          fail(`Dimensi terlalu kecil (${w}×${h}). Minimum ${MIN_DIM}×${MIN_DIM}px agar logo tetap tajam.`);
+        if (w0 < MIN_DIM || h0 < MIN_DIM) {
+          fail(`Dimensi terlalu kecil (${w0}×${h0}). Minimum ${MIN_DIM}×${MIN_DIM}px agar logo tetap tajam.`);
           return;
         }
-        if (w > MAX_DIM || h > MAX_DIM) {
-          fail(`Dimensi ${w}×${h} melebihi batas ${MAX_DIM}×${MAX_DIM}px. Kecilkan gambar dulu.`);
-          return;
-        }
-        const ratio = w / h;
+        const ratio = w0 / h0;
         if (ratio < MIN_RATIO || ratio > MAX_RATIO) {
           const r = ratio >= 1 ? `${ratio.toFixed(2)}:1` : `1:${(1 / ratio).toFixed(2)}`;
           fail(`Rasio ${r} terlalu ekstrem. Gunakan rasio antara 1:2 dan 2:1 (persegi paling ideal).`);
           return;
         }
-        setPendingLogo({ url, size: file.size, width: w, height: h, mime });
-        toast.success(
-          Math.abs(ratio - 1) < 0.05
-            ? "Logo siap — tekan Simpan untuk menerapkan"
-            : `Logo siap (${w}×${h}, rasio ${ratio.toFixed(2)}:1) — tekan Simpan.`,
-        );
+        // Auto-resize + kompresi bila melebihi batas dimensi atau ukuran file.
+        const needsWork = w0 > MAX_DIM || h0 > MAX_DIM || file.size > MAX_BYTES;
+        let finalUrl = url;
+        let finalMime = mime;
+        let finalW = w0;
+        let finalH = h0;
+        let finalSize = file.size;
+        let compressed = false;
+        if (needsWork) {
+          try {
+            const result = await compressRaster(img, mime, MAX_DIM, MAX_BYTES);
+            finalUrl = result.dataUrl;
+            finalMime = result.mime;
+            finalW = result.width;
+            finalH = result.height;
+            finalSize = result.size;
+            compressed = true;
+          } catch (err) {
+            fail(`Gagal mengecilkan gambar otomatis: ${err instanceof Error ? err.message : "kesalahan tidak dikenali"}.`);
+            return;
+          }
+          if (finalSize > MAX_BYTES) {
+            fail(`Gambar tetap ${(finalSize / 1024).toFixed(0)} KB setelah kompresi otomatis (batas 512 KB). Pilih gambar lebih sederhana.`);
+            return;
+          }
+        }
+        setPendingLogo({ url: finalUrl, size: finalSize, width: finalW, height: finalH, mime: finalMime });
+        if (compressed) {
+          const shrunk = finalW !== w0 || finalH !== h0;
+          toast.success(
+            `Logo dioptimalkan otomatis: ${shrunk ? `${w0}×${h0} → ${finalW}×${finalH}, ` : ""}${(file.size / 1024).toFixed(0)} KB → ${(finalSize / 1024).toFixed(0)} KB${finalMime !== mime ? ` (${finalMime.replace("image/", "").toUpperCase()})` : ""}. Tekan Simpan.`,
+          );
+        } else {
+          toast.success(
+            Math.abs(ratio - 1) < 0.05
+              ? "Logo siap — tekan Simpan untuk menerapkan"
+              : `Logo siap (${finalW}×${finalH}, rasio ${ratio.toFixed(2)}:1) — tekan Simpan.`,
+          );
+        }
       };
       img.onerror = () => fail("Gambar rusak atau format tidak dikenali.");
       img.src = url;
