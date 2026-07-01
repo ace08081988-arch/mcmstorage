@@ -88,6 +88,32 @@ function ChatListPage() {
     return { active: act, archived: arc };
   }, [conversations]);
 
+  // Terapkan filter chip pada daftar aktif.
+  const filteredActive = useMemo(() => {
+    switch (filter) {
+      case "unread":
+        return active.filter((c) => (c.unread ?? 0) > 0);
+      case "group":
+        return active.filter((c) => c.kind === "group");
+      case "favorite":
+        return active.filter((c) => !!c.pinned_at);
+      default:
+        return active;
+    }
+  }, [active, filter]);
+  const unreadCount = useMemo(
+    () => active.reduce((n, c) => n + ((c.unread ?? 0) > 0 ? 1 : 0), 0),
+    [active],
+  );
+  const groupCount = useMemo(
+    () => active.reduce((n, c) => n + (c.kind === "group" ? 1 : 0), 0),
+    [active],
+  );
+  const favCount = useMemo(
+    () => active.reduce((n, c) => n + (c.pinned_at ? 1 : 0), 0),
+    [active],
+  );
+
   const currentVisibleIds = useMemo(() => {
     // Untuk aksi "Pilih semua" — pilih dari gabungan aktif+arsip yang tampil.
     return [...active, ...archived].map((c) => c.id);
