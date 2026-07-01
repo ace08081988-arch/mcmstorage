@@ -290,7 +290,7 @@ function TugasPage() {
             <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs">Buka</button>
             <button
               onClick={() => setSharePinFor(t)}
-              title="Bagikan link + PIN via WhatsApp"
+              title="Bagikan link + PIN via MCM"
               className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952] hover:bg-[#25D366]/20"
             >
               <MessageCircle className="h-4 w-4" />
@@ -1378,7 +1378,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                           </span>
                           <button
                             onClick={() => previewWaForItem(r, p)}
-                            title={`Kirim detail item "${p.name}" via WhatsApp`}
+                            title={`Kirim detail item "${p.name}" via MCM`}
                             className="inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-[#25D366]/40 bg-[#25D366]/10 px-1.5 text-[10px] font-medium text-[#1ea952] hover:bg-[#25D366]/20"
                           >
                             <MessageCircle className="h-2.5 w-2.5" /> WA
@@ -1470,7 +1470,7 @@ function WaPreviewDialog({
     onClose();
   }
   return (
-    <Modal title="Pratinjau pesan WhatsApp" onClose={onClose}>
+    <Modal title="Pratinjau pesan MCM" onClose={onClose}>
       <div className="space-y-3 text-sm">
         <div className="text-[11px] text-muted-foreground">
           Cek isi pesan di bawah. Anda bisa mengedit sebelum mengirim.
@@ -1490,7 +1490,7 @@ function WaPreviewDialog({
             onClick={() => void send()}
             className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white hover:opacity-90"
           >
-            <MessageCircle className="h-3.5 w-3.5" /> Kirim ke WhatsApp
+            <MessageCircle className="h-3.5 w-3.5" /> Kirim via MCM
           </button>
         </div>
       </div>

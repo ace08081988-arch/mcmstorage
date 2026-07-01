@@ -525,7 +525,7 @@ function TugasBaruPage() {
             </Field>
           </div>
           <TaskQrCode url={created.url} pin={created.pin} title={created.title} />
-          <Field label="Kirim ke WhatsApp (opsional)">
+          <Field label="Kirim via MCM (opsional)">
             <div className="flex items-center gap-2">
               <input
                 inputMode="tel"

@@ -113,7 +113,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
               </div>
               <a
                 href={buildWhatsAppUrl("", c.wa_phone)} target="_blank" rel="noreferrer"
-                title="Buka chat WhatsApp"
+                title="Kirim via MCM"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]"
               ><MessageCircle className="h-4 w-4" /></a>
               <button
