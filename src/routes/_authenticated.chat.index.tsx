@@ -3,7 +3,6 @@ import { useMemo, useState } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff,
-  Settings2,
 } from "lucide-react";
 
 import {
