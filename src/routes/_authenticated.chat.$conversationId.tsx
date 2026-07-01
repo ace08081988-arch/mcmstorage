@@ -1389,6 +1389,7 @@ function ChatRoomPage() {
               variant="outline"
               className="w-full justify-start"
               disabled={hideMsg.isPending}
+              aria-busy={hideMsg.isPending}
               onClick={() => {
                 const target = longPressMsg;
                 if (!target) return;
@@ -1406,8 +1407,12 @@ function ChatRoomPage() {
                 });
               }}
             >
-              <EyeOff className="mr-2 h-4 w-4" />
-              Hapus untuk saya
+              {hideMsg.isPending ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <EyeOff className="mr-2 h-4 w-4" />
+              )}
+              {hideMsg.isPending ? "Menghapus…" : "Hapus untuk saya"}
             </Button>
             {longPressMsg?.sender_id === myId ? (
               <Button
