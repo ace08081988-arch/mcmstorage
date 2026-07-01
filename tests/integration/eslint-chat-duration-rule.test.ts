@@ -1,6 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import { ESLint } from "eslint";
 import path from "path";
+import { readFileSync } from "node:fs";
 
 // Uji ESLint rule `no-restricted-syntax` di eslint.config.js untuk direktori
 // src/components/chat: setiap pola ad-hoc mm:ss harus terdeteksi, dan
@@ -74,5 +75,42 @@ describe("ESLint chat duration rule", () => {
   it("tidak berlaku di file test dalam src/components/chat", async () => {
     const errs = await lint("src/components/chat/foo.test.ts", COMBINED);
     expect(errs).toEqual([]);
+  });
+
+  it("allowlist dibaca dari eslint.mmss-allowlist.json (config-driven)", () => {
+    const raw = JSON.parse(
+      readFileSync(path.resolve(__dirname, "../../eslint.mmss-allowlist.json"), "utf8"),
+    );
+    expect(Array.isArray(raw.files)).toBe(true);
+    // Setiap entri wajib menyertakan `reason` yang informatif (>= 20 char)
+    // dan `path` di bawah scope rule.
+    for (const entry of raw.files) {
+      expect(entry.path.startsWith("src/components/chat/")).toBe(true);
+      expect(typeof entry.reason).toBe("string");
+      expect(entry.reason.trim().length).toBeGreaterThanOrEqual(20);
+    }
+    // AttachMenu.tsx tetap ada di allowlist konfigurasi.
+    expect(raw.files.some((e: { path: string }) => e.path === "src/components/chat/AttachMenu.tsx")).toBe(true);
+  });
+
+  it("inline `eslint-disable-next-line` dengan justifikasi mmss-allow diizinkan", async () => {
+    const code =
+      `// eslint-disable-next-line no-restricted-syntax -- mmss-allow: elapsed upload, bukan durasi media\n` +
+      `export const m = (s: number) => Math.floor(s / 60);\n`;
+    const errs = await lint(CHAT_FILE, code);
+    expect(errs).toEqual([]);
+  });
+});
+
+describe("mmss allowlist loader", () => {
+  it("menolak entry tanpa reason (schema check)", () => {
+    const raw = JSON.parse(
+      readFileSync(path.resolve(__dirname, "../../eslint.mmss-allowlist.json"), "utf8"),
+    );
+    for (const entry of raw.files) {
+      // Kontrak: reason kosong / terlalu pendek akan gagal validasi di
+      // eslint.config.js saat startup.
+      expect(entry.reason && entry.reason.trim().length >= 20).toBe(true);
+    }
   });
 });
