@@ -37,8 +37,12 @@ test.describe("voice note — source guard", () => {
     expect(src).toMatch(/new\s+MediaRecorder/);
     // Preview player sebelum kirim.
     expect(src).toMatch(/<audio[^>]*controls/);
-    // Insert baris ke tabel messages setelah upload sukses.
-    expect(src).toMatch(/from\(\s*["']messages["']\s*\)/);
+    // Upload ke storage lalu kirim via server-fn sendMessage dengan
+    // metadata attachment (path, mime, size, duration).
+    expect(src).toMatch(/uploadChatFile\b/);
+    expect(src).toMatch(/sendMessage\b/);
+    expect(src).toMatch(/attachmentPath/);
+    expect(src).toMatch(/attachmentDurationSec/);
   });
 
   test("MessageAttachment: audio/* merutekan ke VoiceNotePlayer", () => {
