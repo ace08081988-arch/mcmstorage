@@ -242,6 +242,21 @@ function PengaturanKunci() {
     }
   };
 
+  const handleOpenPerm = async () => {
+    setOpeningPerm(true);
+    const opened = await openAppPermissionSettings();
+    setOpeningPerm(false);
+    if (!opened) {
+      toast.error(
+        bioStatus.native
+          ? "Tidak bisa membuka halaman izin. Buka manual: Setelan → Aplikasi → MCM Storage → Izin."
+          : "Hanya tersedia di APK Android",
+      );
+    } else {
+      toast.message("Ubah izin lalu kembali ke aplikasi — status akan diperbarui otomatis.");
+    }
+  };
+
   if (!uid) {
     return (
       <div className="mx-auto max-w-2xl p-4 text-sm text-muted-foreground">
