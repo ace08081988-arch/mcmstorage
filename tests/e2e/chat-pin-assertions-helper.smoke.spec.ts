@@ -1,6 +1,9 @@
 import { test, expect } from "@playwright/test";
 import {
   PHONE_ID_LIKE,
+  PHONE_ID_TEL_URI,
+  PHONE_ID_LIKE_ANY,
+  containsRawIndoPhone,
   PIN_MCM_FORMAT,
   PIN_ANY_TOKEN,
   extractPinTokens,
@@ -33,10 +36,69 @@ test.describe("chat-pin-assertions — kontrak regex", () => {
     for (const s of [
       "PIN ABCD-1234",
       "PIN 0812-XXXX", // bukan HP karena diikuti non-digit setelah 0812
+      "PIN 0812-3456", // PIN 4-4 all-digit: hanya 6 digit lanjutan → bukan HP
       "Kontak",
       "Percakapan tidak ditemukan",
     ]) {
       expect(s).not.toMatch(PHONE_ID_LIKE);
+      expect(containsRawIndoPhone(s), s).toBe(false);
+    }
+  });
+
+  test("PHONE_ID_LIKE menangkap varian dengan separator ( -  . spasi )", () => {
+    for (const s of [
+      "0812-3456-7890",
+      "0812 3456 7890",
+      "0812.3456.7890",
+      "+62 812-3456-7890",
+      "+62-812-3456-7890",
+      "62 812 3456 7890",
+    ]) {
+      expect(s, s).toMatch(PHONE_ID_LIKE);
+      expect(containsRawIndoPhone(s), s).toBe(true);
+    }
+  });
+
+  test("PHONE_ID_TEL_URI menangkap anchor tel: mentah", () => {
+    for (const s of [
+      "tel:081234567890",
+      "tel:+6281234567890",
+      "TEL: 081234567890",
+    ]) {
+      expect(s, s).toMatch(PHONE_ID_TEL_URI);
+      expect(PHONE_ID_LIKE_ANY.test(s), s).toBe(true);
+      expect(containsRawIndoPhone(s), s).toBe(true);
+    }
+  });
+
+  test("containsRawIndoPhone menembus obfuscation zero-width / NBSP", () => {
+    // Simulasi jaringan lambat: UI menyelipkan NBSP / zero-width
+    // di tengah digit sehingga regex compact klasik miss, tapi user
+    // tetap melihat nomor telp.
+    const nbsp = "\u00A0";
+    const zwsp = "\u200B";
+    for (const s of [
+      `0812${nbsp}3456${nbsp}7890`,
+      `+62${zwsp}812${zwsp}3456${zwsp}7890`,
+      `0${zwsp}8${zwsp}1${zwsp}2${zwsp}3${zwsp}4${zwsp}5${zwsp}6${zwsp}7${zwsp}8${zwsp}9`,
+    ]) {
+      expect(containsRawIndoPhone(s), s).toBe(true);
+    }
+    // Kontrol negatif: PIN dengan NBSP di dalamnya tidak boleh trigger.
+    expect(
+      containsRawIndoPhone(`PIN${nbsp}ABCD-1234`),
+      "PIN dengan NBSP",
+    ).toBe(false);
+  });
+
+  test("expectNoRawPhone menangkap varian separator & tel: & zero-width", () => {
+    for (const s of [
+      "hubungi 0812-3456-7890",
+      "WA +62 812 3456 7890",
+      "tel:081234567890",
+      `0812\u200B3456\u200B7890`,
+    ]) {
+      expect(() => expectNoRawPhone(s, s), s).toThrow();
     }
   });
 
@@ -152,6 +214,12 @@ test.describe("chat-pin-assertions — kontrak regex", () => {
   test("expectPinBrandingClean gabungan: phone gagal, PIN valid lolos", () => {
     expect(() =>
       expectPinBrandingClean("chat dengan 081234567890", "case"),
+    ).toThrow();
+    expect(() =>
+      expectPinBrandingClean("chat dengan 0812-3456-7890", "case"),
+    ).toThrow();
+    expect(() =>
+      expectPinBrandingClean("chat dengan tel:+6281234567890", "case"),
     ).toThrow();
     expect(() =>
       expectPinBrandingClean("chat dengan PIN ABCD-1234", "case"),
