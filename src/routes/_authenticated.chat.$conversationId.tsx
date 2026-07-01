@@ -142,6 +142,18 @@ function ChatRoomPage() {
   const [muteOpen, setMuteOpen] = useState(false);
   const { prefs: convPrefs, mutedNow } = useConvPrefs(myId ?? undefined, conversationId);
 
+  // Toast saat pin/mute/arsip berubah dari tab/perangkat lain
+  useEffect(() => {
+    const onRemote = (e: Event) => {
+      const d = (e as CustomEvent).detail as { cid?: string; changes?: string[] } | undefined;
+      if (!d || d.cid !== conversationId) return;
+      const list = (d.changes ?? []).join(", ");
+      if (list) toast.success(`Disinkronkan dari perangkat lain: ${list}`);
+    };
+    window.addEventListener("mcm:conv-prefs-remote", onRemote);
+    return () => window.removeEventListener("mcm:conv-prefs-remote", onRemote);
+  }, [conversationId]);
+
   const toggleSelect = useCallback((m: MessageRow) => {
     if (m.deleted_at) return;
     setSelectedIds((prev) => {
