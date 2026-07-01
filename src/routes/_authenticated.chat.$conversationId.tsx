@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { scheduleUndo } from "@/lib/undo-action";
+import { confirm } from "@/lib/confirm";
 import { logChatDelete } from "@/lib/chat-delete-audit";
 import { optimisticDeleteMessages } from "@/lib/chat-optimistic-delete";
 import { Linkify, UrlPreviewList } from "@/lib/linkify";
