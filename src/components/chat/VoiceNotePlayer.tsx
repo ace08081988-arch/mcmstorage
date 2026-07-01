@@ -94,9 +94,19 @@ export function VoiceNotePlayer({
   };
 
   const progress = duration > 0 ? Math.min(1000, Math.round((current / duration) * 1000)) : 0;
-  const label = ready && duration > 0
-    ? formatDurationMMSS(playing || current > 0 ? current : duration)
-    : formatDurationMMSS(0);
+  // Label durasi:
+  // - Saat memutar / sedang berjalan → posisi saat ini.
+  // - Diam & metadata audio siap → durasi audio.
+  // - Diam & belum siap tapi ada nilai server ternormalisasi → tampilkan itu
+  //   supaya tidak pernah muncul "00:00" saat loading.
+  // - Tidak ada info sama sekali → tampilkan em dash, bukan "00:00".
+  const showCurrent = playing || current > 0;
+  const fallback = initial > 0 ? initial : (ready && duration > 0 ? duration : null);
+  const label = showCurrent
+    ? formatDurationMMSS(current)
+    : fallback != null
+      ? formatDurationMMSS(fallback)
+      : "—:—";
 
   return (
     <div
