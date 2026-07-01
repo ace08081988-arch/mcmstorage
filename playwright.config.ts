@@ -268,6 +268,21 @@ export default defineConfig({
       },
     },
     {
+      // E2E: membuka DM lewat DEEP LINK `/chat/$conversationId` langsung
+      // (tanpa transit `/chat`, konteks bersih) wajib merender identitas
+      // `PIN xxxx-xxxx` di header & transkrip; setelah `reload()` histori
+      // pra-reload tetap terbaca — bukti hidrasi dari server per-konvo,
+      // bukan sisa cache list.
+      name: "chat-pin-mcm-deep-link-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-deep-link\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
