@@ -1356,6 +1356,7 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          chat_only: boolean
           country_code: string
           created_at: string
           currency: string
@@ -1371,6 +1372,7 @@ export type Database = {
         }
         Insert: {
           avatar_url?: string | null
+          chat_only?: boolean
           country_code?: string
           created_at?: string
           currency?: string
@@ -1386,6 +1388,7 @@ export type Database = {
         }
         Update: {
           avatar_url?: string | null
+          chat_only?: boolean
           country_code?: string
           created_at?: string
           currency?: string
@@ -2585,6 +2588,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      is_chat_only: { Args: { _uid: string }; Returns: boolean }
       is_conversation_member: {
         Args: { _conv: string; _user: string }
         Returns: boolean
