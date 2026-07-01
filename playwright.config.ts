@@ -253,6 +253,21 @@ export default defineConfig({
       },
     },
     {
+      // E2E: setelah `page.reload()` di DM yang sudah ada, mengirim
+      // pesan baru wajib tetap merender identitas `PIN xxxx-xxxx` di
+      // header & transkrip — tidak pernah mem-fallback ke nomor telp
+      // mentah. Reload kedua memastikan pesan baru bertahan (bukan
+      // sekadar bubble optimistik) dan branding tetap konsisten.
+      name: "chat-pin-mcm-post-refresh-send-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-post-refresh-send\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
