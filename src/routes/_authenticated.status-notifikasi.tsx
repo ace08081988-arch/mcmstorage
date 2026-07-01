@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { sendTestNotification } from "@/lib/push-client";
 
 export const Route = createFileRoute("/_authenticated/status-notifikasi")({
   head: () => ({
@@ -547,6 +548,8 @@ function StatusNotifikasiPage() {
           <Readiness perm={perm} inIframe={frame.inIframe} sw={swReady} sub={pushSub} />
         </CardContent>
       </Card>
+
+      <TestNotificationCard perm={perm} sub={pushSub} />
     </div>
   );
 }
