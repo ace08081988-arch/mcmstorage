@@ -17,6 +17,7 @@ import {
 import { AppLockScreen } from "@/components/AppLockScreen";
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "@/components/AppSidebar";
+import { CallHost } from "@/components/chat/CallHost";
 
 function AuthLock() {
   const [uid, setUid] = useState<string | null>(null);
@@ -122,6 +123,7 @@ function AuthLock() {
         </SidebarInset>
       </div>
       {uid && cfg && locked && <AppLockScreen uid={uid} cfg={cfg} />}
+      <CallHost />
     </SidebarProvider>
   );
 }
