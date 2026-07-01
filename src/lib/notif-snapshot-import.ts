@@ -421,6 +421,8 @@ export function normalizeSnapshot(raw: Record<string, unknown>): ImportResult {
   };
   if (Object.keys(extra).length > 0) snapshot.extra = extra;
 
+  const fieldIssues = validateFields(migrated);
+
   return {
     ok: true,
     snapshot,
@@ -429,6 +431,7 @@ export function normalizeSnapshot(raw: Record<string, unknown>): ImportResult {
     rawBefore: raw,
     rawAfter: migrated,
     warnings,
+    fieldIssues,
   };
 }
 
