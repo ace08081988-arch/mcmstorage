@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
@@ -215,19 +215,12 @@ export function AppSidebar() {
                         tooltip={item.title}
                         className="group/nav relative h-9 rounded-md px-2.5 font-medium text-sidebar-foreground/85 transition-colors duration-150 hover:bg-sidebar-accent/60 hover:text-sidebar-foreground data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground data-[active=true]:shadow-[inset_2px_0_0_0_var(--primary)]"
                       >
-                        <Link
-                          to={item.url}
-                          preload="intent"
-                          className="flex items-center gap-2.5"
-                          onPointerDown={(e) => {
-                            if (!isMobile) return;
-                            if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
-                            e.preventDefault();
-                            setOpenMobile(false);
-                            if (pathname !== item.url) {
-                              void navigate({ to: item.url });
-                            }
-                          }}
+                        <NavLinkItem
+                          item={item}
+                          isMobile={isMobile}
+                          pathname={pathname}
+                          setOpenMobile={setOpenMobile}
+                          navigate={navigate}
                         >
                           <item.icon
                             className={
@@ -260,7 +253,7 @@ export function AppSidebar() {
                               ) : null}
                             </span>
                           ) : null}
-                        </Link>
+                        </NavLinkItem>
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   );
