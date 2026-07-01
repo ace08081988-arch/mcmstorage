@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactElement } from "react";
 import {
   Card,
   CardContent,
@@ -52,7 +52,7 @@ type Example = {
     expected: string[];
   }>;
   /** JSX contoh — harus terbungkus `data-press-scope="on"`. */
-  renderInner: () => JSX.Element;
+  renderInner: () => ReactElement;
 };
 
 const EXAMPLES: Example[] = [
