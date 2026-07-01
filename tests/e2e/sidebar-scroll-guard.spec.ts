@@ -20,6 +20,8 @@ const HARNESS = /* html */ `<!doctype html>
   .item{padding:16px;border-bottom:1px solid #eee;user-select:none;touch-action:pan-y;}
   #log{padding:8px;font-family:monospace;font-size:12px;white-space:pre;}
   .spacer{height:1200px;}
+  #hint{position:fixed;left:0;top:0;padding:4px 8px;font-size:11px;background:#111;color:#fff;border-radius:999px;pointer-events:none;opacity:0;transition:opacity .12s;}
+  #hint.show{opacity:1;}
 </style></head><body>
   <div id="scroller">
     <a class="item" data-testid="nav-home" href="#home">Home</a>
@@ -28,6 +30,7 @@ const HARNESS = /* html */ `<!doctype html>
     <div class="spacer"></div>
   </div>
   <div id="log"></div>
+  <div id="hint" data-testid="scroll-guard-hint" role="status" aria-live="polite"></div>
   <script>
     let scrollActiveUntil = 0;
     const bump = () => { scrollActiveUntil = Date.now() + 250; };
@@ -37,11 +40,26 @@ const HARNESS = /* html */ `<!doctype html>
     const scroller = document.getElementById("scroller");
     scroller.addEventListener("scroll", bump, { capture: true, passive: true });
     const log = document.getElementById("log");
+    const hintEl = document.getElementById("hint");
+    let hintTimer = 0;
+    window.__hints = [];
+    const showHint = (text, x, y) => {
+      window.__hints.push(text);
+      hintEl.textContent = text;
+      hintEl.style.transform = "translate(" + (x + 8) + "px," + (y + 8) + "px)";
+      hintEl.classList.add("show");
+      clearTimeout(hintTimer);
+      hintTimer = setTimeout(() => hintEl.classList.remove("show"), 1200);
+    };
     window.__navs = [];
     document.querySelectorAll(".item").forEach(el => {
       let start = null;
       el.addEventListener("pointerdown", e => {
-        if (Date.now() < scrollActiveUntil) { start = null; return; }
+        if (Date.now() < scrollActiveUntil) {
+          start = null;
+          showHint("Tunggu scroll selesai…", e.clientX, e.clientY);
+          return;
+        }
         start = { x: e.clientX, y: e.clientY, t: Date.now() };
       });
       el.addEventListener("pointermove", e => {
@@ -52,10 +70,16 @@ const HARNESS = /* html */ `<!doctype html>
       el.addEventListener("pointerup", e => {
         const s = start; start = null;
         if (!s) return;
-        if (Date.now() < scrollActiveUntil) return;
+        if (Date.now() < scrollActiveUntil) {
+          showHint("Tunggu scroll selesai…", e.clientX, e.clientY);
+          return;
+        }
         const dx = Math.abs(e.clientX - s.x), dy = Math.abs(e.clientY - s.y);
         const dt = Date.now() - s.t;
-        if (dx > 10 || dy > 10 || dt > 600) return;
+        if (dx > 10 || dy > 10 || dt > 600) {
+          showHint("Geser terdeteksi — tap dibatalkan", e.clientX, e.clientY);
+          return;
+        }
         e.preventDefault();
         const id = el.getAttribute("data-testid");
         window.__navs.push(id);
@@ -76,6 +100,9 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
     const box = (await target.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
     expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-sesi"]);
+    // Tap diizinkan → tooltip guard TIDAK muncul.
+    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 
   test("scroll gesture di atas item → TIDAK navigasi", async ({ page }) => {
@@ -101,6 +128,10 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
       el.dispatchEvent(new PointerEvent("pointerup", opts(cx, cy - 120)));
     }, { cx, cy });
     expect(await page.evaluate(() => (window as any).__navs)).toEqual([]);
+    // Drift > 10px pada pointerup → hint "Geser terdeteksi" muncul.
+    const hints = await page.evaluate(() => (window as any).__hints);
+    expect(hints).toContain("Geser terdeteksi — tap dibatalkan");
+    await expect(page.getByTestId("scroll-guard-hint")).toHaveClass(/show/);
   });
 
   test("tap yang mendarat < 250ms setelah scroll berhenti → TIDAK navigasi", async ({ page }) => {
@@ -111,6 +142,10 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
     const box = (await target.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
     expect(await page.evaluate(() => (window as any).__navs)).toEqual([]);
+    // Guard aktif → hint "Tunggu scroll selesai…" muncul.
+    const hints = await page.evaluate(() => (window as any).__hints);
+    expect(hints).toContain("Tunggu scroll selesai…");
+    await expect(page.getByTestId("scroll-guard-hint")).toHaveClass(/show/);
   });
 
   test("tap setelah scroll cooldown lewat (>250ms) → navigasi terpicu", async ({ page }) => {
@@ -121,6 +156,9 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
     const box = (await target.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
     expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-sesi"]);
+    // Cooldown sudah lewat → tap diizinkan, tooltip guard TIDAK muncul.
+    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 });
 
@@ -131,6 +169,9 @@ test.describe("sidebar scroll guard (desktop / mouse + wheel)", () => {
     await page.setContent(HARNESS);
     await page.getByTestId("nav-chat").click();
     expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-chat"]);
+    // Klik diizinkan → tidak ada hint.
+    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 
   test("wheel scroll aktif → klik dalam 250ms TIDAK navigasi", async ({ page }) => {
@@ -142,6 +183,10 @@ test.describe("sidebar scroll guard (desktop / mouse + wheel)", () => {
     // Klik langsung: guard harus menolak karena scrollActiveUntil belum lewat.
     await target.click({ noWaitAfter: true });
     expect(await page.evaluate(() => (window as any).__navs)).toEqual([]);
+    // Klik ditolak oleh cooldown → hint "Tunggu scroll selesai…" muncul.
+    const hints = await page.evaluate(() => (window as any).__hints);
+    expect(hints).toContain("Tunggu scroll selesai…");
+    await expect(page.getByTestId("scroll-guard-hint")).toHaveClass(/show/);
   });
 
   test("wheel scroll → tunggu cooldown → klik navigasi normal", async ({ page }) => {
@@ -153,5 +198,8 @@ test.describe("sidebar scroll guard (desktop / mouse + wheel)", () => {
     await page.waitForTimeout(320);
     await target.click();
     expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-home"]);
+    // Cooldown lewat → klik diizinkan, tidak ada hint.
+    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 });
