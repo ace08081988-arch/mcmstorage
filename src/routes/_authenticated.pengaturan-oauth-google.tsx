@@ -272,6 +272,53 @@ function OAuthGooglePage() {
     setShowSecret(false);
   };
 
+  // --- Uji Login Google --------------------------------------------------
+  type TestState =
+    | { status: "idle" }
+    | { status: "running" }
+    | { status: "success"; email: string | null; issuer: string | null; at: string }
+    | { status: "redirected" }
+    | { status: "error"; message: string };
+  const [testState, setTestState] = useState<TestState>({ status: "idle" });
+
+  const runGoogleTest = async () => {
+    setTestState({ status: "running" });
+    try {
+      const result = await lovable.auth.signInWithOAuth("google", {
+        redirect_uri: window.location.origin,
+        extraParams: { prompt: "select_account" },
+      });
+      if (result.error) {
+        const msg =
+          result.error instanceof Error
+            ? result.error.message
+            : String(result.error);
+        setTestState({ status: "error", message: msg });
+        toast.error("Uji gagal — cek pesan di kartu Uji");
+        return;
+      }
+      if (result.redirected) {
+        // Browser sedang berpindah ke Google. Ini normal di mode full-page.
+        setTestState({ status: "redirected" });
+        return;
+      }
+      // Popup flow (iframe/preview): sesi sudah di-set oleh helper.
+      const { data } = await supabase.auth.getUser();
+      const identity = data.user?.identities?.find((i) => i.provider === "google");
+      setTestState({
+        status: "success",
+        email: data.user?.email ?? null,
+        issuer: (identity?.identity_data?.iss as string | undefined) ?? null,
+        at: new Date().toISOString(),
+      });
+      toast.success("Login Google berhasil");
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e);
+      setTestState({ status: "error", message: msg });
+      toast.error("Uji gagal — cek pesan di kartu Uji");
+    }
+  };
+
   const copy = async (value: string, label: string) => {
     if (!value) {
       toast.error(`${label} belum tersedia`);
