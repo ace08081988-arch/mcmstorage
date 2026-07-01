@@ -332,7 +332,6 @@ function ChatRoomPage() {
       const p = other ? profiles.data.get(other) : null;
       return p?.display_name
         || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
-        || p?.email
         || "Kontak";
     }
     return meta.data.title || (meta.data.kind === "order" ? "Diskusi pesanan" : "Grup");
@@ -351,7 +350,6 @@ function ChatRoomPage() {
       fallbackName:
         p?.display_name
         || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
-        || p?.email
         || "Kontak",
     };
   }, [meta.data, members.data, profiles.data, myId]);
@@ -412,7 +410,6 @@ function ChatRoomPage() {
       const name =
         p?.display_name
         || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
-        || p?.email
         || "Seseorang";
       setTypingNames((prev) => (prev.includes(name) ? prev : [...prev, name]));
       const prevT = typingTimers.current.get(uid);
@@ -649,7 +646,10 @@ function ChatRoomPage() {
             const text = selectedMessages
               .map((m) => {
                 const sp = profiles.data?.get(m.sender_id);
-                const name = sp?.display_name || sp?.email || "Pengguna";
+                const name =
+                  sp?.display_name
+                  || (sp?.invite_code ? `PIN ${formatInviteCode(sp.invite_code)}` : null)
+                  || "Pengguna";
                 return `${name}: ${safePreview(m)}`;
               })
               .join("\n");
@@ -878,11 +878,17 @@ function ChatRoomPage() {
               {g.items.map((m) => {
                 const mine = m.sender_id === myId;
                 const senderProfile = profiles.data?.get(m.sender_id);
-                const senderName = senderProfile?.display_name || senderProfile?.email || "Pengguna";
+                const senderName =
+                  senderProfile?.display_name
+                  || (senderProfile?.invite_code ? `PIN ${formatInviteCode(senderProfile.invite_code)}` : null)
+                  || "Pengguna";
                 const showSender = !mine && (meta.data?.kind !== "dm");
                 const replyMsg = m.reply_to_id ? messageById.get(m.reply_to_id) : null;
                 const replySender = replyMsg ? profiles.data?.get(replyMsg.sender_id) : null;
-                const replySenderName = replySender?.display_name || replySender?.email || "Pengguna";
+                const replySenderName =
+                  replySender?.display_name
+                  || (replySender?.invite_code ? `PIN ${formatInviteCode(replySender.invite_code)}` : null)
+                  || "Pengguna";
                 const myReactions = new Set<string>();
                 const reactionEntries: Array<{ emoji: string; count: number; mine: boolean }> = [];
                 const rmap = reactionMap.get(m.id);
@@ -1687,7 +1693,11 @@ function ChatRoomPage() {
           const sp = profiles.data?.get(onlyOne.sender_id);
           return onlyOne.sender_id === myId
             ? "Anda"
-            : (sp?.display_name || sp?.email || "Pengguna");
+            : (
+                sp?.display_name
+                || (sp?.invite_code ? `PIN ${formatInviteCode(sp.invite_code)}` : null)
+                || "Pengguna"
+              );
         })()}
         readAtMs={othersRead.data}
       />
