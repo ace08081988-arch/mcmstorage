@@ -109,6 +109,7 @@ import {
   rupiah,
 } from "@/lib/stock-format";
 export { BOTOL_PER_KARTON, fmtBase, fmtItemPrice, fmtItemQty, fmtQtyDual, rupiah };
+import { computeBeliDerived } from "@/lib/beli-derived";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
