@@ -199,6 +199,106 @@ html[data-font="serif"]   { --app-font-family: "Merriweather", Georgia, serif; }
 html[data-font="mono"]    { --app-font-family: "JetBrains Mono", ui-monospace, monospace; }
 html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-serif; }
 
+/* ==========================================================================
+   WhatsApp-Business inspired chat surface (dark-first, light fallback)
+   Dipakai di halaman /chat, /chat/$conversationId, /profil-chat agar UI
+   terasa familier seperti aplikasi WA Business.
+   ========================================================================== */
+:root {
+  --wa-surface: #ffffff;
+  --wa-surface-2: #f0f2f5;
+  --wa-header: #ffffff;
+  --wa-text: #111b21;
+  --wa-text-muted: #667781;
+  --wa-border: #e9edef;
+  --wa-green: #00a884;
+  --wa-green-strong: #008069;
+  --wa-bubble-out: #d9fdd3;
+  --wa-bubble-out-fg: #111b21;
+  --wa-bubble-in: #ffffff;
+  --wa-bubble-in-fg: #111b21;
+  --wa-chat-bg: #efeae2;
+  --wa-check: #53bdeb;
+}
+.dark {
+  --wa-surface: #0b141a;
+  --wa-surface-2: #111b21;
+  --wa-header: #1f2c34;
+  --wa-text: #e9edef;
+  --wa-text-muted: #8696a0;
+  --wa-border: rgba(134,150,160,0.15);
+  --wa-green: #00a884;
+  --wa-green-strong: #21b193;
+  --wa-bubble-out: #005c4b;
+  --wa-bubble-out-fg: #e9edef;
+  --wa-bubble-in: #1f2c34;
+  --wa-bubble-in-fg: #e9edef;
+  --wa-chat-bg: #0b141a;
+  --wa-check: #53bdeb;
+}
+
+@utility wa-surface {
+  background-color: var(--wa-surface);
+  color: var(--wa-text);
+}
+@utility wa-header {
+  background-color: var(--wa-header);
+  color: var(--wa-text);
+  border-color: var(--wa-border);
+}
+@utility wa-muted {
+  color: var(--wa-text-muted);
+}
+@utility wa-chat-bg {
+  background-color: var(--wa-chat-bg);
+  background-image:
+    radial-gradient(circle at 20% 30%, color-mix(in oklab, var(--wa-text) 6%, transparent) 0 1px, transparent 2px),
+    radial-gradient(circle at 70% 60%, color-mix(in oklab, var(--wa-text) 5%, transparent) 0 1px, transparent 2px),
+    radial-gradient(circle at 40% 85%, color-mix(in oklab, var(--wa-text) 4%, transparent) 0 1.5px, transparent 3px),
+    radial-gradient(circle at 85% 15%, color-mix(in oklab, var(--wa-text) 5%, transparent) 0 1px, transparent 2px);
+  background-size: 180px 180px, 220px 220px, 260px 260px, 200px 200px;
+  color: var(--wa-text);
+}
+@utility wa-search {
+  background-color: var(--wa-surface-2);
+  color: var(--wa-text);
+  border-color: transparent;
+  border-radius: 9999px;
+}
+@utility wa-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 12px;
+  line-height: 1.2;
+  background-color: var(--wa-surface-2);
+  color: var(--wa-text);
+  border: 1px solid transparent;
+  white-space: nowrap;
+}
+@utility wa-chip-active {
+  background-color: color-mix(in oklab, var(--wa-green) 22%, var(--wa-surface-2));
+  color: var(--wa-text);
+  border-color: color-mix(in oklab, var(--wa-green) 55%, transparent);
+}
+@utility wa-bubble-out {
+  background-color: var(--wa-bubble-out);
+  color: var(--wa-bubble-out-fg);
+}
+@utility wa-bubble-in {
+  background-color: var(--wa-bubble-in);
+  color: var(--wa-bubble-in-fg);
+}
+@utility wa-badge {
+  background-color: var(--wa-green);
+  color: #0b141a;
+}
+@utility wa-check {
+  color: var(--wa-check);
+}
+
 html[data-font-size="sm"] { --app-font-size: 14px; }
 html[data-font-size="md"] { --app-font-size: 16px; }
 html[data-font-size="lg"] { --app-font-size: 18px; }
