@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Building2, Save, ImagePlus, Trash2, Palette, RotateCcw, Check } from "lucide-react";
+import { Building2, Save, ImagePlus, Trash2, Palette, RotateCcw, Check, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,7 @@ export function OrgNameSettings() {
   const [brand, setBrand] = useState(savedBrand);
   const [hex, setHex] = useState(savedBrand.startsWith("#") ? savedBrand : "#10b981");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const v = window.localStorage.getItem("app-org-saved-at");
@@ -97,51 +98,74 @@ export function OrgNameSettings() {
 
   const ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"] as const;
   const MAX_BYTES = 512 * 1024; // 512 KB
+  const MIN_DIM = 64; // px — cegah logo pecah saat di-render 32-64px
   const MAX_DIM = 1024; // px (raster only)
+  const MIN_RATIO = 0.5; // 1:2 (portrait terjauh)
+  const MAX_RATIO = 2.0; // 2:1 (landscape terjauh)
+
+  const fail = (msg: string) => {
+    setLogoError(msg);
+    toast.error(msg);
+  };
 
   const onPickFile = (file: File) => {
+    setLogoError(null);
     const mime = (file.type || "").toLowerCase();
     if (!ALLOWED_MIME.includes(mime as typeof ALLOWED_MIME[number])) {
-      toast.error("Format harus PNG, JPG, WEBP, atau SVG");
+      fail(`Format tidak didukung (${mime || "tidak dikenali"}). Gunakan PNG, JPG, WEBP, atau SVG.`);
       return;
     }
     if (file.size === 0) {
-      toast.error("File kosong");
+      fail("File kosong — pilih file lain.");
       return;
     }
     if (file.size > MAX_BYTES) {
-      toast.error(`Logo maksimal 512 KB (file Anda ${(file.size / 1024).toFixed(0)} KB)`);
+      fail(`Ukuran ${(file.size / 1024).toFixed(0)} KB melebihi batas 512 KB. Kompres dulu atau pilih file lebih kecil.`);
       return;
     }
     const reader = new FileReader();
-    reader.onerror = () => toast.error("Gagal membaca file");
+    reader.onerror = () => fail("Gagal membaca file — coba lagi.");
     reader.onload = () => {
       const url = String(reader.result || "");
       if (!url.startsWith("data:image/")) {
-        toast.error("Isi file bukan gambar valid");
+        fail("Isi file bukan gambar valid (magic bytes tidak cocok).");
         return;
       }
-      // SVG: langsung terima (tidak perlu cek dimensi)
       if (mime === "image/svg+xml") {
         setOrgLogo(url);
         toast.success("Logo diperbarui");
         return;
       }
-      // Raster: verifikasi magic bytes lewat decode + batasi dimensi
       const img = new Image();
       img.onload = () => {
-        if (img.naturalWidth === 0 || img.naturalHeight === 0) {
-          toast.error("Gambar tidak valid");
+        const w = img.naturalWidth;
+        const h = img.naturalHeight;
+        if (w === 0 || h === 0) {
+          fail("Gambar tidak valid — dimensi 0×0.");
           return;
         }
-        if (img.naturalWidth > MAX_DIM || img.naturalHeight > MAX_DIM) {
-          toast.error(`Dimensi maksimal ${MAX_DIM}×${MAX_DIM}px (file: ${img.naturalWidth}×${img.naturalHeight})`);
+        if (w < MIN_DIM || h < MIN_DIM) {
+          fail(`Dimensi terlalu kecil (${w}×${h}). Minimum ${MIN_DIM}×${MIN_DIM}px agar logo tetap tajam.`);
+          return;
+        }
+        if (w > MAX_DIM || h > MAX_DIM) {
+          fail(`Dimensi ${w}×${h} melebihi batas ${MAX_DIM}×${MAX_DIM}px. Kecilkan gambar dulu.`);
+          return;
+        }
+        const ratio = w / h;
+        if (ratio < MIN_RATIO || ratio > MAX_RATIO) {
+          const r = ratio >= 1 ? `${ratio.toFixed(2)}:1` : `1:${(1 / ratio).toFixed(2)}`;
+          fail(`Rasio ${r} terlalu ekstrem. Gunakan rasio antara 1:2 dan 2:1 (persegi paling ideal).`);
           return;
         }
         setOrgLogo(url);
-        toast.success("Logo diperbarui");
+        toast.success(
+          Math.abs(ratio - 1) < 0.05
+            ? "Logo diperbarui"
+            : `Logo diperbarui (${w}×${h}, rasio ${ratio.toFixed(2)}:1 — persegi tetap paling ideal).`,
+        );
       };
-      img.onerror = () => toast.error("Gambar rusak atau format tidak dikenali");
+      img.onerror = () => fail("Gambar rusak atau format tidak dikenali.");
       img.src = url;
     };
     reader.readAsDataURL(file);
@@ -210,8 +234,24 @@ export function OrgNameSettings() {
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            PNG, JPG, WEBP, atau SVG. Maks. 512 KB, dimensi ≤ 1024×1024 px. Persegi disarankan.
+            PNG, JPG, WEBP, atau SVG. Maks. 512 KB, dimensi 64–1024 px, rasio 1:2 s.d. 2:1 (persegi paling ideal).
           </p>
+          {logoError && (
+            <div
+              role="alert"
+              className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive"
+            >
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <div className="flex-1 leading-snug">{logoError}</div>
+              <button
+                type="button"
+                onClick={() => setLogoError(null)}
+                className="text-[10px] font-medium underline underline-offset-2 opacity-80 hover:opacity-100"
+              >
+                Tutup
+              </button>
+            </div>
+          )}
         </div>
 
         <div className="space-y-1.5">
