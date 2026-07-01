@@ -685,7 +685,7 @@ function PrepCard({
             onClick={sendWA}
             className="rounded-md border border-[#25D366]/40 bg-[#25D366]/15 p-1 text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
             aria-label="Kirim WA"
-            title="Kirim ringkasan via WhatsApp"
+            title="Kirim ringkasan via MCM"
           >
             <MessageCircle className="h-3.5 w-3.5" />
           </button>

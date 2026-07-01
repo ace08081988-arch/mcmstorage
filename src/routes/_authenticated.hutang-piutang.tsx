@@ -598,7 +598,7 @@ function HutangPiutangPage() {
                             variant="secondary"
                             className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
                             onClick={() => void sendPartyReportWA(group)}
-                            title="Kirim laporan via WhatsApp"
+                            title="Kirim laporan via MCM"
                           >
                             Kirim laporan WA
                           </Button>
@@ -679,7 +679,7 @@ function HutangPiutangPage() {
                               variant="secondary"
                               className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
                               onClick={() => void sendReminderWA(d)}
-                              title="Kirim pengingat via WhatsApp"
+                              title="Kirim pengingat via MCM"
                             >
                               Tagih via WA
                             </Button>
@@ -924,7 +924,7 @@ function PaymentsReport({
             variant="secondary"
             className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
             onClick={onSendWA}
-            title="Kirim laporan via WhatsApp"
+            title="Kirim laporan via MCM"
           >
             Kirim laporan WA
           </Button>
