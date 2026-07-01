@@ -537,3 +537,58 @@ html[data-reduce-motion="on"] *::after {
   outline: none;
   box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
 }
+
+/*
+ * Hormati preferensi sistem `prefers-reduced-motion: reduce` maupun override
+ * manual (`html.reduce-motion`, `html[data-reduce-motion="on"]`): nonaktifkan
+ * skala + shading pada semua utility press dan pada scope auto-press, tanpa
+ * menghapus focus-ring aksesibilitas. Transisi juga dinolkan agar tidak ada
+ * "loncat" saat state :active dilepas.
+ */
+@media (prefers-reduced-motion: reduce) {
+  .press,
+  .press-card,
+  .press-row,
+  .press-fab,
+  [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
+    transition-duration: 0.001ms;
+    will-change: auto;
+  }
+  .press:active,
+  .press-card:active,
+  .press-row:active,
+  .press-fab:active,
+  [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
+    transform: none;
+    filter: none;
+    background-color: inherit;
+    box-shadow: none;
+  }
+}
+
+html.reduce-motion .press,
+html.reduce-motion .press-card,
+html.reduce-motion .press-row,
+html.reduce-motion .press-fab,
+html[data-reduce-motion="on"] .press,
+html[data-reduce-motion="on"] .press-card,
+html[data-reduce-motion="on"] .press-row,
+html[data-reduce-motion="on"] .press-fab,
+html.reduce-motion [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]),
+html[data-reduce-motion="on"] [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
+  will-change: auto;
+}
+html.reduce-motion .press:active,
+html.reduce-motion .press-card:active,
+html.reduce-motion .press-row:active,
+html.reduce-motion .press-fab:active,
+html[data-reduce-motion="on"] .press:active,
+html[data-reduce-motion="on"] .press-card:active,
+html[data-reduce-motion="on"] .press-row:active,
+html[data-reduce-motion="on"] .press-fab:active,
+html.reduce-motion [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active,
+html[data-reduce-motion="on"] [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
+  transform: none !important;
+  filter: none !important;
+  background-color: inherit !important;
+}
