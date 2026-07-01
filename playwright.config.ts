@@ -162,6 +162,21 @@ export default defineConfig({
       },
     },
     {
+      // E2E chat surface: guard bahwa nomor telepon TIDAK muncul sebagai
+      // fallback identitas — semua permukaan chat memakai `PIN xxxx-xxxx`.
+      // Static source guard selalu jalan; blok runtime (buka `/chat`,
+      // dialog "Chat baru", buka DM & kirim pesan) self-skip bila
+      // storageState kosong.
+      name: "chat-pin-mcm-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
