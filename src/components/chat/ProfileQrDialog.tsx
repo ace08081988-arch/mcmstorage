@@ -18,18 +18,53 @@ type Props = {
 /**
  * Bangun payload vCard 3.0 supaya pemindai (kamera bawaan HP) langsung
  * menawarkan "Simpan kontak" alih-alih membuka URL asing.
+ *
+ * Untuk memicu tindakan telepon/email dari QR (bukan cuma teks), setiap
+ * TEL/EMAIL ditulis juga sebagai baris URL tel:/mailto: dan sebagai
+ * VALUE=uri (dikenali vCard 4-aware scanner). Baris klasik tetap ada
+ * untuk kompatibilitas iOS/Android bawaan.
  */
+export function normalizePhoneForTel(raw: string): string {
+  const trimmed = raw.trim();
+  const hasPlus = trimmed.startsWith("+");
+  const digits = trimmed.replace(/[^\d]/g, "");
+  if (!digits) return "";
+  return hasPlus ? `+${digits}` : digits;
+}
+
+function isValidEmail(raw: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw.trim());
+}
+
 function buildVCard(name: string, email: string | null, phone: string | null, url: string): string {
   const esc = (s: string) => s.replace(/([,;\\])/g, "\\$1");
-  const lines = [
+  const lines: string[] = [
     "BEGIN:VCARD",
     "VERSION:3.0",
     `FN:${esc(name)}`,
     `N:${esc(name)};;;;`,
   ];
-  if (phone) lines.push(`TEL;TYPE=CELL:${esc(phone)}`);
-  if (email) lines.push(`EMAIL;TYPE=INTERNET:${esc(email)}`);
-  lines.push(`URL:${esc(url)}`);
+
+  const telNumber = phone ? normalizePhoneForTel(phone) : "";
+  if (telNumber) {
+    // Baris klasik — pemindai default Android/iOS menampilkan "Panggil".
+    lines.push(`TEL;TYPE=CELL,VOICE:${esc(telNumber)}`);
+    // vCard 4-style URI (banyak pemindai modern memakainya untuk memicu tel:).
+    lines.push(`TEL;TYPE=CELL,VOICE;VALUE=uri:tel:${esc(telNumber)}`);
+  }
+
+  const emailAddr = email && isValidEmail(email) ? email.trim() : "";
+  if (emailAddr) {
+    lines.push(`EMAIL;TYPE=INTERNET:${esc(emailAddr)}`);
+    lines.push(`EMAIL;TYPE=INTERNET;VALUE=uri:mailto:${esc(emailAddr)}`);
+  }
+
+  // Baris URL tambahan: kalau pemindai memilih membuka "link", biar link-nya
+  // langsung tindakan yang benar, bukan sekadar teks.
+  if (telNumber) lines.push(`URL;TYPE=tel:tel:${esc(telNumber)}`);
+  if (emailAddr) lines.push(`URL;TYPE=email:mailto:${esc(emailAddr)}`);
+  if (url) lines.push(`URL:${esc(url)}`);
+
   lines.push("END:VCARD");
   return lines.join("\r\n");
 }
