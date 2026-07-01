@@ -527,3 +527,50 @@ export const upsertApkReleaseMeta = createServerFn({ method: "POST" })
       status: computeStatus(data.enabled, data.publish_at),
     };
   });
+
+export const setApkMinSupported = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      variant: ApkVariant;
+      min_version_name: string | null;
+      min_version_code: number | null;
+      reason: string | null;
+    }) => {
+      if (data.variant !== "storage" && data.variant !== "chat") {
+        throw new Error("Varian tidak dikenal");
+      }
+      if (
+        data.min_version_name !== null &&
+        !/^\d+\.\d+(\.\d+){0,2}$/.test(data.min_version_name)
+      ) {
+        throw new Error("min_version_name harus format semver (mis. 1.2.3)");
+      }
+      if (
+        data.min_version_code !== null &&
+        (!Number.isFinite(data.min_version_code) || data.min_version_code < 0)
+      ) {
+        throw new Error("min_version_code harus bilangan bulat ≥ 0");
+      }
+      return data;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { error } = await supabaseAdmin.from("apk_min_supported").upsert(
+      {
+        variant: data.variant,
+        min_version_name: data.min_version_name,
+        min_version_code: data.min_version_code,
+        reason: data.reason,
+        updated_by: context.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "variant" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
+  });
