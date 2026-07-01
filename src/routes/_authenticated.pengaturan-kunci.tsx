@@ -546,6 +546,19 @@ function PengaturanKunci() {
               {bioChecking ? "Memeriksa…" : "Refresh"}
             </button>
           </div>
+          {bioStatus.native && (
+            <div className="mb-2">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-7 px-2 text-[11px]"
+                onClick={handleOpenPerm}
+                disabled={openingPerm}
+              >
+                {openingPerm ? "Membuka…" : "Buka pengaturan izin"}
+              </Button>
+            </div>
+          )}
           <ul className="grid grid-cols-1 gap-1 text-[11px] sm:grid-cols-2">
             <StatusRow
               label="Platform"
