@@ -670,12 +670,20 @@ function ChatRoomPage() {
             </DropdownMenuItem>
             {meta.data?.kind === "dm" && dmPeer?.peerPhone ? (
               <DropdownMenuItem
-                onSelect={() =>
-                  navigate({
-                    to: "/buku-alamat",
-                    search: { prefill_phone: dmPeer.peerPhone ?? "" },
-                  })
-                }
+                onSelect={() => {
+                  try {
+                    sessionStorage.setItem(
+                      "mcm.buku-alamat.prefill",
+                      JSON.stringify({
+                        phone: dmPeer.peerPhone ?? "",
+                        name: displayedPeerName,
+                      }),
+                    );
+                  } catch {
+                    /* ignore */
+                  }
+                  navigate({ to: "/buku-alamat" });
+                }}
               >
                 <UserPlus className="mr-2 h-4 w-4" /> Tambah ke daftar kontak
               </DropdownMenuItem>
