@@ -1642,26 +1642,50 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // Dipakai di setiap titik akses agar tidak ada properti yang dibaca
   // dari nilai null saat itemId kosong / item terhapus.
   const isWItem = (v: WItem | null): v is WItem => v !== null;
-  const derived = computeBeliDerived({
-    mode,
-    selectedItem,
-    newPackageType: packageType,
-    newPackageSize: packageSize,
-    packageQty,
-    pricePerPackage,
-    priceMode,
-    pricePerBase,
-    inputKarton,
-  });
+  // `derived` — memoized: dep array MENCAKUP semua input yang dipakai
+  // computeBeliDerived. Bila salah satu berubah, ringkasan real-time dan
+  // warnings ikut memperbarui pada render yang sama.
+  const derived = useMemo(
+    () =>
+      computeBeliDerived({
+        mode,
+        selectedItem,
+        newPackageType: packageType,
+        newPackageSize: packageSize,
+        packageQty,
+        pricePerPackage,
+        priceMode,
+        pricePerBase,
+        inputKarton,
+      }),
+    [
+      mode,
+      selectedItem,
+      packageType,
+      packageSize,
+      packageQty,
+      pricePerPackage,
+      priceMode,
+      pricePerBase,
+      inputKarton,
+    ],
+  );
   const { effPackageType, effBaseUnit, effectivePkgSize, kartonActive, pkgQ, price, baseAdded, totalCost } = derived;
   const baseUnit = effBaseUnit;
-  const warnings = computeBeliWarnings({
-    mode,
-    selectedItem,
-    derived,
-    priceMode,
-    inputKarton,
-  }).filter((w) => w.level !== "error"); // error-level sudah ditangani di submit()
+  // `warnings` — memoized: bergantung pada `derived` (identitas stabil dari
+  // useMemo di atas) plus mode/selectedItem/priceMode/inputKarton.
+  // error-level sudah ditangani di submit(), jadi filter di sini.
+  const warnings = useMemo(
+    () =>
+      computeBeliWarnings({
+        mode,
+        selectedItem,
+        derived,
+        priceMode,
+        inputKarton,
+      }).filter((w) => w.level !== "error"),
+    [mode, selectedItem, derived, priceMode, inputKarton],
+  );
 
   // Bila item terpilih bukan botol, mode karton wajib mati agar tidak
   // ×100 dari qty. Bila pindah ke item pcs, harga per-kemasan tidak
@@ -1670,12 +1694,18 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (!isWItem(selectedItem)) return;
     if (selectedItem.package_type !== "botol" && inputKarton) setInputKarton(false);
     if (selectedItem.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
+    // `selectedItem` sudah useMemo(mode, items, itemId) — identitasnya stabil
+    // saat pilihan tidak berubah, jadi effect ini tidak menyala ulang tanpa
+    // sebab dan tidak menyisakan state karton/priceMode dari item sebelumnya.
   }, [selectedItem, inputKarton, priceMode]);
 
   // Kunci/reset state saat pengguna cepat mengganti item atau mode agar
   // sisa state (karton, priceMode, harga, qty, nilai "barang baru") dari
   // pilihan sebelumnya tidak ikut terbawa ke item/mode berikutnya.
-  const resetKey = beliResetKey({ mode, itemId, packageType });
+  const resetKey = useMemo(
+    () => beliResetKey({ mode, itemId, packageType }),
+    [mode, itemId, packageType],
+  );
   const resetKeyRef = useRef<string>(resetKey);
   useEffect(() => {
     if (resetKeyRef.current === resetKey) return;
@@ -1688,13 +1718,18 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     // Karton hanya masuk akal untuk item botol; matikan default.
     setInputKarton(false);
     // priceMode default: "package" untuk item non-pcs, "base" untuk pcs.
+    // Sumber tunggal: pakai `selectedItem` yang sudah tersempit lewat guard,
+    // agar tidak duplikasi `items.find(...)` (rentan drift bila daftar items
+    // di-refetch tepat pada tick yang sama).
     if (mode === "existing") {
-      const it = items.find((i) => i.id === itemId);
-      setPriceMode(it && it.package_type === "pcs" ? "base" : "package");
+      setPriceMode(isWItem(selectedItem) && selectedItem.package_type === "pcs" ? "base" : "package");
     } else {
       setPriceMode(packageType === "pcs" ? "base" : "package");
     }
-  }, [resetKey, mode, itemId, items, packageType]);
+    // resetKey mengenkode (mode, itemId, packageType), sehingga trigger tunggal.
+    // selectedItem dibaca di dalam body dan HARUS ada di dep array agar
+    // pembacaan tidak stale bila resetKey berubah bersamaan dengan refetch items.
+  }, [resetKey, mode, packageType, selectedItem]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
