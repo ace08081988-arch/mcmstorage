@@ -140,3 +140,77 @@ press. Untuk mematikan seluruh sub-tree, cabut scope-nya:
 - `prefers-reduced-motion` aktif tapi skala tetap muncul? Periksa
   `<html>`: pastikan tidak ada CSS override yang men-set `transform` di
   style inline dengan `!important`.
+
+## Checklist implementasi per komponen
+
+Checklist ringkas untuk memasang `data-no-press` secara konsisten. Terapkan
+urut dari atas ke bawah; centang tiap baris saat komponen baru dibuat atau
+di-refactor.
+
+### Radix Dialog / Sheet / AlertDialog / Popover
+
+- [ ] `Dialog.Overlay` → `data-no-press` (WAJIB — punya keyframes fade sendiri).
+- [ ] `Dialog.Content` → `data-no-press` (WAJIB — punya keyframes zoom/slide).
+- [ ] `Dialog.Close` (tombol X + tombol batal) → `data-no-press`.
+- [ ] `Dialog.Trigger` → `data-no-press` **hanya** bila tombol terasa
+      "dobel-animasi" saat modal terbuka; default biarkan ikut press.
+- [ ] Jangan pasang `data-press-scope="on"` di dalam `Dialog.Content`
+      kecuali seluruh isi form memang ingin bereaksi.
+
+### Radix DropdownMenu / Select / ContextMenu
+
+- [ ] `Menu.Content` → `data-no-press` (animasi masuk-keluar sendiri).
+- [ ] `Menu.Item` destruktif (Hapus, Logout) → `data-no-press` supaya
+      highlight `data-highlighted` tidak tabrakan dengan skala.
+- [ ] `Menu.Item` biasa → biarkan default (ikut press).
+- [ ] `Select.Trigger` → biarkan default; opt-out hanya bila dibungkus
+      `motion.div`.
+
+### shadcn `Button` di dalam `motion.div` (Framer Motion)
+
+- [ ] `motion.div` yang punya `whileTap` / `whileHover` scale → child
+      `Button` **wajib** `data-no-press` supaya skala tidak ditumpuk.
+- [ ] `motion.button` langsung (tanpa wrapper) → `data-no-press` di
+      elemen `motion.button` itu sendiri.
+- [ ] `motion.div` tanpa `whileTap` → tidak perlu opt-out.
+- [ ] Verifikasi cepat: `getComputedStyle(btn).transform` saat ditekan
+      harus menunjukkan **satu** matrix, bukan dua transform bertumpuk.
+
+### Sortable / drag handle (`@dnd-kit`, `react-sortable`, dll.)
+
+- [ ] Elemen yang menerima `{...listeners}` / `{...attributes}` →
+      `data-no-press` (skala saat drag = jitter + offset pointer salah).
+- [ ] Container item yang men-transform saat drag (`transform: CSS.Transform.toString(...)`)
+      → `data-no-press` di root item.
+- [ ] Tombol aksi **di dalam** item (edit, hapus) → biarkan default;
+      hanya handle-nya yang opt-out.
+- [ ] Untuk canvas sortable kompleks, cabut scope: bungkus dengan
+      `<div data-press-scope="off">` sekali saja.
+
+### Snippet template
+
+```tsx
+// Radix Dialog
+<Dialog.Overlay data-no-press />
+<Dialog.Content data-no-press>
+  <Dialog.Close data-no-press>×</Dialog.Close>
+</Dialog.Content>
+
+// DropdownMenu destruktif
+<DropdownMenu.Content data-no-press>
+  <DropdownMenu.Item data-no-press onSelect={onDelete}>Hapus</DropdownMenu.Item>
+</DropdownMenu.Content>
+
+// Button dalam motion.div dengan whileTap
+<motion.div whileTap={{ scale: 0.94 }}>
+  <Button data-no-press>Kirim</Button>
+</motion.div>
+
+// Sortable handle
+<li ref={setNodeRef} style={style} data-no-press>
+  <button {...listeners} {...attributes} data-no-press aria-label="Geser">
+    <GripVertical />
+  </button>
+  <Button size="sm">Edit</Button>  {/* tetap ikut press */}
+</li>
+```
