@@ -1,0 +1,110 @@
+name: Integration — messages_check & message_delete_for_all
+
+# Regression guard: setiap perubahan pada constraint messages_check atau RPC
+# message_delete_for_all (baik lewat fixture snapshot maupun migrasi baru di
+# supabase/migrations/**) harus lulus semua integration test. Workflow ini
+# menjalankan `bunx vitest run tests/integration` supaya regresi
+# 400/23514 pada soft-delete pesan langsung ketahuan di PR/push.
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "tests/fixtures/message_delete_for_all.sql"
+      - "tests/integration/message-delete-for-all-sql.test.ts"
+      - "tests/integration/**"
+      - "supabase/migrations/**"
+      - ".github/workflows/messages-delete-integration.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "tests/fixtures/message_delete_for_all.sql"
+      - "tests/integration/message-delete-for-all-sql.test.ts"
+      - "tests/integration/**"
+      - "supabase/migrations/**"
+      - ".github/workflows/messages-delete-integration.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: messages-delete-integration-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  detect:
+    name: Detect messages_check / message_delete_for_all changes
+    runs-on: ubuntu-latest
+    outputs:
+      hit: ${{ steps.grep.outputs.hit }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Cari keyword di file yang berubah
+        id: grep
+        run: |
+          set -euo pipefail
+          if [ "${{ github.event_name }}" = "pull_request" ]; then
+            BASE="${{ github.event.pull_request.base.sha }}"
+            HEAD="${{ github.event.pull_request.head.sha }}"
+          else
+            BASE="${{ github.event.before }}"
+            HEAD="${{ github.sha }}"
+          fi
+          # Fallback: kalau BASE kosong/invalid (mis. first push), pakai HEAD~1.
+          if [ -z "$BASE" ] || ! git cat-file -e "$BASE" 2>/dev/null; then
+            BASE="$(git rev-parse HEAD~1 2>/dev/null || echo "")"
+          fi
+          if [ -z "$BASE" ]; then
+            CHANGED="$(git ls-files 'supabase/migrations/*.sql' 'tests/**')"
+          else
+            CHANGED="$(git diff --name-only "$BASE" "$HEAD" -- 'supabase/migrations/*.sql' 'tests/**' || true)"
+          fi
+          echo "Changed files:"
+          echo "$CHANGED"
+          HIT="no"
+          if [ -n "$CHANGED" ]; then
+            if echo "$CHANGED" | xargs -r grep -lE 'messages_check|message_delete_for_all' >/dev/null 2>&1; then
+              HIT="yes"
+            fi
+          fi
+          # Selalu jalankan bila fixture/test khusus berubah, sekalipun keyword tidak ke-grep.
+          if echo "$CHANGED" | grep -qE 'message-delete-for-all-sql\.test\.ts|message_delete_for_all\.sql'; then
+            HIT="yes"
+          fi
+          echo "hit=$HIT" >> "$GITHUB_OUTPUT"
+          echo "hit=$HIT"
+
+  integration:
+    name: Vitest integration (all)
+    needs: detect
+    if: needs.detect.outputs.hit == 'yes' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run all integration tests
+        run: bunx vitest run tests/integration
+
+      - name: Failure summary
+        if: failure()
+        run: |
+          {
+            echo "## Regresi messages_check / message_delete_for_all";
+            echo "";
+            echo "Salah satu integration test gagal setelah perubahan pada constraint";
+            echo "\`messages_check\` atau RPC \`message_delete_for_all\`.";
+            echo "";
+            echo "Cek dulu: apakah constraint masih mengizinkan (body NULL, attachment_path NULL) saat deleted_at terisi?";
+          } >> "$GITHUB_STEP_SUMMARY"
