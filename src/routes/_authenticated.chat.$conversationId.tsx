@@ -147,11 +147,23 @@ function ChatRoomPage() {
   // digabung jadi satu toast ringkas agar tidak terasa spam.
   useEffect(() => {
     const COALESCE_MS = 500;
+    // Rate-limit: setelah satu toast tampil, tahan toast berikutnya sampai
+    // cooldown ini lewat. Perubahan yang masuk selama cooldown tetap dibuffer
+    // dan ditampilkan sebagai satu toast gabungan begitu cooldown berakhir.
+    const RATE_LIMIT_MS = 4000;
     let buffer: string[] = [];
     let timer: ReturnType<typeof setTimeout> | null = null;
+    let lastShownAt = 0;
     const flush = () => {
       timer = null;
       if (!buffer.length) return;
+      const now = Date.now();
+      const wait = lastShownAt + RATE_LIMIT_MS - now;
+      if (wait > 0) {
+        // Masih dalam cooldown — jadwalkan ulang, biarkan buffer terus tumbuh.
+        timer = setTimeout(flush, wait);
+        return;
+      }
       // Dedupe berurutan (mis. dua kali "disematkan") sambil pertahankan urutan
       const seen = new Set<string>();
       const uniq = buffer.filter((c) => (seen.has(c) ? false : (seen.add(c), true)));
@@ -161,6 +173,7 @@ function ChatRoomPage() {
           ? uniq.join(", ")
           : `${uniq.length} perubahan (${uniq.slice(0, 2).join(", ")}, …)`;
       toast.success(`Disinkronkan dari perangkat lain: ${msg}`);
+      lastShownAt = now;
     };
     const onRemote = (e: Event) => {
       const d = (e as CustomEvent).detail as { cid?: string; changes?: string[] } | undefined;
@@ -168,8 +181,9 @@ function ChatRoomPage() {
       const changes = d.changes ?? [];
       if (!changes.length) return;
       buffer.push(...changes);
-      if (timer) clearTimeout(timer);
-      timer = setTimeout(flush, COALESCE_MS);
+      // Jangan reset timer yang sudah menunggu cooldown — cukup pastikan
+      // ada satu timer aktif untuk flush berikutnya.
+      if (!timer) timer = setTimeout(flush, COALESCE_MS);
     };
     window.addEventListener("mcm:conv-prefs-remote", onRemote);
     return () => {
