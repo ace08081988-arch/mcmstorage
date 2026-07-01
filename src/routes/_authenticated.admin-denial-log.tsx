@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useQuery } from "@tanstack/react-query";
-import { useMemo, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -16,6 +16,7 @@ import {
 import { ChevronLeft, RefreshCw, Search, ShieldAlert, X } from "lucide-react";
 import { listAdminDenialEvents } from "@/lib/admin-denial-log.functions";
 import { useAdminStatus } from "@/hooks/use-is-admin";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/_authenticated/admin-denial-log")({
   head: () => ({
@@ -54,6 +55,10 @@ function fmtAgo(iso: string | null | undefined) {
 function AdminDenialLogPage() {
   const { isAdmin, isCheckingAdmin } = useAdminStatus();
   const fetchLog = useServerFn(listAdminDenialEvents);
+  const queryClient = useQueryClient();
+  const [liveOn, setLiveOn] = useState(false);
+  const lastLiveAtRef = useRef<number | null>(null);
+  const [liveTick, setLiveTick] = useState(0);
 
   const [fnFilter, setFnFilter] = useState<string>(ANY_FN);
   const [userIdFilter, setUserIdFilter] = useState<string>("");
@@ -76,9 +81,34 @@ function AdminDenialLogPage() {
         },
       }),
     enabled: isAdmin,
-    refetchInterval: 15_000,
+    refetchInterval: liveOn ? false : 15_000,
     staleTime: 5_000,
   });
+
+  // Real-time: subscribe ke INSERT admin_denial_events dan invalidasi
+  // seluruh query dashboard sehingga baris baru langsung muncul tanpa
+  // refresh manual (RLS admin-only tetap yang menjamin akses).
+  useEffect(() => {
+    if (!isAdmin) return;
+    const channel = supabase
+      .channel("admin-denial-events")
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "admin_denial_events" },
+        () => {
+          lastLiveAtRef.current = Date.now();
+          setLiveTick((n) => n + 1);
+          queryClient.invalidateQueries({ queryKey: ["admin-denial-log"] });
+        },
+      )
+      .subscribe((status) => {
+        setLiveOn(status === "SUBSCRIBED");
+      });
+    return () => {
+      supabase.removeChannel(channel);
+      setLiveOn(false);
+    };
+  }, [isAdmin, queryClient]);
 
   const rows = q.data?.rows ?? [];
   const total = q.data?.total ?? 0;
@@ -232,7 +262,29 @@ function AdminDenialLogPage() {
                   <span className="ml-2">Bersihkan</span>
                 </Button>
                 <div className="ml-auto text-xs text-muted-foreground">
-                  {total} baris · diperbarui {fmtAgo(q.data?.fetchedAt)}
+                  <span
+                    className={`mr-2 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-snug ${
+                      liveOn
+                        ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400"
+                        : "bg-muted text-muted-foreground"
+                    }`}
+                    title={
+                      liveOn
+                        ? "Menerima update real-time"
+                        : "Real-time nonaktif — polling 15 dtk"
+                    }
+                  >
+                    <span
+                      className={`h-1.5 w-1.5 rounded-full ${
+                        liveOn ? "bg-emerald-500 animate-pulse" : "bg-muted-foreground/60"
+                      }`}
+                    />
+                    {liveOn ? "Live" : "Polling"}
+                  </span>
+                  {total} baris · diperbarui{" "}
+                  {lastLiveAtRef.current && liveTick > 0
+                    ? fmtAgo(new Date(lastLiveAtRef.current).toISOString())
+                    : fmtAgo(q.data?.fetchedAt)}
                 </div>
               </div>
             </CardContent>
