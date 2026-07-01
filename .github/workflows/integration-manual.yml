@@ -1,0 +1,66 @@
+name: Integration — manual full run
+
+# Jalankan seluruh tests/integration secara manual dari tab Actions
+# (Run workflow) untuk verifikasi regresi menyeluruh sebelum merge.
+# Semua shard dieksekusi paralel; job rollup memberi status akhir.
+
+on:
+  workflow_dispatch:
+    inputs:
+      shards:
+        description: "Jumlah shard paralel (1 = single runner)"
+        required: false
+        default: "4"
+
+concurrency:
+  group: integration-manual-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  integration:
+    name: Vitest integration (shard ${{ matrix.shard }}/4)
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3, 4]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run all integration tests (shard ${{ matrix.shard }}/4)
+        run: bunx vitest run tests/integration --shard=${{ matrix.shard }}/4
+
+      - name: Failure summary
+        if: failure()
+        run: |
+          {
+            echo "## ❌ Integration tests gagal (manual run)";
+            echo "";
+            echo "- Shard: \`${{ matrix.shard }}/4\`";
+            echo "- Commit: \`${GITHUB_SHA::7}\`";
+            echo "- Run: ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/actions/runs/${GITHUB_RUN_ID}";
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  rollup:
+    name: Vitest integration (rollup)
+    needs: integration
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any shard failed
+        run: |
+          if [ "${{ needs.integration.result }}" != "success" ]; then
+            echo "Salah satu shard gagal: ${{ needs.integration.result }}" >&2
+            exit 1
+          fi
+          echo "Semua shard lulus ✅" >> "$GITHUB_STEP_SUMMARY"
