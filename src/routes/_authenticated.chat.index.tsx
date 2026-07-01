@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
-  MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff,
+  MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check, Camera,
 } from "lucide-react";
 
@@ -9,6 +9,7 @@ import {
   useConversations, useChatSearch, usePinConversation, useArchiveConversation,
   useMuteConversation, useChatHeartbeat,
 } from "@/lib/chat";
+import { usePendingIncomingCount } from "@/lib/friend-requests";
 import { NewDmDialog } from "@/components/chat/NewDmDialog";
 import { NewGroupDialog } from "@/components/chat/NewGroupDialog";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ function timeShort(iso: string | null): string {
 function ChatListPage() {
   useChatHeartbeat();
   const { data: conversations, isLoading, isError, error, isFetching, refetch } = useConversations();
+  const pendingRequests = usePendingIncomingCount();
   const [q, setQ] = useState("");
   const search = useChatSearch(q);
   const navigate = useNavigate();
@@ -199,6 +201,29 @@ function ChatListPage() {
           <span className="wa-chip"><span className="inline-block h-2 w-2 rounded-full bg-rose-500" />Arsip {archived.length ? archived.length : ""}</span>
           <span className="wa-chip">Belum dibaca</span>
         </div>
+      ) : null}
+
+      {pendingRequests > 0 ? (
+        <Link
+          to={"/kontak/permintaan" as never}
+          className="mt-2 flex items-center gap-3 rounded-2xl border border-primary/30 bg-primary/5 px-3 py-2 text-sm hover:bg-primary/10"
+          aria-label="Buka permintaan pertemanan"
+        >
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-primary/15 text-primary">
+            <UserPlus className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="truncate font-medium">
+              {pendingRequests} permintaan pertemanan baru
+            </div>
+            <div className="truncate text-xs text-muted-foreground">
+              Terima dulu supaya bisa chat & panggilan.
+            </div>
+          </div>
+          <span className="inline-flex items-center rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+            {pendingRequests}
+          </span>
+        </Link>
       ) : null}
 
       {q.trim().length >= 2 ? (

@@ -1,66 +1,65 @@
-# Fungsikan semua fitur Chat
+# Permintaan pertemanan (friend request) sebelum chat & call
 
-Cakupan besar. Saya pecah jadi 4 langkah, dikerjakan berurutan supaya bisa diverifikasi satu-per-satu. Tiap langkah selesai baru lanjut yang berikutnya.
+Saat ini invite via PIN langsung menyimpan kontak dan DM bisa dibuka. Aturan baru: setelah invite, sisi lawan harus **menerima** permintaan dulu. Sebelum diterima → tidak bisa chat, voice, atau video call.
 
-## 1. Root-cause "Gagal hapus pesan" (prioritas)
+## Model data
 
-Symptom: setiap kali tombol Hapus ditekan → toast "Gagal menghapus pesan". RPC `message_hide_for_me` / `message_delete_for_all` sebenarnya ada dan GRANT + RLS di `message_hidden` sudah benar (sudah saya verifikasi via DB). Jadi kegagalan ada di sisi client atau kondisi runtime.
+Tabel baru `public.friend_requests`:
+- `from_user` (uuid, pengundang)
+- `to_user` (uuid, target PIN)
+- `status`: `pending` | `accepted` | `rejected` | `cancelled`
+- `responded_at` (nullable)
+- unik per pasangan arah `(from_user, to_user)` supaya tidak double-request
 
-Yang akan saya periksa & perbaiki:
-- Reproduksi via Playwright headless: login → buka `/chat/<id>` → long-press pesan → tekan "Hapus untuk saya" — capture `network` request ke `rpc/message_hide_for_me` beserta response body & console error persis.
-- Kalau server error → perbaiki RPC/RLS pada migration.
-- Kalau client error (mis. `scheduleUndo` men-commit lebih dari sekali, `optimisticDeleteMessages` throw, atau `logChatDelete` throw sebelum RPC) → perbaiki di `src/lib/chat.ts` / `_authenticated.chat.$conversationId.tsx`.
-- Tambahkan E2E regresi `tests/e2e/chat-delete-happy-path.spec.ts` supaya bug ini tidak balik.
+RLS: kedua pihak boleh SELECT baris terkait dirinya; hanya `to_user` yang boleh UPDATE `status`; hanya `from_user` yang boleh cancel/hapus.
 
-## 2. Audit menyeluruh tombol/menu di `/chat`
+## RPC
 
-Iterasi semua control di halaman chat & bubble message. Untuk tiap yang tidak ada handler / handler no-op, saya isi kontrak fungsionalnya:
+- `send_friend_request(_invite_code)` — pengganti perilaku "add + auto-connect" pada `add_contact_by_invite_code`. Membuat baris `pending`, atau kembalikan status baris eksisting (idempoten). Tidak lagi otomatis membuat address_book "accepted".
+- `respond_friend_request(_request_id, _accept boolean)` — hanya boleh untuk `to_user`. Kalau accept: set `accepted`, buat entri `address_book` dua arah, boleh buat conversation DM.
+- `cancel_friend_request(_request_id)` — hanya `from_user`, ubah ke `cancelled`.
+- `list_friend_requests(_direction)` — `incoming` / `outgoing` / `all`, hanya pending untuk badge.
 
-| Kontrol | Kontrak |
-| --- | --- |
-| Bubble long-press: Balas | Set `replyTo` state → composer tampil quote → kirim isi `reply_to` |
-| Bubble long-press: Forward | Dialog pilih conversation → panggil `sendMessage` per target |
-| Bubble long-press: Salin | `navigator.clipboard.writeText(body)` + toast |
-| Bubble long-press: Info | Buka `MessageInfoDialog` (sudah ada, cek wiring) |
-| Bubble long-press: Reaksi emoji | `message_reactions` upsert + realtime |
-| Toolbar bulk: Hapus / Forward / Salin | Sama seperti single, versi array |
-| Header: Cari di percakapan | Filter input + highlight |
-| Composer: attach foto/dokumen | Upload ke bucket `chat-attachments` + preview thumb |
-| Composer: sticker picker | Buka dialog (sudah ada di `StickerPickerDialog`) → kirim sebagai attachment |
+## Gate chat & call
 
-Yang sudah bekerja saya biarkan; yang no-op/rusak saya kabelkan ke logic yang sudah ada.
+- `start_dm` / `useStartDm`: tolak dengan pesan "Belum berteman — kirim permintaan dulu" bila belum ada `accepted` di kedua arah.
+- Tombol Panggilan suara / video di header DM: disabled + tooltip yang sama saat belum accepted (guard di UI + guard di RPC signaling).
+- Halaman kontak: badge "Menunggu diterima" untuk outgoing pending; "Permintaan masuk" untuk incoming pending.
 
-## 3. Panggilan suara + video (WebRTC)
+## UI
 
-Skema kecil, minimal viable, mengikuti rencana yang sudah disepakati sebelumnya:
+Rute baru `/kontak/permintaan`:
+- Tab **Masuk** — daftar `incoming` pending dengan tombol *Terima* / *Tolak*.
+- Tab **Terkirim** — daftar `outgoing` pending dengan tombol *Batalkan*.
+- Badge angka di sidebar item "Kontak" untuk incoming pending.
 
-- Migration: tabel `chat_calls (id, conversation_id, caller_id, callee_id, kind text 'audio'|'video', status text 'ringing'|'answered'|'declined'|'missed'|'ended', started_at, ended_at, duration_s)` + RLS scoped ke member percakapan + ADD ke `supabase_realtime`.
-- Signaling: Supabase Realtime broadcast channel `call:{conversationId}` untuk offer/answer/ice/hangup. STUN publik Google, TURN opsional nanti.
-- UI:
-  - Tombol 📞 & 🎥 di header `_authenticated.chat.$conversationId.tsx`.
-  - Overlay incoming-call global di `__root.tsx` (subscribe user-scoped channel `call-invite:{uid}`).
-  - Route aktif `src/routes/_authenticated.call.$callId.tsx` (mute/kamera/hangup).
-- Native permission: pakai `getUserMedia` biasa; di Capacitor Android manifest sudah punya izin RECORD_AUDIO/CAMERA.
-- Riwayat: system-bubble di chat ("📞 Panggilan suara · 1m 23s") saat status `ended`/`missed`.
+Dialog "Chat baru" & flow undang via PIN:
+- Setelah kirim invite: toast "Permintaan terkirim — menunggu diterima".
+- Kalau target sudah accepted sebelumnya → langsung buka DM (backward-compatible).
+- Kalau ada pending incoming dari target ini → shortcut "Terima permintaan" alih-alih tombol Undang.
 
-## 4. Stiker & lampiran, reaksi/balas/forward/salin
+## Migrasi data eksisting
 
-Digabung dengan langkah 2 karena banyak yang sudah ada helper-nya (StickerPickerDialog, sticker-library, share-chat). Saya hanya perlu:
-- Pastikan tombol sticker di composer memanggil `StickerPickerDialog` dan pilihan stiker menghasilkan message attachment.
-- Pastikan attach foto/dokumen tampil di bubble (bukan cuma link).
-- Menu long-press konsisten di single & bulk.
+Semua pasangan `address_book` yang saat ini sudah linked → seed baris `friend_requests` dengan `status='accepted'` supaya user lama tidak kehilangan akses chat setelah rilis.
 
-## Verifikasi tiap langkah
+## File yang tersentuh (ringkas)
 
-- Langkah 1: Playwright login → hapus 1 pesan → refresh → pesan tetap hilang. Toast sukses, bukan gagal.
-- Langkah 2: Manual walkthrough via Playwright pada tiap tombol; screenshot state before/after.
-- Langkah 3: Dua tab Playwright (caller & callee) — assert `pc.iceConnectionState === "connected"` di kedua sisi lalu hangup.
-- Langkah 4: Kirim stiker & foto lalu assert bubble merender image.
+```text
+supabase migration: friend_requests + RPC + seed accepted
+src/lib/chat.ts                              # start_dm gate + tipe
+src/lib/friends.functions.ts (baru)          # server fn send/respond/list/cancel
+src/components/chat/NewDmDialog.tsx          # copy & aksi
+src/components/chat/CallButtons.tsx          # disable saat belum accepted
+src/routes/_authenticated.kontak.permintaan.tsx (baru)
+src/routes/_authenticated.chat.$conversationId.tsx  # guard header call buttons
+src/components/AppSidebar.tsx                # badge pending
+tests/e2e/friend-request-gate.spec.ts (baru) # invite → belum bisa chat → accept → bisa chat
+```
 
-## Pertanyaan konfirmasi
+## Verifikasi
 
-Fitur langkah 3 (panggilan) berat & bikin migration tabel baru. Sebelum saya mulai, boleh saya:
-1) Kerjakan **langkah 1 dulu** (root-cause + fix delete) dan tunjukkan hasil sebelum lanjut audit + panggilan? Ini paling aman karena delete-pesan adalah blocker sekarang.
-2) Atau saya kerjakan semua langsung dalam satu batch besar (lebih lama, lebih banyak perubahan sekaligus).
+- Migrasi seed jalan → user existing tetap bisa chat tanpa aksi apa pun.
+- E2E: dua akun test A & B — A invite B, B belum terima → A tidak bisa buka DM (RPC 403). B terima → A langsung dapat DM aktif, tombol call enabled.
+- Integration test RLS `friend_requests`: user lain tidak bisa SELECT/UPDATE baris orang lain.
 
-Balas "1" atau "2" — default saya "1" kalau tidak dijawab.
+Setuju dengan arah ini? Kalau ada bagian yang ingin diubah (mis. rejected boleh re-request setelah X jam, atau invite via PIN otomatis auto-accept dari sisi pengundang saja), sampaikan sekarang sebelum saya mulai migrasi.

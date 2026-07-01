@@ -80,7 +80,17 @@ export function useStartDm() {
   return useMutation({
     mutationFn: async (partnerId: string) => {
       const { data, error } = await supabase.rpc("start_dm", { _partner: partnerId });
-      if (error) throw error;
+      if (error) {
+        // `can_chat` sekarang mengharuskan pertemanan diterima dulu.
+        if (/not_allowed|forbidden|permission/i.test(error.message)) {
+          const err = new Error(
+            "Belum bisa chat — permintaan pertemanan belum diterima. Silakan tunggu konfirmasi teman.",
+          );
+          (err as Error & { code?: string }).code = "friend_gate";
+          throw err;
+        }
+        throw error;
+      }
       return data as string;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["chat", "conversations"] }),

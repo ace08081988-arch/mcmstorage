@@ -64,6 +64,7 @@ import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.v
 import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
+import { Route as AuthenticatedKontakPermintaanRouteImport } from './routes/_authenticated.kontak.permintaan'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -367,6 +368,12 @@ const ApiPublicAiPingRoute = ApiPublicAiPingRouteImport.update({
   path: '/api/public/ai-ping',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedKontakPermintaanRoute =
+  AuthenticatedKontakPermintaanRouteImport.update({
+    id: '/permintaan',
+    path: '/permintaan',
+    getParentRoute: () => AuthenticatedKontakRoute,
+  } as any)
 const AuthenticatedChatConversationIdRoute =
   AuthenticatedChatConversationIdRouteImport.update({
     id: '/$conversationId',
@@ -433,7 +440,7 @@ export interface FileRoutesByFullPath {
   '/email-queue': typeof AuthenticatedEmailQueueRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
-  '/kontak': typeof AuthenticatedKontakRoute
+  '/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -457,6 +464,7 @@ export interface FileRoutesByFullPath {
   '/t/$token': typeof TTokenRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -494,7 +502,7 @@ export interface FileRoutesByTo {
   '/email-queue': typeof AuthenticatedEmailQueueRoute
   '/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
-  '/kontak': typeof AuthenticatedKontakRoute
+  '/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -519,6 +527,7 @@ export interface FileRoutesByTo {
   '/': typeof AuthenticatedIndexRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -559,7 +568,7 @@ export interface FileRoutesById {
   '/_authenticated/email-queue': typeof AuthenticatedEmailQueueRoute
   '/_authenticated/gudang': typeof AuthenticatedGudangRouteWithChildren
   '/_authenticated/hutang-piutang': typeof AuthenticatedHutangPiutangRoute
-  '/_authenticated/kontak': typeof AuthenticatedKontakRoute
+  '/_authenticated/kontak': typeof AuthenticatedKontakRouteWithChildren
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
@@ -584,6 +593,7 @@ export interface FileRoutesById {
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/_authenticated/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -649,6 +659,7 @@ export interface FileRouteTypes {
     | '/t/$token'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
+    | '/kontak/permintaan'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
@@ -711,6 +722,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
+    | '/kontak/permintaan'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
@@ -775,6 +787,7 @@ export interface FileRouteTypes {
     | '/_authenticated/'
     | '/_authenticated/admin/worker-portal'
     | '/_authenticated/chat/$conversationId'
+    | '/_authenticated/kontak/permintaan'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
@@ -1205,6 +1218,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAiPingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/kontak/permintaan': {
+      id: '/_authenticated/kontak/permintaan'
+      path: '/permintaan'
+      fullPath: '/kontak/permintaan'
+      preLoaderRoute: typeof AuthenticatedKontakPermintaanRouteImport
+      parentRoute: typeof AuthenticatedKontakRoute
+    }
     '/_authenticated/chat/$conversationId': {
       id: '/_authenticated/chat/$conversationId'
       path: '/$conversationId'
@@ -1297,6 +1317,17 @@ const AuthenticatedGudangRouteChildren: AuthenticatedGudangRouteChildren = {
 const AuthenticatedGudangRouteWithChildren =
   AuthenticatedGudangRoute._addFileChildren(AuthenticatedGudangRouteChildren)
 
+interface AuthenticatedKontakRouteChildren {
+  AuthenticatedKontakPermintaanRoute: typeof AuthenticatedKontakPermintaanRoute
+}
+
+const AuthenticatedKontakRouteChildren: AuthenticatedKontakRouteChildren = {
+  AuthenticatedKontakPermintaanRoute: AuthenticatedKontakPermintaanRoute,
+}
+
+const AuthenticatedKontakRouteWithChildren =
+  AuthenticatedKontakRoute._addFileChildren(AuthenticatedKontakRouteChildren)
+
 interface AuthenticatedRouteChildren {
   AuthenticatedAdminDenialLogRoute: typeof AuthenticatedAdminDenialLogRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
@@ -1311,7 +1342,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedEmailQueueRoute: typeof AuthenticatedEmailQueueRoute
   AuthenticatedGudangRoute: typeof AuthenticatedGudangRouteWithChildren
   AuthenticatedHutangPiutangRoute: typeof AuthenticatedHutangPiutangRoute
-  AuthenticatedKontakRoute: typeof AuthenticatedKontakRoute
+  AuthenticatedKontakRoute: typeof AuthenticatedKontakRouteWithChildren
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
@@ -1348,7 +1379,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedEmailQueueRoute: AuthenticatedEmailQueueRoute,
   AuthenticatedGudangRoute: AuthenticatedGudangRouteWithChildren,
   AuthenticatedHutangPiutangRoute: AuthenticatedHutangPiutangRoute,
-  AuthenticatedKontakRoute: AuthenticatedKontakRoute,
+  AuthenticatedKontakRoute: AuthenticatedKontakRouteWithChildren,
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
