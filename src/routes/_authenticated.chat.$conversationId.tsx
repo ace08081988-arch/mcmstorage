@@ -11,6 +11,8 @@ import {
   Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
   History as HistoryIcon,
   Sticker as StickerIcon,
+  Search as SearchIcon, Image as ImageIcon, Link as LinkIcon2, BellOff, BellRing,
+  Pin as PinIcon, Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -67,6 +69,12 @@ import { SaveAsNoteDialog } from "@/components/chat/SaveAsNoteDialog";
 import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog";
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { StickerPickerDialog, parseStickerFromBody } from "@/components/chat/StickerPickerDialog";
+import {
+  ConversationSearchDialog,
+  MediaLinksDialog,
+  MuteDialog,
+} from "@/components/chat/ConversationExtrasDialogs";
+import { useConvPrefs, setConvPrefs } from "@/lib/conversation-prefs";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import {
   DELETED_PLACEHOLDER,
