@@ -491,6 +491,17 @@ function ExampleCard({ example }: { example: Example }) {
           {traces && (
             <Button
               size="sm"
+              variant={highlightsOn ? "secondary" : "outline"}
+              data-testid={`pa-demo-${example.id}-toggle-highlight`}
+              aria-pressed={highlightsOn}
+              onClick={toggleHighlights}
+            >
+              Sorotan ancestor: {highlightsOn ? "ON" : "OFF"}
+            </Button>
+          )}
+          {traces && (
+            <Button
+              size="sm"
               variant="ghost"
               onClick={() => {
                 clearHighlights();
