@@ -196,3 +196,41 @@ export async function authenticateBiometric(reason: string): Promise<boolean> {
     return false;
   }
 }
+
+// Coba buka layar pendaftaran sidik jari di Pengaturan Sistem (Android/iOS).
+// Mengembalikan `true` bila salah satu intent berhasil dibuka.
+export async function openBiometricEnrollment(): Promise<boolean> {
+  if (!isNative()) return false;
+  let AppLauncher: typeof import("@capacitor/app-launcher").AppLauncher | null = null;
+  try {
+    AppLauncher = (await import("@capacitor/app-launcher")).AppLauncher;
+  } catch {
+    return false;
+  }
+  // Urutan intent Android: khusus enroll biometrik → fingerprint → security → settings umum.
+  // iOS: skema "app-settings:" langsung ke pengaturan aplikasi.
+  const candidates = [
+    "intent:#Intent;action=android.settings.BIOMETRIC_ENROLL;end",
+    "intent:#Intent;action=android.settings.FINGERPRINT_ENROLL;end",
+    "intent:#Intent;action=android.settings.SECURITY_SETTINGS;end",
+    "intent:#Intent;action=android.settings.SETTINGS;end",
+    "app-settings:",
+  ];
+  for (const url of candidates) {
+    try {
+      const can = await AppLauncher.canOpenUrl({ url });
+      if (!can.value) continue;
+      const res = await AppLauncher.openUrl({ url });
+      if (res.completed) return true;
+    } catch {
+      // coba kandidat berikutnya
+    }
+  }
+  // Fallback terakhir: paksa buka Settings umum tanpa cek.
+  try {
+    await AppLauncher.openUrl({ url: "intent:#Intent;action=android.settings.SETTINGS;end" });
+    return true;
+  } catch {
+    return false;
+  }
+}
