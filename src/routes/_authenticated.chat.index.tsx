@@ -1,7 +1,7 @@
 import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
-  MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff,
+  MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check, Camera,
 } from "lucide-react";
 
@@ -9,6 +9,7 @@ import {
   useConversations, useChatSearch, usePinConversation, useArchiveConversation,
   useMuteConversation, useChatHeartbeat,
 } from "@/lib/chat";
+import { usePendingIncomingCount } from "@/lib/friend-requests";
 import { NewDmDialog } from "@/components/chat/NewDmDialog";
 import { NewGroupDialog } from "@/components/chat/NewGroupDialog";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ function timeShort(iso: string | null): string {
 function ChatListPage() {
   useChatHeartbeat();
   const { data: conversations, isLoading, isError, error, isFetching, refetch } = useConversations();
+  const pendingRequests = usePendingIncomingCount();
   const [q, setQ] = useState("");
   const search = useChatSearch(q);
   const navigate = useNavigate();
