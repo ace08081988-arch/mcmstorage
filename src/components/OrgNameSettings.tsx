@@ -70,6 +70,15 @@ export function OrgNameSettings() {
     toast.success("Dikembalikan ke bawaan");
   };
 
+  const onResetLogoBrand = () => {
+    setOrgLogo("");
+    setOrgBrand("");
+    setBrand("");
+    setHex("#10b981");
+    applyBrandColor();
+    toast.success("Logo & warna direset ke bawaan");
+  };
+
   const ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"] as const;
   const MAX_BYTES = 512 * 1024; // 512 KB
   const MAX_DIM = 1024; // px (raster only)
@@ -286,6 +295,15 @@ export function OrgNameSettings() {
           <p className="text-[11px] text-muted-foreground">
             Menggantikan aksen dari Tampilan. Kosongkan untuk kembali ke tema.
           </p>
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={onResetLogoBrand}
+            className="h-8 gap-1.5 px-2 text-[11px]"
+          >
+            <RotateCcw className="h-3 w-3" /> Reset logo & warna
+          </Button>
         </div>
 
         {/* Pratinjau langsung */}
