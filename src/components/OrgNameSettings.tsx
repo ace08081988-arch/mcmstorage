@@ -70,22 +70,55 @@ export function OrgNameSettings() {
     toast.success("Dikembalikan ke bawaan");
   };
 
+  const ALLOWED_MIME = ["image/png", "image/jpeg", "image/webp", "image/svg+xml"] as const;
+  const MAX_BYTES = 512 * 1024; // 512 KB
+  const MAX_DIM = 1024; // px (raster only)
+
   const onPickFile = (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      toast.error("File harus berupa gambar");
+    const mime = (file.type || "").toLowerCase();
+    if (!ALLOWED_MIME.includes(mime as typeof ALLOWED_MIME[number])) {
+      toast.error("Format harus PNG, JPG, WEBP, atau SVG");
       return;
     }
-    if (file.size > 512 * 1024) {
-      toast.error("Logo maksimal 512 KB");
+    if (file.size === 0) {
+      toast.error("File kosong");
+      return;
+    }
+    if (file.size > MAX_BYTES) {
+      toast.error(`Logo maksimal 512 KB (file Anda ${(file.size / 1024).toFixed(0)} KB)`);
       return;
     }
     const reader = new FileReader();
+    reader.onerror = () => toast.error("Gagal membaca file");
     reader.onload = () => {
       const url = String(reader.result || "");
-      setOrgLogo(url);
-      toast.success("Logo diperbarui");
+      if (!url.startsWith("data:image/")) {
+        toast.error("Isi file bukan gambar valid");
+        return;
+      }
+      // SVG: langsung terima (tidak perlu cek dimensi)
+      if (mime === "image/svg+xml") {
+        setOrgLogo(url);
+        toast.success("Logo diperbarui");
+        return;
+      }
+      // Raster: verifikasi magic bytes lewat decode + batasi dimensi
+      const img = new Image();
+      img.onload = () => {
+        if (img.naturalWidth === 0 || img.naturalHeight === 0) {
+          toast.error("Gambar tidak valid");
+          return;
+        }
+        if (img.naturalWidth > MAX_DIM || img.naturalHeight > MAX_DIM) {
+          toast.error(`Dimensi maksimal ${MAX_DIM}×${MAX_DIM}px (file: ${img.naturalWidth}×${img.naturalHeight})`);
+          return;
+        }
+        setOrgLogo(url);
+        toast.success("Logo diperbarui");
+      };
+      img.onerror = () => toast.error("Gambar rusak atau format tidak dikenali");
+      img.src = url;
     };
-    reader.onerror = () => toast.error("Gagal membaca file");
     reader.readAsDataURL(file);
   };
 
@@ -118,7 +151,7 @@ export function OrgNameSettings() {
               <input
                 ref={fileRef}
                 type="file"
-                accept="image/*"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
                 className="hidden"
                 onChange={(e) => {
                   const f = e.target.files?.[0];
@@ -152,7 +185,7 @@ export function OrgNameSettings() {
             </div>
           </div>
           <p className="text-[11px] text-muted-foreground">
-            PNG/JPG persegi disarankan, maks. 512 KB.
+            PNG, JPG, WEBP, atau SVG. Maks. 512 KB, dimensi ≤ 1024×1024 px. Persegi disarankan.
           </p>
         </div>
 
