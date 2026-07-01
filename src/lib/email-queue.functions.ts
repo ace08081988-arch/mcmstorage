@@ -1,5 +1,6 @@
 import { createServerFn } from '@tanstack/react-start'
 import { requireSupabaseAuth } from '@/integrations/supabase/auth-middleware'
+import { logAdminDenial } from './admin-denial-telemetry'
 import { createHash, randomInt, randomUUID } from 'crypto'
 
 export type EmailQueueHealth = {
@@ -44,6 +45,7 @@ export async function buildEmailQueueStatus(context: any): Promise<EmailQueueSta
   })
   const now = new Date().toISOString()
   if (!isAdmin) {
+    logAdminDenial({ fn: 'email-queue:getEmailQueueStatus', userId })
     return {
       isAdmin: false,
       fetchedAt: now,
@@ -131,7 +133,10 @@ export const resendDeviceOtpByMessage = createServerFn({ method: 'POST' })
       _user_id: userId,
       _role: 'admin',
     })
-    if (!isAdmin) return { ok: false, error: 'Bukan admin' }
+    if (!isAdmin) {
+      logAdminDenial({ fn: 'email-queue:resendDeviceOtpByMessage', userId })
+      return { ok: false, error: 'Bukan admin' }
+    }
 
     const { supabaseAdmin } = await import('@/integrations/supabase/client.server')
 
