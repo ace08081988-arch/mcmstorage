@@ -282,3 +282,45 @@ export async function openBiometricEnrollment(): Promise<boolean> {
     return false;
   }
 }
+
+// Buka halaman detail izin aplikasi (App Info) langsung untuk paket ini.
+// Ini adalah rute yang diperlukan saat izin biometrik ditolak permanen.
+export async function openAppPermissionSettings(
+  packageId = "biz.mcmstorage.app",
+): Promise<boolean> {
+  if (!isNative()) return false;
+  let AppLauncher: typeof import("@capacitor/app-launcher").AppLauncher | null = null;
+  try {
+    AppLauncher = (await import("@capacitor/app-launcher")).AppLauncher;
+  } catch {
+    return false;
+  }
+  const pkg = encodeURIComponent(packageId);
+  // Urutan Android: detail izin app → detail app info → pengaturan biometrik → security → settings umum.
+  // iOS: skema "app-settings:" membuka halaman aplikasi ini di Settings.
+  const candidates = [
+    `intent:#Intent;action=android.settings.APPLICATION_DETAILS_SETTINGS;package=${packageId};S.android.provider.extra.APP_PACKAGE=${packageId};end`,
+    `package:${packageId}`,
+    `intent://${pkg}/#Intent;scheme=package;action=android.settings.APPLICATION_DETAILS_SETTINGS;end`,
+    "intent:#Intent;action=android.settings.BIOMETRIC_ENROLL;end",
+    "intent:#Intent;action=android.settings.SECURITY_SETTINGS;end",
+    "intent:#Intent;action=android.settings.SETTINGS;end",
+    "app-settings:",
+  ];
+  for (const url of candidates) {
+    try {
+      const can = await AppLauncher.canOpenUrl({ url });
+      if (!can.value) continue;
+      const res = await AppLauncher.openUrl({ url });
+      if (res.completed) return true;
+    } catch {
+      // coba kandidat berikutnya
+    }
+  }
+  try {
+    await AppLauncher.openUrl({ url: "intent:#Intent;action=android.settings.SETTINGS;end" });
+    return true;
+  } catch {
+    return false;
+  }
+}
