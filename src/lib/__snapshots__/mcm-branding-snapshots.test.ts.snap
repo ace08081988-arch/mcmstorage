@@ -1,0 +1,16 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`MCM branding — snapshot label chat kunci > daftar percakapan → src/routes/_authenticated.chat.index.tsx 1`] = `[]`;
+
+exports[`MCM branding — snapshot label chat kunci > detail chat → src/routes/_authenticated.chat.$conversationId.tsx 1`] = `[]`;
+
+exports[`MCM branding — snapshot label chat kunci > dialog undang → src/routes/_authenticated.undang.tsx 1`] = `
+[
+  "Tambahkan saya di MCM Chat. PIN: \${formatInviteCode(myCode)}\\n",
+  "Undangan MCM Chat",
+]
+`;
+
+exports[`MCM branding — snapshot label chat kunci > forward (selection toolbar) → src/components/chat/SelectionToolbar.tsx 1`] = `[]`;
+
+exports[`MCM branding — snapshot label chat kunci > kartu kontak → src/components/chat/ProfileQrDialog.tsx 1`] = `[]`;
