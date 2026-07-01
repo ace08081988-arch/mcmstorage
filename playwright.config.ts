@@ -491,5 +491,21 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: DM ke peer tanpa PIN lengkap (invite_code kosong / <4
+      // karakter, tanpa display_name & email, walau kolom phone terisi)
+      // wajib menampilkan placeholder aman ("Kontak" atau alias) di
+      // header dan bebas nomor telp Indonesia mentah di header maupun
+      // transkrip. RPC `get_chat_member_profiles` diintercept & di-
+      // rewrite di runtime untuk memaksa skenario ini.
+      name: "chat-pin-mcm-incomplete-pin-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-incomplete-pin\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
