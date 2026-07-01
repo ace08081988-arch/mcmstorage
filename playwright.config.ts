@@ -660,6 +660,9 @@ export default defineConfig({
         ...devices["Desktop Firefox"],
         viewport: { width: 1280, height: 900 },
         storageState: "tests/visual/.auth/user.json",
+        trace: "on",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
       },
     },
     {
@@ -670,6 +673,9 @@ export default defineConfig({
         ...devices["Desktop Safari"],
         viewport: { width: 1280, height: 900 },
         storageState: "tests/visual/.auth/user.json",
+        trace: "on",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
       },
     },
     {
@@ -842,6 +848,9 @@ export default defineConfig({
         ...devices["Desktop Firefox"],
         viewport: { width: 411, height: 893 },
         storageState: "tests/visual/.auth/user.json",
+        trace: "on",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
       },
     },
     {
@@ -852,6 +861,9 @@ export default defineConfig({
         ...devices["Desktop Safari"],
         viewport: { width: 411, height: 893 },
         storageState: "tests/visual/.auth/user.json",
+        trace: "on",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
       },
     },
     {
@@ -862,6 +874,9 @@ export default defineConfig({
         ...devices["Desktop Firefox"],
         viewport: { width: 411, height: 893 },
         storageState: "tests/visual/.auth/user.json",
+        trace: "on",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
       },
     },
     {
@@ -872,6 +887,9 @@ export default defineConfig({
         ...devices["Desktop Safari"],
         viewport: { width: 411, height: 893 },
         storageState: "tests/visual/.auth/user.json",
+        trace: "on",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
       },
     },
     // ── Lintas-browser: gabungan search-filter + infinite scroll /
@@ -887,6 +905,9 @@ export default defineConfig({
         ...devices["Desktop Firefox"],
         viewport: { width: 411, height: 893 },
         storageState: "tests/visual/.auth/user.json",
+        trace: "on",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
       },
     },
     {
@@ -897,6 +918,9 @@ export default defineConfig({
         ...devices["Desktop Safari"],
         viewport: { width: 411, height: 893 },
         storageState: "tests/visual/.auth/user.json",
+        trace: "on",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
       },
     },
     // ── Alur "scroll list → buka detail baris yang baru dimount →
