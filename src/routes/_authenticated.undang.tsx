@@ -285,7 +285,7 @@ function UndangPage() {
               className="gap-2"
             >
               <UserPlus className="h-4 w-4" />
-              {adding ? "Menambah…" : "Tambah kontak"}
+              {adding ? "Mengirim…" : "Kirim permintaan"}
             </Button>
           </div>
 
