@@ -182,3 +182,57 @@ describe("message_delete_for_all RPC body", () => {
     expect(rpcBody).toMatch(/IF v_m\.deleted_at IS NOT NULL THEN[\s\S]*?RETURN v_m\.attachment_path;[\s\S]*?END IF;/);
   });
 });
+
+describe("message_delete_for_all — idempotensi terhadap pesan yang sudah soft-deleted", () => {
+  // Regresi yang dijaga: caller memanggil RPC dua kali untuk pesan yang sama.
+  // Panggilan kedua TIDAK boleh 400 (23514) messages_check dan TIDAK boleh
+  // RAISE EXCEPTION 'forbidden' / 'not found'. Harus lewat cabang idempoten
+  // dan mengembalikan attachment_path yang tersimpan (biasanya NULL setelah
+  // panggilan pertama) tanpa menyentuh baris lagi.
+  const expr = checkMatch![1];
+
+  it("short-circuit idempoten muncul SEBELUM UPDATE pada aliran fungsi", () => {
+    const idempIdx = rpcBody.search(/IF v_m\.deleted_at IS NOT NULL THEN/);
+    const updIdx = rpcBody.search(/UPDATE public\.messages/);
+    expect(idempIdx).toBeGreaterThan(-1);
+    expect(updIdx).toBeGreaterThan(-1);
+    expect(idempIdx).toBeLessThan(updIdx);
+  });
+
+  it("cabang idempoten tidak RAISE EXCEPTION apa pun (tidak 'forbidden'/'not found')", () => {
+    const branch = rpcBody.match(
+      /IF v_m\.deleted_at IS NOT NULL THEN([\s\S]*?)END IF;/,
+    );
+    expect(branch, "cabang idempoten tidak ditemukan").toBeTruthy();
+    expect(branch![1]).not.toMatch(/RAISE\s+EXCEPTION/i);
+    // Harus mengembalikan attachment_path yang tersimpan apa adanya
+    // (boleh NULL) — bukan melakukan UPDATE ulang.
+    expect(branch![1]).toMatch(/RETURN\s+v_m\.attachment_path;/);
+    expect(branch![1]).not.toMatch(/UPDATE\s+public\.messages/i);
+  });
+
+  it("baris hasil panggilan pertama (body=NULL, attachment=NULL, deleted_at terisi) TETAP lolos messages_check saat RPC dipanggil ulang", () => {
+    // State setelah delete pertama:
+    const after1 = { body: null, attachment_path: null, deleted_at: "2026-07-01T00:00:00Z" };
+    expect(evalCheck(expr, after1)).toBe(true);
+    // Cabang idempoten tidak mengubah kolom apa pun, jadi state setelah
+    // panggilan kedua identik — masih lolos constraint.
+    const after2 = { ...after1 };
+    expect(evalCheck(expr, after2)).toBe(true);
+  });
+
+  it.each([
+    ["attachment tersisa (kasus tidak lazim, tapi mungkin dari data lama)", "arsip/x.jpg"],
+    ["attachment sudah dibersihkan", null],
+  ] as const)(
+    "RPC ulang pada pesan soft-deleted (%s) mengembalikan attachment_path apa adanya tanpa UPDATE",
+    (_label, storedPath) => {
+      // State input: sudah soft-deleted sebelumnya.
+      expect(
+        evalCheck(expr, { body: null, attachment_path: storedPath, deleted_at: "2026-07-01T00:00:00Z" }),
+      ).toBe(true);
+      // Kontrak fungsi: RETURN v_m.attachment_path — apa pun isinya, termasuk NULL.
+      expect(rpcBody).toMatch(/RETURN v_m\.attachment_path;/);
+    },
+  );
+});
