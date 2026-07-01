@@ -1012,7 +1012,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
           </button>
         </PopoverTrigger>
         <PopoverContent align="start" className="w-64 space-y-1 p-2.5 text-[11px]" onClick={stop}>
-          <div className="font-semibold text-foreground">Gagal mengirim ke WhatsApp</div>
+          <div className="font-semibold text-foreground">Gagal kirim via MCM</div>
           <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
           <p className="text-muted-foreground">Tekan tombol WA lagi untuk mencoba ulang.</p>
         </PopoverContent>
@@ -1829,7 +1829,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               type="button"
               onClick={sendWA}
               disabled={sending}
-              aria-label="Kirim ke WhatsApp"
+              aria-label="Kirim via MCM"
               className="ml-auto inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
             >
               <MessageCircle className="h-3 w-3" />
