@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Boxes,
@@ -111,6 +111,7 @@ import {
 export { BOTOL_PER_KARTON, fmtBase, fmtItemPrice, fmtItemQty, fmtQtyDual, rupiah };
 import { computeBeliDerived } from "@/lib/beli-derived";
 import { computeBeliWarnings } from "@/lib/beli-warnings";
+import { beliResetKey } from "@/lib/beli-reset-key";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
@@ -1661,6 +1662,30 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (selectedItem.package_type !== "botol" && inputKarton) setInputKarton(false);
     if (selectedItem.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
   }, [selectedItem, inputKarton, priceMode]);
+
+  // Kunci/reset state saat pengguna cepat mengganti item atau mode agar
+  // sisa state (karton, priceMode, harga, qty, nilai "barang baru") dari
+  // pilihan sebelumnya tidak ikut terbawa ke item/mode berikutnya.
+  const resetKey = beliResetKey({ mode, itemId, packageType });
+  const resetKeyRef = useRef<string>(resetKey);
+  useEffect(() => {
+    if (resetKeyRef.current === resetKey) return;
+    resetKeyRef.current = resetKey;
+
+    // Angka pembelian selalu direset agar tidak terbawa lintas item.
+    setPackageQty("1");
+    setPricePerPackage("");
+    setPricePerBase("");
+    // Karton hanya masuk akal untuk item botol; matikan default.
+    setInputKarton(false);
+    // priceMode default: "package" untuk item non-pcs, "base" untuk pcs.
+    if (mode === "existing") {
+      const it = items.find((i) => i.id === itemId);
+      setPriceMode(it && it.package_type === "pcs" ? "base" : "package");
+    } else {
+      setPriceMode(packageType === "pcs" ? "base" : "package");
+    }
+  }, [resetKey, mode, itemId, items, packageType]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
