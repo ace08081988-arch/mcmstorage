@@ -655,41 +655,43 @@ export function useHideMessageForMe(conversationId: string) {
       if (error) throw error;
     },
     onMutate: async (messageId: string) => {
-      // Optimistically add to the hidden set so the message disappears
-      // immediately, even before the RPC round-trip or the SELECT refetch.
-      await qc.cancelQueries({ queryKey: ["chat", "hidden"] });
-      const prev = qc.getQueryData<Set<string>>(["chat", "hidden"]);
-      const next = new Set(prev ?? []);
-      next.add(messageId);
-      qc.setQueryData<Set<string>>(["chat", "hidden"], next);
+      // Wrap in try/catch: any unexpected exception here would flip the
+      // mutation to error and surface a false "Gagal menghapus pesan" toast
+      // even though the RPC hasn't run yet.
+      try {
+        await qc.cancelQueries({ queryKey: ["chat", "hidden"] });
+        const prev = qc.getQueryData<Set<string>>(["chat", "hidden"]);
+        const next = new Set(prev ?? []);
+        next.add(messageId);
+        qc.setQueryData<Set<string>>(["chat", "hidden"], next);
 
-      // Optimistically shrink the conversation badge if the hidden message
-      // was actually contributing to unread (not mine + newer than last_read).
-      const prevConvs = qc.getQueriesData<ConversationListItem[]>({ queryKey: ["chat", "conversations"] });
-      const msgs = qc.getQueryData<MessageRow[]>(["chat", "messages", conversationId]);
-      const hidden = msgs?.find((m) => m.id === messageId);
-      if (hidden && myId && hidden.sender_id !== myId) {
-        for (const [key, list] of prevConvs) {
-          if (!Array.isArray(list)) continue;
-          const patched = list.map((c) => {
-            if (c.id !== conversationId) return c;
-            const lrMs = c.last_at ? 0 : 0; // fallback; we don't have last_read_at here
-            void lrMs;
-            const nextUnread = Math.max(0, (c.unread ?? 0) - 1);
-            const isLastPreview = hidden.created_at === c.last_at;
-            return {
-              ...c,
-              unread: nextUnread,
-              // Clear preview if the hidden msg was the last one; refetch will backfill.
-              last_body: isLastPreview ? null : c.last_body,
-            };
-          });
-          qc.setQueryData(key, patched);
+        const prevConvs = qc.getQueriesData<ConversationListItem[]>({ queryKey: ["chat", "conversations"] });
+        const msgs = qc.getQueryData<MessageRow[]>(["chat", "messages", conversationId]);
+        const hidden = msgs?.find((m) => m.id === messageId);
+        if (hidden && myId && hidden.sender_id !== myId) {
+          for (const [key, list] of prevConvs) {
+            if (!Array.isArray(list)) continue;
+            const patched = list.map((c) => {
+              if (c.id !== conversationId) return c;
+              const nextUnread = Math.max(0, (c.unread ?? 0) - 1);
+              const isLastPreview = hidden.created_at === c.last_at;
+              return {
+                ...c,
+                unread: nextUnread,
+                last_body: isLastPreview ? null : c.last_body,
+              };
+            });
+            qc.setQueryData(key, patched);
+          }
         }
+        return { prev, prevConvs };
+      } catch (err) {
+        console.warn("[useHideMessageForMe] onMutate optimistic patch failed:", err);
+        return { prev: undefined, prevConvs: [] as ReturnType<typeof qc.getQueriesData<ConversationListItem[]>> };
       }
-      return { prev, prevConvs };
     },
     onError: (e, messageId, ctx) => {
+      console.error("[useHideMessageForMe] RPC failed", { messageId, error: e });
       // Rollback: restore previous set, or remove the optimistic entry if there
       // was no prior cache to snapshot.
       if (ctx && "prev" in ctx) {
@@ -710,8 +712,13 @@ export function useHideMessageForMe(conversationId: string) {
           qc.setQueryData(key, list);
         }
       }
-      const msg = e instanceof Error ? e.message : String(e ?? "Gagal menyembunyikan pesan");
-      toast.error("Gagal menghapus pesan", { description: msg });
+      // Extract Supabase Postgrest error shape too, not just Error instances.
+      const anyE = e as { message?: string; code?: string; details?: string } | undefined;
+      const description =
+        anyE?.message ||
+        anyE?.details ||
+        (typeof e === "string" ? e : "Coba lagi beberapa saat.");
+      toast.error("Gagal menghapus pesan", { description });
     },
     onSuccess: (_data, messageId) => {
       // Undo: DELETE the message_hidden row for this user. RLS scopes it to
