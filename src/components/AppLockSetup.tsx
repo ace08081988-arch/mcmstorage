@@ -19,7 +19,8 @@ import {
   setLockConfig,
   hashSecret,
   randomSalt,
-  isBiometricAvailable,
+  checkBiometricStatus,
+  type BiometricStatus,
   type LockConfig,
 } from "@/lib/app-lock";
 
@@ -40,7 +41,9 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
   const [pat2, setPat2] = useState<number[]>([]);
   const [resetKey, setResetKey] = useState(0);
   const [biometric, setBiometric] = useState(false);
-  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioStatus, setBioStatus] = useState<BiometricStatus>({ available: false, native: false });
+  const [bioChecking, setBioChecking] = useState(false);
+  const bioAvailable = bioStatus.available;
   const [idleMin, setIdleMin] = useState(2);
   const [lockOnHide, setLockOnHide] = useState(true);
   const existing = open ? getLockConfig(uid) : null;
@@ -53,7 +56,11 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
     setPat1([]);
     setPat2([]);
     setResetKey((k) => k + 1);
-    isBiometricAvailable().then(setBioAvailable);
+    setBioChecking(true);
+    checkBiometricStatus().then((s) => {
+      setBioStatus(s);
+      setBioChecking(false);
+    });
     if (existing) {
       setMethod(existing.method);
       setBiometric(existing.biometric);
