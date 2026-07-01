@@ -146,3 +146,119 @@ bun run test:security:sql                 # jalankan blok 8–13
 Guard hanya menuntut file ikut disentuh — bila migrasi hanya menyentuh
 komentar/whitespace, catat itu di bagian **6. Referensi kode & uji** agar
 ada perubahan yang tercatat.
+
+## 8. Menjalankan subset uji RLS participant
+
+Semua uji berada di `supabase/tests/security_rls_authz.sql`. Setiap blok
+ditandai komentar `-- N)` sehingga bisa di-grep atau di-slice.
+
+### 8.1 Jalankan seluruh suite
+
+```bash
+# Perlu $PGHOST/$PGUSER/$PGPASSWORD (managed Postgres di CI) dan
+# test.can_switch=on agar SET LOCAL ROLE authenticated/anon boleh.
+PGOPTIONS="-c test.can_switch=on" \
+  psql -v ON_ERROR_STOP=1 -f supabase/tests/security_rls_authz.sql
+# atau via package script:
+bun run test:security:sql
+```
+
+### 8.2 Subset blok yang relevan untuk participant
+
+| Blok | Fokus                                    | Cara jalankan hanya blok itu |
+|------|-------------------------------------------|------------------------------|
+| 8    | RLS UPDATE — sender vs recipient          | lihat perintah slice di bawah |
+| 9    | Policy `fr_update_recipient` scope        | `sed` slice atau grep-run    |
+| 10   | `start_dm` tetap tertutup bila belum accepted | slice |
+| 11   | Matriks transisi pending → *              | slice |
+| 12   | Kontrak error trigger (SQLSTATE/DETAIL/HINT) | slice |
+| 13   | Visibility SELECT policy `fr_select_self` | slice |
+
+Slice satu blok saja (contoh: hanya blok 12) tanpa mengubah file:
+
+```bash
+# Ambil header setup (BEGIN…SET) + blok 12 + ROLLBACK, lalu jalankan.
+awk '
+  BEGIN { keep=1 }
+  /^-- =+$/ && next_is_block { keep=0 }
+  /^-- 12\)/ { keep=1 }
+  /^ROLLBACK;/ { print; exit }
+  keep { print }
+' supabase/tests/security_rls_authz.sql \
+  | PGOPTIONS="-c test.can_switch=on" psql -v ON_ERROR_STOP=1 -f -
+```
+
+Alternatif praktis: comment-out blok yang tidak diinginkan sementara,
+atau jalankan semuanya — durasi seluruh suite <2 detik.
+
+### 8.3 Audit + integrasi berdampingan
+
+```bash
+bun run audit:friend-requests          # snapshot policy/trigger/grant + simulasi serangan
+bun run test:security:integration      # HTTP-level RLS via PostgREST (Vitest)
+```
+
+## 9. Membaca kegagalan kontrak SQLSTATE / MESSAGE_TEXT / DETAIL / HINT
+
+Blok 12 memverifikasi bahwa setiap penolakan dari
+`tg_friend_requests_guard` menyertakan **kode + pesan + DETAIL + HINT**
+yang tepat. Bila gagal, output CI berbentuk:
+
+```text
+psql:supabase/tests/security_rls_authz.sql:XXXX: ERROR:
+  FAIL 12a: expected SQLSTATE 42501, got 23514
+           (msg=friend_requests guard: participants are immutable ...)
+CONTEXT:  PL/pgSQL function inline_code_block line 42 at RAISE
+```
+
+### 9.1 Cara membaca baris FAIL
+
+Format: `FAIL <blok>: <alasan> (sqlstate=… msg=… detail=… hint=…)`.
+
+- **`expected SQLSTATE X, got Y`** — kode error berubah. Bandingkan
+  dengan tabel di **§4** dan cek RAISE mana di `tg_friend_requests_guard`
+  yang seharusnya menyalakan skenario ini. Kemungkinan besar branch di
+  trigger dipindah/dihapus, atau policy RLS sekarang menyaring baris
+  keluar lebih dulu (silent no-op → tidak ada error sama sekali).
+- **`unexpected message: …`** — MESSAGE_TEXT tidak match regex yang
+  didokumentasikan di **§4**. Sinkronkan: perbarui pesan trigger _atau_
+  perbarui regex di blok 12 _dan_ tabel §4 (dalam commit yang sama).
+- **`DETAIL missing diagnostic fields: …`** — trigger tidak lagi
+  mengisi `req_id / actor / role / from_user / to_user / old_status /
+  new_status`. Ini adalah **regresi observability CI**; kembalikan
+  format `ctx` di `tg_friend_requests_guard`.
+- **`HINT missing RPC recommendation: …`** — HINT tidak menyebut RPC
+  yang seharusnya dipakai (`respond_friend_request`,
+  `cancel_friend_request`). Perbaiki HINT di trigger.
+- **`FAIL 12g: third-party UPDATE mutated a pending row`** — pihak
+  ketiga berhasil UPDATE. Ini **security regression** — policy RLS
+  USING melebar. Hentikan deploy.
+
+### 9.2 Alur triage cepat
+
+1. Baca baris `FAIL <blok>:` untuk mengetahui skenario mana yang pecah.
+2. Buka `supabase/tests/security_rls_authz.sql` di blok tersebut untuk
+   melihat ekspektasi eksplisit (regex message, string DETAIL, dsb).
+3. Bandingkan dengan definisi trigger:
+   ```bash
+   psql -c "SELECT pg_get_functiondef('public.tg_friend_requests_guard'::regproc);"
+   ```
+4. Cocokkan branch trigger dengan tabel §4. Baris yang tidak lagi cocok
+   adalah source of truth yang bergeser — sinkronkan trigger, tabel §4,
+   dan blok 12 dalam satu commit.
+5. Jalankan ulang subset: `bun run test:security:sql` (atau slice blok
+   12 dengan snippet §8.2) sampai hijau.
+
+### 9.3 Kegagalan yang khas dan artinya
+
+| Gejala di log CI | Kemungkinan akar masalah |
+|---|---|
+| Semua blok 12 skip `SKIP 12: cannot switch roles` | Sesi Postgres tidak boleh `SET ROLE`. Set `test.can_switch=on` atau jalankan sebagai role dengan hak switch. |
+| `FAIL 12a: sender self-accept did not raise` | Trigger guard dihapus / dinonaktifkan. Regresi kritis. |
+| `sqlstate=42501, msg=new row violates row-level security policy` | Trigger tidak ter-fire karena USING RLS menyaring baris **sebelum** BEFORE trigger — cek apakah policy USING sender-cancel dihapus. |
+| `DETAIL is NULL` | `ctx` di trigger tidak dilampirkan pada branch itu — sinkronkan format RAISE dengan §4. |
+| Blok 13 gagal dengan jumlah baris > 1 untuk third-party | `fr_select_self` melebar atau ada policy SELECT tambahan. Cek blok 13-static untuk pesan drift. |
+
+> Jika CI merah tetapi lokal hijau, biasanya karena `test.can_switch`
+> tidak diaktifkan di lokal (blok runtime di-skip). Reproduksi dengan
+> `PGOPTIONS="-c test.can_switch=on"` sebelum menuduh flakiness.
