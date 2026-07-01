@@ -465,35 +465,102 @@ function PenyimpananPage() {
                         Kosongkan
                       </button>
                     </div>
-                    <div className="mt-2 max-h-56 overflow-auto rounded border bg-background">
-                      <ul className="divide-y">
-                        {pendingClear.keys.map((e) => {
-                          const checked = selectedKeys.has(e.key);
-                          return (
-                            <li
-                              key={e.key}
-                              className="flex items-center gap-2 px-2 py-1 font-mono text-[11px]"
-                            >
-                              <Checkbox
-                                checked={checked}
-                                onCheckedChange={(v) => {
-                                  setSelectedKeys((prev) => {
-                                    const next = new Set(prev);
-                                    if (v) next.add(e.key);
-                                    else next.delete(e.key);
-                                    return next;
-                                  });
-                                }}
-                              />
-                              <span className="flex-1 truncate">{e.key}</span>
-                              <span className="shrink-0 tabular-nums text-muted-foreground">
-                                {formatKB(e.bytes)}
-                              </span>
-                            </li>
+                    {(() => {
+                      const total = pendingClear.keys.length;
+                      const totalPages = Math.max(1, Math.ceil(total / CLEAR_PAGE_SIZE));
+                      const page = Math.min(clearPage, totalPages);
+                      const visible = clearExpanded
+                        ? pendingClear.keys
+                        : pendingClear.keys.slice(
+                            (page - 1) * CLEAR_PAGE_SIZE,
+                            page * CLEAR_PAGE_SIZE,
                           );
-                        })}
-                      </ul>
-                    </div>
+                      return (
+                        <>
+                          <div
+                            className={
+                              clearExpanded
+                                ? "mt-2 max-h-64 overflow-auto rounded border bg-background"
+                                : "mt-2 rounded border bg-background"
+                            }
+                          >
+                            <ul className="divide-y">
+                              {visible.map((e) => {
+                                const checked = selectedKeys.has(e.key);
+                                return (
+                                  <li
+                                    key={e.key}
+                                    className="flex items-center gap-2 px-2 py-1 font-mono text-[11px]"
+                                  >
+                                    <Checkbox
+                                      checked={checked}
+                                      onCheckedChange={(v) => {
+                                        setSelectedKeys((prev) => {
+                                          const next = new Set(prev);
+                                          if (v) next.add(e.key);
+                                          else next.delete(e.key);
+                                          return next;
+                                        });
+                                      }}
+                                    />
+                                    <span className="flex-1 truncate">{e.key}</span>
+                                    <span className="shrink-0 tabular-nums text-muted-foreground">
+                                      {formatKB(e.bytes)}
+                                    </span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          </div>
+                          {total > CLEAR_PAGE_SIZE && (
+                            <div className="mt-1 flex items-center justify-between gap-2 text-[11px]">
+                              {clearExpanded ? (
+                                <button
+                                  type="button"
+                                  className="text-primary underline"
+                                  onClick={() => setClearExpanded(false)}
+                                >
+                                  Ciutkan
+                                </button>
+                              ) : (
+                                <>
+                                  <div className="flex items-center gap-1">
+                                    <button
+                                      type="button"
+                                      disabled={page <= 1}
+                                      onClick={() => setClearPage((p) => Math.max(1, p - 1))}
+                                      className="rounded border px-1.5 py-0.5 disabled:opacity-40"
+                                    >
+                                      ‹
+                                    </button>
+                                    <span className="tabular-nums text-muted-foreground">
+                                      {page}/{totalPages}
+                                    </span>
+                                    <button
+                                      type="button"
+                                      disabled={page >= totalPages}
+                                      onClick={() =>
+                                        setClearPage((p) => Math.min(totalPages, p + 1))
+                                      }
+                                      className="rounded border px-1.5 py-0.5 disabled:opacity-40"
+                                    >
+                                      ›
+                                    </button>
+                                  </div>
+                                  <button
+                                    type="button"
+                                    className="text-primary underline"
+                                    onClick={() => setClearExpanded(true)}
+                                  >
+                                    Tampilkan semua ({total})
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          )}
+                        </>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
