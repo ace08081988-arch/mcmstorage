@@ -77,6 +77,9 @@ function PenyimpananPage() {
     currentKey: string;
     freedBytes: number;
   }>({ phase: "idle", done: 0, total: 0, currentKey: "", freedBytes: 0 });
+  const [clearPage, setClearPage] = useState(1);
+  const [clearExpanded, setClearExpanded] = useState(false);
+  const CLEAR_PAGE_SIZE = 10;
 
   const refresh = async () => {
     setSnapshot(estimateLocalStorage());
