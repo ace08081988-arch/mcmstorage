@@ -1,11 +1,12 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { Download, Maximize2, MessageSquare, Minimize2, Share2, X } from "lucide-react";
+import { Camera, Download, Maximize2, MessageSquare, Minimize2, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { QrScannerDialog, handleScannedText } from "@/components/QrScannerDialog";
 
 type Props = {
   open: boolean;
@@ -126,6 +127,7 @@ export function ProfileQrDialog({
   const [error, setError] = useState<string | null>(null);
   const [smsDraft, setSmsDraft] = useState<string>(smsMessage ?? "");
   const [showSmsField, setShowSmsField] = useState<boolean>(Boolean(smsMessage));
+  const [scanOpen, setScanOpen] = useState(false);
   useEffect(() => {
     setSmsDraft(smsMessage ?? "");
     setShowSmsField(Boolean(smsMessage));
@@ -280,6 +282,15 @@ export function ProfileQrDialog({
           </Button>
           <Button
             type="button"
+            variant="outline"
+            onClick={() => setScanOpen(true)}
+            className="gap-2"
+            aria-label="Pindai QR dengan kamera"
+          >
+            <Camera className="h-4 w-4" /> Pindai QR
+          </Button>
+          <Button
+            type="button"
             variant="ghost"
             onClick={() => setFullscreen((v) => !v)}
             className="ml-auto gap-2"
@@ -294,6 +305,13 @@ export function ProfileQrDialog({
             </Button>
           ) : null}
         </div>
+        <QrScannerDialog
+          open={scanOpen}
+          onOpenChange={setScanOpen}
+          onResult={(text) => void handleScannedText(text)}
+          title="Pindai QR kontak"
+          description="Arahkan kamera ke QR profil untuk membuka kontak."
+        />
       </DialogContent>
     </Dialog>
   );
