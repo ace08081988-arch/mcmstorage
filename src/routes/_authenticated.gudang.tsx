@@ -1666,7 +1666,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // Kunci/reset state saat pengguna cepat mengganti item atau mode agar
   // sisa state (karton, priceMode, harga, qty, nilai "barang baru") dari
   // pilihan sebelumnya tidak ikut terbawa ke item/mode berikutnya.
-  const resetKey = mode === "existing" ? `existing::${itemId}` : `new::${packageType}`;
+  const resetKey = beliResetKey({ mode, itemId, packageType });
   const resetKeyRef = useRef<string>(resetKey);
   useEffect(() => {
     if (resetKeyRef.current === resetKey) return;
