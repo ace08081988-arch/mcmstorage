@@ -341,6 +341,69 @@ function PenyimpananPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!pendingClear} onOpenChange={(o) => !o && setPendingClear(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              Hapus {pendingClear?.label.toLowerCase() ?? "data"}?
+            </AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-2 text-xs">
+                <p>
+                  Aksi ini menghapus data dari perangkat ini saja dan tidak bisa dibatalkan.
+                  Data di server (jika ada) tidak terpengaruh.
+                </p>
+                {pendingClear && (
+                  <div className="rounded-md border bg-muted/30 p-2 text-[11px] text-foreground">
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Entri</span>
+                      <span className="font-medium tabular-nums">
+                        {pendingClear.keys.length}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Total</span>
+                      <span className="font-medium tabular-nums">
+                        {formatKB(pendingClear.totalBytes)}
+                      </span>
+                    </div>
+                    <div className="mt-2 max-h-40 overflow-auto rounded border bg-background">
+                      <ul className="divide-y">
+                        {pendingClear.keys.slice(0, 20).map((e) => (
+                          <li
+                            key={e.key}
+                            className="flex items-center justify-between gap-2 px-2 py-1 font-mono text-[11px]"
+                          >
+                            <span className="truncate">{e.key}</span>
+                            <span className="shrink-0 tabular-nums text-muted-foreground">
+                              {formatKB(e.bytes)}
+                            </span>
+                          </li>
+                        ))}
+                        {pendingClear.keys.length > 20 && (
+                          <li className="px-2 py-1 text-center text-[11px] text-muted-foreground">
+                            +{pendingClear.keys.length - 20} entri lain
+                          </li>
+                        )}
+                      </ul>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmClear}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Hapus{pendingClear ? ` (${pendingClear.keys.length})` : ""}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
