@@ -83,17 +83,75 @@ function readPermission(): PermState {
   return (Notification.permission as PermState) ?? "default";
 }
 
-function detectFrame() {
-  if (typeof window === "undefined") return { inIframe: false, sameOrigin: true };
-  const inIframe = window.self !== window.top;
-  let sameOrigin = true;
-  try {
-    // Accessing top.location throws when cross-origin.
-    void window.top?.location.href;
-  } catch {
-    sameOrigin = false;
+type FrameInfo = {
+  inIframe: boolean;
+  sameOrigin: boolean;
+  // Individual signals (evidence)
+  selfNeTop: boolean;
+  hasParent: boolean;
+  ancestorCount: number | null; // window.location.ancestorOrigins length
+  frameElementAccessible: boolean; // true = same-origin frame element reachable
+  topAccessError: string | null;
+  ancestorOrigin: string | null;
+  referrer: string;
+};
+
+function detectFrame(): FrameInfo {
+  if (typeof window === "undefined") {
+    return {
+      inIframe: false,
+      sameOrigin: true,
+      selfNeTop: false,
+      hasParent: false,
+      ancestorCount: null,
+      frameElementAccessible: false,
+      topAccessError: null,
+      ancestorOrigin: null,
+      referrer: "",
+    };
   }
-  return { inIframe, sameOrigin };
+  const selfNeTop = window.self !== window.top;
+  const hasParent = window.parent !== window;
+
+  let sameOrigin = true;
+  let topAccessError: string | null = null;
+  try {
+    void window.top?.location.href;
+  } catch (e) {
+    sameOrigin = false;
+    topAccessError = e instanceof Error ? e.name : String(e);
+  }
+
+  let frameElementAccessible = false;
+  try {
+    frameElementAccessible = window.frameElement !== null;
+  } catch {
+    // SecurityError => cross-origin iframe (still an iframe)
+    frameElementAccessible = false;
+  }
+
+  const ao = (window.location as unknown as { ancestorOrigins?: DOMStringList }).ancestorOrigins;
+  const ancestorCount = ao ? ao.length : null;
+  const ancestorOrigin = ao && ao.length > 0 ? ao[0] : null;
+
+  // Aggregate: any positive signal means we're framed.
+  const inIframe =
+    selfNeTop ||
+    hasParent ||
+    frameElementAccessible ||
+    (ancestorCount !== null && ancestorCount > 0);
+
+  return {
+    inIframe,
+    sameOrigin,
+    selfNeTop,
+    hasParent,
+    ancestorCount,
+    frameElementAccessible,
+    topAccessError,
+    ancestorOrigin,
+    referrer: document.referrer || "",
+  };
 }
 
 function explainPermission(
