@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Bell, MessageCircle, ClipboardCheck, Package, ShieldAlert } from "lucide-react";
+import { Bell, BellOff, BellRing, MessageCircle, ClipboardCheck, Package, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -52,6 +52,36 @@ export function NotificationBell() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
+    () =>
+      typeof window !== "undefined" && "Notification" in window
+        ? Notification.permission
+        : "unsupported",
+  );
+  const [requesting, setRequesting] = useState(false);
+
+  const refreshPerm = () => {
+    if (typeof window === "undefined") return;
+    if (!("Notification" in window)) {
+      setPerm("unsupported");
+      return;
+    }
+    setPerm(Notification.permission);
+  };
+
+  const askPermission = async () => {
+    if (typeof window === "undefined" || !("Notification" in window)) return;
+    if (Notification.permission === "denied") return;
+    setRequesting(true);
+    try {
+      const res = await Notification.requestPermission();
+      setPerm(res);
+    } catch {
+      /* ignore */
+    } finally {
+      setRequesting(false);
+    }
+  };
 
   const unreadCount = useMemo(
     () => items.filter((i) => i.unread).length,
@@ -81,7 +111,10 @@ export function NotificationBell() {
     };
     void tick();
     const onVis = () => {
-      if (document.visibilityState === "visible") void refresh();
+      if (document.visibilityState === "visible") {
+        void refresh();
+        refreshPerm();
+      }
     };
     document.addEventListener("visibilitychange", onVis);
     return () => {
@@ -166,6 +199,53 @@ export function NotificationBell() {
             </Button>
           </div>
         </div>
+
+        {perm !== "granted" && (
+          <div className="flex items-start gap-2 border-b bg-muted/40 px-3 py-2 text-xs">
+            {perm === "denied" ? (
+              <BellOff className="mt-0.5 h-3.5 w-3.5 flex-none text-destructive" />
+            ) : (
+              <BellRing className="mt-0.5 h-3.5 w-3.5 flex-none text-primary" />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="font-medium">
+                {perm === "unsupported"
+                  ? "Notification API tidak tersedia"
+                  : perm === "denied"
+                    ? "Izin notifikasi diblokir"
+                    : "Aktifkan banner notifikasi"}
+              </div>
+              <p className="leading-snug text-muted-foreground">
+                {perm === "unsupported"
+                  ? "Browser/WebView ini tidak mendukung banner sistem."
+                  : perm === "denied"
+                    ? "Browser tidak akan menampilkan prompt lagi. Reset dari site settings atau buka diagnostik."
+                    : "Izinkan browser menampilkan banner walau aplikasi ditutup."}
+              </p>
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {perm === "default" && (
+                  <Button
+                    size="sm"
+                    className="h-7 text-xs"
+                    onClick={askPermission}
+                    disabled={requesting}
+                  >
+                    {requesting ? "Meminta…" : "Izinkan notifikasi"}
+                  </Button>
+                )}
+                <Button
+                  asChild
+                  size="sm"
+                  variant="outline"
+                  className="h-7 text-xs"
+                  onClick={() => setOpen(false)}
+                >
+                  <Link to="/status-notifikasi">Diagnostik</Link>
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="max-h-[70vh] overflow-y-auto">
           {items.length === 0 ? (
