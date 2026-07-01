@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { getScrollGuardConfig } from "@/lib/scroll-guard-config";
-import { useIsAdmin } from "@/hooks/use-is-admin";
+import { useAdminStatus } from "@/hooks/use-is-admin";
 import { ADMIN_ONLY_URLS, filterSidebarItemsForAdmin } from "@/lib/admin-sidebar-visibility";
 
 /**
@@ -344,7 +344,11 @@ export function AppSidebar() {
     return () => window.removeEventListener("mcm:app-mode-change", on);
   }, []);
   const chatOnly = isChatOnly();
-  const isAdmin = useIsAdmin();
+  // Sampai status admin dipastikan (`isCheckingAdmin`), perlakukan sebagai
+  // non-admin agar menu admin TIDAK berkedip muncul lalu hilang untuk user
+  // biasa. Setelah query `has_role` selesai, sidebar akan diperbarui.
+  const { isAdmin, isCheckingAdmin } = useAdminStatus();
+  const adminVisible = isAdmin && !isCheckingAdmin;
   const baseGroups = chatOnly
     ? groups.filter((g) => CHAT_ONLY_GROUP_LABELS.has(g.label))
     : groups;
@@ -356,7 +360,7 @@ export function AppSidebar() {
   const visibleGroups = baseGroups
     .map((g) => ({
       ...g,
-      items: filterSidebarItemsForAdmin(g.items, isAdmin),
+      items: filterSidebarItemsForAdmin(g.items, adminVisible),
     }))
     .filter((g) => g.items.length > 0);
   void modeTick;
