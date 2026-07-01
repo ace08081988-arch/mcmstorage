@@ -33,17 +33,20 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
   const now = Date.now();
   if (now - __lastHintAt < 900) return;
   __lastHintAt = now;
+  const cfg = getScrollGuardConfig();
+  const text = reason === "scroll" ? cfg.hintScrollText : cfg.hintDriftText;
+  if (!text) return; // teks kosong = matikan hint sepenuhnya
   const el = document.createElement("div");
   el.setAttribute("role", "status");
   el.setAttribute("aria-live", "polite");
   el.setAttribute("data-testid", "scroll-guard-hint");
-  el.textContent =
-    reason === "scroll"
-      ? "Tunggu scroll selesai…"
-      : "Geser terdeteksi — tap dibatalkan";
+  el.setAttribute("data-reason", reason);
+  el.textContent = text;
   const vw = window.innerWidth;
   const left = Math.max(8, Math.min(vw - 200, x + 12));
   const top = Math.max(8, y - 44);
+  const fade = Math.max(0, cfg.hintFadeMs);
+  const hold = Math.max(fade + 60, cfg.hintHoldMs);
   el.style.cssText = [
     "position:fixed",
     `left:${left}px`,
@@ -62,7 +65,7 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
     "backdrop-filter:blur(4px)",
     "opacity:0",
     "transform:translateY(4px)",
-    "transition:opacity 140ms ease-out, transform 140ms ease-out",
+    `transition:opacity ${fade}ms ease-out, transform ${fade}ms ease-out`,
   ].join(";");
   document.body.appendChild(el);
   requestAnimationFrame(() => {
@@ -72,10 +75,10 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
   window.setTimeout(() => {
     el.style.opacity = "0";
     el.style.transform = "translateY(-4px)";
-  }, 1200);
+  }, hold);
   window.setTimeout(() => {
     el.remove();
-  }, 1400);
+  }, hold + fade + 20);
 }
 import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";

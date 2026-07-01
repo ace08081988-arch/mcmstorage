@@ -16,25 +16,43 @@ export type ScrollGuardConfig = {
   cooldownMs: number;
   driftPx: number;
   longPressMs: number;
+  hintScrollText: string;
+  hintDriftText: string;
+  hintFadeMs: number;
+  hintHoldMs: number;
 };
 
 export const DEFAULT_SCROLL_GUARD: ScrollGuardConfig = {
   cooldownMs: 250,
   driftPx: 10,
   longPressMs: 600,
+  hintScrollText: "Tunggu scroll selesai…",
+  hintDriftText: "Geser terdeteksi — tap dibatalkan",
+  hintFadeMs: 140,
+  hintHoldMs: 1200,
 };
 
 export const SCROLL_GUARD_BOUNDS = {
   cooldownMs: { min: 100, max: 800, step: 25 },
   driftPx: { min: 4, max: 24, step: 1 },
   longPressMs: { min: 300, max: 1500, step: 50 },
+  hintFadeMs: { min: 0, max: 600, step: 20 },
+  hintHoldMs: { min: 300, max: 4000, step: 100 },
+  hintTextMaxLen: 80,
 } as const;
 
-const STORAGE_KEY = "mcm.scroll-guard.v1";
+const STORAGE_KEY = "mcm.scroll-guard.v2";
 const CHANGE_EVENT = "mcm:scroll-guard-changed";
 
 function clamp(n: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, n));
+}
+
+function sanitizeText(raw: unknown, fallback: string): string {
+  if (typeof raw !== "string") return fallback;
+  const trimmed = raw.replace(/\s+/g, " ").trim();
+  if (!trimmed) return fallback;
+  return trimmed.slice(0, SCROLL_GUARD_BOUNDS.hintTextMaxLen);
 }
 
 function sanitize(raw: unknown): ScrollGuardConfig {
@@ -54,6 +72,18 @@ function sanitize(raw: unknown): ScrollGuardConfig {
       Number.isFinite(r.longPressMs) ? Number(r.longPressMs) : DEFAULT_SCROLL_GUARD.longPressMs,
       SCROLL_GUARD_BOUNDS.longPressMs.min,
       SCROLL_GUARD_BOUNDS.longPressMs.max,
+    ),
+    hintScrollText: sanitizeText(r.hintScrollText, DEFAULT_SCROLL_GUARD.hintScrollText),
+    hintDriftText: sanitizeText(r.hintDriftText, DEFAULT_SCROLL_GUARD.hintDriftText),
+    hintFadeMs: clamp(
+      Number.isFinite(r.hintFadeMs) ? Number(r.hintFadeMs) : DEFAULT_SCROLL_GUARD.hintFadeMs,
+      SCROLL_GUARD_BOUNDS.hintFadeMs.min,
+      SCROLL_GUARD_BOUNDS.hintFadeMs.max,
+    ),
+    hintHoldMs: clamp(
+      Number.isFinite(r.hintHoldMs) ? Number(r.hintHoldMs) : DEFAULT_SCROLL_GUARD.hintHoldMs,
+      SCROLL_GUARD_BOUNDS.hintHoldMs.min,
+      SCROLL_GUARD_BOUNDS.hintHoldMs.max,
     ),
   };
 }

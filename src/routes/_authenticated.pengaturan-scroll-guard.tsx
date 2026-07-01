@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, CheckCircle2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { RotateCcw, CheckCircle2, Bell } from "lucide-react";
 import {
   DEFAULT_SCROLL_GUARD,
   SCROLL_GUARD_BOUNDS,
@@ -112,6 +113,17 @@ function PengaturanScrollGuardPage() {
       </Card>
 
       <TestArea cooldownMs={cfg.cooldownMs} driftPx={cfg.driftPx} longPressMs={cfg.longPressMs} />
+
+      <HintCustomization
+        scrollText={cfg.hintScrollText}
+        driftText={cfg.hintDriftText}
+        fadeMs={cfg.hintFadeMs}
+        holdMs={cfg.hintHoldMs}
+        onChange={(patch) => {
+          set(patch);
+          flashSaved();
+        }}
+      />
     </div>
   );
 }
@@ -282,5 +294,162 @@ function TestArea({
         </div>
       </CardContent>
     </Card>
+  );
+}
+
+function HintCustomization({
+  scrollText,
+  driftText,
+  fadeMs,
+  holdMs,
+  onChange,
+}: {
+  scrollText: string;
+  driftText: string;
+  fadeMs: number;
+  holdMs: number;
+  onChange: (patch: {
+    hintScrollText?: string;
+    hintDriftText?: string;
+    hintFadeMs?: number;
+    hintHoldMs?: number;
+  }) => void;
+}) {
+  const [preview, setPreview] = useState<null | { text: string; key: number }>(null);
+
+  const showPreview = (text: string) => {
+    if (!text.trim()) return;
+    setPreview({ text: text.trim(), key: Date.now() });
+    window.setTimeout(() => setPreview(null), holdMs + fadeMs + 60);
+  };
+
+  return (
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-base flex items-center gap-2">
+          <Bell className="h-4 w-4" />
+          Teks & durasi tooltip
+        </CardTitle>
+        <CardDescription className="text-xs">
+          Sesuaikan pesan yang muncul saat guard menolak tap, plus seberapa cepat tooltip fade
+          in/out. Kosongkan teks untuk mematikan hint.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-5">
+        <TextRow
+          label="Teks saat scroll masih aktif"
+          help='Muncul ketika tap ditolak karena cooldown belum lewat.'
+          value={scrollText}
+          defaultValue={DEFAULT_SCROLL_GUARD.hintScrollText}
+          onChange={(v) => onChange({ hintScrollText: v })}
+          onPreview={() => showPreview(scrollText)}
+        />
+        <TextRow
+          label="Teks saat drift terdeteksi"
+          help="Muncul ketika pointer bergeser melewati ambang drift saat tap."
+          value={driftText}
+          defaultValue={DEFAULT_SCROLL_GUARD.hintDriftText}
+          onChange={(v) => onChange({ hintDriftText: v })}
+          onPreview={() => showPreview(driftText)}
+        />
+
+        <SliderRow
+          label="Durasi fade"
+          help="Waktu transisi opacity untuk muncul & hilang. 0 = tanpa animasi."
+          unit="ms"
+          value={fadeMs}
+          defaultValue={DEFAULT_SCROLL_GUARD.hintFadeMs}
+          bounds={SCROLL_GUARD_BOUNDS.hintFadeMs}
+          onChange={(v) => onChange({ hintFadeMs: v })}
+        />
+        <SliderRow
+          label="Durasi tampil (hold)"
+          help="Berapa lama tooltip terlihat penuh sebelum mulai fade-out."
+          unit="ms"
+          value={holdMs}
+          defaultValue={DEFAULT_SCROLL_GUARD.hintHoldMs}
+          bounds={SCROLL_GUARD_BOUNDS.hintHoldMs}
+          onChange={(v) => onChange({ hintHoldMs: v })}
+        />
+
+        <div className="rounded-lg border bg-muted/30 p-3">
+          <div className="mb-2 text-xs font-medium text-muted-foreground">Pratinjau</div>
+          <div className="relative h-16 overflow-hidden rounded-md bg-background/60">
+            {preview && (
+              <div
+                key={preview.key}
+                data-testid="hint-preview"
+                className="pointer-events-none absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full px-3 py-1.5 text-[11px] font-medium leading-tight shadow-md"
+                style={{
+                  background: "hsl(var(--foreground) / 0.92)",
+                  color: "hsl(var(--background))",
+                  animation: `mcmHintPreview ${holdMs + fadeMs * 2}ms ease-out forwards`,
+                }}
+              >
+                {preview.text}
+              </div>
+            )}
+          </div>
+          <style>{`@keyframes mcmHintPreview {
+            0%   { opacity: 0; transform: translate(-50%, -46%); }
+            ${Math.max(1, Math.round((fadeMs / (holdMs + fadeMs * 2)) * 100))}%  { opacity: 1; transform: translate(-50%, -50%); }
+            ${Math.min(99, Math.round(((holdMs + fadeMs) / (holdMs + fadeMs * 2)) * 100))}% { opacity: 1; transform: translate(-50%, -50%); }
+            100% { opacity: 0; transform: translate(-50%, -54%); }
+          }`}</style>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function TextRow({
+  label,
+  help,
+  value,
+  defaultValue,
+  onChange,
+  onPreview,
+}: {
+  label: string;
+  help: string;
+  value: string;
+  defaultValue: string;
+  onChange: (v: string) => void;
+  onPreview: () => void;
+}) {
+  const isDefault = value === defaultValue;
+  return (
+    <div>
+      <div className="mb-1 flex items-baseline justify-between gap-2">
+        <label className="text-sm font-medium leading-snug">{label}</label>
+        {!isDefault && (
+          <button
+            type="button"
+            className="text-[11px] text-muted-foreground underline-offset-2 hover:underline"
+            onClick={() => onChange(defaultValue)}
+          >
+            Kembali ke default
+          </button>
+        )}
+      </div>
+      <div className="flex gap-2">
+        <Input
+          value={value}
+          maxLength={SCROLL_GUARD_BOUNDS.hintTextMaxLen}
+          placeholder={defaultValue}
+          onChange={(e) => onChange(e.target.value)}
+          className="text-sm"
+        />
+        <Button type="button" size="sm" variant="outline" onClick={onPreview}>
+          Uji
+        </Button>
+      </div>
+      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+        {help}{" "}
+        <span className="tabular-nums">
+          {value.length}/{SCROLL_GUARD_BOUNDS.hintTextMaxLen}
+        </span>
+      </p>
+    </div>
   );
 }
