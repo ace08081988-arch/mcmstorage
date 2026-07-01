@@ -54,6 +54,85 @@ test.describe("chat-pin-assertions — kontrak regex", () => {
     expect(extractPinTokens(s)).toEqual(["PIN ABCD-1234", "PIN 0000-9999"]);
   });
 
+  test("extractPinTokens — PIN ganda dalam satu baris", () => {
+    // Dua PIN dipisah kata biasa dalam satu paragraf → dua token,
+    // bukan satu blob yang menelan teks di antaranya.
+    const s = "Kirim ke PIN ABCD-1234 dan PIN EFGH-5678 sekaligus.";
+    expect(extractPinTokens(s)).toEqual([
+      "PIN ABCD-1234",
+      "PIN EFGH-5678",
+    ]);
+  });
+
+  test("extractPinTokens — PIN ganda menempel tanpa spasi antar token", () => {
+    // Regresi umum saat preview di layar sempit menyambung dua PIN.
+    // Negative lookahead memutus token sebelum `PIN` berikutnya.
+    const s = "PIN ABCD-1234PIN EFGH-5678";
+    expect(extractPinTokens(s)).toEqual([
+      "PIN ABCD-1234",
+      "PIN EFGH-5678",
+    ]);
+  });
+
+  test("extractPinTokens — PIN terpotong di akhir baris tetap ditangkap sebagai off-format", () => {
+    // Word-wrap yang memecah PIN antar baris HARUS terlihat sebagai
+    // pelanggaran, bukan disembunyikan. Token pertama sengaja off-
+    // format supaya `expectPinFormat` bisa menandainya.
+    const s = "Header PIN ABCD-\n1234 lanjut PIN EFGH-5678";
+    const tokens = extractPinTokens(s);
+    expect(tokens).toEqual(["PIN ABCD-", "PIN EFGH-5678"]);
+    expect(tokens[0]).not.toMatch(PIN_MCM_FORMAT);
+    expect(() => expectPinFormat(s, "wrapped")).toThrow();
+  });
+
+  test("extractPinTokens — punctuation trailing tidak ikut termakan", () => {
+    // Titik/koma/tanda kurung di akhir kalimat tidak boleh mengubah
+    // token valid menjadi off-format.
+    for (const s of [
+      "Silakan chat PIN ABCD-1234.",
+      "Silakan chat PIN ABCD-1234,",
+      "Silakan chat PIN ABCD-1234)",
+      "Silakan chat PIN ABCD-1234!",
+    ]) {
+      expect(extractPinTokens(s), s).toEqual(["PIN ABCD-1234"]);
+      expect(() => expectPinFormat(s, s)).not.toThrow();
+    }
+  });
+
+  test("extractPinTokens — lowercase tetap diekstrak lalu ditolak PIN_MCM_FORMAT", () => {
+    const s = "Diketik salah: PIN abcd-1234";
+    expect(extractPinTokens(s)).toEqual(["PIN abcd-1234"]);
+    expect(() => expectPinFormat(s, "lowercase")).toThrow();
+  });
+
+  test("extractPinTokens — kata mirip (SPIN, PINK, PINGGIR) tidak ikut match", () => {
+    // Word-boundary di awal `\bPIN\s+` memastikan hanya kata `PIN`
+    // yang berdiri sendiri (diikuti whitespace) yang jadi anchor token.
+    for (const s of [
+      "SPIN cepat",
+      "warna PINK muda",
+      "di PINGGIR jalan",
+      "PINtu terbuka",
+    ]) {
+      expect(extractPinTokens(s), s).toEqual([]);
+    }
+  });
+
+  test("extractPinTokens — multi-baris: satu PIN per baris tetap terpisah", () => {
+    const s = "Baris 1: PIN ABCD-1234\nBaris 2: PIN EFGH-5678\nBaris 3: PIN IJKL-9012";
+    expect(extractPinTokens(s)).toEqual([
+      "PIN ABCD-1234",
+      "PIN EFGH-5678",
+      "PIN IJKL-9012",
+    ]);
+  });
+
+  test("extractPinTokens — tanpa token PIN sama sekali menghasilkan array kosong", () => {
+    for (const s of ["", "Kontak", "Halo dunia", "hubungi kami"]) {
+      expect(extractPinTokens(s), s).toEqual([]);
+    }
+  });
+
   test("expectNoRawPhone melempar untuk phone mentah, lolos untuk PIN", () => {
     expect(() => expectNoRawPhone("hubungi 081234567890", "case")).toThrow();
     expect(() => expectNoRawPhone("hubungi PIN ABCD-1234", "case")).not.toThrow();
