@@ -561,5 +561,22 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: variasi input PIN di FAB "Tambah kontak PIN" halaman /chat
+      // — lowercase / spasi berlebih / dash salah / kelebihan karakter
+      // wajib DINORMALISASI menjadi `XXXX-XXXX` oleh handler onChange
+      // (memakai `normalizeInviteCode`), dan seluruh dialog tetap bebas
+      // nomor telp Indonesia mentah. Static source guard + unit
+      // formatInviteCode selalu jalan; blok runtime self-skip bila
+      // storageState kosong.
+      name: "chat-pin-mcm-input-variations-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-input-variations\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
