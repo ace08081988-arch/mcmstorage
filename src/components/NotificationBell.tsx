@@ -72,6 +72,8 @@ export function NotificationBell() {
   const [items, setItems] = useState<FeedItem[]>([]);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [syncing, setSyncing] = useState<null | "one" | "all">(null);
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [perm, setPerm] = useState<NotificationPermission | "unsupported">(
     () =>
       typeof window !== "undefined" && "Notification" in window
@@ -146,23 +148,39 @@ export function NotificationBell() {
   }, []);
 
   const onItemClick = async (it: FeedItem) => {
+    const snapshot = items;
     setItems((prev) =>
       prev.map((x) => (x.id === it.id ? { ...x, unread: false } : x)),
     );
+    setSyncing("one");
+    setSyncError(null);
     try {
       await markOne({ data: { id: it.id } });
+      // Konfirmasi backend: refresh daftar dari server agar status sinkron.
+      await refresh();
     } catch {
-      /* optimistic; will resync on next refresh */
+      // Rollback optimistik dan tandai gagal sinkron.
+      setItems(snapshot);
+      setSyncError("Gagal menandai dibaca. Coba lagi.");
+    } finally {
+      setSyncing(null);
     }
     setOpen(false);
   };
 
   const onMarkAll = async () => {
+    const snapshot = items;
     setItems((prev) => prev.map((x) => ({ ...x, unread: false })));
+    setSyncing("all");
+    setSyncError(null);
     try {
       await markAll({ data: {} });
+      await refresh();
     } catch {
-      /* optimistic */
+      setItems(snapshot);
+      setSyncError("Gagal menandai semua dibaca.");
+    } finally {
+      setSyncing(null);
     }
   };
 
@@ -204,8 +222,9 @@ export function NotificationBell() {
                 size="sm"
                 className="h-7 px-2 text-xs"
                 onClick={onMarkAll}
+                disabled={syncing !== null}
               >
-                Tandai dibaca
+                {syncing === "all" ? "Menyinkron…" : "Tandai dibaca"}
               </Button>
             )}
             <Button
@@ -219,6 +238,23 @@ export function NotificationBell() {
             </Button>
           </div>
         </div>
+
+        {syncError && (
+          <div className="flex items-center justify-between gap-2 border-b bg-destructive/10 px-3 py-1.5 text-[11px] text-destructive">
+            <span>{syncError}</span>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-[11px]"
+              onClick={() => {
+                setSyncError(null);
+                void refresh();
+              }}
+            >
+              Muat ulang
+            </Button>
+          </div>
+        )}
 
         {perm !== "granted" && (
           <div className="flex items-start gap-2 border-b bg-muted/40 px-3 py-2 text-xs">
