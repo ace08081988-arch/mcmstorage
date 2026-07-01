@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { Download, Maximize2, Minimize2, Share2, X } from "lucide-react";
+import { Download, Maximize2, MessageSquare, Minimize2, Share2, X } from "lucide-react";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 
 type Props = {
   open: boolean;
@@ -122,6 +124,12 @@ export function ProfileQrDialog({
   const [dataUrl, setDataUrl] = useState<string | null>(null);
   const [fullscreen, setFullscreen] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [smsDraft, setSmsDraft] = useState<string>(smsMessage ?? "");
+  const [showSmsField, setShowSmsField] = useState<boolean>(Boolean(smsMessage));
+  useEffect(() => {
+    setSmsDraft(smsMessage ?? "");
+    setShowSmsField(Boolean(smsMessage));
+  }, [smsMessage, open]);
 
   const profileUrl = useMemo(() => {
     if (typeof window === "undefined") return "";
@@ -130,8 +138,8 @@ export function ProfileQrDialog({
   }, [userId]);
 
   const payload = useMemo(
-    () => buildVCard(name, email, phone, profileUrl, smsPhone ?? null, smsMessage ?? null),
-    [name, email, phone, profileUrl, smsPhone, smsMessage],
+    () => buildVCard(name, email, phone, profileUrl, smsPhone ?? null, smsDraft),
+    [name, email, phone, profileUrl, smsPhone, smsDraft],
   );
 
   useEffect(() => {
