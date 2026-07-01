@@ -648,10 +648,7 @@ function PengaturanKunci() {
                   text: "Izin sidik jari ditolak. Buka Pengaturan Sistem → Aplikasi → izinkan Biometrik untuk MCM Storage.",
                   action: permAction,
                 });
-              } else if (
-                bioStatus.permission === "prompt" ||
-                bioStatus.permission === "unknown"
-              ) {
+              } else if (bioStatus.permission === "unknown") {
                 recs.push({
                   key: "perm-check",
                   text: "Izin sidik jari belum diizinkan. Buka pengaturan izin untuk memberikan akses biometrik.",
