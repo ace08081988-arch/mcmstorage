@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { HardDrive, Trash2, RefreshCw, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Progress } from "@/components/ui/progress";
+import { Loader2, CheckCircle2 } from "lucide-react";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { useAppPrefs } from "@/lib/app-prefs";
 import {
@@ -68,6 +70,13 @@ function PenyimpananPage() {
     totalBytes: number;
   } | null>(null);
   const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
+  const [clearProgress, setClearProgress] = useState<{
+    phase: "idle" | "processing" | "done";
+    done: number;
+    total: number;
+    currentKey: string;
+    freedBytes: number;
+  }>({ phase: "idle", done: 0, total: 0, currentKey: "", freedBytes: 0 });
 
   const refresh = async () => {
     setSnapshot(estimateLocalStorage());
@@ -150,7 +159,7 @@ function PenyimpananPage() {
     setSelectedKeys(new Set(keys.map((k) => k.key)));
   };
 
-  const confirmClear = () => {
+  const confirmClear = async () => {
     if (!pendingClear) return;
     const { keys, label } = pendingClear;
     const chosen = keys.filter((e) => selectedKeys.has(e.key));
@@ -158,14 +167,43 @@ function PenyimpananPage() {
       toast.info("Tidak ada entri yang dipilih.");
       return;
     }
-    const freed = chosen.reduce((s, e) => s + e.bytes, 0);
-    chosen.forEach((e) => localStorage.removeItem(e.key));
+    setClearProgress({
+      phase: "processing",
+      done: 0,
+      total: chosen.length,
+      currentKey: chosen[0]?.key ?? "",
+      freedBytes: 0,
+    });
+    let freed = 0;
+    // Chunk deletion so the UI can paint progress between batches.
+    const batchSize = Math.max(1, Math.ceil(chosen.length / 20));
+    for (let i = 0; i < chosen.length; i += batchSize) {
+      const slice = chosen.slice(i, i + batchSize);
+      for (const e of slice) {
+        localStorage.removeItem(e.key);
+        freed += e.bytes;
+      }
+      const done = Math.min(i + batchSize, chosen.length);
+      setClearProgress({
+        phase: "processing",
+        done,
+        total: chosen.length,
+        currentKey: slice[slice.length - 1]?.key ?? "",
+        freedBytes: freed,
+      });
+      await new Promise((r) => requestAnimationFrame(() => r(null)));
+    }
+    setClearProgress((p) => ({ ...p, phase: "done", currentKey: "" }));
     toast.success(`${label} dihapus`, {
       description: `${chosen.length} dari ${keys.length} entri · ${formatKB(freed)} dibebaskan.`,
     });
-    setPendingClear(null);
-    setSelectedKeys(new Set());
-    refresh();
+    await refresh();
+    // Show "selesai" briefly before closing.
+    setTimeout(() => {
+      setPendingClear(null);
+      setSelectedKeys(new Set());
+      setClearProgress({ phase: "idle", done: 0, total: 0, currentKey: "", freedBytes: 0 });
+    }, 900);
   };
 
   return (
@@ -337,7 +375,14 @@ function PenyimpananPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!pendingClear} onOpenChange={(o) => !o && setPendingClear(null)}>
+      <AlertDialog
+        open={!!pendingClear}
+        onOpenChange={(o) => {
+          if (o) return;
+          if (clearProgress.phase === "processing") return; // block close while running
+          setPendingClear(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -345,6 +390,41 @@ function PenyimpananPage() {
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-xs">
+                {clearProgress.phase !== "idle" && (
+                  <div className="rounded-md border bg-muted/40 p-2 text-[11px]">
+                    <div className="mb-1 flex items-center justify-between font-medium">
+                      <span className="flex items-center gap-1.5">
+                        {clearProgress.phase === "processing" ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                            Memproses…
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                            Selesai
+                          </>
+                        )}
+                      </span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {clearProgress.done}/{clearProgress.total} · {formatKB(clearProgress.freedBytes)}
+                      </span>
+                    </div>
+                    <Progress
+                      value={
+                        clearProgress.total > 0
+                          ? (clearProgress.done / clearProgress.total) * 100
+                          : 0
+                      }
+                      className="h-1.5"
+                    />
+                    {clearProgress.phase === "processing" && clearProgress.currentKey && (
+                      <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">
+                        {clearProgress.currentKey}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <p>
                   Aksi ini menghapus data dari perangkat ini saja dan tidak bisa dibatalkan.
                   Data di server (jika ada) tidak terpengaruh.
@@ -415,13 +495,27 @@ function PenyimpananPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={clearProgress.phase === "processing"}>
+              {clearProgress.phase === "done" ? "Tutup" : "Batal"}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmClear}
-              disabled={selectedKeys.size === 0}
+              disabled={selectedKeys.size === 0 || clearProgress.phase !== "idle"}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Hapus{selectedKeys.size > 0 ? ` (${selectedKeys.size})` : ""}
+              {clearProgress.phase === "processing" ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  Memproses…
+                </>
+              ) : clearProgress.phase === "done" ? (
+                <>
+                  <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                  Selesai
+                </>
+              ) : (
+                <>Hapus{selectedKeys.size > 0 ? ` (${selectedKeys.size})` : ""}</>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
