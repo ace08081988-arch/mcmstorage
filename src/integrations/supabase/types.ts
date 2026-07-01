@@ -197,6 +197,59 @@ export type Database = {
         }
         Relationships: []
       }
+      chat_calls: {
+        Row: {
+          accepted_at: string | null
+          callee_id: string | null
+          caller_id: string
+          conversation_id: string
+          created_at: string
+          duration_sec: number
+          end_reason: string | null
+          ended_at: string | null
+          id: string
+          kind: string
+          started_at: string
+          status: string
+        }
+        Insert: {
+          accepted_at?: string | null
+          callee_id?: string | null
+          caller_id: string
+          conversation_id: string
+          created_at?: string
+          duration_sec?: number
+          end_reason?: string | null
+          ended_at?: string | null
+          id?: string
+          kind: string
+          started_at?: string
+          status?: string
+        }
+        Update: {
+          accepted_at?: string | null
+          callee_id?: string | null
+          caller_id?: string
+          conversation_id?: string
+          created_at?: string
+          duration_sec?: number
+          end_reason?: string | null
+          ended_at?: string | null
+          id?: string
+          kind?: string
+          started_at?: string
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_calls_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       chat_delete_audit: {
         Row: {
           action: Database["public"]["Enums"]["chat_delete_action"]
