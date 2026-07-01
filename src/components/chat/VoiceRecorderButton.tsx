@@ -41,8 +41,9 @@ function extFromMime(mime: string): string {
   return "webm";
 }
 
-// Format durasi tersentralisasi (mm:ss) — lihat src/lib/format-duration.ts.
-const fmt = formatDurationMMSS;
+// Format durasi tersentralisasi (mm:ss) — semua komponen attachment WAJIB
+// memakai `formatDurationMMSS` dari `@/lib/format-duration` agar label
+// (recorder timer, VoiceNotePlayer, dsb) identik lintas UI.
 
 type Props = {
   conversationId: string;
