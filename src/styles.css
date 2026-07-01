@@ -533,36 +533,6 @@ html[data-reduce-motion="on"] *::after {
  * tombol di dalam dialog Radix yang punya animasi sendiri, atau tombol
  * yang harus tetap statis (mis. label toggle di form multi-langkah).
  */
-@custom-variant press-target (&:is(
-  button,
-  a[href],
-  summary,
-  label[for],
-  select,
-  input[type="button"],
-  input[type="submit"],
-  input[type="reset"],
-  input[type="checkbox"],
-  input[type="radio"],
-  input[type="file"],
-  input[type="image"],
-  input[type="color"],
-  input[type="range"],
-  [role="button"],
-  [role="link"],
-  [role="menuitem"],
-  [role="menuitemcheckbox"],
-  [role="menuitemradio"],
-  [role="tab"],
-  [role="option"],
-  [role="switch"],
-  [role="checkbox"],
-  [role="radio"],
-  [role="treeitem"],
-  [role="gridcell"],
-  [role="combobox"]
-):not([data-no-press]):not(:disabled):not([aria-disabled="true"]));
-
 [data-press-scope="on"] :is(
   button, a[href], summary, label[for], select,
   input[type="button"], input[type="submit"], input[type="reset"],
