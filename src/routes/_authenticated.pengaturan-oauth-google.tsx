@@ -173,6 +173,70 @@ function OAuthGooglePage() {
   const doneCount = STEPS.filter((s) => checks[s.id]).length;
   const complete = doneCount === STEPS.length;
 
+  // --- Form kredensial ---------------------------------------------------
+  // Client ID: publik-safe (muncul di URL OAuth), disimpan sebagai audit-hint.
+  // Client Secret: TIDAK PERNAH disimpan — hanya divalidasi lalu disediakan
+  // tombol Salin untuk ditempel ke Backend. State di-clear setelah salin.
+  const [clientId, setClientId] = useState<string>("");
+  const [savedClientId, setSavedClientId] = useState<string>("");
+  const [clientIdError, setClientIdError] = useState<string | null>(null);
+  const [clientSecret, setClientSecret] = useState<string>("");
+  const [secretError, setSecretError] = useState<string | null>(null);
+  const [showSecret, setShowSecret] = useState(false);
+
+  useEffect(() => {
+    const v = loadClientId();
+    setClientId(v);
+    setSavedClientId(v);
+  }, []);
+
+  const clientIdDirty = clientId.trim() !== savedClientId;
+
+  const handleSaveClientId = () => {
+    const parsed = clientIdSchema.safeParse(clientId);
+    if (!parsed.success) {
+      setClientIdError(parsed.error.issues[0]?.message ?? "Format tidak valid");
+      return;
+    }
+    setClientIdError(null);
+    saveClientId(parsed.data);
+    setClientId(parsed.data);
+    setSavedClientId(parsed.data);
+    toast.success("Client ID tersimpan di perangkat ini");
+  };
+
+  const handleClearClientId = () => {
+    saveClientId("");
+    setClientId("");
+    setSavedClientId("");
+    setClientIdError(null);
+    toast.success("Client ID dihapus");
+  };
+
+  const handleCopySecret = async () => {
+    const parsed = clientSecretSchema.safeParse(clientSecret);
+    if (!parsed.success) {
+      setSecretError(parsed.error.issues[0]?.message ?? "Format tidak valid");
+      return;
+    }
+    setSecretError(null);
+    try {
+      await navigator.clipboard.writeText(parsed.data);
+      toast.success("Client Secret disalin — tempel ke Backend sekarang");
+      // Bersihkan agar tidak menetap di DOM/memory setelah dipakai.
+      setClientSecret("");
+      setShowSecret(false);
+    } catch {
+      toast.error("Gagal menyalin — salin manual lalu bersihkan field");
+    }
+  };
+
+  const handleClearSecret = () => {
+    setClientSecret("");
+    setSecretError(null);
+    setShowSecret(false);
+  };
+
   const copy = async (value: string, label: string) => {
     if (!value) {
       toast.error(`${label} belum tersedia`);
