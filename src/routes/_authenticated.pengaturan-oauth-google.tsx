@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
+import { z } from "zod";
 import {
   Card,
   CardContent,
@@ -10,7 +11,9 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Copy, ExternalLink, ShieldAlert, Check } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Copy, ExternalLink, ShieldAlert, Check, Eye, EyeOff, Save, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { useAdminStatus } from "@/hooks/use-is-admin";
@@ -33,6 +36,30 @@ export const Route = createFileRoute("/_authenticated/pengaturan-oauth-google")(
  */
 
 const CHECKLIST_KEY = "mcm.oauth-google.checklist.v1";
+const CLIENT_ID_KEY = "mcm.oauth-google.client-id.v1";
+
+// Regex resmi format kredensial Google OAuth 2.0.
+// Client ID web: "<digits>-<lowercased-alphanumeric>.apps.googleusercontent.com".
+// Client Secret: diawali "GOCSPX-" diikuti minimal 20 karakter A-Z a-z 0-9 _ -.
+const clientIdSchema = z
+  .string()
+  .trim()
+  .min(1, "Client ID wajib diisi")
+  .max(200, "Client ID terlalu panjang")
+  .regex(
+    /^\d{6,}-[a-z0-9]{10,}\.apps\.googleusercontent\.com$/,
+    "Format tidak dikenali — contoh: 1234567890-abc123def.apps.googleusercontent.com",
+  );
+const clientSecretSchema = z
+  .string()
+  .trim()
+  .min(1, "Client Secret wajib diisi")
+  .max(200, "Client Secret terlalu panjang")
+  .regex(
+    /^GOCSPX-[A-Za-z0-9_-]{20,}$/,
+    "Format tidak dikenali — Client Secret Google diawali GOCSPX-",
+  );
+
 const STEPS = [
   { id: "consent", label: "Isi OAuth consent screen (nama, logo, domain)" },
   { id: "scopes", label: "Tambah scope userinfo.email, userinfo.profile, openid" },
