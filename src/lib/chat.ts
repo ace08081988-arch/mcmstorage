@@ -713,9 +713,50 @@ export function useHideMessageForMe(conversationId: string) {
       const msg = e instanceof Error ? e.message : String(e ?? "Gagal menyembunyikan pesan");
       toast.error("Gagal menghapus pesan", { description: msg });
     },
-    onSuccess: () => {
+    onSuccess: (_data, messageId) => {
+      // Undo: DELETE the message_hidden row for this user. RLS scopes it to
+      // (user_id = auth.uid()) so this only affects our own row, and the
+      // realtime DELETE event fans out to every other logged-in device on
+      // the same account (channel `chat-hidden:{uid}`).
+      let undone = false;
       toast.success("Pesan dihapus", {
         description: "Pesan disembunyikan dari perangkat kamu.",
+        duration: 6000,
+        action: {
+          label: "Batalkan",
+          onClick: async () => {
+            if (undone) return;
+            undone = true;
+            const { error } = await supabase
+              .from("message_hidden")
+              .delete()
+              .eq("message_id", messageId);
+            if (error) {
+              toast.error("Gagal membatalkan", { description: error.message });
+              return;
+            }
+            // Local optimistic revert — realtime DELETE will confirm across devices.
+            qc.setQueryData<Set<string>>(["chat", "hidden"], (prev) => {
+              if (!prev || !prev.has(messageId)) return prev;
+              const next = new Set(prev);
+              next.delete(messageId);
+              return next;
+            });
+            await Promise.all([
+              qc.invalidateQueries({ queryKey: ["chat", "hidden"], refetchType: "active" }),
+              qc.invalidateQueries({
+                queryKey: ["chat", "messages", conversationId],
+                refetchType: "active",
+              }),
+              qc.invalidateQueries({
+                queryKey: ["chat", "conversations"],
+                refetchType: "active",
+              }),
+            ]);
+            qc.invalidateQueries({ queryKey: ["chat", "unread-total"] });
+            toast.success("Pesan dikembalikan");
+          },
+        },
       });
     },
     onSettled: async () => {
