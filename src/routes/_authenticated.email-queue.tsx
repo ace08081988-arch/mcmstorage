@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import { getEmailQueueStatus, resendDeviceOtpByMessage } from "@/lib/email-queue.functions";
 import { toast } from "sonner";
+import { useAdminStatus } from "@/hooks/use-is-admin";
 
 export const Route = createFileRoute("/_authenticated/email-queue")({
   head: () => ({
@@ -69,9 +70,14 @@ function EmailQueuePage() {
   const fetchStatus = useServerFn(getEmailQueueStatus);
   const resendOtp = useServerFn(resendDeviceOtpByMessage);
   const [busyId, setBusyId] = useState<string | null>(null);
+  // Route-level guard: jangan panggil server fn admin sama sekali kalau
+  // user belum terbukti admin. Non-admin melihat fallback statis; status
+  // pending menampilkan skeleton ringan tanpa memicu request.
+  const { isAdmin, isCheckingAdmin } = useAdminStatus();
   const q = useQuery({
     queryKey: ["email-queue-status"],
     queryFn: () => fetchStatus(),
+    enabled: isAdmin,
     refetchInterval: 10_000,
     refetchIntervalInBackground: false,
     staleTime: 5_000,
@@ -137,7 +143,30 @@ function EmailQueuePage() {
         </p>
       </div>
 
-      {q.isLoading ? (
+      {isCheckingAdmin ? (
+        <Card>
+          <CardContent className="p-6 text-sm text-muted-foreground">
+            Memeriksa akses…
+          </CardContent>
+        </Card>
+      ) : !isAdmin ? (
+        <Card>
+          <CardContent className="space-y-2 p-6 text-sm">
+            <div className="font-medium">Halaman ini hanya untuk admin.</div>
+            <p className="text-muted-foreground">
+              Anda tidak memiliki akses ke antrian email. Kembali ke{" "}
+              <Link to="/diagnostics" className="underline">
+                Diagnostik
+              </Link>{" "}
+              atau{" "}
+              <Link to="/" className="underline">
+                halaman utama
+              </Link>
+              .
+            </p>
+          </CardContent>
+        </Card>
+      ) : q.isLoading ? (
         <Card>
           <CardContent className="p-6 text-sm text-muted-foreground">Memuat status…</CardContent>
         </Card>
