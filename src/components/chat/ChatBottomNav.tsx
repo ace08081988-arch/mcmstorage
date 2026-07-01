@@ -1,6 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { MessageCircle, Phone, Bell, LayoutGrid } from "lucide-react";
-import { useTotalUnreadCount } from "@/lib/chat";
+import { useUnreadTotal } from "@/lib/chat";
 
 type Item = {
   to: "/chat" | "/panggilan" | "/notifikasi" | "/";
@@ -14,7 +14,7 @@ type Item = {
  * Chat / Panggilan / Pembaruan / Fitur — sticky di bawah, hormati safe-area iOS.
  */
 export function ChatBottomNav() {
-  const unread = useTotalUnreadCount();
+  const unread = useUnreadTotal();
   const path = useRouterState({ select: (s) => s.location.pathname });
   const items: Item[] = [
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread },
