@@ -7,10 +7,14 @@ import {
   MessageCircle,
   Loader2,
   ChevronRight,
+  Link2,
+  Check,
 } from "lucide-react";
 import { getLatestApkVariants, type LatestApk } from "@/lib/apk.functions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
+import { useState } from "react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/download")({
   head: () => ({
@@ -183,8 +187,80 @@ function ApkCard({
             Detail & changelog
             <ChevronRight className="h-3 w-3" />
           </Link>
+          <CopyLinkButtons apk={apk} variant={variant} title={title} />
         </>
       )}
+    </div>
+  );
+}
+
+function CopyLinkButtons({
+  apk,
+  variant,
+  title,
+}: {
+  apk: NonNullable<LatestApk>;
+  variant: "storage" | "chat";
+  title: string;
+}) {
+  const [copied, setCopied] = useState<"page" | "file" | null>(null);
+
+  const doCopy = async (text: string, kind: "page" | "file", label: string) => {
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setCopied(kind);
+      toast.success(`${label} disalin`);
+      setTimeout(() => setCopied((c) => (c === kind ? null : c)), 1500);
+    } catch {
+      toast.error("Gagal menyalin link");
+    }
+  };
+
+  const pageUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/download/${variant}`
+      : `/download/${variant}`;
+
+  return (
+    <div className="mt-3 grid grid-cols-2 gap-2">
+      <button
+        type="button"
+        onClick={() => doCopy(pageUrl, "page", "Link halaman")}
+        className="flex items-center justify-center gap-1.5 rounded-lg border bg-background px-2 py-2 text-xs font-medium hover:bg-muted"
+        aria-label={`Salin link halaman ${title}`}
+      >
+        {copied === "page" ? (
+          <Check className="h-3.5 w-3.5 text-emerald-600" />
+        ) : (
+          <Link2 className="h-3.5 w-3.5" />
+        )}
+        {copied === "page" ? "Tersalin" : "Salin link halaman"}
+      </button>
+      <button
+        type="button"
+        onClick={() => doCopy(apk.url, "file", "Link unduh langsung")}
+        className="flex items-center justify-center gap-1.5 rounded-lg border bg-background px-2 py-2 text-xs font-medium hover:bg-muted"
+        aria-label={`Salin link unduh langsung ${title}`}
+        title="Berlaku ± 1 jam sebelum kedaluwarsa"
+      >
+        {copied === "file" ? (
+          <Check className="h-3.5 w-3.5 text-emerald-600" />
+        ) : (
+          <Link2 className="h-3.5 w-3.5" />
+        )}
+        {copied === "file" ? "Tersalin" : "Salin link file"}
+      </button>
     </div>
   );
 }
