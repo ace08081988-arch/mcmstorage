@@ -811,5 +811,21 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: konsistensi `PIN xxxx-xxxx` pada BARIS YANG BARU DIMOUNT
+      // saat scroll di daftar `/chat` (virtualized list). Skenario
+      // scroll cepat bolak-balik + polling `innerText` frekuensi
+      // tinggi memastikan token PIN per `href` identik lintas
+      // mount/unmount dan tidak pernah sesaat berupa nomor telp
+      // Indonesia mentah.
+      name: "chat-pin-mcm-virtualized-scroll-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-virtualized-scroll\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
