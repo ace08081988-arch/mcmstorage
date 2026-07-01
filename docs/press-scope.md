@@ -235,3 +235,24 @@ di-refactor.
   <Button size="sm">Edit</Button>  {/* tetap ikut press */}
 </li>
 ```
+
+## Kode error press-audit
+
+Setiap warning dari `src/lib/press-audit.ts` diawali kode stabil supaya
+mudah difilter di devtools (ketik `PA00` di panel Console) dan
+dijadikan tautan langsung ke bagian dokumentasi ini.
+
+| Kode  | Rule                          | Anchor docs                                 |
+| ----- | ----------------------------- | ------------------------------------------- |
+| PA001 | `radix-animated-surface`      | [Radix Dialog / DropdownMenu](#radix-dialog--dropdownmenu) |
+| PA002 | `motion-whiletap-wraps-button`| [shadcn Button dalam motion.div](#shadcn-button-dalam-motiondiv) |
+| PA003 | `sortable-handle`             | [Sortable / drag handle](#sortable--drag-handle) |
+| PA004 | `destructive-menuitem`        | [Radix Dialog / DropdownMenu](#radix-dialog--dropdownmenu) |
+
+Format tiap baris warning:
+
+```
+[press-audit PA00X] <saran perbaikan> · docs: docs/press-scope.md#<anchor>
+  ↳ arg ke-2: elemen DOM asli (klik untuk highlight di Elements panel)
+  ↳ arg ke-3: { code, rule, docs, tag, id, testid, role, cls }
+```

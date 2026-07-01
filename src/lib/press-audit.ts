@@ -29,6 +29,54 @@ type Finding = {
   suggestion: string;
 };
 
+/**
+ * Metadata terstruktur per rule. Format `PA###` sengaja stabil supaya
+ * mudah di-grep dari log, di-filter di devtools ("PA002"), dan
+ * dijadikan tautan langsung ke bagian dokumentasi terkait.
+ */
+type RuleMeta = { code: string; docs: string };
+
+const DOCS_BASE = "docs/press-scope.md";
+const RULE_META: Record<string, RuleMeta> = {
+  "radix-animated-surface": {
+    code: "PA001",
+    docs: `${DOCS_BASE}#radix-dialog--dropdownmenu`,
+  },
+  "motion-whiletap-wraps-button": {
+    code: "PA002",
+    docs: `${DOCS_BASE}#shadcn-button-dalam-motiondiv`,
+  },
+  "sortable-handle": {
+    code: "PA003",
+    docs: `${DOCS_BASE}#sortable--drag-handle`,
+  },
+  "destructive-menuitem": {
+    code: "PA004",
+    docs: `${DOCS_BASE}#radix-dialog--dropdownmenu`,
+  },
+};
+
+function metaFor(rule: string): RuleMeta {
+  return RULE_META[rule] ?? { code: "PA000", docs: DOCS_BASE };
+}
+
+function describeEl(el: Element): {
+  tag: string;
+  id: string | null;
+  testid: string | null;
+  role: string | null;
+  cls: string | null;
+} {
+  const h = el as HTMLElement;
+  return {
+    tag: el.tagName.toLowerCase(),
+    id: h.id || null,
+    testid: h.getAttribute("data-testid"),
+    role: h.getAttribute("role"),
+    cls: (h.getAttribute("class") || null)?.slice(0, 80) ?? null,
+  };
+}
+
 const seen = new WeakSet<Element>();
 const dedupe = new Set<string>();
 
@@ -139,25 +187,34 @@ function report(findings: Finding[]) {
     arr.push(f);
     byRule.set(f.rule, arr);
   }
+  // Ringkasan kode error untuk memudahkan filtering global
+  // (mis. devtools filter "PA00" atau grep log).
+  const codes = Array.from(byRule.keys())
+    .map((r) => metaFor(r).code)
+    .sort()
+    .join(",");
   // eslint-disable-next-line no-console
   console.groupCollapsed(
-    `%c[press-audit]%c ${fresh.length} komponen berpotensi bentrok tanpa \`data-no-press\``,
+    `%c[press-audit]%c ${fresh.length} temuan tanpa \`data-no-press\` · kode: ${codes} · docs: ${DOCS_BASE}`,
     "color:#f59e0b;font-weight:600",
     "color:inherit",
   );
   for (const [rule, list] of byRule) {
+    const meta = metaFor(rule);
     // eslint-disable-next-line no-console
-    console.groupCollapsed(`${rule} (${list.length})`);
+    console.groupCollapsed(`[${meta.code}] ${rule} (${list.length}) · ${meta.docs}`);
     for (const { el, suggestion } of list) {
+      const details = { code: meta.code, rule, docs: meta.docs, ...describeEl(el) };
       // eslint-disable-next-line no-console
-      console.warn(suggestion, el);
+      console.warn(`[press-audit ${meta.code}] ${suggestion} · docs: ${meta.docs}`, el, details);
     }
     // eslint-disable-next-line no-console
     console.groupEnd();
   }
   // eslint-disable-next-line no-console
   console.info(
-    "Dokumentasi: docs/press-scope.md — bagian Checklist implementasi per komponen.",
+    `Dokumentasi lengkap: ${DOCS_BASE} — bagian "Checklist implementasi per komponen". ` +
+      `Filter cepat di devtools: ketik "press-audit" atau kode (PA001-PA004).`,
   );
   // eslint-disable-next-line no-console
   console.groupEnd();
