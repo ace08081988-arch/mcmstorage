@@ -317,9 +317,14 @@ function collectAncestorTokens(el: Element, attrs: string[]): string[] {
  * Token harus salah satu dari:
  *   - nama rule terdaftar (mis. `radix-animated-surface`)
  *   - kode `PA###` yang dikenal (mis. `PA001`)
- * Selain itu kita `console.warn` sekali per host + (atribut, token) unik
- * supaya salah ketik seperti `PA01`, `pa-002`, `radix-animatd-surface`
- * cepat kelihatan tanpa spam.
+ * Selain itu kita `console.warn` sekali per host + (atribut, raw value,
+ * token) unik supaya:
+ *   - salah ketik seperti `PA01`, `pa-002`, `radix-animatd-surface` cepat
+ *     kelihatan tanpa spam untuk token yang sama,
+ *   - ganti isi atribut saat HMR/dev (misal `PA01` → `PA02`) memicu
+ *     warning baru karena raw value ikut jadi bagian kunci dedup,
+ *   - dua host berbeda dengan token sama tetap masing-masing di-warn
+ *     sekali (dedup dipegang di WeakMap per host).
  */
 const CODE_PATTERN = /^PA\d{3}$/;
 const warnedSkipTokens = new WeakMap<Element, Set<string>>();
@@ -350,7 +355,10 @@ function validateSkipTokens(
   const unknownCode: string[] = [];
   const unknownRule: string[] = [];
   for (const tok of tokens) {
-    const key = `${attr}::${tok}`;
+    // Kunci dedup: (atribut, raw value, token). Raw value ikut supaya
+    // perubahan isi atribut (mis. developer memperbaiki lalu memasang
+    // salah ketik lain) tidak tertelan cache warning sebelumnya.
+    const key = `${attr}\x1f${raw}\x1f${tok}`;
     if (seen.has(key)) continue;
     const upper = tok.toUpperCase();
     const looksLikeCode = upper.startsWith("PA") || /\d/.test(tok);

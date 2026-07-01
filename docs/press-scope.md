@@ -506,6 +506,19 @@ ketik di `-allow`/`-deny` tidak menyamar sebagai warning `-skip`. Contoh:
 belum dialokasikan: "PA042". Kode yang dikenal: PA001, PA002, PA003, PA004.
 ```
 
+**Dedup warning.** Kunci dedup adalah tuple **(host element, atribut,
+raw value atribut, token)**. Konsekuensinya:
+
+- Dua host berbeda dengan token salah yang sama → masing-masing di-warn
+  sekali (WeakMap per host tidak dipakai bersama).
+- Host yang sama dengan dua token berbeda pada satu atribut (mis.
+  `data-press-audit-skip="PA01 PA02"`) → dua warning terpisah.
+- Isi atribut diubah saat dev/HMR (mis. `"PA01"` → `"PA02"`) → warning
+  baru muncul karena raw value ikut sebagai kunci, walau host-nya sama.
+- Atribut berbeda dengan token sama (mis. `-allow="PA042"` dan
+  `-deny="PA042"` pada host yang sama) → tetap dua warning, karena nama
+  atribut jadi bagian kunci dedup.
+
 ### Prioritas evaluasi (satu section, banyak atribut)
 
 Kalau satu subtree memasang lebih dari satu mekanisme (mis. `data-press-audit="on"`
