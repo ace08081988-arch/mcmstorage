@@ -343,9 +343,21 @@ export function AppSidebar() {
     return () => window.removeEventListener("mcm:app-mode-change", on);
   }, []);
   const chatOnly = isChatOnly();
-  const visibleGroups = chatOnly
+  const isAdmin = useIsAdmin();
+  const baseGroups = chatOnly
     ? groups.filter((g) => CHAT_ONLY_GROUP_LABELS.has(g.label))
     : groups;
+  // Sembunyikan menu admin-only ("Rilis APK") dari non-admin supaya mereka
+  // tidak jatuh ke halaman kosong dengan runtime error.
+  const ADMIN_ONLY_URLS = new Set<string>(["/pengaturan-apk"]);
+  const visibleGroups = baseGroups
+    .map((g) => ({
+      ...g,
+      items: g.items.filter(
+        (it) => isAdmin || !ADMIN_ONLY_URLS.has(it.url),
+      ),
+    }))
+    .filter((g) => g.items.length > 0);
   void modeTick;
   const chatFetching = useIsFetching({ queryKey: ["chat", "conversations"] });
   const queryClient = useQueryClient();
