@@ -266,6 +266,7 @@ function AuthPage() {
     }
     if (result.redirected) return;
     toast.success("Berhasil masuk");
+    clearPrefs();
     navigate({ to: "/", replace: true });
   };
 
@@ -281,6 +282,7 @@ function AuthPage() {
     }
     if (result.redirected) return;
     toast.success("Berhasil masuk");
+    clearPrefs();
     navigate({ to: "/", replace: true });
   };
 
