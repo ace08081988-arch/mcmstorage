@@ -1631,28 +1631,19 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // Untuk mode "existing", SEMUA turunan (jenis kemasan, ukuran, base unit)
   // WAJIB diambil dari item terpilih — bukan state form "barang baru".
   const selectedItem = mode === "existing" ? items.find((i) => i.id === itemId) ?? null : null;
-  const effPackageType: PackageType = selectedItem
-    ? ((selectedItem.package_type as PackageType) || "pcs")
-    : packageType;
-  const effBaseUnit: "g" | "pcs" = selectedItem
-    ? (selectedItem.base_unit as "g" | "pcs")
-    : defaultBase(packageType);
+  const derived = computeBeliDerived({
+    mode,
+    selectedItem,
+    newPackageType: packageType,
+    newPackageSize: packageSize,
+    packageQty,
+    pricePerPackage,
+    priceMode,
+    pricePerBase,
+    inputKarton,
+  });
+  const { effPackageType, effBaseUnit, effectivePkgSize, kartonActive, pkgQ, price, baseAdded, totalCost } = derived;
   const baseUnit = effBaseUnit;
-  const effectivePkgSize = selectedItem
-    ? (effPackageType === "pcs" ? 1 : Number(selectedItem.package_size) || 0)
-    : (packageType === "pcs" ? 1 : Number(packageSize) || 0);
-  const kartonActive = inputKarton && effPackageType === "botol";
-  const rawQty = Number(packageQty) || 0;
-  // Saat mode karton aktif, angka yang diketik = jumlah karton → ×100 botol.
-  const pkgQ = kartonActive ? rawQty * BOTOL_PER_KARTON : rawQty;
-  const rawPricePerPackage = Number(pricePerPackage) || 0;
-  // Harga per karton ÷ 100 = harga per botol.
-  const pricePerBotol = kartonActive ? rawPricePerPackage / BOTOL_PER_KARTON : rawPricePerPackage;
-  const price = priceMode === "package"
-    ? pricePerBotol
-    : (Number(pricePerBase) || 0) * effectivePkgSize;
-  const baseAdded = pkgQ * effectivePkgSize;
-  const totalCost = pkgQ * price;
 
   // Bila item terpilih bukan botol, mode karton wajib mati agar tidak
   // ×100 dari qty. Bila pindah ke item pcs, harga per-kemasan tidak
