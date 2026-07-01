@@ -41,6 +41,32 @@ export const Route = createFileRoute("/_authenticated/pengaturan-kunci")({
   component: PengaturanKunci,
 });
 
+function StatusRow({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "ok" | "warn" | "err";
+}) {
+  const dot =
+    tone === "ok"
+      ? "bg-emerald-500"
+      : tone === "err"
+        ? "bg-rose-500"
+        : "bg-amber-500";
+  return (
+    <li className="flex items-center justify-between gap-2 rounded border bg-background px-2 py-1">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="flex items-center gap-1.5 font-medium">
+        <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot}`} />
+        {value}
+      </span>
+    </li>
+  );
+}
+
 function PengaturanKunci() {
   const [uid, setUid] = useState<string | null>(null);
   const [cfg, setCfg] = useState<LockConfig | null>(null);
