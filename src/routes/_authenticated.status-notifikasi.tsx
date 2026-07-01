@@ -1135,3 +1135,180 @@ function TestNotificationCard({
     </Card>
   );
 }
+
+function ImportSnapshotCard() {
+  const fileRef = useRef<HTMLInputElement | null>(null);
+  const [result, setResult] = useState<ImportResult | null>(null);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [pasteOpen, setPasteOpen] = useState(false);
+  const [pasteText, setPasteText] = useState("");
+
+  const pickFile = () => fileRef.current?.click();
+
+  const handleFile = async (file: File) => {
+    setFileName(file.name);
+    try {
+      const text = await readFileAsText(file);
+      setResult(parseSnapshotText(text));
+    } catch (e) {
+      setResult({ ok: false, error: e instanceof Error ? e.message : "Gagal membaca file." });
+    }
+  };
+
+  const onInput = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const f = e.target.files?.[0];
+    if (f) await handleFile(f);
+    // Reset agar file yang sama bisa dipilih ulang.
+    e.target.value = "";
+  };
+
+  const parsePasted = () => {
+    setFileName("(tempel manual)");
+    setResult(parseSnapshotText(pasteText));
+    setPasteOpen(false);
+  };
+
+  const reset = () => {
+    setResult(null);
+    setFileName(null);
+    setPasteText("");
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-base">Impor snapshot JSON</CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-3 text-sm">
+        <p className="text-xs text-muted-foreground leading-snug">
+          Baca kembali file ekspor Status Notifikasi (versi saat ini: v{CURRENT_SCHEMA_VERSION}).
+          File lama tanpa <code>schemaVersion</code> tetap didukung dan otomatis dinormalkan.
+        </p>
+        <input
+          ref={fileRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={(e) => void onInput(e)}
+        />
+        <div className="flex flex-wrap gap-2">
+          <Button size="sm" onClick={pickFile}>Pilih file JSON</Button>
+          <Button size="sm" variant="outline" onClick={() => setPasteOpen(true)}>
+            Tempel JSON
+          </Button>
+          {result && (
+            <Button size="sm" variant="ghost" onClick={reset}>
+              Bersihkan
+            </Button>
+          )}
+        </div>
+        {fileName && (
+          <div className="text-[11px] text-muted-foreground">
+            Sumber: <code>{fileName}</code>
+          </div>
+        )}
+        {result && <ImportResultView result={result} />}
+
+        <Dialog open={pasteOpen} onOpenChange={setPasteOpen}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Tempel JSON snapshot</DialogTitle>
+              <DialogDescription>
+                Salin isi file ekspor Status Notifikasi ke bawah ini, lalu tekan Validasi.
+              </DialogDescription>
+            </DialogHeader>
+            <textarea
+              value={pasteText}
+              onChange={(e) => setPasteText(e.target.value)}
+              className="min-h-[240px] w-full rounded-md border bg-background p-2 font-mono text-[11px] leading-snug"
+              placeholder='{ "schemaVersion": 1, ... }'
+            />
+            <DialogFooter className="gap-2 sm:gap-2">
+              <Button size="sm" variant="outline" onClick={() => setPasteOpen(false)}>
+                Batal
+              </Button>
+              <Button size="sm" onClick={parsePasted} disabled={!pasteText.trim()}>
+                Validasi
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ImportResultView({ result }: { result: ImportResult }) {
+  if (!result.ok) {
+    return (
+      <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive space-y-1">
+        <div className="font-medium">Gagal diimpor</div>
+        <p className="leading-snug">{result.error}</p>
+      </div>
+    );
+  }
+  const { snapshot, sourceVersion, warnings } = result;
+  return (
+    <div className="space-y-2">
+      <div className="rounded-md border p-3 text-xs space-y-1">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="font-medium">Snapshot valid</span>
+          <div className="flex gap-1">
+            <Badge variant={sourceVersion === 0 ? "secondary" : "default"}>
+              schema v{sourceVersion === 0 ? "0 (legacy)" : sourceVersion}
+            </Badge>
+            {sourceVersion > CURRENT_SCHEMA_VERSION && (
+              <Badge variant="destructive">lebih baru</Badge>
+            )}
+          </div>
+        </div>
+        <SnapshotSummary snapshot={snapshot} />
+      </div>
+      {warnings.length > 0 && (
+        <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-1">
+          <div className="font-medium">Catatan validasi ({warnings.length})</div>
+          <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground leading-snug">
+            {warnings.map((w, i) => (
+              <li key={`${w.code}-${i}`}>
+                <code className="text-[10px]">{w.code}</code> — {w.detail}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <details className="rounded-md border p-2 text-[11px]">
+        <summary className="cursor-pointer text-xs font-medium">Snapshot ternormalisasi</summary>
+        <pre className="mt-2 max-h-[40vh] overflow-auto whitespace-pre-wrap break-all font-mono">
+          {JSON.stringify(snapshot, null, 2)}
+        </pre>
+      </details>
+    </div>
+  );
+}
+
+function SnapshotSummary({ snapshot }: { snapshot: NormalizedSnapshot }) {
+  const perm = (snapshot.permission?.state as string) ?? "—";
+  const inFrame = snapshot.frame?.inIframe;
+  const swState = (snapshot.serviceWorker?.state as string) ?? "—";
+  const pushActive = snapshot.pushSubscription?.active;
+  return (
+    <div className="grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+      <div>exportedAt</div>
+      <div className="text-right text-foreground">{snapshot.exportedAt ?? "—"}</div>
+      <div>timezone</div>
+      <div className="text-right text-foreground">{snapshot.timezone?.label ?? "—"}</div>
+      <div>permission</div>
+      <div className="text-right text-foreground">{perm}</div>
+      <div>iframe</div>
+      <div className="text-right text-foreground">
+        {inFrame === undefined ? "—" : String(inFrame)}
+      </div>
+      <div>service worker</div>
+      <div className="text-right text-foreground">{swState}</div>
+      <div>push subscription</div>
+      <div className="text-right text-foreground">
+        {pushActive === undefined ? "—" : pushActive ? "aktif" : "tidak"}
+      </div>
+    </div>
+  );
+}
