@@ -195,17 +195,27 @@ export function OrgNameSettings() {
         {/* Logo */}
         <div className="space-y-2">
           <Label>Logo</Label>
-          <div className="flex items-center gap-3">
-            <div className="h-14 w-14 shrink-0 overflow-hidden rounded-md border bg-muted flex items-center justify-center">
-              {savedLogo ? (
+          <div className="flex items-start gap-3">
+            <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-md border bg-muted flex items-center justify-center">
+              {pendingLogo ? (
+                <img src={pendingLogo.url} alt="Pratinjau logo baru" className="h-full w-full object-cover" />
+              ) : savedLogo ? (
                 <img src={savedLogo} alt="Logo" className="h-full w-full object-cover" />
               ) : (
                 <span className="text-[11px] font-bold tracking-wider text-muted-foreground">
                   {short || DEFAULT_ORG_SHORT}
                 </span>
               )}
+              {pendingLogo && (
+                <span
+                  className="absolute inset-x-0 bottom-0 bg-amber-500/90 text-center text-[9px] font-semibold uppercase tracking-wider text-white"
+                  aria-hidden="true"
+                >
+                  Baru
+                </span>
+              )}
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-1 flex-wrap gap-2">
               <input
                 ref={fileRef}
                 type="file"
@@ -226,7 +236,22 @@ export function OrgNameSettings() {
               >
                 <ImagePlus className="h-3.5 w-3.5" /> Pilih logo
               </Button>
-              {savedLogo && (
+              {pendingLogo && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setPendingLogo(null);
+                    setLogoError(null);
+                    toast.message("Pratinjau logo dibatalkan");
+                  }}
+                  className="gap-1.5"
+                >
+                  Batalkan pratinjau
+                </Button>
+              )}
+              {!pendingLogo && savedLogo && (
                 <Button
                   type="button"
                   variant="ghost"
@@ -242,6 +267,34 @@ export function OrgNameSettings() {
               )}
             </div>
           </div>
+          {pendingLogo && (
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2 text-[11px]">
+              <div className="mb-1 flex items-center gap-1.5 font-semibold text-amber-700 dark:text-amber-500">
+                <ImagePlus className="h-3 w-3" aria-hidden="true" />
+                Pratinjau logo baru — belum disimpan
+              </div>
+              <dl className="grid grid-cols-2 gap-x-3 gap-y-0.5 text-muted-foreground">
+                <dt>Format</dt>
+                <dd className="font-mono text-foreground">{pendingLogo.mime.replace("image/", "").toUpperCase()}</dd>
+                <dt>Ukuran file</dt>
+                <dd className="font-mono text-foreground">{formatBytes(pendingLogo.size)}</dd>
+                <dt>Dimensi</dt>
+                <dd className="font-mono text-foreground">
+                  {pendingLogo.width > 0
+                    ? `${pendingLogo.width} × ${pendingLogo.height} px`
+                    : "Vektor (SVG)"}
+                </dd>
+                {pendingLogo.width > 0 && (
+                  <>
+                    <dt>Rasio</dt>
+                    <dd className="font-mono text-foreground">
+                      {(pendingLogo.width / pendingLogo.height).toFixed(2)}:1
+                    </dd>
+                  </>
+                )}
+              </dl>
+            </div>
+          )}
           <p className="text-[11px] text-muted-foreground">
             PNG, JPG, WEBP, atau SVG. Maks. 512 KB, dimensi 64–1024 px, rasio 1:2 s.d. 2:1 (persegi paling ideal).
           </p>
