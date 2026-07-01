@@ -234,6 +234,43 @@ export function ProfileQrDialog({
           )}
         </div>
 
+        {(phone || smsPhone) && (
+          <div className={fullscreen ? "px-4" : ""}>
+            {showSmsField ? (
+              <div className="space-y-1.5 rounded-md border bg-muted/30 p-2">
+                <Label
+                  htmlFor="qr-sms-body"
+                  className="flex items-center gap-1.5 text-[11px] font-medium"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  Pesan SMS awal (otomatis terisi saat QR dipindai)
+                </Label>
+                <Textarea
+                  id="qr-sms-body"
+                  value={smsDraft}
+                  onChange={(e) => setSmsDraft(e.target.value.slice(0, 500))}
+                  placeholder={`Halo ${name}, saya ingin bertanya…`}
+                  rows={2}
+                  className="text-xs"
+                />
+                <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                  <span>Kirim ke: {smsPhone || phone}</span>
+                  <span className="tabular-nums">{smsDraft.length}/500</span>
+                </div>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowSmsField(true)}
+                className="flex items-center gap-1.5 text-[11px] text-primary underline"
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                Tambah pesan SMS awal
+              </button>
+            )}
+          </div>
+        )}
+
         <div className={fullscreen ? "flex flex-wrap gap-2 border-t bg-background px-4 py-3" : "flex flex-wrap gap-2 pt-2"}>
           <Button type="button" onClick={handleDownload} disabled={!dataUrl} className="gap-2">
             <Download className="h-4 w-4" /> Unduh PNG
