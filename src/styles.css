@@ -447,6 +447,8 @@ html[data-reduce-motion="on"] *::after {
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
   will-change: transform;
   outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   &:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
@@ -461,6 +463,8 @@ html[data-reduce-motion="on"] *::after {
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
   will-change: transform;
   outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   &:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
@@ -478,6 +482,8 @@ html[data-reduce-motion="on"] *::after {
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
   will-change: transform;
   outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   &:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
@@ -493,6 +499,8 @@ html[data-reduce-motion="on"] *::after {
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
   will-change: transform;
   outline: none;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
   &:focus-visible {
     outline: none;
     box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
@@ -518,6 +526,8 @@ html[data-reduce-motion="on"] *::after {
   transition-duration: 150ms;
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
   will-change: transform;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
   transform: scale(0.97);
