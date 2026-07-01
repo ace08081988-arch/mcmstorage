@@ -232,7 +232,7 @@ function ChatListPage() {
         </div>
       ) : (
         <Tabs defaultValue="active">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 bg-transparent">
             <TabsTrigger value="active">Aktif {active.length ? `(${active.length})` : ""}</TabsTrigger>
             <TabsTrigger value="archived">Arsip {archived.length ? `(${archived.length})` : ""}</TabsTrigger>
           </TabsList>
@@ -351,8 +351,8 @@ function ConvList({
     return <div className="rounded-lg border">{empty}</div>;
   }
   return (
-    <div className="rounded-lg border">
-      <ul className="divide-y">
+    <div className="-mx-3 border-y border-[var(--wa-border)]">
+      <ul className="divide-y divide-[var(--wa-border)]">
         {list.map((c) => {
           const mutedUntil = c.muted_until ? new Date(c.muted_until) : null;
           const isMuted = mutedUntil && mutedUntil.getTime() > Date.now();
@@ -361,29 +361,29 @@ function ConvList({
               <Link
                 to="/chat/$conversationId"
                 params={{ conversationId: c.id }}
-                className="flex items-start gap-3 px-3 py-3 pr-12 hover:bg-accent/50"
+                className="flex items-center gap-3 px-4 py-2.5 pr-12 hover:bg-[var(--wa-surface-2)]"
               >
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                  <MessageCircle className="h-5 w-5" />
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase">
+                  {(c.display_title ?? "?").trim().charAt(0) || "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex min-w-0 items-center gap-1 truncate text-sm font-medium">
-                      {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 text-primary" /> : null}
+                    <span className="flex min-w-0 items-center gap-1 truncate text-[15px] font-medium">
+                      {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 wa-muted" /> : null}
                       <span className="truncate">{c.display_title}</span>
-                      {isMuted ? <BellOff className="h-3 w-3 shrink-0 text-muted-foreground" /> : null}
+                      {isMuted ? <BellOff className="h-3 w-3 shrink-0 wa-muted" /> : null}
                     </span>
-                    <span className="shrink-0 text-[10px] text-muted-foreground">{timeShort(c.last_at)}</span>
+                    <span className={`shrink-0 text-[11px] ${c.unread > 0 ? "text-[var(--wa-green)] font-medium" : "wa-muted"}`}>{timeShort(c.last_at)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
+                    <span className="flex min-w-0 items-center gap-1 truncate text-[13px] wa-muted">
                       {c.last_body ? (
                         <>
                           {c.last_delivered ? (
                             c.last_read ? (
-                              <CheckCheck className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="Dibaca" />
+                              <CheckCheck className="h-3.5 w-3.5 shrink-0 wa-check" aria-label="Dibaca" />
                             ) : (
-                              <CheckCheck className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" aria-label="Terkirim" />
+                              <CheckCheck className="h-3.5 w-3.5 shrink-0 wa-muted opacity-70" aria-label="Terkirim" />
                             )
                           ) : null}
                           <span className="truncate">{c.last_body}</span>
@@ -393,7 +393,7 @@ function ConvList({
                       )}
                     </span>
                     {c.unread > 0 ? (
-                      <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                      <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full wa-badge px-1.5 text-[11px] font-semibold">
                         {c.unread > 99 ? "99+" : c.unread}
                       </span>
                     ) : null}
