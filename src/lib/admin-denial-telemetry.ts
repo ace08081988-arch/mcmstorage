@@ -20,18 +20,39 @@ export function logAdminDenial(params: {
     const referer =
       getRequestHeader("referer") ?? getRequestHeader("referrer") ?? null;
     const ua = getRequestHeader("user-agent") ?? null;
+    const reason = params.reason ?? "not_admin";
+    const userId = params.userId ?? null;
     // eslint-disable-next-line no-console
     console.warn(
       "[admin-denial] " +
         JSON.stringify({
           fn: params.fn,
-          userId: params.userId ?? null,
-          reason: params.reason ?? "not_admin",
+          userId,
+          reason,
           referer,
           ua,
           at: new Date().toISOString(),
         }),
     );
+    // Persist ke tabel supaya bisa dicari/difilter dari dashboard admin.
+    // Fire-and-forget: kegagalan telemetri tidak boleh mengubah perilaku
+    // denial dan tidak boleh menahan response ke client.
+    void (async () => {
+      try {
+        const { supabaseAdmin } = await import(
+          "@/integrations/supabase/client.server"
+        );
+        await supabaseAdmin.from("admin_denial_events").insert({
+          fn: params.fn,
+          user_id: userId,
+          reason,
+          referer,
+          ua,
+        });
+      } catch {
+        // ignore
+      }
+    })();
   } catch {
     // Telemetri tidak boleh mengubah perilaku denial.
   }

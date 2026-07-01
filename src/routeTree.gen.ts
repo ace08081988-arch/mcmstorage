@@ -53,6 +53,7 @@ import { Route as AuthenticatedCatatanRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedBukuAlamatRouteImport } from './routes/_authenticated.buku-alamat'
 import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authenticated.balas-cepat'
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
+import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authenticated.admin-denial-log'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as LovableVisualProdukListRouteImport } from './routes/lovable.visual.produk-list'
 import { Route as LovableVisualMinSupportedFormRouteImport } from './routes/lovable.visual.min-supported-form'
@@ -303,6 +304,12 @@ const AuthenticatedAuditRoute = AuthenticatedAuditRouteImport.update({
   path: '/audit',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedAdminDenialLogRoute =
+  AuthenticatedAdminDenialLogRouteImport.update({
+    id: '/admin-denial-log',
+    path: '/admin-denial-log',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -413,6 +420,7 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/trust': typeof TrustRoute
+  '/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/balas-cepat': typeof AuthenticatedBalasCepatRoute
   '/buku-alamat': typeof AuthenticatedBukuAlamatRoute
@@ -474,6 +482,7 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/trust': typeof TrustRoute
+  '/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/audit': typeof AuthenticatedAuditRoute
   '/balas-cepat': typeof AuthenticatedBalasCepatRoute
   '/buku-alamat': typeof AuthenticatedBukuAlamatRoute
@@ -537,6 +546,7 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/terms': typeof TermsRoute
   '/trust': typeof TrustRoute
+  '/_authenticated/admin-denial-log': typeof AuthenticatedAdminDenialLogRoute
   '/_authenticated/audit': typeof AuthenticatedAuditRoute
   '/_authenticated/balas-cepat': typeof AuthenticatedBalasCepatRoute
   '/_authenticated/buku-alamat': typeof AuthenticatedBukuAlamatRoute
@@ -602,6 +612,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/trust'
+    | '/admin-denial-log'
     | '/audit'
     | '/balas-cepat'
     | '/buku-alamat'
@@ -663,6 +674,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/trust'
+    | '/admin-denial-log'
     | '/audit'
     | '/balas-cepat'
     | '/buku-alamat'
@@ -725,6 +737,7 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/terms'
     | '/trust'
+    | '/_authenticated/admin-denial-log'
     | '/_authenticated/audit'
     | '/_authenticated/balas-cepat'
     | '/_authenticated/buku-alamat'
@@ -1115,6 +1128,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAuditRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin-denial-log': {
+      id: '/_authenticated/admin-denial-log'
+      path: '/admin-denial-log'
+      fullPath: '/admin-denial-log'
+      preLoaderRoute: typeof AuthenticatedAdminDenialLogRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/chat/': {
       id: '/_authenticated/chat/'
       path: '/'
@@ -1278,6 +1298,7 @@ const AuthenticatedGudangRouteWithChildren =
   AuthenticatedGudangRoute._addFileChildren(AuthenticatedGudangRouteChildren)
 
 interface AuthenticatedRouteChildren {
+  AuthenticatedAdminDenialLogRoute: typeof AuthenticatedAdminDenialLogRoute
   AuthenticatedAuditRoute: typeof AuthenticatedAuditRoute
   AuthenticatedBalasCepatRoute: typeof AuthenticatedBalasCepatRoute
   AuthenticatedBukuAlamatRoute: typeof AuthenticatedBukuAlamatRoute
@@ -1314,6 +1335,7 @@ interface AuthenticatedRouteChildren {
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
+  AuthenticatedAdminDenialLogRoute: AuthenticatedAdminDenialLogRoute,
   AuthenticatedAuditRoute: AuthenticatedAuditRoute,
   AuthenticatedBalasCepatRoute: AuthenticatedBalasCepatRoute,
   AuthenticatedBukuAlamatRoute: AuthenticatedBukuAlamatRoute,
