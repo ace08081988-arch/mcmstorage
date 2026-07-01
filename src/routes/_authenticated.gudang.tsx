@@ -1632,7 +1632,12 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
 
   // Untuk mode "existing", SEMUA turunan (jenis kemasan, ukuran, base unit)
   // WAJIB diambil dari item terpilih — bukan state form "barang baru".
-  const selectedItem = mode === "existing" ? items.find((i) => i.id === itemId) ?? null : null;
+  // Anotasi eksplisit + useMemo mencegah TDZ (TS2448/TS2454) bila hook lain
+  // di bawah memindahkan urutan referensi di edit-edit berikutnya.
+  const selectedItem: WItem | null = useMemo(
+    () => (mode === "existing" ? items.find((i) => i.id === itemId) ?? null : null),
+    [mode, items, itemId],
+  );
   const derived = computeBeliDerived({
     mode,
     selectedItem,
