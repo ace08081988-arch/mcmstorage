@@ -23,7 +23,17 @@ import {
   Trash2,
   ContactRound,
   CheckCircle2,
+  ScanLine,
+  Loader2,
 } from "lucide-react";
+import { QrScannerDialog } from "@/components/QrScannerDialog";
+import {
+  formatInviteCode,
+  isLikelyInviteCode,
+  normalizeInviteCode,
+  resolveInviteCode,
+  type InviteProfile,
+} from "@/lib/invite";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
@@ -422,6 +432,9 @@ function EditDialog({
   const [note, setNote] = useState("");
   const [pin, setPin] = useState("");
   const [busy, setBusy] = useState(false);
+  const [scanOpen, setScanOpen] = useState(false);
+  const [pinPreview, setPinPreview] = useState<InviteProfile | null>(null);
+  const [pinChecking, setPinChecking] = useState(false);
 
   useEffect(() => {
     if (isNew) {
@@ -438,6 +451,37 @@ function EditDialog({
       setPin("");
     }
   }, [target]);
+
+  // Debounced preview PIN — hanya di mode "tambah kontak baru".
+  useEffect(() => {
+    if (!isNew) {
+      setPinPreview(null);
+      setPinChecking(false);
+      return;
+    }
+    const cleaned = normalizeInviteCode(pin);
+    if (!isLikelyInviteCode(cleaned)) {
+      setPinPreview(null);
+      setPinChecking(false);
+      return;
+    }
+    let cancelled = false;
+    setPinChecking(true);
+    const t = setTimeout(async () => {
+      try {
+        const p = await resolveInviteCode(cleaned);
+        if (!cancelled) setPinPreview(p);
+      } catch {
+        if (!cancelled) setPinPreview(null);
+      } finally {
+        if (!cancelled) setPinChecking(false);
+      }
+    }, 350);
+    return () => {
+      cancelled = true;
+      clearTimeout(t);
+    };
+  }, [pin, isNew]);
 
   const normPhone = (s: string) => s.replace(/\D/g, "");
   const normEmail = (s: string) => s.trim().toLowerCase();
@@ -468,6 +512,10 @@ function EditDialog({
       toast.error("Nama wajib diisi.");
       return;
     }
+    if (isNew && !isLikelyInviteCode(normalizeInviteCode(pin))) {
+      toast.error("PIN undangan wajib diisi (8 karakter) atau pindai QR.");
+      return;
+    }
     if (duplicate) {
       toast.error("Kontak duplikat", { description: duplicate.reason });
       return;
@@ -480,7 +528,7 @@ function EditDialog({
       let alreadyFriends = false;
       if (isNew && pin.trim()) {
         const { addContactByInviteCode } = await import("@/lib/invite");
-        const res = await addContactByInviteCode(pin.trim());
+        const res = await addContactByInviteCode(normalizeInviteCode(pin));
         linkedName = res.displayName;
         alreadyExisted = res.alreadyExisted;
         pendingRequest = res.pending;
@@ -523,7 +571,7 @@ function EditDialog({
           <DialogTitle>{isNew ? "Tambah kontak" : "Edit kontak"}</DialogTitle>
           <DialogDescription>
             {isNew
-              ? "Masukkan nama dan PIN undangan teman untuk menautkan akun terdaftar. Nomor telepon & email opsional."
+              ? "Masukkan nama dan PIN undangan teman (8 karakter) atau pindai QR undangan."
               : "Simpan nama, nomor telepon, dan email."}
           </DialogDescription>
         </DialogHeader>
@@ -542,30 +590,68 @@ function EditDialog({
             value={name}
             onChange={(e) => setName(e.target.value)}
           />
-          {isNew && (
-            <Input
-              inputMode="text"
-              autoCapitalize="characters"
-              placeholder="PIN undangan (8 karakter)"
-              value={pin}
-              onChange={(e) => setPin(e.target.value.toUpperCase())}
-              maxLength={12}
-            />
+          {isNew ? (
+            <>
+              <div className="flex items-center gap-2">
+                <Input
+                  inputMode="text"
+                  autoCapitalize="characters"
+                  placeholder="PIN undangan (XXXX-XXXX)"
+                  value={pin}
+                  onChange={(e) => {
+                    const raw = normalizeInviteCode(e.target.value);
+                    setPin(raw.length > 4 ? `${raw.slice(0, 4)}-${raw.slice(4, 8)}` : raw);
+                  }}
+                  maxLength={12}
+                  className="font-mono tracking-widest"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  aria-label="Pindai QR undangan"
+                  onClick={() => setScanOpen(true)}
+                >
+                  <ScanLine className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="rounded-lg border p-2 text-xs">
+                {!isLikelyInviteCode(normalizeInviteCode(pin)) ? (
+                  <p className="text-muted-foreground">
+                    Ketik PIN 8 karakter atau tekan ikon kamera untuk memindai QR.
+                  </p>
+                ) : pinChecking ? (
+                  <p className="flex items-center gap-2 text-muted-foreground">
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memeriksa PIN…
+                  </p>
+                ) : pinPreview ? (
+                  <p className="text-emerald-600">
+                    Tertaut ke: <span className="font-medium">{pinPreview.display_name || "Pengguna MCM"}</span>
+                    {" · "}PIN {formatInviteCode(pinPreview.invite_code)}
+                  </p>
+                ) : (
+                  <p className="text-amber-600">PIN tidak ditemukan. Periksa lagi kode dari teman.</p>
+                )}
+              </div>
+            </>
+          ) : (
+            <>
+              <Input
+                type="tel"
+                inputMode="tel"
+                placeholder="Nomor telepon (mis. 0812…)"
+                value={phone}
+                onChange={(e) => setPhone(e.target.value)}
+              />
+              <Input
+                type="email"
+                inputMode="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            </>
           )}
-          <Input
-            type="tel"
-            inputMode="tel"
-            placeholder={isNew ? "Nomor telepon (opsional)" : "Nomor telepon (mis. 0812…)"}
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-          />
-          <Input
-            type="email"
-            inputMode="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
           <Input
             placeholder="Catatan (opsional)"
             value={note}
@@ -581,6 +667,38 @@ function EditDialog({
           </Button>
         </DialogFooter>
       </DialogContent>
+      {isNew && (
+        <QrScannerDialog
+          open={scanOpen}
+          onOpenChange={setScanOpen}
+          title="Pindai QR undangan"
+          description="Arahkan kamera ke QR undangan teman untuk mengisi PIN otomatis."
+          onResult={(text) => {
+            const trimmed = (text ?? "").trim();
+            try {
+              const u = new URL(trimmed);
+              const m = u.pathname.match(/\/i\/([^/?#]+)/);
+              if (m) {
+                const code = normalizeInviteCode(decodeURIComponent(m[1]));
+                if (isLikelyInviteCode(code)) {
+                  setPin(formatInviteCode(code));
+                  toast.success("PIN terisi dari QR.");
+                  return;
+                }
+              }
+            } catch {
+              /* not a URL */
+            }
+            const code = normalizeInviteCode(trimmed);
+            if (isLikelyInviteCode(code)) {
+              setPin(formatInviteCode(code));
+              toast.success("PIN terisi dari QR.");
+              return;
+            }
+            toast.error("QR bukan undangan MCM yang dikenali.");
+          }}
+        />
+      )}
     </Dialog>
   );
 }

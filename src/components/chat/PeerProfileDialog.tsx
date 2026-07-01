@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { Pencil, BookUser, Phone as PhoneIcon, X } from "lucide-react";
+import { Pencil, BookUser, X } from "lucide-react";
 import {
   Dialog,
   DialogContent,
@@ -26,7 +26,6 @@ type PeerProfileRow = {
   display_name: string | null;
   avatar_url: string | null;
   invite_code: string | null;
-  phone: string | null;
 };
 
 function initialOf(name: string): string {
@@ -50,7 +49,7 @@ export function PeerProfileDialog({
       if (!peerUserId) return null;
       const { data, error } = await supabase
         .from("profiles")
-        .select("id, display_name, avatar_url, invite_code, phone")
+        .select("id, display_name, avatar_url, invite_code")
         .eq("id", peerUserId)
         .maybeSingle();
       if (error) throw error;
@@ -132,15 +131,6 @@ export function PeerProfileDialog({
                 <BookUser className="mr-2 h-4 w-4" />
                 Simpan ke buku alamat
               </Button>
-            ) : null}
-            {profile.data?.phone ? (
-              <a
-                href={`tel:${profile.data.phone}`}
-                className="inline-flex items-center rounded-md border px-3 py-2 text-sm hover:bg-accent"
-              >
-                <PhoneIcon className="mr-2 h-4 w-4" />
-                Hubungi
-              </a>
             ) : null}
           </div>
         </div>
