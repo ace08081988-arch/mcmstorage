@@ -14,6 +14,7 @@ import {
   hashSecret,
   checkBiometricStatus,
   openBiometricEnrollment,
+  openAppPermissionSettings,
   randomSalt,
   requestLockNow,
   setLockConfig,
@@ -93,6 +94,7 @@ function PengaturanKunci() {
   const [bioStatus, setBioStatus] = useState<BiometricStatus>({ available: false, native: false });
   const [bioChecking, setBioChecking] = useState(false);
   const [enrolling, setEnrolling] = useState(false);
+  const [openingPerm, setOpeningPerm] = useState(false);
   const [bioCheckedAt, setBioCheckedAt] = useState<number | null>(null);
   const [bioTick, setBioTick] = useState(0);
   const prevBioRef = useRef<BiometricStatus | null>(null);
