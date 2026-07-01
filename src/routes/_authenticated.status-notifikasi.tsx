@@ -19,6 +19,7 @@ import {
   type ImportResult,
   type NormalizedSnapshot,
 } from "@/lib/notif-snapshot-import";
+import { diffJsonLines, type DiffLine } from "@/lib/json-line-diff";
 
 export const Route = createFileRoute("/_authenticated/status-notifikasi")({
   head: () => ({
@@ -1247,7 +1248,8 @@ function ImportResultView({ result }: { result: ImportResult }) {
       </div>
     );
   }
-  const { snapshot, sourceVersion, warnings, appliedMigrations } = result;
+  const { snapshot, sourceVersion, warnings, appliedMigrations, rawBefore, rawAfter } = result;
+  const hasMigrations = appliedMigrations.length > 0;
   return (
     <div className="space-y-2">
       <div className="rounded-md border p-3 text-xs space-y-1">
@@ -1285,6 +1287,9 @@ function ImportResultView({ result }: { result: ImportResult }) {
             ))}
           </ul>
         </div>
+      )}
+      {hasMigrations && (
+        <MigrationDiffView before={rawBefore} after={rawAfter} />
       )}
       {warnings.length > 0 && (
         <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-1">
