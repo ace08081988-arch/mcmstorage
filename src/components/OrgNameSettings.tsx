@@ -157,7 +157,22 @@ export function OrgNameSettings() {
         </div>
 
         <div className="space-y-1.5">
-          <Label htmlFor="org-full">Nama lengkap</Label>
+          <div className="flex items-center justify-between gap-2">
+            <Label htmlFor="org-full">Nama lengkap</Label>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setFull(DEFAULT_ORG_NAME);
+                setShort(DEFAULT_ORG_SHORT);
+                toast.success("Nama & singkatan direset ke bawaan");
+              }}
+              className="h-7 px-2 text-[11px] gap-1"
+            >
+              <RotateCcw className="h-3 w-3" /> Reset nama & singkatan
+            </Button>
+          </div>
           <Input
             id="org-full"
             value={full}
