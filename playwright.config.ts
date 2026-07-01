@@ -253,6 +253,20 @@ export default defineConfig({
       },
     },
     {
+      // E2E: perpindahan antar DM lewat sidebar/daftar percakapan
+      // (`/chat`). Setiap klik item DM harus me-render `PIN xxxx-xxxx`
+      // peer yang benar di header & transkrip, tanpa "menyangkut" dari
+      // DM sebelumnya dan tanpa nomor telp mentah di semua fase.
+      name: "chat-pin-mcm-switch-via-list-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-switch-via-list\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // E2E: setelah `page.reload()` di DM yang sudah ada, mengirim
       // pesan baru wajib tetap merender identitas `PIN xxxx-xxxx` di
       // header & transkrip — tidak pernah mem-fallback ke nomor telp
@@ -276,6 +290,21 @@ export default defineConfig({
       name: "chat-pin-mcm-deep-link-e2e",
       testDir: "./tests/e2e",
       testMatch: /chat-pin-mcm-deep-link\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
+      // E2E: deep link multi-DM — `page.goto('/chat/<idA>')` diikuti
+      // `page.goto('/chat/<idB>')` (langsung, tanpa transit daftar),
+      // lalu balik ke `<idA>`. Setiap kunjungan wajib menampilkan
+      // `PIN xxxx-xxxx` peer yang benar di header + transkrip dan
+      // BEBAS nomor telp Indonesia mentah; identitas peer A ≠ peer B.
+      name: "chat-pin-mcm-deep-link-multi-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-deep-link-multi\.spec\.ts/,
       use: {
         ...devices["Pixel 5"],
         viewport: { width: 411, height: 893 },
