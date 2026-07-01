@@ -898,6 +898,11 @@ function StatusNotifikasiPage() {
               {exportCopied ? "Tersalin" : "Salin JSON"}
             </Button>
           </div>
+          {exportError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+              {exportError}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
