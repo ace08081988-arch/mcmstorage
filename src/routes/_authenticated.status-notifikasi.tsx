@@ -932,10 +932,6 @@ function StatusNotifikasiPage() {
       </Card>
 
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-
-      <ImportSnapshotCard />
-
-      {null}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
         <DialogContent className="max-w-2xl">
           <DialogHeader>
