@@ -317,21 +317,7 @@ function PenyimpananPage() {
                   Pengaturan aksesibilitas, bahasa, penyimpanan, dan URL sosial saat ini akan
                   ditimpa oleh isi cadangan.
                 </p>
-                {pending && (
-                  <div className="rounded-md border bg-muted/30 p-2 font-mono text-[11px] text-foreground">
-                    <div>Diekspor: {new Date(pending.exportedAt).toLocaleString()}</div>
-                    <div>
-                      Bahasa {pending.prefs.language.toUpperCase()} · Font{" "}
-                      {Math.round(pending.prefs.fontScale * 100)}% · Kontras{" "}
-                      {pending.prefs.highContrast ? "tinggi" : "normal"} · Motion{" "}
-                      {pending.prefs.reduceMotion ? "reduced" : "normal"}
-                    </div>
-                    <div>
-                      Wi-Fi {pending.prefs.autoDownloadWifi ? "on" : "off"} · Seluler{" "}
-                      {pending.prefs.autoDownloadCellular ? "on" : "off"}
-                    </div>
-                  </div>
-                )}
+                {pending && <BackupSummary pending={pending} current={prefs} />}
               </div>
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -427,6 +413,83 @@ function ToggleRow({
         <p className="text-[11px] leading-snug text-muted-foreground">{help}</p>
       </div>
       <Switch id={id} checked={checked} onCheckedChange={onChange} />
+    </div>
+  );
+}
+
+function BackupSummary({
+  pending,
+  current,
+}: {
+  pending: PrefsBackup;
+  current: import("@/lib/app-prefs").AppPrefs;
+}) {
+  const p = pending.prefs;
+  const rows: Array<{ label: string; group: string; cur: string; next: string }> = [
+    { group: "Aksesibilitas", label: "Skala font", cur: `${Math.round(current.fontScale * 100)}%`, next: `${Math.round(p.fontScale * 100)}%` },
+    { group: "Aksesibilitas", label: "Kontras tinggi", cur: current.highContrast ? "on" : "off", next: p.highContrast ? "on" : "off" },
+    { group: "Aksesibilitas", label: "Kurangi gerakan", cur: current.reduceMotion ? "on" : "off", next: p.reduceMotion ? "on" : "off" },
+    { group: "Bahasa", label: "Bahasa aplikasi", cur: current.language.toUpperCase(), next: p.language.toUpperCase() },
+    { group: "Penyimpanan", label: "Auto-unduh Wi-Fi", cur: current.autoDownloadWifi ? "on" : "off", next: p.autoDownloadWifi ? "on" : "off" },
+    { group: "Penyimpanan", label: "Auto-unduh seluler", cur: current.autoDownloadCellular ? "on" : "off", next: p.autoDownloadCellular ? "on" : "off" },
+    { group: "Integrasi sosial", label: "Facebook URL", cur: current.facebookUrl || "—", next: p.facebookUrl || "—" },
+    { group: "Integrasi sosial", label: "Instagram URL", cur: current.instagramUrl || "—", next: p.instagramUrl || "—" },
+  ];
+  const changed = rows.filter((r) => r.cur !== r.next).length;
+  const groups = Array.from(new Set(rows.map((r) => r.group)));
+  return (
+    <div className="space-y-2">
+      <div className="rounded-md border bg-muted/30 p-2 text-[11px] text-foreground">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-muted-foreground">Diekspor</span>
+          <span className="font-medium">{new Date(pending.exportedAt).toLocaleString()}</span>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-muted-foreground">Versi cadangan</span>
+          <span className="font-medium tabular-nums">v{pending.version}</span>
+        </div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <span className="text-muted-foreground">Field berubah</span>
+          <span className={`font-medium tabular-nums ${changed > 0 ? "text-amber-600 dark:text-amber-400" : ""}`}>
+            {changed} / {rows.length}
+          </span>
+        </div>
+      </div>
+      <div className="max-h-64 overflow-auto rounded-md border bg-background">
+        {groups.map((g) => (
+          <div key={g} className="border-b last:border-b-0">
+            <div className="bg-muted/40 px-2 py-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              {g}
+            </div>
+            <ul className="divide-y">
+              {rows
+                .filter((r) => r.group === g)
+                .map((r) => {
+                  const diff = r.cur !== r.next;
+                  return (
+                    <li key={r.label} className="grid grid-cols-[1fr_auto_auto_auto] items-center gap-2 px-2 py-1.5">
+                      <span className="truncate text-[11px]">{r.label}</span>
+                      <span className="truncate font-mono text-[11px] text-muted-foreground line-through max-w-[9rem]">
+                        {r.cur}
+                      </span>
+                      <span className="text-[10px] text-muted-foreground">→</span>
+                      <span
+                        className={`truncate font-mono text-[11px] max-w-[9rem] ${diff ? "font-semibold text-amber-600 dark:text-amber-400" : "text-foreground"}`}
+                      >
+                        {r.next}
+                      </span>
+                    </li>
+                  );
+                })}
+            </ul>
+          </div>
+        ))}
+      </div>
+      {changed === 0 && (
+        <p className="text-[11px] text-muted-foreground">
+          Isi cadangan identik dengan pengaturan saat ini — memulihkan tidak akan mengubah apa pun.
+        </p>
+      )}
     </div>
   );
 }
