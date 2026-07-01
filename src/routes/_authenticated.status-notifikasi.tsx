@@ -29,10 +29,16 @@ type SwDetails = {
   scriptURL: string;
   state: "installing" | "waiting" | "active" | "redundant" | "none";
   controlled: boolean;
+  hasWaiting: boolean;
+  hasInstalling: boolean;
+  version: string | null;
+  scriptEtag: string | null;
+  scriptLastModified: string | null;
 };
 
 const LS_SW_KEY = "notif.lastSwSetup";
 const LS_PUSH_KEY = "notif.lastPushSetup";
+const LS_SW_UPDATE_KEY = "notif.lastSwUpdateCheck";
 
 function readTs(k: string): number | null {
   try {
@@ -204,6 +210,35 @@ async function queryPermissionApi(): Promise<string | null> {
   }
 }
 
+async function fetchScriptMeta(scriptURL: string): Promise<{ etag: string | null; lastModified: string | null }> {
+  try {
+    const res = await fetch(scriptURL, { cache: "no-store", method: "GET" });
+    return {
+      etag: res.headers.get("etag"),
+      lastModified: res.headers.get("last-modified"),
+    };
+  } catch {
+    return { etag: null, lastModified: null };
+  }
+}
+
+async function askWorkerVersion(worker: ServiceWorker): Promise<string | null> {
+  return new Promise((resolve) => {
+    try {
+      const ch = new MessageChannel();
+      const t = setTimeout(() => resolve(null), 800);
+      ch.port1.onmessage = (e) => {
+        clearTimeout(t);
+        const v = e.data?.version ?? e.data?.v ?? null;
+        resolve(typeof v === "string" ? v : null);
+      };
+      worker.postMessage({ type: "GET_VERSION" }, [ch.port2]);
+    } catch {
+      resolve(null);
+    }
+  });
+}
+
 function StatusNotifikasiPage() {
   const [perm, setPerm] = useState<PermState>(() => readPermission());
   const [frame, setFrame] = useState(() => detectFrame());
@@ -217,6 +252,11 @@ function StatusNotifikasiPage() {
   const [permApiState, setPermApiState] = useState<string | null>(null);
   const [secure, setSecure] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [updateState, setUpdateState] = useState<
+    "idle" | "checking" | "no-update" | "waiting" | "activated" | "error"
+  >("idle");
+  const [updateMsg, setUpdateMsg] = useState<string | null>(null);
+  const [lastUpdateCheck, setLastUpdateCheck] = useState<number | null>(null);
 
   const runChecks = async () => {
     setChecking(true);
@@ -226,6 +266,7 @@ function StatusNotifikasiPage() {
       setSecure(typeof window !== "undefined" ? window.isSecureContext !== false : true);
       setLastSwSetup(readTs(LS_SW_KEY));
       setLastPushSetup(readTs(LS_PUSH_KEY));
+      setLastUpdateCheck(readTs(LS_SW_UPDATE_KEY));
       void queryPermissionApi().then(setPermApiState);
 
       if (!("serviceWorker" in navigator)) {
@@ -253,16 +294,27 @@ function StatusNotifikasiPage() {
               : "none";
       const isReady = !!reg && state === "active";
       setSwReady(isReady);
-      setSwDetails(
-        reg
-          ? {
-              scope: reg.scope,
-              scriptURL: worker?.scriptURL ?? "",
-              state,
-              controlled: !!navigator.serviceWorker.controller,
-            }
-          : null,
-      );
+      if (reg) {
+        const scriptURL = worker?.scriptURL ?? "";
+        const [meta, version] = await Promise.all([
+          scriptURL ? fetchScriptMeta(scriptURL) : Promise.resolve({ etag: null, lastModified: null }),
+          worker ? askWorkerVersion(worker) : Promise.resolve(null),
+        ]);
+        setSwDetails({
+          scope: reg.scope,
+          scriptURL,
+          state,
+          controlled: !!navigator.serviceWorker.controller,
+          hasWaiting: !!reg.waiting,
+          hasInstalling: !!reg.installing,
+          version,
+          scriptEtag: meta.etag,
+          scriptLastModified: meta.lastModified,
+        });
+        if (reg.waiting) setUpdateState("waiting");
+      } else {
+        setSwDetails(null);
+      }
       if (isReady) {
         const now = Date.now();
         writeTs(LS_SW_KEY, now);
@@ -296,6 +348,68 @@ function StatusNotifikasiPage() {
       }
     } finally {
       setChecking(false);
+    }
+  };
+
+  const requestSwUpdate = async () => {
+    setUpdateState("checking");
+    setUpdateMsg(null);
+    try {
+      if (!("serviceWorker" in navigator)) {
+        setUpdateState("error");
+        setUpdateMsg("Service worker tidak didukung browser ini.");
+        return;
+      }
+      const reg = await navigator.serviceWorker.getRegistration();
+      if (!reg) {
+        setUpdateState("error");
+        setUpdateMsg("Belum ada registrasi service worker untuk origin ini.");
+        return;
+      }
+      let updateFound = false;
+      const onUpdate = () => {
+        updateFound = true;
+      };
+      reg.addEventListener("updatefound", onUpdate);
+      await reg.update();
+      // Beri browser waktu memproses 'updatefound' + install.
+      await new Promise((r) => setTimeout(r, 400));
+      reg.removeEventListener("updatefound", onUpdate);
+      const now = Date.now();
+      writeTs(LS_SW_UPDATE_KEY, now);
+      setLastUpdateCheck(now);
+      if (reg.waiting) {
+        setUpdateState("waiting");
+        setUpdateMsg("Versi baru sudah ter-install dan menunggu diaktifkan.");
+      } else if (reg.installing || updateFound) {
+        setUpdateState("checking");
+        setUpdateMsg("Sedang meng-install versi baru…");
+      } else {
+        setUpdateState("no-update");
+        setUpdateMsg("Sudah menggunakan versi terbaru.");
+      }
+      void runChecks();
+    } catch (e) {
+      setUpdateState("error");
+      setUpdateMsg(e instanceof Error ? e.message : "Gagal memeriksa pembaruan.");
+    }
+  };
+
+  const activateWaiting = async () => {
+    try {
+      const reg = await navigator.serviceWorker.getRegistration();
+      const waiting = reg?.waiting;
+      if (!waiting) {
+        setUpdateMsg("Tidak ada worker yang menunggu.");
+        return;
+      }
+      waiting.postMessage({ type: "SKIP_WAITING" });
+      setUpdateState("activated");
+      setUpdateMsg("Mengaktifkan versi baru — memuat ulang halaman…");
+      setTimeout(() => window.location.reload(), 500);
+    } catch (e) {
+      setUpdateState("error");
+      setUpdateMsg(e instanceof Error ? e.message : "Gagal mengaktifkan versi baru.");
     }
   };
 
