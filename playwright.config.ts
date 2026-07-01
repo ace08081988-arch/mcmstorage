@@ -30,8 +30,21 @@ export default defineConfig({
   globalSetup: "./tests/visual/global-setup.ts",
   use: {
     baseURL: process.env.BASE_URL ?? "http://localhost:5173",
+    // Debug artefak untuk regresi format PIN:
+    //   - CI: trace + video + screenshot semuanya `retain-on-failure`
+    //     sehingga tiap kegagalan (mis. token PIN off-format atau
+    //     kebocoran nomor telp mentah) langsung bisa direplay dari
+    //     artifact Playwright tanpa menunggu re-run lokal.
+    //   - Lokal: hanya trace + screenshot on-failure — video di-skip
+    //     supaya dev loop cepat & disk tidak penuh.
+    // Override manual via `PWTEST_VIDEO=on|retain-on-failure|off`.
     trace: "retain-on-failure",
     screenshot: "only-on-failure",
+    video: (process.env.PWTEST_VIDEO as
+      | "on"
+      | "off"
+      | "retain-on-failure"
+      | undefined) ?? (process.env.CI ? "retain-on-failure" : "off"),
     locale: "id-ID",
     timezoneId: "Asia/Jakarta",
   },
