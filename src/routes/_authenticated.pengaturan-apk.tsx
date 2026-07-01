@@ -99,6 +99,20 @@ function PengaturanApkPage() {
             Coba lagi
           </button>
         </div>
+      ) : data && data.isAdmin === false ? (
+        <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
+          <div className="flex items-start gap-2">
+            <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0">
+              <p className="font-semibold leading-snug">Hanya admin</p>
+              <p className="text-xs leading-snug">
+                Halaman ini khusus admin untuk mengatur jadwal & status rilis
+                APK. Minta admin untuk memberikan peran admin ke akun kamu bila
+                perlu akses.
+              </p>
+            </div>
+          </div>
+        </div>
       ) : (
         <>
           <MinSupportedCard
