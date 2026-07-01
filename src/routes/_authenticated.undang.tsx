@@ -109,15 +109,22 @@ function UndangPage() {
     setAdding(true);
     try {
       const r = await addContactByInviteCode(cleanInput);
-      toast.success(
-        r.alreadyExisted
-          ? `Sudah ada di kontak: ${r.displayName ?? "Kontak"}`
-          : `Ditambahkan: ${r.displayName ?? "Kontak"}`,
-      );
       setInput("");
       setPreview(null);
-      // Buka chat langsung — pengalaman ala BBM.
-      router.navigate({ to: "/chat" });
+      if (r.alreadyFriends) {
+        toast.success(`Sudah berteman dengan ${r.displayName ?? "kontak"}.`);
+        router.navigate({ to: "/chat" });
+      } else if (r.incomingReverseId) {
+        toast.info(`${r.displayName ?? "Kontak"} sudah mengirim permintaan lebih dulu — buka daftar Permintaan untuk menerima.`);
+        router.navigate({ to: "/kontak/permintaan" as never });
+      } else {
+        toast.success(
+          r.alreadyExisted
+            ? `Permintaan sebelumnya masih menunggu diterima ${r.displayName ?? "kontak"}.`
+            : `Permintaan pertemanan terkirim ke ${r.displayName ?? "kontak"}. Chat akan aktif setelah diterima.`,
+        );
+        router.navigate({ to: "/kontak/permintaan" as never });
+      }
     } catch (e) {
       toast.error((e as Error).message || "Gagal menambah kontak.");
     } finally {
