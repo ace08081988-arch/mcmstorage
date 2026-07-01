@@ -9,8 +9,21 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useChatContacts, useCreateGroup } from "@/lib/chat";
 
-export function NewGroupDialog() {
-  const [open, setOpen] = useState(false);
+export function NewGroupDialog({
+  open: openProp,
+  onOpenChange,
+  trigger = true,
+}: {
+  open?: boolean;
+  onOpenChange?: (v: boolean) => void;
+  trigger?: boolean;
+} = {}) {
+  const [openInternal, setOpenInternal] = useState(false);
+  const open = openProp ?? openInternal;
+  const setOpen = (v: boolean) => {
+    setOpenInternal(v);
+    onOpenChange?.(v);
+  };
   const [title, setTitle] = useState("");
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<Record<string, true>>({});
@@ -45,11 +58,13 @@ export function NewGroupDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-1.5">
-          <Users className="h-4 w-4" /> Grup baru
-        </Button>
-      </DialogTrigger>
+      {trigger ? (
+        <DialogTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-1.5">
+            <Users className="h-4 w-4" /> Grup baru
+          </Button>
+        </DialogTrigger>
+      ) : null}
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Buat grup chat</DialogTitle>
