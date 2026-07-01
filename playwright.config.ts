@@ -961,5 +961,17 @@ export default defineConfig({
         viewport: { width: 411, height: 893 },
       },
     },
+    // ── Dev-mode press-audit: verifikasi `console.warn` muncul dengan
+    //   selector yang benar untuk komponen tanpa `data-no-press`.
+    //   Butuh dev server (auditor hanya aktif di import.meta.env.DEV).
+    {
+      name: "press-audit-warnings-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /press-audit-warnings\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 800 },
+      },
+    },
   ],
 });
