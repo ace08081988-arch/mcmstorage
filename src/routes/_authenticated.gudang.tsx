@@ -1627,6 +1627,15 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (mode === "existing" && !itemId && items[0]) setItemId(items[0].id);
   }, [mode, items, itemId]);
 
+  // Bila item terpilih bukan botol, mode karton wajib mati agar tidak
+  // ×100 dari qty. Bila pindah ke item pcs, harga per-kemasan tidak
+  // punya arti — paksa priceMode ke "base".
+  useEffect(() => {
+    if (!selectedItem) return;
+    if (selectedItem.package_type !== "botol" && inputKarton) setInputKarton(false);
+    if (selectedItem.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
+  }, [selectedItem, inputKarton, priceMode]);
+
   // Untuk mode "existing", SEMUA turunan (jenis kemasan, ukuran, base unit)
   // WAJIB diambil dari item terpilih — bukan state form "barang baru".
   const selectedItem = mode === "existing" ? items.find((i) => i.id === itemId) ?? null : null;
