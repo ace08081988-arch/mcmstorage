@@ -213,6 +213,10 @@ function MinSupportedCard({
       qc.invalidateQueries({ queryKey: ["apk-variant-detail"] });
     },
     onError: (err: unknown) => {
+      if (isAdminRequiredError(err)) {
+        toast.error("Akses ditolak — hanya admin yang bisa mengubah minimum versi.");
+        return;
+      }
       toast.error(
         `Gagal menyimpan: ${err instanceof Error ? err.message : "unknown"}`,
       );
@@ -404,6 +408,10 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
       qc.invalidateQueries({ queryKey: ["apk-variant-detail"] });
     },
     onError: (err: unknown) => {
+      if (isAdminRequiredError(err)) {
+        toast.error("Akses ditolak — hanya admin yang bisa mengubah rilis APK.");
+        return;
+      }
       toast.error(
         `Gagal menyimpan: ${err instanceof Error ? err.message : "unknown"}`,
       );
