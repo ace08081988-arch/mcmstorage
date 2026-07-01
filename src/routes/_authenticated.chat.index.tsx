@@ -45,6 +45,7 @@ function ChatListPage() {
   const pin = usePinConversation();
   const archive = useArchiveConversation();
   const mute = useMuteConversation();
+  const [grupOpen, setGrupOpen] = useState(false);
 
   const { active, archived } = useMemo(() => {
     const list = conversations ?? [];
@@ -74,6 +75,7 @@ function ChatListPage() {
             </Link>
           </Button>
           <NewDmDialog />
+          <NewGroupDialog open={grupOpen} onOpenChange={setGrupOpen} trigger={false} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-1.5" aria-label="Menu lainnya">
@@ -84,8 +86,8 @@ function ChatListPage() {
               <DropdownMenuItem onSelect={() => toast.info("Pasang iklan — segera hadir.")}>
                 Pasang iklan
               </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/chat">Grup baru</Link>
+              <DropdownMenuItem onSelect={() => setGrupOpen(true)}>
+                Grup baru
               </DropdownMenuItem>
               <DropdownMenuItem onSelect={() => toast.info("Komunitas — segera hadir.")}>
                 Komunitas
