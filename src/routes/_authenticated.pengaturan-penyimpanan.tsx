@@ -5,6 +5,7 @@ import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import { HardDrive, Trash2, RefreshCw, Download, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { useAppPrefs } from "@/lib/app-prefs";
 import {
@@ -66,6 +67,7 @@ function PenyimpananPage() {
     keys: Array<{ key: string; bytes: number }>;
     totalBytes: number;
   } | null>(null);
+  const [selectedKeys, setSelectedKeys] = useState<Set<string>>(new Set());
 
   const refresh = async () => {
     setSnapshot(estimateLocalStorage());
@@ -145,17 +147,24 @@ function PenyimpananPage() {
       return;
     }
     setPendingClear({ prefix, label, keys, totalBytes: total });
+    setSelectedKeys(new Set(keys.map((k) => k.key)));
   };
 
   const confirmClear = () => {
     if (!pendingClear) return;
     const { keys, label } = pendingClear;
-    keys.forEach((e) => localStorage.removeItem(e.key));
-    const totalKB = formatKB(pendingClear.totalBytes);
+    const chosen = keys.filter((e) => selectedKeys.has(e.key));
+    if (chosen.length === 0) {
+      toast.info("Tidak ada entri yang dipilih.");
+      return;
+    }
+    const freed = chosen.reduce((s, e) => s + e.bytes, 0);
+    chosen.forEach((e) => localStorage.removeItem(e.key));
     toast.success(`${label} dihapus`, {
-      description: `${keys.length} entri · ${totalKB} dibebaskan.`,
+      description: `${chosen.length} dari ${keys.length} entri · ${formatKB(freed)} dibebaskan.`,
     });
     setPendingClear(null);
+    setSelectedKeys(new Set());
     refresh();
   };
 
@@ -343,35 +352,61 @@ function PenyimpananPage() {
                 {pendingClear && (
                   <div className="rounded-md border bg-muted/30 p-2 text-[11px] text-foreground">
                     <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Entri</span>
+                      <span className="text-muted-foreground">Dipilih</span>
                       <span className="font-medium tabular-nums">
-                        {pendingClear.keys.length}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <span className="text-muted-foreground">Total</span>
-                      <span className="font-medium tabular-nums">
-                        {formatKB(pendingClear.totalBytes)}
-                      </span>
-                    </div>
-                    <div className="mt-2 max-h-40 overflow-auto rounded border bg-background">
-                      <ul className="divide-y">
-                        {pendingClear.keys.slice(0, 20).map((e) => (
-                          <li
-                            key={e.key}
-                            className="flex items-center justify-between gap-2 px-2 py-1 font-mono text-[11px]"
-                          >
-                            <span className="truncate">{e.key}</span>
-                            <span className="shrink-0 tabular-nums text-muted-foreground">
-                              {formatKB(e.bytes)}
-                            </span>
-                          </li>
-                        ))}
-                        {pendingClear.keys.length > 20 && (
-                          <li className="px-2 py-1 text-center text-[11px] text-muted-foreground">
-                            +{pendingClear.keys.length - 20} entri lain
-                          </li>
+                        {selectedKeys.size} / {pendingClear.keys.length} entri ·{" "}
+                        {formatKB(
+                          pendingClear.keys
+                            .filter((e) => selectedKeys.has(e.key))
+                            .reduce((s, e) => s + e.bytes, 0),
                         )}
+                      </span>
+                    </div>
+                    <div className="mt-1 flex gap-2">
+                      <button
+                        type="button"
+                        className="text-[11px] text-primary underline"
+                        onClick={() =>
+                          setSelectedKeys(new Set(pendingClear.keys.map((k) => k.key)))
+                        }
+                      >
+                        Pilih semua
+                      </button>
+                      <button
+                        type="button"
+                        className="text-[11px] text-muted-foreground underline"
+                        onClick={() => setSelectedKeys(new Set())}
+                      >
+                        Kosongkan
+                      </button>
+                    </div>
+                    <div className="mt-2 max-h-56 overflow-auto rounded border bg-background">
+                      <ul className="divide-y">
+                        {pendingClear.keys.map((e) => {
+                          const checked = selectedKeys.has(e.key);
+                          return (
+                            <li
+                              key={e.key}
+                              className="flex items-center gap-2 px-2 py-1 font-mono text-[11px]"
+                            >
+                              <Checkbox
+                                checked={checked}
+                                onCheckedChange={(v) => {
+                                  setSelectedKeys((prev) => {
+                                    const next = new Set(prev);
+                                    if (v) next.add(e.key);
+                                    else next.delete(e.key);
+                                    return next;
+                                  });
+                                }}
+                              />
+                              <span className="flex-1 truncate">{e.key}</span>
+                              <span className="shrink-0 tabular-nums text-muted-foreground">
+                                {formatKB(e.bytes)}
+                              </span>
+                            </li>
+                          );
+                        })}
                       </ul>
                     </div>
                   </div>
@@ -383,9 +418,10 @@ function PenyimpananPage() {
             <AlertDialogCancel>Batal</AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmClear}
+              disabled={selectedKeys.size === 0}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Hapus{pendingClear ? ` (${pendingClear.keys.length})` : ""}
+              Hapus{selectedKeys.size > 0 ? ` (${selectedKeys.size})` : ""}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
