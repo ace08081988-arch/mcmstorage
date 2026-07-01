@@ -198,6 +198,7 @@ export const getLatestApk = createServerFn({ method: "GET" }).handler(
       });
     if (error || !data) return null;
     const meta = await loadReleaseMetaMap();
+    const mins = await loadMinSupportedMap();
     const apks = data
       .filter((f) => /\.apk$/i.test(f.name))
       .filter((f) => isPublic(f.name, meta));
@@ -209,6 +210,7 @@ export const getLatestApk = createServerFn({ method: "GET" }).handler(
     if (signErr || !signed?.signedUrl) return null;
     const size = (latest.metadata as { size?: number } | null)?.size ?? null;
     const parsed = parseApkFileName(latest.name);
+    const variant: ApkVariant = isChatName(latest.name) ? "chat" : "storage";
     return {
       name: latest.name,
       url: signed.signedUrl,
@@ -216,6 +218,7 @@ export const getLatestApk = createServerFn({ method: "GET" }).handler(
       updatedAt: latest.updated_at ?? latest.created_at ?? null,
       versionName: parsed.versionName,
       versionCode: parsed.versionCode,
+      belowMinimum: isBelowMinimum(parsed, mins[variant] ?? null),
     };
   },
 );
@@ -232,14 +235,24 @@ export const getLatestApkVariants = createServerFn({ method: "GET" }).handler(
         limit: 200,
         sortBy: { column: "updated_at", order: "desc" },
       });
-    if (error || !data) return { storage: null, chat: null };
+    if (error || !data) {
+      return {
+        storage: null,
+        chat: null,
+        minSupported: { storage: null, chat: null },
+      };
+    }
     const meta = await loadReleaseMetaMap();
+    const mins = await loadMinSupportedMap();
     const apks = data
       .filter((f) => /\.apk$/i.test(f.name))
       .filter((f) => isPublic(f.name, meta));
     const chatFile = apks.find((f) => isChatName(f.name)) ?? null;
     const storageFile = apks.find((f) => !isChatName(f.name)) ?? null;
-    const toResult = async (f: typeof apks[number] | null): Promise<LatestApk> => {
+    const toResult = async (
+      f: typeof apks[number] | null,
+      variant: ApkVariant,
+    ): Promise<LatestApk> => {
       if (!f) return null;
       const { data: signed, error: signErr } = await supabaseAdmin.storage
         .from(BUCKET)
@@ -254,13 +267,21 @@ export const getLatestApkVariants = createServerFn({ method: "GET" }).handler(
         updatedAt: f.updated_at ?? f.created_at ?? null,
         versionName: parsed.versionName,
         versionCode: parsed.versionCode,
+        belowMinimum: isBelowMinimum(parsed, mins[variant] ?? null),
       };
     };
     const [storage, chat] = await Promise.all([
-      toResult(storageFile),
-      toResult(chatFile),
+      toResult(storageFile, "storage"),
+      toResult(chatFile, "chat"),
     ]);
-    return { storage, chat };
+    return {
+      storage,
+      chat,
+      minSupported: {
+        storage: mins.storage ?? null,
+        chat: mins.chat ?? null,
+      },
+    };
   },
 );
 
@@ -299,6 +320,8 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
     let releases: ApkRelease[] = [];
     if (!error && files) {
       const meta = await loadReleaseMetaMap();
+      const mins = await loadMinSupportedMap();
+      const minForVariant = mins[data.variant] ?? null;
       const apks = files
         .filter((f) => /\.apk$/i.test(f.name))
         .filter((f) =>
@@ -321,6 +344,7 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
             updatedAt: f.updated_at ?? f.created_at ?? null,
             versionName: parsed.versionName,
             versionCode: parsed.versionCode,
+            belowMinimum: isBelowMinimum(parsed, minForVariant),
           };
         }),
       );
@@ -359,6 +383,7 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
       latest: releases[0] ?? null,
       releases,
       changelog,
+      minSupported: (await loadMinSupportedMap())[data.variant] ?? null,
     };
   });
 
