@@ -55,6 +55,8 @@ export function VoiceNotePlayer({
     };
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
+    // Jika durasi server sudah ada, tandai siap segera sebelum metadata audio termuat.
+    if (initial > 0) setReady(true);
     a.addEventListener("loadedmetadata", onLoaded);
     a.addEventListener("durationchange", onLoaded);
     a.addEventListener("timeupdate", onTime);
@@ -69,7 +71,8 @@ export function VoiceNotePlayer({
       a.removeEventListener("play", onPlay);
       a.removeEventListener("pause", onPause);
     };
-  }, []);
+    // initial ikut dependency agar update prop durationSec (mis. setelah refetch) terpakai.
+  }, [initial]);
 
   const toggle = () => {
     const a = audioRef.current;
