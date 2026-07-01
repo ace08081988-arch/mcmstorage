@@ -57,6 +57,20 @@ export type AppliedMigration = {
   description: string;
 };
 
+/**
+ * Masalah validasi field terikat pada path spesifik pada bentuk raw
+ * (setelah migrasi). Path memakai notasi dot, mis. `permission.state`
+ * atau `timezone.offsetMinutes`.
+ */
+export type FieldIssue = {
+  path: string;
+  code: "missing" | "wrong_type" | "empty" | "invalid_enum";
+  severity: "error" | "warning";
+  expected: string;
+  got: string;
+  detail: string;
+};
+
 export type ImportResult =
   | {
       ok: true;
@@ -69,6 +83,8 @@ export type ImportResult =
       /** Bentuk raw setelah semua migrasi berjalan (sebelum validasi/normalisasi). */
       rawAfter: Record<string, unknown>;
       warnings: ImportWarning[];
+      /** Masalah per-path pada bentuk pasca-migrasi (missing/wrong_type/…). */
+      fieldIssues: FieldIssue[];
     }
   | { ok: false; error: string };
 
