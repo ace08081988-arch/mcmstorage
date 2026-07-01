@@ -163,6 +163,44 @@ PGOPTIONS="-c test.can_switch=on" \
 bun run test:security:sql
 ```
 
+### 8.1a Mode verbose (rekomendasi saat debugging lokal)
+
+`scripts/run-security-sql.mjs` menjalankan psql dengan `VERBOSITY=verbose`,
+auto-set `PGOPTIONS="-c test.can_switch=on"`, dan mewarnai baris
+PASS/FAIL/SKIP/SQLSTATE/DETAIL/HINT/CONTEXT sehingga setiap komponen
+kontrak error langsung terlihat di terminal.
+
+```bash
+# Full suite, output berwarna, SQLSTATE + DETAIL + HINT + CONTEXT tampil per error
+bun run test:security:sql:verbose
+
+# Setara: langsung panggil runner (lebih banyak flag tersedia)
+node scripts/run-security-sql.mjs --verbose
+
+# Hanya blok 12 (kontrak error trigger) — slice otomatis, ROLLBACK tetap dijalankan
+node scripts/run-security-sql.mjs --verbose --block=12
+
+# Kombinasi: blok transisi + kontrak error + visibility SELECT
+node scripts/run-security-sql.mjs --verbose --block=11,12,13
+
+# Simpan file hasil slice untuk inspeksi manual (mis. cek line number di error CI)
+node scripts/run-security-sql.mjs --verbose --block=12 --keep-tmp
+```
+
+Mode verbose menampilkan tiap error dalam format lengkap:
+
+```text
+psql:sliced.sql:842: ERROR:  42501: FAIL 12a: sender self-accept did not raise ...
+DETAIL:  req_id=…, actor=<sender>, role=sender, old_status=pending, new_status=accepted
+HINT:    Use respond_friend_request(req_id, accept => true) as the recipient instead.
+CONTEXT: PL/pgSQL function public.tg_friend_requests_guard() line 42 at RAISE
+LOCATION: exec_stmt_raise, pl_exec.c:3616
+```
+
+SQLSTATE (kolom pertama setelah `ERROR:`) hanya muncul karena
+`VERBOSITY=verbose`. Tanpa flag itu psql hanya menampilkan pesan tanpa
+kode — jadi selalu gunakan runner ini saat men-triage kegagalan blok 12.
+
 ### 8.2 Subset blok yang relevan untuk participant
 
 | Blok | Fokus                                    | Cara jalankan hanya blok itu |
@@ -174,21 +212,9 @@ bun run test:security:sql
 | 12   | Kontrak error trigger (SQLSTATE/DETAIL/HINT) | slice |
 | 13   | Visibility SELECT policy `fr_select_self` | slice |
 
-Slice satu blok saja (contoh: hanya blok 12) tanpa mengubah file:
-
-```bash
-# Ambil header setup (BEGIN…SET) + blok 12 + ROLLBACK, lalu jalankan.
-awk '
-  BEGIN { keep=1 }
-  /^-- =+$/ && next_is_block { keep=0 }
-  /^-- 12\)/ { keep=1 }
-  /^ROLLBACK;/ { print; exit }
-  keep { print }
-' supabase/tests/security_rls_authz.sql \
-  | PGOPTIONS="-c test.can_switch=on" psql -v ON_ERROR_STOP=1 -f -
-```
-
-Alternatif praktis: comment-out blok yang tidak diinginkan sementara,
+Cara termudah: pakai flag `--block=` di runner (lihat §8.1a). Runner
+otomatis menyertakan header setup + `ROLLBACK` agar transaksi tetap
+bersih. Alternatif: comment-out blok yang tidak diinginkan sementara,
 atau jalankan semuanya — durasi seluruh suite <2 detik.
 
 ### 8.3 Audit + integrasi berdampingan
