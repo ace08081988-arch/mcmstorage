@@ -90,7 +90,9 @@ test.describe("non-admin — semua route admin tidak memanggil server-fn admin",
 
       // Halaman harus menampilkan fallback admin-only, bukan konten.
       await expect(
-        page.getByText(/Hanya untuk admin|Access Denied|Akses ditolak/i).first(),
+        page
+          .getByText(/Hanya untuk admin|Hanya admin|Access Denied|Akses ditolak/i)
+          .first(),
       ).toBeVisible({ timeout: 10_000 });
 
       // Beri waktu tail request (mount effect, refetch awal).
