@@ -72,3 +72,78 @@ describe("gudang.tsx — selectedItem TDZ guard", () => {
     expect(offenders, offenders.join("\n")).toEqual([]);
   }, 60_000);
 });
+
+// Regression: mengunci dependency array useMemo/useEffect yang berkaitan
+// dengan selectedItem → derived → warnings. Jika salah satu dependency
+// hilang, ringkasan real-time dan warnings bisa stale, atau state karton /
+// priceMode dari item sebelumnya ikut terbawa.
+
+function extractDepArray(pattern: RegExp): string[] {
+  const m = src.match(pattern);
+  if (!m) return [];
+  const raw = m[1] ?? "";
+  return raw
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
+describe("gudang.tsx — dependency arrays selectedItem/derived/warnings", () => {
+  it("selectedItem = useMemo(..., [mode, items, itemId])", () => {
+    const deps = extractDepArray(
+      /const\s+selectedItem\s*:\s*WItem\s*\|\s*null\s*=\s*useMemo\(\s*\(\)\s*=>[\s\S]*?,\s*\[([^\]]*)\]\s*\)/,
+    );
+    expect(deps.sort()).toEqual(["items", "itemId", "mode"].sort());
+  });
+
+  it("derived = useMemo mencakup SEMUA input computeBeliDerived", () => {
+    const deps = extractDepArray(
+      /const\s+derived\s*=\s*useMemo\(\s*\(\)\s*=>\s*[\s\S]*?computeBeliDerived\(\{[\s\S]*?\}\)\s*,\s*\[([^\]]*)\]\s*\)/,
+    );
+    // Semua state dan input yang dipakai computeBeliDerived harus muncul —
+    // menghapus salah satu = risiko ringkasan stale.
+    const required = [
+      "mode",
+      "selectedItem",
+      "packageType",
+      "packageSize",
+      "packageQty",
+      "pricePerPackage",
+      "priceMode",
+      "pricePerBase",
+      "inputKarton",
+    ];
+    for (const dep of required) {
+      expect(deps, `dep '${dep}' harus ada di useMemo(derived)`).toContain(dep);
+    }
+  });
+
+  it("warnings = useMemo(..., [mode, selectedItem, derived, priceMode, inputKarton])", () => {
+    const deps = extractDepArray(
+      /const\s+warnings\s*=\s*useMemo\(\s*\(\)\s*=>\s*[\s\S]*?computeBeliWarnings\(\{[\s\S]*?\}\)[\s\S]*?,\s*\[([^\]]*)\]\s*\)/,
+    );
+    expect(deps.sort()).toEqual(
+      ["mode", "selectedItem", "derived", "priceMode", "inputKarton"].sort(),
+    );
+  });
+
+  it("effect karton/priceMode berdep [selectedItem, inputKarton, priceMode]", () => {
+    const deps = extractDepArray(
+      /if\s*\(!isWItem\(selectedItem\)\)\s*return;[\s\S]*?\}\s*,\s*\[([^\]]*)\]\s*\)/,
+    );
+    expect(deps.sort()).toEqual(["selectedItem", "inputKarton", "priceMode"].sort());
+  });
+
+  it("effect reset dep menyertakan resetKey + selectedItem (bukan items) agar tidak stale", () => {
+    const deps = extractDepArray(
+      /if\s*\(resetKeyRef\.current\s*===\s*resetKey\)\s*return;[\s\S]*?\}\s*,\s*\[([^\]]*)\]\s*\)/,
+    );
+    // WAJIB: resetKey (trigger) + selectedItem (dibaca di dalam body).
+    expect(deps).toContain("resetKey");
+    expect(deps).toContain("selectedItem");
+    // Body tidak lagi memakai `items.find`, jadi `items` TIDAK boleh ikut —
+    // memasukkan `items` akan me-refire reset tiap kali daftar refetch dan
+    // menghapus input user secara diam-diam.
+    expect(deps).not.toContain("items");
+  });
+});
