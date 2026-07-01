@@ -110,6 +110,7 @@ import {
 } from "@/lib/stock-format";
 export { BOTOL_PER_KARTON, fmtBase, fmtItemPrice, fmtItemQty, fmtQtyDual, rupiah };
 import { computeBeliDerived } from "@/lib/beli-derived";
+import { computeBeliWarnings } from "@/lib/beli-warnings";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
@@ -1644,6 +1645,13 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   });
   const { effPackageType, effBaseUnit, effectivePkgSize, kartonActive, pkgQ, price, baseAdded, totalCost } = derived;
   const baseUnit = effBaseUnit;
+  const warnings = computeBeliWarnings({
+    mode,
+    selectedItem,
+    derived,
+    priceMode,
+    inputKarton,
+  }).filter((w) => w.level !== "error"); // error-level sudah ditangani di submit()
 
   // Bila item terpilih bukan botol, mode karton wajib mati agar tidak
   // ×100 dari qty. Bila pindah ke item pcs, harga per-kemasan tidak
@@ -1834,6 +1842,24 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         <div>Total biaya: <b>{rupiah(totalCost)}</b> ({paymentMethod === "hutang" ? "hutang ke supplier" : "lunas tunai"})</div>
         {baseAdded > 0 && <div>Modal per {baseUnit}: <b>{rupiah(totalCost / baseAdded)}</b></div>}
       </div>
+
+      {warnings.length > 0 && (
+        <ul
+          className="space-y-1 rounded-md border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900 dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-200"
+          role="alert"
+          aria-label="Peringatan pembelian"
+        >
+          {warnings.map((w) => (
+            <li key={w.code} className="flex gap-1.5">
+              <span aria-hidden>⚠️</span>
+              <span>{w.message}</span>
+            </li>
+          ))}
+          <li className="pt-0.5 text-[10px] text-amber-800/80 dark:text-amber-300/80">
+            Periksa kembali sebelum menyimpan. Tekan "Simpan pembelian" untuk tetap melanjutkan.
+          </li>
+        </ul>
+      )}
 
       <button className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Simpan pembelian</button>
     </form>
