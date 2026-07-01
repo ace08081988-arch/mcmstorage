@@ -242,9 +242,9 @@ function PengaturanKunci() {
     }
   };
 
-  const handleOpenPerm = async () => {
+  const handleOpenPerm = async (preferBiometric = false) => {
     setOpeningPerm(true);
-    const opened = await openAppPermissionSettings();
+    const opened = await openAppPermissionSettings(undefined, { preferBiometric });
     setOpeningPerm(false);
     if (!opened) {
       toast.error(
@@ -253,7 +253,11 @@ function PengaturanKunci() {
           : "Hanya tersedia di APK Android",
       );
     } else {
-      toast.message("Ubah izin lalu kembali ke aplikasi — status akan diperbarui otomatis.");
+      toast.message(
+        preferBiometric
+          ? "Atur biometrik lalu kembali ke aplikasi — status akan diperbarui otomatis."
+          : "Ubah izin lalu kembali ke aplikasi — status akan diperbarui otomatis.",
+      );
     }
   };
 
@@ -552,7 +556,7 @@ function PengaturanKunci() {
                 size="sm"
                 variant="outline"
                 className="h-7 px-2 text-[11px]"
-                onClick={handleOpenPerm}
+                onClick={() => handleOpenPerm(false)}
                 disabled={openingPerm}
               >
                 {openingPerm ? "Membuka…" : "Buka pengaturan izin"}
@@ -627,7 +631,12 @@ function PengaturanKunci() {
             }[] = [];
             const permAction = {
               label: openingPerm ? "Membuka…" : "Buka pengaturan izin",
-              onClick: handleOpenPerm,
+              onClick: () => handleOpenPerm(false),
+              disabled: openingPerm,
+            };
+            const bioPageAction = {
+              label: openingPerm ? "Membuka…" : "Buka pengaturan izin",
+              onClick: () => handleOpenPerm(true),
               disabled: openingPerm,
             };
             if (!bioStatus.native) {
@@ -661,7 +670,7 @@ function PengaturanKunci() {
                   key: "enroll",
                   text: "Belum ada sidik jari terdaftar di perangkat. Daftarkan dulu di Pengaturan Sistem.",
                   action: { label: enrolling ? "Membuka…" : "Daftarkan sidik jari", onClick: handleEnroll, disabled: enrolling },
-                  secondary: permAction,
+                  secondary: bioPageAction,
                 });
               }
               if (!hasLock) {

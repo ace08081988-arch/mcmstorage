@@ -287,6 +287,7 @@ export async function openBiometricEnrollment(): Promise<boolean> {
 // Ini adalah rute yang diperlukan saat izin biometrik ditolak permanen.
 export async function openAppPermissionSettings(
   packageId = "biz.mcmstorage.app",
+  opts: { preferBiometric?: boolean } = {},
 ): Promise<boolean> {
   if (!isNative()) return false;
   let AppLauncher: typeof import("@capacitor/app-launcher").AppLauncher | null = null;
@@ -296,14 +297,21 @@ export async function openAppPermissionSettings(
     return false;
   }
   const pkg = encodeURIComponent(packageId);
-  // Urutan Android: detail izin app → detail app info → pengaturan biometrik → security → settings umum.
-  // iOS: skema "app-settings:" membuka halaman aplikasi ini di Settings.
-  const candidates = [
+  // Halaman detail aplikasi (paling relevan saat izin ditolak permanen).
+  const appDetails = [
     `intent:#Intent;action=android.settings.APPLICATION_DETAILS_SETTINGS;package=${packageId};S.android.provider.extra.APP_PACKAGE=${packageId};end`,
     `package:${packageId}`,
     `intent://${pkg}/#Intent;scheme=package;action=android.settings.APPLICATION_DETAILS_SETTINGS;end`,
+  ];
+  // Halaman biometrik sistem — dipakai saat sidik jari belum terdaftar
+  // atau saat izin biometrik dikelola di halaman biometrik, bukan izin app.
+  const biometricPages = [
     "intent:#Intent;action=android.settings.BIOMETRIC_ENROLL;end",
+    "intent:#Intent;action=android.settings.FINGERPRINT_ENROLL;end",
     "intent:#Intent;action=android.settings.SECURITY_SETTINGS;end",
+  ];
+  const candidates = [
+    ...(opts.preferBiometric ? [...biometricPages, ...appDetails] : [...appDetails, ...biometricPages]),
     "intent:#Intent;action=android.settings.SETTINGS;end",
     "app-settings:",
   ];
