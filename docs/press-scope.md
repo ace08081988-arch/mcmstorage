@@ -242,12 +242,29 @@ Setiap warning dari `src/lib/press-audit.ts` diawali kode stabil supaya
 mudah difilter di devtools (ketik `PA00` di panel Console) dan
 dijadikan tautan langsung ke bagian dokumentasi ini.
 
-| Kode  | Rule                          | Anchor docs                                 |
-| ----- | ----------------------------- | ------------------------------------------- |
-| PA001 | `radix-animated-surface`      | [Radix Dialog / DropdownMenu](#radix-dialog--dropdownmenu) |
-| PA002 | `motion-whiletap-wraps-button`| [shadcn Button dalam motion.div](#shadcn-button-dalam-motiondiv) |
-| PA003 | `sortable-handle`             | [Sortable / drag handle](#sortable--drag-handle) |
-| PA004 | `destructive-menuitem`        | [Radix Dialog / DropdownMenu](#radix-dialog--dropdownmenu) |
+### Ringkasan cepat
+
+| Kode  | Rule                        | Apa yang dideteksi                                                                 | Saran singkat                                                          | Bacaan lengkap |
+| ----- | --------------------------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------------------------- | -------------- |
+| PA001 | `radix-animated-surface`    | Radix `Dialog`/`Sheet`/`Popover`/`DropdownMenu` trigger/content di dalam scope press tanpa `data-no-press`. Skala press menabrak animasi `data-state=open/closed`. | Pasang `data-no-press` di **Trigger** dan **Content** Radix.            | [Radix Dialog / Sheet / Popover](#radix-dialog--sheet--popover) · [DropdownMenu / Select](#dropdownmenu--select) |
+| PA002 | `motion-whiletap-wraps-button` | `motion.div whileTap={{ scale }}` membungkus `<button>` / `shadcn Button` — skala tap ganda (Framer Motion + press-scope). | Hapus `whileTap` **atau** `data-no-press` di child button (pilih satu). | [shadcn Button di scope press](#shadcn-button-di-scope-press) · [Checklist](#shadcn-button-di-dalam-motiondiv-framer-motion) |
+| PA003 | `sortable-handle`           | Drag handle (`@dnd-kit`, `react-sortable`, dst.) tanpa `data-no-press` — skala saat drag memicu jitter/mismatch pointer. | `data-no-press` **pada handle-nya**, bukan container sortable-nya.      | [Sortable / drag handle](#sortable--drag-handle) · [Checklist](#sortable--drag-handle-dnd-kit-react-sortable-dll) |
+| PA004 | `destructive-menuitem`      | `DropdownMenu.Item` / `ContextMenu.Item` bergaya destruktif (`text-destructive`, `variant="destructive"`) di scope press. Radix sudah punya highlight sendiri. | `data-no-press` di `MenuItem` destruktif tsb.                          | [DropdownMenu / Select](#dropdownmenu--select) · [Checklist](#radix-dropdownmenu--select--contextmenu) |
+
+### Anchor cheat-sheet (klik ke bagian docs)
+
+- PA001 → [`#radix-dialog--sheet--popover`](#radix-dialog--sheet--popover),
+  [`#dropdownmenu--select`](#dropdownmenu--select)
+- PA002 → [`#shadcn-button-di-scope-press`](#shadcn-button-di-scope-press),
+  [`#shadcn-button-di-dalam-motiondiv-framer-motion`](#shadcn-button-di-dalam-motiondiv-framer-motion)
+- PA003 → [`#sortable--drag-handle`](#sortable--drag-handle),
+  [`#sortable--drag-handle-dnd-kit-react-sortable-dll`](#sortable--drag-handle-dnd-kit-react-sortable-dll)
+- PA004 → [`#dropdownmenu--select`](#dropdownmenu--select),
+  [`#radix-dropdownmenu--select--contextmenu`](#radix-dropdownmenu--select--contextmenu)
+
+Warning di console juga menyematkan anchor ini di field `docs`, sehingga
+`console.warn` bisa langsung diklik untuk melompat ke bagian yang tepat
+bila docs dibuka di GitHub/preview markdown.
 
 Format tiap baris warning:
 
