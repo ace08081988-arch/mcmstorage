@@ -20,9 +20,39 @@ export const PHONE_ID_LIKE = /(?:\+?62|0)8\d{7,12}/;
 export const PIN_MCM_FORMAT = /PIN\s+[A-Z0-9]{4}-[A-Z0-9]{4}/;
 export const PIN_ANY_TOKEN = /PIN\s+\S+/;
 
-/** Ambil semua token yang diawali `PIN ` dari `text` (bisa 0 hasil). */
+/**
+ * Ambil semua token yang diawali `PIN ` dari `text` (bisa 0 hasil).
+ *
+ * Edge case yang secara eksplisit didukung dan dites di
+ * `chat-pin-assertions-helper.smoke.spec.ts`:
+ *
+ *   1. **Ganda dalam satu baris/paragraf** — `"PIN ABCD-1234 dan PIN
+ *      EFGH-5678"` menghasilkan DUA token, bukan menggabungkan menjadi
+ *      satu blob raksasa.
+ *   2. **Ganda menempel tanpa spasi antar token** — `"PIN ABCD-1234PIN
+ *      EFGH-5678"` juga menghasilkan dua token. Ini penting karena
+ *      transkrip chat kadang mengalirkan preview tanpa separator saat
+ *      dirender di layar kecil.
+ *   3. **Terpotong di akhir baris** — `"PIN ABCD-\n1234"` menghasilkan
+ *      token off-format `"PIN ABCD-"`. Ini SENGAJA tetap ditangkap
+ *      supaya `expectPinFormat` bisa menandainya sebagai pelanggaran,
+ *      bukan disembunyikan diam-diam.
+ *   4. **Punctuation trailing** — `"PIN ABCD-1234."` menghasilkan
+ *      `"PIN ABCD-1234"` (titik tidak ikut termakan) sehingga token
+ *      valid tidak salah ditandai gara-gara punctuation.
+ *   5. **Case lowercase** — `"PIN abcd-1234"` tetap diekstrak apa
+ *      adanya. `PIN_MCM_FORMAT` yang uppercase-only lalu menolaknya.
+ *
+ * Implementasi:
+ *   - `\bPIN\s+` — awal token wajib `PIN` yang diikuti whitespace,
+ *     dengan word-boundary agar `SPIN` / `PINK` tidak ikut match.
+ *   - `(?:(?!PIN)[A-Za-z0-9-])+` — konsumsi char PIN-body yang valid
+ *     (huruf/angka/dash) tapi berhenti sebelum urutan `PIN` berikutnya.
+ *     Negative lookahead ini yang membuat kasus back-to-back tanpa
+ *     spasi (edge case #2) terpisah bersih menjadi dua token.
+ */
 export function extractPinTokens(text: string): string[] {
-  return text.match(/PIN\s+[^\s\n]+/g) ?? [];
+  return text.match(/\bPIN\s+(?:(?!PIN)[A-Za-z0-9-])+/g) ?? [];
 }
 
 /**
