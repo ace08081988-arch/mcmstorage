@@ -475,8 +475,26 @@ function StatusNotifikasiPage() {
     }
   };
 
-  const buildSnapshot = () => ({
-    generatedAt: new Date().toISOString(),
+  const buildSnapshot = () => {
+    const now = new Date();
+    const offsetMin = -now.getTimezoneOffset();
+    const sign = offsetMin >= 0 ? "+" : "-";
+    const p = (n: number) => String(n).padStart(2, "0");
+    const abs = Math.abs(offsetMin);
+    const idLabel: Record<number, string> = { 420: "WIB", 480: "WITA", 540: "WIT" };
+    const tzLabel = idLabel[offsetMin] ?? `UTC${sign}${p(Math.floor(abs / 60))}${p(abs % 60)}`;
+    return {
+    // Versi skema snapshot ekspor. Naikkan saat mengubah bentuk field (breaking).
+    schemaVersion: 1,
+    schemaName: "mcm.notifikasi-status",
+    exportedAt: now.toISOString(),
+    exportedAtLocal: now.toString(),
+    timezone: {
+      label: tzLabel,
+      offsetMinutes: offsetMin,
+      iana: typeof Intl !== "undefined" ? Intl.DateTimeFormat().resolvedOptions().timeZone : null,
+    },
+    generatedAt: now.toISOString(), // alias untuk kompatibilitas ekspor lama
     origin: typeof window !== "undefined" ? window.location.origin : null,
     userAgent: typeof navigator !== "undefined" ? navigator.userAgent : null,
     permission: {
@@ -504,7 +522,8 @@ function StatusNotifikasiPage() {
           lastSubscribedAt: lastPushSetup ? new Date(lastPushSetup).toISOString() : null,
         }
       : { active: !!pushSub },
-  });
+    };
+  };
 
   // Safe replacer: handles BigInt, functions, and cyclic refs so JSON.stringify never throws.
   const makeSafeReplacer = () => {
