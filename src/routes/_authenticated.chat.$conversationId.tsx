@@ -11,6 +11,8 @@ import {
   Check, CheckCheck, AlertCircle, RefreshCw, WifiOff, Reply, Pencil, EyeOff, Smile, X, Ban, Star, Pin,
   History as HistoryIcon,
   Sticker as StickerIcon,
+  Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
+  Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -67,6 +69,12 @@ import { SaveAsNoteDialog } from "@/components/chat/SaveAsNoteDialog";
 import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog";
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { StickerPickerDialog, parseStickerFromBody } from "@/components/chat/StickerPickerDialog";
+import {
+  ConversationSearchDialog,
+  MediaLinksDialog,
+  MuteDialog,
+} from "@/components/chat/ConversationExtrasDialogs";
+import { useConvPrefs, setConvPrefs } from "@/lib/conversation-prefs";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import {
   DELETED_PLACEHOLDER,
@@ -129,6 +137,10 @@ function ChatRoomPage() {
   const [qrSource, setQrSource] = useState<string | null>(null);
   const starMut = useStarMessage(conversationId);
   const pinMut = usePinMessage(conversationId);
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [mediaOpen, setMediaOpen] = useState(false);
+  const [muteOpen, setMuteOpen] = useState(false);
+  const { prefs: convPrefs, mutedNow } = useConvPrefs(myId ?? undefined, conversationId);
 
   const toggleSelect = useCallback((m: MessageRow) => {
     if (m.deleted_at) return;
@@ -650,10 +662,94 @@ function ChatRoomPage() {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-64">
+            <DropdownMenuItem onSelect={() => setSearchOpen(true)}>
+              <SearchIcon className="mr-2 h-4 w-4" /> Cari di percakapan
+            </DropdownMenuItem>
+            <DropdownMenuItem onSelect={() => setMediaOpen(true)}>
+              <ImageIcon className="mr-2 h-4 w-4" /> Media, tautan, dan dok
+            </DropdownMenuItem>
+            {meta.data?.kind === "dm" && dmPeer?.peerPhone ? (
+              <DropdownMenuItem
+                onSelect={() => {
+                  try {
+                    sessionStorage.setItem(
+                      "mcm.buku-alamat.prefill",
+                      JSON.stringify({
+                        phone: dmPeer.peerPhone ?? "",
+                        name: displayedPeerName,
+                      }),
+                    );
+                  } catch {
+                    /* ignore */
+                  }
+                  navigate({ to: "/buku-alamat" });
+                }}
+              >
+                <UserPlus className="mr-2 h-4 w-4" /> Tambah ke daftar kontak
+              </DropdownMenuItem>
+            ) : null}
+            <DropdownMenuItem
+              onSelect={() => {
+                setConvPrefs(myId ?? undefined, conversationId, { pinned: !convPrefs.pinned });
+                toast.success(convPrefs.pinned ? "Chat dilepas dari sematan" : "Chat disematkan di atas");
+              }}
+            >
+              <Pin className="mr-2 h-4 w-4" /> {convPrefs.pinned ? "Lepas sematan" : "Tetapkan chat"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                if (mutedNow) {
+                  setConvPrefs(myId ?? undefined, conversationId, { mutedUntil: null });
+                  toast.success("Notifikasi diaktifkan kembali");
+                } else {
+                  setMuteOpen(true);
+                }
+              }}
+            >
+              {mutedNow ? (
+                <>
+                  <BellRing className="mr-2 h-4 w-4" /> Bunyikan notifikasi
+                </>
+              ) : (
+                <>
+                  <BellOff className="mr-2 h-4 w-4" /> Senyapkan notifikasi
+                </>
+              )}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                setConvPrefs(myId ?? undefined, conversationId, {
+                  archived: !convPrefs.archived,
+                });
+                toast.success(convPrefs.archived ? "Dikeluarkan dari arsip" : "Dipindah ke arsip");
+              }}
+            >
+              <Archive className="mr-2 h-4 w-4" /> {convPrefs.archived ? "Batalkan arsip" : "Arsipkan chat"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                setConvPrefs(myId ?? undefined, conversationId, {
+                  markedUnread: !convPrefs.markedUnread,
+                });
+                toast.success(convPrefs.markedUnread ? "Ditandai sudah dibaca" : "Ditandai belum dibaca");
+              }}
+            >
+              <MailWarning className="mr-2 h-4 w-4" />
+              {convPrefs.markedUnread ? "Tandai sudah dibaca" : "Tandai belum dibaca"}
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => navigate({ to: "/ecer" })}
+            >
+              <ShoppingCart className="mr-2 h-4 w-4" /> Buat pesanan
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => navigate({ to: "/chat" })}
+            >
+              <MessageSquarePlus className="mr-2 h-4 w-4" /> Chat baru
+            </DropdownMenuItem>
             {meta.data?.kind === "group" ? (
               <DropdownMenuItem onSelect={() => setManageOpen(true)}>
-                <Users className="mr-2 h-4 w-4" />
-                Kelola grup &amp; anggota
+                <Users className="mr-2 h-4 w-4" /> Kelola grup &amp; anggota
               </DropdownMenuItem>
             ) : null}
             <DropdownMenuItem
@@ -661,15 +757,13 @@ function ChatRoomPage() {
                 navigate({ to: "/chat-audit", search: { c: conversationId } })
               }
             >
-              <HistoryIcon className="mr-2 h-4 w-4" />
-              Log hapus pesan
+              <HistoryIcon className="mr-2 h-4 w-4" /> Log hapus pesan
             </DropdownMenuItem>
             <DropdownMenuItem
               className="text-destructive focus:text-destructive"
               onSelect={() => setConfirmAllOpen(true)}
             >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Hapus semua pesan saya
+              <Trash2 className="mr-2 h-4 w-4" /> Hapus semua pesan saya
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -1331,6 +1425,26 @@ function ChatRoomPage() {
           fromAlias={!!peerAlias.data?.name}
         />
       ) : null}
+
+      <ConversationSearchDialog
+        open={searchOpen}
+        onOpenChange={setSearchOpen}
+        messages={visibleMessages}
+        onJump={jumpToMessage}
+      />
+      <MediaLinksDialog
+        open={mediaOpen}
+        onOpenChange={setMediaOpen}
+        messages={visibleMessages}
+      />
+      <MuteDialog
+        open={muteOpen}
+        onOpenChange={setMuteOpen}
+        onPick={(until) => {
+          setConvPrefs(myId ?? undefined, conversationId, { mutedUntil: until });
+          toast.success("Notifikasi disenyapkan");
+        }}
+      />
 
       <AlertDialog open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
         <AlertDialogContent>
