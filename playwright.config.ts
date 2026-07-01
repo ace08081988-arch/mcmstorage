@@ -517,5 +517,39 @@ export default defineConfig({
       testMatch: /chat-pin-assertions-helper\.smoke\.spec\.ts/,
       use: { ...devices["Desktop Chrome"] },
     },
+    // ── Multi-viewport: skenario buka DM eksisting pertama dijalankan
+    //   ulang di 3 lebar (mobile 411, tablet 820, desktop 1280) untuk
+    //   membuktikan branding `PIN xxxx-xxxx` tidak regres di breakpoint
+    //   manapun (list, header, transkrip). Spec sama, viewport beda.
+    {
+      name: "chat-pin-mcm-multi-viewport-mobile-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-multi-viewport\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
+      name: "chat-pin-mcm-multi-viewport-tablet-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-multi-viewport\.spec\.ts/,
+      use: {
+        ...devices["iPad (gen 7)"],
+        viewport: { width: 820, height: 1180 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
+      name: "chat-pin-mcm-multi-viewport-desktop-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-multi-viewport\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 900 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
