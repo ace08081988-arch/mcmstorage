@@ -124,13 +124,27 @@ export function useConvPrefs(uid: string | undefined, cid: string) {
           // Diff → beri tahu subscriber bahwa perubahan datang dari tab lain
           try {
             const changes: string[] = [];
-            if (prev.pinned !== next.pinned)
+            const sigParts: string[] = [];
+            if (prev.pinned !== next.pinned) {
               changes.push(next.pinned ? "disematkan" : "dilepas sematan");
-            if ((prev.mutedUntil ?? 0) !== (next.mutedUntil ?? 0))
+              sigParts.push(`pin:${prev.pinned ? 1 : 0}->${next.pinned ? 1 : 0}`);
+            }
+            if ((prev.mutedUntil ?? 0) !== (next.mutedUntil ?? 0)) {
               changes.push(next.mutedUntil ? "disenyapkan" : "notifikasi aktif");
-            if (prev.archived !== next.archived)
+              // Bucket mute into on/off + expiry timestamp so identical mute
+              // targets dedupe, but "8 jam" → "1 minggu" tetap sig berbeda.
+              sigParts.push(
+                `mute:${prev.mutedUntil ?? 0}->${next.mutedUntil ?? 0}`,
+              );
+            }
+            if (prev.archived !== next.archived) {
               changes.push(next.archived ? "diarsipkan" : "dikeluarkan arsip");
-            const sig = changes.join("|");
+              sigParts.push(`arch:${prev.archived ? 1 : 0}->${next.archived ? 1 : 0}`);
+            }
+            // Signature mencakup nilai konkret pin/mute/arsip agar dua tulisan
+            // beruntun dengan hasil identik ter-dedupe, sementara toggle bolak-
+            // balik (on→off→on) tetap dianggap kejadian berbeda.
+            const sig = sigParts.join("|");
             if (changes.length && shouldEmit(cid, sig)) {
               window.dispatchEvent(
                 new CustomEvent("mcm:conv-prefs-remote", {
