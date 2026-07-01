@@ -60,6 +60,12 @@ function PenyimpananPage() {
   const fileRef = useRef<HTMLInputElement | null>(null);
   const [pending, setPending] = useState<PrefsBackup | null>(null);
   const [lastExportAt, setLastExportAt] = useState<string | null>(null);
+  const [pendingClear, setPendingClear] = useState<{
+    prefix: string;
+    label: string;
+    keys: Array<{ key: string; bytes: number }>;
+    totalBytes: number;
+  } | null>(null);
 
   const refresh = async () => {
     setSnapshot(estimateLocalStorage());
@@ -122,15 +128,34 @@ function PenyimpananPage() {
     }
   };
 
-  const clearNamespace = (prefix: string, label: string) => {
-    if (!confirm(`Hapus semua data ${label}?`)) return;
-    const keys: string[] = [];
+  const requestClear = (prefix: string, label: string) => {
+    const keys: Array<{ key: string; bytes: number }> = [];
+    let total = 0;
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(prefix)) keys.push(k);
+      if (!k || !k.startsWith(prefix)) continue;
+      const v = localStorage.getItem(k) ?? "";
+      const size = k.length + v.length;
+      total += size;
+      keys.push({ key: k, bytes: size });
     }
-    keys.forEach((k) => localStorage.removeItem(k));
-    toast.success(`${label}: ${keys.length} entri dihapus.`);
+    keys.sort((a, b) => b.bytes - a.bytes);
+    if (keys.length === 0) {
+      toast.info(`${label}: tidak ada data untuk dihapus.`);
+      return;
+    }
+    setPendingClear({ prefix, label, keys, totalBytes: total });
+  };
+
+  const confirmClear = () => {
+    if (!pendingClear) return;
+    const { keys, label } = pendingClear;
+    keys.forEach((e) => localStorage.removeItem(e.key));
+    const totalKB = formatKB(pendingClear.totalBytes);
+    toast.success(`${label} dihapus`, {
+      description: `${keys.length} entri · ${totalKB} dibebaskan.`,
+    });
+    setPendingClear(null);
     refresh();
   };
 
@@ -187,15 +212,15 @@ function PenyimpananPage() {
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                 Segarkan
               </Button>
-              <Button size="sm" variant="outline" onClick={() => clearNamespace("mcm.wa-sent", "riwayat WA")}>
+              <Button size="sm" variant="outline" onClick={() => requestClear("mcm.wa-sent", "Riwayat WA")}>
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                 Hapus riwayat WA
               </Button>
-              <Button size="sm" variant="outline" onClick={() => clearNamespace("mcm.sticker", "stiker lokal")}>
+              <Button size="sm" variant="outline" onClick={() => requestClear("mcm.sticker", "Cache stiker")}>
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                 Hapus cache stiker
               </Button>
-              <Button size="sm" variant="outline" onClick={() => clearNamespace("mcm.send-log", "log kirim")}>
+              <Button size="sm" variant="outline" onClick={() => requestClear("mcm.send-log", "Log kirim")}>
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" />
                 Hapus log kirim
               </Button>
