@@ -140,7 +140,22 @@ export type BiometricStatus = {
   reason?: string;
   code?: string;
   biometryType?: number;
+  platform?: "android" | "ios" | "web";
+  pluginLoaded?: boolean;
+  enrolled?: boolean; // ada sidik jari terdaftar di sistem
+  permission?: "granted" | "denied" | "unknown";
 };
+
+function getPlatform(): "android" | "ios" | "web" {
+  try {
+    const w = window as unknown as { Capacitor?: { getPlatform?: () => string } };
+    const p = w.Capacitor?.getPlatform?.();
+    if (p === "android" || p === "ios") return p;
+    return "web";
+  } catch {
+    return "web";
+  }
+}
 
 function isNative(): boolean {
   try {
@@ -153,23 +168,56 @@ function isNative(): boolean {
 
 export async function checkBiometricStatus(): Promise<BiometricStatus> {
   const native = isNative();
+  const platform = getPlatform();
   if (!native) {
-    return { available: false, native: false, reason: "Hanya tersedia di APK Android (bukan preview browser)" };
+    return {
+      available: false,
+      native: false,
+      platform,
+      pluginLoaded: false,
+      enrolled: false,
+      permission: "unknown",
+      reason: "Hanya tersedia di APK Android (bukan preview browser)",
+    };
   }
   try {
     const { BiometricAuth } = await import("@aparajita/capacitor-biometric-auth");
     const info = await BiometricAuth.checkBiometry();
+    const code = info.code as string | undefined;
+    // Kode dari plugin: biometryNotEnrolled = tidak ada sidik jari.
+    // biometryNotAvailable = hardware tidak ada / dimatikan.
+    // noDeviceCredential = tidak ada PIN/pola sistem.
+    const enrolled = info.isAvailable
+      ? true
+      : code === "biometryNotEnrolled"
+        ? false
+        : code === "biometryNotAvailable" || code === "noDeviceCredential"
+          ? false
+          : undefined; // tidak diketahui
+    // Plugin ini tidak butuh runtime permission terpisah di Android modern
+    // (USE_BIOMETRIC declared di manifest). Anggap granted bila plugin
+    // berhasil dimuat & checkBiometry tidak melempar.
+    const permission: "granted" | "denied" | "unknown" =
+      code === "authenticationFailed" || code === "userLockout" ? "denied" : "granted";
     return {
       available: !!info.isAvailable,
       native: true,
+      platform,
+      pluginLoaded: true,
+      enrolled: enrolled ?? undefined,
+      permission,
       reason: info.reason,
-      code: info.code,
+      code,
       biometryType: info.biometryType as unknown as number,
     };
   } catch (e) {
     return {
       available: false,
       native: true,
+      platform,
+      pluginLoaded: false,
+      enrolled: undefined,
+      permission: "unknown",
       reason: e instanceof Error ? e.message : "Plugin biometrik gagal dimuat",
     };
   }

@@ -41,6 +41,32 @@ export const Route = createFileRoute("/_authenticated/pengaturan-kunci")({
   component: PengaturanKunci,
 });
 
+function StatusRow({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string;
+  tone: "ok" | "warn" | "err";
+}) {
+  const dot =
+    tone === "ok"
+      ? "bg-emerald-500"
+      : tone === "err"
+        ? "bg-rose-500"
+        : "bg-amber-500";
+  return (
+    <li className="flex items-center justify-between gap-2 rounded border bg-background px-2 py-1">
+      <span className="text-muted-foreground">{label}</span>
+      <span className="flex items-center gap-1.5 font-medium">
+        <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot}`} />
+        {value}
+      </span>
+    </li>
+  );
+}
+
 function PengaturanKunci() {
   const [uid, setUid] = useState<string | null>(null);
   const [cfg, setCfg] = useState<LockConfig | null>(null);
@@ -416,6 +442,78 @@ function PengaturanKunci() {
 
       <section className="space-y-4 rounded-lg border p-4">
         <h2 className="text-sm font-medium">Opsi Tambahan</h2>
+
+        <div className="rounded-md border bg-muted/30 p-3">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <div className="text-[12px] font-medium">Status Perangkat</div>
+            <button
+              type="button"
+              onClick={() => runBioCheck(true)}
+              disabled={bioChecking}
+              className="text-[11px] font-medium text-primary underline disabled:opacity-50"
+            >
+              {bioChecking ? "Memeriksa…" : "Refresh"}
+            </button>
+          </div>
+          <ul className="grid grid-cols-1 gap-1 text-[11px] sm:grid-cols-2">
+            <StatusRow
+              label="Platform"
+              value={
+                bioStatus.platform === "android"
+                  ? "Android"
+                  : bioStatus.platform === "ios"
+                    ? "iOS"
+                    : "Web (preview)"
+              }
+              tone={bioStatus.native ? "ok" : "warn"}
+            />
+            <StatusRow
+              label="Plugin biometrik"
+              value={bioStatus.pluginLoaded ? "Aktif" : "Tidak aktif"}
+              tone={bioStatus.pluginLoaded ? "ok" : "warn"}
+            />
+            <StatusRow
+              label="Izin sidik jari"
+              value={
+                bioStatus.permission === "granted"
+                  ? "Diberikan"
+                  : bioStatus.permission === "denied"
+                    ? "Ditolak"
+                    : "Belum diketahui"
+              }
+              tone={
+                bioStatus.permission === "granted"
+                  ? "ok"
+                  : bioStatus.permission === "denied"
+                    ? "err"
+                    : "warn"
+              }
+            />
+            <StatusRow
+              label="Sidik jari terdaftar"
+              value={
+                bioStatus.enrolled === true
+                  ? "Ya"
+                  : bioStatus.enrolled === false
+                    ? "Belum"
+                    : "Tidak diketahui"
+              }
+              tone={
+                bioStatus.enrolled === true
+                  ? "ok"
+                  : bioStatus.enrolled === false
+                    ? "err"
+                    : "warn"
+              }
+            />
+          </ul>
+          {bioStatus.reason && !bioAvailable && (
+            <div className="mt-2 text-[11px] text-muted-foreground">
+              Detail: <span className="font-mono">{bioStatus.code || "—"}</span>{" "}
+              · {bioStatus.reason}
+            </div>
+          )}
+        </div>
 
         <div className="flex items-center justify-between gap-3">
           <div className="flex-1">
