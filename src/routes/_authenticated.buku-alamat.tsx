@@ -443,9 +443,13 @@ function EditDialog({
     }
     setBusy(true);
     try {
+      let linkedName: string | null = null;
+      let alreadyExisted = false;
       if (isNew && pin.trim()) {
         const { addContactByInviteCode } = await import("@/lib/invite");
-        await addContactByInviteCode(pin.trim());
+        const res = await addContactByInviteCode(pin.trim());
+        linkedName = res.displayName;
+        alreadyExisted = res.alreadyExisted;
       }
       await upsertManualEntry({
         id: row?.id,
@@ -454,7 +458,14 @@ function EditDialog({
         email: email || null,
         note: note || null,
       });
-      toast.success(isNew ? "Kontak ditambahkan" : "Kontak diperbarui");
+      if (isNew) {
+        toast.success(
+          alreadyExisted ? "Kontak sudah ada, diperbarui" : "Kontak berhasil ditambahkan",
+          linkedName ? { description: `Tertaut ke akun: ${linkedName}` } : undefined,
+        );
+      } else {
+        toast.success("Kontak berhasil diperbarui");
+      }
       await onSaved();
     } catch (e) {
       toast.error(friendlyError(e));
