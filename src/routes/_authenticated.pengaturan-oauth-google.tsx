@@ -87,6 +87,17 @@ const STEPS = [
   { id: "test", label: "Uji sign-in di preview & domain produksi" },
 ] as const;
 
+// Deep-link ke halaman Google Cloud Console yang relevan untuk tiap langkah.
+// "paste" & "test" tidak dibuka di Cloud Console (paste di Backend, test lokal).
+const STEP_CONSOLE_URL: Partial<Record<StepId, string>> = {
+  consent: "https://console.cloud.google.com/apis/credentials/consent",
+  scopes: "https://console.cloud.google.com/apis/credentials/consent/edit",
+  domains: "https://console.cloud.google.com/apis/credentials/consent/edit",
+  origins: "https://console.cloud.google.com/apis/credentials",
+  redirect: "https://console.cloud.google.com/apis/credentials",
+  credentials: "https://console.cloud.google.com/apis/credentials",
+};
+
 type StepId = (typeof STEPS)[number]["id"];
 
 // Kategori "block" yang bisa disorot pada bagian "Nilai untuk Google Cloud Console".
