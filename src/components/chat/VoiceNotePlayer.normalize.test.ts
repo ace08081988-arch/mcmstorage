@@ -69,4 +69,64 @@ describe("normalizeDurationSec", () => {
       expect((out as number) >= 1).toBe(true);
     }
   });
+
+  // Kasus tambahan: sumber durasi bisa datang dari JSON server (string),
+  // metadata audio yang belum siap (NaN), atau field opsional yang hilang
+  // (undefined). Aturan pembulatan ≥ 1 detik harus tetap berlaku.
+  describe("input tak biasa (undefined / string numerik / NaN)", () => {
+    it("mengembalikan null untuk undefined eksplisit maupun implisit", () => {
+      expect(normalizeDurationSec(undefined)).toBeNull();
+      // Implicit undefined via destructuring optional field.
+      const obj: { d?: number } = {};
+      expect(normalizeDurationSec(obj.d)).toBeNull();
+    });
+
+    it("mengembalikan null untuk NaN dari sumber apa pun", () => {
+      expect(normalizeDurationSec(Number.NaN)).toBeNull();
+      expect(normalizeDurationSec(0 / 0)).toBeNull();
+      expect(normalizeDurationSec(parseFloat("bukan-angka"))).toBeNull();
+      // Audio.duration sering NaN sebelum metadata termuat.
+      const fakeAudio = { duration: Number.NaN } as HTMLAudioElement;
+      expect(normalizeDurationSec(fakeAudio.duration)).toBeNull();
+    });
+
+    it("meng-coerce string numerik ke aturan pembulatan yang sama (≥ 1 detik)", () => {
+      // String bisa masuk dari payload JSON server yang belum ter-parse.
+      // Kontrak: hasil harus identik dengan varian number-nya.
+      expect(normalizeDurationSec("0.1" as unknown as number)).toBe(1);
+      expect(normalizeDurationSec("0.5" as unknown as number)).toBe(1);
+      expect(normalizeDurationSec("1" as unknown as number)).toBe(1);
+      expect(normalizeDurationSec("1.4" as unknown as number)).toBe(1);
+      expect(normalizeDurationSec("1.5" as unknown as number)).toBe(2);
+      expect(normalizeDurationSec("2.7" as unknown as number)).toBe(3);
+      expect(normalizeDurationSec("59.6" as unknown as number)).toBe(60);
+      expect(normalizeDurationSec("125" as unknown as number)).toBe(125);
+    });
+
+    it("mengembalikan null untuk string non-numerik / kosong / whitespace", () => {
+      expect(normalizeDurationSec("" as unknown as number)).toBeNull();
+      expect(normalizeDurationSec("   " as unknown as number)).toBeNull();
+      expect(normalizeDurationSec("abc" as unknown as number)).toBeNull();
+      expect(normalizeDurationSec("NaN" as unknown as number)).toBeNull();
+      expect(normalizeDurationSec("Infinity" as unknown as number)).toBeNull();
+      expect(normalizeDurationSec("-3" as unknown as number)).toBeNull();
+      expect(normalizeDurationSec("0" as unknown as number)).toBeNull();
+    });
+
+    it("konsisten: string numerik dan number-nya menghasilkan output identik", () => {
+      const pairs: Array<[string, number]> = [
+        ["0.2", 0.2],
+        ["1", 1],
+        ["1.5", 1.5],
+        ["2.4", 2.4],
+        ["59.6", 59.6],
+        ["125.3", 125.3],
+      ];
+      for (const [s, n] of pairs) {
+        expect(normalizeDurationSec(s as unknown as number)).toBe(
+          normalizeDurationSec(n),
+        );
+      }
+    });
+  });
 });
