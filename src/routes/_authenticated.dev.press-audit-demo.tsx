@@ -712,6 +712,52 @@ function PressAuditDemoPage() {
           finding aktual vs yang diharapkan.
         </p>
       </div>
+      <div
+        className="rounded border bg-muted/30 p-3 text-xs"
+        data-testid="pa-demo-legend"
+        aria-label="Legend warna dan gaya sorotan ancestor pemenang"
+      >
+        <div className="font-medium mb-2">Legend sorotan</div>
+        <ul className="grid gap-2 sm:grid-cols-3">
+          <li className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="inline-block h-4 w-8 rounded"
+              style={{
+                outline: "2px dashed hsl(142 71% 45%)",
+                outlineOffset: "2px",
+                boxShadow: "0 0 0 4px hsl(142 71% 45% / 0.13)",
+              }}
+            />
+            <span>
+              <b className="text-emerald-600">Hijau</b> — allow (on / allow-match / scope.allow)
+            </span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="inline-block h-4 w-8 rounded"
+              style={{
+                outline: "2px dashed hsl(0 84% 60%)",
+                outlineOffset: "2px",
+                boxShadow: "0 0 0 4px hsl(0 84% 60% / 0.13)",
+              }}
+            />
+            <span>
+              <b className="text-destructive">Merah</b> — block / deny / skip / off / allowlist-miss
+            </span>
+          </li>
+          <li className="flex items-center gap-2">
+            <span
+              aria-hidden="true"
+              className="inline-block h-4 w-8 rounded border-2 border-dashed border-muted-foreground/70"
+            />
+            <span>
+              <b>Dashed</b> — ancestor <i>pemenang</i> pada trace (hover untuk alasan)
+            </span>
+          </li>
+        </ul>
+      </div>
       <div className="flex gap-2">
         <Button
           size="sm"
