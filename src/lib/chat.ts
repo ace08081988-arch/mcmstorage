@@ -247,9 +247,18 @@ export function useConversations() {
         .in("conversation_id", ids)
         .order("created_at", { ascending: false })
         .limit(500);
+      // Hidden-for-me: exclude these messages from unread counts AND from the
+      // "last message" preview so deleting a message immediately shrinks the
+      // badge and refreshes the row snippet.
+      const { data: hiddenRows } = await supabase
+        .from("message_hidden")
+        .select("message_id")
+        .eq("user_id", myId!);
+      const hiddenSet = new Set((hiddenRows ?? []).map((r) => r.message_id as string));
       const lastByConv = new Map<string, { body: string | null; created_at: string; sender_id: string }>();
       const unreadByConv = new Map<string, number>();
       for (const m of lastMsgs ?? []) {
+        if (hiddenSet.has(m.id)) continue;
         if (!lastByConv.has(m.conversation_id)) {
           lastByConv.set(m.conversation_id, {
             body: messagePreviewText(m) || "Lampiran",
