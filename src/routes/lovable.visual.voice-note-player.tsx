@@ -18,6 +18,9 @@ export const Route = createFileRoute("/lovable/visual/voice-note-player")({
       { name: "robots", content: "noindex,nofollow" },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    d: typeof s.d === "string" ? s.d : undefined,
+  }),
   component: VoiceNotePlayerHarness,
 });
 
@@ -53,6 +56,17 @@ function makeWavBlobUrl(sec: number): string {
 }
 
 function VoiceNotePlayerHarness() {
+  const { d } = Route.useSearch();
+  // Mode "decimals": render satu baris per nilai desimal untuk memverifikasi
+  // normalisasi `attachmentDurationSec` menjadi bilangan bulat ≥ 1 pada label.
+  const decimals = useMemo(() => {
+    if (!d) return null;
+    const parts = d
+      .split(",")
+      .map((t: string) => Number(t.trim()))
+      .filter((n: number) => Number.isFinite(n));
+    return parts.length > 0 ? parts : null;
+  }, [d]);
   const [url, setUrl] = useState<string | null>(null);
   const [mountKey, setMountKey] = useState(0);
   useEffect(() => {
@@ -78,7 +92,18 @@ function VoiceNotePlayerHarness() {
         className="flex flex-col gap-2 overflow-y-auto rounded border p-2"
         style={{ height: 480 }}
       >
-        {url ? (
+        {url ? decimals ? (
+          decimals.map((raw: number, i: number) => (
+            <div
+              key={`${mountKey}-dec-${i}`}
+              data-vn-index={i}
+              data-vn-raw={String(raw)}
+              className={`flex ${i % 2 === 0 ? "justify-start" : "justify-end"}`}
+            >
+              <VoiceNotePlayer url={url} mine={i % 2 === 1} durationSec={raw} />
+            </div>
+          ))
+        ) : (
           rows.map((i) => (
             <div
               key={`${mountKey}-${i}`}
