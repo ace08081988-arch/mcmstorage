@@ -89,12 +89,12 @@ function KontakPage() {
   const startDm = useStartDm();
   const [chatting, setChatting] = useState<string | null>(null);
 
-  const openChat = async (row: Row) => {
+  const openChat = async (row: GroupedRow) => {
     if (!row.account_user_id) {
       toast.error("Tautkan akun pengguna dulu sebelum memulai chat.");
       return;
     }
-    setChatting(row.id);
+    setChatting(row.ids[0]);
     try {
       const conversationId = await startDm.mutateAsync(row.account_user_id);
       if (!conversationId) throw new Error("Tidak menerima ID percakapan");
@@ -130,13 +130,14 @@ function KontakPage() {
   }, []);
 
   const rows = tab === "customer" ? customers : suppliers;
+  const groupedRows = useMemo(() => groupRows(rows), [rows]);
 
-  const unlink = async (kind: Kind, row: Row) => {
+  const unlink = async (kind: Kind, row: GroupedRow) => {
     const table = kind === "customer" ? "customers" : "suppliers";
     const { error } = await supabase
       .from(table)
       .update({ account_user_id: null })
-      .eq("id", row.id);
+      .in("id", row.ids);
     if (error) toast.error(friendlyError(error));
     else {
       toast.success("Tautan akun dilepas");
@@ -144,18 +145,21 @@ function KontakPage() {
     }
   };
 
-  const removeRow = async (kind: Kind, row: Row) => {
+  const removeRow = async (kind: Kind, row: GroupedRow) => {
     const label = kind === "customer" ? "pelanggan" : "pemasok";
+    const extra = row.ids.length > 1
+      ? ` (${row.ids.length} entri duplikat akan digabung & dihapus)`
+      : "";
     if (
       !(await confirm({
         title: `Hapus ${label}?`,
-        description: `${row.name} akan dihapus permanen. Riwayat transaksi terkait tetap ada, tapi tidak lagi tertaut ke kontak ini.`,
+        description: `${row.name}${extra} akan dihapus permanen. Riwayat transaksi terkait tetap ada, tapi tidak lagi tertaut ke kontak ini.`,
         confirmText: "Hapus",
         destructive: true,
       }))
     ) return;
     const table = kind === "customer" ? "customers" : "suppliers";
-    const { error } = await supabase.from(table).delete().eq("id", row.id);
+    const { error } = await supabase.from(table).delete().in("id", row.ids);
     if (error) toast.error(friendlyError(error));
     else {
       toast.success(`${label[0].toUpperCase() + label.slice(1)} dihapus`);
@@ -163,17 +167,17 @@ function KontakPage() {
     }
   };
 
-  const sendWa = async (row: Row) => {
+  const sendWa = async (row: GroupedRow) => {
     const text = `Halo ${row.name}, ada yang ingin saya sampaikan.`;
     const phone = row.contact?.replace(/\D/g, "") || undefined;
     const res = await shareToWhatsApp({ text, title: row.name, phone });
     notifyShareResult(res);
   };
 
-  const handleTest = async (kind: Kind, row: Row) => {
-    setTesting(row.id);
+  const handleTest = async (kind: Kind, row: GroupedRow) => {
+    setTesting(row.ids[0]);
     try {
-      const res = await sendTest({ data: { kind, id: row.id } });
+      const res = await sendTest({ data: { kind, id: row.ids[0] } });
       if (res.sent > 0) toast.success(res.message);
       else toast.warning(res.message);
     } catch (e: any) {
@@ -184,8 +188,8 @@ function KontakPage() {
   };
 
   const linkedCount = useMemo(
-    () => rows.filter((r) => r.account_user_id).length,
-    [rows],
+    () => groupedRows.filter((r) => r.account_user_id).length,
+    [groupedRows],
   );
 
   const handleTestAll = async () => {
