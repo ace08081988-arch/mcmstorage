@@ -746,5 +746,21 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: reload berkali-kali di bawah throttling REGULAR 2G
+      // (~250 kbps, RTT 800ms) — lebih lambat dari Slow 3G. Fase
+      // skeleton lebih panjang → window kebocoran lebih besar; test
+      // mem-poll `innerText` tiap ~100ms dan gagal seketika bila
+      // `PHONE_ID_LIKE` cocok, lalu mengunci kontrak `PIN xxxx-xxxx`
+      // setelah stabil. CDP-only → hanya Chromium.
+      name: "chat-pin-mcm-2g-throttled-reload-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-2g-throttled-reload\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
