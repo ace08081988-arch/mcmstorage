@@ -89,4 +89,67 @@ test.describe("Pengaturan APK · form minSupported", () => {
     await expect(formErr).toContainText(/Alasan hanya berlaku/i);
     await expect(page.getByTestId("mf-save")).toBeDisabled();
   });
+
+  test("input valid tersimpan → toast sukses & badge 'lawas' menyesuaikan data", async ({
+    page,
+  }) => {
+    await page.goto(URL);
+
+    // Awal (tanpa minimum tersimpan): semua rilis 'ok', tidak ada badge.
+    for (const id of ["r-old", "r-mid", "r-new"]) {
+      await expect(page.getByTestId(`mf-rel-${id}`)).toHaveAttribute(
+        "data-below",
+        "0",
+      );
+    }
+
+    // Isi minimum valid: name=1.2.0, build=45.
+    await page.getByTestId("mf-name").fill("1.2.0");
+    await page.getByTestId("mf-code").fill("45");
+    await expect(page.getByTestId("mf-save")).toBeEnabled();
+    await page.getByTestId("mf-save").click();
+
+    // Toast sukses muncul.
+    await expect(page.getByText(/^Tersimpan$/)).toBeVisible({
+      timeout: 3_000,
+    });
+    await expect(page.getByTestId("mf-saved-count")).toHaveText("saved=1");
+
+    // Badge menyesuaikan: r-old (1.0.0/10) di bawah → 'lawas';
+    // r-mid (1.2.0/45) tepat = ok; r-new (2.0.0/80) di atas = ok.
+    await expect(page.getByTestId("mf-rel-r-old")).toHaveAttribute(
+      "data-below",
+      "1",
+    );
+    await expect(page.getByTestId("mf-rel-r-old-badge")).toBeVisible();
+    await expect(page.getByTestId("mf-rel-r-mid")).toHaveAttribute(
+      "data-below",
+      "0",
+    );
+    await expect(page.getByTestId("mf-rel-r-new")).toHaveAttribute(
+      "data-below",
+      "0",
+    );
+
+    // Naikkan minimum: 2.0.0/80 → sekarang r-mid ikut jadi 'lawas',
+    // r-new tetap ok (tepat di minimum).
+    await page.getByTestId("mf-name").fill("2.0.0");
+    await page.getByTestId("mf-code").fill("80");
+    await page.getByTestId("mf-save").click();
+    await expect(page.getByTestId("mf-saved-count")).toHaveText("saved=2");
+
+    await expect(page.getByTestId("mf-rel-r-old")).toHaveAttribute(
+      "data-below",
+      "1",
+    );
+    await expect(page.getByTestId("mf-rel-r-mid")).toHaveAttribute(
+      "data-below",
+      "1",
+    );
+    await expect(page.getByTestId("mf-rel-r-mid-badge")).toBeVisible();
+    await expect(page.getByTestId("mf-rel-r-new")).toHaveAttribute(
+      "data-below",
+      "0",
+    );
+  });
 });
