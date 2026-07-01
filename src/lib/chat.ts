@@ -643,7 +643,8 @@ export function useHideMessageForMe(conversationId: string) {
 }
 
 export function useHiddenMessageIds() {
-  return useQuery({
+  const qc = useQueryClient();
+  const query = useQuery({
     queryKey: ["chat", "hidden"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -654,6 +655,55 @@ export function useHiddenMessageIds() {
     },
     staleTime: 30_000,
   });
+
+  // Realtime sync: keep the hidden set consistent across tabs/devices so
+  // that when a realtime UPDATE arrives for a message, the filter already
+  // knows the message is hidden and never lets it reappear.
+  useEffect(() => {
+    let cancelled = false;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
+    (async () => {
+      const { data } = await supabase.auth.getUser();
+      const uid = data.user?.id;
+      if (!uid || cancelled) return;
+      channel = supabase
+        .channel(`chat-hidden:${uid}`)
+        .on(
+          "postgres_changes",
+          { event: "INSERT", schema: "public", table: "message_hidden", filter: `user_id=eq.${uid}` },
+          (payload) => {
+            const id = (payload.new as { message_id?: string }).message_id;
+            if (!id) return;
+            qc.setQueryData<Set<string>>(["chat", "hidden"], (prev) => {
+              const next = new Set(prev ?? []);
+              next.add(id);
+              return next;
+            });
+          },
+        )
+        .on(
+          "postgres_changes",
+          { event: "DELETE", schema: "public", table: "message_hidden", filter: `user_id=eq.${uid}` },
+          (payload) => {
+            const id = (payload.old as { message_id?: string }).message_id;
+            if (!id) return;
+            qc.setQueryData<Set<string>>(["chat", "hidden"], (prev) => {
+              if (!prev || !prev.has(id)) return prev;
+              const next = new Set(prev);
+              next.delete(id);
+              return next;
+            });
+          },
+        )
+        .subscribe();
+    })();
+    return () => {
+      cancelled = true;
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [qc]);
+
+  return query;
 }
 
 // ---------------- Pin / Archive / Mute ----------------
