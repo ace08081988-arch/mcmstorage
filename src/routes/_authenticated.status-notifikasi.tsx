@@ -957,10 +957,63 @@ function Readiness({
   if (inIframe && perm !== "granted")
     return <p>Preview di iframe — banner sistem tidak akan muncul. Buka di tab utama untuk mengaktifkan.</p>;
   if (perm === "denied") return <p>Izin diblokir. Notifikasi tidak akan muncul sampai diaktifkan ulang di pengaturan browser.</p>;
-  if (perm === "default") return <p>Izin belum diminta. Klik "Minta izin notifikasi" di atas.</p>;
-  if (!sw) return <p>Izin sudah granted, tapi service worker belum terdaftar.</p>;
-  if (!sub) return <p>Izin granted & service worker aktif, tapi push subscription belum dibuat.</p>;
-  return <p className="text-green-600 dark:text-green-400">Siap menerima notifikasi push.</p>;
+  if (perm === "default") return <p>Izin belum diminta. Tekan tombol "Minta izin notifikasi" untuk mengaktifkan.</p>;
+  if (!sw) return <p>Izin sudah diberikan, tetapi service worker belum terdaftar.</p>;
+  if (!sub) return <p>Izin sudah diberikan dan service worker aktif, tetapi push subscription belum dibuat.</p>;
+  return <p className="font-medium text-primary">Siap menerima notifikasi push.</p>;
+}
+
+function ExportReadinessNotice({
+  perm,
+  swReady,
+  pushSub,
+  checking,
+  canPrompt,
+  onRetry,
+  onRequestPerm,
+}: {
+  perm: PermState;
+  swReady: boolean | null;
+  pushSub: boolean | null;
+  checking: boolean;
+  canPrompt: boolean;
+  onRetry: () => void;
+  onRequestPerm: () => void;
+}) {
+  const issues: string[] = [];
+  if (perm === "unsupported") issues.push("Browser tidak mendukung Notification API.");
+  else if (perm === "denied") issues.push("Izin notifikasi diblokir — aktifkan ulang di pengaturan browser.");
+  else if (perm === "default") issues.push("Izin notifikasi belum diminta.");
+  if (swReady === false) issues.push("Service worker belum terdaftar.");
+  if (pushSub === false) issues.push("Push subscription belum aktif.");
+  if (!issues.length) return null;
+
+  return (
+    <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-2">
+      <div className="flex items-center justify-between gap-2">
+        <span className="font-medium text-foreground">Data belum lengkap</span>
+        <Badge variant="secondary" className="text-[10px]">
+          {issues.length} item
+        </Badge>
+      </div>
+      <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground leading-snug">
+        {issues.map((i) => <li key={i}>{i}</li>)}
+      </ul>
+      <p className="text-muted-foreground leading-snug">
+        Snapshot tetap dapat diekspor; bagian yang tidak tersedia akan tercatat sebagai kosong.
+      </p>
+      <div className="flex flex-wrap gap-2 pt-1">
+        <Button size="sm" variant="outline" onClick={onRetry} disabled={checking}>
+          {checking ? "Memeriksa…" : "Coba lagi"}
+        </Button>
+        {canPrompt && (
+          <Button size="sm" onClick={onRequestPerm}>
+            Minta izin notifikasi
+          </Button>
+        )}
+      </div>
+    </div>
+  );
 }
 
 type TestResult = {
