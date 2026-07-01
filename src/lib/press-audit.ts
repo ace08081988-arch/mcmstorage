@@ -1013,6 +1013,45 @@ export function installPressAudit(): () => void {
     run();
   };
 
+  // Debug trace: `window.__pressAuditTrace(el, "PA004" | "destructive-menuitem")`.
+  // Mengembalikan objek jejak DAN mencetak baris ringkas ke console.groupCollapsed
+  // agar mudah dipakai saat memverifikasi tabel prioritas dari docs.
+  (window as any).__pressAuditTrace = (
+    elOrSelector: Element | string,
+    ruleOrCode: string,
+  ) => {
+    const el =
+      typeof elOrSelector === "string"
+        ? document.querySelector(elOrSelector)
+        : elOrSelector;
+    if (!el) {
+      // eslint-disable-next-line no-console
+      console.warn("[press-audit trace] elemen tidak ditemukan:", elOrSelector);
+      return null;
+    }
+    // Terima kode PA00X maupun nama rule.
+    const upper = ruleOrCode.toUpperCase();
+    const rule =
+      Object.entries(RULE_META).find(([, m]) => m.code === upper)?.[0] ??
+      ruleOrCode;
+    const trace = tracePressAuditDecision(el, rule);
+    // eslint-disable-next-line no-console
+    console.groupCollapsed(
+      `%c[press-audit trace]%c ${trace.code} (${trace.rule}) — ${
+        trace.allowed ? "ALLOWED" : "BLOCKED"
+      }`,
+      "color:#0ea5e9;font-weight:600",
+      "color:inherit",
+    );
+    for (const line of formatPressAuditTrace(trace)) {
+      // eslint-disable-next-line no-console
+      console.log(line);
+    }
+    // eslint-disable-next-line no-console
+    console.groupEnd();
+    return trace;
+  };
+
   // API konfigurasi runtime — bisa dipanggil dari devtools console tanpa reload.
   (window as any).__pressAuditConfig = {
     get: (): PressAuditConfig => ({ ...config }),
