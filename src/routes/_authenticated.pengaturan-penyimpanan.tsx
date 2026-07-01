@@ -227,6 +227,10 @@ function PenyimpananPage() {
         return;
       }
     }
+    // Snapshot values BEFORE removal so undo can restore them.
+    const snapshotForUndo: Array<{ key: string; value: string }> = chosen
+      .map((e) => ({ key: e.key, value: localStorage.getItem(e.key) ?? "" }))
+      .filter((e) => e.value !== null);
     setClearProgress({
       phase: "processing",
       done: 0,
@@ -254,9 +258,32 @@ function PenyimpananPage() {
       await new Promise((r) => requestAnimationFrame(() => r(null)));
     }
     setClearProgress((p) => ({ ...p, phase: "done", currentKey: "" }));
-    toast.success(`${label} dihapus`, {
+    let undone = false;
+    const undoToastId = toast.success(`${label} dihapus`, {
       description: `${chosen.length} dari ${keys.length} entri · ${formatKB(freed)} dibebaskan.`,
+      duration: 10000,
+      action: {
+        label: "Batalkan",
+        onClick: () => {
+          if (undone) return;
+          undone = true;
+          let restored = 0;
+          for (const item of snapshotForUndo) {
+            try {
+              localStorage.setItem(item.key, item.value);
+              restored++;
+            } catch {
+              /* quota — skip */
+            }
+          }
+          toast.success("Penghapusan dibatalkan", {
+            description: `${restored} entri dipulihkan.`,
+          });
+          refresh();
+        },
+      },
     });
+    void undoToastId;
     await refresh();
     // Show "selesai" briefly before closing.
     setTimeout(() => {
