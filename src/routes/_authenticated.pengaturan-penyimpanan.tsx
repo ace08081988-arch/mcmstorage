@@ -216,6 +216,17 @@ function PenyimpananPage() {
       toast.info("Tidak ada entri yang dipilih.");
       return;
     }
+    if (backupBeforeClear) {
+      try {
+        exportKeysBackup(label, pendingClear.prefix, chosen);
+        toast.success("Cadangan diunduh sebelum menghapus.");
+      } catch (e) {
+        toast.error("Gagal ekspor cadangan — penghapusan dibatalkan.", {
+          description: e instanceof Error ? e.message : "Coba lagi.",
+        });
+        return;
+      }
+    }
     setClearProgress({
       phase: "processing",
       done: 0,
