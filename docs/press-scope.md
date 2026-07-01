@@ -412,3 +412,72 @@ window.__pressAudit();                   // trigger sweep manual
 > supaya sesi berikutnya kembali ke default (`mode: "log"`, tanpa
 > allow/deny). Konfigurasi persist di `localStorage`, jadi tanpa reset
 > pengaturan debug bisa kebawa ke sesi normal.
+
+### Cheat sheet allowlist / denylist
+
+Kedua daftar menerima **nama rule** (`sortable-handle`) maupun **kode
+error** (`PA003`) — dievaluasi case-insensitive untuk kode. Bila
+`rules.allow` diisi, HANYA rule yang tercantum yang dilaporkan; setelah
+itu `rules.deny` mengeliminasi lagi. Kombinasi keduanya = intersect.
+
+#### Global (semua section)
+
+```ts
+// Hanya lapor sortable-handle di seluruh app
+window.__pressAuditConfig.set({ rules: { allow: ["PA003"] } });
+
+// Diam-kan destructive-menuitem & radix-animated-surface tanpa sentuh yg lain
+window.__pressAuditConfig.set({ rules: { deny: ["PA001", "PA004"] } });
+
+// Kombinasi: fokus ke motion + sortable, tapi kecualikan sortable di 1 subtree
+window.__pressAuditConfig.set({
+  rules: { allow: ["PA002", "PA003"] },
+  scope: { deny: ["#legacy-sortable"] },
+});
+```
+
+#### Per section via atribut DOM
+
+`data-press-audit-skip` menerima daftar dipisah koma/spasi dan
+mencampur nama rule dengan kode `PA00X`. Ancestor terdekat berlaku;
+atribut dapat dipasang di elemen mana pun (`<section>`, `<div>`,
+`<main>`, wrapper Radix, dst).
+
+```tsx
+// Tolak PA001 (radix-animated-surface) di dropdown filter
+<div data-press-audit-skip="PA001">
+  <DropdownMenu.Content>…</DropdownMenu.Content>
+</div>
+
+// Tolak PA002 & PA004 sekaligus di header
+<header data-press-audit-skip="PA002, PA004">
+  <motion.div whileTap={{ scale: 0.96 }}><Button>Menu</Button></motion.div>
+  <DropdownMenu.Item className="text-destructive">Logout</DropdownMenu.Item>
+</header>
+
+// Nama rule + kode boleh dicampur
+<section data-press-audit-skip="sortable-handle, PA001">
+  <SortableList />
+  <Dialog>…</Dialog>
+</section>
+
+// Matikan SEMUA rule di subtree
+<aside data-press-audit="off">
+  <ThirdPartyWidget />
+</aside>
+```
+
+#### Kombinasi tipikal per halaman
+
+| Halaman            | Global config                                   | Atribut DOM di section                                    |
+| ------------------ | ----------------------------------------------- | --------------------------------------------------------- |
+| Chat               | *(default)*                                     | `data-press-audit-skip="PA001, PA004"` di picker & sheet  |
+| Pembaruan          | *(default)*                                     | `data-press-audit-skip="PA002"` di carousel status         |
+| Produk (sortable)  | `rules: { allow: ["PA003"] }`                   | `data-press-audit="off"` di panel filter (tidak relevan)   |
+| Pengaturan         | `rules: { deny: ["PA004"] }`                    | —                                                          |
+| Preview iframe     | `scope: { deny: ["[data-lovable-preview]"] }`   | —                                                          |
+| Sesi debug fokus   | `mode: "suggest", rules: { allow: ["PA002"] }`  | `data-press-audit-skip="PA001,PA004"` di area investigasi  |
+
+> Aturan urutan evaluasi: `data-press-audit="off"` ▶ `scope.deny` ▶
+> `scope.allow` (bila diisi) ▶ `rules.allow` (bila diisi) ▶ `rules.deny`
+> ▶ `data-press-audit-skip`. Temuan hanya lolos bila lulus semua tahap.
