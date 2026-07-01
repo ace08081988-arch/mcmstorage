@@ -520,6 +520,51 @@ function PenyimpananPage() {
                         Kosongkan
                       </button>
                     </div>
+                    <div className="mt-2 flex items-start justify-between gap-2 rounded border bg-background p-2">
+                      <label className="flex items-start gap-2 text-[11px] leading-snug">
+                        <Checkbox
+                          checked={backupBeforeClear}
+                          onCheckedChange={(v) => setBackupBeforeClear(Boolean(v))}
+                          disabled={clearProgress.phase === "processing"}
+                          className="mt-0.5"
+                        />
+                        <span>
+                          <span className="font-medium text-foreground">
+                            Ekspor cadangan JSON sebelum hapus
+                          </span>
+                          <span className="block text-muted-foreground">
+                            Berisi {selectedKeys.size} entri terpilih; bisa diimpor manual jika perlu.
+                          </span>
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        className="shrink-0 text-[11px] text-primary underline disabled:opacity-40"
+                        disabled={
+                          selectedKeys.size === 0 || clearProgress.phase === "processing"
+                        }
+                        onClick={() => {
+                          try {
+                            const chosen = pendingClear.keys.filter((e) =>
+                              selectedKeys.has(e.key),
+                            );
+                            exportKeysBackup(
+                              pendingClear.label,
+                              pendingClear.prefix,
+                              chosen,
+                            );
+                            toast.success("Cadangan diunduh.");
+                          } catch (e) {
+                            toast.error("Gagal ekspor cadangan.", {
+                              description:
+                                e instanceof Error ? e.message : "Coba lagi.",
+                            });
+                          }
+                        }}
+                      >
+                        Ekspor sekarang
+                      </button>
+                    </div>
                     {(() => {
                       const total = pendingClear.keys.length;
                       const totalPages = Math.max(1, Math.ceil(total / CLEAR_PAGE_SIZE));
