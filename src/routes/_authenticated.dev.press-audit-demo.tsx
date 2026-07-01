@@ -180,12 +180,60 @@ function winnerColor(step: PressAuditTraceStep): string {
   return "hsl(142 71% 45%)"; // hijau
 }
 
+/**
+ * Hitung diff antara hasil efektif yang diharapkan (dari preset) vs
+ * hasil aktual (dari `traces`). "Effective" = kode yang tetap dilaporkan.
+ */
+type DiffRow = {
+  code: string;
+  expectedKept: boolean;
+  actualKept: boolean;
+  match: boolean;
+  winnerName?: string;
+  winnerHost?: string;
+};
+
+function computeDiff(
+  triggered: string[],
+  expectedKept: string[],
+  traces: PressAuditTrace[],
+): DiffRow[] {
+  const expSet = new Set(expectedKept);
+  const byCode = new Map(traces.map((t) => [t.code, t] as const));
+  return triggered.map((code) => {
+    const t = byCode.get(code);
+    const actualKept = !!t?.allowed;
+    const expected = expSet.has(code);
+    const winner = t ? pickWinnerStep(t) : null;
+    return {
+      code,
+      expectedKept: expected,
+      actualKept,
+      match: expected === actualKept,
+      winnerName: winner?.name,
+      winnerHost: winner?.hostTag,
+    };
+  });
+}
+
 function ExampleCard({ example }: { example: Example }) {
   const [presetIdx, setPresetIdx] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [results, setResults] = useState<VerifyResult[] | null>(null);
   const [running, setRunning] = useState(false);
   const [traces, setTraces] = useState<PressAuditTrace[] | null>(null);
+  const activePreset = example.presets[presetIdx];
+  const diffRows = useMemo(
+    () =>
+      traces
+        ? computeDiff(example.triggeredCodes, activePreset.expected, traces)
+        : null,
+    [traces, example.triggeredCodes, activePreset.expected],
+  );
+  const diffAllMatch = useMemo(
+    () => (diffRows ? diffRows.every((r) => r.match) : true),
+    [diffRows],
+  );
   const highlightedRef = useRef<Element[]>([]);
 
   const clearHighlights = useCallback(() => {
@@ -424,6 +472,81 @@ function ExampleCard({ example }: { example: Example }) {
                 </ul>
               </div>
             ))}
+          </div>
+        )}
+
+        {diffRows && (
+          <div
+            className="text-xs rounded border bg-background/60 p-2"
+            data-testid={`pa-demo-${example.id}-diff`}
+            data-diff-match={diffAllMatch ? "1" : "0"}
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <span className="font-medium">Diff efektif</span>
+              <Badge variant={diffAllMatch ? "default" : "destructive"}>
+                {diffAllMatch ? "cocok" : "beda"}
+              </Badge>
+              <span className="text-[10px] text-muted-foreground">
+                preset: <b>{activePreset.label}</b>
+              </span>
+            </div>
+            <table className="w-full font-mono text-[11px]">
+              <thead className="text-muted-foreground">
+                <tr className="text-left">
+                  <th className="pr-2">Kode</th>
+                  <th className="pr-2">Expected</th>
+                  <th className="pr-2">Actual</th>
+                  <th className="pr-2">Winner</th>
+                  <th>Δ</th>
+                </tr>
+              </thead>
+              <tbody>
+                {diffRows.map((r) => (
+                  <tr
+                    key={r.code}
+                    data-code={r.code}
+                    data-match={r.match ? "1" : "0"}
+                    className={r.match ? "" : "bg-destructive/10"}
+                  >
+                    <td className="pr-2">{r.code}</td>
+                    <td
+                      className={
+                        "pr-2 " +
+                        (r.expectedKept
+                          ? "text-emerald-600"
+                          : "text-destructive")
+                      }
+                    >
+                      {r.expectedKept ? "kept" : "blocked"}
+                    </td>
+                    <td
+                      className={
+                        "pr-2 " +
+                        (r.actualKept
+                          ? "text-emerald-600"
+                          : "text-destructive")
+                      }
+                    >
+                      {r.actualKept ? "kept" : "blocked"}
+                    </td>
+                    <td className="pr-2 text-muted-foreground">
+                      {r.winnerName
+                        ? `${r.winnerName}${r.winnerHost ? " @" + r.winnerHost : ""}`
+                        : "—"}
+                    </td>
+                    <td>
+                      {r.match ? (
+                        <span className="text-emerald-600">=</span>
+                      ) : (
+                        <span className="text-destructive">
+                          {r.expectedKept ? "kept→blocked" : "blocked→kept"}
+                        </span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         )}
       </CardContent>
