@@ -520,6 +520,8 @@ export function installPressAudit(): () => void {
   });
   mo.observe(document.body, { childList: true, subtree: true });
 
+  runSweep = run;
+
   // API manual untuk audit ad-hoc dari console.
   (window as any).__pressAudit = () => {
     dedupe.clear();
@@ -530,25 +532,30 @@ export function installPressAudit(): () => void {
   // API konfigurasi runtime — bisa dipanggil dari devtools console tanpa reload.
   (window as any).__pressAuditConfig = {
     get: (): PressAuditConfig => ({ ...config }),
-    set: (patch: Partial<PressAuditConfig>) => {
-      saveConfig({
-        mode: patch.mode ?? config.mode,
-        rules: {
-          allow: patch.rules?.allow ?? config.rules.allow,
-          deny: patch.rules?.deny ?? config.rules.deny,
-        },
-        scope: {
-          allow: patch.scope?.allow ?? config.scope.allow,
-          deny: patch.scope?.deny ?? config.scope.deny,
-        },
-      });
+    set: (
+      patch: Partial<PressAuditConfig>,
+      opts?: PressAuditSetOptions,
+    ) => {
+      applyConfig(
+        normalize({
+          mode: patch.mode ?? config.mode,
+          rules: {
+            allow: patch.rules?.allow ?? config.rules.allow,
+            deny: patch.rules?.deny ?? config.rules.deny,
+          },
+          scope: {
+            allow: patch.scope?.allow ?? config.scope.allow,
+            deny: patch.scope?.deny ?? config.scope.deny,
+          },
+        }),
+        opts,
+      );
       dedupe.clear();
       run();
       return config;
     },
     reset: () => {
-      saveConfig(DEFAULT_CONFIG);
-      dedupe.clear();
+      resetConfig();
       run();
       return config;
     },
