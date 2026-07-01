@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/re
 import { useMemo, useState } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff,
-  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check,
+  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check, Camera,
 } from "lucide-react";
 
 import {
@@ -65,29 +65,22 @@ function ChatListPage() {
   }, [conversations]);
 
   return (
-    <main className="mx-auto max-w-2xl space-y-3 p-4">
-      <header className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">Chat</h1>
-        </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link to="/kontak">
-              <Link2 className="h-4 w-4" /> Siapkan kontak chat
-            </Link>
+    <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface">
+      <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-2 border-b px-4 py-3">
+        <h1 className="text-2xl font-bold tracking-tight">WhatsApp</h1>
+        <div className="flex items-center gap-1">
+          <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Siapkan kontak">
+            <Link to="/kontak"><Camera className="h-5 w-5" /></Link>
           </Button>
           <NewDmDialog />
           <NewGroupDialog open={grupOpen} onOpenChange={setGrupOpen} trigger={false} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="outline"
-                size="sm"
+                variant="ghost"
+                size="icon"
                 className={
-                  // Trigger jadi jelas "aktif" saat menu terbuka (state=open ⇒ accent+ring).
-                  "gap-1.5 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground " +
-                  "data-[state=open]:ring-2 data-[state=open]:ring-primary/40"
+                  "h-9 w-9 rounded-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
                 }
                 aria-label="Menu lainnya"
               >
@@ -153,6 +146,7 @@ function ChatListPage() {
         </div>
       </header>
 
+      <div className="flex-1 space-y-3 px-3 py-3">
       {isError && (conversations?.length ?? 0) > 0 ? (
         <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
           <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -169,12 +163,12 @@ function ChatListPage() {
       ) : null}
 
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 wa-muted" />
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Cari pesan…"
-          className="pl-8 pr-9"
+          placeholder="Cari…"
+          className="wa-search h-10 rounded-full border-0 pl-10 pr-9 shadow-none focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/50"
         />
         {q ? (
           <Button
@@ -188,6 +182,15 @@ function ChatListPage() {
           </Button>
         ) : null}
       </div>
+
+      {q.trim().length < 2 ? (
+        <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="wa-chip wa-chip-active font-medium">Semua</span>
+          <span className="wa-chip"><span className="inline-block h-2 w-2 rounded-full bg-[var(--wa-green)]" />Aktif {active.length ? active.length : ""}</span>
+          <span className="wa-chip"><span className="inline-block h-2 w-2 rounded-full bg-rose-500" />Arsip {archived.length ? archived.length : ""}</span>
+          <span className="wa-chip">Belum dibaca</span>
+        </div>
+      ) : null}
 
       {q.trim().length >= 2 ? (
         <div className="rounded-lg border">
@@ -229,7 +232,7 @@ function ChatListPage() {
         </div>
       ) : (
         <Tabs defaultValue="active">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-2 bg-transparent">
             <TabsTrigger value="active">Aktif {active.length ? `(${active.length})` : ""}</TabsTrigger>
             <TabsTrigger value="archived">Arsip {archived.length ? `(${archived.length})` : ""}</TabsTrigger>
           </TabsList>
@@ -298,6 +301,7 @@ function ChatListPage() {
           </TabsContent>
         </Tabs>
       )}
+      </div>
     </main>
   );
 }
@@ -347,8 +351,8 @@ function ConvList({
     return <div className="rounded-lg border">{empty}</div>;
   }
   return (
-    <div className="rounded-lg border">
-      <ul className="divide-y">
+    <div className="-mx-3 border-y border-[var(--wa-border)]">
+      <ul className="divide-y divide-[var(--wa-border)]">
         {list.map((c) => {
           const mutedUntil = c.muted_until ? new Date(c.muted_until) : null;
           const isMuted = mutedUntil && mutedUntil.getTime() > Date.now();
@@ -357,29 +361,29 @@ function ConvList({
               <Link
                 to="/chat/$conversationId"
                 params={{ conversationId: c.id }}
-                className="flex items-start gap-3 px-3 py-3 pr-12 hover:bg-accent/50"
+                className="flex items-center gap-3 px-4 py-2.5 pr-12 hover:bg-[var(--wa-surface-2)]"
               >
-                <div className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-primary/10 text-primary">
-                  <MessageCircle className="h-5 w-5" />
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase">
+                  {(c.display_title ?? "?").trim().charAt(0) || "?"}
                 </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex min-w-0 items-center gap-1 truncate text-sm font-medium">
-                      {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 text-primary" /> : null}
+                    <span className="flex min-w-0 items-center gap-1 truncate text-[15px] font-medium">
+                      {c.pinned_at ? <Pin className="h-3 w-3 shrink-0 wa-muted" /> : null}
                       <span className="truncate">{c.display_title}</span>
-                      {isMuted ? <BellOff className="h-3 w-3 shrink-0 text-muted-foreground" /> : null}
+                      {isMuted ? <BellOff className="h-3 w-3 shrink-0 wa-muted" /> : null}
                     </span>
-                    <span className="shrink-0 text-[10px] text-muted-foreground">{timeShort(c.last_at)}</span>
+                    <span className={`shrink-0 text-[11px] ${c.unread > 0 ? "text-[var(--wa-green)] font-medium" : "wa-muted"}`}>{timeShort(c.last_at)}</span>
                   </div>
                   <div className="flex items-center justify-between gap-2">
-                    <span className="flex min-w-0 items-center gap-1 truncate text-xs text-muted-foreground">
+                    <span className="flex min-w-0 items-center gap-1 truncate text-[13px] wa-muted">
                       {c.last_body ? (
                         <>
                           {c.last_delivered ? (
                             c.last_read ? (
-                              <CheckCheck className="h-3.5 w-3.5 shrink-0 text-primary" aria-label="Dibaca" />
+                              <CheckCheck className="h-3.5 w-3.5 shrink-0 wa-check" aria-label="Dibaca" />
                             ) : (
-                              <CheckCheck className="h-3.5 w-3.5 shrink-0 text-muted-foreground/70" aria-label="Terkirim" />
+                              <CheckCheck className="h-3.5 w-3.5 shrink-0 wa-muted opacity-70" aria-label="Terkirim" />
                             )
                           ) : null}
                           <span className="truncate">{c.last_body}</span>
@@ -389,7 +393,7 @@ function ConvList({
                       )}
                     </span>
                     {c.unread > 0 ? (
-                      <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-primary px-1.5 text-[10px] font-semibold text-primary-foreground">
+                      <span className="ml-2 inline-flex h-5 min-w-[20px] items-center justify-center rounded-full wa-badge px-1.5 text-[11px] font-semibold">
                         {c.unread > 99 ? "99+" : c.unread}
                       </span>
                     ) : null}
