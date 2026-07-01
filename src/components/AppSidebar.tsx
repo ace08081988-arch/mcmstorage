@@ -160,22 +160,7 @@ export function AppSidebar() {
   return (
     <Sidebar collapsible="icon">
       <SidebarHeader className="border-b border-sidebar-border/60 px-3 py-3.5">
-        <div className="flex items-center gap-2.5">
-          <span
-            aria-hidden
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-[12px] font-bold tracking-tight text-primary-foreground shadow-sm ring-1 ring-primary/20"
-          >
-            MCM
-          </span>
-          <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-            <div className="truncate text-[13px] font-semibold leading-tight tracking-tight">
-              MCM Storage
-            </div>
-            <div className="truncate text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
-              Manajemen Operasional
-            </div>
-          </div>
-        </div>
+        <OrgHeader />
       </SidebarHeader>
       <SidebarContent className="gap-0">
         {groups.map((group, gi) => (
