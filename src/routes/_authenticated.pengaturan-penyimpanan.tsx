@@ -80,6 +80,50 @@ function PenyimpananPage() {
   const [clearPage, setClearPage] = useState(1);
   const [clearExpanded, setClearExpanded] = useState(false);
   const CLEAR_PAGE_SIZE = 10;
+  const AUTO_BACKUP_KEY = "mcm.autoBackupBeforeClear";
+  const [backupBeforeClear, setBackupBeforeClear] = useState<boolean>(() => {
+    if (typeof localStorage === "undefined") return true;
+    return localStorage.getItem(AUTO_BACKUP_KEY) !== "0";
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUTO_BACKUP_KEY, backupBeforeClear ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [backupBeforeClear]);
+
+  function exportKeysBackup(
+    label: string,
+    prefix: string,
+    entries: Array<{ key: string; bytes: number }>,
+  ) {
+    const payload = {
+      kind: "mcm-local-keys-backup",
+      version: 1,
+      label,
+      prefix,
+      exportedAt: new Date().toISOString(),
+      count: entries.length,
+      entries: entries.map((e) => ({
+        key: e.key,
+        value: localStorage.getItem(e.key),
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    a.href = url;
+    a.download = `mcm-backup-${slug}-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
 
   const refresh = async () => {
     setSnapshot(estimateLocalStorage());
