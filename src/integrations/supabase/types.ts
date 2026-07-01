@@ -62,6 +62,36 @@ export type Database = {
         }
         Relationships: []
       }
+      admin_denial_events: {
+        Row: {
+          created_at: string
+          fn: string
+          id: string
+          reason: string
+          referer: string | null
+          ua: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          fn: string
+          id?: string
+          reason?: string
+          referer?: string | null
+          ua?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          fn?: string
+          id?: string
+          reason?: string
+          referer?: string | null
+          ua?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       apk_min_supported: {
         Row: {
           created_at: string
