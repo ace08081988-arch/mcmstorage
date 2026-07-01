@@ -177,6 +177,18 @@ function PembaruanPage() {
 
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col bg-background pb-24">
+      {/*
+       * Skip-to-content: tersembunyi secara visual, muncul saat menerima
+       * fokus keyboard (Tab pertama). Melompatkan fokus ke <main> di bawah
+       * header supaya pengguna keyboard tidak harus melewati ikon header
+       * setiap kali membuka halaman.
+       */}
+      <a
+        href="#pembaruan-main"
+        className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-50 focus:rounded-md focus:bg-primary focus:px-4 focus:py-2 focus:text-sm focus:font-medium focus:text-primary-foreground focus:shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background"
+      >
+        Lompat ke konten
+      </a>
       {/* Header */}
       <header className="sticky top-0 z-20 flex items-center gap-2 bg-background/95 px-4 pb-2 pt-4 backdrop-blur">
         <h1 className="mr-auto text-2xl font-semibold tracking-tight">Pembaruan</h1>
@@ -219,6 +231,7 @@ function PembaruanPage() {
         </DropdownMenu>
       </header>
 
+      <main id="pembaruan-main" tabIndex={-1} className="outline-none">
       {/* Status */}
       <section className="px-4">
         <h2 className="mb-2 text-lg font-semibold">Status</h2>
@@ -353,6 +366,7 @@ function PembaruanPage() {
           />
         </ul>
       </section>
+      </main>
 
       {/*
        * FAB stack — DOM order = visual atas-ke-bawah supaya keyboard tab
