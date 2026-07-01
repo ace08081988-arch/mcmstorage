@@ -250,6 +250,13 @@ dijadikan tautan langsung ke bagian dokumentasi ini.
 | PA002 | `motion-whiletap-wraps-button` | `motion.div whileTap={{ scale }}` membungkus `<button>` / `shadcn Button` — skala tap ganda (Framer Motion + press-scope). | Hapus `whileTap` **atau** `data-no-press` di child button (pilih satu). | [shadcn Button di scope press](#shadcn-button-di-scope-press) · [Checklist](#shadcn-button-di-dalam-motiondiv-framer-motion) |
 | PA003 | `sortable-handle`           | Drag handle (`@dnd-kit`, `react-sortable`, dst.) tanpa `data-no-press` — skala saat drag memicu jitter/mismatch pointer. | `data-no-press` **pada handle-nya**, bukan container sortable-nya.      | [Sortable / drag handle](#sortable--drag-handle) · [Checklist](#sortable--drag-handle-dnd-kit-react-sortable-dll) |
 | PA004 | `destructive-menuitem`      | `DropdownMenu.Item` / `ContextMenu.Item` bergaya destruktif (`text-destructive`, `variant="destructive"`) di scope press. Radix sudah punya highlight sendiri. | `data-no-press` di `MenuItem` destruktif tsb.                          | [DropdownMenu / Select](#dropdownmenu--select) · [Checklist](#radix-dropdownmenu--select--contextmenu) |
+| PA000 | `unknown-rule` *(fallback)* | Auditor pihak ketiga / kode lama yang belum register `code` → dilempar ke fallback. Muncul hanya kalau ada rule custom yang belum diberi ID stabil. | Tambahkan entri di `RULE_META` (`src/lib/press-audit.ts`) dengan kode `PA00X` unik + anchor docs. | [Menambahkan rule baru](#menambahkan-rule-baru-pa005) |
+
+> **Status registry PA00X.** Kode aktif saat ini: `PA001`–`PA004`.
+> `PA005` dan seterusnya **belum dialokasikan** — sengaja kosong supaya
+> next rule dapat kode berurutan tanpa gap. Jangan mengarang kode di
+> luar tabel ini; auditor tidak akan mengenalinya dan akan jatuh ke
+> `PA000`. Untuk menambah rule baru, lihat panduan di bawah.
 
 ### Anchor cheat-sheet (klik ke bagian docs)
 
@@ -261,6 +268,8 @@ dijadikan tautan langsung ke bagian dokumentasi ini.
   [`#sortable--drag-handle-dnd-kit-react-sortable-dll`](#sortable--drag-handle-dnd-kit-react-sortable-dll)
 - PA004 → [`#dropdownmenu--select`](#dropdownmenu--select),
   [`#radix-dropdownmenu--select--contextmenu`](#radix-dropdownmenu--select--contextmenu)
+- PA005+ → *belum dialokasikan* (lihat [Menambahkan rule baru](#menambahkan-rule-baru-pa005))
+- PA000 → fallback tanpa anchor spesifik → [Kode error press-audit](#kode-error-press-audit)
 
 Warning di console juga menyematkan anchor ini di field `docs`, sehingga
 `console.warn` bisa langsung diklik untuk melompat ke bagian yang tepat
@@ -273,6 +282,33 @@ Format tiap baris warning:
   ↳ arg ke-2: elemen DOM asli (klik untuk highlight di Elements panel)
   ↳ arg ke-3: { code, rule, docs, tag, id, testid, role, cls }
 ```
+
+### Menambahkan rule baru (PA005+)
+
+Alur baku supaya kode PA00X tetap stabil & terdokumentasi:
+
+1. Pilih kode berikutnya yang berurutan (`PA005`, lalu `PA006`, dst.) —
+   **jangan menggunakan ulang** kode yang sudah pernah dipakai walau
+   rule-nya dihapus.
+2. Daftarkan di `RULE_META` pada `src/lib/press-audit.ts`:
+
+   ```ts
+   const RULE_META: Record<string, { code: string; docs: string }> = {
+     // ...existing...
+     "nama-rule-baru": {
+       code: "PA005",
+       docs: `${DOCS_BASE}#anchor-heading-baru`,
+     },
+   };
+   ```
+3. Tambahkan heading `### Anchor heading baru` di dokumen ini (slug
+   GitHub: lowercase, spasi → `-`, tanda baca dihilangkan) dan
+   masukkan barisnya ke tabel [Ringkasan cepat](#ringkasan-cepat)
+   sekaligus [Anchor cheat-sheet](#anchor-cheat-sheet-klik-ke-bagian-docs).
+4. Update string `PA001-PA004` di `src/lib/press-audit.ts` (baris
+   filter devtools) menjadi range terbaru.
+5. Jalankan sekali di preview: `window.__pressAudit()` — pastikan
+   warning baru muncul dengan `code: "PA005"` dan tautan docs valid.
 
 ## Tuning per section (allowlist/denylist & mode)
 
