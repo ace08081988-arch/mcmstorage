@@ -513,15 +513,66 @@ html[data-reduce-motion="on"] *::after {
 
 /*
  * Scoped auto-press: setiap elemen dengan atribut `data-press-scope="on"`
- * akan otomatis memberi reaksi sentuh pada `button`, `a[href]`, dan elemen
- * ber-`role="button"` di dalamnya — tanpa perlu menambah kelas satu-per-satu
- * di halaman besar (Beranda, daftar produk, dsb).
+ * akan otomatis memberi reaksi sentuh pada elemen interaktif di dalamnya —
+ * tanpa perlu menambah kelas satu-per-satu di halaman besar (Beranda,
+ * daftar produk, dsb).
+ *
+ * Cakupan role/tag interaktif:
+ *   - button, a[href], summary, label[for]
+ *   - input[type="button"|"submit"|"reset"|"checkbox"|"radio"|"file"|"image"|"color"|"range"]
+ *   - select
+ *   - [role="button"|"menuitem"|"menuitemcheckbox"|"menuitemradio"
+ *          |"tab"|"option"|"switch"|"checkbox"|"radio"|"link"
+ *          |"treeitem"|"gridcell"|"combobox"]
+ *
+ * Sengaja TIDAK termasuk: input teks (text/email/password/number/search/tel/url/
+ * date/time/datetime-local/month/week) dan textarea — mengaktifkan scale pada
+ * saat mengetik terasa mengganggu dan bisa memicu shift caret.
  *
  * Opt-out per elemen dengan `data-no-press`; berguna untuk drag handle,
  * tombol di dalam dialog Radix yang punya animasi sendiri, atau tombol
  * yang harus tetap statis (mis. label toggle di form multi-langkah).
  */
-[data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
+@custom-variant press-target (&:is(
+  button,
+  a[href],
+  summary,
+  label[for],
+  select,
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"],
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="file"],
+  input[type="image"],
+  input[type="color"],
+  input[type="range"],
+  [role="button"],
+  [role="link"],
+  [role="menuitem"],
+  [role="menuitemcheckbox"],
+  [role="menuitemradio"],
+  [role="tab"],
+  [role="option"],
+  [role="switch"],
+  [role="checkbox"],
+  [role="radio"],
+  [role="treeitem"],
+  [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]));
+
+[data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
   transition-property: transform, background-color, filter, box-shadow, opacity;
   transition-duration: 150ms;
   transition-timing-function: cubic-bezier(0, 0, 0.2, 1);
@@ -529,11 +580,29 @@ html[data-reduce-motion="on"] *::after {
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
-[data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
+[data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
   transform: scale(0.97);
   filter: brightness(0.96);
 }
-[data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):focus-visible {
+[data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):focus-visible {
   outline: none;
   box-shadow: 0 0 0 2px hsl(var(--background)), 0 0 0 4px hsl(var(--ring));
 }
@@ -550,7 +619,16 @@ html[data-reduce-motion="on"] *::after {
   .press-card,
   .press-row,
   .press-fab,
-  [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
+  [data-press-scope="on"] :is(
+    button, a[href], summary, label[for], select,
+    input[type="button"], input[type="submit"], input[type="reset"],
+    input[type="checkbox"], input[type="radio"], input[type="file"],
+    input[type="image"], input[type="color"], input[type="range"],
+    [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+    [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+    [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+    [role="combobox"]
+  ):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
     transition-duration: 0.001ms;
     will-change: auto;
   }
@@ -558,7 +636,16 @@ html[data-reduce-motion="on"] *::after {
   .press-card:active,
   .press-row:active,
   .press-fab:active,
-  [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
+  [data-press-scope="on"] :is(
+    button, a[href], summary, label[for], select,
+    input[type="button"], input[type="submit"], input[type="reset"],
+    input[type="checkbox"], input[type="radio"], input[type="file"],
+    input[type="image"], input[type="color"], input[type="range"],
+    [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+    [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+    [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+    [role="combobox"]
+  ):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
     transform: none;
     filter: none;
     background-color: inherit;
@@ -574,8 +661,26 @@ html[data-reduce-motion="on"] .press,
 html[data-reduce-motion="on"] .press-card,
 html[data-reduce-motion="on"] .press-row,
 html[data-reduce-motion="on"] .press-fab,
-html.reduce-motion [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]),
-html[data-reduce-motion="on"] [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
+html.reduce-motion [data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]),
+html[data-reduce-motion="on"] [data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]) {
   will-change: auto;
 }
 html.reduce-motion .press:active,
@@ -586,8 +691,26 @@ html[data-reduce-motion="on"] .press:active,
 html[data-reduce-motion="on"] .press-card:active,
 html[data-reduce-motion="on"] .press-row:active,
 html[data-reduce-motion="on"] .press-fab:active,
-html.reduce-motion [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active,
-html[data-reduce-motion="on"] [data-press-scope="on"] :is(button, a[href], [role="button"]):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
+html.reduce-motion [data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active,
+html[data-reduce-motion="on"] [data-press-scope="on"] :is(
+  button, a[href], summary, label[for], select,
+  input[type="button"], input[type="submit"], input[type="reset"],
+  input[type="checkbox"], input[type="radio"], input[type="file"],
+  input[type="image"], input[type="color"], input[type="range"],
+  [role="button"], [role="link"], [role="menuitem"], [role="menuitemcheckbox"],
+  [role="menuitemradio"], [role="tab"], [role="option"], [role="switch"],
+  [role="checkbox"], [role="radio"], [role="treeitem"], [role="gridcell"],
+  [role="combobox"]
+):not([data-no-press]):not(:disabled):not([aria-disabled="true"]):active {
   transform: none !important;
   filter: none !important;
   background-color: inherit !important;
