@@ -93,6 +93,21 @@ function formatTimeShort(iso: string): string {
   return d.toLocaleDateString("id-ID", { day: "2-digit", month: "2-digit" });
 }
 
+/**
+ * Token reaksi sentuh terpadu:
+ *  - durasi 150ms, easing ease-out (sinkron dengan micro-interactions lain).
+ *  - properti yang dianimasikan dibatasi eksplisit agar tidak "wobble" saat
+ *    kelas lain berubah.
+ *  - varian scale disesuaikan dengan luas hit-area (ikon vs kartu besar).
+ */
+const PRESS_BASE =
+  "transition-[transform,background-color,filter,box-shadow,opacity] duration-150 ease-out will-change-transform";
+const PRESS_ICON = `${PRESS_BASE} active:scale-95`;
+const PRESS_CHIP = `${PRESS_BASE} active:scale-95`;
+const PRESS_CARD = `${PRESS_BASE} active:scale-[0.97]`;
+const PRESS_ROW = `${PRESS_BASE} active:scale-[0.98]`;
+const PRESS_FAB = `${PRESS_BASE} active:scale-95`;
+
 function initials(text: string): string {
   return text
     .split(/\s+/)
@@ -163,14 +178,14 @@ function PembaruanPage() {
           type="button"
           aria-label="Kamera"
           onClick={tellUnavailable}
-          className="grid size-9 place-items-center rounded-full text-foreground transition hover:bg-muted active:scale-90 active:bg-muted/80"
+          className={`grid size-9 place-items-center rounded-full text-foreground hover:bg-muted active:bg-muted/80 ${PRESS_ICON}`}
         >
           <Camera className="size-5" />
         </button>
         <Link
           to="/chat"
           aria-label="Cari"
-          className="grid size-9 place-items-center rounded-full text-foreground transition hover:bg-muted active:scale-90 active:bg-muted/80"
+          className={`grid size-9 place-items-center rounded-full text-foreground hover:bg-muted active:bg-muted/80 ${PRESS_ICON}`}
         >
           <Search className="size-5" />
         </Link>
@@ -179,7 +194,7 @@ function PembaruanPage() {
             <button
               type="button"
               aria-label="Menu"
-              className="grid size-9 place-items-center rounded-full text-foreground transition hover:bg-muted active:scale-90 active:bg-muted/80"
+              className={`grid size-9 place-items-center rounded-full text-foreground hover:bg-muted active:bg-muted/80 ${PRESS_ICON}`}
             >
               <MoreVertical className="size-5" />
             </button>
@@ -203,7 +218,7 @@ function PembaruanPage() {
           <button
             type="button"
             onClick={tellUnavailable}
-            className="relative flex h-40 w-28 shrink-0 snap-start flex-col justify-end rounded-2xl bg-muted/40 p-2 text-left ring-1 ring-inset ring-border/50 transition duration-150 hover:bg-muted/60 active:scale-[0.97] active:bg-muted/70"
+            className={`relative flex h-40 w-28 shrink-0 snap-start flex-col justify-end rounded-2xl bg-muted/40 p-2 text-left ring-1 ring-inset ring-border/50 hover:bg-muted/60 active:bg-muted/70 ${PRESS_CARD}`}
           >
             <span
               className="absolute left-1/2 top-6 grid size-16 -translate-x-1/2 place-items-center overflow-hidden rounded-full bg-background text-lg font-semibold"
@@ -236,7 +251,7 @@ function PembaruanPage() {
           <h2 className="text-lg font-semibold">Saluran</h2>
           <Link
             to="/notifikasi"
-            className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted/80 active:scale-95 active:bg-muted/60"
+            className={`rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/80 active:bg-muted/60 ${PRESS_CHIP}`}
           >
             Jelajahi
           </Link>
@@ -283,7 +298,7 @@ function PembaruanPage() {
                   {ch.href ? (
                     <Link
                       to={ch.href}
-                      className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 transition duration-150 hover:bg-muted/40 active:scale-[0.98] active:bg-muted/60"
+                      className={`-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/40 active:bg-muted/60 ${PRESS_ROW}`}
                     >
                       {body}
                     </Link>
@@ -332,7 +347,7 @@ function PembaruanPage() {
         type="button"
         aria-label="Kamera"
         onClick={tellUnavailable}
-        className="fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg transition duration-150 hover:brightness-110 active:scale-90 active:shadow-md"
+        className={`fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg hover:brightness-110 active:shadow-md ${PRESS_FAB}`}
       >
         <Camera className="size-6" />
       </button>
@@ -341,7 +356,7 @@ function PembaruanPage() {
         type="button"
         aria-label="Tambah status teks"
         onClick={tellUnavailable}
-        className="fixed bottom-40 right-5 z-30 grid size-11 place-items-center rounded-full bg-muted text-foreground shadow-md transition duration-150 hover:bg-muted/80 active:scale-90"
+        className={`fixed bottom-40 right-5 z-30 grid size-11 place-items-center rounded-full bg-muted text-foreground shadow-md hover:bg-muted/80 ${PRESS_FAB}`}
       >
         <Edit3 className="size-5" />
       </button>
@@ -366,7 +381,10 @@ function SuggestionRow({
 }) {
   return (
     <li>
-      <Link to={to as never} className="flex items-center gap-3 py-1 hover:opacity-90">
+      <Link
+        to={to as never}
+        className={`-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/40 active:bg-muted/60 ${PRESS_ROW}`}
+      >
         <span className={`grid size-12 shrink-0 place-items-center rounded-full ${tone}`}>
           <Icon className="size-5" />
         </span>
