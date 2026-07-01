@@ -127,6 +127,26 @@ function OAuthGooglePage() {
     "";
   const callbackUrl = supabaseUrl ? `${supabaseUrl.replace(/\/$/, "")}/auth/v1/callback` : "";
 
+  // Daftar Authorized redirect URIs yang perlu ditempel ke Google Cloud
+  // Console. Yang wajib adalah callback broker Supabase; sisanya adalah
+  // callback per-origin yang dipakai oleh flow `signInWithOAuth` di
+  // preview & domain produksi supaya tidak pernah tertolak "redirect_uri_mismatch".
+  const redirectUris = useMemo(() => {
+    const set = new Set<string>();
+    if (callbackUrl) set.add(callbackUrl);
+    const origins = [
+      "https://mcmstorage.biz",
+      "https://www.mcmstorage.biz",
+      "https://mcmstorage.lovable.app",
+      origin,
+    ].filter(Boolean);
+    for (const o of origins) {
+      set.add(`${o}/auth/callback`);
+      set.add(`${o}/`);
+    }
+    return Array.from(set);
+  }, [callbackUrl, origin]);
+
   const authorizedDomains = useMemo(() => {
     const set = new Set<string>();
     // Domain publik proyek.
@@ -328,26 +348,31 @@ function OAuthGooglePage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <FieldBlock
-              label="Authorized redirect URI (Callback URL)"
-              value={callbackUrl}
-              placeholder="URL callback belum tersedia — pastikan Backend aktif"
-              onCopy={() => copy(callbackUrl, "Callback URL")}
+            <ListBlock
+              label="Authorized redirect URIs"
+              values={redirectUris}
+              onCopyAll={() => copy(redirectUris.join("\n"), "Redirect URIs")}
+              onCopyItem={(v) => copy(v, "Redirect URI")}
+              primaryIndex={callbackUrl ? 0 : -1}
+              emptyText="Belum tersedia — pastikan Backend aktif"
             />
             <ListBlock
               label="Authorized JavaScript origins"
               values={jsOrigins}
               onCopyAll={() => copy(jsOrigins.join("\n"), "JavaScript origins")}
+              onCopyItem={(v) => copy(v, "Origin")}
             />
             <ListBlock
               label="Authorized domains (OAuth consent screen)"
               values={authorizedDomains}
               onCopyAll={() => copy(authorizedDomains.join("\n"), "Authorized domains")}
+              onCopyItem={(v) => copy(v, "Domain")}
             />
             <ListBlock
               label="Scope non-sensitive"
               values={scopes}
               onCopyAll={() => copy(scopes.join("\n"), "Scope")}
+              onCopyItem={(v) => copy(v, "Scope")}
             />
           </CardContent>
         </Card>
