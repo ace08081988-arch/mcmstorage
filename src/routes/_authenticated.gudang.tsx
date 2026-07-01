@@ -1645,6 +1645,13 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   });
   const { effPackageType, effBaseUnit, effectivePkgSize, kartonActive, pkgQ, price, baseAdded, totalCost } = derived;
   const baseUnit = effBaseUnit;
+  const warnings = computeBeliWarnings({
+    mode,
+    selectedItem,
+    derived,
+    priceMode,
+    inputKarton,
+  }).filter((w) => w.level !== "error"); // error-level sudah ditangani di submit()
 
   // Bila item terpilih bukan botol, mode karton wajib mati agar tidak
   // ×100 dari qty. Bila pindah ke item pcs, harga per-kemasan tidak
