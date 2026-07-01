@@ -331,10 +331,29 @@ export function AppLockSetup({ uid, open, onOpenChange }: Props) {
               <div>
                 <Label>Sidik jari</Label>
                 <p className="text-[11px] text-muted-foreground">
-                  {bioAvailable
-                    ? "Aktifkan unlock dengan sidik jari"
-                    : "Tidak tersedia di perangkat ini"}
+                  {bioChecking
+                    ? "Memeriksa perangkat…"
+                    : bioAvailable
+                      ? "Aktifkan unlock dengan sidik jari"
+                      : bioStatus.reason || "Tidak tersedia di perangkat ini"}
                 </p>
+                {!bioAvailable && !bioChecking && (
+                  <button
+                    type="button"
+                    className="mt-1 text-[11px] font-medium text-primary underline"
+                    onClick={() => {
+                      setBioChecking(true);
+                      checkBiometricStatus().then((s) => {
+                        setBioStatus(s);
+                        setBioChecking(false);
+                        if (s.available) toast.success("Sidik jari terdeteksi");
+                        else toast.error(s.reason || "Belum tersedia");
+                      });
+                    }}
+                  >
+                    Cek ulang
+                  </button>
+                )}
               </div>
               <Switch
                 checked={biometric && bioAvailable}
