@@ -54,8 +54,12 @@ for (const file of files) {
 
   if (out !== src) {
     if (!out.includes("format-duration")) {
-      // Sisipkan import setelah import pertama.
-      out = out.replace(/^(import .+?;\s*)/s, `$1${IMPORT_LINE}\n`);
+      // Sisipkan import setelah import pertama; bila tidak ada, prepend.
+      if (/^import\s.+?;/m.test(out)) {
+        out = out.replace(/^(import\s.+?;\s*)/, `$1${IMPORT_LINE}\n`);
+      } else {
+        out = `${IMPORT_LINE}\n${out}`;
+      }
     }
     changed++;
     if (DRY) {
