@@ -224,6 +224,63 @@ bun run audit:friend-requests          # snapshot policy/trigger/grant + simulas
 bun run test:security:integration      # HTTP-level RLS via PostgREST (Vitest)
 ```
 
+### 8.4 Contoh output yang diharapkan — `fr_select_self` (blok 13)
+
+Fixture blok 13 menyiapkan 4 baris A→B (satu per status pending / accepted /
+rejected / cancelled) dan 1 baris B→C `pending`. Total di tabel = 5 baris.
+Ketika suite hijau, `bun run test:security:sql:verbose --block=13` mencetak
+ringkasan berikut (baris `NOTICE` diwarnai hijau untuk PASS, merah untuk
+FAIL) — pakai contoh ini sebagai baseline saat mereview PR yang menyentuh
+policy `fr_select_self`.
+
+#### 8.4.1 Static drift check (jalan tanpa role switch)
+
+```text
+NOTICE:  PASS 13-static: exactly 1 SELECT/ALL policy on friend_requests (fr_select_self)
+NOTICE:  PASS 13-static: fr_select_self USING qual references from_user=auth.uid() OR to_user=auth.uid()
+```
+
+Jika ada policy SELECT tambahan atau qual dimodifikasi, baris ini berubah
+menjadi `FAIL 13-static: unexpected extra SELECT policy: <nama>` atau
+`FAIL 13-static: fr_select_self qual drifted: <qual baru>` — hentikan
+review, sinkronkan §3.1 dan blok 13 dengan policy baru.
+
+#### 8.4.2 Visibilitas per aktor (butuh `test.can_switch=on`)
+
+```text
+-- SET LOCAL ROLE authenticated; auth.uid() = <sender A>
+NOTICE:  PASS 13a: sender sees 4 own rows (pending/accepted/rejected/cancelled), 0 rows from B↔C
+
+-- SET LOCAL ROLE authenticated; auth.uid() = <recipient B>
+NOTICE:  PASS 13b: recipient sees 5 rows (4 as to_user + 1 as from_user of B→C), no leaks
+
+-- SET LOCAL ROLE authenticated; auth.uid() = <third party C>
+NOTICE:  PASS 13c: third party sees 1 row (own B→C only); 0 rows for A↔B across all statuses
+NOTICE:  PASS 13c: third-party SELECT count by status = {pending:0, accepted:0, rejected:0, cancelled:0}
+
+-- SELECT * FROM friend_requests (tanpa WHERE)
+NOTICE:  PASS 13d: unfiltered SELECT still RLS-fenced (sender=4 rows, third_party=1 row)
+
+-- SET LOCAL ROLE anon;
+NOTICE:  PASS 13e: anon SELECT returned 0 rows (no GRANT + RLS deny)
+```
+
+Kalau salah satu berubah menjadi `FAIL 13c: third party saw N rows for
+A↔B` dengan `N > 0`, hentikan deploy: `fr_select_self` melebar atau ada
+policy SELECT tambahan yang meloloskan baris. Cocokkan dengan §3.1 dan
+audit `bun run audit:friend-requests` untuk snapshot policy saat ini.
+
+#### 8.4.3 Ketika role switch di-skip
+
+Tanpa `test.can_switch=on`, blok runtime (13a–13e) di-skip dengan pesan
+ini — bukan kegagalan, tapi **static drift check di §8.4.1 tetap wajib
+hijau**:
+
+```text
+NOTICE:  SKIP 13a-13e: cannot switch roles (set PGOPTIONS="-c test.can_switch=on")
+NOTICE:  PASS 13-static: … (tetap dijalankan)
+```
+
 ## 9. Membaca kegagalan kontrak SQLSTATE / MESSAGE_TEXT / DETAIL / HINT
 
 Blok 12 memverifikasi bahwa setiap penolakan dari
