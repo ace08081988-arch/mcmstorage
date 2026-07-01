@@ -11,11 +11,15 @@ import {
   XCircle,
   AlertTriangle,
   ShieldAlert,
+  History,
 } from "lucide-react";
 import {
   listApkReleaseAdmin,
   upsertApkReleaseMeta,
+  setApkMinSupported,
   type AdminApkEntry,
+  type MinSupported,
+  type ApkVariant,
 } from "@/lib/apk.functions";
 import {
   validateApkFileName,
@@ -50,7 +54,7 @@ function PengaturanApkPage() {
   });
 
   const grouped = useMemo(() => {
-    const rows = data ?? [];
+    const rows = data?.entries ?? [];
     return {
       storage: rows.filter((r) => r.variant === "storage"),
       chat: rows.filter((r) => r.variant === "chat"),
@@ -93,9 +97,19 @@ function PengaturanApkPage() {
         </div>
       ) : (
         <>
+          <MinSupportedCard
+            variant="storage"
+            title="MCM Storage"
+            current={data?.minSupported.storage ?? null}
+          />
           <VariantSection title="MCM Storage" rows={grouped.storage} />
+          <MinSupportedCard
+            variant="chat"
+            title="MCM Chat"
+            current={data?.minSupported.chat ?? null}
+          />
           <VariantSection title="MCM Chat" rows={grouped.chat} />
-          {data && data.length === 0 && (
+          {data && data.entries.length === 0 && (
             <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
               Belum ada berkas APK di bucket.
             </div>
@@ -103,6 +117,128 @@ function PengaturanApkPage() {
         </>
       )}
     </div>
+  );
+}
+
+function MinSupportedCard({
+  variant,
+  title,
+  current,
+}: {
+  variant: ApkVariant;
+  title: string;
+  current: MinSupported | null;
+}) {
+  const setFn = useServerFn(setApkMinSupported);
+  const qc = useQueryClient();
+  const [name, setName] = useState(current?.min_version_name ?? "");
+  const [code, setCode] = useState<string>(
+    current?.min_version_code !== null && current?.min_version_code !== undefined
+      ? String(current.min_version_code)
+      : "",
+  );
+  const [reason, setReason] = useState(current?.reason ?? "");
+
+  const dirty =
+    (name || null) !== (current?.min_version_name ?? null) ||
+    (code ? Number(code) : null) !== (current?.min_version_code ?? null) ||
+    (reason || "") !== (current?.reason ?? "");
+
+  const save = useMutation({
+    mutationFn: () =>
+      setFn({
+        data: {
+          variant,
+          min_version_name: name.trim() || null,
+          min_version_code: code.trim() ? Number.parseInt(code, 10) : null,
+          reason: reason.trim() || null,
+        },
+      }),
+    onSuccess: () => {
+      toast.success(`Minimum versi ${title} tersimpan`);
+      qc.invalidateQueries({ queryKey: ["apk-release-admin"] });
+      qc.invalidateQueries({ queryKey: ["latest-apk-variants"] });
+      qc.invalidateQueries({ queryKey: ["apk-variant-detail"] });
+    },
+    onError: (err: unknown) => {
+      toast.error(
+        `Gagal menyimpan: ${err instanceof Error ? err.message : "unknown"}`,
+      );
+    },
+  });
+
+  return (
+    <section className="rounded-xl border bg-card p-3 shadow-sm">
+      <header className="flex items-center gap-2">
+        <History className="h-4 w-4 text-primary" />
+        <h2 className="text-sm font-semibold">
+          Minimum versi kompatibel — {title}
+        </h2>
+      </header>
+      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+        Build yang di bawah minimum akan ditandai sebagai lawas / tidak
+        kompatibel di halaman unduh. Kosongkan salah satu untuk melewatkan
+        pemeriksaannya.
+      </p>
+      <div className="mt-2 grid grid-cols-2 gap-2">
+        <div>
+          <label className="text-[11px] font-medium">
+            Min. versi (semver)
+          </label>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="mis. 1.2.0"
+            className="h-8 font-mono text-xs"
+          />
+        </div>
+        <div>
+          <label className="text-[11px] font-medium">Min. build</label>
+          <Input
+            value={code}
+            inputMode="numeric"
+            onChange={(e) => setCode(e.target.value.replace(/[^\d]/g, ""))}
+            placeholder="mis. 45"
+            className="h-8 font-mono text-xs"
+          />
+        </div>
+      </div>
+      <div className="mt-2">
+        <label className="text-[11px] font-medium">
+          Alasan (opsional, ditampilkan ke user)
+        </label>
+        <Input
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+          placeholder="mis. Perbaikan keamanan penting"
+          className="h-8 text-xs"
+          maxLength={200}
+        />
+      </div>
+      <div className="mt-2 flex items-center justify-between gap-2">
+        <p className="text-[11px] text-muted-foreground">
+          {current
+            ? `Aktif: v${current.min_version_name ?? "-"}${
+                current.min_version_code !== null
+                  ? ` build ${current.min_version_code}`
+                  : ""
+              }`
+            : "Belum diset — semua build dianggap kompatibel."}
+        </p>
+        <Button
+          type="button"
+          size="sm"
+          disabled={!dirty || save.isPending}
+          onClick={() => save.mutate()}
+        >
+          {save.isPending ? (
+            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+          ) : (
+            "Simpan"
+          )}
+        </Button>
+      </div>
+    </section>
   );
 }
 
@@ -202,6 +338,16 @@ function ReleaseRow({ entry }: { entry: AdminApkEntry }) {
         </div>
         <StatusBadge status={entry.status} />
       </div>
+
+      {entry.belowMinimum && (
+        <div className="mt-3 flex items-start gap-1.5 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-[11px] leading-snug text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+          <History className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            Build ini di bawah minimum versi yang ditetapkan. User akan
+            melihat peringatan tidak kompatibel di halaman unduh.
+          </span>
+        </div>
+      )}
 
       {hasWarn && (
         <div
