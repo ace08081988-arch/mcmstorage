@@ -250,7 +250,13 @@ function computeDiff(
   });
 }
 
-function ExampleCard({ example }: { example: Example }) {
+function ExampleCard({
+  example,
+  onResults,
+}: {
+  example: Example;
+  onResults?: (res: VerifyResult[] | null) => void;
+}) {
   const [presetIdx, setPresetIdx] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [results, setResults] = useState<VerifyResult[] | null>(null);
@@ -334,8 +340,9 @@ function ExampleCard({ example }: { example: Example }) {
       for (const [k, v] of Object.entries(attrs)) el.setAttribute(k, v);
     }
     setResults(collected);
+    onResults?.(collected);
     setRunning(false);
-  }, [attrs, example.presets]);
+  }, [attrs, example.presets, onResults]);
 
   const allPass = useMemo(
     () => results && results.every((r) => r.pass),
@@ -697,6 +704,41 @@ function ExampleCard({ example }: { example: Example }) {
 
 function PressAuditDemoPage() {
   const [runAll, setRunAll] = useState(0);
+  const [cardResults, setCardResults] = useState<
+    Record<string, VerifyResult[] | null>
+  >({});
+  const summary = useMemo(() => {
+    const cards = EXAMPLES.map((ex) => {
+      const res = cardResults[ex.id] ?? null;
+      if (!res) {
+        return {
+          id: ex.id,
+          title: ex.title,
+          verified: false,
+          match: 0,
+          diff: 0,
+          total: ex.presets.length,
+        };
+      }
+      const match = res.filter((r) => r.pass).length;
+      return {
+        id: ex.id,
+        title: ex.title,
+        verified: true,
+        match,
+        diff: res.length - match,
+        total: res.length,
+      };
+    });
+    const verified = cards.filter((c) => c.verified);
+    return {
+      cards,
+      totalMatch: verified.reduce((s, c) => s + c.match, 0),
+      totalDiff: verified.reduce((s, c) => s + c.diff, 0),
+      totalPresets: verified.reduce((s, c) => s + c.total, 0),
+      verifiedCount: verified.length,
+    };
+  }, [cardResults]);
   useEffect(() => {
     // Bantu E2E: expose helper global untuk trigger verifikasi seluruh halaman.
     (window as any).__pressAuditDemoVerify = async () => {
@@ -771,12 +813,62 @@ function PressAuditDemoPage() {
           </li>
         </ul>
       </div>
+      <div
+        className="rounded border bg-background p-3 text-xs space-y-2"
+        data-testid="pa-demo-summary"
+        aria-label="Ringkasan cocok vs beda seluruh kartu"
+      >
+        <div className="flex items-center justify-between gap-2 flex-wrap">
+          <div className="font-medium">Ringkasan verifikasi seluruh kartu</div>
+          <div className="flex items-center gap-2">
+            <Badge
+              variant={summary.totalDiff === 0 ? "default" : "destructive"}
+              data-testid="pa-demo-summary-badge"
+            >
+              {summary.verifiedCount === 0
+                ? "Belum diverifikasi"
+                : summary.totalDiff === 0
+                  ? `Semua cocok · ${summary.totalMatch}/${summary.totalPresets}`
+                  : `Beda ${summary.totalDiff}/${summary.totalPresets}`}
+            </Badge>
+            <span className="text-muted-foreground">
+              {summary.verifiedCount}/{EXAMPLES.length} kartu diverifikasi
+            </span>
+          </div>
+        </div>
+        <ul className="grid gap-1 sm:grid-cols-2">
+          {summary.cards.map((c) => (
+            <li
+              key={c.id}
+              className="flex items-center justify-between gap-2 rounded border bg-muted/30 px-2 py-1"
+              data-testid={`pa-demo-summary-row-${c.id}`}
+              data-status={
+                !c.verified ? "pending" : c.diff === 0 ? "match" : "diff"
+              }
+            >
+              <span className="truncate">{c.title}</span>
+              {!c.verified ? (
+                <span className="text-muted-foreground">—</span>
+              ) : c.diff === 0 ? (
+                <span className="text-emerald-600 font-mono">
+                  ✓ {c.match}/{c.total}
+                </span>
+              ) : (
+                <span className="text-destructive font-mono">
+                  ✗ beda {c.diff}/{c.total}
+                </span>
+              )}
+            </li>
+          ))}
+        </ul>
+      </div>
       <div className="flex gap-2">
         <Button
           size="sm"
           variant="secondary"
           onClick={() => {
             setRunAll((n) => n + 1);
+            setCardResults({});
             (window as any).__pressAuditDemoVerify?.();
           }}
         >
@@ -785,7 +877,13 @@ function PressAuditDemoPage() {
       </div>
       <div className="grid gap-4" key={runAll}>
         {EXAMPLES.map((ex) => (
-          <ExampleCard key={ex.id} example={ex} />
+          <ExampleCard
+            key={ex.id}
+            example={ex}
+            onResults={(res) =>
+              setCardResults((prev) => ({ ...prev, [ex.id]: res }))
+            }
+          />
         ))}
       </div>
     </div>
