@@ -65,9 +65,11 @@ function MinSupportedFormHarness() {
     }
     setSavedCount((n) => n + 1);
     setSaved({
+      variant: "storage",
       min_version_name: name.trim() || null,
       min_version_code: code.trim() ? Number(code.trim()) : null,
       reason: reason.trim() || null,
+      updated_at: new Date().toISOString(),
     });
     toast.success("Tersimpan");
   };
