@@ -3,7 +3,8 @@ import { useEffect, useRef, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, CheckCircle2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { RotateCcw, CheckCircle2, Bell } from "lucide-react";
 import {
   DEFAULT_SCROLL_GUARD,
   SCROLL_GUARD_BOUNDS,
@@ -112,6 +113,17 @@ function PengaturanScrollGuardPage() {
       </Card>
 
       <TestArea cooldownMs={cfg.cooldownMs} driftPx={cfg.driftPx} longPressMs={cfg.longPressMs} />
+
+      <HintCustomization
+        scrollText={cfg.hintScrollText}
+        driftText={cfg.hintDriftText}
+        fadeMs={cfg.hintFadeMs}
+        holdMs={cfg.hintHoldMs}
+        onChange={(patch) => {
+          set(patch);
+          flashSaved();
+        }}
+      />
     </div>
   );
 }
