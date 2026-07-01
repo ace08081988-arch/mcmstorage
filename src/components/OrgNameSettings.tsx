@@ -240,6 +240,80 @@ export function OrgNameSettings() {
           </p>
         </div>
 
+        {/* Pratinjau langsung */}
+        <div className="space-y-2">
+          <Label>Pratinjau langsung</Label>
+          <div
+            className="space-y-3 rounded-lg border bg-muted/30 p-3"
+            style={brand ? ({ ["--primary" as any]: brand, ["--ring" as any]: brand } as React.CSSProperties) : undefined}
+          >
+            {/* Header sidebar */}
+            <div className="rounded-md border bg-background p-2.5">
+              <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Header sidebar
+              </div>
+              <div className="flex items-center gap-2.5">
+                {savedLogo ? (
+                  <img
+                    src={savedLogo}
+                    alt=""
+                    aria-hidden
+                    className="h-8 w-8 shrink-0 rounded-md object-cover ring-1 ring-border shadow-sm"
+                  />
+                ) : (
+                  <span
+                    aria-hidden
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-[12px] font-bold tracking-tight text-primary-foreground shadow-sm ring-1 ring-primary/20"
+                  >
+                    {(short || DEFAULT_ORG_SHORT).slice(0, 6)}
+                  </span>
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-[13px] font-semibold leading-tight tracking-tight">
+                    {full.trim() || DEFAULT_ORG_NAME}
+                  </div>
+                  <div className="truncate text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                    Manajemen Operasional
+                  </div>
+                </div>
+              </div>
+            </div>
+            {/* Footer publik */}
+            <div className="rounded-md border bg-background">
+              <div className="px-2.5 pt-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Footer publik
+              </div>
+              <div className="flex flex-col gap-1 px-2.5 pb-2.5 pt-1 text-[11px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
+                <p>
+                  © {new Date().getFullYear()}{" "}
+                  <strong className="text-foreground">{full.trim() || DEFAULT_ORG_NAME}</strong>
+                </p>
+                <span className="text-[10px]">Syarat · Refund · Privasi</span>
+              </div>
+            </div>
+            {/* Contoh tombol brand */}
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+                Aksen:
+              </span>
+              <button
+                type="button"
+                className="rounded-md bg-primary px-3 py-1.5 text-[11px] font-medium text-primary-foreground shadow-sm"
+              >
+                Tombol utama
+              </button>
+              <span className="rounded-full border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                Badge
+              </span>
+            </div>
+          </div>
+          {dirty && (
+            <p className="text-[11px] text-amber-600 dark:text-amber-500">
+              Perubahan belum disimpan — tekan Simpan untuk menerapkan.
+            </p>
+          )}
+        </div>
+
         <div className="flex items-center justify-between gap-3">
           <Button
             type="button"
