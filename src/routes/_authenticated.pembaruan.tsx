@@ -354,17 +354,12 @@ function PembaruanPage() {
         </ul>
       </section>
 
-      {/* Camera FAB */}
-      <button
-        type="button"
-        aria-label="Kamera"
-        onClick={tellUnavailable}
-        onPointerDown={onPressStart("medium")}
-        className={`fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg hover:brightness-110 active:shadow-md ${PRESS_FAB}`}
-      >
-        <Camera className="size-6" />
-      </button>
-      {/* Compose pencil (secondary FAB) */}
+      {/*
+       * FAB stack — DOM order = visual atas-ke-bawah supaya keyboard tab
+       * berpindah tanpa loncatan:
+       *   1. Compose pencil (bottom-40, lebih atas di layar) → tab dulu.
+       *   2. Camera primary (bottom-24, lebih bawah) → tab kedua.
+       */}
       <button
         type="button"
         aria-label="Tambah status teks"
@@ -373,6 +368,15 @@ function PembaruanPage() {
         className={`fixed bottom-40 right-5 z-30 grid size-11 place-items-center rounded-full bg-muted text-foreground shadow-md hover:bg-muted/80 ${PRESS_FAB}`}
       >
         <Edit3 className="size-5" />
+      </button>
+      <button
+        type="button"
+        aria-label="Kamera"
+        onClick={tellUnavailable}
+        onPointerDown={onPressStart("medium")}
+        className={`fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg hover:brightness-110 active:shadow-md ${PRESS_FAB}`}
+      >
+        <Camera className="size-6" />
       </button>
 
       <ChatBottomNav />
