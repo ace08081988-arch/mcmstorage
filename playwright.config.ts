@@ -715,5 +715,21 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: reload berkali-kali di bawah throttling Slow 3G pada
+      // beberapa DM. Selama fase loading/skeleton, `innerText` di-poll
+      // untuk memastikan nomor telp Indonesia mentah TIDAK PERNAH
+      // muncul (bahkan satu frame). Setelah stabil, identitas peer
+      // wajib berformat `PIN xxxx-xxxx`. Throttling via CDP → hanya
+      // Chromium (non-Chromium self-skip).
+      name: "chat-pin-mcm-throttled-reload-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-throttled-reload\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
