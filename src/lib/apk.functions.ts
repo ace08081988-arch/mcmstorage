@@ -24,6 +24,7 @@ export type ApkRelease = {
   updatedAt: string | null;
   versionName: string | null;
   versionCode: number | null;
+  belowMinimum: boolean;
 };
 
 export type ApkVariantDetail = {
@@ -33,9 +34,74 @@ export type ApkVariantDetail = {
   latest: ApkRelease | null;
   releases: ApkRelease[];
   changelog: string | null;
+  minSupported: MinSupported | null;
 };
 
 const isChatName = (n: string) => /(^|[-_.])chat([-_.]|$)/i.test(n);
+
+export type MinSupported = {
+  variant: ApkVariant;
+  min_version_name: string | null;
+  min_version_code: number | null;
+  reason: string | null;
+  updated_at: string;
+};
+
+/** Bandingkan semver kasar: "1.2.3" vs "1.10.0". Missing bagian = 0. */
+export function compareSemver(a: string, b: string): number {
+  const pa = a.split(".").map((x) => Number.parseInt(x, 10) || 0);
+  const pb = b.split(".").map((x) => Number.parseInt(x, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const va = pa[i] ?? 0;
+    const vb = pb[i] ?? 0;
+    if (va !== vb) return va - vb;
+  }
+  return 0;
+}
+
+/**
+ * Apakah rilis dianggap di bawah minimum yang ditetapkan?
+ * Prioritas: versionCode (build number) → versionName (semver).
+ * Return false jika min tidak diset atau data rilis tidak cukup.
+ */
+export function isBelowMinimum(
+  release: { versionName: string | null; versionCode: number | null },
+  min: MinSupported | null,
+): boolean {
+  if (!min) return false;
+  if (
+    min.min_version_code !== null &&
+    release.versionCode !== null &&
+    release.versionCode < min.min_version_code
+  ) {
+    return true;
+  }
+  if (
+    min.min_version_name &&
+    release.versionName &&
+    compareSemver(release.versionName, min.min_version_name) < 0
+  ) {
+    return true;
+  }
+  return false;
+}
+
+async function loadMinSupportedMap(): Promise<
+  Partial<Record<ApkVariant, MinSupported>>
+> {
+  const { supabaseAdmin } = await import(
+    "@/integrations/supabase/client.server"
+  );
+  const { data } = await supabaseAdmin
+    .from("apk_min_supported")
+    .select("variant, min_version_name, min_version_code, reason, updated_at");
+  const out: Partial<Record<ApkVariant, MinSupported>> = {};
+  for (const row of (data ?? []) as MinSupported[]) {
+    out[row.variant] = row;
+  }
+  return out;
+}
 
 export type ApkReleaseMeta = {
   file_name: string;
