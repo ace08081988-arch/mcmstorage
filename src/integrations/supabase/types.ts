@@ -1084,6 +1084,33 @@ export type Database = {
           },
         ]
       }
+      org_branding: {
+        Row: {
+          brand_color: string
+          logo_url: string
+          org_name: string
+          org_short: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          brand_color?: string
+          logo_url?: string
+          org_name?: string
+          org_short?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          brand_color?: string
+          logo_url?: string
+          org_name?: string
+          org_short?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       prep_pin_alerts: {
         Row: {
           acknowledged_at: string | null
