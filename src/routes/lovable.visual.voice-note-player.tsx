@@ -63,8 +63,8 @@ function VoiceNotePlayerHarness() {
     if (!d) return null;
     const parts = d
       .split(",")
-      .map((t) => Number(t.trim()))
-      .filter((n) => Number.isFinite(n));
+      .map((t: string) => Number(t.trim()))
+      .filter((n: number) => Number.isFinite(n));
     return parts.length > 0 ? parts : null;
   }, [d]);
   const [url, setUrl] = useState<string | null>(null);
@@ -93,7 +93,7 @@ function VoiceNotePlayerHarness() {
         style={{ height: 480 }}
       >
         {url ? decimals ? (
-          decimals.map((raw, i) => (
+          decimals.map((raw: number, i: number) => (
             <div
               key={`${mountKey}-dec-${i}`}
               data-vn-index={i}
