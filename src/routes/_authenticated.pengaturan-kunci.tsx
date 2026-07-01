@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { confirm } from "@/lib/confirm";
@@ -85,6 +85,7 @@ function PengaturanKunci() {
   const [enrolling, setEnrolling] = useState(false);
   const [bioCheckedAt, setBioCheckedAt] = useState<number | null>(null);
   const [bioTick, setBioTick] = useState(0);
+  const prevBioRef = useRef<BiometricStatus | null>(null);
   const bioAvailable = bioStatus.available;
   const [autoLock, setAutoLock] = useState(false);
 
@@ -166,9 +167,37 @@ function PengaturanKunci() {
   const runBioCheck = (interactive: boolean) => {
     setBioChecking(true);
     checkBiometricStatus().then((s) => {
+      const prev = prevBioRef.current;
       setBioStatus(s);
       setBioChecking(false);
       setBioCheckedAt(Date.now());
+      // Diff status dan tampilkan toast bila ada perubahan yang berarti.
+      if (prev) {
+        const diffs: string[] = [];
+        if (prev.platform !== s.platform) {
+          diffs.push(`Platform: ${labelPlatform(s.platform)}`);
+        }
+        if (prev.pluginLoaded !== s.pluginLoaded) {
+          diffs.push(`Plugin biometrik: ${s.pluginLoaded ? "aktif" : "nonaktif"}`);
+        }
+        if (prev.permission !== s.permission) {
+          diffs.push(`Izin: ${labelPermission(s.permission)}`);
+        }
+        if (prev.enrolled !== s.enrolled) {
+          diffs.push(`Sidik jari: ${labelEnrolled(s.enrolled)}`);
+        }
+        if (diffs.length > 0) {
+          const desc = diffs.join(" · ");
+          if (s.available && !prev.available) {
+            toast.success("Status perangkat berubah", { description: desc });
+          } else if (!s.available && prev.available) {
+            toast.warning("Status perangkat berubah", { description: desc });
+          } else {
+            toast("Status perangkat berubah", { description: desc });
+          }
+        }
+      }
+      prevBioRef.current = s;
       if (!interactive) return;
       if (s.available) {
         // Setelah pendaftaran berhasil, langsung aktifkan bila sudah ada kunci.
