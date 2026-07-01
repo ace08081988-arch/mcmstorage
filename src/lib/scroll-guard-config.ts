@@ -48,40 +48,66 @@ function clamp(n: number, lo: number, hi: number) {
   return Math.min(hi, Math.max(lo, n));
 }
 
-function sanitizeText(raw: unknown, fallback: string): string {
+/**
+ * Konversi input ke integer yang dijamin di dalam batas slider.
+ * - Nilai non-finite / NaN / bukan angka → fallback ke default.
+ * - Nilai desimal dibulatkan.
+ * - Nilai di luar rentang di-clamp (bukan ditolak) supaya penyimpanan
+ *   lintas versi (mis. batas yang dulu lebih longgar) tidak melempar error.
+ */
+function coerceInt(raw: unknown, fallback: number, lo: number, hi: number): number {
+  const n = typeof raw === "number" ? raw : Number(raw);
+  if (!Number.isFinite(n)) return fallback;
+  return clamp(Math.round(n), lo, hi);
+}
+
+/**
+ * Sanitasi teks hint. Perbedaan penting dari sebelumnya: **string kosong
+ * dipertahankan** (bukan diganti default) supaya user benar-benar bisa
+ * mematikan hint dengan mengosongkan field. Yang di-fallback ke default
+ * hanya nilai bukan-string (mis. `null`, `undefined`, `123`).
+ */
+function sanitizeText(raw: unknown, fallback: string, opts?: { allowEmpty?: boolean }): string {
+  const allowEmpty = opts?.allowEmpty ?? true;
   if (typeof raw !== "string") return fallback;
-  const trimmed = raw.replace(/\s+/g, " ").trim();
-  if (!trimmed) return fallback;
-  return trimmed.slice(0, SCROLL_GUARD_BOUNDS.hintTextMaxLen);
+  const collapsed = raw.replace(/\s+/g, " ").trim();
+  if (!collapsed) return allowEmpty ? "" : fallback;
+  return collapsed.slice(0, SCROLL_GUARD_BOUNDS.hintTextMaxLen);
 }
 
 function sanitize(raw: unknown): ScrollGuardConfig {
   const r = (raw ?? {}) as Partial<ScrollGuardConfig>;
   return {
-    cooldownMs: clamp(
-      Number.isFinite(r.cooldownMs) ? Number(r.cooldownMs) : DEFAULT_SCROLL_GUARD.cooldownMs,
+    cooldownMs: coerceInt(
+      r.cooldownMs,
+      DEFAULT_SCROLL_GUARD.cooldownMs,
       SCROLL_GUARD_BOUNDS.cooldownMs.min,
       SCROLL_GUARD_BOUNDS.cooldownMs.max,
     ),
-    driftPx: clamp(
-      Number.isFinite(r.driftPx) ? Number(r.driftPx) : DEFAULT_SCROLL_GUARD.driftPx,
+    driftPx: coerceInt(
+      r.driftPx,
+      DEFAULT_SCROLL_GUARD.driftPx,
       SCROLL_GUARD_BOUNDS.driftPx.min,
       SCROLL_GUARD_BOUNDS.driftPx.max,
     ),
-    longPressMs: clamp(
-      Number.isFinite(r.longPressMs) ? Number(r.longPressMs) : DEFAULT_SCROLL_GUARD.longPressMs,
+    longPressMs: coerceInt(
+      r.longPressMs,
+      DEFAULT_SCROLL_GUARD.longPressMs,
       SCROLL_GUARD_BOUNDS.longPressMs.min,
       SCROLL_GUARD_BOUNDS.longPressMs.max,
     ),
+    // Teks: kosong DIPERTAHANKAN → hint dimatikan sesuai niat user.
     hintScrollText: sanitizeText(r.hintScrollText, DEFAULT_SCROLL_GUARD.hintScrollText),
     hintDriftText: sanitizeText(r.hintDriftText, DEFAULT_SCROLL_GUARD.hintDriftText),
-    hintFadeMs: clamp(
-      Number.isFinite(r.hintFadeMs) ? Number(r.hintFadeMs) : DEFAULT_SCROLL_GUARD.hintFadeMs,
+    hintFadeMs: coerceInt(
+      r.hintFadeMs,
+      DEFAULT_SCROLL_GUARD.hintFadeMs,
       SCROLL_GUARD_BOUNDS.hintFadeMs.min,
       SCROLL_GUARD_BOUNDS.hintFadeMs.max,
     ),
-    hintHoldMs: clamp(
-      Number.isFinite(r.hintHoldMs) ? Number(r.hintHoldMs) : DEFAULT_SCROLL_GUARD.hintHoldMs,
+    hintHoldMs: coerceInt(
+      r.hintHoldMs,
+      DEFAULT_SCROLL_GUARD.hintHoldMs,
       SCROLL_GUARD_BOUNDS.hintHoldMs.min,
       SCROLL_GUARD_BOUNDS.hintHoldMs.max,
     ),
