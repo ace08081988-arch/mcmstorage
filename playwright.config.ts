@@ -239,6 +239,20 @@ export default defineConfig({
       },
     },
     {
+      // E2E: berpindah antar DM yang sudah ada — header & transkrip
+      // tiap konvo memakai `PIN xxxx-xxxx` peer yang benar, identitas
+      // tidak "menyangkut" dari DM sebelumnya, dan tidak ada nomor
+      // telp mentah pada tiap fase (DM A → DM B → balik ke DM A).
+      name: "chat-pin-mcm-switch-dm-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-switch-dm\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
