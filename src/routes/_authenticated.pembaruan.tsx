@@ -298,7 +298,7 @@ function PembaruanPage() {
                   {ch.href ? (
                     <Link
                       to={ch.href}
-                      className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 transition duration-150 hover:bg-muted/40 active:scale-[0.98] active:bg-muted/60"
+                      className={`-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/40 active:bg-muted/60 ${PRESS_ROW}`}
                     >
                       {body}
                     </Link>
