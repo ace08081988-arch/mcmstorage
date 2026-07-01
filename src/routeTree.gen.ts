@@ -73,6 +73,7 @@ import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from '
 import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
+import { Route as AuthenticatedStatusBaruRouteImport } from './routes/_authenticated.status.baru'
 import { Route as AuthenticatedKontakPermintaanRouteImport } from './routes/_authenticated.kontak.permintaan'
 import { Route as AuthenticatedDevPressAuditDemoRouteImport } from './routes/_authenticated.dev.press-audit-demo'
 import { Route as AuthenticatedDevPressAuditCodesRouteImport } from './routes/_authenticated.dev.press-audit-codes'
@@ -428,6 +429,11 @@ const ApiPublicAiPingRoute = ApiPublicAiPingRouteImport.update({
   path: '/api/public/ai-ping',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedStatusBaruRoute = AuthenticatedStatusBaruRouteImport.update({
+  id: '/status/baru',
+  path: '/status/baru',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedKontakPermintaanRoute =
   AuthenticatedKontakPermintaanRouteImport.update({
     id: '/permintaan',
@@ -544,6 +550,7 @@ export interface FileRoutesByFullPath {
   '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
   '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
+  '/status/baru': typeof AuthenticatedStatusBaruRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -618,6 +625,7 @@ export interface FileRoutesByTo {
   '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
   '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
+  '/status/baru': typeof AuthenticatedStatusBaruRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -695,6 +703,7 @@ export interface FileRoutesById {
   '/_authenticated/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/_authenticated/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
   '/_authenticated/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
+  '/_authenticated/status/baru': typeof AuthenticatedStatusBaruRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
@@ -772,6 +781,7 @@ export interface FileRouteTypes {
     | '/dev/press-audit-codes'
     | '/dev/press-audit-demo'
     | '/kontak/permintaan'
+    | '/status/baru'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
@@ -846,6 +856,7 @@ export interface FileRouteTypes {
     | '/dev/press-audit-codes'
     | '/dev/press-audit-demo'
     | '/kontak/permintaan'
+    | '/status/baru'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
@@ -922,6 +933,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dev/press-audit-codes'
     | '/_authenticated/dev/press-audit-demo'
     | '/_authenticated/kontak/permintaan'
+    | '/_authenticated/status/baru'
     | '/api/public/ai-ping'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
@@ -1423,6 +1435,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicAiPingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/status/baru': {
+      id: '/_authenticated/status/baru'
+      path: '/status/baru'
+      fullPath: '/status/baru'
+      preLoaderRoute: typeof AuthenticatedStatusBaruRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/kontak/permintaan': {
       id: '/_authenticated/kontak/permintaan'
       path: '/permintaan'
@@ -1589,6 +1608,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
   AuthenticatedDevPressAuditCodesRoute: typeof AuthenticatedDevPressAuditCodesRoute
   AuthenticatedDevPressAuditDemoRoute: typeof AuthenticatedDevPressAuditDemoRoute
+  AuthenticatedStatusBaruRoute: typeof AuthenticatedStatusBaruRoute
 }
 
 const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
@@ -1638,6 +1658,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
   AuthenticatedDevPressAuditCodesRoute: AuthenticatedDevPressAuditCodesRoute,
   AuthenticatedDevPressAuditDemoRoute: AuthenticatedDevPressAuditDemoRoute,
+  AuthenticatedStatusBaruRoute: AuthenticatedStatusBaruRoute,
 }
 
 const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
