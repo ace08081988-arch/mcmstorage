@@ -110,7 +110,7 @@ function PesananDetailPage() {
   // Badge status pakai komponen bersama agar konsisten & tidak overflow.
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
+    <div className="min-h-screen bg-background text-foreground" data-press-scope="on">
       <header className="sticky top-0 z-10 border-b bg-card/95 backdrop-blur">
         <div className="mx-auto flex max-w-3xl items-center gap-2 px-3 py-3">
           <button onClick={() => navigate({ to: "/gudang" })} className="rounded-md border px-2 py-1 text-xs hover:bg-accent">← Kembali</button>
