@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { Bell, BellOff, BellRing, MessageCircle, ClipboardCheck, Package, ShieldAlert } from "lucide-react";
+import { Bell, BellOff, BellRing, ChevronRight, MessageCircle, ClipboardCheck, Package, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,6 +28,26 @@ function timeAgo(iso: string) {
   if (h < 24) return `${h}j`;
   const d = Math.floor(h / 24);
   return `${d}h`;
+}
+
+function formatDate(iso: string) {
+  const d = new Date(iso);
+  const now = new Date();
+  const sameDay =
+    d.getFullYear() === now.getFullYear() &&
+    d.getMonth() === now.getMonth() &&
+    d.getDate() === now.getDate();
+  const time = d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+  if (sameDay) return `Hari ini · ${time}`;
+  const yest = new Date(now);
+  yest.setDate(now.getDate() - 1);
+  const isYest =
+    d.getFullYear() === yest.getFullYear() &&
+    d.getMonth() === yest.getMonth() &&
+    d.getDate() === yest.getDate();
+  if (isYest) return `Kemarin · ${time}`;
+  const date = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" });
+  return `${date} · ${time}`;
 }
 
 function iconFor(kind: FeedItem["kind"]) {
@@ -266,20 +286,36 @@ export function NotificationBell() {
                         <div className="truncate text-xs font-medium">
                           {it.title}
                         </div>
-                        <div className="flex-none text-[11px] text-muted-foreground">
+                        <div
+                          className="flex-none text-[11px] text-muted-foreground"
+                          title={new Date(it.createdAt).toLocaleString("id-ID")}
+                        >
                           {timeAgo(it.createdAt)}
                         </div>
                       </div>
                       <div className="mt-0.5 line-clamp-2 text-xs leading-snug text-muted-foreground">
                         {it.body}
                       </div>
+                      <div className="mt-1 flex items-center gap-2 text-[11px]">
+                        <span className="text-muted-foreground">
+                          {formatDate(it.createdAt)}
+                        </span>
+                        <span
+                          className={
+                            it.unread
+                              ? "rounded-full bg-primary/10 px-1.5 py-0.5 text-primary"
+                              : "rounded-full bg-muted px-1.5 py-0.5 text-muted-foreground"
+                          }
+                        >
+                          {it.unread ? "Belum dibaca" : "Dibaca"}
+                        </span>
+                        {it.href && (
+                          <span className="ml-auto inline-flex items-center gap-0.5 text-primary">
+                            Buka <ChevronRight className="h-3 w-3" />
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    {it.unread && (
-                      <span
-                        aria-hidden
-                        className="mt-1 h-2 w-2 flex-none rounded-full bg-primary"
-                      />
-                    )}
                   </div>
                 );
                 return (
