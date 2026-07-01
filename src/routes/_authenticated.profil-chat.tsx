@@ -24,10 +24,10 @@ const ROWS: Row[] = [
   { icon: Users, title: "Daftar", desc: "Kelola orang dan grup", to: "/buku-alamat" },
   { icon: MessageSquare, title: "Chat", desc: "Tema, wallpaper, riwayat obrolan", to: "/chat-audit" },
   { icon: Bell, title: "Notifikasi", desc: "Pesan, grup & nada dering panggilan", to: "/chat" },
-  { icon: RefreshCcw, title: "Penyimpanan dan data", desc: "Penggunaan jaringan, unduh otomatis", soon: true },
-  { icon: LinkIcon, title: "Facebook & Instagram", desc: "Hubungkan untuk menjangkau lebih banyak pelanggan", soon: true },
-  { icon: Accessibility, title: "Aksesibilitas", desc: "Tingkatkan kontras, animasi", soon: true },
-  { icon: Languages, title: "Bahasa Aplikasi", desc: "Bahasa Indonesia (perangkat)", soon: true },
+  { icon: RefreshCcw, title: "Penyimpanan dan data", desc: "Penggunaan jaringan, unduh otomatis", to: "/pengaturan-penyimpanan" },
+  { icon: LinkIcon, title: "Facebook & Instagram", desc: "Hubungkan untuk menjangkau lebih banyak pelanggan", to: "/pengaturan-integrasi-sosial" },
+  { icon: Accessibility, title: "Aksesibilitas", desc: "Tingkatkan kontras, animasi", to: "/pengaturan-aksesibilitas" },
+  { icon: Languages, title: "Bahasa Aplikasi", desc: "Bahasa Indonesia (perangkat)", to: "/pengaturan-bahasa" },
 ];
 
 function initialOf(name: string | null | undefined): string {
