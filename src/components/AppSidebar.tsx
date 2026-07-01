@@ -424,7 +424,7 @@ export function AppSidebar() {
         <OrgHeader />
       </SidebarHeader>
       <SidebarContent className="gap-0">
-        {groups.map((group, gi) => (
+        {visibleGroups.map((group, gi) => (
           <SidebarGroup key={group.label} className="px-2 py-1.5">
             {gi > 0 ? (
               <SidebarSeparator className="mx-0 mb-1.5 group-data-[collapsible=icon]:hidden" />
