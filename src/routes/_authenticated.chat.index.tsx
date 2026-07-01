@@ -1,14 +1,18 @@
 import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, useCallback } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff, UserPlus,
   Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check, Camera,
+  Trash2, CheckSquare, Square,
 } from "lucide-react";
 
 import {
   useConversations, useChatSearch, usePinConversation, useArchiveConversation,
   useMuteConversation, useChatHeartbeat,
 } from "@/lib/chat";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { confirm } from "@/lib/confirm";
 import { usePendingIncomingCount } from "@/lib/friend-requests";
 import { NewDmDialog } from "@/components/chat/NewDmDialog";
 import { NewGroupDialog } from "@/components/chat/NewGroupDialog";
@@ -48,6 +52,20 @@ function ChatListPage() {
   const archive = useArchiveConversation();
   const mute = useMuteConversation();
   const [grupOpen, setGrupOpen] = useState(false);
+  // Mode seleksi multi-percakapan (tekan lama untuk aktif).
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
+  const [deleting, setDeleting] = useState(false);
+  const qc = useQueryClient();
+  const selecting = selectedIds.size > 0;
+  const exitSelect = useCallback(() => setSelectedIds(new Set()), []);
+  const toggleSelect = useCallback((id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }, []);
   // Pantau path aktif untuk menandai item menu yang sedang dibuka.
   const currentPath = useRouterState({ select: (s) => s.location.pathname });
   const isPathActive = (to: string): boolean =>
@@ -67,8 +85,108 @@ function ChatListPage() {
     return { active: act, archived: arc };
   }, [conversations]);
 
+  const currentVisibleIds = useMemo(() => {
+    // Untuk aksi "Pilih semua" — pilih dari gabungan aktif+arsip yang tampil.
+    return [...active, ...archived].map((c) => c.id);
+  }, [active, archived]);
+
+  const allSelected =
+    currentVisibleIds.length > 0 &&
+    currentVisibleIds.every((id) => selectedIds.has(id));
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+    const ok = await confirm({
+      title: `Hapus pesan di ${ids.length} percakapan?`,
+      description:
+        "Pesan akan dihapus hanya di perangkatmu. Percakapan tetap ada, kamu bisa mulai chat lagi kapan saja.",
+      confirmText: "Hapus",
+      cancelText: "Batal",
+      destructive: true,
+    });
+    if (!ok) return;
+    setDeleting(true);
+    let failed = 0;
+    for (const convId of ids) {
+      try {
+        const { data, error } = await supabase.rpc("message_delete_all_mine", { _conv: convId });
+        if (error) throw error;
+        const paths = ((data ?? []) as string[]).filter((p): p is string => !!p);
+        if (paths.length > 0) {
+          await supabase.storage.from("chat-attachments").remove(paths).catch(() => undefined);
+        }
+      } catch {
+        failed += 1;
+      }
+    }
+    setDeleting(false);
+    qc.invalidateQueries({ queryKey: ["chat", "conversations"] });
+    for (const convId of ids) {
+      qc.invalidateQueries({ queryKey: ["chat", "messages", convId] });
+    }
+    exitSelect();
+    if (failed === 0) {
+      toast.success(`${ids.length} percakapan dibersihkan`);
+    } else if (failed < ids.length) {
+      toast.warning(`${ids.length - failed} berhasil, ${failed} gagal`);
+    } else {
+      toast.error("Gagal membersihkan pesan");
+    }
+  }, [selectedIds, qc, exitSelect]);
+
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface">
+      {selecting ? (
+        <header
+          className="sticky top-0 z-20 flex items-center justify-between gap-2 border-b bg-primary px-3 py-3 text-primary-foreground shadow-sm"
+          role="toolbar"
+          aria-label="Mode pilih percakapan"
+        >
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full text-primary-foreground hover:bg-white/15"
+              onClick={exitSelect}
+              aria-label="Batal pilih"
+            >
+              <X className="h-5 w-5" />
+            </Button>
+            <span className="text-base font-semibold">{selectedIds.size} dipilih</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full text-primary-foreground hover:bg-white/15"
+              onClick={() =>
+                setSelectedIds(
+                  allSelected ? new Set() : new Set(currentVisibleIds),
+                )
+              }
+              aria-label={allSelected ? "Hapus semua pilihan" : "Pilih semua"}
+              title={allSelected ? "Hapus semua pilihan" : "Pilih semua"}
+            >
+              {allSelected ? <Square className="h-5 w-5" /> : <CheckSquare className="h-5 w-5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full text-primary-foreground hover:bg-white/15"
+              onClick={handleBulkDelete}
+              disabled={deleting || selectedIds.size === 0}
+              aria-label={`Hapus pesan di ${selectedIds.size} percakapan`}
+            >
+              {deleting ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Trash2 className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
+        </header>
+      ) : (
       <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-2 border-b px-4 py-3">
         <div className="flex items-center gap-2">
           <span
@@ -157,6 +275,7 @@ function ChatListPage() {
           </DropdownMenu>
         </div>
       </header>
+      )}
 
       <div className="flex-1 space-y-3 px-3 py-3">
       {isError && (conversations?.length ?? 0) > 0 ? (
@@ -275,6 +394,10 @@ function ChatListPage() {
             <ConvList
               list={active}
               isLoading={isLoading}
+              selecting={selecting}
+              selectedIds={selectedIds}
+              onLongPressStart={toggleSelect}
+              onRowTap={toggleSelect}
               empty={
                 <div className="space-y-2 p-8 text-center">
                   <MessageCircle className="mx-auto h-8 w-8 text-muted-foreground" />
@@ -318,6 +441,10 @@ function ChatListPage() {
             <ConvList
               list={archived}
               isLoading={isLoading}
+              selecting={selecting}
+              selectedIds={selectedIds}
+              onLongPressStart={toggleSelect}
+              onRowTap={toggleSelect}
               empty={
                 <div className="p-8 text-center text-xs text-muted-foreground">
                   Belum ada percakapan yang diarsipkan.
@@ -337,7 +464,7 @@ function ChatListPage() {
         </Tabs>
       )}
       </div>
-      <AddContactFab />
+      {selecting ? null : <AddContactFab />}
     </main>
   );
 }
@@ -365,6 +492,10 @@ function ConvList({
   onPin,
   onArchive,
   onMute,
+  selecting,
+  selectedIds,
+  onLongPressStart,
+  onRowTap,
 }: {
   list: ConvItem[];
   isLoading: boolean;
@@ -373,6 +504,10 @@ function ConvList({
   onPin: (c: ConvItem) => void;
   onArchive: (c: ConvItem) => void;
   onMute: (c: ConvItem, until: Date | null) => void;
+  selecting: boolean;
+  selectedIds: Set<string>;
+  onLongPressStart: (id: string) => void;
+  onRowTap: (id: string) => void;
 }) {
   if (isLoading) {
     return (
@@ -392,16 +527,20 @@ function ConvList({
         {list.map((c) => {
           const mutedUntil = c.muted_until ? new Date(c.muted_until) : null;
           const isMuted = mutedUntil && mutedUntil.getTime() > Date.now();
+          const isSelected = selectedIds.has(c.id);
           return (
-            <li key={c.id} className="relative">
-              <Link
-                to="/chat/$conversationId"
-                params={{ conversationId: c.id }}
-                className="flex items-center gap-3 px-4 py-2.5 pr-12 hover:bg-[var(--wa-surface-2)]"
+            <li
+              key={c.id}
+              className={`relative ${isSelected ? "bg-primary/10" : ""}`}
+            >
+              <ConvRow
+                conv={c}
+                isMuted={!!isMuted}
+                selecting={selecting}
+                isSelected={isSelected}
+                onLongPress={() => onLongPressStart(c.id)}
+                onTapWhileSelecting={() => onRowTap(c.id)}
               >
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase">
-                  {(c.display_title ?? "?").trim().charAt(0) || "?"}
-                </div>
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
                     <span className="flex min-w-0 items-center gap-1 truncate text-[15px] font-medium">
@@ -435,7 +574,8 @@ function ConvList({
                     ) : null}
                   </div>
                 </div>
-              </Link>
+              </ConvRow>
+              {selecting ? null : (
               <div className="absolute right-1 top-1.5">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
@@ -499,11 +639,150 @@ function ConvList({
                   </DropdownMenuContent>
                 </DropdownMenu>
               </div>
+              )}
             </li>
           );
         })}
       </ul>
     </div>
+  );
+}
+
+/**
+ * Baris satu percakapan dengan dukungan tekan lama (long-press) untuk masuk
+ * mode seleksi. Saat mode seleksi aktif, tap tunggal memilih/lepas, tanpa
+ * navigasi. Long-press ~450ms memicu haptic + masuk mode seleksi.
+ */
+function ConvRow({
+  conv,
+  selecting,
+  isSelected,
+  onLongPress,
+  onTapWhileSelecting,
+  children,
+}: {
+  conv: ConvItem;
+  isMuted: boolean;
+  selecting: boolean;
+  isSelected: boolean;
+  onLongPress: () => void;
+  onTapWhileSelecting: () => void;
+  children: React.ReactNode;
+}) {
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const triggered = useRef(false);
+  const startXY = useRef<{ x: number; y: number } | null>(null);
+
+  const clear = () => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+  };
+  const onPointerDown = (e: React.PointerEvent) => {
+    triggered.current = false;
+    startXY.current = { x: e.clientX, y: e.clientY };
+    clear();
+    timer.current = setTimeout(() => {
+      triggered.current = true;
+      try {
+        (navigator as Navigator & { vibrate?: (p: number) => void }).vibrate?.(35);
+      } catch { /* noop */ }
+      onLongPress();
+    }, 450);
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (!startXY.current) return;
+    const dx = e.clientX - startXY.current.x;
+    const dy = e.clientY - startXY.current.y;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) clear();
+  };
+  const onPointerUp = () => clear();
+  const onPointerCancel = () => clear();
+  const onContextMenu = (e: React.MouseEvent) => {
+    // Web/desktop: klik kanan = long-press setara.
+    e.preventDefault();
+    triggered.current = true;
+    onLongPress();
+  };
+
+  const checkbox = (
+    <div
+      aria-hidden
+      className={
+        "grid h-6 w-6 shrink-0 place-items-center rounded-md border transition " +
+        (isSelected
+          ? "border-primary bg-primary text-primary-foreground"
+          : "border-[var(--wa-border)] bg-transparent")
+      }
+    >
+      {isSelected ? <Check className="h-4 w-4" /> : null}
+    </div>
+  );
+
+  const avatar = (
+    <div className="grid h-12 w-12 shrink-0 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase">
+      {(conv.display_title ?? "?").trim().charAt(0) || "?"}
+    </div>
+  );
+
+  const inner = (
+    <>
+      {selecting ? checkbox : null}
+      {avatar}
+      {children}
+    </>
+  );
+
+  const rowClass =
+    "flex items-center gap-3 px-4 py-2.5 pr-12 hover:bg-[var(--wa-surface-2)] " +
+    (selecting ? "cursor-pointer select-none" : "");
+
+  if (selecting) {
+    return (
+      <button
+        type="button"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerCancel}
+        onContextMenu={onContextMenu}
+        onClick={(e) => {
+          if (triggered.current) {
+            e.preventDefault();
+            triggered.current = false;
+            return;
+          }
+          onTapWhileSelecting();
+        }}
+        className={`${rowClass} w-full text-left`}
+        aria-pressed={isSelected}
+      >
+        {inner}
+      </button>
+    );
+  }
+
+  return (
+    <Link
+      to="/chat/$conversationId"
+      params={{ conversationId: conv.id }}
+      className={rowClass}
+      onPointerDown={onPointerDown}
+      onPointerMove={onPointerMove}
+      onPointerUp={onPointerUp}
+      onPointerCancel={onPointerCancel}
+      onContextMenu={onContextMenu}
+      onClick={(e) => {
+        if (triggered.current) {
+          // Cegah navigasi setelah long-press.
+          e.preventDefault();
+          triggered.current = false;
+        }
+      }}
+    >
+      {inner}
+    </Link>
   );
 }
 
