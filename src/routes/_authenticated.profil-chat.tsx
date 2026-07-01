@@ -48,7 +48,10 @@ function ProfilChatPage() {
   const { data: profile } = useMyProfile();
   const { data: avatarUrl } = useAvatarSignedUrl(profile?.avatar_url ?? null);
 
-  const name = profile?.display_name || profile?.email?.split("@")[0] || "Saya";
+  const name =
+    profile?.display_name
+    || (profile?.invite_code ? `PIN ${formatInviteCode(profile.invite_code)}` : null)
+    || "Saya";
   const initial = initialOf(name);
   const [qrOpen, setQrOpen] = useState(false);
 
@@ -163,7 +166,7 @@ function ProfilChatPage() {
         open={qrOpen}
         onOpenChange={setQrOpen}
         name={name}
-        email={profile?.email ?? null}
+        email={null}
         phone={profile?.phone ?? null}
         userId={profile?.id ?? null}
         avatarUrl={avatarUrl ?? null}
