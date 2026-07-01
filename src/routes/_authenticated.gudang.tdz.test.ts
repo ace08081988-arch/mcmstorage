@@ -23,6 +23,28 @@ describe("gudang.tsx — selectedItem TDZ guard", () => {
     expect(m, "selectedItem harus dibungkus useMemo([mode, items, itemId])").toBeTruthy();
   });
 
+  it("mendefinisikan type guard isWItem untuk menyempitkan WItem | null", () => {
+    expect(src).toMatch(/isWItem\s*=\s*\(v\s*:\s*WItem\s*\|\s*null\)\s*:\s*v\s+is\s+WItem/);
+  });
+
+  it("semua akses properti selectedItem.<x> dilindungi type guard di baris yang sama atau di atasnya", () => {
+    const lines = src.split("\n");
+    // Baris yang membaca properti langsung: selectedItem.name / .package_type / dst.
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      if (!/\bselectedItem\.\w/.test(line)) continue;
+      // Cari guard di baris yang sama (ternary/&&/if) ATAU dalam 6 baris sebelumnya
+      // (mis. `if (!isWItem(selectedItem)) return;`).
+      const windowSrc = lines.slice(Math.max(0, i - 6), i + 1).join("\n");
+      const guarded =
+        /isWItem\(selectedItem\)/.test(windowSrc) ||
+        /selectedItem\s*\?/.test(windowSrc) ||
+        /selectedItem\s*&&/.test(windowSrc) ||
+        /if\s*\(\s*!selectedItem\s*\)/.test(windowSrc);
+      expect(guarded, `selectedItem.<prop> di baris ${i + 1} tidak dilindungi type guard:\n${line}`).toBe(true);
+    }
+  });
+
   it("semua pemakaian selectedItem terjadi setelah deklarasinya", () => {
     const declIdx = src.search(/const\s+selectedItem\s*:/);
     expect(declIdx).toBeGreaterThan(-1);

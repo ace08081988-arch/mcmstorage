@@ -1638,6 +1638,10 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     () => (mode === "existing" ? items.find((i) => i.id === itemId) ?? null : null),
     [mode, items, itemId],
   );
+  // Type guard eksplisit: menyempitkan `WItem | null` menjadi `WItem`.
+  // Dipakai di setiap titik akses agar tidak ada properti yang dibaca
+  // dari nilai null saat itemId kosong / item terhapus.
+  const isWItem = (v: WItem | null): v is WItem => v !== null;
   const derived = computeBeliDerived({
     mode,
     selectedItem,
@@ -1663,7 +1667,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // ×100 dari qty. Bila pindah ke item pcs, harga per-kemasan tidak
   // punya arti — paksa priceMode ke "base".
   useEffect(() => {
-    if (!selectedItem) return;
+    if (!isWItem(selectedItem)) return;
     if (selectedItem.package_type !== "botol" && inputKarton) setInputKarton(false);
     if (selectedItem.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
   }, [selectedItem, inputKarton, priceMode]);
@@ -1719,9 +1723,9 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
       useItemId = (data as WItem).id;
       useSize = (data as WItem).package_size;
     } else {
-      const it = items.find((i) => i.id === itemId);
-      if (!it) { toast.error("Pilih barang"); return; }
-      useSize = it.package_size;
+      if (!isWItem(selectedItem)) { toast.error("Pilih barang"); return; }
+      useItemId = selectedItem.id;
+      useSize = selectedItem.package_size;
     }
 
     const { error } = await supabase.from("purchases").insert({
@@ -1874,7 +1878,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
       >
         <div className="mb-1 flex items-center justify-between">
           <span className="font-semibold text-foreground">Ringkasan</span>
-          {selectedItem ? (
+          {isWItem(selectedItem) ? (
             <span className="text-[10px] text-muted-foreground">
               {selectedItem.name} · {effPackageType}
               {effPackageType !== "pcs" ? ` ${effectivePkgSize} ${baseUnit}` : ""}
@@ -1895,7 +1899,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Tambahan stok</span>
-          <b>{selectedItem ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, baseUnit)}</b>
+          <b>{isWItem(selectedItem) ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, baseUnit)}</b>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Harga per {effPackageType}</span>
@@ -1916,7 +1920,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
             </span>
           </b>
         </div>
-        {selectedItem && Number(selectedItem.avg_cost_per_base) > 0 && baseAdded > 0 && (
+        {isWItem(selectedItem) && Number(selectedItem.avg_cost_per_base) > 0 && baseAdded > 0 && (
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>Rata-rata modal item</span>
             <span>
