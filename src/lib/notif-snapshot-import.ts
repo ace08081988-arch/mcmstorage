@@ -389,16 +389,35 @@ export function normalizeSnapshot(raw: Record<string, unknown>): ImportResult {
     };
   }
 
+  // Jalankan rantai migrasi (naik/turun) sebelum validasi field, agar
+  // semua pemeriksaan di bawah beroperasi pada bentuk sedekat mungkin
+  // dengan v_current.
+  let migrated: Record<string, unknown>;
+  let applied: AppliedMigration[] = [];
+  let landedVersion = sourceVersion;
+
   if (sourceVersion > CURRENT_SCHEMA_VERSION) {
     warnings.push({
       code: "future_schema_version",
-      detail: `File memakai schemaVersion ${sourceVersion}, lebih baru dari yang dikenali (${CURRENT_SCHEMA_VERSION}). Field baru akan dipertahankan di "extra".`,
+      detail: `File memakai schemaVersion ${sourceVersion}, lebih baru dari yang dikenali (${CURRENT_SCHEMA_VERSION}). Sistem mencoba mode kompatibilitas.`,
     });
+    const down = runDowngrades(raw, sourceVersion);
+    migrated = down.migrated;
+    applied = down.applied;
+    landedVersion = down.landedAt;
+    if (landedVersion > CURRENT_SCHEMA_VERSION) {
+      warnings.push({
+        code: "future_partial_migration",
+        detail: `Tidak ada downgrader dari v${landedVersion} ke v${CURRENT_SCHEMA_VERSION}. Field yang dikenali tetap dibaca; field baru dipertahankan di "extra" (mode backward_partial).`,
+      });
+    }
+  } else {
+    const up = runMigrations(raw, sourceVersion);
+    migrated = up.migrated;
+    applied = up.applied;
+    landedVersion = Math.max(sourceVersion, CURRENT_SCHEMA_VERSION);
   }
 
-  // Jalankan rantai migrasi sebelum validasi field, agar semua pemeriksaan
-  // di bawah beroperasi pada bentuk v_current.
-  const { migrated, applied } = runMigrations(raw, sourceVersion);
   for (const step of applied) {
     warnings.push({
       code: "migrated",
@@ -462,9 +481,19 @@ export function normalizeSnapshot(raw: Record<string, unknown>): ImportResult {
   for (const [k, v] of Object.entries(migrated)) {
     if (!known.has(k)) extra[k] = v;
   }
+  const unknownTopLevelFields = Object.keys(extra);
+  // Beritahu user setiap field masa-depan yang dipertahankan agar tidak
+  // hilang diam-diam.
+  if (sourceVersion > CURRENT_SCHEMA_VERSION) {
+    for (const key of unknownTopLevelFields) {
+      warnings.push({
+        code: "unknown_field_preserved",
+        detail: `Field \`${key}\` tidak dikenali versi ini — disimpan di snapshot.extra.`,
+      });
+    }
+  }
 
-  const targetVersion =
-    sourceVersion > CURRENT_SCHEMA_VERSION ? sourceVersion : CURRENT_SCHEMA_VERSION;
+  const targetVersion = landedVersion;
 
   const snapshot: NormalizedSnapshot = {
     schemaVersion: targetVersion,
@@ -483,6 +512,19 @@ export function normalizeSnapshot(raw: Record<string, unknown>): ImportResult {
 
   const fieldIssues = validateFields(migrated);
 
+  const compatibility: CompatibilityInfo = {
+    mode:
+      sourceVersion === CURRENT_SCHEMA_VERSION
+        ? "exact"
+        : sourceVersion < CURRENT_SCHEMA_VERSION
+          ? "forward_migrated"
+          : "backward_partial",
+    sourceVersion,
+    targetVersion,
+    versionGap: Math.max(0, landedVersion - CURRENT_SCHEMA_VERSION),
+    unknownTopLevelFields,
+  };
+
   return {
     ok: true,
     snapshot,
@@ -492,6 +534,7 @@ export function normalizeSnapshot(raw: Record<string, unknown>): ImportResult {
     rawAfter: migrated,
     warnings,
     fieldIssues,
+    compatibility,
   };
 }
 
