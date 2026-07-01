@@ -6,6 +6,10 @@ import {
   extractPinTokens,
   PIN_MCM_FORMAT,
 } from "./_helpers/chat-pin-assertions";
+import {
+  armPinChangeTracing,
+  capturePinChangeArtifacts,
+} from "./_helpers/pin-change-capture";
 
 /**
  * E2E — token `PIN xxxx-xxxx` peer WAJIB identik dan bebas nomor telp
@@ -61,7 +65,13 @@ async function snapshotHits(
   return out;
 }
 
-function assertHitPinsIdentical(base: HitSnap[], after: HitSnap[], label: string): void {
+async function assertHitPinsIdentical(
+  page: import("@playwright/test").Page,
+  testInfo: import("@playwright/test").TestInfo,
+  base: HitSnap[],
+  after: HitSnap[],
+  label: string,
+): Promise<void> {
   const map = new Map<string, string>();
   for (const s of base) {
     const prev = map.get(s.key);
@@ -77,6 +87,14 @@ function assertHitPinsIdentical(base: HitSnap[], after: HitSnap[], label: string
       map.set(s.key, s.pin); // hit baru pasca load-more — catat.
       continue;
     }
+    if (prev !== s.pin) {
+      await capturePinChangeArtifacts(page, testInfo, {
+        href: s.key,
+        prev,
+        next: s.pin,
+        phase: label,
+      });
+    }
     expect(prev, `PIN untuk hit "${s.key}" identik pada ${label}`).toBe(s.pin);
   }
 }
@@ -86,7 +104,8 @@ test.describe("konsistensi PIN xxxx-xxxx di hasil pencarian selama scroll/pagina
 
   test("token PIN tetap identik di setiap hit pencarian saat scroll & load-more", async ({
     page,
-  }) => {
+  }, testInfo) => {
+    await armPinChangeTracing(page, testInfo);
     await page.goto("/chat");
     await page.waitForLoadState("networkidle");
 
@@ -169,7 +188,7 @@ test.describe("konsistensi PIN xxxx-xxxx di hasil pencarian selama scroll/pagina
       ).toBe(false);
 
       const snap = await snapshotHits(page, `hits step#${step}`);
-      assertHitPinsIdentical(cumulative, snap, `scroll/load-more step#${step}`);
+      await assertHitPinsIdentical(page, testInfo, cumulative, snap, `scroll/load-more step#${step}`);
       // Perbarui baseline kumulatif dengan hit yang baru terlihat.
       cumulative = snap.length >= cumulative.length ? snap : cumulative;
 
@@ -190,6 +209,6 @@ test.describe("konsistensi PIN xxxx-xxxx di hasil pencarian selama scroll/pagina
       "panel pasca-refine bebas nomor telp mentah",
     ).toBe(false);
     const refineSnap = await snapshotHits(page, "hits pasca-refine");
-    assertHitPinsIdentical(cumulative, refineSnap, "refine query (append)");
+    await assertHitPinsIdentical(page, testInfo, cumulative, refineSnap, "refine query (append)");
   });
 });
