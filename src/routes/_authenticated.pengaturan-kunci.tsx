@@ -12,10 +12,12 @@ import {
   APP_LOCK_EVENT,
   getLockConfig,
   hashSecret,
-  isBiometricAvailable,
+  checkBiometricStatus,
+  openBiometricEnrollment,
   randomSalt,
   requestLockNow,
   setLockConfig,
+  type BiometricStatus,
   type LockConfig,
 } from "@/lib/app-lock";
 import {
@@ -42,7 +44,10 @@ export const Route = createFileRoute("/_authenticated/pengaturan-kunci")({
 function PengaturanKunci() {
   const [uid, setUid] = useState<string | null>(null);
   const [cfg, setCfg] = useState<LockConfig | null>(null);
-  const [bioAvailable, setBioAvailable] = useState(false);
+  const [bioStatus, setBioStatus] = useState<BiometricStatus>({ available: false, native: false });
+  const [bioChecking, setBioChecking] = useState(false);
+  const [enrolling, setEnrolling] = useState(false);
+  const bioAvailable = bioStatus.available;
   const [autoLock, setAutoLock] = useState(false);
 
   // Nama toko untuk caption WhatsApp
@@ -78,7 +83,7 @@ function PengaturanKunci() {
         setAutoLock(isAutoLockEnabled(id));
       }
     });
-    isBiometricAvailable().then(setBioAvailable);
+    runBioCheck(false);
   }, []);
 
   useEffect(() => {
@@ -96,6 +101,57 @@ function PengaturanKunci() {
       window.removeEventListener("storage", sync);
     };
   }, [uid]);
+
+  // Cek ulang otomatis ketika user kembali dari Pengaturan Sistem.
+  useEffect(() => {
+    const onVisible = () => {
+      if (document.visibilityState === "visible") runBioCheck(true);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    window.addEventListener("focus", onVisible);
+    return () => {
+      document.removeEventListener("visibilitychange", onVisible);
+      window.removeEventListener("focus", onVisible);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid, cfg?.biometric, enrolling]);
+
+  const runBioCheck = (interactive: boolean) => {
+    setBioChecking(true);
+    checkBiometricStatus().then((s) => {
+      setBioStatus(s);
+      setBioChecking(false);
+      if (!interactive) return;
+      if (s.available) {
+        // Setelah pendaftaran berhasil, langsung aktifkan bila sudah ada kunci.
+        const current = uid ? getLockConfig(uid) : null;
+        if (current && !current.biometric && enrolling) {
+          setLockConfig(uid!, { ...current, biometric: true });
+          toast.success("Sidik jari terdeteksi & diaktifkan");
+        } else {
+          toast.success("Sidik jari terdeteksi");
+        }
+        setEnrolling(false);
+      } else if (enrolling) {
+        toast.error(s.reason || "Belum terdaftar");
+      }
+    });
+  };
+
+  const handleEnroll = async () => {
+    setEnrolling(true);
+    const opened = await openBiometricEnrollment();
+    if (!opened) {
+      setEnrolling(false);
+      toast.error(
+        bioStatus.native
+          ? "Tidak bisa membuka Pengaturan otomatis. Buka manual: Setelan → Keamanan → Sidik Jari."
+          : "Hanya bisa didaftarkan di APK Android",
+      );
+    } else {
+      toast.message("Buka Pengaturan Sistem. Kembali ke aplikasi setelah sidik jari terdaftar.");
+    }
+  };
 
   if (!uid) {
     return (
@@ -362,13 +418,43 @@ function PengaturanKunci() {
         <h2 className="text-sm font-medium">Opsi Tambahan</h2>
 
         <div className="flex items-center justify-between gap-3">
-          <div>
+          <div className="flex-1">
             <Label>Sidik jari</Label>
             <p className="text-[11px] text-muted-foreground">
-              {bioAvailable
-                ? "Buka kunci dengan sidik jari (selain PIN/pola)"
-                : "Tidak tersedia di perangkat ini"}
+              {bioChecking
+                ? "Memeriksa perangkat…"
+                : bioAvailable
+                  ? "Buka kunci dengan sidik jari (selain PIN/pola)"
+                  : bioStatus.reason || "Tidak tersedia di perangkat ini"}
             </p>
+            {!bioChecking && !bioAvailable && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                {bioStatus.native && (
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={handleEnroll}
+                    disabled={enrolling}
+                  >
+                    {enrolling ? "Membuka…" : "Daftarkan sidik jari"}
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => runBioCheck(true)}
+                  disabled={bioChecking}
+                >
+                  Cek ulang
+                </Button>
+              </div>
+            )}
+            {!bioChecking && !bioAvailable && bioStatus.native && (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Setelah menambahkan sidik jari di sistem, kembali ke aplikasi —
+                switch akan aktif otomatis.
+              </p>
+            )}
           </div>
           <Switch
             checked={!!cfg?.biometric && bioAvailable}
