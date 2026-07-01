@@ -804,6 +804,44 @@ function StatusNotifikasiPage() {
           <p className="text-xs text-muted-foreground leading-snug">
             Ringkasan permission, service worker, dan detail push subscription (endpoint dimasker) dalam format JSON.
           </p>
+          {(() => {
+            const issues: string[] = [];
+            if (perm === "unsupported") issues.push("Browser tidak mendukung Notification API.");
+            else if (perm === "denied") issues.push("Izin notifikasi diblokir — aktifkan ulang di pengaturan browser.");
+            else if (perm === "default") issues.push("Izin notifikasi belum diminta.");
+            if (swReady === false) issues.push("Service worker belum terdaftar.");
+            if (pushSub === false) issues.push("Push subscription belum aktif.");
+            if (!issues.length) return null;
+            return (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-xs space-y-2">
+                <div className="font-medium text-amber-700 dark:text-amber-400">
+                  Data belum lengkap
+                </div>
+                <ul className="list-disc pl-4 space-y-0.5 text-muted-foreground leading-snug">
+                  {issues.map((i) => <li key={i}>{i}</li>)}
+                </ul>
+                <p className="text-muted-foreground leading-snug">
+                  Snapshot tetap bisa diekspor, tapi bagian yang tidak tersedia akan kosong.
+                </p>
+                <div className="flex flex-wrap gap-2 pt-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-xs"
+                    onClick={() => void runChecks()}
+                    disabled={checking}
+                  >
+                    {checking ? "Memeriksa…" : "Coba lagi"}
+                  </Button>
+                  {canPrompt && (
+                    <Button size="sm" className="h-7 text-xs" onClick={requestPerm}>
+                      Minta izin notifikasi
+                    </Button>
+                  )}
+                </div>
+              </div>
+            );
+          })()}
           <div className="flex flex-wrap gap-2">
             <Button size="sm" onClick={downloadSnapshot}>Unduh JSON</Button>
             <Button size="sm" variant="outline" onClick={copySnapshot}>
