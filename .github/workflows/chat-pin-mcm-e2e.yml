@@ -117,7 +117,8 @@ jobs:
             --project=chat-pin-mcm-input-variations-e2e \
             --project=chat-pin-mcm-cross-surface-consistency-e2e \
             --project=chat-pin-mcm-list-pagination-e2e \
-            --project=chat-pin-mcm-list-search-filter-e2e
+            --project=chat-pin-mcm-list-search-filter-e2e \
+            --project=chat-pin-mcm-virtualized-scroll-e2e
 
       - name: Upload Playwright report
         if: always()
