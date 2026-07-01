@@ -99,7 +99,10 @@ export default defineConfig({
       name: "admin-visibility-e2e",
       testDir: "./tests/e2e",
       testMatch: /admin-visibility\.spec\.ts/,
-      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 390, height: 844 },
+      },
     },
     {
       // E2E RLS/GRANT: pastikan role `authenticated` bisa SELECT
