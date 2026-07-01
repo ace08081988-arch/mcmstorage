@@ -21,9 +21,13 @@ const MAX_SECONDS = 180;
 function pickMime(): string {
   if (typeof MediaRecorder === "undefined") return "";
   const cands = [
+    // Utamakan MP4/AAC agar bisa diputar lintas platform (iOS Safari
+    // tidak bisa memutar webm/opus di <audio> native). Chrome modern
+    // sudah mendukung merekam audio/mp4.
+    "audio/mp4;codecs=mp4a.40.2",
+    "audio/mp4",
     "audio/webm;codecs=opus",
     "audio/webm",
-    "audio/mp4",
     "audio/ogg;codecs=opus",
   ];
   for (const c of cands) {
