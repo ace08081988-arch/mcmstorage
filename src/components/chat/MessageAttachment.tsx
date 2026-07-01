@@ -5,6 +5,7 @@ import { decodeCard, type Card } from "@/lib/chat-cards";
 import { Button } from "@/components/ui/button";
 import { Link } from "@tanstack/react-router";
 import { StickerView } from "@/components/chat/StickerView";
+import { VoiceNotePlayer } from "@/components/chat/VoiceNotePlayer";
 
 function bytes(n: number | null | undefined): string {
   if (!n) return "";
@@ -51,8 +52,12 @@ export function MessageAttachment(props: {
   }
   if (mime.startsWith("audio/")) {
     return url ? (
-      <audio src={url} controls preload="metadata" className="w-64" />
-    ) : null;
+      <VoiceNotePlayer url={url} mine={props.mine} />
+    ) : (
+      <div className="grid h-10 w-52 animate-pulse place-items-center rounded-full bg-muted/60 text-[10px] text-muted-foreground">
+        Memuat voice note…
+      </div>
+    );
   }
   return (
     <a
