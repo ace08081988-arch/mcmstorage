@@ -93,6 +93,13 @@ const DEFAULT_CONFIG: PressAuditConfig = {
 let config: PressAuditConfig = DEFAULT_CONFIG;
 let ttlTimer: ReturnType<typeof setTimeout> | 0 = 0;
 let navUnbind: (() => void) | null = null;
+let runSweep: (() => void) | null = null;
+
+function requestRun() {
+  if (runSweep) {
+    try { runSweep(); } catch { /* ignore */ }
+  }
+}
 
 function normalize(parsed: Partial<PressAuditConfig> | null | undefined): PressAuditConfig {
   if (!parsed) return DEFAULT_CONFIG;
