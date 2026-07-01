@@ -2232,6 +2232,100 @@ export type Database = {
         }
         Relationships: []
       }
+      status_comments: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          status_id: string
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          status_id: string
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          status_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_comments_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "statuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      status_likes: {
+        Row: {
+          created_at: string
+          status_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          status_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          status_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "status_likes_status_id_fkey"
+            columns: ["status_id"]
+            isOneToOne: false
+            referencedRelation: "statuses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      statuses: {
+        Row: {
+          bg_color: string | null
+          caption: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          media_path: string
+          media_type: string
+          media_url: string
+          user_id: string
+        }
+        Insert: {
+          bg_color?: string | null
+          caption?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          media_path: string
+          media_type: string
+          media_url: string
+          user_id: string
+        }
+        Update: {
+          bg_color?: string | null
+          caption?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          media_path?: string
+          media_type?: string
+          media_url?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       subscription_payments: {
         Row: {
           admin_note: string | null

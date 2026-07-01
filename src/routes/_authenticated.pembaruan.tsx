@@ -1,8 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
-import { useInfiniteQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { toast } from "sonner";
 import {
   Camera,
   Search,
@@ -15,6 +14,7 @@ import {
   Compass,
   Edit3,
   Store,
+  Heart,
 } from "lucide-react";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,13 @@ import {
   type FeedItem,
   type FeedItemKind,
 } from "@/lib/notif-feed.functions";
+import {
+  getLikeCounts,
+  listActiveStatuses,
+  statusSignedUrl,
+  type StatusRow,
+} from "@/lib/status";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Landing tab "Pembaruan" bergaya WhatsApp: Status carousel + daftar Saluran
@@ -150,6 +157,52 @@ function PembaruanPage() {
     [data],
   );
 
+  // ==== Real statuses ====
+  const { data: statuses = [] } = useQuery<StatusRow[]>({
+    queryKey: ["statuses", "active"],
+    queryFn: () => listActiveStatuses(),
+    staleTime: 15_000,
+    refetchOnWindowFocus: true,
+  });
+
+  const [uid, setUid] = useState<string | null>(null);
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null));
+  }, []);
+
+  const [thumbUrls, setThumbUrls] = useState<Record<string, string>>({});
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      const entries: [string, string][] = [];
+      for (const s of statuses) {
+        if (s.media_type === "text" || !s.media_path) continue;
+        const u = await statusSignedUrl(s.media_path, 60 * 30);
+        if (u) entries.push([s.id, u]);
+      }
+      if (alive) setThumbUrls(Object.fromEntries(entries));
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [statuses]);
+
+  const { data: likeCounts } = useQuery<Map<string, number>>({
+    queryKey: ["status-likes", statuses.map((s) => s.id).join(",")],
+    queryFn: () => getLikeCounts(statuses.map((s) => s.id)),
+    enabled: statuses.length > 0,
+    staleTime: 30_000,
+  });
+
+  const myStatuses = useMemo(
+    () => (uid ? statuses.filter((s) => s.user_id === uid) : []),
+    [statuses, uid],
+  );
+  const otherStatuses = useMemo(
+    () => (uid ? statuses.filter((s) => s.user_id !== uid) : statuses),
+    [statuses, uid],
+  );
+
   // Grouping: setiap judul unik jadi satu "saluran".
   const channels: Channel[] = useMemo(() => {
     const map = new Map<string, Channel>();
@@ -180,9 +233,6 @@ function PembaruanPage() {
     );
   }, [feedItems]);
 
-  const tellUnavailable = () =>
-    toast.info("Status kontak belum tersedia — akan diaktifkan setelah fitur status siap.");
-
   // Handler pointerdown terpadu — jalankan haptic sebelum click event sehingga
   // getarannya terasa saat jari menyentuh, bukan saat melepas.
   const onPressStart = (intensity: HapticIntensity = "light") =>
@@ -207,15 +257,14 @@ function PembaruanPage() {
         <h1 id="pembaruan-title" className="mr-auto text-2xl font-semibold tracking-tight">
           Pembaruan
         </h1>
-        <button
-          type="button"
-          aria-label="Buka kamera untuk membuat status baru"
-          onClick={tellUnavailable}
+        <Link
+          to="/status/baru"
+          aria-label="Buat status baru"
           onPointerDown={onPressStart("light")}
           className={`grid size-9 place-items-center rounded-full text-foreground hover:bg-muted active:bg-muted/80 ${PRESS_ICON}`}
         >
           <Camera className="size-5" aria-hidden="true" focusable="false" />
-        </button>
+        </Link>
         <Link
           to="/chat"
           aria-label="Cari percakapan"
@@ -255,10 +304,9 @@ function PembaruanPage() {
         </h2>
         <div className="-mx-4 flex snap-x snap-mandatory gap-3 overflow-x-auto px-4 pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {/* Tambah Status card */}
-          <button
-            type="button"
+          <Link
+            to="/status/baru"
             aria-label="Tambah status baru"
-            onClick={tellUnavailable}
             onPointerDown={onPressStart("medium")}
             className={`relative flex h-40 w-28 shrink-0 snap-start flex-col justify-end rounded-2xl bg-muted/40 p-2 text-left ring-1 ring-inset ring-border/50 hover:bg-muted/60 active:bg-muted/70 ${PRESS_CARD}`}
           >
@@ -276,14 +324,36 @@ function PembaruanPage() {
               </span>
             </span>
             <span className="text-center text-xs font-medium">Tambah Status</span>
-          </button>
+          </Link>
 
-          {/* Placeholder empty tile — jujur: tidak ada status kontak lain */}
-          <div className="flex h-40 w-40 shrink-0 snap-start flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-3 text-center">
-            <span className="text-xs text-muted-foreground">
-              Belum ada status dari kontak. Status akan muncul di sini setelah fitur aktif.
-            </span>
-          </div>
+          {myStatuses.slice(0, 1).map((s) => (
+            <StatusTile
+              key={s.id}
+              status={s}
+              thumbUrl={thumbUrls[s.id]}
+              likes={likeCounts?.get(s.id) ?? 0}
+              label="Status saya"
+              onPressStart={onPressStart}
+            />
+          ))}
+
+          {otherStatuses.map((s) => (
+            <StatusTile
+              key={s.id}
+              status={s}
+              thumbUrl={thumbUrls[s.id]}
+              likes={likeCounts?.get(s.id) ?? 0}
+              onPressStart={onPressStart}
+            />
+          ))}
+
+          {statuses.length === 0 && (
+            <div className="flex h-40 w-40 shrink-0 snap-start flex-col items-center justify-center rounded-2xl border border-dashed border-border/60 px-3 text-center">
+              <span className="text-xs text-muted-foreground">
+                Belum ada status. Ketuk "Tambah Status" untuk mulai.
+              </span>
+            </div>
+          )}
         </div>
       </section>
 
@@ -429,21 +499,20 @@ function PembaruanPage() {
       <button
         type="button"
         aria-label="Tulis status teks baru"
-        onClick={tellUnavailable}
+        onClick={() => (window.location.href = "/status/baru")}
         onPointerDown={onPressStart("light")}
         className={`fixed bottom-40 right-5 z-30 grid size-11 place-items-center rounded-full bg-muted text-foreground shadow-md hover:bg-muted/80 ${PRESS_FAB}`}
       >
         <Edit3 className="size-5" aria-hidden="true" focusable="false" />
       </button>
-      <button
-        type="button"
+      <Link
+        to="/status/baru"
         aria-label="Ambil foto atau video untuk status baru"
-        onClick={tellUnavailable}
         onPointerDown={onPressStart("medium")}
         className={`fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg hover:brightness-110 active:shadow-md ${PRESS_FAB}`}
       >
         <Camera className="size-6" aria-hidden="true" focusable="false" />
-      </button>
+      </Link>
 
       <ChatBottomNav />
     </div>
@@ -486,3 +555,50 @@ function SuggestionRow({
 
 // Keep Compass import used for tree-shake safety in future edits.
 void Compass;
+
+function StatusTile({
+  status,
+  thumbUrl,
+  likes,
+  label,
+  onPressStart,
+}: {
+  status: StatusRow;
+  thumbUrl?: string;
+  likes: number;
+  label?: string;
+  onPressStart: (i?: HapticIntensity) => () => void;
+}) {
+  const caption = status.caption?.trim();
+  return (
+    <Link
+      to="/status/$id"
+      params={{ id: status.id }}
+      aria-label={`Buka status${caption ? ` ${caption}` : ""}`}
+      onPointerDown={onPressStart("selection")}
+      className="relative flex h-40 w-28 shrink-0 snap-start overflow-hidden rounded-2xl bg-muted/40 ring-1 ring-inset ring-primary/50"
+    >
+      {status.media_type === "image" && thumbUrl && (
+        <img src={thumbUrl} alt="" className="size-full object-cover" />
+      )}
+      {status.media_type === "video" && thumbUrl && (
+        <video src={thumbUrl} muted playsInline className="size-full object-cover" />
+      )}
+      {status.media_type === "text" && (
+        <div
+          className="flex size-full items-center justify-center p-2 text-center text-xs font-semibold text-white"
+          style={{ background: status.bg_color || "#0f172a" }}
+        >
+          <span className="line-clamp-4">{caption}</span>
+        </div>
+      )}
+      <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/70 to-transparent px-2 py-1.5 text-[11px] font-medium text-white">
+        <span className="truncate">{label ?? "Status"}</span>
+        <span className="flex items-center gap-0.5">
+          <Heart className="size-3" />
+          {likes}
+        </span>
+      </div>
+    </Link>
+  );
+}
