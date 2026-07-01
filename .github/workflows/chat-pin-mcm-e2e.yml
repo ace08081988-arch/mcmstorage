@@ -106,6 +106,7 @@ jobs:
             --project=chat-pin-mcm-orientation-e2e \
             --project=chat-pin-mcm-loadmore-reload-e2e \
             --project=chat-pin-mcm-throttled-reload-e2e \
+            --project=chat-pin-mcm-offline-reconnect-e2e \
             --project=chat-pin-mcm-invalid-deep-link-e2e \
             --project=chat-pin-mcm-random-multi-e2e \
             --project=chat-pin-mcm-incomplete-pin-e2e \
