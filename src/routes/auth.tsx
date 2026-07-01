@@ -60,6 +60,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const navigate = useNavigate();
   const [mode, setMode] = useState<"login" | "signup">("login");
+  const [intent, setIntent] = useState<"storage" | "chat" | null>(null);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -95,7 +96,10 @@ function AuthPage() {
       const { error } = await supabase.auth.signUp({
         email,
         password,
-        options: { emailRedirectTo: window.location.origin },
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: { chat_only: intent === "chat" },
+        },
       });
       setLoading(false);
       if (error) {
@@ -227,11 +231,49 @@ function AuthPage() {
         <div className="text-center">
           <AuthBrand />
           <p className="text-xs text-muted-foreground">
-            {mode === "signup"
+            {intent === null
+              ? "Pilih jenis akun untuk lanjut"
+              : mode === "signup"
               ? "Buat akun baru dengan email & kata sandi"
               : "Masuk dengan email & kata sandi Anda"}
           </p>
         </div>
+
+        {intent === null ? (
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => { setIntent("storage"); setMode("login"); }}
+              className="w-full rounded-md border bg-background p-3 text-left hover:bg-accent"
+            >
+              <div className="text-sm font-semibold">Saya sudah pakai MCM Storage</div>
+              <div className="text-[11px] text-muted-foreground">
+                Masuk dengan akun MCM Storage Anda — semua fitur (gudang, ecer, chat) aktif.
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => { setIntent("chat"); setMode("signup"); }}
+              className="w-full rounded-md border bg-background p-3 text-left hover:bg-accent"
+            >
+              <div className="text-sm font-semibold">Daftar akun chat baru</div>
+              <div className="text-[11px] text-muted-foreground">
+                Buat akun untuk MCM Chat saja. Bisa upgrade ke Storage kapan pun tanpa daftar ulang.
+              </div>
+            </button>
+            <p className="text-center text-[11px] text-muted-foreground">
+              Satu akun berlaku di MCM Storage & MCM Chat.
+            </p>
+          </div>
+        ) : (
+        <>
+        <button
+          type="button"
+          onClick={() => setIntent(null)}
+          className="w-full text-left text-[11px] text-muted-foreground hover:underline"
+        >
+          ← Ubah pilihan {intent === "chat" ? "(Akun chat baru)" : "(MCM Storage)"}
+        </button>
 
         <div className="grid grid-cols-2 gap-1 rounded-md border bg-muted/40 p-1 text-xs">
           <button
@@ -359,6 +401,8 @@ function AuthPage() {
               : "Sudah punya akun? Pilih tab Masuk di atas."}
           </p>
         </form>
+        </>
+        )}
       </div>
       </main>
       <PublicFooter />
