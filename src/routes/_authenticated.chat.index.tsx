@@ -1,8 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff,
-  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff,
+  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check,
 } from "lucide-react";
 
 import {
@@ -45,6 +45,10 @@ function ChatListPage() {
   const archive = useArchiveConversation();
   const mute = useMuteConversation();
   const [grupOpen, setGrupOpen] = useState(false);
+  // Pantau path aktif untuk menandai item menu yang sedang dibuka.
+  const currentPath = useRouterState({ select: (s) => s.location.pathname });
+  const isPathActive = (to: string): boolean =>
+    currentPath === to || currentPath.startsWith(`${to}/`);
 
   const { active, archived } = useMemo(() => {
     const list = conversations ?? [];
@@ -77,36 +81,73 @@ function ChatListPage() {
           <NewGroupDialog open={grupOpen} onOpenChange={setGrupOpen} trigger={false} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-1.5" aria-label="Menu lainnya">
+              <Button
+                variant="outline"
+                size="sm"
+                className={
+                  // Trigger jadi jelas "aktif" saat menu terbuka (state=open ⇒ accent+ring).
+                  "gap-1.5 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground " +
+                  "data-[state=open]:ring-2 data-[state=open]:ring-primary/40"
+                }
+                aria-label="Menu lainnya"
+              >
                 <MoreVertical className="h-4 w-4" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onSelect={() => toast.info("Pasang iklan — segera hadir.")}>
-                Pasang iklan
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => setGrupOpen(true)}>
-                Grup baru
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => toast.info("Komunitas — segera hadir.")}>
-                Komunitas
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/buku-alamat">Daftar</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/sesi">Perangkat tertaut</Link>
-              </DropdownMenuItem>
-              <DropdownMenuItem onSelect={() => toast.info("Berbintang — segera hadir.")}>
-                Berbintang
-              </DropdownMenuItem>
-              <DropdownMenuItem asChild>
-                <Link to="/chat-audit">Order</Link>
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem asChild>
-                <Link to="/profil-chat">Pengaturan</Link>
-              </DropdownMenuItem>
+              {(() => {
+                type Item =
+                  | { label: string; to: string }
+                  | { label: string; action: () => void };
+                const items: Item[] = [
+                  { label: "Pasang iklan", action: () => toast.info("Pasang iklan — segera hadir.") },
+                  { label: "Grup baru", action: () => setGrupOpen(true) },
+                  { label: "Komunitas", action: () => toast.info("Komunitas — segera hadir.") },
+                  { label: "Daftar", to: "/buku-alamat" },
+                  { label: "Perangkat tertaut", to: "/sesi" },
+                  { label: "Berbintang", action: () => toast.info("Berbintang — segera hadir.") },
+                  { label: "Order", to: "/chat-audit" },
+                ];
+                const settings: Item = { label: "Pengaturan", to: "/profil-chat" };
+                const renderItem = (it: Item, key: string) => {
+                  const active = "to" in it && isPathActive(it.to);
+                  const cls =
+                    "flex items-center justify-between gap-2 " +
+                    (active
+                      ? "bg-primary/10 font-medium text-primary focus:bg-primary/15 focus:text-primary"
+                      : "");
+                  const label = (
+                    <>
+                      <span className="truncate">{it.label}</span>
+                      {active ? <Check className="h-4 w-4 shrink-0" aria-hidden /> : null}
+                    </>
+                  );
+                  if ("to" in it) {
+                    return (
+                      <DropdownMenuItem
+                        key={key}
+                        asChild
+                        aria-current={active ? "page" : undefined}
+                        className={cls}
+                      >
+                        <Link to={it.to as "/sesi"}>{label}</Link>
+                      </DropdownMenuItem>
+                    );
+                  }
+                  return (
+                    <DropdownMenuItem key={key} onSelect={it.action}>
+                      {it.label}
+                    </DropdownMenuItem>
+                  );
+                };
+                return (
+                  <>
+                    {items.map((it, i) => renderItem(it, `it-${i}`))}
+                    <DropdownMenuSeparator />
+                    {renderItem(settings, "settings")}
+                  </>
+                );
+              })()}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
