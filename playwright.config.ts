@@ -578,5 +578,20 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: buka beberapa DM eksisting bergantian, tiap DM di-reload
+      // berulang kali. Identitas header WAJIB persist antar reload,
+      // identitas antar DM berbeda WAJIB unik, dan header + transkrip
+      // tidak pernah menampilkan nomor telp Indonesia mentah (semua
+      // token `PIN <...>` mengikuti format `xxxx-xxxx`).
+      name: "chat-pin-mcm-multi-reload-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-multi-reload\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
