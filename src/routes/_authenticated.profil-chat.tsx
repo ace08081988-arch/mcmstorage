@@ -5,6 +5,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyProfile, useAvatarSignedUrl } from "@/lib/profile";
+import { useState } from "react";
+import { ProfileQrDialog } from "@/components/chat/ProfileQrDialog";
 
 export const Route = createFileRoute("/_authenticated/profil-chat")({
   component: ProfilChatPage,
@@ -43,6 +45,7 @@ function ProfilChatPage() {
 
   const name = profile?.display_name || profile?.email?.split("@")[0] || "Saya";
   const initial = initialOf(name);
+  const [qrOpen, setQrOpen] = useState(false);
 
   return (
     <main className="mx-auto min-h-screen max-w-2xl bg-background">
@@ -97,7 +100,7 @@ function ProfilChatPage() {
         <button
           type="button"
           aria-label="Kode QR profil"
-          onClick={() => toast.info("Kode QR profil segera hadir.")}
+          onClick={() => setQrOpen(true)}
           className="grid h-10 w-10 place-items-center rounded-lg hover:bg-accent"
         >
           <QrCode className="h-6 w-6 text-primary" />
@@ -139,6 +142,16 @@ function ProfilChatPage() {
           );
         })}
       </ul>
+
+      <ProfileQrDialog
+        open={qrOpen}
+        onOpenChange={setQrOpen}
+        name={name}
+        email={profile?.email ?? null}
+        phone={profile?.phone ?? null}
+        userId={profile?.id ?? null}
+        avatarUrl={avatarUrl ?? null}
+      />
     </main>
   );
 }
