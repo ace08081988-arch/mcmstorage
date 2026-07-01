@@ -7,12 +7,15 @@ import {
   Loader2,
   MessageCircle,
   Smartphone,
+  AlertTriangle,
+  History,
 } from "lucide-react";
 import {
   getApkVariantDetail,
   type ApkRelease,
   type ApkVariant,
   type ApkVariantDetail,
+  type MinSupported,
 } from "@/lib/apk.functions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
@@ -102,11 +105,16 @@ function DetailPage() {
               accent={accent}
               icon={<Icon className="h-6 w-6" />}
               latest={data.latest}
+              min={data.minSupported}
             />
 
             <ChangelogCard changelog={data.changelog} />
 
-            <ReleaseHistoryCard releases={data.releases} accent={accent} />
+            <ReleaseHistoryCard
+              releases={data.releases}
+              accent={accent}
+              min={data.minSupported}
+            />
           </>
         )}
       </main>
@@ -121,12 +129,14 @@ function HeaderCard({
   icon,
   accent,
   latest,
+  min,
 }: {
   title: string;
   subtitle: string;
   icon: React.ReactNode;
   accent: "emerald" | "sky";
   latest: ApkRelease | null;
+  min: MinSupported | null;
 }) {
   const badge =
     accent === "emerald"
@@ -153,6 +163,27 @@ function HeaderCard({
         </div>
       ) : (
         <>
+          {latest.belowMinimum && (
+            <div className="mb-3 flex items-start gap-1.5 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-[11px] leading-snug text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <div>
+                <strong className="font-semibold">Build ini lebih lama</strong>{" "}
+                dari minimum yang direkomendasikan
+                {min?.min_version_name ? ` (v${min.min_version_name}` : ""}
+                {min?.min_version_code !== null && min?.min_version_code !== undefined
+                  ? ` build ${min.min_version_code})`
+                  : min?.min_version_name
+                    ? ")"
+                    : ""}
+                .
+                {min?.reason && (
+                  <span className="mt-0.5 block opacity-80">
+                    Alasan: {min.reason}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           <a
             href={latest.url}
             className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow transition ${btn}`}
@@ -215,9 +246,11 @@ function ChangelogCard({ changelog }: { changelog: string | null }) {
 function ReleaseHistoryCard({
   releases,
   accent,
+  min,
 }: {
   releases: ApkRelease[];
   accent: "emerald" | "sky";
+  min: MinSupported | null;
 }) {
   if (releases.length === 0) return null;
   const linkColor =
@@ -229,6 +262,13 @@ function ReleaseHistoryCard({
       <h2 className="mb-2 text-sm font-semibold">
         Riwayat rilis ({releases.length})
       </h2>
+      {min && (min.min_version_name || min.min_version_code !== null) && (
+        <p className="mb-2 flex items-center gap-1 text-[11px] text-muted-foreground">
+          <History className="h-3 w-3" />
+          Minimum: {min.min_version_name ? `v${min.min_version_name}` : ""}
+          {min.min_version_code !== null ? ` build ${min.min_version_code}` : ""}
+        </p>
+      )}
       <ul className="divide-y">
         {releases.map((r, i) => (
           <li key={r.name} className="flex items-center gap-3 py-2 text-xs">
@@ -247,6 +287,12 @@ function ReleaseHistoryCard({
                     terbaru
                   </span>
                 )}
+                {r.belowMinimum && (
+                  <span className="inline-flex items-center gap-0.5 rounded bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-700 dark:text-amber-300">
+                    <AlertTriangle className="h-2.5 w-2.5" />
+                    lawas
+                  </span>
+                )}
               </div>
               <div className="text-[11px] text-muted-foreground">
                 {r.updatedAt
@@ -258,7 +304,19 @@ function ReleaseHistoryCard({
             {r.url && (
               <a
                 href={r.url}
-                className={`shrink-0 text-xs font-semibold ${linkColor} hover:underline`}
+                className={`shrink-0 text-xs font-semibold ${
+                  r.belowMinimum ? "text-amber-700 dark:text-amber-300" : linkColor
+                } hover:underline`}
+                onClick={(e) => {
+                  if (
+                    r.belowMinimum &&
+                    !window.confirm(
+                      "Build ini di bawah minimum yang direkomendasikan dan mungkin tidak kompatibel. Tetap unduh?",
+                    )
+                  ) {
+                    e.preventDefault();
+                  }
+                }}
               >
                 Unduh
               </a>
