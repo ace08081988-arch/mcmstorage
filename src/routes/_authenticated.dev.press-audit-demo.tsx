@@ -256,6 +256,7 @@ function ExampleCard({ example }: { example: Example }) {
   const [results, setResults] = useState<VerifyResult[] | null>(null);
   const [running, setRunning] = useState(false);
   const [traces, setTraces] = useState<PressAuditTrace[] | null>(null);
+  const [highlightsOn, setHighlightsOn] = useState(true);
   const activePreset = example.presets[presetIdx];
   const diffRows = useMemo(
     () =>
@@ -341,37 +342,8 @@ function ExampleCard({ example }: { example: Example }) {
     [results],
   );
 
-  const showTrace = useCallback(() => {
-    const host = wrapRef.current;
-    if (!host) return;
+  const applyHighlights = useCallback((out: PressAuditTrace[]) => {
     clearHighlights();
-    const out: PressAuditTrace[] = [];
-    for (const code of example.triggeredCodes) {
-      // Cari elemen target di dalam host (finding di-scan; kalau tak ada,
-      // pakai host itu sendiri sebagai konteks).
-      const findings = scanPressAuditFindings(host);
-      const match = findings.find((f) => f.code === code);
-      // Untuk rule yang di-block, findings tak akan berisi kode itu — kita
-      // masih bisa memanggil trace dengan elemen kandidat pertama di host.
-      const el =
-        match?.el ??
-        host.querySelector(
-          code === "PA003"
-            ? "[data-dnd-handle]"
-            : code === "PA004"
-              ? '[role="menuitem"]'
-              : "*",
-        ) ??
-        host;
-      const rule =
-        code === "PA003"
-          ? "sortable-handle"
-          : code === "PA004"
-            ? "destructive-menuitem"
-            : code;
-      out.push(tracePressAuditDecision(el, rule));
-    }
-    setTraces(out);
     // Sorot elemen ancestor "pemenang" untuk tiap jejak +
     // pasang tooltip yang menjelaskan alasan efektif.
     const applied: Array<{ el: Element; prevTitle: string | null }> = [];
@@ -432,7 +404,49 @@ function ExampleCard({ example }: { example: Example }) {
       applied.push({ el: winnerEl, prevTitle });
     }
     highlightedRef.current = applied;
-  }, [example.triggeredCodes, clearHighlights]);
+  }, [clearHighlights]);
+
+  const showTrace = useCallback(() => {
+    const host = wrapRef.current;
+    if (!host) return;
+    clearHighlights();
+    const out: PressAuditTrace[] = [];
+    for (const code of example.triggeredCodes) {
+      const findings = scanPressAuditFindings(host);
+      const match = findings.find((f) => f.code === code);
+      const el =
+        match?.el ??
+        host.querySelector(
+          code === "PA003"
+            ? "[data-dnd-handle]"
+            : code === "PA004"
+              ? '[role="menuitem"]'
+              : "*",
+        ) ??
+        host;
+      const rule =
+        code === "PA003"
+          ? "sortable-handle"
+          : code === "PA004"
+            ? "destructive-menuitem"
+            : code;
+      out.push(tracePressAuditDecision(el, rule));
+    }
+    setTraces(out);
+    if (highlightsOn) applyHighlights(out);
+  }, [example.triggeredCodes, clearHighlights, highlightsOn, applyHighlights]);
+
+  const toggleHighlights = useCallback(() => {
+    setHighlightsOn((prev) => {
+      const next = !prev;
+      if (next) {
+        if (traces) applyHighlights(traces);
+      } else {
+        clearHighlights();
+      }
+      return next;
+    });
+  }, [traces, applyHighlights, clearHighlights]);
 
   return (
     <Card>
