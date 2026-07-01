@@ -35,6 +35,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { supabase } from "@/integrations/supabase/client";
+import { formatInviteCode } from "@/lib/invite";
 import {
   getConversationMeta,
   markConversationRead,
@@ -329,7 +330,10 @@ function ChatRoomPage() {
     if (meta.data.kind === "dm" && myId && profiles.data) {
       const other = (members.data ?? []).find((u) => u !== myId);
       const p = other ? profiles.data.get(other) : null;
-      return p?.display_name || p?.phone || p?.email || "Kontak";
+      return p?.display_name
+        || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
+        || p?.email
+        || "Kontak";
     }
     return meta.data.title || (meta.data.kind === "order" ? "Diskusi pesanan" : "Grup");
   }, [meta.data, profiles.data, members.data, myId]);
@@ -344,7 +348,11 @@ function ChatRoomPage() {
       peerUserId: other,
       peerPhone: p?.phone ?? null,
       peerEmail: p?.email ?? null,
-      fallbackName: p?.display_name || p?.phone || p?.email || "Kontak",
+      fallbackName:
+        p?.display_name
+        || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
+        || p?.email
+        || "Kontak",
     };
   }, [meta.data, members.data, profiles.data, myId]);
 
