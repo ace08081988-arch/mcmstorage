@@ -375,7 +375,14 @@ function PenyimpananPage() {
         </AlertDialogContent>
       </AlertDialog>
 
-      <AlertDialog open={!!pendingClear} onOpenChange={(o) => !o && setPendingClear(null)}>
+      <AlertDialog
+        open={!!pendingClear}
+        onOpenChange={(o) => {
+          if (o) return;
+          if (clearProgress.phase === "processing") return; // block close while running
+          setPendingClear(null);
+        }}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
@@ -383,6 +390,41 @@ function PenyimpananPage() {
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-2 text-xs">
+                {clearProgress.phase !== "idle" && (
+                  <div className="rounded-md border bg-muted/40 p-2 text-[11px]">
+                    <div className="mb-1 flex items-center justify-between font-medium">
+                      <span className="flex items-center gap-1.5">
+                        {clearProgress.phase === "processing" ? (
+                          <>
+                            <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
+                            Memproses…
+                          </>
+                        ) : (
+                          <>
+                            <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" />
+                            Selesai
+                          </>
+                        )}
+                      </span>
+                      <span className="tabular-nums text-muted-foreground">
+                        {clearProgress.done}/{clearProgress.total} · {formatKB(clearProgress.freedBytes)}
+                      </span>
+                    </div>
+                    <Progress
+                      value={
+                        clearProgress.total > 0
+                          ? (clearProgress.done / clearProgress.total) * 100
+                          : 0
+                      }
+                      className="h-1.5"
+                    />
+                    {clearProgress.phase === "processing" && clearProgress.currentKey && (
+                      <p className="mt-1 truncate font-mono text-[10px] text-muted-foreground">
+                        {clearProgress.currentKey}
+                      </p>
+                    )}
+                  </div>
+                )}
                 <p>
                   Aksi ini menghapus data dari perangkat ini saja dan tidak bisa dibatalkan.
                   Data di server (jika ada) tidak terpengaruh.
@@ -453,13 +495,27 @@ function PenyimpananPage() {
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogCancel disabled={clearProgress.phase === "processing"}>
+              {clearProgress.phase === "done" ? "Tutup" : "Batal"}
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={confirmClear}
-              disabled={selectedKeys.size === 0}
+              disabled={selectedKeys.size === 0 || clearProgress.phase !== "idle"}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Hapus{selectedKeys.size > 0 ? ` (${selectedKeys.size})` : ""}
+              {clearProgress.phase === "processing" ? (
+                <>
+                  <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                  Memproses…
+                </>
+              ) : clearProgress.phase === "done" ? (
+                <>
+                  <CheckCircle2 className="mr-1.5 h-3.5 w-3.5" />
+                  Selesai
+                </>
+              ) : (
+                <>Hapus{selectedKeys.size > 0 ? ` (${selectedKeys.size})` : ""}</>
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
