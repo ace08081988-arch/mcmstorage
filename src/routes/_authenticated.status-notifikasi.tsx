@@ -454,6 +454,18 @@ function StatusNotifikasiPage() {
 
   const [exportCopied, setExportCopied] = useState(false);
   const [exportError, setExportError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewJson, setPreviewJson] = useState("");
+
+  const openPreview = () => {
+    try {
+      setPreviewJson(serializeSnapshot());
+      setExportError(null);
+      setPreviewOpen(true);
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "Gagal membuat JSON.");
+    }
+  };
 
   const buildSnapshot = () => ({
     generatedAt: new Date().toISOString(),
