@@ -808,6 +808,26 @@ export function formatPressAuditTrace(trace: PressAuditTrace): string[] {
   });
 }
 
+/**
+ * Pilih langkah "pemenang" pada jejak.
+ *  - Kalau ada langkah `block`, langkah pertama yang block adalah pemenang
+ *    (keputusan final).
+ *  - Kalau semua langkah `pass`, pemenang = langkah pass terakhir yang
+ *    menyimpan `hostEl` (ancestor efektif yang paling dekat dengan target).
+ *  - Jika tak ada langkah dengan `hostEl`, kembalikan `null` — pemanggil
+ *    tetap punya `trace.allowed` untuk menampilkan verdict tanpa sorotan.
+ */
+export function pickWinnerStep(
+  t: PressAuditTrace,
+): PressAuditTraceStep | null {
+  const block = t.steps.find((s) => s.outcome === "block");
+  if (block) return block;
+  for (let i = t.steps.length - 1; i >= 0; i--) {
+    if (t.steps[i].hostEl) return t.steps[i];
+  }
+  return null;
+}
+
 function describeEl(el: Element): {
   tag: string;
   id: string | null;
