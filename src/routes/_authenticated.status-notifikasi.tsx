@@ -1248,8 +1248,18 @@ function ImportResultView({ result }: { result: ImportResult }) {
       </div>
     );
   }
-  const { snapshot, sourceVersion, warnings, appliedMigrations, rawBefore, rawAfter } = result;
+  const {
+    snapshot,
+    sourceVersion,
+    warnings,
+    appliedMigrations,
+    rawBefore,
+    rawAfter,
+    fieldIssues,
+  } = result;
   const hasMigrations = appliedMigrations.length > 0;
+  const errorCount = fieldIssues.filter((f) => f.severity === "error").length;
+  const warnCount = fieldIssues.filter((f) => f.severity === "warning").length;
   return (
     <div className="space-y-2">
       <div className="rounded-md border p-3 text-xs space-y-1">
@@ -1290,6 +1300,61 @@ function ImportResultView({ result }: { result: ImportResult }) {
       )}
       {hasMigrations && (
         <MigrationDiffView before={rawBefore} after={rawAfter} />
+      )}
+      {fieldIssues.length > 0 && (
+        <div
+          className={
+            "rounded-md border p-3 text-xs space-y-2 " +
+            (errorCount > 0
+              ? "border-destructive/40 bg-destructive/10"
+              : "border-border bg-muted/50")
+          }
+        >
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="font-medium">
+              Validasi field ({fieldIssues.length})
+            </div>
+            <div className="flex gap-1">
+              {errorCount > 0 && (
+                <Badge variant="destructive">{errorCount} error</Badge>
+              )}
+              {warnCount > 0 && (
+                <Badge variant="secondary">{warnCount} peringatan</Badge>
+              )}
+            </div>
+          </div>
+          <div className="overflow-auto max-h-[40vh] rounded border bg-background">
+            <table className="w-full border-collapse text-[10px]">
+              <thead className="sticky top-0 bg-muted text-muted-foreground">
+                <tr className="text-left">
+                  <th className="px-2 py-1 font-medium">Path</th>
+                  <th className="px-2 py-1 font-medium">Kode</th>
+                  <th className="px-2 py-1 font-medium">Diharapkan</th>
+                  <th className="px-2 py-1 font-medium">Aktual</th>
+                </tr>
+              </thead>
+              <tbody>
+                {fieldIssues.map((f, i) => (
+                  <tr
+                    key={`${f.path}-${f.code}-${i}`}
+                    className={
+                      f.severity === "error"
+                        ? "text-destructive"
+                        : "text-foreground"
+                    }
+                  >
+                    <td className="px-2 py-1 font-mono">
+                      <code>{f.path}</code>
+                    </td>
+                    <td className="px-2 py-1">{f.code}</td>
+                    <td className="px-2 py-1 font-mono">{f.expected}</td>
+                    <td className="px-2 py-1 font-mono">{f.got}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
       )}
       {warnings.length > 0 && (
         <div className="rounded-md border border-border bg-muted/50 p-3 text-xs space-y-1">
