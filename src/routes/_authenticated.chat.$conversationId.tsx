@@ -1155,8 +1155,10 @@ function ChatRoomPage() {
                                       deleteMsg.mutate(
                                         { id: m.id, attachment_path: m.attachment_path },
                                         {
-                                          onSuccess: () =>
-                                            void logChatDelete({ conversationId, action: "for_all", messageId: m.id }),
+                                          onSuccess: () => {
+                                            toast.success("Pesan dihapus untuk semua");
+                                            void logChatDelete({ conversationId, action: "for_all", messageId: m.id });
+                                          },
                                           onError: (e) => {
                                             restore();
                                             toast.error(e instanceof Error ? e.message : "Gagal menghapus");
