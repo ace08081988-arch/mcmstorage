@@ -354,6 +354,7 @@ export type Database = {
       conversation_members: {
         Row: {
           archived_at: string | null
+          cleared_at: string | null
           conversation_id: string
           joined_at: string
           last_read_at: string | null
@@ -365,6 +366,7 @@ export type Database = {
         }
         Insert: {
           archived_at?: string | null
+          cleared_at?: string | null
           conversation_id: string
           joined_at?: string
           last_read_at?: string | null
@@ -376,6 +378,7 @@ export type Database = {
         }
         Update: {
           archived_at?: string | null
+          cleared_at?: string | null
           conversation_id?: string
           joined_at?: string
           last_read_at?: string | null
@@ -2708,6 +2711,10 @@ export type Database = {
           request_id: string
           status: Database["public"]["Enums"]["friend_request_status"]
         }[]
+      }
+      chat_clear_conversation_for_me: {
+        Args: { _conv: string }
+        Returns: string[]
       }
       chat_heartbeat: { Args: never; Returns: undefined }
       chat_mute: { Args: { _conv: string; _until: string }; Returns: undefined }

@@ -25,6 +25,7 @@ export type ConversationListItem = ConversationRow & {
   pinned_at: string | null;
   archived_at: string | null;
   muted_until: string | null;
+  cleared_at: string | null;
 };
 
 export type MessageRow = {
@@ -148,7 +149,7 @@ export function useConversations() {
     queryFn: async (): Promise<ConversationListItem[]> => {
       const { data: members, error: mErr } = await supabase
         .from("conversation_members")
-        .select("conversation_id, last_read_at, pinned_at, archived_at, notifications_muted_until")
+        .select("conversation_id, last_read_at, pinned_at, archived_at, notifications_muted_until, cleared_at")
         .eq("user_id", myId!);
       if (mErr) throw mErr;
       const ids = (members ?? []).map((m) => m.conversation_id);
@@ -161,6 +162,7 @@ export function useConversations() {
             pinned_at: (m as { pinned_at?: string | null }).pinned_at ?? null,
             archived_at: (m as { archived_at?: string | null }).archived_at ?? null,
             muted_until: (m as { notifications_muted_until?: string | null }).notifications_muted_until ?? null,
+            cleared_at: (m as { cleared_at?: string | null }).cleared_at ?? null,
           },
         ]),
       );
@@ -266,10 +268,20 @@ export function useConversations() {
         .select("message_id")
         .eq("user_id", myId!);
       const hiddenSet = new Set((hiddenRows ?? []).map((r) => r.message_id as string));
+      const clearedAtMap = new Map<string, number>(
+        Array.from(mineMemberMap.entries()).map(([cid, m]) => [
+          cid,
+          m.cleared_at ? new Date(m.cleared_at).getTime() : 0,
+        ]),
+      );
       const lastByConv = new Map<string, { body: string | null; created_at: string; sender_id: string }>();
       const unreadByConv = new Map<string, number>();
       for (const m of lastMsgs ?? []) {
         if (hiddenSet.has(m.id)) continue;
+        // Skip messages older-or-equal to the caller's cleared_at watermark —
+        // "Bersihkan percakapan" hides the entire history for the caller.
+        const cAt = clearedAtMap.get(m.conversation_id) ?? 0;
+        if (cAt && new Date(m.created_at).getTime() <= cAt) continue;
         if (!lastByConv.has(m.conversation_id)) {
           lastByConv.set(m.conversation_id, {
             body: messagePreviewText(m) || "Lampiran",
@@ -284,7 +296,7 @@ export function useConversations() {
         }
       }
 
-      return (convs ?? []).map((c) => {
+      const items = (convs ?? []).map((c) => {
         let display = c.title ?? "";
         if (c.kind === "dm") {
           const m = memberMap.get(c.id) ?? [];
@@ -323,7 +335,17 @@ export function useConversations() {
           pinned_at: mine?.pinned_at ?? null,
           archived_at: mine?.archived_at ?? null,
           muted_until: mine?.muted_until ?? null,
+          cleared_at: mine?.cleared_at ?? null,
         };
+      });
+      // Hide conversations the user cleared that have no newer activity.
+      // As soon as a peer sends a fresh message (or the user starts chatting
+      // again), lastByConv gets an entry and the row reappears automatically.
+      return items.filter((c) => {
+        if (!c.cleared_at) return true;
+        if (c.pinned_at) return true; // keep pinned rows visible
+        if (lastByConv.has(c.id)) return true;
+        return false;
       });
     },
   });
