@@ -1627,9 +1627,20 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (mode === "existing" && !itemId && items[0]) setItemId(items[0].id);
   }, [mode, items, itemId]);
 
-  const baseUnit = defaultBase(packageType);
-  const effectivePkgSize = packageType === "pcs" ? 1 : Number(packageSize) || 0;
-  const kartonActive = inputKarton && packageType === "botol";
+  // Untuk mode "existing", SEMUA turunan (jenis kemasan, ukuran, base unit)
+  // WAJIB diambil dari item terpilih — bukan state form "barang baru".
+  const selectedItem = mode === "existing" ? items.find((i) => i.id === itemId) ?? null : null;
+  const effPackageType: PackageType = selectedItem
+    ? ((selectedItem.package_type as PackageType) || "pcs")
+    : packageType;
+  const effBaseUnit: "g" | "pcs" = selectedItem
+    ? (selectedItem.base_unit as "g" | "pcs")
+    : defaultBase(packageType);
+  const baseUnit = effBaseUnit;
+  const effectivePkgSize = selectedItem
+    ? (effPackageType === "pcs" ? 1 : Number(selectedItem.package_size) || 0)
+    : (packageType === "pcs" ? 1 : Number(packageSize) || 0);
+  const kartonActive = inputKarton && effPackageType === "botol";
   const rawQty = Number(packageQty) || 0;
   // Saat mode karton aktif, angka yang diketik = jumlah karton → ×100 botol.
   const pkgQ = kartonActive ? rawQty * BOTOL_PER_KARTON : rawQty;
