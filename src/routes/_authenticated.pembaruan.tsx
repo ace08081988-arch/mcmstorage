@@ -275,11 +275,14 @@ function PembaruanPage() {
       </section>
 
       {/* Saluran */}
-      <section className="mt-2 px-4">
+      <section className="mt-2 px-4" aria-labelledby="pembaruan-saluran-h">
         <div className="mb-2 flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Saluran</h2>
+          <h2 id="pembaruan-saluran-h" className="text-lg font-semibold">
+            Saluran
+          </h2>
           <Link
             to="/notifikasi"
+            aria-label="Jelajahi pengaturan saluran & notifikasi"
             onPointerDown={onPressStart("selection")}
             className={`rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/80 active:bg-muted/60 ${PRESS_CHIP}`}
           >
@@ -288,25 +291,46 @@ function PembaruanPage() {
         </div>
 
         {channels.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground">
+          <div
+            role="status"
+            className="rounded-xl border border-dashed border-border/60 p-6 text-center text-sm text-muted-foreground"
+          >
             Belum ada pembaruan. Pesan, tugas, dan pesanan baru akan tampil di sini.
           </div>
         ) : (
-          <ul className="space-y-4">
+          <ul className="space-y-4" aria-label="Daftar saluran pembaruan">
             {channels.map((ch) => {
               const Icon = KIND_ICON[ch.kind];
+              const kindLabel: Record<FeedItemKind, string> = {
+                chat: "Pesan",
+                tugas: "Tugas",
+                order: "Pesanan",
+                system: "Sistem",
+              };
+              const rowLabel = [
+                kindLabel[ch.kind],
+                ch.title,
+                ch.snippet,
+                ch.unread > 0 ? `${ch.unread} belum dibaca` : null,
+                formatTimeShort(ch.time),
+              ]
+                .filter(Boolean)
+                .join(", ");
               const body = (
                 <>
                   <span
                     className={`grid size-12 shrink-0 place-items-center rounded-full ${KIND_TONE[ch.kind]}`}
                     aria-hidden
                   >
-                    <Icon className="size-5" />
+                    <Icon className="size-5" aria-hidden="true" focusable="false" />
                   </span>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline gap-2">
                       <span className="truncate text-[15px] font-semibold">{ch.title}</span>
-                      <span className="ml-auto shrink-0 text-xs tabular-nums text-emerald-500">
+                      <span
+                        className="ml-auto shrink-0 text-xs tabular-nums text-emerald-500"
+                        aria-hidden="true"
+                      >
                         {formatTimeShort(ch.time)}
                       </span>
                     </div>
@@ -315,7 +339,10 @@ function PembaruanPage() {
                         {ch.snippet}
                       </span>
                       {ch.unread > 0 && (
-                        <span className="grid min-w-6 shrink-0 place-items-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[11px] font-semibold text-white">
+                        <span
+                          aria-hidden="true"
+                          className="grid min-w-6 shrink-0 place-items-center rounded-full bg-emerald-500 px-1.5 py-0.5 text-[11px] font-semibold text-white"
+                        >
                           {ch.unread > 99 ? "99+" : ch.unread}
                         </span>
                       )}
@@ -328,13 +355,19 @@ function PembaruanPage() {
                   {ch.href ? (
                     <Link
                       to={ch.href}
+                      aria-label={rowLabel}
                       onPointerDown={onPressStart("selection")}
                       className={`-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/40 active:bg-muted/60 ${PRESS_ROW}`}
                     >
                       {body}
                     </Link>
                   ) : (
-                    <div className="flex items-center gap-3 py-1">{body}</div>
+                    <div
+                      className="flex items-center gap-3 py-1"
+                      aria-label={rowLabel}
+                    >
+                      {body}
+                    </div>
                   )}
                 </li>
               );
@@ -344,11 +377,11 @@ function PembaruanPage() {
       </section>
 
       {/* Temukan saluran untuk diikuti */}
-      <section className="mt-6 px-4">
-        <h2 className="mb-3 text-sm text-muted-foreground">
+      <section className="mt-6 px-4" aria-labelledby="pembaruan-temukan-h">
+        <h2 id="pembaruan-temukan-h" className="mb-3 text-sm text-muted-foreground">
           Temukan saluran untuk diikuti
         </h2>
-        <ul className="space-y-4">
+        <ul className="space-y-4" aria-label="Rekomendasi saluran untuk diikuti">
           <SuggestionRow
             to="/chat"
             Icon={MessageCircle}
@@ -382,21 +415,21 @@ function PembaruanPage() {
        */}
       <button
         type="button"
-        aria-label="Tambah status teks"
+        aria-label="Tulis status teks baru"
         onClick={tellUnavailable}
         onPointerDown={onPressStart("light")}
         className={`fixed bottom-40 right-5 z-30 grid size-11 place-items-center rounded-full bg-muted text-foreground shadow-md hover:bg-muted/80 ${PRESS_FAB}`}
       >
-        <Edit3 className="size-5" />
+        <Edit3 className="size-5" aria-hidden="true" focusable="false" />
       </button>
       <button
         type="button"
-        aria-label="Kamera"
+        aria-label="Ambil foto atau video untuk status baru"
         onClick={tellUnavailable}
         onPointerDown={onPressStart("medium")}
         className={`fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg hover:brightness-110 active:shadow-md ${PRESS_FAB}`}
       >
-        <Camera className="size-6" />
+        <Camera className="size-6" aria-hidden="true" focusable="false" />
       </button>
 
       <ChatBottomNav />
