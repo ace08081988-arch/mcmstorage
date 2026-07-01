@@ -1,6 +1,7 @@
 import { Link, useNavigate, useRouterState, useMatchRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { getScrollGuardConfig } from "@/lib/scroll-guard-config";
+import { useIsAdmin } from "@/hooks/use-is-admin";
 
 /**
  * Global "scroll aktif" flag. Sekali ada scroll event dari elemen apapun
