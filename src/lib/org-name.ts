@@ -119,25 +119,100 @@ export function setOrgBrand(color: string) {
   } catch { /* ignore */ }
 }
 
+/* ---------- brand color helpers ---------- */
+
+function parseHex(hex: string): { r: number; g: number; b: number } | null {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim());
+  if (!m) return null;
+  let h = m[1];
+  if (h.length === 3) h = h.split("").map((c) => c + c).join("");
+  return {
+    r: parseInt(h.slice(0, 2), 16),
+    g: parseInt(h.slice(2, 4), 16),
+    b: parseInt(h.slice(4, 6), 16),
+  };
+}
+
+function toHex({ r, g, b }: { r: number; g: number; b: number }): string {
+  const c = (n: number) => Math.max(0, Math.min(255, Math.round(n)))
+    .toString(16).padStart(2, "0");
+  return `#${c(r)}${c(g)}${c(b)}`;
+}
+
+/** Relative luminance per WCAG. */
+function luminance({ r, g, b }: { r: number; g: number; b: number }): number {
+  const ch = (v: number) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : Math.pow((s + 0.055) / 1.055, 2.4);
+  };
+  return 0.2126 * ch(r) + 0.7152 * ch(g) + 0.0722 * ch(b);
+}
+
+/** Blend color toward white by t (0..1). */
+function lighten(rgb: { r: number; g: number; b: number }, t: number) {
+  return {
+    r: rgb.r + (255 - rgb.r) * t,
+    g: rgb.g + (255 - rgb.g) * t,
+    b: rgb.b + (255 - rgb.b) * t,
+  };
+}
+
+/**
+ * Adjust brand color so it stays visible on the active theme.
+ * - On dark theme: force luminance >= 0.28 by mixing toward white.
+ * - Returns [displayColor, foregroundColor] for --primary / --primary-foreground.
+ */
+function adjustForTheme(hex: string, isDark: boolean): { primary: string; fg: string } {
+  const rgb = parseHex(hex);
+  if (!rgb) return { primary: hex, fg: "" };
+  let out = rgb;
+  if (isDark) {
+    let lum = luminance(out);
+    // Lift dark brand colors so they read on near-black surfaces.
+    let guard = 0;
+    while (lum < 0.28 && guard < 20) {
+      out = lighten(out, 0.15);
+      lum = luminance(out);
+      guard++;
+    }
+  }
+  const fg = luminance(out) > 0.5 ? "#0b0b0b" : "#ffffff";
+  return { primary: toHex(out), fg };
+}
+
 /** Push brand color into CSS custom properties. Called on load + change. */
 export function applyBrandColor() {
   if (typeof document === "undefined") return;
   const c = getOrgBrand();
   const root = document.documentElement;
   if (c) {
-    root.style.setProperty("--primary", c);
-    root.style.setProperty("--ring", c);
+    const isDark = root.classList.contains("dark");
+    const { primary, fg } = adjustForTheme(c, isDark);
+    root.style.setProperty("--primary", primary);
+    root.style.setProperty("--ring", primary);
+    if (fg) root.style.setProperty("--primary-foreground", fg);
     root.dataset.orgBrand = "1";
   } else if (root.dataset.orgBrand === "1") {
-    // Only clear when we previously overrode — let appearance-settings own
-    // the value otherwise.
     delete root.dataset.orgBrand;
-    // Re-run appearance so the accent preset restores.
+    root.style.removeProperty("--primary");
+    root.style.removeProperty("--ring");
+    root.style.removeProperty("--primary-foreground");
     try {
       const evt = new CustomEvent("app-appearance-reapply");
       window.dispatchEvent(evt);
     } catch { /* ignore */ }
   }
+}
+
+/** Watch for dark-mode class flips and re-apply brand color contrast. */
+let themeObserver: MutationObserver | null = null;
+export function watchThemeForBrand() {
+  if (typeof document === "undefined" || themeObserver) return;
+  themeObserver = new MutationObserver(() => applyBrandColor());
+  themeObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["class"],
+  });
 }
 
 /** Reactive hook — updates on cross-tab storage events + local setOrgName. */
