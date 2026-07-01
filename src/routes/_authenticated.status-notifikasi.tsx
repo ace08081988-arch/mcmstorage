@@ -1339,3 +1339,81 @@ function SnapshotSummary({ snapshot }: { snapshot: NormalizedSnapshot }) {
     </div>
   );
 }
+
+function MigrationDiffView({
+  before,
+  after,
+}: {
+  before: Record<string, unknown>;
+  after: Record<string, unknown>;
+}) {
+  const { lines, stats } = diffJsonLines(before, after);
+  const [mode, setMode] = useState<"changed" | "all">("changed");
+  const visible: DiffLine[] =
+    mode === "changed" ? lines.filter((l) => l.kind !== "same") : lines;
+  return (
+    <details className="rounded-md border p-2 text-[11px]" open>
+      <summary className="cursor-pointer text-xs font-medium flex flex-wrap items-center gap-2">
+        <span>Preview diff migrasi</span>
+        <Badge variant="outline" className="text-emerald-600 border-emerald-600/40">
+          +{stats.added}
+        </Badge>
+        <Badge variant="outline" className="text-destructive border-destructive/40">
+          −{stats.removed}
+        </Badge>
+        <Badge variant="secondary">{stats.unchanged} sama</Badge>
+      </summary>
+      <div className="mt-2 flex items-center gap-1">
+        <Button
+          type="button"
+          size="sm"
+          variant={mode === "changed" ? "default" : "outline"}
+          className="h-6 px-2 text-[10px]"
+          onClick={() => setMode("changed")}
+        >
+          Hanya perubahan
+        </Button>
+        <Button
+          type="button"
+          size="sm"
+          variant={mode === "all" ? "default" : "outline"}
+          className="h-6 px-2 text-[10px]"
+          onClick={() => setMode("all")}
+        >
+          Semua baris
+        </Button>
+      </div>
+      <div className="mt-2 max-h-[40vh] overflow-auto rounded border bg-muted/30 font-mono text-[10px] leading-snug">
+        {visible.length === 0 ? (
+          <div className="p-2 text-muted-foreground">Tidak ada perbedaan baris.</div>
+        ) : (
+          <table className="w-full border-collapse">
+            <tbody>
+              {visible.map((l, i) => {
+                const bg =
+                  l.kind === "add"
+                    ? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                    : l.kind === "del"
+                      ? "bg-destructive/10 text-destructive"
+                      : "";
+                const sign = l.kind === "add" ? "+" : l.kind === "del" ? "−" : " ";
+                return (
+                  <tr key={i} className={bg}>
+                    <td className="w-8 select-none border-r border-border/50 px-1 text-right text-muted-foreground">
+                      {l.left ?? ""}
+                    </td>
+                    <td className="w-8 select-none border-r border-border/50 px-1 text-right text-muted-foreground">
+                      {l.right ?? ""}
+                    </td>
+                    <td className="w-4 select-none px-1 text-center">{sign}</td>
+                    <td className="whitespace-pre-wrap break-all px-1">{l.text}</td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+    </details>
+  );
+}
