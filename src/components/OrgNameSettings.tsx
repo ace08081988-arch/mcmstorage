@@ -11,7 +11,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { useOrgLogoDraft } from "@/lib/org-name";
 import {
   useOrgName,
   setOrgName,
