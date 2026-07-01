@@ -141,6 +141,19 @@ function ApkCard({
             Unduh {title} ({apk.sizeMB ? `${apk.sizeMB} MB` : "ukuran ?"})
           </a>
           <dl className="mt-3 space-y-1 text-[11px] text-muted-foreground">
+            {(apk.versionName || apk.versionCode !== null) && (
+              <div className="flex justify-between gap-2">
+                <dt>Versi</dt>
+                <dd className="font-mono">
+                  {apk.versionName ?? "?"}
+                  {apk.versionCode !== null && (
+                    <span className="ml-1 text-muted-foreground/70">
+                      (build {apk.versionCode})
+                    </span>
+                  )}
+                </dd>
+              </div>
+            )}
             <div className="flex justify-between gap-2">
               <dt>Nama berkas</dt>
               <dd className="truncate font-mono">{apk.name}</dd>
