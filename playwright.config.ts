@@ -132,6 +132,20 @@ export default defineConfig({
       },
     },
     {
+      // Kontrak positif: admin membuka tiap route admin harus MEMICU
+      // server-fn yang sesuai (listApkReleaseAdminPanel, getEmailQueueStatus,
+      // listAdminDenialEvents). Butuh storage state hasil global-setup;
+      // self-skip bila user login bukan admin.
+      name: "admin-routes-serverfn-called-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /admin-routes-serverfn-called\.spec\.ts/,
+      use: {
+        ...devices["iPhone 14"],
+        viewport: { width: 390, height: 844 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
