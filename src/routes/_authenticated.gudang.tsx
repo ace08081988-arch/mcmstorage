@@ -1665,11 +1665,11 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // Kunci/reset state saat pengguna cepat mengganti item atau mode agar
   // sisa state (karton, priceMode, harga, qty, nilai "barang baru") dari
   // pilihan sebelumnya tidak ikut terbawa ke item/mode berikutnya.
-  const resetKeyRef = useRef<string>(`${mode}::${itemId}`);
+  const resetKey = mode === "existing" ? `existing::${itemId}` : `new::${packageType}`;
+  const resetKeyRef = useRef<string>(resetKey);
   useEffect(() => {
-    const key = `${mode}::${itemId}`;
-    if (resetKeyRef.current === key) return;
-    resetKeyRef.current = key;
+    if (resetKeyRef.current === resetKey) return;
+    resetKeyRef.current = resetKey;
 
     // Angka pembelian selalu direset agar tidak terbawa lintas item.
     setPackageQty("1");
@@ -1684,7 +1684,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     } else {
       setPriceMode(packageType === "pcs" ? "base" : "package");
     }
-  }, [mode, itemId, items, packageType]);
+  }, [resetKey, mode, itemId, items, packageType]);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
