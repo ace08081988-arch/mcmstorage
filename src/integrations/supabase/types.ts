@@ -62,6 +62,39 @@ export type Database = {
         }
         Relationships: []
       }
+      apk_release_meta: {
+        Row: {
+          created_at: string
+          enabled: boolean
+          file_name: string
+          notes: string | null
+          publish_at: string | null
+          updated_at: string
+          updated_by: string | null
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          enabled?: boolean
+          file_name: string
+          notes?: string | null
+          publish_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          variant: string
+        }
+        Update: {
+          created_at?: string
+          enabled?: boolean
+          file_name?: string
+          notes?: string | null
+          publish_at?: string | null
+          updated_at?: string
+          updated_by?: string | null
+          variant?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           bank_account_holder: string

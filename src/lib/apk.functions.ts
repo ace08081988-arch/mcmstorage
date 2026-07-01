@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type LatestApk = {
   name: string;
@@ -35,6 +36,44 @@ export type ApkVariantDetail = {
 };
 
 const isChatName = (n: string) => /(^|[-_.])chat([-_.]|$)/i.test(n);
+
+export type ApkReleaseMeta = {
+  file_name: string;
+  variant: ApkVariant;
+  enabled: boolean;
+  publish_at: string | null;
+  notes: string | null;
+  updated_at: string;
+};
+
+type MetaMap = Map<string, ApkReleaseMeta>;
+
+async function loadReleaseMetaMap(): Promise<MetaMap> {
+  const { supabaseAdmin } = await import(
+    "@/integrations/supabase/client.server"
+  );
+  const { data } = await supabaseAdmin
+    .from("apk_release_meta")
+    .select("file_name, variant, enabled, publish_at, notes, updated_at");
+  const m: MetaMap = new Map();
+  for (const row of (data ?? []) as ApkReleaseMeta[]) {
+    m.set(row.file_name, row);
+  }
+  return m;
+}
+
+/**
+ * Sebuah berkas APK "terlihat publik" jika:
+ *   - tidak ada meta (default aktif), ATAU
+ *   - enabled=true DAN (publish_at IS NULL atau publish_at <= now)
+ */
+function isPublic(name: string, meta: MetaMap): boolean {
+  const row = meta.get(name);
+  if (!row) return true;
+  if (!row.enabled) return false;
+  if (row.publish_at && Date.parse(row.publish_at) > Date.now()) return false;
+  return true;
+}
 
 /**
  * Ekstrak versionName + versionCode dari nama berkas APK.
@@ -87,7 +126,10 @@ export const getLatestApk = createServerFn({ method: "GET" }).handler(
         sortBy: { column: "updated_at", order: "desc" },
       });
     if (error || !data) return null;
-    const apks = data.filter((f) => /\.apk$/i.test(f.name));
+    const meta = await loadReleaseMetaMap();
+    const apks = data
+      .filter((f) => /\.apk$/i.test(f.name))
+      .filter((f) => isPublic(f.name, meta));
     if (apks.length === 0) return null;
     const latest = apks[0];
     const { data: signed, error: signErr } = await supabaseAdmin.storage
@@ -120,7 +162,10 @@ export const getLatestApkVariants = createServerFn({ method: "GET" }).handler(
         sortBy: { column: "updated_at", order: "desc" },
       });
     if (error || !data) return { storage: null, chat: null };
-    const apks = data.filter((f) => /\.apk$/i.test(f.name));
+    const meta = await loadReleaseMetaMap();
+    const apks = data
+      .filter((f) => /\.apk$/i.test(f.name))
+      .filter((f) => isPublic(f.name, meta));
     const chatFile = apks.find((f) => isChatName(f.name)) ?? null;
     const storageFile = apks.find((f) => !isChatName(f.name)) ?? null;
     const toResult = async (f: typeof apks[number] | null): Promise<LatestApk> => {
@@ -182,11 +227,13 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
       });
     let releases: ApkRelease[] = [];
     if (!error && files) {
+      const meta = await loadReleaseMetaMap();
       const apks = files
         .filter((f) => /\.apk$/i.test(f.name))
         .filter((f) =>
           data.variant === "chat" ? isChatName(f.name) : !isChatName(f.name),
-        );
+        )
+        .filter((f) => isPublic(f.name, meta));
       releases = await Promise.all(
         apks.map(async (f) => {
           const { data: signed } = await supabaseAdmin.storage
@@ -241,5 +288,128 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
       latest: releases[0] ?? null,
       releases,
       changelog,
+    };
+  });
+
+// ============================================================================
+// Admin: kelola jadwal & status rilis
+// ============================================================================
+
+export type AdminApkEntry = {
+  file_name: string;
+  variant: ApkVariant;
+  sizeMB: number | null;
+  uploadedAt: string | null;
+  versionName: string | null;
+  versionCode: number | null;
+  enabled: boolean;
+  publish_at: string | null;
+  notes: string | null;
+  status: "published" | "scheduled" | "disabled";
+};
+
+// Menggunakan `any` di sini karena tipe context dari middleware
+// tidak diekspor & bervariasi; RPC tetap type-safe via nama literal.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function requireAdmin(context: any) {
+  const { data, error } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (error) throw new Error(error.message);
+  if (!data) throw new Error("Forbidden: admin diperlukan");
+}
+
+function computeStatus(
+  enabled: boolean,
+  publish_at: string | null,
+): "published" | "scheduled" | "disabled" {
+  if (!enabled) return "disabled";
+  if (publish_at && Date.parse(publish_at) > Date.now()) return "scheduled";
+  return "published";
+}
+
+export const listApkReleaseAdmin = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<AdminApkEntry[]> => {
+    await requireAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const BUCKET = "apk-releases";
+    const { data: files } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .list("", {
+        limit: 500,
+        sortBy: { column: "updated_at", order: "desc" },
+      });
+    const apks = (files ?? []).filter((f) => /\.apk$/i.test(f.name));
+    const meta = await loadReleaseMetaMap();
+    return apks.map<AdminApkEntry>((f) => {
+      const row = meta.get(f.name);
+      const variant: ApkVariant = isChatName(f.name) ? "chat" : "storage";
+      const enabled = row?.enabled ?? true;
+      const publish_at = row?.publish_at ?? null;
+      const size = (f.metadata as { size?: number } | null)?.size ?? null;
+      const parsed = parseApkFileName(f.name);
+      return {
+        file_name: f.name,
+        variant,
+        sizeMB: size ? Math.round((size / (1024 * 1024)) * 10) / 10 : null,
+        uploadedAt: f.updated_at ?? f.created_at ?? null,
+        versionName: parsed.versionName,
+        versionCode: parsed.versionCode,
+        enabled,
+        publish_at,
+        notes: row?.notes ?? null,
+        status: computeStatus(enabled, publish_at),
+      };
+    });
+  });
+
+export const upsertApkReleaseMeta = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      file_name: string;
+      enabled: boolean;
+      publish_at: string | null;
+      notes?: string | null;
+    }) => {
+      if (!data.file_name || typeof data.file_name !== "string") {
+        throw new Error("file_name wajib diisi");
+      }
+      if (typeof data.enabled !== "boolean") {
+        throw new Error("enabled wajib boolean");
+      }
+      if (data.publish_at !== null && Number.isNaN(Date.parse(data.publish_at))) {
+        throw new Error("publish_at tidak valid");
+      }
+      return data;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    const variant: ApkVariant = isChatName(data.file_name) ? "chat" : "storage";
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { error } = await supabaseAdmin
+      .from("apk_release_meta")
+      .upsert(
+        {
+          file_name: data.file_name,
+          variant,
+          enabled: data.enabled,
+          publish_at: data.publish_at,
+          notes: data.notes ?? null,
+          updated_by: context.userId,
+        },
+        { onConflict: "file_name" },
+      );
+    if (error) throw new Error(error.message);
+    return {
+      ok: true,
+      status: computeStatus(data.enabled, data.publish_at),
     };
   });

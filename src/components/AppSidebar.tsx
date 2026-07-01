@@ -323,6 +323,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
       { title: "Audit Rute", url: "/audit", icon: ClipboardCheck },
       { title: "Diagnostik", url: "/diagnostics", icon: Activity },
       { title: "Antrian Email", url: "/email-queue", icon: Mail },
+      { title: "Rilis APK", url: "/pengaturan-apk", icon: Package },
     ],
   },
 ];
