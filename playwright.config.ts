@@ -827,5 +827,52 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    // ── Lintas-browser paginasi/virtualisasi: skenario
+    //   list-pagination & virtualized-scroll juga dijalankan di
+    //   Firefox dan WebKit supaya konsistensi `PIN xxxx-xxxx` tidak
+    //   bergantung pada engine Chromium. Perbedaan implementasi
+    //   virtual scrolling (rAF timing, IntersectionObserver
+    //   scheduling, normalisasi `innerText`) di ketiga engine tidak
+    //   boleh memicu regresi token PIN atau kebocoran nomor telp.
+    {
+      name: "chat-pin-mcm-list-pagination-firefox-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-list-pagination\.spec\.ts/,
+      use: {
+        ...devices["Desktop Firefox"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
+      name: "chat-pin-mcm-list-pagination-webkit-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-list-pagination\.spec\.ts/,
+      use: {
+        ...devices["Desktop Safari"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
+      name: "chat-pin-mcm-virtualized-scroll-firefox-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-virtualized-scroll\.spec\.ts/,
+      use: {
+        ...devices["Desktop Firefox"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
+      name: "chat-pin-mcm-virtualized-scroll-webkit-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-virtualized-scroll\.spec\.ts/,
+      use: {
+        ...devices["Desktop Safari"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
