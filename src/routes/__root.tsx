@@ -64,15 +64,26 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   useEffect(() => {
     if (!isChunkLoadError) return;
     if (typeof window === "undefined") return;
-    // Avoid infinite reload loops: only auto-reload once per session.
-    const KEY = "__chunk_reload_once";
+    // Chunk-load errors typically mean the dev server rebuilt and the
+    // currently-loaded index.html points at chunk hashes that no longer
+    // exist. A hard reload with a cache-busting query param is the only
+    // safe recovery. Guard against tight reload loops by throttling to
+    // one reload per 5s window — but do NOT lock reloads to once per
+    // session, since subsequent rebuilds in the same session must also
+    // recover.
+    const KEY = "__chunk_reload_at";
+    const now = Date.now();
     try {
-      if (window.sessionStorage.getItem(KEY)) return;
-      window.sessionStorage.setItem(KEY, "1");
+      const prev = Number(window.sessionStorage.getItem(KEY) || "0");
+      if (prev && now - prev < 5000) return;
+      window.sessionStorage.setItem(KEY, String(now));
     } catch {
       // ignore storage errors
     }
-    window.location.reload();
+    // Force bypass of any HTTP/service-worker cache for the shell.
+    const url = new URL(window.location.href);
+    url.searchParams.set("__r", String(now));
+    window.location.replace(url.toString());
   }, [isChunkLoadError]);
 
   useEffect(() => {
