@@ -402,6 +402,15 @@ export type AdminApkEntry = {
   publish_at: string | null;
   notes: string | null;
   status: "published" | "scheduled" | "disabled";
+  belowMinimum: boolean;
+};
+
+export type AdminApkListResult = {
+  entries: AdminApkEntry[];
+  minSupported: {
+    storage: MinSupported | null;
+    chat: MinSupported | null;
+  };
 };
 
 // Menggunakan `any` di sini karena tipe context dari middleware
@@ -427,7 +436,7 @@ function computeStatus(
 
 export const listApkReleaseAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<AdminApkEntry[]> => {
+  .handler(async ({ context }): Promise<AdminApkListResult> => {
     await requireAdmin(context);
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
@@ -441,7 +450,8 @@ export const listApkReleaseAdmin = createServerFn({ method: "GET" })
       });
     const apks = (files ?? []).filter((f) => /\.apk$/i.test(f.name));
     const meta = await loadReleaseMetaMap();
-    return apks.map<AdminApkEntry>((f) => {
+    const mins = await loadMinSupportedMap();
+    const entries = apks.map<AdminApkEntry>((f) => {
       const row = meta.get(f.name);
       const variant: ApkVariant = isChatName(f.name) ? "chat" : "storage";
       const enabled = row?.enabled ?? true;
@@ -459,8 +469,16 @@ export const listApkReleaseAdmin = createServerFn({ method: "GET" })
         publish_at,
         notes: row?.notes ?? null,
         status: computeStatus(enabled, publish_at),
+        belowMinimum: isBelowMinimum(parsed, mins[variant] ?? null),
       };
     });
+    return {
+      entries,
+      minSupported: {
+        storage: mins.storage ?? null,
+        chat: mins.chat ?? null,
+      },
+    };
   });
 
 export const upsertApkReleaseMeta = createServerFn({ method: "POST" })
