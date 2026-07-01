@@ -593,5 +593,21 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: full-coverage sweep — buka SETIAP DM dari daftar `/chat`,
+      // baca innerText body-nya, dan pastikan (a) tidak ada substring
+      // nomor telp Indonesia mentah di halaman mana pun, (b) SETIAP
+      // token `PIN …` yang tampil lolos `PIN_MCM_FORMAT`
+      // (`PIN xxxx-xxxx`). Berbeda dari suite sampling: pelanggaran
+      // dikumpulkan lalu dilaporkan sekaligus.
+      name: "chat-pin-mcm-all-dms-body-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-all-dms-body\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
