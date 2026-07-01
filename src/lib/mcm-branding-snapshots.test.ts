@@ -25,27 +25,18 @@ const FILES = {
 
 const BRAND_RE = /\b(MCM|WhatsApp|WA)\b/;
 
-// Cocokkan literal string di dalam kutip tunggal / ganda / backtick.
-// Cukup untuk JSX text-as-string, placeholder/title/aria-label, toast, dsb.
-const STRING_LITERAL_RE = /(["'`])((?:\\.|(?!\1).)*?)\1/g;
-
 // Baris yang jelas non-UI dan harus diabaikan meski mengandung token.
 const TECH_HINT_RE =
-  /whatsapp:\/\/|wa\.me|com\.whatsapp|\/\/|\/\*|\*\/|import\s|from\s+["']|require\(/i;
+  /whatsapp:\/\/|wa\.me|com\.whatsapp|^\s*(\/\/|\*|\/\*)|import\s|from\s+["']|require\(/i;
 
 function extractBrandLabels(source: string): string[] {
   const out = new Set<string>();
-  for (const line of source.split("\n")) {
+  for (const rawLine of source.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) continue;
+    if (!BRAND_RE.test(line)) continue;
     if (TECH_HINT_RE.test(line)) continue;
-    let m: RegExpExecArray | null;
-    STRING_LITERAL_RE.lastIndex = 0;
-    while ((m = STRING_LITERAL_RE.exec(line)) !== null) {
-      const value = m[2];
-      if (!BRAND_RE.test(value)) continue;
-      // Buang literal yang terlihat seperti URL/scheme/identifier teknis.
-      if (/[\/@]|https?:|\bimport\b/.test(value)) continue;
-      out.add(value.trim());
-    }
+    out.add(line);
   }
   return [...out].sort();
 }
