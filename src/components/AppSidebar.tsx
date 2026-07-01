@@ -20,6 +20,62 @@ if (typeof window !== "undefined" && !(window as any).__navScrollGuard) {
   window.addEventListener("wheel", bump, { capture: true, passive: true });
   window.addEventListener("touchmove", bump, { capture: true, passive: true });
 }
+
+/**
+ * Hint kecil "Scroll dulu selesai" yang muncul dekat titik tap ketika
+ * scroll-guard menolak navigasi — supaya user paham kenapa halaman tidak
+ * berpindah, bukan mengira menu-nya rusak. Throttle 900ms per hint.
+ */
+let __lastHintAt = 0;
+function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+  const now = Date.now();
+  if (now - __lastHintAt < 900) return;
+  __lastHintAt = now;
+  const el = document.createElement("div");
+  el.setAttribute("role", "status");
+  el.setAttribute("aria-live", "polite");
+  el.setAttribute("data-testid", "scroll-guard-hint");
+  el.textContent =
+    reason === "scroll"
+      ? "Tunggu scroll selesai…"
+      : "Geser terdeteksi — tap dibatalkan";
+  const vw = window.innerWidth;
+  const left = Math.max(8, Math.min(vw - 200, x + 12));
+  const top = Math.max(8, y - 44);
+  el.style.cssText = [
+    "position:fixed",
+    `left:${left}px`,
+    `top:${top}px`,
+    "z-index:9999",
+    "pointer-events:none",
+    "padding:6px 10px",
+    "border-radius:9999px",
+    "font-size:11px",
+    "font-weight:500",
+    "line-height:1.2",
+    "letter-spacing:0.01em",
+    "background:hsl(var(--foreground) / 0.92)",
+    "color:hsl(var(--background))",
+    "box-shadow:0 4px 12px hsl(var(--foreground) / 0.18)",
+    "backdrop-filter:blur(4px)",
+    "opacity:0",
+    "transform:translateY(4px)",
+    "transition:opacity 140ms ease-out, transform 140ms ease-out",
+  ].join(";");
+  document.body.appendChild(el);
+  requestAnimationFrame(() => {
+    el.style.opacity = "1";
+    el.style.transform = "translateY(0)";
+  });
+  window.setTimeout(() => {
+    el.style.opacity = "0";
+    el.style.transform = "translateY(-4px)";
+  }, 1200);
+  window.setTimeout(() => {
+    el.remove();
+  }, 1400);
+}
 import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
@@ -75,6 +131,7 @@ function NavLinkItem({
         if (e.pointerType === "mouse") return;
         if (isScrollActive()) {
           startRef.current = null;
+          showScrollGuardHint(e.clientX, e.clientY, "scroll");
           return;
         }
         startRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
@@ -97,12 +154,18 @@ function NavLinkItem({
         startRef.current = null;
         if (!s) return;
         // Scroll sempat aktif selama gesture — jangan pernah navigasi.
-        if (isScrollActive()) return;
+        if (isScrollActive()) {
+          showScrollGuardHint(e.clientX, e.clientY, "scroll");
+          return;
+        }
         const dx = Math.abs(e.clientX - s.x);
         const dy = Math.abs(e.clientY - s.y);
         const dt = Date.now() - s.t;
         // Bukan tap kalau ada scroll drift atau tekan-lama.
-        if (dx > 10 || dy > 10 || dt > 600) return;
+        if (dx > 10 || dy > 10 || dt > 600) {
+          if (dx > 10 || dy > 10) showScrollGuardHint(e.clientX, e.clientY, "drift");
+          return;
+        }
         if (e.button !== 0 || e.metaKey || e.ctrlKey || e.shiftKey) return;
         e.preventDefault();
         setOpenMobile(false);
