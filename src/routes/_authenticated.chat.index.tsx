@@ -450,7 +450,7 @@ function ChatListPage() {
           </TabsList>
           <TabsContent value="active">
             <ConvList
-              list={active}
+              list={filteredActive}
               isLoading={isLoading}
               selecting={selecting}
               selectedIds={selectedIds}
