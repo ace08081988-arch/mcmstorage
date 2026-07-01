@@ -80,6 +80,50 @@ function PenyimpananPage() {
   const [clearPage, setClearPage] = useState(1);
   const [clearExpanded, setClearExpanded] = useState(false);
   const CLEAR_PAGE_SIZE = 10;
+  const AUTO_BACKUP_KEY = "mcm.autoBackupBeforeClear";
+  const [backupBeforeClear, setBackupBeforeClear] = useState<boolean>(() => {
+    if (typeof localStorage === "undefined") return true;
+    return localStorage.getItem(AUTO_BACKUP_KEY) !== "0";
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem(AUTO_BACKUP_KEY, backupBeforeClear ? "1" : "0");
+    } catch {
+      /* ignore */
+    }
+  }, [backupBeforeClear]);
+
+  function exportKeysBackup(
+    label: string,
+    prefix: string,
+    entries: Array<{ key: string; bytes: number }>,
+  ) {
+    const payload = {
+      kind: "mcm-local-keys-backup",
+      version: 1,
+      label,
+      prefix,
+      exportedAt: new Date().toISOString(),
+      count: entries.length,
+      entries: entries.map((e) => ({
+        key: e.key,
+        value: localStorage.getItem(e.key),
+      })),
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+    const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+    a.href = url;
+    a.download = `mcm-backup-${slug}-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 5000);
+  }
 
   const refresh = async () => {
     setSnapshot(estimateLocalStorage());
@@ -171,6 +215,17 @@ function PenyimpananPage() {
     if (chosen.length === 0) {
       toast.info("Tidak ada entri yang dipilih.");
       return;
+    }
+    if (backupBeforeClear) {
+      try {
+        exportKeysBackup(label, pendingClear.prefix, chosen);
+        toast.success("Cadangan diunduh sebelum menghapus.");
+      } catch (e) {
+        toast.error("Gagal ekspor cadangan — penghapusan dibatalkan.", {
+          description: e instanceof Error ? e.message : "Coba lagi.",
+        });
+        return;
+      }
     }
     setClearProgress({
       phase: "processing",
@@ -463,6 +518,51 @@ function PenyimpananPage() {
                         onClick={() => setSelectedKeys(new Set())}
                       >
                         Kosongkan
+                      </button>
+                    </div>
+                    <div className="mt-2 flex items-start justify-between gap-2 rounded border bg-background p-2">
+                      <label className="flex items-start gap-2 text-[11px] leading-snug">
+                        <Checkbox
+                          checked={backupBeforeClear}
+                          onCheckedChange={(v) => setBackupBeforeClear(Boolean(v))}
+                          disabled={clearProgress.phase === "processing"}
+                          className="mt-0.5"
+                        />
+                        <span>
+                          <span className="font-medium text-foreground">
+                            Ekspor cadangan JSON sebelum hapus
+                          </span>
+                          <span className="block text-muted-foreground">
+                            Berisi {selectedKeys.size} entri terpilih; bisa diimpor manual jika perlu.
+                          </span>
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        className="shrink-0 text-[11px] text-primary underline disabled:opacity-40"
+                        disabled={
+                          selectedKeys.size === 0 || clearProgress.phase === "processing"
+                        }
+                        onClick={() => {
+                          try {
+                            const chosen = pendingClear.keys.filter((e) =>
+                              selectedKeys.has(e.key),
+                            );
+                            exportKeysBackup(
+                              pendingClear.label,
+                              pendingClear.prefix,
+                              chosen,
+                            );
+                            toast.success("Cadangan diunduh.");
+                          } catch (e) {
+                            toast.error("Gagal ekspor cadangan.", {
+                              description:
+                                e instanceof Error ? e.message : "Coba lagi.",
+                            });
+                          }
+                        }}
+                      >
+                        Ekspor sekarang
                       </button>
                     </div>
                     {(() => {
