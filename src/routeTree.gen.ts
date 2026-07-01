@@ -56,6 +56,7 @@ import { Route as AuthenticatedBalasCepatRouteImport } from './routes/_authentic
 import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.audit'
 import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authenticated.admin-denial-log'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
+import { Route as LovableVisualVoiceNotePlayerRouteImport } from './routes/lovable.visual.voice-note-player'
 import { Route as LovableVisualProdukListRouteImport } from './routes/lovable.visual.produk-list'
 import { Route as LovableVisualMinSupportedFormRouteImport } from './routes/lovable.visual.min-supported-form'
 import { Route as LovableVisualMessageHiddenRlsRouteImport } from './routes/lovable.visual.message-hidden-rls'
@@ -322,6 +323,12 @@ const AuthenticatedChatIndexRoute = AuthenticatedChatIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AuthenticatedChatRoute,
 } as any)
+const LovableVisualVoiceNotePlayerRoute =
+  LovableVisualVoiceNotePlayerRouteImport.update({
+    id: '/lovable/visual/voice-note-player',
+    path: '/lovable/visual/voice-note-player',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualProdukListRoute = LovableVisualProdukListRouteImport.update({
   id: '/lovable/visual/produk-list',
   path: '/lovable/visual/produk-list',
@@ -481,6 +488,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
+  '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -545,6 +553,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
+  '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -612,6 +621,7 @@ export interface FileRoutesById {
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
   '/lovable/visual/min-supported-form': typeof LovableVisualMinSupportedFormRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
+  '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
@@ -679,6 +689,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
     | '/lovable/visual/produk-list'
+    | '/lovable/visual/voice-note-player'
     | '/chat/'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -743,6 +754,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
     | '/lovable/visual/produk-list'
+    | '/lovable/visual/voice-note-player'
     | '/chat'
     | '/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -809,6 +821,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/message-hidden-rls'
     | '/lovable/visual/min-supported-form'
     | '/lovable/visual/produk-list'
+    | '/lovable/visual/voice-note-player'
     | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
     | '/api/public/hooks/email-queue-monitor'
@@ -838,6 +851,7 @@ export interface RootRouteChildren {
   LovableVisualMessageHiddenRlsRoute: typeof LovableVisualMessageHiddenRlsRoute
   LovableVisualMinSupportedFormRoute: typeof LovableVisualMinSupportedFormRoute
   LovableVisualProdukListRoute: typeof LovableVisualProdukListRoute
+  LovableVisualVoiceNotePlayerRoute: typeof LovableVisualVoiceNotePlayerRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
@@ -1174,6 +1188,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedChatIndexRouteImport
       parentRoute: typeof AuthenticatedChatRoute
     }
+    '/lovable/visual/voice-note-player': {
+      id: '/lovable/visual/voice-note-player'
+      path: '/lovable/visual/voice-note-player'
+      fullPath: '/lovable/visual/voice-note-player'
+      preLoaderRoute: typeof LovableVisualVoiceNotePlayerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/produk-list': {
       id: '/lovable/visual/produk-list'
       path: '/lovable/visual/produk-list'
@@ -1465,6 +1486,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualMessageHiddenRlsRoute: LovableVisualMessageHiddenRlsRoute,
   LovableVisualMinSupportedFormRoute: LovableVisualMinSupportedFormRoute,
   LovableVisualProdukListRoute: LovableVisualProdukListRoute,
+  LovableVisualVoiceNotePlayerRoute: LovableVisualVoiceNotePlayerRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
