@@ -25,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useOrgName } from "@/lib/org-name";
+import { haptic, type HapticIntensity } from "@/lib/haptics";
 import {
   getRecentNotifications,
   type FeedItem,
@@ -169,6 +170,11 @@ function PembaruanPage() {
   const tellUnavailable = () =>
     toast.info("Status kontak belum tersedia — akan diaktifkan setelah fitur status siap.");
 
+  // Handler pointerdown terpadu — jalankan haptic sebelum click event sehingga
+  // getarannya terasa saat jari menyentuh, bukan saat melepas.
+  const onPressStart = (intensity: HapticIntensity = "light") =>
+    () => haptic(intensity);
+
   return (
     <div className="mx-auto flex min-h-dvh max-w-2xl flex-col bg-background pb-24">
       {/* Header */}
@@ -178,6 +184,7 @@ function PembaruanPage() {
           type="button"
           aria-label="Kamera"
           onClick={tellUnavailable}
+          onPointerDown={onPressStart("light")}
           className={`grid size-9 place-items-center rounded-full text-foreground hover:bg-muted active:bg-muted/80 ${PRESS_ICON}`}
         >
           <Camera className="size-5" />
@@ -185,6 +192,7 @@ function PembaruanPage() {
         <Link
           to="/chat"
           aria-label="Cari"
+          onPointerDown={onPressStart("light")}
           className={`grid size-9 place-items-center rounded-full text-foreground hover:bg-muted active:bg-muted/80 ${PRESS_ICON}`}
         >
           <Search className="size-5" />
@@ -194,6 +202,7 @@ function PembaruanPage() {
             <button
               type="button"
               aria-label="Menu"
+              onPointerDown={onPressStart("light")}
               className={`grid size-9 place-items-center rounded-full text-foreground hover:bg-muted active:bg-muted/80 ${PRESS_ICON}`}
             >
               <MoreVertical className="size-5" />
@@ -218,6 +227,7 @@ function PembaruanPage() {
           <button
             type="button"
             onClick={tellUnavailable}
+            onPointerDown={onPressStart("medium")}
             className={`relative flex h-40 w-28 shrink-0 snap-start flex-col justify-end rounded-2xl bg-muted/40 p-2 text-left ring-1 ring-inset ring-border/50 hover:bg-muted/60 active:bg-muted/70 ${PRESS_CARD}`}
           >
             <span
@@ -251,6 +261,7 @@ function PembaruanPage() {
           <h2 className="text-lg font-semibold">Saluran</h2>
           <Link
             to="/notifikasi"
+            onPointerDown={onPressStart("selection")}
             className={`rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/80 active:bg-muted/60 ${PRESS_CHIP}`}
           >
             Jelajahi
@@ -298,6 +309,7 @@ function PembaruanPage() {
                   {ch.href ? (
                     <Link
                       to={ch.href}
+                      onPointerDown={onPressStart("selection")}
                       className={`-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/40 active:bg-muted/60 ${PRESS_ROW}`}
                     >
                       {body}
@@ -347,6 +359,7 @@ function PembaruanPage() {
         type="button"
         aria-label="Kamera"
         onClick={tellUnavailable}
+        onPointerDown={onPressStart("medium")}
         className={`fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg hover:brightness-110 active:shadow-md ${PRESS_FAB}`}
       >
         <Camera className="size-6" />
@@ -356,6 +369,7 @@ function PembaruanPage() {
         type="button"
         aria-label="Tambah status teks"
         onClick={tellUnavailable}
+        onPointerDown={onPressStart("light")}
         className={`fixed bottom-40 right-5 z-30 grid size-11 place-items-center rounded-full bg-muted text-foreground shadow-md hover:bg-muted/80 ${PRESS_FAB}`}
       >
         <Edit3 className="size-5" />
