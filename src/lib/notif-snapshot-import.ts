@@ -44,6 +44,8 @@ export type ImportWarning = {
   code:
     | "legacy_no_schema_version"
     | "future_schema_version"
+    | "future_partial_migration"
+    | "unknown_field_preserved"
     | "missing_field"
     | "wrong_schema_name"
     | "coerced_field"
@@ -55,6 +57,24 @@ export type AppliedMigration = {
   from: number;
   to: number;
   description: string;
+};
+
+/**
+ * Mode kompatibilitas hasil impor:
+ * - `exact`             : versi sumber = versi saat ini, tidak ada migrasi.
+ * - `forward_migrated`  : versi sumber < versi saat ini dan seluruhnya berhasil dinaikkan.
+ * - `backward_partial`  : versi sumber > versi saat ini; sistem mencoba
+ *                         downgrade parsial. Field yang tidak dikenali
+ *                         disimpan di `snapshot.extra` dan dicatat.
+ */
+export type CompatibilityInfo = {
+  mode: "exact" | "forward_migrated" | "backward_partial";
+  sourceVersion: number;
+  targetVersion: number;
+  /** Selisih versi yang belum tercakup oleh downgrader (biasanya > 0 pada backward_partial). */
+  versionGap: number;
+  /** Top-level keys yang tidak dikenali versi saat ini dan disimpan di `extra`. */
+  unknownTopLevelFields: string[];
 };
 
 /**
@@ -85,6 +105,8 @@ export type ImportResult =
       warnings: ImportWarning[];
       /** Masalah per-path pada bentuk pasca-migrasi (missing/wrong_type/…). */
       fieldIssues: FieldIssue[];
+      /** Ringkasan mode kompatibilitas untuk konsumen UI. */
+      compatibility: CompatibilityInfo;
     }
   | { ok: false; error: string };
 
