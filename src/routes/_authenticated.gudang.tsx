@@ -1768,7 +1768,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         {priceMode === "package" ? (
           <label className="block">
             <span className="text-[11px] text-muted-foreground">
-              Harga beli / {kartonActive ? "karton" : packageType} (Rp)
+              Harga beli / {kartonActive ? "karton" : effPackageType} (Rp)
             </span>
             <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
           </label>
@@ -1780,7 +1780,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         )}
       </div>
 
-      {packageType === "botol" && (
+      {effPackageType === "botol" && (
         <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <input
             type="checkbox"
@@ -1797,10 +1797,10 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         </label>
       )}
 
-      {packageType !== "pcs" && (
+      {effPackageType !== "pcs" && (
         <div className="flex gap-1 text-xs">
           <button type="button" onClick={() => setPriceMode("package")} className={`flex-1 rounded border px-2 py-1 ${priceMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
-            Harga per {packageType}
+            Harga per {effPackageType}
           </button>
           <button type="button" onClick={() => setPriceMode("base")} className={`flex-1 rounded border px-2 py-1 ${priceMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
             Harga per {baseUnit}
@@ -1829,7 +1829,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
       </div>
 
       <div className="rounded-md bg-muted/50 p-2 text-[11px]">
-        <div>Total tambahan stok: <b>{fmtBase(baseAdded, baseUnit)}</b></div>
+        <div>Total tambahan stok: <b>{selectedItem ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, baseUnit)}</b></div>
         <div>Total biaya: <b>{rupiah(totalCost)}</b> ({paymentMethod === "hutang" ? "hutang ke supplier" : "lunas tunai"})</div>
         {baseAdded > 0 && <div>Modal per {baseUnit}: <b>{rupiah(totalCost / baseAdded)}</b></div>}
       </div>
