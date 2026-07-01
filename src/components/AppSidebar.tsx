@@ -347,9 +347,9 @@ export function AppSidebar() {
   const baseGroups = chatOnly
     ? groups.filter((g) => CHAT_ONLY_GROUP_LABELS.has(g.label))
     : groups;
-  // Sembunyikan menu admin-only ("Rilis APK") dari non-admin supaya mereka
-  // tidak jatuh ke halaman kosong dengan runtime error.
-  const ADMIN_ONLY_URLS = new Set<string>(["/pengaturan-apk"]);
+  // Sembunyikan menu admin-only dari non-admin supaya mereka tidak jatuh ke
+  // halaman kosong / runtime error saat memanggil server fn admin.
+  const ADMIN_ONLY_URLS = new Set<string>(["/pengaturan-apk", "/email-queue"]);
   const visibleGroups = baseGroups
     .map((g) => ({
       ...g,
