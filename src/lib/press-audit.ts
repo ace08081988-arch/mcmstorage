@@ -49,6 +49,13 @@ type Finding = {
  * - `data-press-audit="off"`        pada ancestor → skip seluruh rule.
  * - `data-press-audit-skip="a,b"`   pada ancestor → skip rule tertentu
  *   (comma-separated nama rule atau kode `PA00X`).
+ * - `data-press-audit-deny="a,b"`   pada ancestor → sama efektifnya
+ *   dengan `-skip`, tetapi dibaca sejajar dengan `-allow` supaya
+ *   pasangan allow/deny bisa dibaca eksplisit di markup. Semua nilai
+ *   di-union sepanjang ancestor path.
+ * - `data-press-audit-allow="a,b"`  pada ancestor → whitelist per section:
+ *   HANYA rule dalam daftar yang lolos di subtree tsb (union dengan
+ *   whitelist ancestor). `deny`/`skip` selalu menang atas `allow`.
  */
 export type PressAuditMode = "off" | "log" | "suggest";
 export type PressAuditConfig = {
@@ -268,21 +275,40 @@ function ruleAllows(el: Element, rule: string, code: string): boolean {
     return false;
   }
   if (ruleMatches(config.rules.deny, rule, code)) return false;
-  // Section-level skip pada ancestor
-  const skipHost = el.closest("[data-press-audit-skip]");
-  if (skipHost) {
-    const raw = skipHost.getAttribute("data-press-audit-skip") || "";
-    const list = raw.split(/[\s,]+/).filter(Boolean);
-    validateSkipTokens(skipHost, raw, list);
-    if (
-      list.some(
-        (k) => k === rule || k.toUpperCase() === code.toUpperCase(),
-      )
-    ) {
-      return false;
-    }
+  // Section-level: kumpulkan skip/deny/allow dari SEMUA ancestor (union).
+  // deny/skip selalu menang atas allow — sejalan dengan konfigurasi global.
+  const denyTokens = collectAncestorTokens(el, [
+    "data-press-audit-skip",
+    "data-press-audit-deny",
+  ]);
+  if (denyTokens.some((k) => k === rule || k.toUpperCase() === code.toUpperCase())) {
+    return false;
+  }
+  const allowTokens = collectAncestorTokens(el, ["data-press-audit-allow"]);
+  if (
+    allowTokens.length > 0 &&
+    !allowTokens.some((k) => k === rule || k.toUpperCase() === code.toUpperCase())
+  ) {
+    return false;
   }
   return true;
+}
+
+function collectAncestorTokens(el: Element, attrs: string[]): string[] {
+  const out: string[] = [];
+  let cur: Element | null = el;
+  while (cur) {
+    for (const attr of attrs) {
+      if (cur.hasAttribute(attr)) {
+        const raw = cur.getAttribute(attr) || "";
+        const list = raw.split(/[\s,]+/).filter(Boolean);
+        validateSkipTokens(cur, raw, list);
+        out.push(...list);
+      }
+    }
+    cur = cur.parentElement;
+  }
+  return out;
 }
 
 /**
