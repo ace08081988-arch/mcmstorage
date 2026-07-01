@@ -13,7 +13,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { VoiceNotePlayer, normalizeDurationSec } from "@/components/chat/VoiceNotePlayer";
-import { MessageAttachment } from "@/components/chat/MessageAttachment";
 import { formatDurationMMSS } from "@/lib/format-duration";
 
 export const Route = createFileRoute(
@@ -70,8 +69,8 @@ function Harness() {
       "0.01,0.4,0.5,0.99,1,1.4,1.5,2.7,3.499,3.5,59.4,59.6";
     const parts = src
       .split(",")
-      .map((t) => Number(t.trim()))
-      .filter((n) => Number.isFinite(n));
+      .map((t: string) => Number(t.trim()))
+      .filter((n: number) => Number.isFinite(n));
     return parts.length > 0 ? parts : [1];
   }, [d]);
   const [url, setUrl] = useState<string | null>(null);
@@ -101,7 +100,7 @@ function Harness() {
         style={{ height: 640 }}
       >
         {url ? (
-          decimals.map((raw, i) => {
+          decimals.map((raw: number, i: number) => {
             const norm = normalizeDurationSec(raw);
             // Formula VoiceRecorderButton saat kirim: `normalizeDurationSec(seconds) ?? 1`
             // → label mm:ss dari formatDurationMMSS.
@@ -123,16 +122,16 @@ function Harness() {
                 </div>
                 <div data-surface="msg">
                   <div className="mb-1 text-[10px] text-muted-foreground">
-                    MessageAttachment
+                    MessageAttachment (audio branch)
                   </div>
-                  <MessageAttachment
-                    url={url}
-                    mime="audio/wav"
-                    name={`voice-${i}.wav`}
-                    size={null}
-                    durationSec={raw}
-                    mine={false}
-                  />
+                  {/*
+                   * Cabang `mime.startsWith("audio/")` di MessageAttachment
+                   * mendelegasikan ke VoiceNotePlayer dengan `durationSec`
+                   * yang sama. Kita replikasi delegasinya di harness supaya
+                   * bebas network (tanpa `signedChatUrl`) namun tetap
+                   * memakai komponen produksi yang sama.
+                   */}
+                  <VoiceNotePlayer url={url} mine={false} durationSec={raw} />
                 </div>
                 <div data-surface="vrb">
                   <div className="mb-1 text-[10px] text-muted-foreground">
