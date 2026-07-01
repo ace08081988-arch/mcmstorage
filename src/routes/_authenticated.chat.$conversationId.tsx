@@ -1361,6 +1361,13 @@ function ChatRoomPage() {
             />
           ) : null}
           <AttachMenu conversationId={conversationId} disabled={chatBlocked} onSent={() => { void othersRead.refetch(); }} />
+          <EmojiPickerPopover
+            disabled={chatBlocked}
+            onPick={(ch) => {
+              setBody((prev) => prev + ch);
+              emitTyping();
+            }}
+          />
           <Textarea
             value={body}
             onChange={(e) => {
@@ -1384,6 +1391,13 @@ function ChatRoomPage() {
           <Button type="submit" size="icon" disabled={!body.trim() || chatBlocked} aria-label="Kirim">
             <Send className="h-4 w-4" />
           </Button>
+          {!body.trim() ? (
+            <VoiceRecorderButton
+              conversationId={conversationId}
+              disabled={chatBlocked}
+              onSent={() => { void othersRead.refetch(); }}
+            />
+          ) : null}
         </div>
         <p className="mt-1 px-1 text-[10px] text-muted-foreground">
           Enter untuk kirim · Shift+Enter untuk baris baru
