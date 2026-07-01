@@ -57,6 +57,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk \d+ failed/i.test(
       msg,
     );
+  const isAdminRequiredError = /Forbidden:\s*admin diperlukan|admin diperlukan/i.test(msg);
   useEffect(() => {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
@@ -87,6 +88,10 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
   }, [isChunkLoadError]);
 
   useEffect(() => {
+    if (isAdminRequiredError) {
+      setAutoRetrying(false);
+      return;
+    }
     if (attempt >= MAX_AUTO_RETRIES) {
       setAutoRetrying(false);
       return;
@@ -107,7 +112,37 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
       cancelled = true;
       window.clearTimeout(t);
     };
-  }, [attempt, router, reset]);
+  }, [attempt, isAdminRequiredError, router, reset]);
+
+  if (isAdminRequiredError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md rounded-lg border border-amber-300 bg-amber-50 p-4 text-amber-900 shadow-sm dark:border-amber-700 dark:bg-amber-950/40 dark:text-amber-100">
+          <h1 className="text-base font-semibold leading-snug">Hanya admin</h1>
+          <p className="mt-2 text-sm leading-snug">
+            Halaman ini khusus admin. Aplikasi tidak akan menampilkan layar kosong lagi saat akun tidak punya akses.
+          </p>
+          <div className="mt-4 flex flex-wrap gap-2">
+            <button
+              onClick={() => {
+                router.invalidate();
+                reset();
+              }}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Coba lagi
+            </button>
+            <a
+              href="/"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-3 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Beranda
+            </a>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   if (autoRetrying && attempt < MAX_AUTO_RETRIES) {
     return (

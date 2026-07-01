@@ -18,6 +18,7 @@ import {
   upsertApkReleaseMeta,
   setApkMinSupported,
   type AdminApkEntry,
+  type AdminApkListResult,
   type MinSupported,
   type ApkVariant,
 } from "@/lib/apk.functions";
@@ -50,12 +51,30 @@ export const Route = createFileRoute("/_authenticated/pengaturan-apk")({
   component: PengaturanApkPage,
 });
 
+const emptyNonAdminApkList: AdminApkListResult = {
+  isAdmin: false,
+  entries: [],
+  minSupported: { storage: null, chat: null },
+};
+
+function isAdminRequiredError(error: unknown) {
+  const message = error instanceof Error ? error.message : String(error ?? "");
+  return /Forbidden:\s*admin diperlukan|admin diperlukan/i.test(message);
+}
+
 function PengaturanApkPage() {
   const { isAdmin, isCheckingAdmin } = useAdminStatus();
   const fetchList = useServerFn(listApkReleaseAdminPanel);
   const { data, isLoading: isLoadingApk, isError, refetch } = useQuery({
     queryKey: ["apk-release-admin"],
-    queryFn: () => fetchList(),
+    queryFn: async () => {
+      try {
+        return await fetchList();
+      } catch (error) {
+        if (isAdminRequiredError(error)) return emptyNonAdminApkList;
+        throw error;
+      }
+    },
     enabled: isAdmin,
     staleTime: 15_000,
     retry: false,
