@@ -26,7 +26,6 @@
     "test:worker-portal": "playwright test --project=worker-portal-e2e",
     "test:security:sql": "psql -v ON_ERROR_STOP=1 -f supabase/tests/security_rls_authz.sql -f supabase/tests/security_definer_authz.sql",
     "test:security:sql:verbose": "node scripts/run-security-sql.mjs --verbose",
-    "test:security:sql:block": "node scripts/run-security-sql.mjs --verbose --block",
     "test:security:integration": "vitest run tests/integration/security-rls.test.ts",
     "test:security": "npm run test:security:sql && npm run test:security:integration",
     "test:chat-deleted": "vitest run src/lib/chat-deleted.test.tsx src/lib/chat-deleted-ui.test.tsx src/lib/chat-deleted-snapshots.test.tsx",
