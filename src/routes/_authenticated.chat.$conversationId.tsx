@@ -12,7 +12,7 @@ import {
   History as HistoryIcon,
   Sticker as StickerIcon,
   Search as SearchIcon, Image as ImageIcon, BellOff, BellRing,
-  Pin as PinIcon, Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus,
+  Archive, ShoppingCart, UserPlus, MailWarning, MessageSquarePlus,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -694,7 +694,7 @@ function ChatRoomPage() {
                 toast.success(convPrefs.pinned ? "Chat dilepas dari sematan" : "Chat disematkan di atas");
               }}
             >
-              <PinIcon className="mr-2 h-4 w-4" /> {convPrefs.pinned ? "Lepas sematan" : "Tetapkan chat"}
+              <Pin className="mr-2 h-4 w-4" /> {convPrefs.pinned ? "Lepas sematan" : "Tetapkan chat"}
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
