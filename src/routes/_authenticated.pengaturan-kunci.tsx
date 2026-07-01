@@ -455,6 +455,42 @@ function PengaturanKunci() {
                 switch akan aktif otomatis.
               </p>
             )}
+            {!bioChecking && !bioAvailable && !cfg && (
+              <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-900 dark:text-amber-200">
+                Sidik jari belum tersedia. Buat <b>PIN cadangan</b> agar tetap bisa
+                mengaktifkan App Lock dan membuka aplikasi.
+                <div className="mt-2 flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      setEditor("pin");
+                      setPin1("");
+                      setPin2("");
+                    }}
+                  >
+                    Buat PIN cadangan
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setEditor("pattern");
+                      setPat1([]);
+                      setPat2([]);
+                      setResetKey((k) => k + 1);
+                    }}
+                  >
+                    Atau pakai Pola
+                  </Button>
+                </div>
+              </div>
+            )}
+            {cfg && (
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                {cfg.method === "pin" ? "PIN" : "Pola"} cadangan tetap aktif —
+                bisa dipakai login bila sidik jari gagal atau dinonaktifkan.
+              </p>
+            )}
           </div>
           <Switch
             checked={!!cfg?.biometric && bioAvailable}
