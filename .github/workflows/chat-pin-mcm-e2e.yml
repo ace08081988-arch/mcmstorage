@@ -102,6 +102,7 @@ jobs:
             --project=chat-pin-mcm-edit-message-e2e \
             --project=chat-pin-mcm-search-e2e \
             --project=chat-pin-mcm-back-forward-e2e \
+            --project=chat-pin-mcm-back-forward-reload-e2e \
             --project=chat-pin-mcm-invalid-deep-link-e2e \
             --project=chat-pin-mcm-random-multi-e2e \
             --project=chat-pin-mcm-incomplete-pin-e2e \
