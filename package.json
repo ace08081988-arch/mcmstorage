@@ -30,7 +30,8 @@
     "test:chat-deleted": "vitest run src/lib/chat-deleted.test.tsx src/lib/chat-deleted-ui.test.tsx src/lib/chat-deleted-snapshots.test.tsx",
     "test:mcm-branding": "vitest run src/lib/mcm-branding-snapshots.test.ts",
     "test:worker-portal-config": "vitest run src/lib/worker-portal-config.test.ts",
-    "codemod:mmss": "bun run scripts/codemod-mmss.mjs"
+    "codemod:mmss": "bun run scripts/codemod-mmss.mjs",
+    "audit:friend-requests": "node scripts/audit-friend-requests.mjs"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",
