@@ -937,5 +937,18 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    // ── Voice note pemutar: rekam → preview → kirim → tampil di
+    //   transkrip virtualized. Static source guard selalu jalan; runtime
+    //   memakai harness publik `/lovable/visual/voice-note-player`
+    //   (no-auth, no-network) dengan sampel WAV in-memory.
+    {
+      name: "voice-note-player-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /voice-note-player\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+      },
+    },
   ],
 });
