@@ -762,5 +762,22 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: konsistensi format `PIN xxxx-xxxx` LINTAS PERMUKAAN UI
+      // (daftar percakapan `/chat`, header DM, panel detail transkrip)
+      // selama reload biasa DAN transisi jaringan (offline↔online,
+      // throttled Slow 3G↔normal). Token PIN peer yang tampil di
+      // daftar wajib identik dengan yang tampil di header & panel
+      // detail, dan tetap stabil pasca-transisi jaringan. CDP untuk
+      // offline/throttle → non-Chromium hanya menjalankan fase online.
+      name: "chat-pin-mcm-cross-surface-consistency-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-cross-surface-consistency\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
