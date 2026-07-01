@@ -918,13 +918,13 @@ function ShareDebt({
 
   const links: Array<{ label: string; emoji: string; href: string; cls: string }> = [
     {
-      label: "WhatsApp",
+      label: "Kirim via MCM",
       emoji: "💬",
       href: waPhone ? `https://wa.me/${waPhone}?text=${encoded}` : `https://wa.me/?text=${encoded}`,
       cls: "border-emerald-500 text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400",
     },
     {
-      label: "WA Business",
+      label: "Kirim via MCM Business",
       emoji: "🏪",
       href: waPhone
         ? `whatsapp://send?phone=${waPhone}&text=${encoded}`
@@ -1540,7 +1540,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
                               target="_blank"
                               rel="noopener noreferrer"
                               className="rounded border border-emerald-500 px-1.5 py-0.5 text-[11px] font-semibold text-emerald-600 hover:bg-emerald-500/10 dark:text-emerald-400"
-                              aria-label={`Chat WhatsApp ${s.name}`}
+                              aria-label={`Kirim via MCM ke ${s.name}`}
                             >
                               💬 Chat
                             </a>
