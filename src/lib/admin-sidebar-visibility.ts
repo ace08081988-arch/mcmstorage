@@ -14,6 +14,7 @@
 export const ADMIN_ONLY_URLS: ReadonlySet<string> = new Set<string>([
   "/pengaturan-apk",
   "/email-queue",
+  "/admin-denial-log",
 ]);
 
 export function isAdminOnlyUrl(url: string): boolean {
