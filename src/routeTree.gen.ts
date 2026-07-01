@@ -28,6 +28,7 @@ import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authentic
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
+import { Route as AuthenticatedPengaturanAksesibilitasRouteImport } from './routes/_authenticated.pengaturan-aksesibilitas'
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
 import { Route as AuthenticatedLabelPreviewRouteImport } from './routes/_authenticated.label-preview'
@@ -152,6 +153,12 @@ const AuthenticatedPengaturanKunciRoute =
   AuthenticatedPengaturanKunciRouteImport.update({
     id: '/pengaturan-kunci',
     path: '/pengaturan-kunci',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanAksesibilitasRoute =
+  AuthenticatedPengaturanAksesibilitasRouteImport.update({
+    id: '/pengaturan-aksesibilitas',
+    path: '/pengaturan-aksesibilitas',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedNotifikasiRoute = AuthenticatedNotifikasiRouteImport.update({
@@ -341,6 +348,7 @@ export interface FileRoutesByFullPath {
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
+  '/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
@@ -388,6 +396,7 @@ export interface FileRoutesByTo {
   '/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
+  '/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
@@ -439,6 +448,7 @@ export interface FileRoutesById {
   '/_authenticated/label-preview': typeof AuthenticatedLabelPreviewRoute
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
+  '/_authenticated/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/_authenticated/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
@@ -491,6 +501,7 @@ export interface FileRouteTypes {
     | '/label-preview'
     | '/link-pegawai'
     | '/notifikasi'
+    | '/pengaturan-aksesibilitas'
     | '/pengaturan-kunci'
     | '/pengaturan-scroll-guard'
     | '/profil'
@@ -538,6 +549,7 @@ export interface FileRouteTypes {
     | '/label-preview'
     | '/link-pegawai'
     | '/notifikasi'
+    | '/pengaturan-aksesibilitas'
     | '/pengaturan-kunci'
     | '/pengaturan-scroll-guard'
     | '/profil'
@@ -588,6 +600,7 @@ export interface FileRouteTypes {
     | '/_authenticated/label-preview'
     | '/_authenticated/link-pegawai'
     | '/_authenticated/notifikasi'
+    | '/_authenticated/pengaturan-aksesibilitas'
     | '/_authenticated/pengaturan-kunci'
     | '/_authenticated/pengaturan-scroll-guard'
     | '/_authenticated/profil'
@@ -767,6 +780,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-kunci'
       fullPath: '/pengaturan-kunci'
       preLoaderRoute: typeof AuthenticatedPengaturanKunciRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-aksesibilitas': {
+      id: '/_authenticated/pengaturan-aksesibilitas'
+      path: '/pengaturan-aksesibilitas'
+      fullPath: '/pengaturan-aksesibilitas'
+      preLoaderRoute: typeof AuthenticatedPengaturanAksesibilitasRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/notifikasi': {
@@ -1032,6 +1052,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLabelPreviewRoute: typeof AuthenticatedLabelPreviewRoute
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
+  AuthenticatedPengaturanAksesibilitasRoute: typeof AuthenticatedPengaturanAksesibilitasRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
   AuthenticatedPengaturanScrollGuardRoute: typeof AuthenticatedPengaturanScrollGuardRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
@@ -1061,6 +1082,8 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedLabelPreviewRoute: AuthenticatedLabelPreviewRoute,
   AuthenticatedLinkPegawaiRoute: AuthenticatedLinkPegawaiRoute,
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
+  AuthenticatedPengaturanAksesibilitasRoute:
+    AuthenticatedPengaturanAksesibilitasRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
   AuthenticatedPengaturanScrollGuardRoute:
     AuthenticatedPengaturanScrollGuardRoute,
