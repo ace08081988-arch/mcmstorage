@@ -271,12 +271,99 @@ function ruleAllows(el: Element, rule: string, code: string): boolean {
   // Section-level skip pada ancestor
   const skipHost = el.closest("[data-press-audit-skip]");
   if (skipHost) {
-    const list = (skipHost.getAttribute("data-press-audit-skip") || "")
-      .split(/[\s,]+/)
-      .filter(Boolean);
-    if (list.some((k) => k === rule || k.toUpperCase() === code)) return false;
+    const raw = skipHost.getAttribute("data-press-audit-skip") || "";
+    const list = raw.split(/[\s,]+/).filter(Boolean);
+    validateSkipTokens(skipHost, raw, list);
+    if (
+      list.some(
+        (k) => k === rule || k.toUpperCase() === code.toUpperCase(),
+      )
+    ) {
+      return false;
+    }
   }
   return true;
+}
+
+/**
+ * Validasi token `data-press-audit-skip`. Token harus salah satu dari:
+ *   - nama rule terdaftar (mis. `radix-animated-surface`)
+ *   - kode `PA###` yang dikenal (mis. `PA001`)
+ * Selain itu kita `console.warn` sekali per host + token unik supaya
+ * salah ketik seperti `PA01`, `pa-002`, atau `radix-animatd-surface`
+ * cepat kelihatan tanpa spam.
+ */
+const CODE_PATTERN = /^PA\d{3}$/;
+const warnedSkipTokens = new WeakMap<Element, Set<string>>();
+
+function knownCodes(): Set<string> {
+  const s = new Set<string>();
+  for (const meta of Object.values(RULE_META)) s.add(meta.code.toUpperCase());
+  return s;
+}
+function knownRules(): Set<string> {
+  return new Set(Object.keys(RULE_META));
+}
+
+function validateSkipTokens(host: Element, raw: string, tokens: string[]) {
+  let seen = warnedSkipTokens.get(host);
+  if (!seen) {
+    seen = new Set();
+    warnedSkipTokens.set(host, seen);
+  }
+  const codes = knownCodes();
+  const rules = knownRules();
+  const invalidFormat: string[] = [];
+  const unknownCode: string[] = [];
+  const unknownRule: string[] = [];
+  for (const tok of tokens) {
+    if (seen.has(tok)) continue;
+    const upper = tok.toUpperCase();
+    const looksLikeCode = upper.startsWith("PA") || /\d/.test(tok);
+    if (looksLikeCode) {
+      if (!CODE_PATTERN.test(upper)) {
+        invalidFormat.push(tok);
+        seen.add(tok);
+        continue;
+      }
+      if (!codes.has(upper)) {
+        unknownCode.push(tok);
+        seen.add(tok);
+        continue;
+      }
+    } else if (!rules.has(tok)) {
+      unknownRule.push(tok);
+      seen.add(tok);
+      continue;
+    }
+    seen.add(tok);
+  }
+  const knownCodeList = Array.from(codes).sort().join(", ");
+  const knownRuleList = Array.from(rules).sort().join(", ");
+  if (invalidFormat.length) {
+    console.warn(
+      `[press-audit PA000] data-press-audit-skip="${raw}" berisi token dengan format salah: ${invalidFormat
+        .map((t) => `"${t}"`)
+        .join(", ")}. Pakai pola PA### (tiga digit, mis. PA001) atau nama rule terdaftar. Docs: ${DOCS_BASE}#kode-error-press-audit`,
+      host,
+    );
+  }
+  if (unknownCode.length) {
+    console.warn(
+      `[press-audit PA000] data-press-audit-skip="${raw}" merujuk kode PA### yang belum dialokasikan: ${unknownCode
+        .map((t) => `"${t}"`)
+        .join(", ")}. Kode yang dikenal: ${knownCodeList}. Docs: ${DOCS_BASE}#menambahkan-rule-baru-pa005`,
+      host,
+    );
+  }
+  if (unknownRule.length) {
+    console.warn(
+      `[press-audit PA000] data-press-audit-skip="${raw}" merujuk nama rule yang tidak dikenal: ${unknownRule
+        .map((t) => `"${t}"`)
+        .join(", ")}. Rule terdaftar: ${knownRuleList}. Docs: ${DOCS_BASE}#ringkasan-cepat`,
+      host,
+    );
+  }
 }
 
 /**
