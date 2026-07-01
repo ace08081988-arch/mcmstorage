@@ -1662,6 +1662,30 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (selectedItem.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
   }, [selectedItem, inputKarton, priceMode]);
 
+  // Kunci/reset state saat pengguna cepat mengganti item atau mode agar
+  // sisa state (karton, priceMode, harga, qty, nilai "barang baru") dari
+  // pilihan sebelumnya tidak ikut terbawa ke item/mode berikutnya.
+  const resetKeyRef = useRef<string>(`${mode}::${itemId}`);
+  useEffect(() => {
+    const key = `${mode}::${itemId}`;
+    if (resetKeyRef.current === key) return;
+    resetKeyRef.current = key;
+
+    // Angka pembelian selalu direset agar tidak terbawa lintas item.
+    setPackageQty("1");
+    setPricePerPackage("");
+    setPricePerBase("");
+    // Karton hanya masuk akal untuk item botol; matikan default.
+    setInputKarton(false);
+    // priceMode default: "package" untuk item non-pcs, "base" untuk pcs.
+    if (mode === "existing") {
+      const it = items.find((i) => i.id === itemId);
+      setPriceMode(it && it.package_type === "pcs" ? "base" : "package");
+    } else {
+      setPriceMode(packageType === "pcs" ? "base" : "package");
+    }
+  }, [mode, itemId, items, packageType]);
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!uid) return;
