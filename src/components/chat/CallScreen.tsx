@@ -201,6 +201,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return () => { mounted = false; };
   }, [callId, role]);
 
+  // Retry `.play()` pada elemen remote setiap kali user menyentuh
+  // layar panggilan — mengatasi autoplay yang diblokir sebelum ada
+  // interaksi. Aman dipanggil berkali-kali (idempotent).
+  const resumePlayback = useCallback(() => {
+    const v = remoteVideoRef.current;
+    const a = remoteAudioRef.current;
+    if (v && v.paused && v.srcObject) void v.play().catch(() => { /* ignore */ });
+    if (a && a.paused && a.srcObject) void a.play().catch(() => { /* ignore */ });
+  }, []);
+
   const status = useMemo(() => {
     if (errorMsg && phase === "ended") return errorMsg;
     if (phase === "connecting") return "Menghubungkan…";
@@ -210,7 +220,10 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   }, [phase, seconds, errorMsg]);
 
   return (
-    <div className="fixed inset-0 z-[100] flex flex-col bg-black text-white">
+    <div
+      className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
+      onPointerDown={resumePlayback}
+    >
       {/* Remote video / avatar besar */}
       <div className="relative flex-1 overflow-hidden">
         {kind === "video" ? (
