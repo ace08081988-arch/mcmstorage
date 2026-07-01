@@ -58,6 +58,8 @@ import { sendMessage } from "@/lib/chat.functions";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { ManageGroupDialog } from "@/components/chat/ManageGroupDialog";
 import { EditContactNameDialog } from "@/components/chat/EditContactNameDialog";
+import { EmojiPickerPopover } from "@/components/chat/EmojiPickerPopover";
+import { VoiceRecorderButton } from "@/components/chat/VoiceRecorderButton";
 import { usePeerAlias } from "@/lib/contact-alias";
 import { AttachMenu } from "@/components/chat/AttachMenu";
 import { MessageAttachment, CardBlock, decodeCard } from "@/components/chat/MessageAttachment";
