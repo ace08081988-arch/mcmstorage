@@ -221,8 +221,15 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             className="absolute inset-0 h-full w-full object-cover"
           />
         ) : (
-          <audio ref={remoteAudioRef} autoPlay />
+          <audio ref={remoteAudioRef} autoPlay playsInline />
         )}
+        {/* Elemen audio remote tambahan untuk mode video — beberapa
+            browser (Android WebView) tidak selalu memutar audio track
+            lewat <video>. Menyediakan sink audio terpisah menjamin
+            suara terdengar. */}
+        {kind === "video" ? (
+          <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+        ) : null}
         {!remoteReady && kind === "video" ? (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-neutral-900 to-black">
             <div className="flex flex-col items-center gap-3 text-center">
