@@ -381,7 +381,10 @@ function SuggestionRow({
 }) {
   return (
     <li>
-      <Link to={to as never} className="flex items-center gap-3 py-1 hover:opacity-90">
+      <Link
+        to={to as never}
+        className={`-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 hover:bg-muted/40 active:bg-muted/60 ${PRESS_ROW}`}
+      >
         <span className={`grid size-12 shrink-0 place-items-center rounded-full ${tone}`}>
           <Icon className="size-5" />
         </span>
