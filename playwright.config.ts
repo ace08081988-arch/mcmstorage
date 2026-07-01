@@ -701,5 +701,19 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: scroll-up load-more berulang di transkrip DM + reload
+      // berkali-kali. Wave pagination + rehidrasi cache TanStack Query
+      // wajib mempertahankan `PIN xxxx-xxxx` di header/transkrip dan
+      // BEBAS nomor telp Indonesia mentah pada setiap fase.
+      name: "chat-pin-mcm-loadmore-reload-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-loadmore-reload\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
