@@ -749,7 +749,7 @@ export function ReadyEcerSection() {
               {view === "sent" ? (
                 <>
                   <History className="h-4 w-4" />
-                  <span>Belum ada riwayat terkirim. Tekan tombol WA pada kartu aktif — kiriman akan pindah ke sini.</span>
+                  <span>Belum ada riwayat terkirim. Tekan tombol MCM pada kartu aktif — kiriman akan pindah ke sini.</span>
                 </>
               ) : (
                 <span>Semua kartu sudah dipindah ke Riwayat terkirim.</span>
@@ -831,7 +831,7 @@ function BulkToolbar({
           className="inline-flex h-7 items-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm hover:bg-[#1ebe57] disabled:opacity-50"
         >
           {busy === "wa" ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
-          WA
+          MCM
         </button>
         <button
           type="button"
@@ -862,8 +862,8 @@ function BulkToolbar({
       </div>
       <p className="basis-full text-[11px] text-muted-foreground">
         {view === "sent"
-          ? "Tap kartu untuk centang. Aksi WA/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
-          : "Tap kartu untuk centang. WA/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
+          ? "Tap kartu untuk centang. Aksi MCM/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
+          : "Tap kartu untuk centang. MCM/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
       </p>
     </div>
   );
@@ -1014,7 +1014,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
         <PopoverContent align="start" className="w-64 space-y-1 p-2.5 text-[11px]" onClick={stop}>
           <div className="font-semibold text-foreground">Gagal kirim via MCM</div>
           <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
-          <p className="text-muted-foreground">Tekan tombol WA lagi untuk mencoba ulang.</p>
+          <p className="text-muted-foreground">Tekan tombol MCM lagi untuk mencoba ulang.</p>
         </PopoverContent>
       </Popover>
     );
@@ -1072,7 +1072,7 @@ function SentDetailList({ shots, details }: { shots: WorkerShot[]; details: Map<
             <li key={shot.id} className="flex flex-wrap items-center gap-1 text-[11px] leading-snug">
               <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${channel === "chat" ? "bg-primary/10 text-primary" : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"}`}>
                 {channel === "chat" ? <Send className="h-2.5 w-2.5" /> : <MessageCircle className="h-2.5 w-2.5" />}
-                {channel === "chat" ? "Chat" : "WA"}
+                {channel === "chat" ? "Chat" : "MCM"}
               </span>
               <span className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 font-semibold ${ok ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400" : "bg-destructive/10 text-destructive"}`}>
                 {ok ? <CheckCircle2 className="h-2.5 w-2.5" /> : <XCircle className="h-2.5 w-2.5" />}
@@ -1233,7 +1233,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         return ok;
       };
       if (files.length === 0) {
-        toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan ke WA.");
+        toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan via MCM.");
       }
       const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
@@ -1274,7 +1274,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             existing.summary ?? null,
             waSummary,
             prevFailed
-              ? "Kiriman WA sebelumnya gagal — bandingkan payload"
+              ? "Kiriman MCM sebelumnya gagal — bandingkan payload"
               : "Sidik jari payload tidak cocok dengan kiriman WA sebelumnya",
           );
           previousLog = getSendLog(idemKey);

@@ -109,7 +109,7 @@ function truncate(s: string, n = 240): string {
 function buildRows(prev: SendPayloadSummary | null, curr: SendPayloadSummary | null): Row[] {
   if (!curr && !prev) return [];
   const fields: { key: keyof SendPayloadSummary; label: string; fmt: (v: unknown) => string }[] = [
-    { key: "channel", label: "Channel", fmt: (v) => (v === "wa" ? "WhatsApp" : v === "chat" ? "Chat aplikasi" : "—") },
+    { key: "channel", label: "Channel", fmt: (v) => (v === "wa" ? "MCM" : v === "chat" ? "Chat aplikasi" : "—") },
     { key: "destination", label: "Tujuan", fmt: (v) => (typeof v === "string" && v ? v : "—") },
     { key: "caption", label: "Caption", fmt: (v) => truncate(typeof v === "string" ? v : "") },
     { key: "photoCount", label: "Jumlah foto", fmt: (v) => `${typeof v === "number" ? v : 0} foto` },
