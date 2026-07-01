@@ -23,7 +23,17 @@ import {
   Trash2,
   ContactRound,
   CheckCircle2,
+  ScanLine,
+  Loader2,
 } from "lucide-react";
+import { QrScannerDialog } from "@/components/QrScannerDialog";
+import {
+  formatInviteCode,
+  isLikelyInviteCode,
+  normalizeInviteCode,
+  resolveInviteCode,
+  type InviteProfile,
+} from "@/lib/invite";
 import { friendlyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
