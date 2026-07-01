@@ -41,8 +41,6 @@ export const Route = createFileRoute("/_authenticated/pengaturan-kunci")({
   component: PengaturanKunci,
 });
 
-function StatusRow({
-
 function relTime(ts: number): string {
   const s = Math.max(0, Math.round((Date.now() - ts) / 1000));
   if (s < 5) return "baru saja";
@@ -53,7 +51,7 @@ function relTime(ts: number): string {
   return `${h}j lalu`;
 }
 
-function _StatusRow({
+function StatusRow({
   label,
   value,
   tone,
