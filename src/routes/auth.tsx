@@ -195,7 +195,8 @@ function AuthPage() {
       <main className="flex flex-1 items-center justify-center px-4 py-10">
       <div className="w-full max-w-sm space-y-6 rounded-2xl border bg-card p-6 shadow-sm">
         <ApkDownloadBanner />
-        <AuthBrand />
+        <div className="text-center">
+          <AuthBrand />
           <p className="text-xs text-muted-foreground">
             {mode === "signup"
               ? "Buat akun baru dengan email & kata sandi"
