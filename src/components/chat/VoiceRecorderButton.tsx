@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { uploadChatFile } from "@/lib/chat-attachments";
 import { sendMessage } from "@/lib/chat.functions";
+import { normalizeDurationSec } from "@/components/chat/VoiceNotePlayer";
 
 /**
  * Voice note recorder untuk komposer chat.
@@ -154,7 +155,7 @@ export function VoiceRecorderButton({ conversationId, disabled, onSent }: Props)
           attachmentMime: up.mime,
           attachmentName: up.name,
           attachmentSize: up.size,
-          attachmentDurationSec: Math.max(1, seconds),
+          attachmentDurationSec: normalizeDurationSec(seconds) ?? 1,
         },
       });
       onSent?.();

@@ -1,5 +1,13 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Play, Pause, Mic } from "lucide-react";
+
+// Konsisten dengan attachment_duration_sec di DB / attachmentDurationSec di serverFn:
+// bilangan bulat, minimal 1 detik, dibulatkan ke atas dari sumber apa pun.
+export function normalizeDurationSec(input: number | null | undefined): number | null {
+  if (input == null) return null;
+  if (!isFinite(input) || input <= 0) return null;
+  return Math.max(1, Math.round(input));
+}
 
 function fmt(sec: number): string {
   if (!isFinite(sec) || sec < 0) return "0:00";
@@ -8,19 +16,35 @@ function fmt(sec: number): string {
   return `${m}:${s.toString().padStart(2, "0")}`;
 }
 
-export function VoiceNotePlayer({ url, mine }: { url: string; mine: boolean }) {
+export function VoiceNotePlayer({
+  url,
+  mine,
+  durationSec,
+}: {
+  url: string;
+  mine: boolean;
+  /** Durasi tersimpan dari server (attachment_duration_sec). Dipakai agar label tetap konsisten saat remount. */
+  durationSec?: number | null;
+}) {
+  const initial = useMemo(() => normalizeDurationSec(durationSec) ?? 0, [durationSec]);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const [playing, setPlaying] = useState(false);
   const [current, setCurrent] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [ready, setReady] = useState(false);
+  const [duration, setDuration] = useState<number>(initial);
+  const [ready, setReady] = useState<boolean>(initial > 0);
 
   useEffect(() => {
     const a = audioRef.current;
     if (!a) return;
     const onLoaded = () => {
       const d = a.duration;
-      if (isFinite(d) && d > 0) setDuration(d);
+      // Prioritaskan nilai server (initial) supaya label tidak berubah saat remount.
+      // Hanya pakai metadata audio jika server tidak menyediakan durasi.
+      if (initial > 0) {
+        setDuration(initial);
+      } else if (isFinite(d) && d > 0) {
+        setDuration(d);
+      }
       setReady(true);
     };
     const onTime = () => setCurrent(a.currentTime);
@@ -31,6 +55,8 @@ export function VoiceNotePlayer({ url, mine }: { url: string; mine: boolean }) {
     };
     const onPlay = () => setPlaying(true);
     const onPause = () => setPlaying(false);
+    // Jika durasi server sudah ada, tandai siap segera sebelum metadata audio termuat.
+    if (initial > 0) setReady(true);
     a.addEventListener("loadedmetadata", onLoaded);
     a.addEventListener("durationchange", onLoaded);
     a.addEventListener("timeupdate", onTime);
@@ -45,7 +71,8 @@ export function VoiceNotePlayer({ url, mine }: { url: string; mine: boolean }) {
       a.removeEventListener("play", onPlay);
       a.removeEventListener("pause", onPause);
     };
-  }, []);
+    // initial ikut dependency agar update prop durationSec (mis. setelah refetch) terpakai.
+  }, [initial]);
 
   const toggle = () => {
     const a = audioRef.current;
