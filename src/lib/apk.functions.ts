@@ -432,6 +432,7 @@ export type AdminApkEntry = {
 };
 
 export type AdminApkListResult = {
+  isAdmin: boolean;
   entries: AdminApkEntry[];
   minSupported: {
     storage: MinSupported | null;
@@ -451,6 +452,16 @@ async function requireAdmin(context: any) {
   if (!data) throw new Error("Forbidden: admin diperlukan");
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+async function checkAdmin(context: any): Promise<boolean> {
+  const { data, error } = await context.supabase.rpc("has_role", {
+    _user_id: context.userId,
+    _role: "admin",
+  });
+  if (error) return false;
+  return Boolean(data);
+}
+
 function computeStatus(
   enabled: boolean,
   publish_at: string | null,
@@ -463,7 +474,18 @@ function computeStatus(
 export const listApkReleaseAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }): Promise<AdminApkListResult> => {
-    await requireAdmin(context);
+    // Non-admin: return an empty payload with a flag instead of throwing.
+    // Throwing di sini menyebabkan blank screen & runtime-error report untuk
+    // user biasa yang tanpa sengaja membuka /pengaturan-apk. Aksi tulis
+    // (`upsertApkReleaseMeta`, `setApkMinSupported`) tetap dijaga strict.
+    const isAdmin = await checkAdmin(context);
+    if (!isAdmin) {
+      return {
+        isAdmin: false,
+        entries: [],
+        minSupported: { storage: null, chat: null },
+      };
+    }
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
     );
@@ -499,6 +521,7 @@ export const listApkReleaseAdmin = createServerFn({ method: "GET" })
       };
     });
     return {
+      isAdmin: true,
       entries,
       minSupported: {
         storage: mins.storage ?? null,
