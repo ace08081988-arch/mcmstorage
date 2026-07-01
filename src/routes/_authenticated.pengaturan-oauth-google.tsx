@@ -26,6 +26,7 @@ import {
   Loader2,
   CheckCircle2,
   XCircle,
+  AlertTriangle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
@@ -87,6 +88,85 @@ const STEPS = [
 ] as const;
 
 type StepId = (typeof STEPS)[number]["id"];
+
+// Kategori "block" yang bisa disorot pada bagian "Nilai untuk Google Cloud Console".
+type BlockId = "redirect" | "origins" | "domains" | "scopes" | "credentials";
+
+/**
+ * Diagnosa pesan error dari flow OAuth Google → item checklist & block mana
+ * yang paling mungkin bermasalah. Kata kunci diambil dari pesan resmi Google
+ * (redirect_uri_mismatch, invalid_client, dst.) sehingga cocok baik untuk
+ * error dari popup web_message maupun error dari halaman consent.
+ */
+function diagnoseError(raw: string): {
+  steps: StepId[];
+  blocks: BlockId[];
+  hint: string;
+} {
+  const m = raw.toLowerCase();
+  // urutan penting: cek yang paling spesifik dulu.
+  if (m.includes("redirect_uri_mismatch") || m.includes("redirect uri") || m.includes("redirect_uri")) {
+    return {
+      steps: ["redirect"],
+      blocks: ["redirect"],
+      hint: "Google menolak redirect_uri. Pastikan Callback URL Backend tercatat persis (termasuk skema https & tanpa trailing slash tambahan) di daftar Authorized redirect URIs.",
+    };
+  }
+  if (m.includes("origin_mismatch") || m.includes("not a valid origin") || m.includes("origin is not allowed")) {
+    return {
+      steps: ["origins"],
+      blocks: ["origins"],
+      hint: "Origin request tidak ada di Authorized JavaScript origins. Tambahkan origin persis (termasuk subdomain preview).",
+    };
+  }
+  if (m.includes("invalid_scope") || m.includes("scope")) {
+    return {
+      steps: ["scopes"],
+      blocks: ["scopes"],
+      hint: "Salah satu scope tidak dikenali/disetujui. Pakai persis openid + userinfo.email + userinfo.profile pada OAuth consent screen.",
+    };
+  }
+  if (m.includes("disallowed_useragent") || m.includes("webview")) {
+    return {
+      steps: ["redirect"],
+      blocks: ["redirect"],
+      hint: "Google memblokir WebView embedded. Uji di browser sistem atau APK Custom Tabs, bukan iframe editor.",
+    };
+  }
+  if (m.includes("invalid_client") || m.includes("unauthorized_client") || m.includes("client id") || m.includes("client secret")) {
+    return {
+      steps: ["credentials", "paste"],
+      blocks: ["credentials"],
+      hint: "Client ID/Secret ditolak. Cek nilai yang ditempel di Backend → Auth Settings → Google persis sama dengan yang di Google Cloud Console (tanpa spasi).",
+    };
+  }
+  if (m.includes("unsupported provider") || m.includes("provider is not enabled") || m.includes("provider not enabled")) {
+    return {
+      steps: ["paste"],
+      blocks: ["credentials"],
+      hint: "Provider Google belum aktif di Backend. Tempel Client ID & Secret di Auth Settings → Google lalu aktifkan.",
+    };
+  }
+  if (m.includes("access_denied") || m.includes("consent") || m.includes("verification")) {
+    return {
+      steps: ["consent", "scopes"],
+      blocks: ["domains", "scopes"],
+      hint: "Consent ditolak / app belum terverifikasi. Lengkapi OAuth consent screen (nama, logo, domain) dan pastikan scope hanya non-sensitive.",
+    };
+  }
+  if (m.includes("domain") || m.includes("authorized domain")) {
+    return {
+      steps: ["domains"],
+      blocks: ["domains"],
+      hint: "Domain tidak terdaftar. Tambahkan di Authorized domains pada OAuth consent screen.",
+    };
+  }
+  return {
+    steps: [],
+    blocks: [],
+    hint: "Pesan tidak dikenali. Cek: (1) Client ID/Secret sudah ditempel di Backend, (2) Callback URL persis sama, (3) domain ada di Authorized domains.",
+  };
+}
 
 function loadChecks(): Record<StepId, boolean> {
   const base = Object.fromEntries(
@@ -281,6 +361,17 @@ function OAuthGooglePage() {
     | { status: "error"; message: string };
   const [testState, setTestState] = useState<TestState>({ status: "idle" });
 
+  // Item yang di-highlight otomatis berdasarkan pesan error hasil Uji.
+  const diagnosis = useMemo(
+    () =>
+      testState.status === "error"
+        ? diagnoseError(testState.message)
+        : { steps: [] as StepId[], blocks: [] as BlockId[], hint: "" },
+    [testState],
+  );
+  const flaggedSteps = new Set<StepId>(diagnosis.steps);
+  const flaggedBlocks = new Set<BlockId>(diagnosis.blocks);
+
   const runGoogleTest = async () => {
     setTestState({ status: "running" });
     try {
@@ -384,7 +475,11 @@ function OAuthGooglePage() {
             {STEPS.map((s, i) => (
               <label
                 key={s.id}
-                className="flex cursor-pointer items-start gap-3 rounded-md border border-border/50 p-2 hover:bg-muted/50"
+                className={`flex cursor-pointer items-start gap-3 rounded-md border p-2 hover:bg-muted/50 ${
+                  flaggedSteps.has(s.id)
+                    ? "border-amber-500/60 bg-amber-500/10"
+                    : "border-border/50"
+                }`}
               >
                 <Checkbox
                   checked={checks[s.id]}
@@ -396,6 +491,15 @@ function OAuthGooglePage() {
                   <span className="mr-1 text-muted-foreground">{i + 1}.</span>
                   {s.label}
                 </span>
+                {flaggedSteps.has(s.id) && (
+                  <Badge
+                    variant="outline"
+                    className="mt-0.5 gap-1 border-amber-500/60 text-[11px] text-amber-600"
+                  >
+                    <AlertTriangle className="h-3 w-3" />
+                    cek ini
+                  </Badge>
+                )}
                 {checks[s.id] && <Check className="mt-0.5 h-4 w-4 text-emerald-500" />}
               </label>
             ))}
@@ -417,24 +521,28 @@ function OAuthGooglePage() {
               onCopyItem={(v) => copy(v, "Redirect URI")}
               primaryIndex={callbackUrl ? 0 : -1}
               emptyText="Belum tersedia — pastikan Backend aktif"
+              flagged={flaggedBlocks.has("redirect")}
             />
             <ListBlock
               label="Authorized JavaScript origins"
               values={jsOrigins}
               onCopyAll={() => copy(jsOrigins.join("\n"), "JavaScript origins")}
               onCopyItem={(v) => copy(v, "Origin")}
+              flagged={flaggedBlocks.has("origins")}
             />
             <ListBlock
               label="Authorized domains (OAuth consent screen)"
               values={authorizedDomains}
               onCopyAll={() => copy(authorizedDomains.join("\n"), "Authorized domains")}
               onCopyItem={(v) => copy(v, "Domain")}
+              flagged={flaggedBlocks.has("domains")}
             />
             <ListBlock
               label="Scope non-sensitive"
               values={scopes}
               onCopyAll={() => copy(scopes.join("\n"), "Scope")}
               onCopyItem={(v) => copy(v, "Scope")}
+              flagged={flaggedBlocks.has("scopes")}
             />
           </CardContent>
         </Card>
@@ -682,10 +790,18 @@ function OAuthGooglePage() {
                   <code className="block break-all rounded bg-background/60 px-1.5 py-1 text-foreground">
                     {testState.message}
                   </code>
-                  <div className="text-muted-foreground">
-                    Cek: (1) Client ID/Secret sudah ditempel di Backend, (2) Callback URL
-                    di Google Cloud Console persis sama, (3) domain aplikasi ada di
-                    Authorized domains.
+                  <div className="flex items-start gap-1.5 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-foreground">
+                    <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0 text-amber-600" />
+                    <div>
+                      <div className="font-medium">Kemungkinan penyebab</div>
+                      <div className="text-muted-foreground">{diagnosis.hint}</div>
+                      {flaggedSteps.size > 0 && (
+                        <div className="mt-1 text-muted-foreground">
+                          Item checklist & daftar di atas yang perlu diperiksa sudah
+                          disorot kuning otomatis.
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -780,6 +896,7 @@ function ListBlock({
   onCopyItem,
   primaryIndex = -1,
   emptyText,
+  flagged = false,
 }: {
   label: string;
   values: string[];
@@ -787,11 +904,29 @@ function ListBlock({
   onCopyItem?: (value: string) => void;
   primaryIndex?: number;
   emptyText?: string;
+  flagged?: boolean;
 }) {
   return (
-    <div>
+    <div
+      className={
+        flagged
+          ? "-mx-2 rounded-md border border-amber-500/50 bg-amber-500/5 p-2"
+          : undefined
+      }
+    >
       <div className="mb-1 flex items-center justify-between gap-2">
-        <span className="text-sm font-medium">{label}</span>
+        <span className="flex items-center gap-1.5 text-sm font-medium">
+          {label}
+          {flagged && (
+            <Badge
+              variant="outline"
+              className="gap-1 border-amber-500/60 text-[11px] text-amber-600"
+            >
+              <AlertTriangle className="h-3 w-3" />
+              cek ini
+            </Badge>
+          )}
+        </span>
         <Button
           type="button"
           size="sm"
