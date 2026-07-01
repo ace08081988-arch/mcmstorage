@@ -601,6 +601,22 @@ function ChatRoomPage() {
 
   return (
     <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col wa-surface">
+      {!meta.isPending && !meta.data ? (
+        <div
+          role="alert"
+          data-testid="chat-not-found"
+          className="flex h-full flex-col items-center justify-center gap-3 p-6 text-center"
+        >
+          <div className="text-[15px] font-semibold">Percakapan tidak ditemukan</div>
+          <div className="text-[13px] leading-snug text-muted-foreground">
+            Tautan ini mungkin sudah kedaluwarsa atau kamu tidak punya akses ke percakapan ini.
+          </div>
+          <Button variant="secondary" onClick={() => navigate({ to: "/chat" })}>
+            Kembali ke daftar chat
+          </Button>
+        </div>
+      ) : (
+      <>
       {selectionMode ? (
         <SelectionToolbar
           count={selectedIds.size}
