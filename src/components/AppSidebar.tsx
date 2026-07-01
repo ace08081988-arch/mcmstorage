@@ -20,6 +20,29 @@ import {
 import { CompactModeToggle } from "@/components/CompactModeToggle";
 import { ReduceMotionToggle } from "@/components/ReduceMotionToggle";
 import { useConversations } from "@/lib/chat";
+import { useOrgName } from "@/lib/org-name";
+
+function OrgHeader() {
+  const { full, short } = useOrgName();
+  return (
+    <div className="flex items-center gap-2.5">
+      <span
+        aria-hidden
+        className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-gradient-to-br from-primary to-primary/70 text-[12px] font-bold tracking-tight text-primary-foreground shadow-sm ring-1 ring-primary/20"
+      >
+        {short}
+      </span>
+      <div className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+        <div className="truncate text-[13px] font-semibold leading-tight tracking-tight">
+          {full}
+        </div>
+        <div className="truncate text-[10.5px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          Manajemen Operasional
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /**
  * Menu dikelompokkan supaya tidak terbaca seperti daftar panjang yang
