@@ -19,6 +19,7 @@ import {
   validateMinSupportedForm,
   hasAnyError,
 } from "@/lib/apk-min-validate";
+import { isBelowMinimum, type MinSupported } from "@/lib/apk.functions";
 
 export const Route = createFileRoute("/lovable/visual/min-supported-form")({
   head: () => ({
@@ -40,6 +41,15 @@ function MinSupportedFormHarness() {
     reason: false,
   });
   const [savedCount, setSavedCount] = useState(0);
+  const [saved, setSaved] = useState<MinSupported | null>(null);
+
+  // Daftar rilis mock untuk verifikasi badge "lawas" ikut berubah
+  // sesuai data minSupported yang tersimpan.
+  const mockReleases = [
+    { id: "r-old", versionName: "1.0.0", versionCode: 10 },
+    { id: "r-mid", versionName: "1.2.0", versionCode: 45 },
+    { id: "r-new", versionName: "2.0.0", versionCode: 80 },
+  ];
 
   const errors = useMemo(
     () => validateMinSupportedForm({ name, code, reason }),
@@ -54,6 +64,11 @@ function MinSupportedFormHarness() {
       return;
     }
     setSavedCount((n) => n + 1);
+    setSaved({
+      min_version_name: name.trim() || null,
+      min_version_code: code.trim() ? Number(code.trim()) : null,
+      reason: reason.trim() || null,
+    });
     toast.success("Tersimpan");
   };
 
@@ -183,6 +198,42 @@ function MinSupportedFormHarness() {
             Paksa simpan
           </Button>
         </div>
+      </section>
+      <section
+        data-testid="mf-releases"
+        className="rounded-xl border bg-card p-3 shadow-sm"
+      >
+        <h2 className="mb-2 text-xs font-semibold">Rilis (mock)</h2>
+        <ul className="space-y-1">
+          {mockReleases.map((r) => {
+            const below = isBelowMinimum(
+              { versionName: r.versionName, versionCode: r.versionCode },
+              saved,
+            );
+            return (
+              <li
+                key={r.id}
+                data-testid={`mf-rel-${r.id}`}
+                data-below={below ? "1" : "0"}
+                className="flex items-center justify-between text-[11px]"
+              >
+                <span className="font-mono">
+                  {r.versionName} ({r.versionCode})
+                </span>
+                {below ? (
+                  <span
+                    data-testid={`mf-rel-${r.id}-badge`}
+                    className="rounded bg-amber-100 px-1.5 py-0.5 text-amber-800"
+                  >
+                    lawas
+                  </span>
+                ) : (
+                  <span className="text-muted-foreground">ok</span>
+                )}
+              </li>
+            );
+          })}
+        </ul>
       </section>
     </main>
   );
