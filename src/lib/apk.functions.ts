@@ -8,11 +8,16 @@ export type LatestApk = {
   updatedAt: string | null;
   versionName: string | null;
   versionCode: number | null;
+  belowMinimum: boolean;
 } | null;
 
 export type LatestApkVariants = {
   storage: LatestApk;
   chat: LatestApk;
+  minSupported: {
+    storage: MinSupported | null;
+    chat: MinSupported | null;
+  };
 };
 
 export type ApkVariant = "storage" | "chat";
@@ -24,6 +29,7 @@ export type ApkRelease = {
   updatedAt: string | null;
   versionName: string | null;
   versionCode: number | null;
+  belowMinimum: boolean;
 };
 
 export type ApkVariantDetail = {
@@ -33,9 +39,74 @@ export type ApkVariantDetail = {
   latest: ApkRelease | null;
   releases: ApkRelease[];
   changelog: string | null;
+  minSupported: MinSupported | null;
 };
 
 const isChatName = (n: string) => /(^|[-_.])chat([-_.]|$)/i.test(n);
+
+export type MinSupported = {
+  variant: ApkVariant;
+  min_version_name: string | null;
+  min_version_code: number | null;
+  reason: string | null;
+  updated_at: string;
+};
+
+/** Bandingkan semver kasar: "1.2.3" vs "1.10.0". Missing bagian = 0. */
+export function compareSemver(a: string, b: string): number {
+  const pa = a.split(".").map((x) => Number.parseInt(x, 10) || 0);
+  const pb = b.split(".").map((x) => Number.parseInt(x, 10) || 0);
+  const len = Math.max(pa.length, pb.length);
+  for (let i = 0; i < len; i++) {
+    const va = pa[i] ?? 0;
+    const vb = pb[i] ?? 0;
+    if (va !== vb) return va - vb;
+  }
+  return 0;
+}
+
+/**
+ * Apakah rilis dianggap di bawah minimum yang ditetapkan?
+ * Prioritas: versionCode (build number) → versionName (semver).
+ * Return false jika min tidak diset atau data rilis tidak cukup.
+ */
+export function isBelowMinimum(
+  release: { versionName: string | null; versionCode: number | null },
+  min: MinSupported | null,
+): boolean {
+  if (!min) return false;
+  if (
+    min.min_version_code !== null &&
+    release.versionCode !== null &&
+    release.versionCode < min.min_version_code
+  ) {
+    return true;
+  }
+  if (
+    min.min_version_name &&
+    release.versionName &&
+    compareSemver(release.versionName, min.min_version_name) < 0
+  ) {
+    return true;
+  }
+  return false;
+}
+
+async function loadMinSupportedMap(): Promise<
+  Partial<Record<ApkVariant, MinSupported>>
+> {
+  const { supabaseAdmin } = await import(
+    "@/integrations/supabase/client.server"
+  );
+  const { data } = await supabaseAdmin
+    .from("apk_min_supported")
+    .select("variant, min_version_name, min_version_code, reason, updated_at");
+  const out: Partial<Record<ApkVariant, MinSupported>> = {};
+  for (const row of (data ?? []) as MinSupported[]) {
+    out[row.variant] = row;
+  }
+  return out;
+}
 
 export type ApkReleaseMeta = {
   file_name: string;
@@ -127,6 +198,7 @@ export const getLatestApk = createServerFn({ method: "GET" }).handler(
       });
     if (error || !data) return null;
     const meta = await loadReleaseMetaMap();
+    const mins = await loadMinSupportedMap();
     const apks = data
       .filter((f) => /\.apk$/i.test(f.name))
       .filter((f) => isPublic(f.name, meta));
@@ -138,6 +210,7 @@ export const getLatestApk = createServerFn({ method: "GET" }).handler(
     if (signErr || !signed?.signedUrl) return null;
     const size = (latest.metadata as { size?: number } | null)?.size ?? null;
     const parsed = parseApkFileName(latest.name);
+    const variant: ApkVariant = isChatName(latest.name) ? "chat" : "storage";
     return {
       name: latest.name,
       url: signed.signedUrl,
@@ -145,6 +218,7 @@ export const getLatestApk = createServerFn({ method: "GET" }).handler(
       updatedAt: latest.updated_at ?? latest.created_at ?? null,
       versionName: parsed.versionName,
       versionCode: parsed.versionCode,
+      belowMinimum: isBelowMinimum(parsed, mins[variant] ?? null),
     };
   },
 );
@@ -161,14 +235,24 @@ export const getLatestApkVariants = createServerFn({ method: "GET" }).handler(
         limit: 200,
         sortBy: { column: "updated_at", order: "desc" },
       });
-    if (error || !data) return { storage: null, chat: null };
+    if (error || !data) {
+      return {
+        storage: null,
+        chat: null,
+        minSupported: { storage: null, chat: null },
+      };
+    }
     const meta = await loadReleaseMetaMap();
+    const mins = await loadMinSupportedMap();
     const apks = data
       .filter((f) => /\.apk$/i.test(f.name))
       .filter((f) => isPublic(f.name, meta));
     const chatFile = apks.find((f) => isChatName(f.name)) ?? null;
     const storageFile = apks.find((f) => !isChatName(f.name)) ?? null;
-    const toResult = async (f: typeof apks[number] | null): Promise<LatestApk> => {
+    const toResult = async (
+      f: typeof apks[number] | null,
+      variant: ApkVariant,
+    ): Promise<LatestApk> => {
       if (!f) return null;
       const { data: signed, error: signErr } = await supabaseAdmin.storage
         .from(BUCKET)
@@ -183,13 +267,21 @@ export const getLatestApkVariants = createServerFn({ method: "GET" }).handler(
         updatedAt: f.updated_at ?? f.created_at ?? null,
         versionName: parsed.versionName,
         versionCode: parsed.versionCode,
+        belowMinimum: isBelowMinimum(parsed, mins[variant] ?? null),
       };
     };
     const [storage, chat] = await Promise.all([
-      toResult(storageFile),
-      toResult(chatFile),
+      toResult(storageFile, "storage"),
+      toResult(chatFile, "chat"),
     ]);
-    return { storage, chat };
+    return {
+      storage,
+      chat,
+      minSupported: {
+        storage: mins.storage ?? null,
+        chat: mins.chat ?? null,
+      },
+    };
   },
 );
 
@@ -228,6 +320,8 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
     let releases: ApkRelease[] = [];
     if (!error && files) {
       const meta = await loadReleaseMetaMap();
+      const mins = await loadMinSupportedMap();
+      const minForVariant = mins[data.variant] ?? null;
       const apks = files
         .filter((f) => /\.apk$/i.test(f.name))
         .filter((f) =>
@@ -250,6 +344,7 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
             updatedAt: f.updated_at ?? f.created_at ?? null,
             versionName: parsed.versionName,
             versionCode: parsed.versionCode,
+            belowMinimum: isBelowMinimum(parsed, minForVariant),
           };
         }),
       );
@@ -288,6 +383,7 @@ export const getApkVariantDetail = createServerFn({ method: "GET" })
       latest: releases[0] ?? null,
       releases,
       changelog,
+      minSupported: (await loadMinSupportedMap())[data.variant] ?? null,
     };
   });
 
@@ -306,6 +402,15 @@ export type AdminApkEntry = {
   publish_at: string | null;
   notes: string | null;
   status: "published" | "scheduled" | "disabled";
+  belowMinimum: boolean;
+};
+
+export type AdminApkListResult = {
+  entries: AdminApkEntry[];
+  minSupported: {
+    storage: MinSupported | null;
+    chat: MinSupported | null;
+  };
 };
 
 // Menggunakan `any` di sini karena tipe context dari middleware
@@ -331,7 +436,7 @@ function computeStatus(
 
 export const listApkReleaseAdmin = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
-  .handler(async ({ context }): Promise<AdminApkEntry[]> => {
+  .handler(async ({ context }): Promise<AdminApkListResult> => {
     await requireAdmin(context);
     const { supabaseAdmin } = await import(
       "@/integrations/supabase/client.server"
@@ -345,7 +450,8 @@ export const listApkReleaseAdmin = createServerFn({ method: "GET" })
       });
     const apks = (files ?? []).filter((f) => /\.apk$/i.test(f.name));
     const meta = await loadReleaseMetaMap();
-    return apks.map<AdminApkEntry>((f) => {
+    const mins = await loadMinSupportedMap();
+    const entries = apks.map<AdminApkEntry>((f) => {
       const row = meta.get(f.name);
       const variant: ApkVariant = isChatName(f.name) ? "chat" : "storage";
       const enabled = row?.enabled ?? true;
@@ -363,8 +469,16 @@ export const listApkReleaseAdmin = createServerFn({ method: "GET" })
         publish_at,
         notes: row?.notes ?? null,
         status: computeStatus(enabled, publish_at),
+        belowMinimum: isBelowMinimum(parsed, mins[variant] ?? null),
       };
     });
+    return {
+      entries,
+      minSupported: {
+        storage: mins.storage ?? null,
+        chat: mins.chat ?? null,
+      },
+    };
   });
 
 export const upsertApkReleaseMeta = createServerFn({ method: "POST" })
@@ -412,4 +526,51 @@ export const upsertApkReleaseMeta = createServerFn({ method: "POST" })
       ok: true,
       status: computeStatus(data.enabled, data.publish_at),
     };
+  });
+
+export const setApkMinSupported = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator(
+    (data: {
+      variant: ApkVariant;
+      min_version_name: string | null;
+      min_version_code: number | null;
+      reason: string | null;
+    }) => {
+      if (data.variant !== "storage" && data.variant !== "chat") {
+        throw new Error("Varian tidak dikenal");
+      }
+      if (
+        data.min_version_name !== null &&
+        !/^\d+\.\d+(\.\d+){0,2}$/.test(data.min_version_name)
+      ) {
+        throw new Error("min_version_name harus format semver (mis. 1.2.3)");
+      }
+      if (
+        data.min_version_code !== null &&
+        (!Number.isFinite(data.min_version_code) || data.min_version_code < 0)
+      ) {
+        throw new Error("min_version_code harus bilangan bulat ≥ 0");
+      }
+      return data;
+    },
+  )
+  .handler(async ({ data, context }) => {
+    await requireAdmin(context);
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const { error } = await supabaseAdmin.from("apk_min_supported").upsert(
+      {
+        variant: data.variant,
+        min_version_name: data.min_version_name,
+        min_version_code: data.min_version_code,
+        reason: data.reason,
+        updated_by: context.userId,
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "variant" },
+    );
+    if (error) throw new Error(error.message);
+    return { ok: true as const };
   });

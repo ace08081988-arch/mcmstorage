@@ -9,8 +9,13 @@ import {
   ChevronRight,
   Link2,
   Check,
+  AlertTriangle,
 } from "lucide-react";
-import { getLatestApkVariants, type LatestApk } from "@/lib/apk.functions";
+import {
+  getLatestApkVariants,
+  type LatestApk,
+  type MinSupported,
+} from "@/lib/apk.functions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { useState } from "react";
@@ -88,6 +93,7 @@ function DownloadPage() {
               icon={<Smartphone className="h-6 w-6" />}
               apk={data?.storage ?? null}
               variant="storage"
+              min={data?.minSupported.storage ?? null}
             />
             <ApkCard
               title="MCM Chat"
@@ -96,6 +102,7 @@ function DownloadPage() {
               icon={<MessageCircle className="h-6 w-6" />}
               apk={data?.chat ?? null}
               variant="chat"
+              min={data?.minSupported.chat ?? null}
             />
             <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
               Setelah terunduh, buka berkas dan izinkan instalasi dari sumber tidak dikenal jika diminta.
@@ -116,6 +123,7 @@ function ApkCard({
   accent,
   apk,
   variant,
+  min,
 }: {
   title: string;
   subtitle: string;
@@ -123,6 +131,7 @@ function ApkCard({
   accent: "emerald" | "sky";
   apk: LatestApk;
   variant: "storage" | "chat";
+  min: MinSupported | null;
 }) {
   const badge =
     accent === "emerald"
@@ -147,6 +156,27 @@ function ApkCard({
         </div>
       ) : (
         <>
+          {apk.belowMinimum && (
+            <div className="mb-3 flex items-start gap-1.5 rounded-lg border border-amber-300 bg-amber-50 p-2.5 text-[11px] leading-snug text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <div>
+                <strong className="font-semibold">Build ini lebih lama</strong>{" "}
+                dari minimum yang direkomendasikan
+                {min?.min_version_name ? ` (v${min.min_version_name}` : ""}
+                {min?.min_version_code !== null && min?.min_version_code !== undefined
+                  ? ` build ${min.min_version_code})`
+                  : min?.min_version_name
+                    ? ")"
+                    : ""}
+                . Beberapa fitur mungkin tidak berjalan sebagaimana mestinya.
+                {min?.reason && (
+                  <span className="mt-0.5 block opacity-80">
+                    Alasan: {min.reason}
+                  </span>
+                )}
+              </div>
+            </div>
+          )}
           <a
             href={apk.url}
             className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow transition ${btn}`}
