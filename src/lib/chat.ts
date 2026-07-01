@@ -670,7 +670,12 @@ export function useHideMessageForMe(conversationId: string) {
         }
       }
       const msg = e instanceof Error ? e.message : String(e ?? "Gagal menyembunyikan pesan");
-      toast.error("Gagal menyembunyikan pesan", { description: msg });
+      toast.error("Gagal menghapus pesan", { description: msg });
+    },
+    onSuccess: () => {
+      toast.success("Pesan dihapus", {
+        description: "Pesan disembunyikan dari perangkat kamu.",
+      });
     },
     onSettled: () => {
       qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
