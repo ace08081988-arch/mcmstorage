@@ -586,7 +586,7 @@ function ChatRoomPage() {
   }, [outbox.length]);
 
   return (
-    <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col">
+    <div className="mx-auto flex h-[100dvh] max-w-2xl flex-col wa-surface">
       {selectionMode ? (
         <SelectionToolbar
           count={selectedIds.size}
@@ -659,7 +659,7 @@ function ChatRoomPage() {
           }}
         />
       ) : (
-      <header className="sticky top-0 z-10 flex items-center gap-2 border-b bg-background/95 px-3 py-2 backdrop-blur">
+      <header className="wa-header sticky top-0 z-10 flex items-center gap-2 border-b px-2 py-2">
         <Button
           variant="ghost"
           size="icon"
@@ -668,12 +668,12 @@ function ChatRoomPage() {
         >
           <ArrowLeft className="h-5 w-5" />
         </Button>
-        <div className="grid h-9 w-9 place-items-center rounded-full bg-primary/10 text-primary">
-          <MessageCircle className="h-4 w-4" />
+        <div className="grid h-10 w-10 place-items-center rounded-full bg-[var(--wa-surface-2)] text-[var(--wa-text-muted)] text-sm font-semibold uppercase">
+          {(meta.data?.kind === "dm" ? displayedPeerName : headerTitle || "?").trim().charAt(0) || "?"}
         </div>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1">
-            <div className="truncate text-sm font-semibold">
+            <div className="truncate text-[15px] font-semibold">
               {meta.data?.kind === "dm" ? displayedPeerName : headerTitle}
             </div>
             {meta.data?.kind === "dm" && dmPeer ? (
@@ -830,7 +830,7 @@ function ChatRoomPage() {
         canUnpin
       />
 
-      <div ref={scrollerRef} className="flex-1 space-y-3 overflow-y-auto p-3">
+      <div ref={scrollerRef} className="wa-chat-bg flex-1 space-y-3 overflow-y-auto p-3">
         {isLoading ? (
           <div className="flex items-center justify-center p-8 text-sm text-muted-foreground">
             <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Memuat pesan…
@@ -843,7 +843,7 @@ function ChatRoomPage() {
           grouped.map((g) => (
             <div key={g.day} className="space-y-2">
               <div className="my-2 flex justify-center">
-                <span className="rounded-full bg-muted px-2.5 py-0.5 text-[10px] text-muted-foreground">{g.day}</span>
+                <span className="rounded-md bg-[var(--wa-header)] px-2.5 py-1 text-[11px] font-medium wa-muted shadow-sm">{g.day}</span>
               </div>
               {g.items.map((m) => {
                 const mine = m.sender_id === myId;
@@ -875,8 +875,8 @@ function ChatRoomPage() {
                           m.deleted_at
                             ? `${mine ? "rounded-br-sm" : "rounded-bl-sm"} bg-muted/60 text-muted-foreground border border-dashed border-border`
                             : mine
-                              ? "rounded-br-sm bg-primary text-primary-foreground"
-                              : "rounded-bl-sm bg-muted text-foreground"
+                              ? "rounded-br-sm wa-bubble-out"
+                              : "rounded-bl-sm wa-bubble-in"
                         } select-none touch-manipulation ${selectedIds.has(m.id) ? "ring-2 ring-primary" : ""}`}
                         onPointerDown={(e) => {
                           if (e.pointerType === "mouse" && e.button !== 0) return;
