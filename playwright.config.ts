@@ -672,5 +672,20 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: kombinasi back/forward + reload antar DM eksisting.
+      // Setiap checkpoint history (A, B, back→A, forward→B) di-reload
+      // untuk memastikan rehidrasi cache + Route.useParams() tidak
+      // menyisakan identitas peer sebelumnya, tetap `PIN xxxx-xxxx`,
+      // dan bebas nomor telp Indonesia mentah.
+      name: "chat-pin-mcm-back-forward-reload-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-back-forward-reload\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
