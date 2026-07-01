@@ -484,10 +484,18 @@ function TextRow({
   onPreview: () => void;
 }) {
   const isDefault = value === defaultValue;
+  const isEmpty = value.trim().length === 0;
   return (
     <div>
       <div className="mb-1 flex items-baseline justify-between gap-2">
-        <label className="text-sm font-medium leading-snug">{label}</label>
+        <label className="text-sm font-medium leading-snug">
+          {label}
+          {isEmpty && (
+            <span className="ml-2 rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-800 dark:bg-amber-950/50 dark:text-amber-300">
+              Hint dimatikan
+            </span>
+          )}
+        </label>
         {!isDefault && (
           <button
             type="button"
@@ -504,14 +512,25 @@ function TextRow({
           maxLength={SCROLL_GUARD_BOUNDS.hintTextMaxLen}
           placeholder={defaultValue}
           onChange={(e) => onChange(e.target.value)}
+          aria-invalid={false}
+          aria-describedby={undefined}
           className="text-sm"
         />
-        <Button type="button" size="sm" variant="outline" onClick={onPreview}>
+        <Button
+          type="button"
+          size="sm"
+          variant="outline"
+          onClick={onPreview}
+          disabled={isEmpty}
+          title={isEmpty ? "Tidak bisa uji: teks kosong berarti hint dimatikan" : undefined}
+        >
           Uji
         </Button>
       </div>
       <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
-        {help}{" "}
+        {isEmpty
+          ? "Teks kosong → tooltip tidak akan pernah muncul untuk kasus ini. Kosongkan sengaja jika ingin mematikannya."
+          : help}{" "}
         <span className="tabular-nums">
           {value.length}/{SCROLL_GUARD_BOUNDS.hintTextMaxLen}
         </span>
