@@ -256,21 +256,33 @@ export function OrgNameSettings() {
       fail("File kosong — pilih file lain.");
       return;
     }
+    if (mime === "image/svg+xml") {
+      if (file.size > SVG_MAX_BYTES) {
+        fail(`SVG ${(file.size / 1024).toFixed(0)} KB melebihi batas ${(SVG_MAX_BYTES / 1024).toFixed(0)} KB.`);
+        return;
+      }
+      const svgReader = new FileReader();
+      svgReader.onerror = () => fail("Gagal membaca SVG — coba lagi.");
+      svgReader.onload = () => {
+        const raw = String(svgReader.result || "");
+        const check = validateSvg(raw);
+        if (!check.ok) {
+          fail(`SVG ditolak: ${check.reason}. Ekspor ulang tanpa script/atribut event/referensi eksternal.`);
+          return;
+        }
+        const encoded = `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(check.sanitized)))}`;
+        setPendingLogo({ url: encoded, size: file.size, width: 0, height: 0, mime });
+        toast.success("SVG lolos pemeriksaan keamanan — tekan Simpan.");
+      };
+      svgReader.readAsText(file);
+      return;
+    }
     const reader = new FileReader();
     reader.onerror = () => fail("Gagal membaca file — coba lagi.");
     reader.onload = () => {
       const url = String(reader.result || "");
       if (!url.startsWith("data:image/")) {
         fail("Isi file bukan gambar valid (magic bytes tidak cocok).");
-        return;
-      }
-      if (mime === "image/svg+xml") {
-        if (file.size > MAX_BYTES) {
-          fail(`SVG ${(file.size / 1024).toFixed(0)} KB melebihi batas 512 KB (SVG tidak bisa dikompres otomatis).`);
-          return;
-        }
-        setPendingLogo({ url, size: file.size, width: 0, height: 0, mime });
-        toast.success("Logo siap — tekan Simpan untuk menerapkan");
         return;
       }
       const img = new Image();
