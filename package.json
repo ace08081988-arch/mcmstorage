@@ -31,7 +31,8 @@
     "test:mcm-branding": "vitest run src/lib/mcm-branding-snapshots.test.ts",
     "test:worker-portal-config": "vitest run src/lib/worker-portal-config.test.ts",
     "codemod:mmss": "bun run scripts/codemod-mmss.mjs",
-    "audit:friend-requests": "node scripts/audit-friend-requests.mjs"
+    "audit:friend-requests": "node scripts/audit-friend-requests.mjs",
+    "check:friend-requests-docs": "node scripts/check-friend-requests-docs.mjs"
   },
   "dependencies": {
     "@aparajita/capacitor-biometric-auth": "^10.0.0",

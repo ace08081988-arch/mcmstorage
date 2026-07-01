@@ -122,3 +122,27 @@ tidak punya grant langsung terhadap tabel.
 
 > **Perubahan pada policy/trigger/RPC di atas WAJIB disertai pembaruan tabel
 > matriks pada dokumen ini dalam commit yang sama.**
+
+## 7. Checklist otomatis (dijaga CI)
+
+Setiap PR yang mengubah `supabase/migrations/**` dan menyentuh permukaan
+`friend_requests` (regex: `friend_requests`, `tg_friend_requests_guard`,
+`send_/respond_/cancel_friend_request`, `fr_(select|update|delete|insert)_*`)
+**wajib** menyertakan pembaruan pada 3 file di bawah — jika tidak, workflow
+`friend-requests-doc-sync` menggagalkan PR:
+
+- [ ] `docs/friend-requests-rls.md` (dokumen ini)
+- [ ] `supabase/tests/security_rls_authz.sql` (blok 8–13)
+- [ ] `supabase/tests/audit_friend_requests.sql`
+
+Verifikasi lokal sebelum push:
+
+```bash
+bun run check:friend-requests-docs        # guard sinkronisasi dokumen + uji
+bun run audit:friend-requests             # audit policy/trigger/grant
+bun run test:security:sql                 # jalankan blok 8–13
+```
+
+Guard hanya menuntut file ikut disentuh — bila migrasi hanya menyentuh
+komentar/whitespace, catat itu di bagian **6. Referensi kode & uji** agar
+ada perubahan yang tercatat.
