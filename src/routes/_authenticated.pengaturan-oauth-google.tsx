@@ -601,6 +601,100 @@ function OAuthGooglePage() {
 
         <Card>
           <CardHeader className="pb-3">
+            <CardTitle className="text-base">Uji Login Google</CardTitle>
+            <CardDescription className="text-xs leading-snug">
+              Jalankan flow consent nyata untuk memverifikasi Client ID & Secret sudah
+              aktif di Backend. Layar consent seharusnya bermerek <b>MCM Storage</b>.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                type="button"
+                size="sm"
+                onClick={runGoogleTest}
+                disabled={testState.status === "running"}
+                className="gap-1.5"
+              >
+                {testState.status === "running" ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <PlayCircle className="h-3.5 w-3.5" />
+                )}
+                {testState.status === "running" ? "Membuka Google…" : "Uji Login Google"}
+              </Button>
+              {testState.status !== "idle" && testState.status !== "running" && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => setTestState({ status: "idle" })}
+                >
+                  Reset hasil
+                </Button>
+              )}
+            </div>
+
+            {testState.status === "idle" && (
+              <p className="text-xs leading-snug text-muted-foreground">
+                Tombol ini membuka popup consent Google. Jika berjalan di WebView APK,
+                flow akan berpindah halaman lalu kembali otomatis.
+              </p>
+            )}
+
+            {testState.status === "success" && (
+              <div className="flex items-start gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/5 p-3">
+                <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0 text-emerald-500" />
+                <div className="min-w-0 space-y-0.5 text-xs leading-snug">
+                  <div className="font-medium text-foreground">Login Google berhasil</div>
+                  {testState.email && (
+                    <div className="text-muted-foreground">
+                      Akun: <code className="text-foreground">{testState.email}</code>
+                    </div>
+                  )}
+                  {testState.issuer && (
+                    <div className="text-muted-foreground">
+                      Issuer: <code className="text-foreground">{testState.issuer}</code>
+                    </div>
+                  )}
+                  <div className="text-muted-foreground">
+                    Selesai {new Date(testState.at).toLocaleTimeString("id-ID")}
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {testState.status === "redirected" && (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/5 p-3">
+                <Loader2 className="mt-0.5 h-4 w-4 shrink-0 animate-spin text-amber-500" />
+                <div className="text-xs leading-snug text-muted-foreground">
+                  Browser sedang berpindah ke Google. Setelah kembali ke halaman ini,
+                  buka ulang menu <b>OAuth Google</b> untuk melihat hasil.
+                </div>
+              </div>
+            )}
+
+            {testState.status === "error" && (
+              <div className="flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/5 p-3">
+                <XCircle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+                <div className="min-w-0 space-y-1 text-xs leading-snug">
+                  <div className="font-medium text-destructive">Uji gagal</div>
+                  <code className="block break-all rounded bg-background/60 px-1.5 py-1 text-foreground">
+                    {testState.message}
+                  </code>
+                  <div className="text-muted-foreground">
+                    Cek: (1) Client ID/Secret sudah ditempel di Backend, (2) Callback URL
+                    di Google Cloud Console persis sama, (3) domain aplikasi ada di
+                    Authorized domains.
+                  </div>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
             <CardTitle className="text-base">Selanjutnya</CardTitle>
             <CardDescription className="text-xs">
               Setelah Client ID & Secret dibuat, tempel di Backend. Aplikasi tidak perlu
