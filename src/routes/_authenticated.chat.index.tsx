@@ -67,7 +67,7 @@ function ChatListPage() {
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface">
       <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-2 border-b px-4 py-3">
-        <h1 className="text-2xl font-bold tracking-tight">WhatsApp</h1>
+        <h1 className="text-2xl font-bold tracking-tight">MCM</h1>
         <div className="flex items-center gap-1">
           <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Siapkan kontak">
             <Link to="/kontak"><Camera className="h-5 w-5" /></Link>
