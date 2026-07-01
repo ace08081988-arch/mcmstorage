@@ -1535,7 +1535,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
       notifyShareResult(res);
     } catch (err) {
       toast.error(`Gagal membagikan: ${(err as Error)?.message ?? String(err)}`, {
-        description: "Salin pesan lalu tempel manual di WhatsApp.",
+        description: "Salin pesan lalu tempel manual di MCM.",
         duration: 9000,
       });
     }
