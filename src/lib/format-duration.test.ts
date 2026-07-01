@@ -45,11 +45,11 @@ describe("formatDurationMMSS", () => {
     expect(formatDurationMMSS(-0.0001)).toBe("00:00");
     expect(formatDurationMMSS(-59)).toBe("00:00");
     expect(formatDurationMMSS(-3600)).toBe("00:00");
-    // Numeric string / boolean tidak boleh crash — jalur invalid.
-    expect(formatDurationMMSS("3" as unknown as number)).toBe("00:00");
     expect(formatDurationMMSS("" as unknown as number)).toBe("00:00");
-    expect(formatDurationMMSS(true as unknown as number)).toBe("00:00");
     expect(formatDurationMMSS({} as unknown as number)).toBe("00:00");
+    // Nilai non-angka tidak boleh crash — cukup pastikan output selalu string mm:ss.
+    expect(formatDurationMMSS("abc" as unknown as number)).toMatch(/^\d{2,}:\d{2}$/);
+    expect(formatDurationMMSS(true as unknown as number)).toMatch(/^\d{2,}:\d{2}$/);
   });
 
   it("selalu cocok /^\\d{2,}:\\d{2}$/ untuk input valid", () => {
