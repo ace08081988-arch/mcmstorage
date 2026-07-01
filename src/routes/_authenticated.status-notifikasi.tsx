@@ -83,17 +83,75 @@ function readPermission(): PermState {
   return (Notification.permission as PermState) ?? "default";
 }
 
-function detectFrame() {
-  if (typeof window === "undefined") return { inIframe: false, sameOrigin: true };
-  const inIframe = window.self !== window.top;
-  let sameOrigin = true;
-  try {
-    // Accessing top.location throws when cross-origin.
-    void window.top?.location.href;
-  } catch {
-    sameOrigin = false;
+type FrameInfo = {
+  inIframe: boolean;
+  sameOrigin: boolean;
+  // Individual signals (evidence)
+  selfNeTop: boolean;
+  hasParent: boolean;
+  ancestorCount: number | null; // window.location.ancestorOrigins length
+  frameElementAccessible: boolean; // true = same-origin frame element reachable
+  topAccessError: string | null;
+  ancestorOrigin: string | null;
+  referrer: string;
+};
+
+function detectFrame(): FrameInfo {
+  if (typeof window === "undefined") {
+    return {
+      inIframe: false,
+      sameOrigin: true,
+      selfNeTop: false,
+      hasParent: false,
+      ancestorCount: null,
+      frameElementAccessible: false,
+      topAccessError: null,
+      ancestorOrigin: null,
+      referrer: "",
+    };
   }
-  return { inIframe, sameOrigin };
+  const selfNeTop = window.self !== window.top;
+  const hasParent = window.parent !== window;
+
+  let sameOrigin = true;
+  let topAccessError: string | null = null;
+  try {
+    void window.top?.location.href;
+  } catch (e) {
+    sameOrigin = false;
+    topAccessError = e instanceof Error ? e.name : String(e);
+  }
+
+  let frameElementAccessible = false;
+  try {
+    frameElementAccessible = window.frameElement !== null;
+  } catch {
+    // SecurityError => cross-origin iframe (still an iframe)
+    frameElementAccessible = false;
+  }
+
+  const ao = (window.location as unknown as { ancestorOrigins?: DOMStringList }).ancestorOrigins;
+  const ancestorCount = ao ? ao.length : null;
+  const ancestorOrigin = ao && ao.length > 0 ? ao[0] : null;
+
+  // Aggregate: any positive signal means we're framed.
+  const inIframe =
+    selfNeTop ||
+    hasParent ||
+    frameElementAccessible ||
+    (ancestorCount !== null && ancestorCount > 0);
+
+  return {
+    inIframe,
+    sameOrigin,
+    selfNeTop,
+    hasParent,
+    ancestorCount,
+    frameElementAccessible,
+    topAccessError,
+    ancestorOrigin,
+    referrer: document.referrer || "",
+  };
 }
 
 function explainPermission(
@@ -453,6 +511,25 @@ function StatusNotifikasiPage() {
           />
           <Row label="Same-origin dengan parent" value={frame.sameOrigin ? "Ya" : "Tidak (cross-origin)"} />
           <Row label="Origin" value={<code className="text-xs">{typeof window !== "undefined" ? window.location.origin : "-"}</code>} />
+          <div className="rounded-md border bg-muted/40 p-2 text-xs space-y-1 font-mono">
+            <div className="font-sans text-muted-foreground mb-1">Bukti mentah</div>
+            <Evidence k="window.self !== window.top" v={String(frame.selfNeTop)} />
+            <Evidence k="window.parent !== window" v={String(frame.hasParent)} />
+            <Evidence
+              k="location.ancestorOrigins.length"
+              v={frame.ancestorCount === null ? "n/a" : String(frame.ancestorCount)}
+            />
+            <Evidence
+              k="ancestorOrigins[0]"
+              v={frame.ancestorOrigin ?? "—"}
+            />
+            <Evidence k="window.frameElement" v={frame.frameElementAccessible ? "<element>" : "null / SecurityError"} />
+            <Evidence
+              k="top.location access"
+              v={frame.topAccessError ? `throws ${frame.topAccessError}` : "ok (same-origin)"}
+            />
+            <Evidence k="document.referrer" v={frame.referrer || "(kosong)"} />
+          </div>
           {frame.inIframe && (
             <p className="text-xs text-muted-foreground">
               Browser umumnya memblokir prompt izin notifikasi di dalam iframe editor.
@@ -479,6 +556,15 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
     <div className="flex items-center justify-between gap-3">
       <span className="text-muted-foreground">{label}</span>
       <span className="font-medium">{value}</span>
+    </div>
+  );
+}
+
+function Evidence({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-muted-foreground">{k}</span>
+      <span className="text-right break-all">{v}</span>
     </div>
   );
 }
