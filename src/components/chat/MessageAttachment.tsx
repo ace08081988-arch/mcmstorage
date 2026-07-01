@@ -31,6 +31,8 @@ export function MessageAttachment(props: {
   name: string | null;
   size: number | null;
   mine: boolean;
+  /** attachment_duration_sec dari row pesan; wajib diteruskan agar VoiceNotePlayer konsisten saat remount. */
+  durationSec?: number | null;
 }) {
   const url = useSignedUrl(props.path);
   const mime = props.mime ?? "";
@@ -52,7 +54,7 @@ export function MessageAttachment(props: {
   }
   if (mime.startsWith("audio/")) {
     return url ? (
-      <VoiceNotePlayer url={url} mine={props.mine} />
+      <VoiceNotePlayer url={url} mine={props.mine} durationSec={props.durationSec ?? null} />
     ) : (
       <div className="grid h-10 w-52 animate-pulse place-items-center rounded-full bg-muted/60 text-[10px] text-muted-foreground">
         Memuat voice note…
