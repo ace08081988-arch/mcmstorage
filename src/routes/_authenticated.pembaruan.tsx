@@ -102,7 +102,7 @@ function formatTimeShort(iso: string): string {
  *  - varian scale disesuaikan dengan luas hit-area (ikon vs kartu besar).
  */
 const PRESS_BASE =
-  "transition-[transform,background-color,filter,box-shadow,opacity] duration-150 ease-out will-change-transform";
+  "transition-[transform,background-color,filter,box-shadow,opacity] duration-150 ease-out will-change-transform outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background";
 const PRESS_ICON = `${PRESS_BASE} active:scale-95`;
 const PRESS_CHIP = `${PRESS_BASE} active:scale-95`;
 const PRESS_CARD = `${PRESS_BASE} active:scale-[0.97]`;
