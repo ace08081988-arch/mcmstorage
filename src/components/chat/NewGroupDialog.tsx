@@ -99,8 +99,8 @@ export function NewGroupDialog({
                       {on ? <Check className="h-3.5 w-3.5" /> : null}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <div className="truncate text-sm font-medium">{c.display_name || c.phone || "Pengguna"}</div>
-                      <div className="truncate text-[11px] text-muted-foreground">{c.phone ? `${c.phone} · ` : ""}{c.label ?? c.kind}</div>
+                      <div className="truncate text-sm font-medium">{c.display_name || "Pengguna"}</div>
+                      <div className="truncate text-[11px] text-muted-foreground">{c.label ?? c.kind}</div>
                     </div>
                   </button>
                 );
