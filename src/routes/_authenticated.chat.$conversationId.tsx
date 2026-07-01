@@ -1535,14 +1535,9 @@ function ChatRoomPage() {
                         );
                       }
                       if (failedItems.length > 0) {
-                        // Roll back only the failed IDs, keep successes marked.
-                        optimisticDeleteMessages(
-                          qc,
-                          conversationId,
-                          [],
-                        );
-                        // Cache was set to snapshot via restore(); redo mark
-                        // for successes to avoid full revert.
+                        // Restore snapshot then re-apply optimistic delete
+                        // only for the IDs that actually succeeded, so failed
+                        // rows revert while successes stay marked as deleted.
                         restore();
                         const okIds = items
                           .filter((it) => !failedItems.some((f) => f.id === it.id))
