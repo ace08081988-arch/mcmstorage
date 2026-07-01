@@ -163,14 +163,14 @@ function PembaruanPage() {
           type="button"
           aria-label="Kamera"
           onClick={tellUnavailable}
-          className="grid size-9 place-items-center rounded-full text-foreground hover:bg-muted"
+          className="grid size-9 place-items-center rounded-full text-foreground transition hover:bg-muted active:scale-90 active:bg-muted/80"
         >
           <Camera className="size-5" />
         </button>
         <Link
           to="/chat"
           aria-label="Cari"
-          className="grid size-9 place-items-center rounded-full text-foreground hover:bg-muted"
+          className="grid size-9 place-items-center rounded-full text-foreground transition hover:bg-muted active:scale-90 active:bg-muted/80"
         >
           <Search className="size-5" />
         </Link>
@@ -179,7 +179,7 @@ function PembaruanPage() {
             <button
               type="button"
               aria-label="Menu"
-              className="grid size-9 place-items-center rounded-full text-foreground hover:bg-muted"
+              className="grid size-9 place-items-center rounded-full text-foreground transition hover:bg-muted active:scale-90 active:bg-muted/80"
             >
               <MoreVertical className="size-5" />
             </button>
@@ -203,7 +203,7 @@ function PembaruanPage() {
           <button
             type="button"
             onClick={tellUnavailable}
-            className="relative flex h-40 w-28 shrink-0 snap-start flex-col justify-end rounded-2xl bg-muted/40 p-2 text-left ring-1 ring-inset ring-border/50 hover:bg-muted/60"
+            className="relative flex h-40 w-28 shrink-0 snap-start flex-col justify-end rounded-2xl bg-muted/40 p-2 text-left ring-1 ring-inset ring-border/50 transition duration-150 hover:bg-muted/60 active:scale-[0.97] active:bg-muted/70"
           >
             <span
               className="absolute left-1/2 top-6 grid size-16 -translate-x-1/2 place-items-center overflow-hidden rounded-full bg-background text-lg font-semibold"
@@ -236,7 +236,7 @@ function PembaruanPage() {
           <h2 className="text-lg font-semibold">Saluran</h2>
           <Link
             to="/notifikasi"
-            className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-foreground hover:bg-muted/80"
+            className="rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-foreground transition hover:bg-muted/80 active:scale-95 active:bg-muted/60"
           >
             Jelajahi
           </Link>
@@ -283,7 +283,7 @@ function PembaruanPage() {
                   {ch.href ? (
                     <Link
                       to={ch.href}
-                      className="flex items-center gap-3 rounded-lg py-1 hover:bg-muted/40"
+                      className="-mx-2 flex items-center gap-3 rounded-lg px-2 py-1.5 transition duration-150 hover:bg-muted/40 active:scale-[0.98] active:bg-muted/60"
                     >
                       {body}
                     </Link>
@@ -332,7 +332,7 @@ function PembaruanPage() {
         type="button"
         aria-label="Kamera"
         onClick={tellUnavailable}
-        className="fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg hover:brightness-110"
+        className="fixed bottom-24 right-5 z-30 grid size-14 place-items-center rounded-2xl bg-primary text-primary-foreground shadow-lg transition duration-150 hover:brightness-110 active:scale-90 active:shadow-md"
       >
         <Camera className="size-6" />
       </button>
@@ -341,7 +341,7 @@ function PembaruanPage() {
         type="button"
         aria-label="Tambah status teks"
         onClick={tellUnavailable}
-        className="fixed bottom-40 right-5 z-30 grid size-11 place-items-center rounded-full bg-muted text-foreground shadow-md hover:bg-muted/80"
+        className="fixed bottom-40 right-5 z-30 grid size-11 place-items-center rounded-full bg-muted text-foreground shadow-md transition duration-150 hover:bg-muted/80 active:scale-90"
       >
         <Edit3 className="size-5" />
       </button>
