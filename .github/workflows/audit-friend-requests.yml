@@ -1,0 +1,38 @@
+name: audit-friend-requests
+
+on:
+  pull_request:
+    paths:
+      - "supabase/migrations/**"
+      - "supabase/tests/audit_friend_requests.sql"
+      - "scripts/audit-friend-requests.mjs"
+      - ".github/workflows/audit-friend-requests.yml"
+  workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *" # nightly regression check
+
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install psql client
+        run: |
+          sudo apt-get update -y
+          sudo apt-get install -y postgresql-client
+
+      - name: Run friend_requests security audit
+        env:
+          DATABASE_URL: ${{ secrets.SUPABASE_DB_URL }}
+          PGSSLMODE: require
+        run: node scripts/audit-friend-requests.mjs
+
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: friend-requests-audit-report
+          path: audit-reports/*.log
+          if-no-files-found: warn
+          retention-days: 30
