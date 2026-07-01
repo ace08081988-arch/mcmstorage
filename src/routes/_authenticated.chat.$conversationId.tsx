@@ -1513,28 +1513,60 @@ function ChatRoomPage() {
                     label: `${items.length} pesan akan dihapus untuk semua`,
                     onCancel: restore,
                     onCommit: async () => {
-                      let failed = false;
+                      // Track per-item success. Failed items must be restored
+                      // individually so the ones that succeeded stay marked
+                      // deleted; a blanket restore was making the whole batch
+                      // reappear after the "N pesan dihapus" toast.
+                      const failedItems: typeof items = [];
+                      let firstError: unknown = null;
                       for (const m of items) {
                         await new Promise<void>((resolve) =>
                           deleteMsg.mutate(
                             { id: m.id, attachment_path: m.attachment_path },
                             {
                               onSuccess: () => resolve(),
-                              onError: () => {
-                                failed = true;
+                              onError: (e) => {
+                                failedItems.push(m);
+                                if (!firstError) firstError = e;
                                 resolve();
                               },
                             },
                           ),
                         );
                       }
-                      if (failed) restore();
-                      toast.success(`${items.length} pesan dihapus`);
-                      void logChatDelete({
-                        conversationId,
-                        action: "for_all_bulk",
-                        messageIds: items.map((m) => m.id),
-                      });
+                      if (failedItems.length > 0) {
+                        // Restore snapshot then re-apply optimistic delete
+                        // only for the IDs that actually succeeded, so failed
+                        // rows revert while successes stay marked as deleted.
+                        restore();
+                        const okIds = items
+                          .filter((it) => !failedItems.some((f) => f.id === it.id))
+                          .map((it) => it.id);
+                        if (okIds.length) optimisticDeleteMessages(qc, conversationId, okIds);
+                      }
+                      const ok = items.length - failedItems.length;
+                      if (ok > 0) {
+                        toast.success(
+                          failedItems.length === 0
+                            ? `${ok} pesan dihapus`
+                            : `${ok} pesan dihapus, ${failedItems.length} gagal`,
+                        );
+                        void logChatDelete({
+                          conversationId,
+                          action: "for_all_bulk",
+                          messageIds: items
+                            .filter((it) => !failedItems.some((f) => f.id === it.id))
+                            .map((m) => m.id),
+                        });
+                      } else {
+                        toast.error(
+                          firstError instanceof Error
+                            ? `Gagal menghapus: ${firstError.message}`
+                            : "Gagal menghapus pesan",
+                        );
+                      }
+                      // Refresh from server so tombstones/failures are authoritative.
+                      qc.invalidateQueries({ queryKey: ["chat", "messages", conversationId] });
                     },
                   });
                 }}
