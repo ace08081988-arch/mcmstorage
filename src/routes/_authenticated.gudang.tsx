@@ -1790,7 +1790,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
             className="h-3.5 w-3.5"
           />
           Input dalam karton (1 karton = {BOTOL_PER_KARTON} botol)
-          {kartonActive && rawQty > 0 && (
+          {kartonActive && (Number(packageQty) || 0) > 0 && (
             <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
               = {pkgQ.toLocaleString("id-ID")} botol
             </span>
