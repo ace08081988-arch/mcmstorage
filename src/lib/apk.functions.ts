@@ -308,7 +308,10 @@ export type AdminApkEntry = {
   status: "published" | "scheduled" | "disabled";
 };
 
-async function requireAdmin(context: { supabase: { rpc: (n: string, a: unknown) => Promise<{ data: unknown }> }; userId: string }) {
+async function requireAdmin(context: {
+  supabase: { rpc: (fn: "has_role", args: { _user_id: string; _role: "admin" }) => Promise<{ data: unknown }> };
+  userId: string;
+}) {
   const { data } = await context.supabase.rpc("has_role", {
     _user_id: context.userId,
     _role: "admin",
