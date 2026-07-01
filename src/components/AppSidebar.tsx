@@ -333,6 +333,18 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const matchRoute = useMatchRoute();
   const { data: conversations } = useConversations();
+  // Re-render saat override mode diubah di /pengaturan-app-mode.
+  const [modeTick, setModeTick] = useState(0);
+  useEffect(() => {
+    const on = () => setModeTick((n) => n + 1);
+    window.addEventListener("mcm:app-mode-change", on);
+    return () => window.removeEventListener("mcm:app-mode-change", on);
+  }, []);
+  const chatOnly = isChatOnly();
+  const visibleGroups = chatOnly
+    ? groups.filter((g) => CHAT_ONLY_GROUP_LABELS.has(g.label))
+    : groups;
+  void modeTick;
   const chatFetching = useIsFetching({ queryKey: ["chat", "conversations"] });
   const queryClient = useQueryClient();
   const [online, setOnline] = useState(() =>
