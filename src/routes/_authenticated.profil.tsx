@@ -41,6 +41,7 @@ import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
 import { COUNTRIES, LANGUAGES, DATE_FORMATS, findCountry } from "@/lib/countries";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { PushNotificationSettings } from "@/components/chat/PushNotificationSettings";
+import { OrgNameSettings } from "@/components/OrgNameSettings";
 
 export const Route = createFileRoute("/_authenticated/profil")({
   component: ProfilPage,
@@ -466,6 +467,10 @@ function ProfilPage() {
       <Separator />
 
       <PushNotificationSettings />
+
+      <Separator />
+
+      <OrgNameSettings />
     </main>
   );
 }
