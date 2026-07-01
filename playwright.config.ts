@@ -312,6 +312,21 @@ export default defineConfig({
       },
     },
     {
+      // E2E: kirim pesan baru di DM eksisting → scroll ke atas berkali
+      // untuk memicu load-more. Setiap wave pagination wajib
+      // mempertahankan `PIN xxxx-xxxx` di header + transkrip dan
+      // BEBAS nomor telp Indonesia mentah. Source guard mengunci
+      // `useConversationMessages` untuk tidak SELECT kolom `phone`.
+      name: "chat-pin-mcm-send-then-loadmore-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-send-then-loadmore\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // E2E: fitur "Cari di percakapan" pada DM yang sudah ada — dialog,
       // list hits, header, dan transkrip di belakang dialog wajib memakai
       // `PIN xxxx-xxxx` dan bebas nomor telp Indonesia mentah. Source
