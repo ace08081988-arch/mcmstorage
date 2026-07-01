@@ -154,6 +154,7 @@ import { CompactModeToggle } from "@/components/CompactModeToggle";
 import { ReduceMotionToggle } from "@/components/ReduceMotionToggle";
 import { useConversations } from "@/lib/chat";
 import { useOrgName } from "@/lib/org-name";
+import { isChatOnly, CHAT_ONLY_GROUP_LABELS } from "@/lib/app-mode";
 
 /**
  * Tap-safe navigation link. On mobile WebViews (411px APK) a plain
@@ -332,6 +333,18 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const matchRoute = useMatchRoute();
   const { data: conversations } = useConversations();
+  // Re-render saat override mode diubah di /pengaturan-app-mode.
+  const [modeTick, setModeTick] = useState(0);
+  useEffect(() => {
+    const on = () => setModeTick((n) => n + 1);
+    window.addEventListener("mcm:app-mode-change", on);
+    return () => window.removeEventListener("mcm:app-mode-change", on);
+  }, []);
+  const chatOnly = isChatOnly();
+  const visibleGroups = chatOnly
+    ? groups.filter((g) => CHAT_ONLY_GROUP_LABELS.has(g.label))
+    : groups;
+  void modeTick;
   const chatFetching = useIsFetching({ queryKey: ["chat", "conversations"] });
   const queryClient = useQueryClient();
   const [online, setOnline] = useState(() =>
@@ -411,7 +424,7 @@ export function AppSidebar() {
         <OrgHeader />
       </SidebarHeader>
       <SidebarContent className="gap-0">
-        {groups.map((group, gi) => (
+        {visibleGroups.map((group, gi) => (
           <SidebarGroup key={group.label} className="px-2 py-1.5">
             {gi > 0 ? (
               <SidebarSeparator className="mx-0 mb-1.5 group-data-[collapsible=icon]:hidden" />

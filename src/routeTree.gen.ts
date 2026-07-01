@@ -31,6 +31,7 @@ import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedPengaturanIntegrasiSosialRouteImport } from './routes/_authenticated.pengaturan-integrasi-sosial'
 import { Route as AuthenticatedPengaturanBahasaRouteImport } from './routes/_authenticated.pengaturan-bahasa'
+import { Route as AuthenticatedPengaturanAppModeRouteImport } from './routes/_authenticated.pengaturan-app-mode'
 import { Route as AuthenticatedPengaturanAksesibilitasRouteImport } from './routes/_authenticated.pengaturan-aksesibilitas'
 import { Route as AuthenticatedNotifikasiRouteImport } from './routes/_authenticated.notifikasi'
 import { Route as AuthenticatedLinkPegawaiRouteImport } from './routes/_authenticated.link-pegawai'
@@ -174,6 +175,12 @@ const AuthenticatedPengaturanBahasaRoute =
   AuthenticatedPengaturanBahasaRouteImport.update({
     id: '/pengaturan-bahasa',
     path: '/pengaturan-bahasa',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanAppModeRoute =
+  AuthenticatedPengaturanAppModeRouteImport.update({
+    id: '/pengaturan-app-mode',
+    path: '/pengaturan-app-mode',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPengaturanAksesibilitasRoute =
@@ -370,6 +377,7 @@ export interface FileRoutesByFullPath {
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
+  '/pengaturan-app-mode': typeof AuthenticatedPengaturanAppModeRoute
   '/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
   '/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
@@ -421,6 +429,7 @@ export interface FileRoutesByTo {
   '/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
+  '/pengaturan-app-mode': typeof AuthenticatedPengaturanAppModeRoute
   '/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
   '/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
@@ -476,6 +485,7 @@ export interface FileRoutesById {
   '/_authenticated/link-pegawai': typeof AuthenticatedLinkPegawaiRoute
   '/_authenticated/notifikasi': typeof AuthenticatedNotifikasiRoute
   '/_authenticated/pengaturan-aksesibilitas': typeof AuthenticatedPengaturanAksesibilitasRoute
+  '/_authenticated/pengaturan-app-mode': typeof AuthenticatedPengaturanAppModeRoute
   '/_authenticated/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
   '/_authenticated/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
@@ -532,6 +542,7 @@ export interface FileRouteTypes {
     | '/link-pegawai'
     | '/notifikasi'
     | '/pengaturan-aksesibilitas'
+    | '/pengaturan-app-mode'
     | '/pengaturan-bahasa'
     | '/pengaturan-integrasi-sosial'
     | '/pengaturan-kunci'
@@ -583,6 +594,7 @@ export interface FileRouteTypes {
     | '/link-pegawai'
     | '/notifikasi'
     | '/pengaturan-aksesibilitas'
+    | '/pengaturan-app-mode'
     | '/pengaturan-bahasa'
     | '/pengaturan-integrasi-sosial'
     | '/pengaturan-kunci'
@@ -637,6 +649,7 @@ export interface FileRouteTypes {
     | '/_authenticated/link-pegawai'
     | '/_authenticated/notifikasi'
     | '/_authenticated/pengaturan-aksesibilitas'
+    | '/_authenticated/pengaturan-app-mode'
     | '/_authenticated/pengaturan-bahasa'
     | '/_authenticated/pengaturan-integrasi-sosial'
     | '/_authenticated/pengaturan-kunci'
@@ -840,6 +853,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-bahasa'
       fullPath: '/pengaturan-bahasa'
       preLoaderRoute: typeof AuthenticatedPengaturanBahasaRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-app-mode': {
+      id: '/_authenticated/pengaturan-app-mode'
+      path: '/pengaturan-app-mode'
+      fullPath: '/pengaturan-app-mode'
+      preLoaderRoute: typeof AuthenticatedPengaturanAppModeRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-aksesibilitas': {
@@ -1113,6 +1133,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedLinkPegawaiRoute: typeof AuthenticatedLinkPegawaiRoute
   AuthenticatedNotifikasiRoute: typeof AuthenticatedNotifikasiRoute
   AuthenticatedPengaturanAksesibilitasRoute: typeof AuthenticatedPengaturanAksesibilitasRoute
+  AuthenticatedPengaturanAppModeRoute: typeof AuthenticatedPengaturanAppModeRoute
   AuthenticatedPengaturanBahasaRoute: typeof AuthenticatedPengaturanBahasaRoute
   AuthenticatedPengaturanIntegrasiSosialRoute: typeof AuthenticatedPengaturanIntegrasiSosialRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
@@ -1147,6 +1168,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedNotifikasiRoute: AuthenticatedNotifikasiRoute,
   AuthenticatedPengaturanAksesibilitasRoute:
     AuthenticatedPengaturanAksesibilitasRoute,
+  AuthenticatedPengaturanAppModeRoute: AuthenticatedPengaturanAppModeRoute,
   AuthenticatedPengaturanBahasaRoute: AuthenticatedPengaturanBahasaRoute,
   AuthenticatedPengaturanIntegrasiSosialRoute:
     AuthenticatedPengaturanIntegrasiSosialRoute,
