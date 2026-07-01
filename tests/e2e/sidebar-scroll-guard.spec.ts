@@ -100,6 +100,9 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
     const box = (await target.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
     expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-sesi"]);
+    // Tap diizinkan → tooltip guard TIDAK muncul.
+    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 
   test("scroll gesture di atas item → TIDAK navigasi", async ({ page }) => {
@@ -125,6 +128,10 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
       el.dispatchEvent(new PointerEvent("pointerup", opts(cx, cy - 120)));
     }, { cx, cy });
     expect(await page.evaluate(() => (window as any).__navs)).toEqual([]);
+    // Drift > 10px pada pointerup → hint "Geser terdeteksi" muncul.
+    const hints = await page.evaluate(() => (window as any).__hints);
+    expect(hints).toContain("Geser terdeteksi — tap dibatalkan");
+    await expect(page.getByTestId("scroll-guard-hint")).toHaveClass(/show/);
   });
 
   test("tap yang mendarat < 250ms setelah scroll berhenti → TIDAK navigasi", async ({ page }) => {
@@ -135,6 +142,10 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
     const box = (await target.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
     expect(await page.evaluate(() => (window as any).__navs)).toEqual([]);
+    // Guard aktif → hint "Tunggu scroll selesai…" muncul.
+    const hints = await page.evaluate(() => (window as any).__hints);
+    expect(hints).toContain("Tunggu scroll selesai…");
+    await expect(page.getByTestId("scroll-guard-hint")).toHaveClass(/show/);
   });
 
   test("tap setelah scroll cooldown lewat (>250ms) → navigasi terpicu", async ({ page }) => {
@@ -145,6 +156,9 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
     const box = (await target.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
     expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-sesi"]);
+    // Cooldown sudah lewat → tap diizinkan, tooltip guard TIDAK muncul.
+    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 });
 
@@ -155,6 +169,9 @@ test.describe("sidebar scroll guard (desktop / mouse + wheel)", () => {
     await page.setContent(HARNESS);
     await page.getByTestId("nav-chat").click();
     expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-chat"]);
+    // Klik diizinkan → tidak ada hint.
+    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 
   test("wheel scroll aktif → klik dalam 250ms TIDAK navigasi", async ({ page }) => {
@@ -166,6 +183,10 @@ test.describe("sidebar scroll guard (desktop / mouse + wheel)", () => {
     // Klik langsung: guard harus menolak karena scrollActiveUntil belum lewat.
     await target.click({ noWaitAfter: true });
     expect(await page.evaluate(() => (window as any).__navs)).toEqual([]);
+    // Klik ditolak oleh cooldown → hint "Tunggu scroll selesai…" muncul.
+    const hints = await page.evaluate(() => (window as any).__hints);
+    expect(hints).toContain("Tunggu scroll selesai…");
+    await expect(page.getByTestId("scroll-guard-hint")).toHaveClass(/show/);
   });
 
   test("wheel scroll → tunggu cooldown → klik navigasi normal", async ({ page }) => {
@@ -177,5 +198,8 @@ test.describe("sidebar scroll guard (desktop / mouse + wheel)", () => {
     await page.waitForTimeout(320);
     await target.click();
     expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-home"]);
+    // Cooldown lewat → klik diizinkan, tidak ada hint.
+    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 });
