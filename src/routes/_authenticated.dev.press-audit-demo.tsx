@@ -12,6 +12,7 @@ import {
   scanPressAuditFindings,
   tracePressAuditDecision,
   formatPressAuditTrace,
+  pickWinnerStep,
   type PressAuditTrace,
   type PressAuditTraceStep,
 } from "@/lib/press-audit";
@@ -160,19 +161,6 @@ type VerifyResult = {
   actual: string[];
   pass: boolean;
 };
-
-/**
- * Ambil langkah "pemenang" pada jejak — langkah block bila ada,
- * jika tidak, langkah pass paling akhir yang menyimpan hostEl.
- */
-function pickWinnerStep(t: PressAuditTrace): PressAuditTraceStep | null {
-  const block = t.steps.find((s) => s.outcome === "block");
-  if (block) return block;
-  for (let i = t.steps.length - 1; i >= 0; i--) {
-    if (t.steps[i].hostEl) return t.steps[i];
-  }
-  return null;
-}
 
 /** Warna sorotan berdasarkan sifat langkah pemenang. */
 function winnerColor(step: PressAuditTraceStep): string {
