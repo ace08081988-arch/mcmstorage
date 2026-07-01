@@ -1,11 +1,12 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import QRCode from "qrcode";
-import { ArrowLeft, Copy, Share2, QrCode, UserPlus, RefreshCcw, Check } from "lucide-react";
+import { ArrowLeft, Copy, Share2, QrCode, UserPlus, RefreshCcw, Check, Camera } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useMyProfile } from "@/lib/profile";
+import { QrScannerDialog, handleScannedText } from "@/components/QrScannerDialog";
 import {
   addContactByInviteCode,
   buildInviteUrl,
@@ -38,6 +39,7 @@ function UndangPage() {
   }, [myUrl]);
 
   const [copied, setCopied] = useState<"code" | "url" | null>(null);
+  const [scanOpen, setScanOpen] = useState(false);
   async function copyText(kind: "code" | "url", text: string) {
     try {
       await navigator.clipboard.writeText(text);
@@ -202,8 +204,51 @@ function UndangPage() {
           <div className="mt-2 break-all text-center text-[11px] text-muted-foreground">
             {myUrl || ""}
           </div>
+          <div className="mt-3 flex justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setScanOpen(true)}
+              className="gap-2"
+              aria-label="Pindai QR teman dengan kamera"
+            >
+              <Camera className="h-4 w-4" /> Pindai QR teman
+            </Button>
+          </div>
         </div>
       </section>
+
+      <QrScannerDialog
+        open={scanOpen}
+        onOpenChange={setScanOpen}
+        title="Pindai QR undangan teman"
+        description="Arahkan kamera ke QR undangan teman untuk mengisi PIN otomatis."
+        onResult={(text) => {
+          // Prioritas: kalau URL undangan same-origin → isi PIN dari path
+          // `/i/<code>`. Kalau teks tampak PIN → langsung isi. Selain itu
+          // fallback ke handler generik (buka/salin).
+          const trimmed = text.trim();
+          try {
+            const u = new URL(trimmed);
+            const m = u.pathname.match(/\/i\/([^/?#]+)/i);
+            if (m && m[1]) {
+              const code = normalizeInviteCode(decodeURIComponent(m[1]));
+              setInput(formatInviteCode(code));
+              toast.success("PIN dari QR terisi.");
+              return;
+            }
+          } catch {
+            /* not a URL */
+          }
+          if (isLikelyInviteCode(trimmed)) {
+            setInput(formatInviteCode(normalizeInviteCode(trimmed)));
+            toast.success("PIN dari QR terisi.");
+            return;
+          }
+          void handleScannedText(trimmed);
+        }}
+      />
 
       {/* Masukkan PIN teman */}
       <section className="px-4 pt-4">
