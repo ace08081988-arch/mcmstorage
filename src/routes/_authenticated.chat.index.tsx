@@ -2,7 +2,7 @@ import { createFileRoute, Link, useNavigate, useRouterState } from "@tanstack/re
 import { useMemo, useState } from "react";
 import {
   MessageCircle, Loader2, Link2, CheckCheck, Pin, Archive, BellOff,
-  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check,
+  Search, MoreVertical, ArchiveRestore, BellRing, X, WifiOff, Check, Camera,
 } from "lucide-react";
 
 import {
@@ -65,29 +65,22 @@ function ChatListPage() {
   }, [conversations]);
 
   return (
-    <main className="mx-auto max-w-2xl space-y-3 p-4">
-      <header className="flex items-center justify-between gap-2">
-        <div className="flex items-center gap-2">
-          <MessageCircle className="h-5 w-5 text-primary" />
-          <h1 className="text-lg font-semibold">Chat</h1>
-        </div>
-        <div className="flex gap-2">
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link to="/kontak">
-              <Link2 className="h-4 w-4" /> Siapkan kontak chat
-            </Link>
+    <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface">
+      <header className="wa-header sticky top-0 z-10 flex items-center justify-between gap-2 border-b px-4 py-3">
+        <h1 className="text-2xl font-bold tracking-tight">WhatsApp</h1>
+        <div className="flex items-center gap-1">
+          <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Siapkan kontak">
+            <Link to="/kontak"><Camera className="h-5 w-5" /></Link>
           </Button>
           <NewDmDialog />
           <NewGroupDialog open={grupOpen} onOpenChange={setGrupOpen} trigger={false} />
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
-                variant="outline"
-                size="sm"
+                variant="ghost"
+                size="icon"
                 className={
-                  // Trigger jadi jelas "aktif" saat menu terbuka (state=open ⇒ accent+ring).
-                  "gap-1.5 data-[state=open]:bg-accent data-[state=open]:text-accent-foreground " +
-                  "data-[state=open]:ring-2 data-[state=open]:ring-primary/40"
+                  "h-9 w-9 rounded-full data-[state=open]:bg-accent data-[state=open]:text-accent-foreground"
                 }
                 aria-label="Menu lainnya"
               >
@@ -153,6 +146,7 @@ function ChatListPage() {
         </div>
       </header>
 
+      <div className="flex-1 space-y-3 px-3 py-3">
       {isError && (conversations?.length ?? 0) > 0 ? (
         <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-xs text-amber-900 dark:text-amber-200">
           <WifiOff className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -169,12 +163,12 @@ function ChatListPage() {
       ) : null}
 
       <div className="relative">
-        <Search className="pointer-events-none absolute left-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Search className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 wa-muted" />
         <Input
           value={q}
           onChange={(e) => setQ(e.target.value)}
-          placeholder="Cari pesan…"
-          className="pl-8 pr-9"
+          placeholder="Cari…"
+          className="wa-search h-10 rounded-full border-0 pl-10 pr-9 shadow-none focus-visible:ring-1 focus-visible:ring-[var(--wa-green)]/50"
         />
         {q ? (
           <Button
@@ -188,6 +182,15 @@ function ChatListPage() {
           </Button>
         ) : null}
       </div>
+
+      {q.trim().length < 2 ? (
+        <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <span className="wa-chip wa-chip-active font-medium">Semua</span>
+          <span className="wa-chip"><span className="inline-block h-2 w-2 rounded-full bg-[var(--wa-green)]" />Aktif {active.length ? active.length : ""}</span>
+          <span className="wa-chip"><span className="inline-block h-2 w-2 rounded-full bg-rose-500" />Arsip {archived.length ? archived.length : ""}</span>
+          <span className="wa-chip">Belum dibaca</span>
+        </div>
+      ) : null}
 
       {q.trim().length >= 2 ? (
         <div className="rounded-lg border">
@@ -298,6 +301,7 @@ function ChatListPage() {
           </TabsContent>
         </Tabs>
       )}
+      </div>
     </main>
   );
 }
