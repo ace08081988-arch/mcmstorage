@@ -326,6 +326,43 @@ function RootComponent() {
     return () => navigator.serviceWorker.removeEventListener("message", onMsg);
   }, [router, queryClient]);
 
+  // Global recovery: dynamic-import failures often escape the route
+  // errorComponent (fired from setTimeout / event handlers / detached
+  // promises). Listen at window scope and hard-reload once per 5s so
+  // stale chunks after a dev rebuild or new deploy don't wedge the app.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const looksLikeChunkErr = (msg: string) =>
+      /Failed to fetch dynamically imported module|Importing a module script failed|ChunkLoadError|Loading chunk \d+ failed|error loading dynamically imported module/i.test(
+        msg,
+      );
+    const recover = () => {
+      const KEY = "__chunk_reload_at";
+      const now = Date.now();
+      try {
+        const prev = Number(window.sessionStorage.getItem(KEY) || "0");
+        if (prev && now - prev < 5000) return;
+        window.sessionStorage.setItem(KEY, String(now));
+      } catch { /* ignore */ }
+      const url = new URL(window.location.href);
+      url.searchParams.set("__r", String(now));
+      window.location.replace(url.toString());
+    };
+    const onRejection = (e: PromiseRejectionEvent) => {
+      const msg = String((e.reason as { message?: string } | undefined)?.message ?? e.reason ?? "");
+      if (looksLikeChunkErr(msg)) recover();
+    };
+    const onError = (e: ErrorEvent) => {
+      if (looksLikeChunkErr(String(e.message ?? ""))) recover();
+    };
+    window.addEventListener("unhandledrejection", onRejection);
+    window.addEventListener("error", onError);
+    return () => {
+      window.removeEventListener("unhandledrejection", onRejection);
+      window.removeEventListener("error", onError);
+    };
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AppearanceInit />
