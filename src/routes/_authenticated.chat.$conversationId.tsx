@@ -1419,6 +1419,7 @@ function ChatRoomPage() {
                 variant="destructive"
                 className="w-full justify-start"
                 disabled={deleteMsg.isPending}
+                aria-busy={deleteMsg.isPending}
                 onClick={() => {
                   const target = longPressMsg;
                   if (!target) return;
@@ -1449,7 +1450,7 @@ function ChatRoomPage() {
                 ) : (
                   <Trash2 className="mr-2 h-4 w-4" />
                 )}
-                Hapus untuk semua orang
+                {deleteMsg.isPending ? "Menghapus…" : "Hapus untuk semua orang"}
               </Button>
             ) : null}
           </div>
