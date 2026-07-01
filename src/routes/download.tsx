@@ -3,6 +3,8 @@ import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
 import { Download, Smartphone, Loader2 } from "lucide-react";
 import { getLatestApk } from "@/lib/apk.functions";
+import { PublicHeader } from "@/components/PublicHeader";
+import { PublicFooter } from "@/components/PublicFooter";
 
 export const Route = createFileRoute("/download")({
   head: () => ({
@@ -41,7 +43,9 @@ function DownloadPage() {
   });
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col items-center justify-center px-4 py-10">
+    <div className="flex min-h-screen flex-col bg-background">
+      <PublicHeader />
+      <main className="mx-auto flex w-full max-w-md flex-1 flex-col items-center justify-center px-4 py-10">
       <div className="w-full rounded-2xl border bg-card p-6 shadow-sm">
         <div className="mb-4 flex items-center gap-3">
           <div className="rounded-xl bg-emerald-600/10 p-3 text-emerald-700 dark:text-emerald-300">
@@ -108,5 +112,7 @@ function DownloadPage() {
         )}
       </div>
     </main>
+    <PublicFooter />
+    </div>
   );
 }

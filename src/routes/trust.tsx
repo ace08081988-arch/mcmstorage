@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { PublicFooter } from "@/components/PublicFooter";
+import { PublicHeader } from "@/components/PublicHeader";
 
 export const Route = createFileRoute("/trust")({
   head: () => ({
@@ -56,6 +57,7 @@ function Section({
 function TrustPage() {
   return (
     <div className="min-h-screen bg-background">
+    <PublicHeader />
     <main className="mx-auto max-w-3xl px-4 py-10">
       <header className="mb-6">
         <h1 className="text-3xl font-bold tracking-tight text-foreground">
