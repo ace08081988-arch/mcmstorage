@@ -9,8 +9,15 @@ import { test, expect, devices } from "@playwright/test";
  * Rather than authenticating and driving the real sidebar, we mount a
  * self-contained harness page that reproduces the exact guard algorithm
  * (bump on scroll/wheel/touchmove for 250ms, tap only fires on
- * pointerup if !scrollActive and drift ≤ 10px and dt ≤ 600ms). This
- * keeps the invariant testable without backend/session.
+ * pointerup if !scrollActive and drift ≤ 10px and dt ≤ 600ms).
+ *
+ * ### Stabilitas di CI
+ * Harness memakai **virtual clock** (`window.__now()`), bukan `Date.now()`,
+ * sehingga cooldown 250ms dan durasi tap 600ms tidak lagi bergantung pada
+ * wall-clock CI. Test mengontrol waktu lewat `window.__advance(ms)` alih-alih
+ * `waitForTimeout`, dan menunggu efek DOM lewat `expect.poll` / auto-retry
+ * locator — bukan sleep tetap. Auto-hide hint dihilangkan agar assertion
+ * `.toHaveClass(/show/)` tidak balapan dengan timer pembersih.
  */
 
 const HARNESS = /* html */ `<!doctype html>
@@ -20,7 +27,7 @@ const HARNESS = /* html */ `<!doctype html>
   .item{padding:16px;border-bottom:1px solid #eee;user-select:none;touch-action:pan-y;}
   #log{padding:8px;font-family:monospace;font-size:12px;white-space:pre;}
   .spacer{height:1200px;}
-  #hint{position:fixed;left:0;top:0;padding:4px 8px;font-size:11px;background:#111;color:#fff;border-radius:999px;pointer-events:none;opacity:0;transition:opacity .12s;}
+  #hint{position:fixed;left:0;top:0;padding:4px 8px;font-size:11px;background:#111;color:#fff;border-radius:999px;pointer-events:none;opacity:0;}
   #hint.show{opacity:1;}
 </style></head><body>
   <div id="scroller">
@@ -32,8 +39,14 @@ const HARNESS = /* html */ `<!doctype html>
   <div id="log"></div>
   <div id="hint" data-testid="scroll-guard-hint" role="status" aria-live="polite"></div>
   <script>
+    // Virtual clock — tumbuh HANYA lewat window.__advance(ms). Semua batas
+    // waktu guard (cooldown, durasi tap) ikut clock ini, jadi hasil test
+    // deterministik dan tidak terpengaruh kecepatan CI.
+    window.__clock = 1000;
+    window.__now = () => window.__clock;
+    window.__advance = (ms) => { window.__clock += ms; };
     let scrollActiveUntil = 0;
-    const bump = () => { scrollActiveUntil = Date.now() + 250; };
+    const bump = () => { scrollActiveUntil = window.__now() + 250; };
     ["scroll","wheel","touchmove"].forEach(ev =>
       window.addEventListener(ev, bump, { capture: true, passive: true })
     );
@@ -41,26 +54,27 @@ const HARNESS = /* html */ `<!doctype html>
     scroller.addEventListener("scroll", bump, { capture: true, passive: true });
     const log = document.getElementById("log");
     const hintEl = document.getElementById("hint");
-    let hintTimer = 0;
     window.__hints = [];
     const showHint = (text, x, y) => {
       window.__hints.push(text);
       hintEl.textContent = text;
       hintEl.style.transform = "translate(" + (x + 8) + "px," + (y + 8) + "px)";
       hintEl.classList.add("show");
-      clearTimeout(hintTimer);
-      hintTimer = setTimeout(() => hintEl.classList.remove("show"), 1200);
+      // Auto-hide sengaja DIHILANGKAN di harness — assertion `.toHaveClass(/show/)`
+      // di test tidak boleh balapan dengan timer real. Kelas dibersihkan hanya
+      // saat hint berikutnya di-`showHint` dengan clear manual di sini juga
+      // tidak perlu karena classList.add idempotent.
     };
     window.__navs = [];
     document.querySelectorAll(".item").forEach(el => {
       let start = null;
       el.addEventListener("pointerdown", e => {
-        if (Date.now() < scrollActiveUntil) {
+        if (window.__now() < scrollActiveUntil) {
           start = null;
           showHint("Tunggu scroll selesai…", e.clientX, e.clientY);
           return;
         }
-        start = { x: e.clientX, y: e.clientY, t: Date.now() };
+        start = { x: e.clientX, y: e.clientY, t: window.__now() };
       });
       el.addEventListener("pointermove", e => {
         if (!start) return;
@@ -70,12 +84,12 @@ const HARNESS = /* html */ `<!doctype html>
       el.addEventListener("pointerup", e => {
         const s = start; start = null;
         if (!s) return;
-        if (Date.now() < scrollActiveUntil) {
+        if (window.__now() < scrollActiveUntil) {
           showHint("Tunggu scroll selesai…", e.clientX, e.clientY);
           return;
         }
         const dx = Math.abs(e.clientX - s.x), dy = Math.abs(e.clientY - s.y);
-        const dt = Date.now() - s.t;
+        const dt = window.__now() - s.t;
         if (dx > 10 || dy > 10 || dt > 600) {
           showHint("Geser terdeteksi — tap dibatalkan", e.clientX, e.clientY);
           return;
@@ -91,6 +105,17 @@ const HARNESS = /* html */ `<!doctype html>
   </script>
 </body></html>`;
 
+// Helpers deterministik — tidak ada `waitForTimeout`.
+async function readNavs(page: import("@playwright/test").Page): Promise<string[]> {
+  return page.evaluate(() => (window as unknown as { __navs: string[] }).__navs);
+}
+async function readHints(page: import("@playwright/test").Page): Promise<string[]> {
+  return page.evaluate(() => (window as unknown as { __hints: string[] }).__hints);
+}
+async function advance(page: import("@playwright/test").Page, ms: number): Promise<void> {
+  await page.evaluate((m) => (window as unknown as { __advance: (n: number) => void }).__advance(m), ms);
+}
+
 test.describe("sidebar scroll guard (mobile / touch)", () => {
   test.use({ ...devices["iPhone 14"], viewport: { width: 390, height: 844 }, hasTouch: true });
 
@@ -99,9 +124,10 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
     const target = page.getByTestId("nav-sesi");
     const box = (await target.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-    expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-sesi"]);
+    // Auto-retry sampai handler pointerup selesai — tidak ada sleep tetap.
+    await expect.poll(() => readNavs(page)).toEqual(["nav-sesi"]);
     // Tap diizinkan → tooltip guard TIDAK muncul.
-    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    expect(await readHints(page)).toEqual([]);
     await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 
@@ -112,6 +138,8 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
     const cx = box.x + box.width / 2;
     const cy = box.y + box.height / 2;
     // Simulasi swipe scroll: pointerdown → gerak > 10px → pointerup.
+    // Semua dispatch synchronous di dalam satu evaluate — tidak ada race
+    // antara Playwright dan handler DOM.
     await page.evaluate(({ cx, cy }) => {
       const el = document.elementFromPoint(cx, cy)!;
       const opts = (x: number, y: number) => ({
@@ -127,37 +155,37 @@ test.describe("sidebar scroll guard (mobile / touch)", () => {
       }
       el.dispatchEvent(new PointerEvent("pointerup", opts(cx, cy - 120)));
     }, { cx, cy });
-    expect(await page.evaluate(() => (window as any).__navs)).toEqual([]);
+    expect(await readNavs(page)).toEqual([]);
     // Drift > 10px pada pointerup → hint "Geser terdeteksi" muncul.
-    const hints = await page.evaluate(() => (window as any).__hints);
-    expect(hints).toContain("Geser terdeteksi — tap dibatalkan");
+    await expect
+      .poll(() => readHints(page))
+      .toContain("Geser terdeteksi — tap dibatalkan");
     await expect(page.getByTestId("scroll-guard-hint")).toHaveClass(/show/);
   });
 
   test("tap yang mendarat < 250ms setelah scroll berhenti → TIDAK navigasi", async ({ page }) => {
     await page.setContent(HARNESS);
-    // Bump scrollActiveUntil, lalu tap segera.
+    // Bump scrollActiveUntil (virtual clock TIDAK maju), lalu tap segera.
+    // Karena __clock tetap, cooldown 250ms belum lewat → tap ditolak.
     await page.evaluate(() => window.dispatchEvent(new Event("scroll")));
     const target = page.getByTestId("nav-home");
     const box = (await target.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-    expect(await page.evaluate(() => (window as any).__navs)).toEqual([]);
-    // Guard aktif → hint "Tunggu scroll selesai…" muncul.
-    const hints = await page.evaluate(() => (window as any).__hints);
-    expect(hints).toContain("Tunggu scroll selesai…");
+    expect(await readNavs(page)).toEqual([]);
+    await expect.poll(() => readHints(page)).toContain("Tunggu scroll selesai…");
     await expect(page.getByTestId("scroll-guard-hint")).toHaveClass(/show/);
   });
 
   test("tap setelah scroll cooldown lewat (>250ms) → navigasi terpicu", async ({ page }) => {
     await page.setContent(HARNESS);
     await page.evaluate(() => window.dispatchEvent(new Event("scroll")));
-    await page.waitForTimeout(320);
+    // Maju-kan virtual clock, bukan wall-clock — deterministik di CI.
+    await advance(page, 320);
     const target = page.getByTestId("nav-sesi");
     const box = (await target.boundingBox())!;
     await page.touchscreen.tap(box.x + box.width / 2, box.y + box.height / 2);
-    expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-sesi"]);
-    // Cooldown sudah lewat → tap diizinkan, tooltip guard TIDAK muncul.
-    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect.poll(() => readNavs(page)).toEqual(["nav-sesi"]);
+    expect(await readHints(page)).toEqual([]);
     await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 });
@@ -168,9 +196,8 @@ test.describe("sidebar scroll guard (desktop / mouse + wheel)", () => {
   test("klik biasa → navigasi terpicu", async ({ page }) => {
     await page.setContent(HARNESS);
     await page.getByTestId("nav-chat").click();
-    expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-chat"]);
-    // Klik diizinkan → tidak ada hint.
-    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect.poll(() => readNavs(page)).toEqual(["nav-chat"]);
+    expect(await readHints(page)).toEqual([]);
     await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 
@@ -180,12 +207,10 @@ test.describe("sidebar scroll guard (desktop / mouse + wheel)", () => {
     const box = (await target.boundingBox())!;
     await page.mouse.move(box.x + 10, box.y + 10);
     await page.mouse.wheel(0, 200);
-    // Klik langsung: guard harus menolak karena scrollActiveUntil belum lewat.
+    // Klik langsung: __clock TIDAK di-advance → cooldown belum lewat, guard tolak.
     await target.click({ noWaitAfter: true });
-    expect(await page.evaluate(() => (window as any).__navs)).toEqual([]);
-    // Klik ditolak oleh cooldown → hint "Tunggu scroll selesai…" muncul.
-    const hints = await page.evaluate(() => (window as any).__hints);
-    expect(hints).toContain("Tunggu scroll selesai…");
+    expect(await readNavs(page)).toEqual([]);
+    await expect.poll(() => readHints(page)).toContain("Tunggu scroll selesai…");
     await expect(page.getByTestId("scroll-guard-hint")).toHaveClass(/show/);
   });
 
@@ -195,11 +220,10 @@ test.describe("sidebar scroll guard (desktop / mouse + wheel)", () => {
     const box = (await target.boundingBox())!;
     await page.mouse.move(box.x + 10, box.y + 10);
     await page.mouse.wheel(0, 200);
-    await page.waitForTimeout(320);
+    await advance(page, 320);
     await target.click();
-    expect(await page.evaluate(() => (window as any).__navs)).toEqual(["nav-home"]);
-    // Cooldown lewat → klik diizinkan, tidak ada hint.
-    expect(await page.evaluate(() => (window as any).__hints)).toEqual([]);
+    await expect.poll(() => readNavs(page)).toEqual(["nav-home"]);
+    expect(await readHints(page)).toEqual([]);
     await expect(page.getByTestId("scroll-guard-hint")).not.toHaveClass(/show/);
   });
 });
