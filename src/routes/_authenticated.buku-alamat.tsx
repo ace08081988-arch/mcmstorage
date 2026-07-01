@@ -528,7 +528,7 @@ function EditDialog({
       let alreadyFriends = false;
       if (isNew && pin.trim()) {
         const { addContactByInviteCode } = await import("@/lib/invite");
-        const res = await addContactByInviteCode(pin.trim());
+        const res = await addContactByInviteCode(normalizeInviteCode(pin));
         linkedName = res.displayName;
         alreadyExisted = res.alreadyExisted;
         pendingRequest = res.pending;
