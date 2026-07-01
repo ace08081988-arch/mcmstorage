@@ -192,6 +192,22 @@ export default defineConfig({
       },
     },
     {
+      // E2E: pagination / load-more di transkrip chat wajib terus
+      // menampilkan `PIN xxxx-xxxx` sebagai identitas peer dan TIDAK
+      // memunculkan nomor telp mentah pada setiap wave scroll. Static
+      // source guard memaksa query `messages` tidak menarik kolom phone
+      // & memakai batas eksplisit; runtime self-skip bila storage/DM
+      // belum tersedia.
+      name: "chat-pin-mcm-pagination-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-pagination\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // E2E: kirim pesan berlampiran di DM pertama harus mempertahankan
       // identitas `PIN xxxx-xxxx` di header + transkrip + sheet Lampirkan
       // — tidak boleh mem-fallback ke nomor telepon peer. Static source
