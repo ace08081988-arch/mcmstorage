@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const LS_FULL = "app-org-name";
 const LS_SHORT = "app-org-short";
@@ -34,6 +35,54 @@ export function getOrgBrand(): string {
   return read(LS_BRAND, "");
 }
 
+/** Debounced upsert to backend so branding persists across devices/logins. */
+let saveTimer: ReturnType<typeof setTimeout> | null = null;
+function scheduleRemoteSave() {
+  if (typeof window === "undefined") return;
+  if (saveTimer) clearTimeout(saveTimer);
+  saveTimer = setTimeout(async () => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      await supabase.from("org_branding" as never).upsert({
+        user_id: user.id,
+        org_name: getOrgName(),
+        org_short: getOrgShort(),
+        logo_url: getOrgLogo(),
+        brand_color: getOrgBrand(),
+      } as never);
+    } catch { /* ignore — localStorage still holds the value */ }
+  }, 400);
+}
+
+/** Load branding from backend on login and hydrate localStorage + CSS. */
+export async function hydrateOrgBrandingFromRemote(): Promise<void> {
+  if (typeof window === "undefined") return;
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    const { data, error } = await supabase
+      .from("org_branding" as never)
+      .select("org_name, org_short, logo_url, brand_color")
+      .eq("user_id", user.id)
+      .maybeSingle();
+    if (error || !data) return;
+    const row = data as unknown as {
+      org_name: string; org_short: string; logo_url: string; brand_color: string;
+    };
+    try {
+      if (row.org_name) window.localStorage.setItem(LS_FULL, row.org_name);
+      if (row.org_short) window.localStorage.setItem(LS_SHORT, row.org_short);
+      if (row.logo_url) window.localStorage.setItem(LS_LOGO, row.logo_url);
+      else window.localStorage.removeItem(LS_LOGO);
+      if (row.brand_color) window.localStorage.setItem(LS_BRAND, row.brand_color);
+      else window.localStorage.removeItem(LS_BRAND);
+    } catch { /* ignore */ }
+    applyBrandColor();
+    window.dispatchEvent(new CustomEvent("app-org-name-changed"));
+  } catch { /* ignore */ }
+}
+
 export function setOrgName(full: string, short: string) {
   if (typeof window === "undefined") return;
   const f = full.trim() || DEFAULT_ORG_NAME;
@@ -42,6 +91,7 @@ export function setOrgName(full: string, short: string) {
     window.localStorage.setItem(LS_FULL, f);
     window.localStorage.setItem(LS_SHORT, s);
     window.dispatchEvent(new CustomEvent("app-org-name-changed"));
+    scheduleRemoteSave();
   } catch { /* ignore */ }
 }
 
@@ -52,6 +102,7 @@ export function setOrgLogo(dataUrl: string) {
     if (dataUrl) window.localStorage.setItem(LS_LOGO, dataUrl);
     else window.localStorage.removeItem(LS_LOGO);
     window.dispatchEvent(new CustomEvent("app-org-name-changed"));
+    scheduleRemoteSave();
   } catch { /* ignore */ }
 }
 
@@ -64,6 +115,7 @@ export function setOrgBrand(color: string) {
     else window.localStorage.removeItem(LS_BRAND);
     window.dispatchEvent(new CustomEvent("app-org-name-changed"));
     applyBrandColor();
+    scheduleRemoteSave();
   } catch { /* ignore */ }
 }
 
