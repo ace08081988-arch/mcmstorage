@@ -47,6 +47,28 @@ type Row = {
   account_user_id: string | null;
 };
 
+// Beberapa row bisa merujuk ke pelanggan/pemasok yang sama (duplikat import
+// atau tertaut ke akun sama). Gabungkan tampilan; operasi berlaku ke semua id.
+type GroupedRow = Row & { ids: string[]; dupCount: number };
+
+function groupRows(rows: Row[]): GroupedRow[] {
+  const map = new Map<string, GroupedRow>();
+  for (const r of rows) {
+    const key = r.account_user_id
+      ? `acc:${r.account_user_id}`
+      : `nc:${r.name.trim().toLowerCase()}|${(r.contact ?? "").trim().toLowerCase()}`;
+    const existing = map.get(key);
+    if (existing) {
+      existing.ids.push(r.id);
+      existing.dupCount = existing.ids.length;
+      if (!existing.contact && r.contact) existing.contact = r.contact;
+    } else {
+      map.set(key, { ...r, ids: [r.id], dupCount: 1 });
+    }
+  }
+  return Array.from(map.values());
+}
+
 type Contact = {
   user_id: string;
   display_name: string | null;
@@ -67,12 +89,12 @@ function KontakPage() {
   const startDm = useStartDm();
   const [chatting, setChatting] = useState<string | null>(null);
 
-  const openChat = async (row: Row) => {
+  const openChat = async (row: GroupedRow) => {
     if (!row.account_user_id) {
       toast.error("Tautkan akun pengguna dulu sebelum memulai chat.");
       return;
     }
-    setChatting(row.id);
+    setChatting(row.ids[0]);
     try {
       const conversationId = await startDm.mutateAsync(row.account_user_id);
       if (!conversationId) throw new Error("Tidak menerima ID percakapan");
@@ -108,13 +130,14 @@ function KontakPage() {
   }, []);
 
   const rows = tab === "customer" ? customers : suppliers;
+  const groupedRows = useMemo(() => groupRows(rows), [rows]);
 
-  const unlink = async (kind: Kind, row: Row) => {
+  const unlink = async (kind: Kind, row: GroupedRow) => {
     const table = kind === "customer" ? "customers" : "suppliers";
     const { error } = await supabase
       .from(table)
       .update({ account_user_id: null })
-      .eq("id", row.id);
+      .in("id", row.ids);
     if (error) toast.error(friendlyError(error));
     else {
       toast.success("Tautan akun dilepas");
@@ -122,18 +145,21 @@ function KontakPage() {
     }
   };
 
-  const removeRow = async (kind: Kind, row: Row) => {
+  const removeRow = async (kind: Kind, row: GroupedRow) => {
     const label = kind === "customer" ? "pelanggan" : "pemasok";
+    const extra = row.ids.length > 1
+      ? ` (${row.ids.length} entri duplikat akan digabung & dihapus)`
+      : "";
     if (
       !(await confirm({
         title: `Hapus ${label}?`,
-        description: `${row.name} akan dihapus permanen. Riwayat transaksi terkait tetap ada, tapi tidak lagi tertaut ke kontak ini.`,
+        description: `${row.name}${extra} akan dihapus permanen. Riwayat transaksi terkait tetap ada, tapi tidak lagi tertaut ke kontak ini.`,
         confirmText: "Hapus",
         destructive: true,
       }))
     ) return;
     const table = kind === "customer" ? "customers" : "suppliers";
-    const { error } = await supabase.from(table).delete().eq("id", row.id);
+    const { error } = await supabase.from(table).delete().in("id", row.ids);
     if (error) toast.error(friendlyError(error));
     else {
       toast.success(`${label[0].toUpperCase() + label.slice(1)} dihapus`);
@@ -141,17 +167,17 @@ function KontakPage() {
     }
   };
 
-  const sendWa = async (row: Row) => {
+  const sendWa = async (row: GroupedRow) => {
     const text = `Halo ${row.name}, ada yang ingin saya sampaikan.`;
     const phone = row.contact?.replace(/\D/g, "") || undefined;
     const res = await shareToWhatsApp({ text, title: row.name, phone });
     notifyShareResult(res);
   };
 
-  const handleTest = async (kind: Kind, row: Row) => {
-    setTesting(row.id);
+  const handleTest = async (kind: Kind, row: GroupedRow) => {
+    setTesting(row.ids[0]);
     try {
-      const res = await sendTest({ data: { kind, id: row.id } });
+      const res = await sendTest({ data: { kind, id: row.ids[0] } });
       if (res.sent > 0) toast.success(res.message);
       else toast.warning(res.message);
     } catch (e: any) {
@@ -162,8 +188,8 @@ function KontakPage() {
   };
 
   const linkedCount = useMemo(
-    () => rows.filter((r) => r.account_user_id).length,
-    [rows],
+    () => groupedRows.filter((r) => r.account_user_id).length,
+    [groupedRows],
   );
 
   const handleTestAll = async () => {
@@ -254,14 +280,24 @@ function KontakPage() {
               </div>
             ) : (
               <ul className="space-y-2">
-                {rows.map((r) => (
+                {groupedRows.map((r) => (
                   <li
-                    key={r.id}
+                    key={r.ids[0]}
                     className="rounded-lg border bg-card p-3 text-sm"
                   >
                     <div className="flex items-start gap-2">
                       <div className="min-w-0 flex-1">
-                        <div className="truncate font-medium">{r.name}</div>
+                        <div className="flex items-center gap-1.5 truncate font-medium">
+                          <span className="truncate">{r.name}</span>
+                          {r.dupCount > 1 ? (
+                            <span
+                              className="shrink-0 rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground"
+                              title={`${r.dupCount} entri digabung`}
+                            >
+                              ×{r.dupCount}
+                            </span>
+                          ) : null}
+                        </div>
                         {r.contact && (
                           <div className="truncate text-xs text-muted-foreground">
                             {r.contact}
@@ -283,7 +319,7 @@ function KontakPage() {
                         <Button
                           size="sm"
                           variant="outline"
-                          onClick={() => setLinkFor({ kind: tab, row: r })}
+                          onClick={() => setLinkFor({ kind: tab, row: { id: r.ids[0], name: r.name, contact: r.contact, account_user_id: r.account_user_id } })}
                         >
                           {r.account_user_id ? "Ubah tautan" : "Tautkan akun"}
                         </Button>
@@ -303,12 +339,12 @@ function KontakPage() {
                             <Button
                               size="sm"
                               variant="secondary"
-                              disabled={chatting === r.id}
+                              disabled={chatting === r.ids[0]}
                               onClick={() => void openChat(r)}
                               title={`Chat dengan ${r.name}`}
                               className="bg-primary/10 text-primary hover:bg-primary/20"
                             >
-                              {chatting === r.id ? (
+                              {chatting === r.ids[0] ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 <MessageSquare className="h-4 w-4" />
@@ -318,10 +354,10 @@ function KontakPage() {
                             <Button
                               size="sm"
                               variant="secondary"
-                              disabled={testing === r.id}
+                              disabled={testing === r.ids[0]}
                               onClick={() => void handleTest(tab, r)}
                             >
-                              {testing === r.id ? "Mengirim…" : "Kirim notifikasi uji"}
+                              {testing === r.ids[0] ? "Mengirim…" : "Kirim notifikasi uji"}
                             </Button>
                             <Button
                               size="sm"
