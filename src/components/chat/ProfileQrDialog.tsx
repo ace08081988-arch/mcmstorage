@@ -1,0 +1,172 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import QRCode from "qrcode";
+import { Download, Maximize2, Minimize2, Share2, X } from "lucide-react";
+import { toast } from "sonner";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+
+type Props = {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  userId: string | null;
+  avatarUrl?: string | null;
+};
+
+/**
+ * Bangun payload vCard 3.0 supaya pemindai (kamera bawaan HP) langsung
+ * menawarkan "Simpan kontak" alih-alih membuka URL asing.
+ */
+function buildVCard(name: string, email: string | null, phone: string | null, url: string): string {
+  const esc = (s: string) => s.replace(/([,;\\])/g, "\\$1");
+  const lines = [
+    "BEGIN:VCARD",
+    "VERSION:3.0",
+    `FN:${esc(name)}`,
+    `N:${esc(name)};;;;`,
+  ];
+  if (phone) lines.push(`TEL;TYPE=CELL:${esc(phone)}`);
+  if (email) lines.push(`EMAIL;TYPE=INTERNET:${esc(email)}`);
+  lines.push(`URL:${esc(url)}`);
+  lines.push("END:VCARD");
+  return lines.join("\r\n");
+}
+
+export function ProfileQrDialog({ open, onOpenChange, name, email, phone, userId }: Props) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [dataUrl, setDataUrl] = useState<string | null>(null);
+  const [fullscreen, setFullscreen] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const profileUrl = useMemo(() => {
+    if (typeof window === "undefined") return "";
+    const origin = window.location.origin;
+    return userId ? `${origin}/u/${userId}` : origin;
+  }, [userId]);
+
+  const payload = useMemo(
+    () => buildVCard(name, email, phone, profileUrl),
+    [name, email, phone, profileUrl],
+  );
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const url = await QRCode.toDataURL(payload, {
+          errorCorrectionLevel: "M",
+          margin: 2,
+          width: 512,
+          color: { dark: "#0f172a", light: "#ffffff" },
+        });
+        if (cancelled) return;
+        setDataUrl(url);
+        setError(null);
+        if (canvasRef.current) {
+          await QRCode.toCanvas(canvasRef.current, payload, {
+            errorCorrectionLevel: "M",
+            margin: 2,
+            width: 512,
+            color: { dark: "#0f172a", light: "#ffffff" },
+          });
+        }
+      } catch (e) {
+        if (!cancelled) setError((e as Error).message || "Gagal membuat QR");
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open, payload]);
+
+  const filename = `qr-${name.replace(/[^a-z0-9]+/gi, "-").toLowerCase() || "profil"}.png`;
+
+  const handleDownload = () => {
+    if (!dataUrl) return;
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast.success("QR profil diunduh.");
+  };
+
+  const handleShare = async () => {
+    if (!dataUrl) return;
+    try {
+      const blob = await (await fetch(dataUrl)).blob();
+      const file = new File([blob], filename, { type: "image/png" });
+      // Web Share API level 2 (file) — sesuai preferensi: gunakan Share bukan window.open.
+      if (navigator.canShare?.({ files: [file] })) {
+        await navigator.share({ files: [file], title: `QR profil ${name}`, text: name });
+        return;
+      }
+      if (navigator.share) {
+        await navigator.share({ title: `QR profil ${name}`, text: name, url: profileUrl });
+        return;
+      }
+      handleDownload();
+    } catch (e) {
+      const msg = (e as Error).message || "";
+      if (!/aborted|cancel/i.test(msg)) toast.error("Gagal membagikan QR.");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className={fullscreen ? "h-svh max-w-none w-svw rounded-none p-0" : "max-w-md"}>
+        <DialogHeader className={fullscreen ? "px-4 pt-4" : ""}>
+          <DialogTitle>Kode QR profil</DialogTitle>
+          <DialogDescription className="truncate">
+            {name}
+            {phone ? ` · ${phone}` : email ? ` · ${email}` : ""}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className={fullscreen ? "flex flex-1 items-center justify-center p-4" : "flex items-center justify-center py-2"}>
+          {error ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              {error}
+            </div>
+          ) : (
+            <div className="rounded-2xl bg-white p-4 shadow-sm ring-1 ring-border">
+              <canvas
+                ref={canvasRef}
+                aria-label={`Kode QR untuk ${name}`}
+                className={fullscreen ? "h-[min(80svh,80svw)] w-[min(80svh,80svw)]" : "h-64 w-64"}
+              />
+            </div>
+          )}
+        </div>
+
+        <div className={fullscreen ? "flex flex-wrap gap-2 border-t bg-background px-4 py-3" : "flex flex-wrap gap-2 pt-2"}>
+          <Button type="button" onClick={handleDownload} disabled={!dataUrl} className="gap-2">
+            <Download className="h-4 w-4" /> Unduh PNG
+          </Button>
+          <Button type="button" variant="secondary" onClick={handleShare} disabled={!dataUrl} className="gap-2">
+            <Share2 className="h-4 w-4" /> Bagikan
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            onClick={() => setFullscreen((v) => !v)}
+            className="ml-auto gap-2"
+            aria-pressed={fullscreen}
+          >
+            {fullscreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+            {fullscreen ? "Keluar layar penuh" : "Layar penuh"}
+          </Button>
+          {fullscreen ? (
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} aria-label="Tutup">
+              <X className="h-4 w-4" />
+            </Button>
+          ) : null}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
