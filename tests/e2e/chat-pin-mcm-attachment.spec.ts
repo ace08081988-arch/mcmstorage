@@ -76,14 +76,12 @@ test.describe("chat + lampiran — source guard: identitas peer tidak boleh fall
     // Yang dilarang: `peer.phone` / `p.phone` sebagai fallback nama tampil.
     expect(src).not.toMatch(/\|\|\s*peer\.phone\b/);
     expect(src).not.toMatch(/\|\|\s*p\.phone\b/);
-    // Guard tambahan: kalau file ini me-render "phone" mentah, harus di
-    // dalam blok contact-card (baris `card.phone`) — bukan di judul bubble.
-    const nonCardPhone = src.match(/[^d]\bphone\b/g)?.filter(
-      (m) => !m.includes("card"),
-    );
-    // Hanya boleh muncul sebagai `card.phone` — turunan lain harus nol.
-    // (heuristik lunak; asserted bahwa jumlahnya kecil & tidak berkembang.)
-    expect((nonCardPhone ?? []).length).toBeLessThanOrEqual(0);
+    // Guard tambahan: setiap kemunculan `phone` di file ini WAJIB
+    // berbentuk `card.phone` (payload contact-card yang sengaja dikirim
+    // user). Kalau ada bentuk lain, itu regresi identitas.
+    const nonCardPhone = (src.match(/\bphone\b/g) ?? []).length
+      - (src.match(/\bcard\.phone\b/g) ?? []).length;
+    expect(nonCardPhone, "phone di MessageAttachment hanya boleh via card.phone").toBe(0);
   });
 
   test("AttachMenu.tsx: header sheet tidak mem-render peer.phone sebagai label", () => {
