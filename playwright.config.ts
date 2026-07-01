@@ -283,6 +283,21 @@ export default defineConfig({
       },
     },
     {
+      // E2E: fitur "Cari di percakapan" pada DM yang sudah ada — dialog,
+      // list hits, header, dan transkrip di belakang dialog wajib memakai
+      // `PIN xxxx-xxxx` dan bebas nomor telp Indonesia mentah. Source
+      // guard memastikan `ConversationSearchDialog` hanya membaca
+      // `m.body`/`m.created_at`, tidak `m.phone`.
+      name: "chat-pin-mcm-search-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-search\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
