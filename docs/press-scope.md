@@ -123,6 +123,48 @@ yang diwarisi dari parent.
 > Prioritas lengkap kalau atribut bertumpuk (parent vs child, DOM vs global
 > config) ada di [Prioritas evaluasi](#prioritas-evaluasi-satu-section-banyak-atribut).
 
+### Verifikasi otomatis contoh HTML (halaman demo)
+
+Semua contoh HTML di dokumen ini bisa dijalankan otomatis di halaman dev
+**`/dev/press-audit-demo`**. Halaman itu memasang setiap kombinasi
+`data-press-audit` / `-skip` / `-allow` / `-deny` ke sub-pohon contoh,
+memanggil helper publik `scanPressAuditFindings(root)`, lalu
+membandingkan finding aktual vs yang diharapkan.
+
+Snippet JavaScript minimum untuk melakukan hal yang sama di console
+devtools (atau di E2E) — tanpa membuka halaman demo:
+
+```js
+// 1) Import helper (di kode aplikasi):
+//    import { scanPressAuditFindings } from "@/lib/press-audit";
+// 2) Atau di devtools, panggil audit manual:
+window.__pressAudit?.();
+
+// 3) Toggle aturan pada satu section secara programatik:
+const host = document.querySelector('[data-testid="pa-demo-destructive-menuitem"]');
+
+// Matikan seluruh audit di section ini:
+host.setAttribute("data-press-audit", "off");
+
+// Atau: matikan hanya PA004 (destructive-menuitem):
+host.setAttribute("data-press-audit-skip", "PA004");
+
+// Verifikasi hasilnya — expect [] (kosong) setelah skip dipasang:
+import("@/lib/press-audit").then(({ scanPressAuditFindings }) => {
+  const codes = scanPressAuditFindings(host).map((f) => f.code);
+  console.assert(codes.length === 0, "harus kosong setelah skip PA004", codes);
+});
+
+// Nyalakan lagi (hapus atribut):
+host.removeAttribute("data-press-audit");
+host.removeAttribute("data-press-audit-skip");
+```
+
+Halaman demo mengekspos `window.__pressAuditDemoVerify()` untuk memicu
+tombol **“Verifikasi semua preset”** di setiap kartu — cocok untuk
+Playwright: navigasi ke `/dev/press-audit-demo`, panggil helper, lalu
+cek atribut `data-pass="1"` pada tiap baris hasil.
+
 ---
 
 Utilitas press MCM memberi feedback taktil (skala + shading) untuk elemen

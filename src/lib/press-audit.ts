@@ -473,6 +473,31 @@ export function getPressAuditRegistry(): PressAuditRuleEntry[] {
 
 export const PRESS_AUDIT_DOCS_BASE = DOCS_BASE;
 
+/**
+ * Public helper untuk halaman demo/E2E: kembalikan finding terstruktur
+ * dari `root` tanpa menulis ke console dan tanpa memodifikasi DOM.
+ *
+ * Menghormati `data-press-audit`, `-skip`, `-allow`, `-deny` (via
+ * `ruleAllows`) dan `scope.*` dari konfigurasi runtime. Berguna untuk
+ * memverifikasi contoh HTML pada `docs/press-scope.md` secara otomatis.
+ */
+export function scanPressAuditFindings(
+  root: ParentNode = document.body,
+): Array<{ rule: string; code: string; docs: string; el: Element }> {
+  const raw = scan(root);
+  return raw
+    .filter((f) => {
+      const meta = metaFor(f.rule);
+      if (!ruleAllows(f.el, f.rule, meta.code)) return false;
+      if (!scopeAllows(f.el)) return false;
+      return true;
+    })
+    .map((f) => {
+      const meta = metaFor(f.rule);
+      return { rule: f.rule, code: meta.code, docs: meta.docs, el: f.el };
+    });
+}
+
 function describeEl(el: Element): {
   tag: string;
   id: string | null;
