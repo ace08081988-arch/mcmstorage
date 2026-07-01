@@ -498,6 +498,302 @@ export function scanPressAuditFindings(
     });
 }
 
+// -----------------------------------------------------------------
+// Debug trace: jelaskan keputusan filter langkah demi langkah.
+// Dipakai halaman demo & devtools untuk memverifikasi tabel prioritas.
+// -----------------------------------------------------------------
+
+export type PressAuditTraceStep = {
+  /** Nomor urut langkah evaluasi (1..7). */
+  step: number;
+  /** Nama singkat langkah (mis. `"scope.deny"`, `"attr:-deny"`). */
+  name: string;
+  /** `"pass"` = lolos ke langkah berikut, `"block"` = keputusan final. */
+  outcome: "pass" | "block";
+  /** Alasan human-readable — muncul apa adanya di console dan UI demo. */
+  reason: string;
+  /** Elemen ancestor tempat atribut terbaca (bila relevan). */
+  hostTag?: string;
+  /** Token yang berkontribusi (mis. daftar hasil union). */
+  tokens?: string[];
+};
+
+export type PressAuditTrace = {
+  rule: string;
+  code: string;
+  /** `true` = temuan tetap dilaporkan; `false` = di-block di salah satu langkah. */
+  allowed: boolean;
+  steps: PressAuditTraceStep[];
+};
+
+function findAncestorWithAttr(el: Element, attr: string): Element | null {
+  let cur: Element | null = el;
+  while (cur) {
+    if (cur.hasAttribute(attr)) return cur;
+    cur = cur.parentElement;
+  }
+  return null;
+}
+
+function tagOf(el: Element | null): string | undefined {
+  if (!el) return undefined;
+  const id = (el as HTMLElement).id ? `#${(el as HTMLElement).id}` : "";
+  const cls = (el.getAttribute("class") || "")
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((c) => `.${c}`)
+    .join("");
+  return `${el.tagName.toLowerCase()}${id}${cls}`;
+}
+
+/**
+ * Kembalikan jejak keputusan untuk sebuah (rule, elemen) tanpa
+ * menyentuh DOM atau console. Setiap langkah menjelaskan atribut mana
+ * yang diambil di ancestor path dan alasan lolos/diblokir — cocok
+ * untuk memverifikasi tabel prioritas di `docs/press-scope.md`.
+ */
+export function tracePressAuditDecision(
+  el: Element,
+  rule: string,
+): PressAuditTrace {
+  const code = metaFor(rule).code;
+  const steps: PressAuditTraceStep[] = [];
+  const push = (s: PressAuditTraceStep) => steps.push(s);
+
+  // (1) scope.deny (selector CSS global)
+  let scopeDenyHit: Element | null = null;
+  for (const sel of config.scope.deny) {
+    try {
+      const hit = el.closest(sel);
+      if (hit) {
+        scopeDenyHit = hit;
+        break;
+      }
+    } catch {
+      /* ignore invalid selector */
+    }
+  }
+  if (scopeDenyHit) {
+    push({
+      step: 1,
+      name: "scope.deny",
+      outcome: "block",
+      reason: `Ancestor cocok selector scope.deny — sub-pohon dimatikan.`,
+      hostTag: tagOf(scopeDenyHit),
+    });
+    return { rule, code, allowed: false, steps };
+  }
+  push({
+    step: 1,
+    name: "scope.deny",
+    outcome: "pass",
+    reason: `Tidak ada ancestor yang cocok scope.deny (${config.scope.deny.length} selector).`,
+  });
+
+  // (2) scope.allow (selector CSS global)
+  if (config.scope.allow.length) {
+    let scopeAllowHit: Element | null = null;
+    for (const sel of config.scope.allow) {
+      try {
+        const hit = el.closest(sel);
+        if (hit) {
+          scopeAllowHit = hit;
+          break;
+        }
+      } catch {
+        /* ignore */
+      }
+    }
+    if (!scopeAllowHit) {
+      push({
+        step: 2,
+        name: "scope.allow",
+        outcome: "block",
+        reason: `scope.allow diisi (${config.scope.allow.length}) tapi tak ada ancestor yang cocok.`,
+      });
+      return { rule, code, allowed: false, steps };
+    }
+    push({
+      step: 2,
+      name: "scope.allow",
+      outcome: "pass",
+      reason: `Ancestor cocok scope.allow.`,
+      hostTag: tagOf(scopeAllowHit),
+    });
+  } else {
+    push({
+      step: 2,
+      name: "scope.allow",
+      outcome: "pass",
+      reason: `scope.allow kosong ⇒ semua sub-pohon lolos.`,
+    });
+  }
+
+  // (3) attribute `data-press-audit="off"` terdekat (dengan `"on"` di child membalik)
+  //     `scopeAllows` memakai `.closest('[data-press-audit="off"]')` — kita
+  //     tirukan logika itu, tapi hormati `on` di descendant terdekat sebagai reset.
+  const offHost = el.closest('[data-press-audit="off"]');
+  if (offHost) {
+    // Adakah `data-press-audit="on"` yang lebih dekat ke `el` dari offHost?
+    const onHost = el.closest('[data-press-audit="on"]');
+    const onCloser = onHost && offHost.contains(onHost) && onHost !== offHost;
+    if (!onCloser) {
+      push({
+        step: 3,
+        name: 'attr:audit="off"',
+        outcome: "block",
+        reason: `data-press-audit="off" terdekat menonaktifkan sub-pohon; tak ada "on" di antara off dan target.`,
+        hostTag: tagOf(offHost),
+      });
+      return { rule, code, allowed: false, steps };
+    }
+    push({
+      step: 3,
+      name: 'attr:audit="on"',
+      outcome: "pass",
+      reason: `data-press-audit="on" di descendant membalik "off" pada ancestor lebih jauh.`,
+      hostTag: tagOf(onHost!),
+    });
+  } else {
+    push({
+      step: 3,
+      name: 'attr:audit',
+      outcome: "pass",
+      reason: `Tak ada data-press-audit="off" di ancestor path.`,
+    });
+  }
+
+  // (4) global allowRules
+  if (config.rules.allow.length) {
+    const inAllow = ruleMatches(config.rules.allow, rule, code);
+    if (!inAllow) {
+      push({
+        step: 4,
+        name: "global.allowRules",
+        outcome: "block",
+        reason: `allowRules global diisi tetapi kode ${code} (${rule}) tidak termasuk.`,
+        tokens: [...config.rules.allow],
+      });
+      return { rule, code, allowed: false, steps };
+    }
+    push({
+      step: 4,
+      name: "global.allowRules",
+      outcome: "pass",
+      reason: `Kode ${code} lolos allowRules global.`,
+      tokens: [...config.rules.allow],
+    });
+  } else {
+    push({
+      step: 4,
+      name: "global.allowRules",
+      outcome: "pass",
+      reason: `allowRules global kosong ⇒ semua kode lolos.`,
+    });
+  }
+
+  // (5) global denyRules
+  if (ruleMatches(config.rules.deny, rule, code)) {
+    push({
+      step: 5,
+      name: "global.denyRules",
+      outcome: "block",
+      reason: `denyRules global memuat ${code} — menang atas allowRules.`,
+      tokens: [...config.rules.deny],
+    });
+    return { rule, code, allowed: false, steps };
+  }
+  push({
+    step: 5,
+    name: "global.denyRules",
+    outcome: "pass",
+    reason: config.rules.deny.length
+      ? `denyRules global (${config.rules.deny.join(",")}) tidak memuat ${code}.`
+      : `denyRules global kosong.`,
+  });
+
+  // (6) DOM `-skip` ∪ `-deny` (aditif sepanjang ancestor path)
+  const denyTokens = collectAncestorTokens(el, [
+    "data-press-audit-skip",
+    "data-press-audit-deny",
+  ]);
+  const denyHit = denyTokens.some(
+    (k) => k === rule || k.toUpperCase() === code.toUpperCase(),
+  );
+  if (denyHit) {
+    const skipHost = findAncestorWithAttr(el, "data-press-audit-skip");
+    const denyHost = findAncestorWithAttr(el, "data-press-audit-deny");
+    push({
+      step: 6,
+      name: "attr:-skip/-deny",
+      outcome: "block",
+      reason: `Union skip+deny sepanjang ancestor path memuat ${code}/${rule} — menang atas -allow.`,
+      tokens: denyTokens,
+      hostTag: tagOf(denyHost ?? skipHost),
+    });
+    return { rule, code, allowed: false, steps };
+  }
+  push({
+    step: 6,
+    name: "attr:-skip/-deny",
+    outcome: "pass",
+    reason: denyTokens.length
+      ? `Union skip+deny = [${denyTokens.join(",")}] tidak memuat ${code}.`
+      : `Tak ada -skip / -deny di ancestor path.`,
+    tokens: denyTokens,
+  });
+
+  // (7) DOM `-allow` (whitelist union)
+  const allowTokens = collectAncestorTokens(el, ["data-press-audit-allow"]);
+  if (allowTokens.length > 0) {
+    const inAllow = allowTokens.some(
+      (k) => k === rule || k.toUpperCase() === code.toUpperCase(),
+    );
+    const allowHost = findAncestorWithAttr(el, "data-press-audit-allow");
+    if (!inAllow) {
+      push({
+        step: 7,
+        name: "attr:-allow",
+        outcome: "block",
+        reason: `-allow diisi di ancestor tapi ${code} tidak termasuk union allowlist.`,
+        tokens: allowTokens,
+        hostTag: tagOf(allowHost),
+      });
+      return { rule, code, allowed: false, steps };
+    }
+    push({
+      step: 7,
+      name: "attr:-allow",
+      outcome: "pass",
+      reason: `${code} termasuk di union -allow ancestor.`,
+      tokens: allowTokens,
+      hostTag: tagOf(allowHost),
+    });
+  } else {
+    push({
+      step: 7,
+      name: "attr:-allow",
+      outcome: "pass",
+      reason: `Tak ada -allow di ancestor path ⇒ default lolos.`,
+    });
+  }
+
+  return { rule, code, allowed: true, steps };
+}
+
+/**
+ * Format jejak menjadi baris teks pendek, mudah dibaca di console.
+ */
+export function formatPressAuditTrace(trace: PressAuditTrace): string[] {
+  return trace.steps.map((s) => {
+    const icon = s.outcome === "pass" ? "✓" : "✗";
+    const host = s.hostTag ? `  @${s.hostTag}` : "";
+    const toks = s.tokens && s.tokens.length ? `  tokens=[${s.tokens.join(",")}]` : "";
+    return `${icon} (${s.step}) ${s.name} — ${s.reason}${host}${toks}`;
+  });
+}
+
 function describeEl(el: Element): {
   tag: string;
   id: string | null;
