@@ -392,6 +392,7 @@ function BukuAlamatPage() {
 
       <EditDialog
         target={editing}
+        rows={rows}
         onClose={() => setEditing(null)}
         onSaved={async () => {
           setEditing(null);
@@ -404,10 +405,12 @@ function BukuAlamatPage() {
 
 function EditDialog({
   target,
+  rows,
   onClose,
   onSaved,
 }: {
   target: AddressBookRow | "new" | null;
+  rows: AddressBookRow[];
   onClose: () => void;
   onSaved: () => void | Promise<void>;
 }) {
@@ -436,9 +439,37 @@ function EditDialog({
     }
   }, [target]);
 
+  const normPhone = (s: string) => s.replace(/\D/g, "");
+  const normEmail = (s: string) => s.trim().toLowerCase();
+  const normName = (s: string) => s.trim().toLowerCase();
+  const duplicate = useMemo(() => {
+    if (!isNew) return null;
+    const others = rows.filter((r) => r.id !== row?.id);
+    const p = normPhone(phone);
+    const e = normEmail(email);
+    const n = normName(name);
+    for (const r of others) {
+      if (p && (r.phone_norm === p || normPhone(r.phone ?? "") === p)) {
+        return { row: r, reason: `Nomor telepon sudah dipakai kontak "${r.name}"` };
+      }
+      if (e && normEmail(r.email ?? "") === e) {
+        return { row: r, reason: `Email sudah dipakai kontak "${r.name}"` };
+      }
+    }
+    if (n) {
+      const nameMatch = others.find((r) => normName(r.name) === n);
+      if (nameMatch) return { row: nameMatch, reason: `Nama "${nameMatch.name}" sudah ada di buku alamat` };
+    }
+    return null;
+  }, [isNew, rows, row?.id, name, phone, email]);
+
   const save = async () => {
     if (!name.trim()) {
       toast.error("Nama wajib diisi.");
+      return;
+    }
+    if (duplicate) {
+      toast.error("Kontak duplikat", { description: duplicate.reason });
       return;
     }
     setBusy(true);
@@ -485,6 +516,14 @@ function EditDialog({
               : "Simpan nama, nomor telepon, dan email."}
           </DialogDescription>
         </DialogHeader>
+        {duplicate && (
+          <div
+            role="alert"
+            className="rounded-md border border-destructive/40 bg-destructive/10 px-3 py-2 text-sm text-destructive"
+          >
+            {duplicate.reason}. Silakan buka kontak yang sudah ada atau ubah data.
+          </div>
+        )}
         <div className="space-y-2">
           <Input
             autoFocus
@@ -526,7 +565,7 @@ function EditDialog({
           <Button variant="ghost" onClick={onClose} disabled={busy}>
             Batal
           </Button>
-          <Button onClick={() => void save()} disabled={busy}>
+          <Button onClick={() => void save()} disabled={busy || !!duplicate}>
             {busy ? "Menyimpan…" : "Simpan"}
           </Button>
         </DialogFooter>
