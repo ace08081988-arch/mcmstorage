@@ -6,6 +6,17 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { RotateCcw, CheckCircle2, Bell } from "lucide-react";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import {
   DEFAULT_SCROLL_GUARD,
   SCROLL_GUARD_BOUNDS,
   useScrollGuardConfig,
@@ -121,6 +132,15 @@ function PengaturanScrollGuardPage() {
         holdMs={cfg.hintHoldMs}
         onChange={(patch) => {
           set(patch);
+          flashSaved();
+        }}
+        onResetAll={() => {
+          set({
+            hintScrollText: DEFAULT_SCROLL_GUARD.hintScrollText,
+            hintDriftText: DEFAULT_SCROLL_GUARD.hintDriftText,
+            hintFadeMs: DEFAULT_SCROLL_GUARD.hintFadeMs,
+            hintHoldMs: DEFAULT_SCROLL_GUARD.hintHoldMs,
+          });
           flashSaved();
         }}
       />
@@ -303,6 +323,7 @@ function HintCustomization({
   fadeMs,
   holdMs,
   onChange,
+  onResetAll,
 }: {
   scrollText: string;
   driftText: string;
@@ -314,6 +335,7 @@ function HintCustomization({
     hintFadeMs?: number;
     hintHoldMs?: number;
   }) => void;
+  onResetAll: () => void;
 }) {
   const [preview, setPreview] = useState<null | { text: string; key: number }>(null);
 
@@ -326,10 +348,41 @@ function HintCustomization({
   return (
     <Card>
       <CardHeader className="pb-3">
-        <CardTitle className="text-base flex items-center gap-2">
-          <Bell className="h-4 w-4" />
-          Teks & durasi tooltip
-        </CardTitle>
+        <div className="flex items-start justify-between gap-2">
+          <CardTitle className="text-base flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Teks & durasi tooltip
+          </CardTitle>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="h-7 shrink-0 text-xs text-muted-foreground hover:text-foreground"
+              >
+                <RotateCcw className="mr-1 h-3.5 w-3.5" />
+                Reset semua
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset semua pengaturan tooltip?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Teks hint, durasi fade, dan durasi tampil akan dikembalikan ke nilai
+                  default pabrik. Pengaturan cooldown, drift, dan tekan-lama tidak
+                  terpengaruh.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction onClick={onResetAll}>
+                  Ya, reset default
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
         <CardDescription className="text-xs">
           Sesuaikan pesan yang muncul saat guard menolak tap, plus seberapa cepat tooltip fade
           in/out. Kosongkan teks untuk mematikan hint.
