@@ -65,6 +65,44 @@ describe("messages_check constraint (post-relaksasi)", () => {
   });
 });
 
+describe("messages_check truth table — body & attachment NULL hanya lolos saat deleted_at terisi", () => {
+  const expr = checkMatch![1];
+  const V = "x"; // any non-null sentinel
+  const D = "2026-07-01T00:00:00Z";
+
+  // (body, attachment_path, deleted_at) -> expected accept?
+  const cases: Array<[
+    string | null,
+    string | null,
+    string | null,
+    boolean,
+    string,
+  ]> = [
+    // deleted_at NULL — minimal salah satu body/attachment harus ada.
+    [null, null, null, false, "hidup & kosong total → DITOLAK"],
+    [V,    null, null, true,  "hidup + body → diterima"],
+    [null, V,    null, true,  "hidup + attachment → diterima"],
+    [V,    V,    null, true,  "hidup + body & attachment → diterima"],
+    // deleted_at terisi — semua kombinasi harus diterima (termasuk yang keduanya NULL).
+    [null, null, D,    true,  "soft-deleted & kosong total → DITERIMA (case kunci soft-delete)"],
+    [V,    null, D,    true,  "soft-deleted + body sisa → diterima"],
+    [null, V,    D,    true,  "soft-deleted + attachment sisa → diterima"],
+    [V,    V,    D,    true,  "soft-deleted + keduanya sisa → diterima"],
+  ];
+
+  it.each(cases)(
+    "body=%s attachment=%s deleted_at=%s → %s (%s)",
+    (body, attachment_path, deleted_at, expected) => {
+      expect(evalCheck(expr, { body, attachment_path, deleted_at })).toBe(expected);
+    },
+  );
+
+  it("body & attachment NULL: ditolak saat deleted_at NULL, diterima saat deleted_at terisi", () => {
+    expect(evalCheck(expr, { body: null, attachment_path: null, deleted_at: null })).toBe(false);
+    expect(evalCheck(expr, { body: null, attachment_path: null, deleted_at: D })).toBe(true);
+  });
+});
+
 describe("message_delete_for_all RPC body", () => {
   it("melakukan UPDATE public.messages yang men-NULL-kan body & attachment_path", () => {
     expect(updateStmt, "UPDATE public.messages tidak ditemukan di RPC").toBeTruthy();
