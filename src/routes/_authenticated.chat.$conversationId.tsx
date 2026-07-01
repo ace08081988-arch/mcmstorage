@@ -1071,6 +1071,7 @@ function ChatRoomPage() {
                                     name={m.attachment_name}
                                     size={m.attachment_size}
                                     mine={mine}
+                                    durationSec={m.attachment_duration_sec ?? null}
                                   />
                                 ) : null}
                                 {card ? <CardBlock card={card} mine={mine} /> : null}
