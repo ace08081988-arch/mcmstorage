@@ -67,12 +67,22 @@ function InviteLandingPage() {
     setAdding(true);
     try {
       const r = await addContactByInviteCode(code);
-      toast.success(
-        r.alreadyExisted
-          ? `Sudah ada di kontak: ${r.displayName ?? "Kontak"}`
-          : `Ditambahkan: ${r.displayName ?? "Kontak"}`,
-      );
-      router.navigate({ to: "/chat" });
+      if (r.alreadyFriends) {
+        toast.success(`Sudah berteman dengan ${r.displayName ?? "kontak"}.`);
+        router.navigate({ to: "/chat" });
+      } else if (r.incomingReverseId) {
+        toast.info(`${r.displayName ?? "Kontak"} sudah lebih dulu mengundang kamu. Buka “Permintaan pertemanan” untuk menerima.`);
+        router.navigate({ to: "/kontak/permintaan" as never });
+      } else if (r.pending) {
+        toast.success(
+          r.alreadyExisted
+            ? `Permintaan ke ${r.displayName ?? "kontak"} sudah dikirim — menunggu diterima.`
+            : `Permintaan pertemanan terkirim ke ${r.displayName ?? "kontak"}. Menunggu diterima.`,
+        );
+        router.navigate({ to: "/kontak/permintaan" as never });
+      } else {
+        toast.info("Permintaan sudah tidak aktif.");
+      }
     } catch (e) {
       toast.error((e as Error).message || "Gagal menambah kontak.");
     } finally {
