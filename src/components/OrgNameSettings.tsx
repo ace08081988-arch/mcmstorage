@@ -406,17 +406,49 @@ export function OrgNameSettings() {
           >
             Reset ke bawaan
           </Button>
-          <Button
-            type="button"
-            onClick={onSave}
-            disabled={!dirty || !full.trim()}
-            className="gap-2"
-          >
-            <Save className="h-4 w-4" aria-hidden="true" />
-            Simpan
-          </Button>
+          <div className="flex items-center gap-3">
+            {lastSavedAt && !dirty && (
+              <span
+                className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-500"
+                title={new Date(lastSavedAt).toLocaleString("id-ID")}
+              >
+                <Check className="h-3 w-3" aria-hidden="true" />
+                Tersimpan · {formatRelative(now - lastSavedAt)}
+              </span>
+            )}
+            <Button
+              type="button"
+              onClick={onSave}
+              disabled={!dirty || !full.trim()}
+              className="gap-2"
+            >
+              <Save className="h-4 w-4" aria-hidden="true" />
+              Simpan
+            </Button>
+          </div>
         </div>
+        {lastSavedAt && (
+          <p className="text-[11px] text-muted-foreground">
+            Terakhir diperbarui{" "}
+            <time dateTime={new Date(lastSavedAt).toISOString()}>
+              {new Date(lastSavedAt).toLocaleString("id-ID", {
+                dateStyle: "medium",
+                timeStyle: "short",
+              })}
+            </time>
+          </p>
+        )}
       </CardContent>
     </Card>
   );
+}
+
+function formatRelative(msAgo: number): string {
+  if (msAgo < 45_000) return "baru saja";
+  const min = Math.round(msAgo / 60_000);
+  if (min < 60) return `${min} menit lalu`;
+  const hr = Math.round(min / 60);
+  if (hr < 24) return `${hr} jam lalu`;
+  const d = Math.round(hr / 24);
+  return `${d} hari lalu`;
 }
