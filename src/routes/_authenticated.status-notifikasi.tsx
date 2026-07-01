@@ -560,6 +560,15 @@ function Row({ label, value }: { label: string; value: React.ReactNode }) {
   );
 }
 
+function Evidence({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="flex items-start justify-between gap-3">
+      <span className="text-muted-foreground">{k}</span>
+      <span className="text-right break-all">{v}</span>
+    </div>
+  );
+}
+
 function Readiness({
   perm,
   inIframe,
