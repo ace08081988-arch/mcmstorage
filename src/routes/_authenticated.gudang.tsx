@@ -390,9 +390,9 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
     if (!myProfile) return;
     const filled: string[] = [];
     if (myProfile.display_name) { setName(myProfile.display_name); filled.push("nama"); }
-    if (normalizedMyPhone) { setContact(normalizedMyPhone); filled.push("no. WA"); }
+    if (normalizedMyPhone) { setContact(normalizedMyPhone); filled.push("no. MCM"); }
     else if (myProfile.phone) {
-      toast.warning("Nomor WA di profil tidak valid — perbarui di halaman Profil Akun");
+      toast.warning("Nomor MCM di profil tidak valid — perbarui di halaman Profil Akun");
     }
     if (filled.length) toast.success(`Diisi dari akun Anda (${filled.join(" & ")})`);
   }
@@ -431,14 +431,14 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
       <form onSubmit={submit} className="space-y-2 rounded-lg border bg-card p-3">
         <div className="text-xs font-semibold">{editingId ? "Edit Pelanggan" : "Tambah Pelanggan"}</div>
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama pelanggan *" value={name} onChange={(e) => setName(e.target.value)} required maxLength={100} />
-        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. WA / kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={50} />
+        <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. MCM / kontak (opsional)" value={contact} onChange={(e) => setContact(e.target.value)} maxLength={50} />
         <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Catatan (opsional)" value={notes} onChange={(e) => setNotes(e.target.value)} maxLength={200} />
         <button
           type="button"
           onClick={useMyContact}
           disabled={!canUseMyContact}
           className="w-full rounded-md border border-dashed px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-accent disabled:opacity-50"
-          title={canUseMyContact ? "Isi nama & no. WA dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
+          title={canUseMyContact ? "Isi nama & no. MCM dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
         >
           👤 Pakai kontak akun saya
         </button>
@@ -805,7 +805,7 @@ function ShareCustomer({
       }
       const payload: ShareData = { text: message, title: `Catatan ${customer.name}`, files };
       if (typeof navigator.canShare === "function" && !navigator.canShare(payload)) {
-        toast.error("Browser ini tidak mengizinkan berbagi file. Coba dari WhatsApp/Chrome di HP.");
+        toast.error("Browser ini tidak mengizinkan berbagi file. Coba dari MCM/Chrome di HP.");
         return;
       }
       await navigator.share(payload);
@@ -857,7 +857,7 @@ function ShareCustomer({
           </div>
           {uniqueImagePaths.length > 0 && (
             <p className="text-[11px] text-muted-foreground">
-              Tombol "Bagikan + Foto" memakai berbagi bawaan HP (Android/iOS) sehingga foto barang ikut terkirim. Tombol WhatsApp/Telegram di atas hanya mengirim teks karena tidak mendukung lampiran via link.
+              Tombol "Bagikan + Foto" memakai berbagi bawaan HP (Android/iOS) sehingga foto barang ikut terkirim. Tombol MCM/Telegram di atas hanya mengirim teks karena tidak mendukung lampiran via link.
             </p>
           )}
         </div>
@@ -1425,9 +1425,9 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
     if (!myProfile) return;
     const filled: string[] = [];
     if (myProfile.display_name) { setName(myProfile.display_name); filled.push("nama"); }
-    if (normalizedMyPhone) { setContact(normalizedMyPhone); filled.push("no. WA"); }
+    if (normalizedMyPhone) { setContact(normalizedMyPhone); filled.push("no. MCM"); }
     else if (myProfile.phone) {
-      toast.warning("Nomor WA di profil tidak valid — perbarui di halaman Profil Akun");
+      toast.warning("Nomor MCM di profil tidak valid — perbarui di halaman Profil Akun");
     }
     if (filled.length) toast.success(`Diisi dari akun Anda (${filled.join(" & ")})`);
   }
@@ -1496,7 +1496,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
           onClick={useMyContact}
           disabled={!canUseMyContact}
           className="w-full rounded-md border border-dashed px-3 py-1.5 text-[11px] text-muted-foreground hover:bg-accent disabled:opacity-50"
-          title={canUseMyContact ? "Isi nama & no. WA dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
+          title={canUseMyContact ? "Isi nama & no. MCM dari profil akun Anda" : "Lengkapi profil akun terlebih dahulu"}
         >
           👤 Pakai kontak akun saya
         </button>
@@ -1990,8 +1990,8 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
           {customerId === "__new__" && (
             <div className="grid grid-cols-1 gap-2 rounded-md border border-dashed bg-muted/30 p-2">
               <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama pelanggan baru *" value={newCustName} onChange={(e) => setNewCustName(e.target.value)} maxLength={100} required />
-              <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. WhatsApp (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
-              <div className="text-[11px] text-muted-foreground">Pelanggan & nomor WA akan otomatis tersimpan ke daftar pelanggan.</div>
+              <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. MCM / HP (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
+              <div className="text-[11px] text-muted-foreground">Pelanggan & nomor MCM akan otomatis tersimpan ke daftar pelanggan.</div>
             </div>
           )}
 
@@ -2000,7 +2000,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             if (!c) return null;
             return (
               <div className="rounded-md border border-dashed bg-muted/30 px-2 py-1.5 text-[11px] text-muted-foreground">
-                No. WA pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
+                No. MCM pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
               </div>
             );
           })()}
@@ -2652,8 +2652,8 @@ function PesananTab({
         {customerId === "__new__" && (
           <div className="grid grid-cols-1 gap-2 rounded-md border border-dashed bg-muted/30 p-2">
             <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="Nama pelanggan baru *" value={newCustName} onChange={(e) => setNewCustName(e.target.value)} maxLength={100} required />
-            <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. WhatsApp (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
-            <div className="text-[11px] text-muted-foreground">Pelanggan & nomor WA akan otomatis tersimpan ke daftar pelanggan.</div>
+            <input className="w-full rounded-md border bg-background px-2 py-1.5 text-sm" placeholder="No. MCM / HP (cth: 0812xxxxx)" inputMode="tel" value={newCustWa} onChange={(e) => setNewCustWa(e.target.value)} maxLength={50} />
+            <div className="text-[11px] text-muted-foreground">Pelanggan & nomor MCM akan otomatis tersimpan ke daftar pelanggan.</div>
           </div>
         )}
 
@@ -2662,7 +2662,7 @@ function PesananTab({
           if (!c) return null;
           return (
             <div className="rounded-md border border-dashed bg-muted/30 px-2 py-1.5 text-[11px] text-muted-foreground">
-              No. WA pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
+              No. MCM pelanggan: {c.contact ? <span className="font-medium text-foreground">📞 {c.contact}</span> : <span className="italic">belum ada — tambahkan di menu Pelanggan</span>}
             </div>
           );
         })()}

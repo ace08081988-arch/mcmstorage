@@ -992,7 +992,7 @@ function LinkPegawaiPage() {
                   <Copy className="h-4 w-4" /> Salin
                 </Button>
                 <Button className="flex-1 bg-emerald-600 hover:bg-emerald-600/90" onClick={() => void sharePinToWa()}>
-                  <MessageCircle className="h-4 w-4" /> Kirim WA
+                  <MessageCircle className="h-4 w-4" /> Kirim via MCM
                 </Button>
               </div>
               <DialogFooter>

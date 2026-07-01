@@ -346,9 +346,9 @@ function PenyimpananPage() {
                 <RefreshCw className="mr-1.5 h-3.5 w-3.5" />
                 Segarkan
               </Button>
-              <Button size="sm" variant="outline" onClick={() => requestClear("mcm.wa-sent", "Riwayat WA")}>
+              <Button size="sm" variant="outline" onClick={() => requestClear("mcm.wa-sent", "Riwayat MCM")}>
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" />
-                Hapus riwayat WA
+                Hapus riwayat MCM
               </Button>
               <Button size="sm" variant="outline" onClick={() => requestClear("mcm.sticker", "Cache stiker")}>
                 <Trash2 className="mr-1.5 h-3.5 w-3.5" />

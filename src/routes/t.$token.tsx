@@ -1053,7 +1053,7 @@ function PublicPrepPage() {
             )}
             {(isLocked || attempts > 0) && (
               <p className="mt-2 text-center text-[10px] leading-relaxed text-muted-foreground">
-                Tombol ini hanya membuka WhatsApp dengan pesan siap kirim — pembatasan percobaan tetap berlaku sampai hitungan mundur selesai.
+                Tombol ini hanya membuka MCM dengan pesan siap kirim — pembatasan percobaan tetap berlaku sampai hitungan mundur selesai.
               </p>
             )}
             <div className="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">

@@ -246,7 +246,7 @@ function TugasPage() {
           </button>
         </div>
       </div>
-      <p className="mb-2 text-xs text-muted-foreground">Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via WhatsApp. Foto & lokasi yang dikirim pegawai muncul otomatis di sini.</p>
+      <p className="mb-2 text-xs text-muted-foreground">Pilih barang yang perlu disiapkan pegawai, kirim link + PIN via MCM. Foto & lokasi yang dikirim pegawai muncul otomatis di sini.</p>
       {pinAlerts.length > 0 && (
         <div className="mb-3 space-y-2">
           {pinAlerts.map((a) => {
@@ -780,7 +780,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         </div>
 
         <label className="block">
-          <div className="mb-1 text-[11px] text-muted-foreground">Nomor WhatsApp pegawai (opsional, format: 628xxxx)</div>
+          <div className="mb-1 text-[11px] text-muted-foreground">Nomor MCM / HP pegawai (opsional, format: 628xxxx)</div>
           <input
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/[^\d+]/g, "").slice(0, 16))}
@@ -788,7 +788,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
             inputMode="tel"
             className="h-10 w-full rounded-md border bg-background px-3 text-sm tabular-nums"
           />
-          <div className="mt-1 text-[10px] text-muted-foreground">Jika diisi, WhatsApp akan otomatis terbuka berisi link & PIN setelah tugas dibuat.</div>
+          <div className="mt-1 text-[10px] text-muted-foreground">Jika diisi, MCM akan otomatis terbuka berisi link & PIN setelah tugas dibuat.</div>
         </label>
 
         <div className="border-t pt-3">
@@ -821,7 +821,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
                         {missingPhoto && (
                           <span
                             className="inline-flex shrink-0 items-center gap-0.5 rounded bg-destructive/10 px-1 py-0.5 text-[9px] font-medium text-destructive"
-                            title="Barang ini belum punya foto — tidak bisa dikirim ke WA"
+                            title="Barang ini belum punya foto — tidak bisa dikirim via MCM"
                           >
                             <ImageIcon className="h-2.5 w-2.5" /> Tanpa foto
                           </span>
@@ -1381,7 +1381,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                             title={`Kirim detail item "${p.name}" via MCM`}
                             className="inline-flex h-5 shrink-0 items-center gap-0.5 rounded border border-[#25D366]/40 bg-[#25D366]/10 px-1.5 text-[10px] font-medium text-[#1ea952] hover:bg-[#25D366]/20"
                           >
-                            <MessageCircle className="h-2.5 w-2.5" /> WA
+                            <MessageCircle className="h-2.5 w-2.5" /> MCM
                           </button>
                         </li>
                       ))}
@@ -1405,7 +1405,7 @@ function AuditDialog({ tasks, onClose, onOpenTask }: { tasks: Task[]; onClose: (
                       className="inline-flex h-7 items-center gap-1 rounded-md border border-[#25D366]/50 bg-[#25D366]/10 px-2 text-[11px] font-medium text-[#1ea952] hover:bg-[#25D366]/20"
                       title="Kirim ringkasan lengkap tugas + semua item bermasalah"
                     >
-                      <MessageCircle className="h-3 w-3" /> Kirim WA
+                      <MessageCircle className="h-3 w-3" /> Kirim via MCM
                     </button>
                     {hasIssues && (
                       isFixed ? (
@@ -1526,7 +1526,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
     const hasWebShare = typeof navigator !== "undefined" && typeof navigator.share === "function";
     if (!hasWebShare) {
       toast.message("Browser ini tak mendukung tombol Bagikan langsung.", {
-        description: "Coba 'Buka WA Web' atau Salin pesan lalu tempel di WhatsApp.",
+        description: "Coba 'Buka MCM (WhatsApp Web)' atau Salin pesan lalu tempel di MCM.",
         duration: 7000,
       });
     }
@@ -1535,7 +1535,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
       notifyShareResult(res);
     } catch (err) {
       toast.error(`Gagal membagikan: ${(err as Error)?.message ?? String(err)}`, {
-        description: "Salin pesan lalu tempel manual di WhatsApp.",
+        description: "Salin pesan lalu tempel manual di MCM.",
         duration: 9000,
       });
     }
@@ -1547,7 +1547,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
     if (win) return;
     // Popup diblokir (mis. iframe pratinjau) — coba buka di tab teratas.
     toast.message("Popup diblokir browser.", {
-      description: "Membuka WhatsApp di tab ini. Izinkan popup untuk situs ini agar terbuka di tab baru.",
+      description: "Membuka MCM di tab ini. Izinkan popup untuk situs ini agar terbuka di tab baru.",
       duration: 8000,
     });
     try { window.top!.location.href = waUrl; }
@@ -1577,7 +1577,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
           </button>
           <a href={waUrl} target="_blank" rel="noreferrer" onClick={onOpenWa}
             className="inline-flex h-10 items-center justify-center gap-1 rounded-md border text-sm">
-            <ExternalLink className="h-4 w-4" /> Buka WA Web
+            <ExternalLink className="h-4 w-4" /> Buka MCM (WhatsApp Web)
           </a>
         </div>
       </div>
@@ -1700,7 +1700,7 @@ function SubmissionCard({ sub }: { sub: Submission }) {
       {sub.note && <div className="mt-0.5 line-clamp-2 text-[11px]">{sub.note}</div>}
       <div className="mt-1 flex gap-1">
         {sub.location_url && /^https:\/\//i.test(sub.location_url) && <a href={sub.location_url} target="_blank" rel="noreferrer" className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded border text-[10px]"><MapPin className="h-3 w-3" /> Lokasi</a>}
-        <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded bg-[#25D366] text-[10px] font-semibold text-white"><MessageCircle className="h-3 w-3" /> WA</button>
+        <button onClick={shareWA} className="inline-flex h-7 flex-1 items-center justify-center gap-1 rounded bg-[#25D366] text-[10px] font-semibold text-white"><MessageCircle className="h-3 w-3" /> MCM</button>
       </div>
     </div>
   );

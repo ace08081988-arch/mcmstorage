@@ -419,7 +419,7 @@ function TugasBaruPage() {
     const missingWid = items.filter((r) => !r.warehouse_item_id).length;
     if (missingWid > 0) {
       const ok = window.confirm(
-        `${missingWid} barang belum dipilih dari daftar produk. Tugas tetap bisa dibuat, tetapi foto pegawai tidak akan otomatis muncul di kartu Beranda (1g/ST/SPR/GS) dan tombol Kirim WA hanya aktif untuk barang yang cocok.\n\nLanjutkan tanpa cocokkan?`,
+        `${missingWid} barang belum dipilih dari daftar produk. Tugas tetap bisa dibuat, tetapi foto pegawai tidak akan otomatis muncul di kartu Beranda (1g/ST/SPR/GS) dan tombol Kirim via MCM hanya aktif untuk barang yang cocok.\n\nLanjutkan tanpa cocokkan?`,
       );
       if (!ok) return;
     }
@@ -633,7 +633,7 @@ function TugasBaruPage() {
                   <div className="col-span-12">
                     <label className="block space-y-1">
                       <div className="text-[11px] font-medium text-muted-foreground">
-                        Pilih dari daftar produk (agar foto pegawai otomatis muncul di Beranda & tombol Kirim WA aktif)
+                        Pilih dari daftar produk (agar foto pegawai otomatis muncul di Beranda & tombol Kirim via MCM aktif)
                       </div>
                       <select
                         value={r.title_id}

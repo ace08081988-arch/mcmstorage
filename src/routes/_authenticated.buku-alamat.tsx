@@ -335,7 +335,7 @@ function BukuAlamatPage() {
                             className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
                             onClick={() => void handleWa(r)}
                           >
-                            WA
+                            MCM
                           </Button>
                         )}
                         {r.linked_user_id && (

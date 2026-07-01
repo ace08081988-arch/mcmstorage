@@ -223,11 +223,11 @@ export function WaPreviewHost() {
             </div>
             <div className="min-w-0 flex-1 text-left">
               <DialogTitle className="flex items-center gap-2 text-base">
-                <span>Pratinjau pesan WhatsApp</span>
+                <span>Pratinjau pesan MCM</span>
                 <SyncSourceBadge source={liveLog.lastSource} active={liveLog.active} />
               </DialogTitle>
               <DialogDescription className="mt-0.5 text-xs">
-                Tinjau teks dan foto yang akan dikirim sebelum membuka WhatsApp.
+                Tinjau teks dan foto yang akan dikirim sebelum membuka MCM.
               </DialogDescription>
             </div>
           </div>
@@ -242,13 +242,13 @@ export function WaPreviewHost() {
                   {dup!.status === "in-flight"
                     ? (crossChannel
                         ? "Kiriman Chat untuk paket ini sedang berjalan."
-                        : "Klik ganda terdeteksi — kiriman WA sebelumnya masih berjalan.")
-                    : "Klik ganda terdeteksi — paket ini baru saja dikirim ke WA."}
+                        : "Klik ganda terdeteksi — kiriman MCM sebelumnya masih berjalan.")
+                    : "Klik ganda terdeteksi — paket ini baru saja dikirim via MCM."}
                 </div>
                 <div className="mt-0.5 opacity-90">
                   {dup!.status === "in-flight"
-                    ? `Dimulai ${dupAgoLabel}. Tombol "Kirim WA" dinonaktifkan hingga ${crossChannel ? "kiriman Chat" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
-                    : `Dikirim ${dupAgoLabel}. Tombol "Kirim WA" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
+                    ? `Dimulai ${dupAgoLabel}. Tombol "Kirim via MCM" dinonaktifkan hingga ${crossChannel ? "kiriman Chat" : "kiriman sebelumnya"} selesai agar tidak terkirim dua kali.`
+                    : `Dikirim ${dupAgoLabel}. Tombol "Kirim via MCM" dinonaktifkan untuk mencegah pesan dobel. Gunakan "Kirim ulang (paksa)" hanya jika Anda yakin perlu mengirim ulang.`}
                 </div>
                 <dl className="mt-2 grid grid-cols-[auto,1fr] gap-x-2 gap-y-0.5 text-[11.5px]">
                   <dt className="font-medium opacity-80">Waktu</dt>
@@ -325,7 +325,7 @@ export function WaPreviewHost() {
                 onChange={(e) => setDraft(e.target.value)}
                 rows={8}
                 className="min-h-[8rem] resize-y bg-background font-sans text-xs leading-relaxed"
-                placeholder="Tulis pesan untuk WhatsApp…"
+                placeholder="Tulis pesan untuk MCM…"
                 autoFocus
               />
             ) : (
@@ -467,7 +467,7 @@ export function WaPreviewHost() {
                 className="bg-emerald-600 text-white hover:bg-emerald-700"
               >
                 <Send className="mr-1.5 h-3.5 w-3.5" />
-                {live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim WA"}
+                {live?.status === "in-flight" ? "Menunggu kiriman lain…" : "Kirim via MCM"}
               </Button>
             )}
           </div>

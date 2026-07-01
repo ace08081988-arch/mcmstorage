@@ -175,7 +175,7 @@ export function ChatSharePreviewDialog({
                   <div className="font-semibold">
                     {effectiveDup.status === "in-flight"
                       ? (crossChannel
-                          ? "Kiriman WhatsApp untuk paket ini sedang berjalan."
+                          ? "Kiriman MCM untuk paket ini sedang berjalan."
                           : "Klik ganda terdeteksi — kiriman sebelumnya masih berjalan.")
                       : "Klik ganda terdeteksi — paket ini baru saja terkirim."}
                   </div>
@@ -188,7 +188,7 @@ export function ChatSharePreviewDialog({
                     <dt className="font-medium opacity-80">Waktu</dt>
                     <dd className="break-words"><span className="font-mono">{dupAbsLabel}</span> <span className="opacity-70">({dupAgoLabel})</span></dd>
                     <dt className="font-medium opacity-80">Tujuan</dt>
-                    <dd className="break-words">{effectiveDup.destination ?? data.conversationTitle}{crossChannel ? " · via WhatsApp" : ""}</dd>
+                    <dd className="break-words">{effectiveDup.destination ?? data.conversationTitle}{crossChannel ? " · via MCM" : ""}</dd>
                     <dt className="font-medium opacity-80">Status</dt>
                     <dd className="break-words">{dupStatusLabel}</dd>
                   </dl>
@@ -389,7 +389,7 @@ export function ChatSharePreviewDialog({
                   disabled={sending || !data || !onForceSend || effectiveDup?.status === "in-flight" || !payloadMatches}
                   title={
                     effectiveDup?.status === "in-flight"
-                      ? (crossChannel ? "Kiriman WhatsApp untuk paket ini masih berjalan" : "Kiriman sebelumnya masih berjalan")
+                      ? (crossChannel ? "Kiriman MCM untuk paket ini masih berjalan" : "Kiriman sebelumnya masih berjalan")
                       : !payloadMatches
                         ? (forceDisabledReason ?? "Payload berbeda dari kiriman sebelumnya")
                         : "Kirim ulang meski klik ganda terdeteksi"
@@ -404,7 +404,7 @@ export function ChatSharePreviewDialog({
                   type="button"
                   onClick={onConfirm}
                   disabled={sending || !data || live?.status === "in-flight"}
-                  title={live?.status === "in-flight" ? (crossChannel ? "Kiriman WhatsApp untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
+                  title={live?.status === "in-flight" ? (crossChannel ? "Kiriman MCM untuk paket ini masih berjalan — tunggu selesai" : "Kiriman sebelumnya masih berjalan") : undefined}
                   className="inline-flex h-9 items-center justify-center gap-1.5 rounded-md bg-primary px-3 text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
                 >
                   {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}

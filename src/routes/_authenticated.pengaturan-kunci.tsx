@@ -362,7 +362,7 @@ function PengaturanKunci() {
         <div>
           <div className="text-sm font-medium">Nama Toko</div>
           <div className="text-xs text-muted-foreground">
-            Dipakai otomatis di caption WhatsApp saat mengirim paket
+            Dipakai otomatis di caption MCM saat mengirim paket
             (mis. <em>“PEMBAYARAN DIKONFIRMASI - {shopSaved || "NAMA TOKO"}”</em>).
           </div>
         </div>
