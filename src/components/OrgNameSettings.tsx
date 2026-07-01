@@ -63,6 +63,92 @@ async function compressRaster(
 
 const MIN_DIM_FLOOR = 64;
 
+// SVG hardening — batas & pola berbahaya.
+const SVG_MAX_BYTES = 128 * 1024; // 128 KB — SVG teks kecil, batas ketat.
+const SVG_MAX_ELEMENTS = 2000;    // cegah bomb parser
+const SVG_MAX_DEPTH = 32;         // cegah nested-recursion abuse
+const SVG_UNSAFE_PATTERNS: Array<{ re: RegExp; label: string }> = [
+  { re: /<script\b/i, label: "elemen <script>" },
+  { re: /<foreignObject\b/i, label: "elemen <foreignObject>" },
+  { re: /<iframe\b/i, label: "elemen <iframe>" },
+  { re: /<object\b/i, label: "elemen <object>" },
+  { re: /<embed\b/i, label: "elemen <embed>" },
+  { re: /<link\b/i, label: "elemen <link>" },
+  { re: /<meta\b/i, label: "elemen <meta>" },
+  { re: /<use\b[^>]*\bhref\s*=\s*["']?\s*(?:https?:|\/\/)/i, label: "<use href> eksternal" },
+  { re: /\bxlink:href\s*=\s*["']?\s*(?:https?:|\/\/|javascript:|data:)/i, label: "xlink:href berbahaya" },
+  { re: /\bhref\s*=\s*["']?\s*javascript:/i, label: "href javascript:" },
+  { re: /\bon[a-z]+\s*=/i, label: "atribut event handler (onload/onclick/…)" },
+  { re: /<!ENTITY\b/i, label: "deklarasi <!ENTITY> (risiko XXE)" },
+  { re: /<!DOCTYPE\b[^>]*\[/i, label: "DOCTYPE dengan internal subset" },
+  { re: /&#?x?[0-9a-z]+;.*&#?x?[0-9a-z]+;.*&#?x?[0-9a-z]+;/i, label: "entitas berulang mencurigakan" },
+];
+
+type SvgCheck = { ok: true; sanitized: string } | { ok: false; reason: string };
+
+function validateSvg(raw: string): SvgCheck {
+  const text = raw.trim();
+  if (!text) return { ok: false, reason: "SVG kosong" };
+  if (!/^<\?xml[^>]*\?>\s*<svg[\s>]/i.test(text) && !/^<svg[\s>]/i.test(text)) {
+    return { ok: false, reason: "bukan dokumen SVG valid (tidak diawali <svg>)" };
+  }
+  for (const { re, label } of SVG_UNSAFE_PATTERNS) {
+    if (re.test(text)) return { ok: false, reason: `mengandung ${label}` };
+  }
+  // Complexity — total tag & kedalaman.
+  let elementCount = 0;
+  let depth = 0;
+  let maxDepth = 0;
+  const tagRe = /<\/?([a-zA-Z][\w:-]*)/g;
+  let m: RegExpExecArray | null;
+  while ((m = tagRe.exec(text))) {
+    const isClose = text[m.index + 1] === "/";
+    const isSelfClose = text.slice(m.index).indexOf(">") > 0 && text[m.index + text.slice(m.index).indexOf(">") - 1] === "/";
+    if (!isClose) {
+      elementCount++;
+      if (!isSelfClose) {
+        depth++;
+        if (depth > maxDepth) maxDepth = depth;
+      }
+    } else {
+      depth = Math.max(0, depth - 1);
+    }
+    if (elementCount > SVG_MAX_ELEMENTS) {
+      return { ok: false, reason: `terlalu kompleks (>${SVG_MAX_ELEMENTS} elemen)` };
+    }
+    if (maxDepth > SVG_MAX_DEPTH) {
+      return { ok: false, reason: `sarang elemen terlalu dalam (>${SVG_MAX_DEPTH})` };
+    }
+  }
+  // Parser DOM cross-check — memastikan XML well-formed.
+  try {
+    const doc = new DOMParser().parseFromString(text, "image/svg+xml");
+    const err = doc.querySelector("parsererror");
+    if (err) return { ok: false, reason: "SVG tidak well-formed (parser error)" };
+    if (!doc.documentElement || doc.documentElement.nodeName.toLowerCase() !== "svg") {
+      return { ok: false, reason: "root element bukan <svg>" };
+    }
+    // Second-pass check pada DOM untuk atribut event handler yang lolos regex.
+    const walker = doc.createTreeWalker(doc.documentElement, NodeFilter.SHOW_ELEMENT);
+    let node: Node | null = walker.currentNode;
+    while (node) {
+      const el = node as Element;
+      for (const attr of Array.from(el.attributes)) {
+        const name = attr.name.toLowerCase();
+        const val = attr.value.toLowerCase().trim();
+        if (name.startsWith("on")) return { ok: false, reason: `atribut event ${attr.name} pada <${el.tagName}>` };
+        if ((name === "href" || name === "xlink:href") && (val.startsWith("javascript:") || val.startsWith("data:text"))) {
+          return { ok: false, reason: `href berbahaya (${val.slice(0, 20)}…)` };
+        }
+      }
+      node = walker.nextNode();
+    }
+  } catch {
+    return { ok: false, reason: "gagal parse SVG" };
+  }
+  return { ok: true, sanitized: text };
+}
+
 const BRAND_PRESETS: { label: string; value: string }[] = [
   { label: "Emerald", value: "oklch(0.696 0.17 162.48)" },
   { label: "Biru", value: "oklch(0.623 0.214 259.815)" },
