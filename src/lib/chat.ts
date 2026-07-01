@@ -66,6 +66,7 @@ export function useChatContacts(q: string) {
         user_id: string;
         display_name: string | null;
         phone: string | null;
+        invite_code: string | null;
         kind: string;
         label: string | null;
       }>;
