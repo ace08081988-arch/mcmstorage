@@ -8,7 +8,12 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { scanPressAuditFindings } from "@/lib/press-audit";
+import {
+  scanPressAuditFindings,
+  tracePressAuditDecision,
+  formatPressAuditTrace,
+  type PressAuditTrace,
+} from "@/lib/press-audit";
 
 export const Route = createFileRoute(
   "/_authenticated/dev/press-audit-demo",
@@ -160,6 +165,7 @@ function ExampleCard({ example }: { example: Example }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [results, setResults] = useState<VerifyResult[] | null>(null);
   const [running, setRunning] = useState(false);
+  const [traces, setTraces] = useState<PressAuditTrace[] | null>(null);
 
   const attrs = serializeAttrs(example.presets[presetIdx].attrs);
 
@@ -214,6 +220,38 @@ function ExampleCard({ example }: { example: Example }) {
     [results],
   );
 
+  const showTrace = useCallback(() => {
+    const host = wrapRef.current;
+    if (!host) return;
+    const out: PressAuditTrace[] = [];
+    for (const code of example.triggeredCodes) {
+      // Cari elemen target di dalam host (finding di-scan; kalau tak ada,
+      // pakai host itu sendiri sebagai konteks).
+      const findings = scanPressAuditFindings(host);
+      const match = findings.find((f) => f.code === code);
+      // Untuk rule yang di-block, findings tak akan berisi kode itu — kita
+      // masih bisa memanggil trace dengan elemen kandidat pertama di host.
+      const el =
+        match?.el ??
+        host.querySelector(
+          code === "PA003"
+            ? "[data-dnd-handle]"
+            : code === "PA004"
+              ? '[role="menuitem"]'
+              : "*",
+        ) ??
+        host;
+      const rule =
+        code === "PA003"
+          ? "sortable-handle"
+          : code === "PA004"
+            ? "destructive-menuitem"
+            : code;
+      out.push(tracePressAuditDecision(el, rule));
+    }
+    setTraces(out);
+  }, [example.triggeredCodes]);
+
   return (
     <Card>
       <CardHeader>
@@ -251,6 +289,9 @@ function ExampleCard({ example }: { example: Example }) {
           <Button size="sm" onClick={verifyAll} disabled={running}>
             {running ? "Menjalankan…" : "Verifikasi semua preset"}
           </Button>
+          <Button size="sm" variant="outline" onClick={showTrace}>
+            Tampilkan jejak keputusan
+          </Button>
           {results && (
             <Badge variant={allPass ? "default" : "destructive"}>
               {allPass
@@ -276,6 +317,35 @@ function ExampleCard({ example }: { example: Example }) {
               </li>
             ))}
           </ul>
+        )}
+
+        {traces && (
+          <div
+            className="text-xs space-y-2 rounded border bg-background/60 p-2"
+            data-testid={`pa-demo-${example.id}-trace`}
+          >
+            {traces.map((t) => (
+              <div key={t.code}>
+                <div className="font-medium">
+                  {t.code} · {t.rule} —{" "}
+                  <span
+                    className={
+                      t.allowed ? "text-emerald-600" : "text-destructive"
+                    }
+                  >
+                    {t.allowed ? "ALLOWED" : "BLOCKED"}
+                  </span>
+                </div>
+                <ul className="pl-4 list-disc">
+                  {formatPressAuditTrace(t).map((line, i) => (
+                    <li key={i} className="font-mono">
+                      {line}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
         )}
       </CardContent>
     </Card>
