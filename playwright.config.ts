@@ -507,5 +507,15 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // Smoke test murni untuk helper `tests/e2e/_helpers/chat-pin-assertions.ts`
+      // — mengunci kontrak regex `PHONE_ID_LIKE`, `PIN_MCM_FORMAT`, dan
+      // perilaku `expectNoRawPhone` / `expectPinFormat` / `expectPinBrandingClean`
+      // yang dipakai seluruh suite `chat-pin-mcm-*`. Tidak butuh dev server.
+      name: "chat-pin-assertions-helper-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-assertions-helper\.smoke\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"] },
+    },
   ],
 });
