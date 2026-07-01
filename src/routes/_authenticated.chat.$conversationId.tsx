@@ -409,7 +409,11 @@ function ChatRoomPage() {
       const uid = (msg.payload as { userId?: string } | undefined)?.userId;
       if (!uid || uid === myId) return;
       const p = profiles.data?.get(uid);
-      const name = p?.display_name || p?.phone || p?.email || "Seseorang";
+      const name =
+        p?.display_name
+        || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
+        || p?.email
+        || "Seseorang";
       setTypingNames((prev) => (prev.includes(name) ? prev : [...prev, name]));
       const prevT = typingTimers.current.get(uid);
       if (prevT) clearTimeout(prevT);
