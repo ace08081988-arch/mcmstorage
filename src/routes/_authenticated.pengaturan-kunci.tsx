@@ -51,6 +51,16 @@ function relTime(ts: number): string {
   return `${h}j lalu`;
 }
 
+function labelPlatform(p: BiometricStatus["platform"]): string {
+  return p === "android" ? "Android" : p === "ios" ? "iOS" : "Web";
+}
+function labelPermission(p: BiometricStatus["permission"]): string {
+  return p === "granted" ? "diberikan" : p === "denied" ? "ditolak" : "belum diketahui";
+}
+function labelEnrolled(e: BiometricStatus["enrolled"]): string {
+  return e === true ? "terdaftar" : e === false ? "belum terdaftar" : "tidak diketahui";
+}
+
 function StatusRow({
   label,
   value,
