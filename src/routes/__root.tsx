@@ -291,6 +291,8 @@ function RootComponent() {
     }).catch(() => {});
     applyCompactMode();
     applyReduceMotion();
+    // Terapkan warna brand organisasi (jika di-set) di atas aksen tampilan
+    import("@/lib/org-name").then(({ applyBrandColor }) => applyBrandColor()).catch(() => {});
     // Kirim preferensi notifikasi ke service worker + tarik versi terbaru dari cloud
     let unsub: (() => void) | null = null;
     import("@/lib/notif-prefs").then(({ loadPrefs, broadcastPrefs, pullPrefsFromCloud, subscribeRemotePrefs }) => {
