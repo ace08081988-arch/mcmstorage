@@ -100,6 +100,146 @@ function asObjOrNull(v: unknown): Record<string, unknown> | null {
   return isObj(v) ? v : null;
 }
 
+/** Helper: baca nilai pada path dot-notation, mis. `permission.state`. */
+function getPath(root: Record<string, unknown>, path: string): unknown {
+  const parts = path.split(".");
+  let cur: unknown = root;
+  for (const p of parts) {
+    if (!isObj(cur)) return undefined;
+    cur = (cur as Record<string, unknown>)[p];
+  }
+  return cur;
+}
+
+function typeName(v: unknown): string {
+  if (v === null) return "null";
+  if (Array.isArray(v)) return "array";
+  return typeof v;
+}
+
+type FieldRule = {
+  path: string;
+  type: "string" | "number" | "boolean" | "object";
+  required: boolean;
+  /** Untuk string: jika true, string kosong dianggap `empty`. */
+  nonEmpty?: boolean;
+  /** Untuk string: whitelist nilai yang valid. */
+  enum?: readonly string[];
+  /** Level ketegasan; default "error" untuk required, "warning" untuk optional. */
+  severity?: "error" | "warning";
+};
+
+/**
+ * Skema field per path untuk v_current. Menambah aturan baru di sini otomatis
+ * ikut divalidasi tanpa mengubah konsumen.
+ */
+const FIELD_RULES: FieldRule[] = [
+  { path: "schemaVersion", type: "number", required: true },
+  { path: "schemaName", type: "string", required: false, severity: "warning" },
+  { path: "exportedAt", type: "string", required: true, nonEmpty: true },
+  { path: "exportedAtLocal", type: "string", required: false, severity: "warning" },
+  { path: "origin", type: "string", required: false, severity: "warning" },
+  { path: "userAgent", type: "string", required: false, severity: "warning" },
+
+  { path: "timezone", type: "object", required: false, severity: "warning" },
+  { path: "timezone.label", type: "string", required: false, severity: "warning" },
+  { path: "timezone.offsetMinutes", type: "number", required: false, severity: "warning" },
+  { path: "timezone.iana", type: "string", required: false, severity: "warning" },
+
+  { path: "permission", type: "object", required: true },
+  {
+    path: "permission.state",
+    type: "string",
+    required: true,
+    enum: ["granted", "denied", "default", "unsupported"],
+  },
+
+  { path: "frame", type: "object", required: true },
+  { path: "frame.inIframe", type: "boolean", required: true },
+
+  { path: "serviceWorker", type: "object", required: true },
+  { path: "serviceWorker.state", type: "string", required: false, severity: "warning" },
+
+  { path: "pushSubscription", type: "object", required: true },
+  { path: "pushSubscription.active", type: "boolean", required: true },
+];
+
+function validateFields(root: Record<string, unknown>): FieldIssue[] {
+  const issues: FieldIssue[] = [];
+  for (const rule of FIELD_RULES) {
+    // Bila parent object tidak ada, jangan spam issue untuk anak — parent
+    // sudah menghasilkan `missing`.
+    const parent = rule.path.includes(".")
+      ? getPath(root, rule.path.slice(0, rule.path.lastIndexOf(".")))
+      : root;
+    if (!isObj(parent)) continue;
+
+    const value = getPath(root, rule.path);
+    const severity: "error" | "warning" =
+      rule.severity ?? (rule.required ? "error" : "warning");
+
+    if (value === undefined || value === null) {
+      if (rule.required) {
+        issues.push({
+          path: rule.path,
+          code: "missing",
+          severity,
+          expected: rule.type,
+          got: value === null ? "null" : "undefined",
+          detail: `Field wajib \`${rule.path}\` tidak ada.`,
+        });
+      }
+      continue;
+    }
+
+    const actual = typeName(value);
+    const typeOk =
+      rule.type === "object"
+        ? isObj(value)
+        : rule.type === "number"
+          ? typeof value === "number" && Number.isFinite(value)
+          : typeof value === rule.type;
+
+    if (!typeOk) {
+      issues.push({
+        path: rule.path,
+        code: "wrong_type",
+        severity,
+        expected: rule.type,
+        got: actual,
+        detail: `Field \`${rule.path}\` bertipe ${actual}, diharapkan ${rule.type}.`,
+      });
+      continue;
+    }
+
+    if (rule.type === "string") {
+      const s = value as string;
+      if (rule.nonEmpty && s.trim() === "") {
+        issues.push({
+          path: rule.path,
+          code: "empty",
+          severity,
+          expected: "string non-kosong",
+          got: '""',
+          detail: `Field \`${rule.path}\` string kosong.`,
+        });
+        continue;
+      }
+      if (rule.enum && !rule.enum.includes(s)) {
+        issues.push({
+          path: rule.path,
+          code: "invalid_enum",
+          severity,
+          expected: rule.enum.join(" | "),
+          got: JSON.stringify(s),
+          detail: `Nilai \`${rule.path}\`="${s}" bukan salah satu ${rule.enum.join(", ")}.`,
+        });
+      }
+    }
+  }
+  return issues;
+}
+
 /**
  * Rantai migrasi berurutan. Setiap entry menaikkan versi tepat satu tingkat
  * (`from` → `to = from + 1`). Untuk menambah v2 nanti, cukup push entry
