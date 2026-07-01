@@ -514,6 +514,12 @@ export type PressAuditTraceStep = {
   reason: string;
   /** Elemen ancestor tempat atribut terbaca (bila relevan). */
   hostTag?: string;
+  /**
+   * Referensi DOM ke ancestor "pemenang" pada langkah ini (bila ada).
+   * Non-serializable — dipakai UI demo untuk menyorot elemen. Tidak
+   * ikut ke `formatPressAuditTrace`.
+   */
+  hostEl?: Element;
   /** Token yang berkontribusi (mis. daftar hasil union). */
   tokens?: string[];
 };
@@ -581,6 +587,7 @@ export function tracePressAuditDecision(
       outcome: "block",
       reason: `Ancestor cocok selector scope.deny — sub-pohon dimatikan.`,
       hostTag: tagOf(scopeDenyHit),
+      hostEl: scopeDenyHit,
     });
     return { rule, code, allowed: false, steps };
   }
@@ -620,6 +627,7 @@ export function tracePressAuditDecision(
       outcome: "pass",
       reason: `Ancestor cocok scope.allow.`,
       hostTag: tagOf(scopeAllowHit),
+      hostEl: scopeAllowHit,
     });
   } else {
     push({
@@ -645,6 +653,7 @@ export function tracePressAuditDecision(
         outcome: "block",
         reason: `data-press-audit="off" terdekat menonaktifkan sub-pohon; tak ada "on" di antara off dan target.`,
         hostTag: tagOf(offHost),
+        hostEl: offHost,
       });
       return { rule, code, allowed: false, steps };
     }
@@ -654,6 +663,7 @@ export function tracePressAuditDecision(
       outcome: "pass",
       reason: `data-press-audit="on" di descendant membalik "off" pada ancestor lebih jauh.`,
       hostTag: tagOf(onHost!),
+      hostEl: onHost!,
     });
   } else {
     push({
@@ -724,13 +734,15 @@ export function tracePressAuditDecision(
   if (denyHit) {
     const skipHost = findAncestorWithAttr(el, "data-press-audit-skip");
     const denyHost = findAncestorWithAttr(el, "data-press-audit-deny");
+    const winner = denyHost ?? skipHost;
     push({
       step: 6,
       name: "attr:-skip/-deny",
       outcome: "block",
       reason: `Union skip+deny sepanjang ancestor path memuat ${code}/${rule} — menang atas -allow.`,
       tokens: denyTokens,
-      hostTag: tagOf(denyHost ?? skipHost),
+      hostTag: tagOf(winner),
+      hostEl: winner ?? undefined,
     });
     return { rule, code, allowed: false, steps };
   }
@@ -759,6 +771,7 @@ export function tracePressAuditDecision(
         reason: `-allow diisi di ancestor tapi ${code} tidak termasuk union allowlist.`,
         tokens: allowTokens,
         hostTag: tagOf(allowHost),
+        hostEl: allowHost ?? undefined,
       });
       return { rule, code, allowed: false, steps };
     }
@@ -769,6 +782,7 @@ export function tracePressAuditDecision(
       reason: `${code} termasuk di union -allow ancestor.`,
       tokens: allowTokens,
       hostTag: tagOf(allowHost),
+      hostEl: allowHost ?? undefined,
     });
   } else {
     push({

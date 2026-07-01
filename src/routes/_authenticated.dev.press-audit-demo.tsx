@@ -13,6 +13,7 @@ import {
   tracePressAuditDecision,
   formatPressAuditTrace,
   type PressAuditTrace,
+  type PressAuditTraceStep,
 } from "@/lib/press-audit";
 
 export const Route = createFileRoute(
@@ -160,12 +161,44 @@ type VerifyResult = {
   pass: boolean;
 };
 
+/**
+ * Ambil langkah "pemenang" pada jejak — langkah block bila ada,
+ * jika tidak, langkah pass paling akhir yang menyimpan hostEl.
+ */
+function pickWinnerStep(t: PressAuditTrace): PressAuditTraceStep | null {
+  const block = t.steps.find((s) => s.outcome === "block");
+  if (block) return block;
+  for (let i = t.steps.length - 1; i >= 0; i--) {
+    if (t.steps[i].hostEl) return t.steps[i];
+  }
+  return null;
+}
+
+/** Warna sorotan berdasarkan sifat langkah pemenang. */
+function winnerColor(step: PressAuditTraceStep): string {
+  if (step.outcome === "block") return "hsl(0 84% 60%)"; // merah
+  return "hsl(142 71% 45%)"; // hijau
+}
+
 function ExampleCard({ example }: { example: Example }) {
   const [presetIdx, setPresetIdx] = useState(0);
   const wrapRef = useRef<HTMLDivElement>(null);
   const [results, setResults] = useState<VerifyResult[] | null>(null);
   const [running, setRunning] = useState(false);
   const [traces, setTraces] = useState<PressAuditTrace[] | null>(null);
+  const highlightedRef = useRef<Element[]>([]);
+
+  const clearHighlights = useCallback(() => {
+    for (const el of highlightedRef.current) {
+      (el as HTMLElement).style.removeProperty("outline");
+      (el as HTMLElement).style.removeProperty("outline-offset");
+      (el as HTMLElement).style.removeProperty("box-shadow");
+      el.removeAttribute("data-pa-winner");
+    }
+    highlightedRef.current = [];
+  }, []);
+
+  useEffect(() => () => clearHighlights(), [clearHighlights]);
 
   const attrs = serializeAttrs(example.presets[presetIdx].attrs);
 
@@ -223,6 +256,7 @@ function ExampleCard({ example }: { example: Example }) {
   const showTrace = useCallback(() => {
     const host = wrapRef.current;
     if (!host) return;
+    clearHighlights();
     const out: PressAuditTrace[] = [];
     for (const code of example.triggeredCodes) {
       // Cari elemen target di dalam host (finding di-scan; kalau tak ada,
@@ -250,7 +284,24 @@ function ExampleCard({ example }: { example: Example }) {
       out.push(tracePressAuditDecision(el, rule));
     }
     setTraces(out);
-  }, [example.triggeredCodes]);
+    // Sorot elemen ancestor "pemenang" untuk tiap jejak.
+    const applied: Element[] = [];
+    for (const t of out) {
+      const step = pickWinnerStep(t);
+      const winnerEl = step?.hostEl;
+      if (!winnerEl) continue;
+      const color = winnerColor(step!);
+      (winnerEl as HTMLElement).style.outline = `2px dashed ${color}`;
+      (winnerEl as HTMLElement).style.outlineOffset = "3px";
+      (winnerEl as HTMLElement).style.boxShadow = `0 0 0 4px ${color}22`;
+      winnerEl.setAttribute(
+        "data-pa-winner",
+        `${t.code}:${step!.name}:${t.allowed ? "allow" : "block"}`,
+      );
+      applied.push(winnerEl);
+    }
+    highlightedRef.current = applied;
+  }, [example.triggeredCodes, clearHighlights]);
 
   return (
     <Card>
@@ -292,6 +343,18 @@ function ExampleCard({ example }: { example: Example }) {
           <Button size="sm" variant="outline" onClick={showTrace}>
             Tampilkan jejak keputusan
           </Button>
+          {traces && (
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                clearHighlights();
+                setTraces(null);
+              }}
+            >
+              Bersihkan sorotan
+            </Button>
+          )}
           {results && (
             <Badge variant={allPass ? "default" : "destructive"}>
               {allPass
@@ -324,6 +387,14 @@ function ExampleCard({ example }: { example: Example }) {
             className="text-xs space-y-2 rounded border bg-background/60 p-2"
             data-testid={`pa-demo-${example.id}-trace`}
           >
+            <div className="text-[10px] text-muted-foreground">
+              Elemen ancestor pemenang disorot langsung di preview di atas
+              (garis putus-putus). Warna:{" "}
+              <span className="text-destructive">merah</span> = block
+              (deny/skip/off/allowlist-miss),{" "}
+              <span className="text-emerald-600">hijau</span> = allow
+              (on/allow-match/scope.allow).
+            </div>
             {traces.map((t) => (
               <div key={t.code}>
                 <div className="font-medium">
@@ -335,6 +406,14 @@ function ExampleCard({ example }: { example: Example }) {
                   >
                     {t.allowed ? "ALLOWED" : "BLOCKED"}
                   </span>
+                  {(() => {
+                    const s = pickWinnerStep(t);
+                    return s?.hostTag ? (
+                      <span className="ml-2 text-[10px] text-muted-foreground font-mono">
+                        winner: {s.name} @{s.hostTag}
+                      </span>
+                    ) : null;
+                  })()}
                 </div>
                 <ul className="pl-4 list-disc">
                   {formatPressAuditTrace(t).map((line, i) => (
