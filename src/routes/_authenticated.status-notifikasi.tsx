@@ -453,6 +453,7 @@ function StatusNotifikasiPage() {
   };
 
   const [exportCopied, setExportCopied] = useState(false);
+  const [exportError, setExportError] = useState<string | null>(null);
 
   const buildSnapshot = () => ({
     generatedAt: new Date().toISOString(),
@@ -485,31 +486,80 @@ function StatusNotifikasiPage() {
       : { active: !!pushSub },
   });
 
+  // Safe replacer: handles BigInt, functions, and cyclic refs so JSON.stringify never throws.
+  const makeSafeReplacer = () => {
+    const seen = new WeakSet<object>();
+    return (_key: string, value: unknown) => {
+      if (typeof value === "bigint") return `${value.toString()}n`;
+      if (typeof value === "function") return `[Function ${value.name || "anonymous"}]`;
+      if (typeof value === "undefined") return null;
+      if (value && typeof value === "object") {
+        if (seen.has(value as object)) return "[Circular]";
+        seen.add(value as object);
+      }
+      return value;
+    };
+  };
+
+  const serializeSnapshot = () => {
+    // 2-space indent + trailing newline for POSIX-friendly files.
+    return JSON.stringify(buildSnapshot(), makeSafeReplacer(), 2) + "\n";
+  };
+
   const downloadSnapshot = () => {
-    const json = JSON.stringify(buildSnapshot(), null, 2);
-    const blob = new Blob([json], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    const d = new Date();
-    const p = (n: number) => String(n).padStart(2, "0");
-    const ts =
-      `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}` +
-      `-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
-    a.href = url;
-    a.download = `notifikasi-status-${ts}.json`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    try {
+      const json = serializeSnapshot();
+      // Explicit UTF-8 charset so editors don't guess encoding; no BOM (breaks strict JSON parsers).
+      const blob = new Blob([json], { type: "application/json;charset=utf-8" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const d = new Date();
+      const p = (n: number) => String(n).padStart(2, "0");
+      const ts =
+        `${d.getFullYear()}${p(d.getMonth() + 1)}${p(d.getDate())}` +
+        `-${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}`;
+      a.href = url;
+      a.download = `notifikasi-status-${ts}.json`;
+      a.rel = "noopener";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      setExportError(null);
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "Gagal membuat file JSON.");
+    }
   };
 
   const copySnapshot = async () => {
+    let json = "";
     try {
-      await navigator.clipboard.writeText(JSON.stringify(buildSnapshot(), null, 2));
+      json = serializeSnapshot();
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "Gagal membuat JSON.");
+      return;
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(json);
+      } else {
+        // Fallback for non-secure context / WebViews without Clipboard API.
+        const ta = document.createElement("textarea");
+        ta.value = json;
+        ta.setAttribute("readonly", "");
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        ta.remove();
+        if (!ok) throw new Error("execCommand copy gagal");
+      }
       setExportCopied(true);
+      setExportError(null);
       setTimeout(() => setExportCopied(false), 1500);
-    } catch {
-      /* ignore */
+    } catch (e) {
+      setExportError(e instanceof Error ? e.message : "Clipboard tidak tersedia.");
     }
   };
 
@@ -848,6 +898,11 @@ function StatusNotifikasiPage() {
               {exportCopied ? "Tersalin" : "Salin JSON"}
             </Button>
           </div>
+          {exportError && (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+              {exportError}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
