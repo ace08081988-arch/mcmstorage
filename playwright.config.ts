@@ -609,5 +609,20 @@ export default defineConfig({
         storageState: "tests/visual/.auth/user.json",
       },
     },
+    {
+      // E2E: variasi deep link `/chat/<id>` invalid — UUID nihil, UUID
+      // acak tanpa izin (RLS), dan slug non-UUID. Tiap varian wajib:
+      // menampilkan banner `chat-not-found`, bebas nomor telp Indonesia
+      // mentah, tidak memuat token `PIN …` off-format, tidak membocorkan
+      // raw id di banner, dan CTA "Kembali ke daftar chat" balik ke /chat.
+      name: "chat-pin-mcm-invalid-deep-link-variants-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-invalid-deep-link-variants\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
