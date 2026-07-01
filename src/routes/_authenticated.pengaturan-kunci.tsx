@@ -619,7 +619,17 @@ function PengaturanKunci() {
           )}
           {(() => {
             const hasLock = !!cfg?.hash;
-            const recs: { key: string; text: string; action?: { label: string; onClick: () => void; disabled?: boolean } }[] = [];
+            const recs: {
+              key: string;
+              text: string;
+              action?: { label: string; onClick: () => void; disabled?: boolean };
+              secondary?: { label: string; onClick: () => void; disabled?: boolean };
+            }[] = [];
+            const permAction = {
+              label: openingPerm ? "Membuka…" : "Buka pengaturan izin",
+              onClick: handleOpenPerm,
+              disabled: openingPerm,
+            };
             if (!bioStatus.native) {
               recs.push({
                 key: "web",
@@ -636,7 +646,14 @@ function PengaturanKunci() {
                 recs.push({
                   key: "perm",
                   text: "Izin sidik jari ditolak. Buka Pengaturan Sistem → Aplikasi → izinkan Biometrik untuk MCM Storage.",
-                  action: { label: openingPerm ? "Membuka…" : "Buka pengaturan izin", onClick: handleOpenPerm, disabled: openingPerm },
+                  action: permAction,
+                });
+              } else if (bioStatus.permission === "unknown") {
+                recs.push({
+                  key: "perm-check",
+                  text: "Izin sidik jari belum diizinkan. Buka pengaturan izin untuk memberikan akses biometrik.",
+                  action: permAction,
+                  secondary: { label: "Cek ulang", onClick: () => runBioCheck(true), disabled: bioChecking },
                 });
               }
               if (bioStatus.enrolled === false) {
@@ -644,6 +661,7 @@ function PengaturanKunci() {
                   key: "enroll",
                   text: "Belum ada sidik jari terdaftar di perangkat. Daftarkan dulu di Pengaturan Sistem.",
                   action: { label: enrolling ? "Membuka…" : "Daftarkan sidik jari", onClick: handleEnroll, disabled: enrolling },
+                  secondary: permAction,
                 });
               }
               if (!hasLock) {
@@ -693,6 +711,17 @@ function PengaturanKunci() {
                             disabled={r.action.disabled}
                           >
                             {r.action.label}
+                          </Button>
+                        )}
+                        {r.secondary && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="ml-1 h-7 px-2 text-[11px]"
+                            onClick={r.secondary.onClick}
+                            disabled={r.secondary.disabled}
+                          >
+                            {r.secondary.label}
                           </Button>
                         )}
                       </div>
