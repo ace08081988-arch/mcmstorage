@@ -192,6 +192,21 @@ export default defineConfig({
       },
     },
     {
+      // E2E: kirim pesan berlampiran di DM pertama harus mempertahankan
+      // identitas `PIN xxxx-xxxx` di header + transkrip + sheet Lampirkan
+      // — tidak boleh mem-fallback ke nomor telepon peer. Static source
+      // guard selalu jalan; runtime self-skip bila storageState kosong
+      // atau akun test belum punya DM.
+      name: "chat-pin-mcm-attachment-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-attachment\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
