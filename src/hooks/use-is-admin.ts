@@ -7,8 +7,8 @@ import { supabase } from "@/integrations/supabase/client";
  * menyembunyikan menu admin di sidebar; keputusan otoritatif tetap di server
  * function (`requireAdmin`).
  */
-export function useIsAdmin(): boolean {
-  const { data } = useQuery({
+export function useAdminStatus() {
+  const query = useQuery({
     queryKey: ["auth", "is-admin"],
     queryFn: async () => {
       const { data: user } = await supabase.auth.getUser();
@@ -21,6 +21,15 @@ export function useIsAdmin(): boolean {
       return Boolean(data);
     },
     staleTime: 60_000,
+    retry: false,
   });
-  return data === true;
+  return {
+    isAdmin: query.data === true,
+    isCheckingAdmin: query.isLoading || (query.isFetching && query.data === undefined),
+    refetchAdminStatus: query.refetch,
+  };
+}
+
+export function useIsAdmin(): boolean {
+  return useAdminStatus().isAdmin;
 }

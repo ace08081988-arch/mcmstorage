@@ -14,7 +14,7 @@ import {
   History,
 } from "lucide-react";
 import {
-  listApkReleaseAdmin,
+  listApkReleaseAdminPanel,
   upsertApkReleaseMeta,
   setApkMinSupported,
   type AdminApkEntry,
@@ -29,6 +29,7 @@ import {
   validateMinSupportedForm,
   hasAnyError,
 } from "@/lib/apk-min-validate";
+import { useAdminStatus } from "@/hooks/use-is-admin";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -50,12 +51,16 @@ export const Route = createFileRoute("/_authenticated/pengaturan-apk")({
 });
 
 function PengaturanApkPage() {
-  const fetchList = useServerFn(listApkReleaseAdmin);
-  const { data, isLoading, isError, refetch } = useQuery({
+  const { isAdmin, isCheckingAdmin } = useAdminStatus();
+  const fetchList = useServerFn(listApkReleaseAdminPanel);
+  const { data, isLoading: isLoadingApk, isError, refetch } = useQuery({
     queryKey: ["apk-release-admin"],
     queryFn: () => fetchList(),
+    enabled: isAdmin,
     staleTime: 15_000,
+    retry: false,
   });
+  const isLoading = isCheckingAdmin || (isAdmin && isLoadingApk);
 
   const grouped = useMemo(() => {
     const rows = data?.entries ?? [];
@@ -99,7 +104,7 @@ function PengaturanApkPage() {
             Coba lagi
           </button>
         </div>
-      ) : data && data.isAdmin === false ? (
+      ) : !isAdmin || (data && data.isAdmin === false) ? (
         <div className="rounded-xl border border-amber-300 bg-amber-50 p-4 text-sm text-amber-900">
           <div className="flex items-start gap-2">
             <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
