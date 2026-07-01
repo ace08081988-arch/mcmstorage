@@ -1,7 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Download, Smartphone, MessageCircle, Loader2 } from "lucide-react";
+import {
+  Download,
+  Smartphone,
+  MessageCircle,
+  Loader2,
+  ChevronRight,
+} from "lucide-react";
 import { getLatestApkVariants, type LatestApk } from "@/lib/apk.functions";
 import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
@@ -77,6 +83,7 @@ function DownloadPage() {
               accent="emerald"
               icon={<Smartphone className="h-6 w-6" />}
               apk={data?.storage ?? null}
+              variant="storage"
             />
             <ApkCard
               title="MCM Chat"
@@ -84,6 +91,7 @@ function DownloadPage() {
               accent="sky"
               icon={<MessageCircle className="h-6 w-6" />}
               apk={data?.chat ?? null}
+              variant="chat"
             />
             <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
               Setelah terunduh, buka berkas dan izinkan instalasi dari sumber tidak dikenal jika diminta.
@@ -103,12 +111,14 @@ function ApkCard({
   icon,
   accent,
   apk,
+  variant,
 }: {
   title: string;
   subtitle: string;
   icon: React.ReactNode;
   accent: "emerald" | "sky";
   apk: LatestApk;
+  variant: "storage" | "chat";
 }) {
   const badge =
     accent === "emerald"
@@ -165,6 +175,14 @@ function ApkCard({
               </div>
             )}
           </dl>
+          <Link
+            to="/download/$variant"
+            params={{ variant }}
+            className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-muted-foreground hover:text-foreground"
+          >
+            Detail & changelog
+            <ChevronRight className="h-3 w-3" />
+          </Link>
         </>
       )}
     </div>

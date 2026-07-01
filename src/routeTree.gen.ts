@@ -20,6 +20,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
+import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
 import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
 import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.sesi'
@@ -116,6 +117,11 @@ const TTokenRoute = TTokenRouteImport.update({
   id: '/t/$token',
   path: '/t/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const DownloadVariantRoute = DownloadVariantRouteImport.update({
+  id: '/$variant',
+  path: '/$variant',
+  getParentRoute: () => DownloadRoute,
 } as any)
 const AuthenticatedTugasBaruRoute = AuthenticatedTugasBaruRouteImport.update({
   id: '/tugas-baru',
@@ -353,7 +359,7 @@ const AuthenticatedGudangPesananIdEditRoute =
 export interface FileRoutesByFullPath {
   '/': typeof AuthenticatedIndexRoute
   '/auth': typeof AuthRoute
-  '/download': typeof DownloadRoute
+  '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -389,6 +395,7 @@ export interface FileRoutesByFullPath {
   '/sesi': typeof AuthenticatedSesiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/download/$variant': typeof DownloadVariantRoute
   '/t/$token': typeof TTokenRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
@@ -406,7 +413,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
-  '/download': typeof DownloadRoute
+  '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -441,6 +448,7 @@ export interface FileRoutesByTo {
   '/sesi': typeof AuthenticatedSesiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/download/$variant': typeof DownloadVariantRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
@@ -461,7 +469,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/_authenticated': typeof AuthenticatedRouteWithChildren
   '/auth': typeof AuthRoute
-  '/download': typeof DownloadRoute
+  '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
@@ -497,6 +505,7 @@ export interface FileRoutesById {
   '/_authenticated/sesi': typeof AuthenticatedSesiRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/download/$variant': typeof DownloadVariantRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
@@ -554,6 +563,7 @@ export interface FileRouteTypes {
     | '/sesi'
     | '/tugas'
     | '/tugas-baru'
+    | '/download/$variant'
     | '/t/$token'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
@@ -606,6 +616,7 @@ export interface FileRouteTypes {
     | '/sesi'
     | '/tugas'
     | '/tugas-baru'
+    | '/download/$variant'
     | '/t/$token'
     | '/'
     | '/admin/worker-portal'
@@ -661,6 +672,7 @@ export interface FileRouteTypes {
     | '/_authenticated/sesi'
     | '/_authenticated/tugas'
     | '/_authenticated/tugas-baru'
+    | '/download/$variant'
     | '/t/$token'
     | '/_authenticated/'
     | '/_authenticated/admin/worker-portal'
@@ -681,7 +693,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   AuthenticatedRoute: typeof AuthenticatedRouteWithChildren
   AuthRoute: typeof AuthRoute
-  DownloadRoute: typeof DownloadRoute
+  DownloadRoute: typeof DownloadRouteWithChildren
   ErrorRoute: typeof ErrorRoute
   RefundRoute: typeof RefundRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
@@ -777,6 +789,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/t/$token'
       preLoaderRoute: typeof TTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/download/$variant': {
+      id: '/download/$variant'
+      path: '/$variant'
+      fullPath: '/download/$variant'
+      preLoaderRoute: typeof DownloadVariantRouteImport
+      parentRoute: typeof DownloadRoute
     }
     '/_authenticated/tugas-baru': {
       id: '/_authenticated/tugas-baru'
@@ -1191,10 +1210,22 @@ const AuthenticatedRouteWithChildren = AuthenticatedRoute._addFileChildren(
   AuthenticatedRouteChildren,
 )
 
+interface DownloadRouteChildren {
+  DownloadVariantRoute: typeof DownloadVariantRoute
+}
+
+const DownloadRouteChildren: DownloadRouteChildren = {
+  DownloadVariantRoute: DownloadVariantRoute,
+}
+
+const DownloadRouteWithChildren = DownloadRoute._addFileChildren(
+  DownloadRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
-  DownloadRoute: DownloadRoute,
+  DownloadRoute: DownloadRouteWithChildren,
   ErrorRoute: ErrorRoute,
   RefundRoute: RefundRoute,
   ResetPasswordRoute: ResetPasswordRoute,
