@@ -44,6 +44,8 @@ export function OrgNameSettings() {
   const [hex, setHex] = useState(savedBrand.startsWith("#") ? savedBrand : "#10b981");
   const fileRef = useRef<HTMLInputElement>(null);
   const [logoError, setLogoError] = useState<string | null>(null);
+  type PendingLogo = { url: string; size: number; width: number; height: number; mime: string };
+  const [pendingLogo, setPendingLogo] = useState<PendingLogo | null>(null);
   const [lastSavedAt, setLastSavedAt] = useState<number | null>(() => {
     if (typeof window === "undefined") return null;
     const v = window.localStorage.getItem("app-org-saved-at");
@@ -64,11 +66,16 @@ export function OrgNameSettings() {
   const dirty =
     full.trim() !== savedFull ||
     short.trim() !== savedShort ||
-    brand !== savedBrand;
+    brand !== savedBrand ||
+    pendingLogo !== null;
 
   const onSave = () => {
     setOrgName(full, short);
     setOrgBrand(brand);
+    if (pendingLogo) {
+      setOrgLogo(pendingLogo.url);
+      setPendingLogo(null);
+    }
     const ts = Date.now();
     try { window.localStorage.setItem("app-org-saved-at", String(ts)); } catch { /* ignore */ }
     setLastSavedAt(ts);
@@ -80,6 +87,7 @@ export function OrgNameSettings() {
     setOrgBrand("");
     setOrgLogo("");
     setBrand("");
+    setPendingLogo(null);
     applyBrandColor();
     toast.success("Dikembalikan ke bawaan");
   };
@@ -89,6 +97,7 @@ export function OrgNameSettings() {
     setOrgBrand("");
     setBrand("");
     setHex("#10b981");
+    setPendingLogo(null);
     applyBrandColor();
     const ts = Date.now();
     try { window.localStorage.setItem("app-org-saved-at", String(ts)); } catch { /* ignore */ }
@@ -132,8 +141,8 @@ export function OrgNameSettings() {
         return;
       }
       if (mime === "image/svg+xml") {
-        setOrgLogo(url);
-        toast.success("Logo diperbarui");
+        setPendingLogo({ url, size: file.size, width: 0, height: 0, mime });
+        toast.success("Logo siap — tekan Simpan untuk menerapkan");
         return;
       }
       const img = new Image();
@@ -158,11 +167,11 @@ export function OrgNameSettings() {
           fail(`Rasio ${r} terlalu ekstrem. Gunakan rasio antara 1:2 dan 2:1 (persegi paling ideal).`);
           return;
         }
-        setOrgLogo(url);
+        setPendingLogo({ url, size: file.size, width: w, height: h, mime });
         toast.success(
           Math.abs(ratio - 1) < 0.05
-            ? "Logo diperbarui"
-            : `Logo diperbarui (${w}×${h}, rasio ${ratio.toFixed(2)}:1 — persegi tetap paling ideal).`,
+            ? "Logo siap — tekan Simpan untuk menerapkan"
+            : `Logo siap (${w}×${h}, rasio ${ratio.toFixed(2)}:1) — tekan Simpan.`,
         );
       };
       img.onerror = () => fail("Gambar rusak atau format tidak dikenali.");
