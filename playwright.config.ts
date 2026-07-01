@@ -105,6 +105,19 @@ export default defineConfig({
       },
     },
     {
+      // Integrasi: pesan yang di-hide via RPC harus tetap hidden setelah
+      // `page.reload()` — bukti persistence server + rehidrasi cache
+      // `["chat","hidden"]` pada mount berikutnya. Butuh storage state.
+      name: "message-hidden-persist-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /message-hidden-persist\.spec\.ts/,
+      use: {
+        ...devices["iPhone 14"],
+        viewport: { width: 390, height: 844 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
+    {
       // Tablet portrait — verifies PinnedBanner & conversation list
       // render consistently at iPad-class widths.
       name: "tablet-public",
