@@ -447,5 +447,19 @@ export default defineConfig({
       testMatch: /produk-list\.public\.spec\.ts/,
       use: { ...devices["Pixel 5"], viewport: { width: 480, height: 900 } },
     },
+    {
+      // E2E: navigasi browser back/forward antar dua DM eksisting wajib
+      // mempertahankan `PIN xxxx-xxxx` yang benar per konvo di header +
+      // transkrip dan tidak pernah memunculkan nomor telp Indonesia
+      // mentah pada fase pra-nav, back, maupun forward.
+      name: "chat-pin-mcm-back-forward-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-pin-mcm-back-forward\.spec\.ts/,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        storageState: "tests/visual/.auth/user.json",
+      },
+    },
   ],
 });
