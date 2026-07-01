@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { Building2, Save, ImagePlus, Trash2, Palette, RotateCcw } from "lucide-react";
+import { Building2, Save, ImagePlus, Trash2, Palette, RotateCcw, Check } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -43,6 +43,16 @@ export function OrgNameSettings() {
   const [brand, setBrand] = useState(savedBrand);
   const [hex, setHex] = useState(savedBrand.startsWith("#") ? savedBrand : "#10b981");
   const fileRef = useRef<HTMLInputElement>(null);
+  const [lastSavedAt, setLastSavedAt] = useState<number | null>(() => {
+    if (typeof window === "undefined") return null;
+    const v = window.localStorage.getItem("app-org-saved-at");
+    return v ? Number(v) || null : null;
+  });
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const id = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(id);
+  }, []);
 
   useEffect(() => {
     setFull(savedFull);
@@ -58,6 +68,9 @@ export function OrgNameSettings() {
   const onSave = () => {
     setOrgName(full, short);
     setOrgBrand(brand);
+    const ts = Date.now();
+    try { window.localStorage.setItem("app-org-saved-at", String(ts)); } catch { /* ignore */ }
+    setLastSavedAt(ts);
     toast.success("Nama organisasi disimpan");
   };
 
@@ -76,6 +89,9 @@ export function OrgNameSettings() {
     setBrand("");
     setHex("#10b981");
     applyBrandColor();
+    const ts = Date.now();
+    try { window.localStorage.setItem("app-org-saved-at", String(ts)); } catch { /* ignore */ }
+    setLastSavedAt(ts);
     toast.success("Logo & warna direset ke bawaan");
   };
 
