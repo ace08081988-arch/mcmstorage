@@ -456,9 +456,9 @@ export function OrgNameSettings() {
                     ) : (
                       <span
                         className="flex h-full w-full items-center justify-center font-semibold text-primary"
-                        style={{ backgroundColor: draftBrand || undefined }}
+                        style={{ backgroundColor: brand || undefined }}
                       >
-                        {(draftShort || "MCM").slice(0, 3)}
+                        {(short || "MCM").slice(0, 3)}
                       </span>
                     )}
                   </div>
