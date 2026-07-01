@@ -4,6 +4,44 @@ import globals from "globals";
 import reactHooks from "eslint-plugin-react-hooks";
 import reactRefresh from "eslint-plugin-react-refresh";
 import tseslint from "typescript-eslint";
+import { readFileSync } from "node:fs";
+import { fileURLToPath } from "node:url";
+import { dirname, resolve } from "node:path";
+
+// Baca allowlist mm:ss dari file konfig eksternal supaya komponen tambahan
+// bisa diizinkan tanpa menyentuh rule ini. Setiap entri wajib punya `reason`
+// (divalidasi oleh schema JSON dan runtime check di bawah).
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const mmssAllowlistPath = resolve(__dirname, "eslint.mmss-allowlist.json");
+let mmssAllowlistFiles = [];
+try {
+  const raw = JSON.parse(readFileSync(mmssAllowlistPath, "utf8"));
+  if (!Array.isArray(raw?.files)) {
+    throw new Error("eslint.mmss-allowlist.json: `files` harus array");
+  }
+  for (const entry of raw.files) {
+    if (!entry?.path || typeof entry.path !== "string") {
+      throw new Error("Allowlist entry tanpa `path` string");
+    }
+    if (!entry?.reason || typeof entry.reason !== "string" || entry.reason.trim().length < 20) {
+      throw new Error(
+        `Allowlist entry untuk "${entry.path}" wajib punya \`reason\` (>= 20 karakter) yang menjelaskan pengecualian.`,
+      );
+    }
+    if (!entry.path.startsWith("src/components/chat/")) {
+      throw new Error(
+        `Allowlist entry "${entry.path}" harus di bawah src/components/chat/ (scope rule ini).`,
+      );
+    }
+    mmssAllowlistFiles.push(entry.path);
+  }
+} catch (err) {
+  if (err && err.code === "ENOENT") {
+    mmssAllowlistFiles = [];
+  } else {
+    throw err;
+  }
+}
 
 export default tseslint.config(
   { ignores: ["dist", ".output", ".vinxi"] },
@@ -39,14 +77,14 @@ export default tseslint.config(
   eslintPluginPrettier,
   // Cegah formatter mm:ss ad-hoc di komponen chat. Semua durasi media
   // WAJIB melewati `formatDurationMMSS` dari `@/lib/format-duration`.
-  // Allowlist file di override berikutnya bila perlu (mis. AttachMenu
-  // yang menampilkan elapsed upload, bukan durasi media).
+  // Allowlist file dibaca dari `eslint.mmss-allowlist.json` (setiap entri
+  // wajib menyertakan `reason`). Inline exception juga didukung via:
+  //   // eslint-disable-next-line no-restricted-syntax -- mmss-allow: <alasan>
   {
     files: ["src/components/chat/**/*.{ts,tsx}"],
     ignores: [
       "src/components/chat/**/*.test.{ts,tsx}",
-      // Allowlist: bukan durasi media attachment.
-      "src/components/chat/AttachMenu.tsx",
+      ...mmssAllowlistFiles,
     ],
     rules: {
       "no-restricted-syntax": [
