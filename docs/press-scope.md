@@ -627,6 +627,33 @@ Semua contoh di bawah bisa disalin apa adanya ke DevTools > Elements
 untuk memverifikasi urutan prioritas. Setiap blok menyertakan komentar
 `efektif:` yang menyimpulkan hasil audit pada elemen target.
 
+##### Tabel ringkasan prioritas (A–J)
+
+Tabel ini memetakan tiap konflik ke contoh yang mendemonstrasikannya.
+Baca kolom kiri → kanan sebagai urutan evaluasi: **atribut DOM
+terdekat** dulu (off/on, skip, deny, allow), baru **konfigurasi
+global** (`__pressAuditConfig`), baru **scope selectors**. Dalam tiap
+tingkat, `deny`/`off`/`skip` selalu menang atas `allow`/`on`; `skip`
+bersifat aditif dan tidak pernah dihapus oleh child.
+
+| Konflik                                              | Yang menang                          | Hasil ringkas                                    | Contoh |
+| ---------------------------------------------------- | ------------------------------------ | ------------------------------------------------ | ------ |
+| `data-press-audit="off"` (parent) vs `-skip` (child) | DOM `off` terdekat                   | Semua rule di sub-pohon dimatikan                | (A)    |
+| `off` (parent) vs `on` (child)                       | DOM `on` terdekat (child membalik)   | Audit menyala lagi di sub-pohon child            | (B)    |
+| `-skip` parent vs `-skip` child                      | Aditif (union), tak ada unskip       | Gabungan token skip diwariskan ke child          | (C)    |
+| `allowRules` vs `denyRules` (global)                 | `denyRules`                          | Kode yang di-deny dibuang meski di allowlist     | (D)    |
+| Atribut DOM `-skip` vs `allowRules` global           | DOM `-skip`                          | Skip DOM memotong allowlist global               | (E)    |
+| `allowScopes` vs `denyScopes` (selector CSS)         | `denyScopes` untuk ancestor cocok    | Sub-pohon deny senyap, sisanya ikut allowScopes  | (F)    |
+| `mode="suggest"` global vs `-skip` per section       | `-skip` untuk kode yg didaftarkan    | Rule di-skip senyap; sisanya tetap `suggest`     | (G)    |
+| `-skip` (parent) vs `data-press-audit="on"` (child)  | `-skip` tetap diwariskan             | `on` hanya membalik `off`, bukan `skip`          | (H)    |
+| `mode="off"` global vs atribut DOM                   | `mode` global (tanpa output)         | Evaluasi tetap berjalan, tapi tak ada log/DOM    | (I)    |
+| Kombinasi penuh: `off→on`, `skip`, `deny`, `allow`   | Urutan 1→6 (lihat kolom "Hasil")     | 1) off/on 2) skip 3) deny 4) allow 5) scope 6) mode | (J) |
+
+> Contoh (A)–(J) ada di blok HTML tepat di bawah tabel ini. Setiap blok
+> membawa komentar `efektif:` yang menyebut kode PA00X final yang
+> muncul. Halaman demo `/dev/press-audit-demo` menjalankan verifikasi
+> otomatis untuk sebagian besar kombinasi ini.
+
 ```html
 <!-- (A) off terdekat menang atas skip di child -->
 <!-- Global: mode="log", allowRules=[], denyRules=[] -->
