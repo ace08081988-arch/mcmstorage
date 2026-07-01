@@ -1,68 +1,66 @@
-## Apa yang akan dibangun
+# Fungsikan semua fitur Chat
 
-Mirip screenshot WhatsApp Business: tekan-tahan gelembung pesan → masuk **mode pilih**, lalu muncul toolbar di header dengan ikon ⇦ jumlah ↶ ⓘ 🗑 📋 ➡ ⋮. Menu ⋮ berisi: Verifikasi kode keamanan, Beri bintang, Sematkan, Tambah ke Catatan, Tambah balas cepat, Terjemahkan.
+Cakupan besar. Saya pecah jadi 4 langkah, dikerjakan berurutan supaya bisa diverifikasi satu-per-satu. Tiap langkah selesai baru lanjut yang berikutnya.
 
----
+## 1. Root-cause "Gagal hapus pesan" (prioritas)
 
-## Bagian 1 — Selection mode & toolbar
+Symptom: setiap kali tombol Hapus ditekan → toast "Gagal menghapus pesan". RPC `message_hide_for_me` / `message_delete_for_all` sebenarnya ada dan GRANT + RLS di `message_hidden` sudah benar (sudah saya verifikasi via DB). Jadi kegagalan ada di sisi client atau kondisi runtime.
 
-- State `selectedIds: Set<string>` di `_authenticated.chat.$conversationId.tsx`.
-- Tekan-tahan 500 ms pertama → masuk selection mode + pilih pesan itu. Ketuk pesan berikutnya = toggle pilih. Ketuk pesan saat selection mode mati = kelakuan normal.
-- Header berubah jadi **SelectionToolbar**: tombol X (keluar), jumlah, lalu aksi:
-  - **Balas** (aktif hanya jika 1 dipilih)
-  - **Info** (aktif hanya jika 1 dipilih) → dialog: pengirim, dikirim, dibaca, status (sent/read), checksum
-  - **Hapus** → pakai dialog hapus yang sudah ada (massal: untuk-saya / untuk-semua bila semua milik sendiri)
-  - **Salin** → gabungkan body terpilih (urut waktu) ke clipboard
-  - **Teruskan via WhatsApp** → gabung jadi 1 teks lalu `shareToWhatsApp`
-  - Menu ⋮ → 6 item di bawah
-- Tap pesan tanpa selection mode tetap normal; long-press di luar selection mode aktifkan selection mode (gantikan AlertDialog hapus lama; dialog hapus dipindah jadi aksi toolbar).
+Yang akan saya periksa & perbaiki:
+- Reproduksi via Playwright headless: login → buka `/chat/<id>` → long-press pesan → tekan "Hapus untuk saya" — capture `network` request ke `rpc/message_hide_for_me` beserta response body & console error persis.
+- Kalau server error → perbaiki RPC/RLS pada migration.
+- Kalau client error (mis. `scheduleUndo` men-commit lebih dari sekali, `optimisticDeleteMessages` throw, atau `logChatDelete` throw sebelum RPC) → perbaiki di `src/lib/chat.ts` / `_authenticated.chat.$conversationId.tsx`.
+- Tambahkan E2E regresi `tests/e2e/chat-delete-happy-path.spec.ts` supaya bug ini tidak balik.
 
-## Bagian 2 — Beri bintang & Sematkan (per pesan)
+## 2. Audit menyeluruh tombol/menu di `/chat`
 
-Migration: tambah kolom `messages.starred_by uuid[] default '{}'` dan `messages.pinned_at timestamptz`, plus RPC:
-- `message_star(_id uuid, _on bool)` — toggle keanggotaan `auth.uid()` di `starred_by`.
-- `message_pin(_id uuid, _on bool)` — set/kosongkan `pinned_at` (hanya member percakapan).
+Iterasi semua control di halaman chat & bubble message. Untuk tiap yang tidak ada handler / handler no-op, saya isi kontrak fungsionalnya:
 
-UI:
-- Bintang kuning kecil di sudut pesan saat user sudah membintangi.
-- Banner "📌 Pesan disematkan" di atas daftar (klik = scroll ke pesan), maksimum 3 pin per percakapan (validasi di RPC).
-- Halaman baru `/_authenticated/chat/$conversationId/starred` — daftar pesan berbintang.
+| Kontrol | Kontrak |
+| --- | --- |
+| Bubble long-press: Balas | Set `replyTo` state → composer tampil quote → kirim isi `reply_to` |
+| Bubble long-press: Forward | Dialog pilih conversation → panggil `sendMessage` per target |
+| Bubble long-press: Salin | `navigator.clipboard.writeText(body)` + toast |
+| Bubble long-press: Info | Buka `MessageInfoDialog` (sudah ada, cek wiring) |
+| Bubble long-press: Reaksi emoji | `message_reactions` upsert + realtime |
+| Toolbar bulk: Hapus / Forward / Salin | Sama seperti single, versi array |
+| Header: Cari di percakapan | Filter input + highlight |
+| Composer: attach foto/dokumen | Upload ke bucket `chat-attachments` + preview thumb |
+| Composer: sticker picker | Buka dialog (sudah ada di `StickerPickerDialog`) → kirim sebagai attachment |
 
-## Bagian 3 — Catatan pribadi & Balas cepat
+Yang sudah bekerja saya biarkan; yang no-op/rusak saya kabelkan ke logic yang sudah ada.
 
-Tabel baru (RLS per user):
-- `chat_notes(id, user_id, title text, body text, source_message_id uuid null, conversation_id uuid null, created_at, updated_at)`
-- `chat_quick_replies(id, user_id, shortcut text, body text, created_at, updated_at)` — `unique(user_id, shortcut)`.
+## 3. Panggilan suara + video (WebRTC)
 
-UI:
-- Aksi toolbar "Tambah ke Catatan" → dialog isi judul (prefilled = potongan body), simpan.
-- Aksi "Tambah balas cepat" → dialog isi shortcut + body (prefilled = body pesan).
-- Halaman `/_authenticated/catatan` (list + tambah/edit/hapus) dan `/_authenticated/balas-cepat`.
-- Di composer: ketik `/` → muncul popover daftar quick reply, pilih → isi `body`.
+Skema kecil, minimal viable, mengikuti rencana yang sudah disepakati sebelumnya:
 
-## Bagian 4 — Terjemahkan + Verifikasi keamanan
+- Migration: tabel `chat_calls (id, conversation_id, caller_id, callee_id, kind text 'audio'|'video', status text 'ringing'|'answered'|'declined'|'missed'|'ended', started_at, ended_at, duration_s)` + RLS scoped ke member percakapan + ADD ke `supabase_realtime`.
+- Signaling: Supabase Realtime broadcast channel `call:{conversationId}` untuk offer/answer/ice/hangup. STUN publik Google, TURN opsional nanti.
+- UI:
+  - Tombol 📞 & 🎥 di header `_authenticated.chat.$conversationId.tsx`.
+  - Overlay incoming-call global di `__root.tsx` (subscribe user-scoped channel `call-invite:{uid}`).
+  - Route aktif `src/routes/_authenticated.call.$callId.tsx` (mute/kamera/hangup).
+- Native permission: pakai `getUserMedia` biasa; di Capacitor Android manifest sudah punya izin RECORD_AUDIO/CAMERA.
+- Riwayat: system-bubble di chat ("📞 Panggilan suara · 1m 23s") saat status `ended`/`missed`.
 
-- Server function `translateMessage` (TanStack `createServerFn`, `requireSupabaseAuth`) → panggil Lovable AI Gateway model `google/gemini-3-flash-preview`, deteksi bahasa & terjemahkan ke ID. Aksi toolbar "Terjemahkan" memunculkan dialog hasil + tombol "Salin terjemahan".
-- "Verifikasi kode keamanan" → dialog yang menampilkan SHA-256 60-digit dari `conversationId + members.sort()` (dibagi 12 grup × 5 digit, mirip WA) + QR (pakai komponen QR yang sudah ada). Ini representasi stabil per percakapan; bukan E2E kripto, tapi format & UX-nya identik dengan WhatsApp untuk verifikasi manual antar-pihak.
+## 4. Stiker & lampiran, reaksi/balas/forward/salin
 
----
+Digabung dengan langkah 2 karena banyak yang sudah ada helper-nya (StickerPickerDialog, sticker-library, share-chat). Saya hanya perlu:
+- Pastikan tombol sticker di composer memanggil `StickerPickerDialog` dan pilihan stiker menghasilkan message attachment.
+- Pastikan attach foto/dokumen tampil di bubble (bukan cuma link).
+- Menu long-press konsisten di single & bulk.
 
-## Detail teknis (ringkas)
+## Verifikasi tiap langkah
 
-- Hooks baru di `src/lib/chat.ts`: `useStarMessage`, `usePinMessage`, `usePinnedMessages`, `useStarredMessages`.
-- Hooks baru di `src/lib/chat-notes.ts` & `src/lib/chat-quick-replies.ts` (CRUD + react-query).
-- Server fn `src/lib/chat-ai.functions.ts` → `translateMessage({ text, target?: 'id'|'en' })`.
-- Komponen baru:
-  - `src/components/chat/SelectionToolbar.tsx`
-  - `src/components/chat/MessageInfoDialog.tsx`
-  - `src/components/chat/SecurityCodeDialog.tsx`
-  - `src/components/chat/TranslateDialog.tsx`
-  - `src/components/chat/SaveAsNoteDialog.tsx`, `SaveAsQuickReplyDialog.tsx`
-  - `src/components/chat/QuickReplyPopover.tsx` (untuk `/` di composer)
-- Migrations (1 file): kolom `starred_by`, `pinned_at` di `messages`; tabel `chat_notes`, `chat_quick_replies` + GRANT + RLS + policies; RPC `message_star`, `message_pin`.
-- Sidebar: tambah link "Catatan" & "Balas cepat" pada grup yang sudah ada.
+- Langkah 1: Playwright login → hapus 1 pesan → refresh → pesan tetap hilang. Toast sukses, bukan gagal.
+- Langkah 2: Manual walkthrough via Playwright pada tiap tombol; screenshot state before/after.
+- Langkah 3: Dua tab Playwright (caller & callee) — assert `pc.iceConnectionState === "connected"` di kedua sisi lalu hangup.
+- Langkah 4: Kirim stiker & foto lalu assert bubble merender image.
 
-## Yang TIDAK akan disentuh
+## Pertanyaan konfirmasi
 
-- Logika kirim/edit/hapus existing, attachment menu, presence/typing.
-- Cara enkripsi backend (verifikasi keamanan hanya fingerprint deterministik, bukan ganti skema kripto).
+Fitur langkah 3 (panggilan) berat & bikin migration tabel baru. Sebelum saya mulai, boleh saya:
+1) Kerjakan **langkah 1 dulu** (root-cause + fix delete) dan tunjukkan hasil sebelum lanjut audit + panggilan? Ini paling aman karena delete-pesan adalah blocker sekarang.
+2) Atau saya kerjakan semua langsung dalam satu batch besar (lebih lama, lebih banyak perubahan sekaligus).
+
+Balas "1" atau "2" — default saya "1" kalau tidak dijawab.
