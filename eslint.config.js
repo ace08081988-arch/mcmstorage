@@ -75,6 +75,19 @@ export default tseslint.config(
     },
   },
   eslintPluginPrettier,
+  // Aktifkan `react-hooks/exhaustive-deps` sebagai ERROR khusus untuk
+  // `_authenticated.gudang.tsx`. File ini memuat form Catat Pembelian
+  // dengan banyak useMemo/useEffect di sekitar `selectedItem` → `derived`
+  // → `warnings`. Dependency array yang bocor pernah menyebabkan
+  // ringkasan real-time stale dan sisa state karton/priceMode ikut
+  // terbawa antar item, jadi rule ini dinaikkan ke error agar kelalaian
+  // dep segera ketahuan di CI (bukan hanya warning yang bisa diabaikan).
+  {
+    files: ["src/routes/_authenticated.gudang.tsx"],
+    rules: {
+      "react-hooks/exhaustive-deps": "error",
+    },
+  },
   // Cegah formatter mm:ss ad-hoc di komponen chat. Semua durasi media
   // WAJIB melewati `formatDurationMMSS` dari `@/lib/format-duration`.
   // Allowlist file dibaca dari `eslint.mmss-allowlist.json` (setiap entri
