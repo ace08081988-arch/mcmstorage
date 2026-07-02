@@ -748,7 +748,7 @@ function ChatRoomPage() {
                   : `${typingNames.join(", ")} sedang menulis…`}
               </span>
             ) : !online ? (
-              <span className="inline-flex items-center gap-1 text-amber-600">
+              <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
                 <WifiOff className="h-3 w-3" /> Offline · pesan akan dikirim saat online
               </span>
             ) : meta.data?.kind === "dm" ? (
@@ -1026,7 +1026,7 @@ function ChatRoomPage() {
                           <div className="mb-0.5 text-[10px] font-semibold opacity-80">{senderName}</div>
                         ) : null}
                         {m.pinned_at && !m.deleted_at ? (
-                          <div className={`mb-0.5 inline-flex items-center gap-1 text-[10px] ${mine ? "text-primary-foreground/80" : "text-amber-600"}`}>
+                          <div className={`mb-0.5 inline-flex items-center gap-1 text-[10px] ${mine ? "text-primary-foreground/80" : "text-amber-600 dark:text-amber-400"}`}>
                             <Pin className="h-3 w-3" /> Disematkan
                           </div>
                         ) : null}
@@ -1120,7 +1120,7 @@ function ChatRoomPage() {
                               const sentMs = new Date(m.created_at).getTime();
                               const read = othersRead.data !== null && othersRead.data !== undefined && othersRead.data >= sentMs;
                               return read ? (
-                                <CheckCheck className="h-3.5 w-3.5 text-sky-300" aria-label="Dibaca" />
+                                <CheckCheck className="h-3.5 w-3.5 text-primary-foreground/90" aria-label="Dibaca" />
                               ) : (
                                 <CheckCheck className="h-3.5 w-3.5 opacity-80" aria-label="Terkirim" />
                               );
