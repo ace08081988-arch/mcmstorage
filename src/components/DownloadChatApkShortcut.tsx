@@ -21,32 +21,33 @@ export function DownloadChatApkShortcut() {
     const loadingId = toast.loading("Menyiapkan unduhan APK MCM Chat…");
     try {
       const detail = await fetchDetail({ data: { variant: "chat" } });
-      const url = detail?.latest?.url;
-      if (!url) {
+      // Ambil snapshot APK terbaru sekali, lalu turunkan url + label dari
+      // objek yang sama supaya versi/ukuran yang ditampilkan di toast
+      // selalu merujuk ke berkas yang benar-benar diunduh.
+      const apk = detail?.latest;
+      const url = apk?.url;
+      if (!apk || !url) {
         toast.error("Belum ada APK MCM Chat yang tersedia.", { id: loadingId });
         return;
       }
-      const version =
-        detail?.latest?.versionName || detail?.latest?.name || "terbaru";
-      const sizeMB = detail?.latest?.sizeMB ?? null;
+      const version = apk.versionName || apk.name || "terbaru";
+      const sizeMB = apk.sizeMB ?? null;
       const sizeLabel =
         typeof sizeMB === "number" && Number.isFinite(sizeMB)
           ? `${sizeMB.toFixed(2)} MB`
           : "ukuran tidak diketahui";
       // Catat ke riwayat versi lokal sebelum navigasi.
-      if (detail?.latest) {
-        recordChatApkDownload({
-          name: detail.latest.name,
-          versionName: detail.latest.versionName ?? null,
-          versionCode: detail.latest.versionCode ?? null,
-          url,
-          sizeMB: detail.latest.sizeMB ?? null,
-        });
-      }
+      recordChatApkDownload({
+        name: apk.name,
+        versionName: apk.versionName ?? null,
+        versionCode: apk.versionCode ?? null,
+        url,
+        sizeMB,
+      });
       window.location.href = url;
       toast.success(`Mulai mengunduh APK MCM Chat v${version} • ${sizeLabel}`, {
         id: loadingId,
-        description: `Berkas: ${detail?.latest?.name ?? "APK Chat"} — cek folder Unduhan pada perangkat Anda.`,
+        description: `Berkas: ${apk.name} — cek folder Unduhan pada perangkat Anda.`,
       });
     } catch (e) {
       toast.error((e as Error)?.message || "Gagal memulai unduhan APK Chat.", {
