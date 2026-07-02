@@ -95,15 +95,6 @@ async function stopSampler(page: Page): Promise<Sample[]> {
   });
 }
 
-type Sample = {
-  t: number;
-  present: boolean;
-  sameTag: boolean;
-  count: number;
-  op: number | null;
-  td: string | null;
-};
-
 test("ChatModeSplash · nav berurutan + rapid toggle reduce-motion", async ({
   browser,
 }) => {
