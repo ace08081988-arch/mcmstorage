@@ -1,5 +1,5 @@
 {
-  "_note": "Baseline durasi micro-benchmark konflik lebar (ms). bestMs = best-of-N (regresi durasi), p95Ms = flakiness p95. Per-scenario `maxCv`/`p95Pct` mengoverride ambang flakiness untuk run yang sangat singkat. Update: UPDATE_BENCH_BASELINE=1 bunx vitest run src/routes/_authenticated.gudang.conflict-wide-fields-benchmark.test.ts",
+  "_note": "Baseline durasi micro-benchmark konflik lebar (ms). bestMs = best-of-N (regresi durasi), p95Ms = flakiness p95. Per-scenario override yang didukung: `regressionPct` & `floorMs` (regresi durasi), `p95Pct` & `maxCv` (flakiness). Update: UPDATE_BENCH_BASELINE=1 bunx vitest run src/routes/_authenticated.gudang.conflict-wide-fields-benchmark.test.ts",
   "capturedOn": "ubuntu-latest-node22-x64",
   "regressionPctDefault": 50,
   "floorMs": {
@@ -25,7 +25,9 @@
       "bestMs": 0.05,
       "p95Ms": 0.4,
       "mode": "batched",
-      "maxCv": 5.0
+      "maxCv": 5.0,
+      "regressionPct": 150,
+      "floorMs": 1
     },
     "ratio-sequential": {
       "bestMs": 1.5,
@@ -36,7 +38,9 @@
       "bestMs": 0.03,
       "p95Ms": 0.25,
       "mode": "batched",
-      "maxCv": 3.0
+      "maxCv": 3.0,
+      "regressionPct": 150,
+      "floorMs": 1
     },
     "scale-rounds-20": {
       "bestMs": 0.1,
