@@ -9,7 +9,10 @@ import {
   Smartphone,
   AlertTriangle,
   History,
+  QrCode as QrIcon,
 } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import {
   getApkVariantDetail,
   type ApkRelease,
@@ -109,6 +112,13 @@ function DetailPage() {
             />
 
             <ChangelogCard changelog={data.changelog} />
+
+            {v === "chat" && data.latest?.url && (
+              <ApkDownloadQr
+                url={data.latest.url}
+                versionName={data.latest.versionName}
+              />
+            )}
 
             <ReleaseHistoryCard
               releases={data.releases}
