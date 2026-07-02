@@ -1,0 +1,714 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Mutasi campuran Jumlah + Harga + Karton (botol) > snapshot: existing + botol · qty & harga & karton berurutan 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: qty 2 → 4 ===
+[INPUT] qty=4 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 4 botol
+[SUM] Tambahan stok | 4 botol (= 2.000 pcs)
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 40.000
+
+=== step 2: harga 10000 → 15000 ===
+[INPUT] qty=4 · pricePkg=15000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 4 botol
+[SUM] Tambahan stok | 4 botol (= 2.000 pcs)
+[SUM] Harga per botol | Rp 15.000
+[SUM] Harga per pcs | Rp 30
+[SUM] Total biaya | Rp 60.000
+
+=== step 3: toggle Karton ON, qty 4 → 1 ===
+[INPUT] qty=1 · pricePkg=15000 · priceBase=- · mode=package · karton=ON
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 100 botol (1 karton)
+[SUM] Tambahan stok | 100 botol (= 50.000 pcs) · = 1 karton
+[SUM] Harga per botol | Rp 150
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 15.000
+
+=== step 4: harga 15000 → 18000 (masih karton) ===
+[INPUT] qty=1 · pricePkg=18000 · priceBase=- · mode=package · karton=ON
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 100 botol (1 karton)
+[SUM] Tambahan stok | 100 botol (= 50.000 pcs) · = 1 karton
+[SUM] Harga per botol | Rp 180
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 18.000
+
+=== step 5: toggle Karton OFF, qty 1 → 6 ===
+[INPUT] qty=6 · pricePkg=18000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 6 botol
+[SUM] Tambahan stok | 6 botol (= 3.000 pcs)
+[SUM] Harga per botol | Rp 18.000
+[SUM] Harga per pcs | Rp 36
+[SUM] Total biaya | Rp 108.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Naikkan Jumlah kemasan bertahap > snapshot: existing + botol · qty 2 → 5 → 10 → 0 → 3 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: qty 2 → 5 ===
+[INPUT] qty=5 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 5 botol
+[SUM] Tambahan stok | 5 botol (= 2.500 pcs)
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 50.000
+
+=== step 2: qty 5 → 10 ===
+[INPUT] qty=10 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 10 botol
+[SUM] Tambahan stok | 10 botol (= 5.000 pcs)
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 100.000
+
+=== step 3: qty 10 → 0 (kosong) ===
+[INPUT] qty=0 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 0 botol
+[SUM] Tambahan stok | 0 botol (= 0 pcs)
+[SUM] Harga per botol | Rp 10.000
+[SUM] Total biaya | Rp 0
+
+=== step 4: qty 0 → 3 ===
+[INPUT] qty=3 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 3 botol
+[SUM] Tambahan stok | 3 botol (= 1.500 pcs)
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 30.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Naikkan Jumlah kemasan bertahap > snapshot: existing + gram · qty 2 → 5 → 10 → 0 → 3 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 gram (= 2 kg)
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: qty 2 → 5 ===
+[INPUT] qty=5 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 5 gram
+[SUM] Tambahan stok | 5 gram (= 5 kg)
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 50.000
+
+=== step 2: qty 5 → 10 ===
+[INPUT] qty=10 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 10 gram
+[SUM] Tambahan stok | 10 gram (= 10 kg)
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 100.000
+
+=== step 3: qty 10 → 0 (kosong) ===
+[INPUT] qty=0 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 gram (= 0 g)
+[SUM] Harga per gram | Rp 10.000
+[SUM] Total biaya | Rp 0
+
+=== step 4: qty 0 → 3 ===
+[INPUT] qty=3 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 3 gram
+[SUM] Tambahan stok | 3 gram (= 3 kg)
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 30.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Naikkan Jumlah kemasan bertahap > snapshot: existing + pcs · qty 2 → 5 → 10 → 0 → 3 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Item PCS · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 6.000
+
+=== step 1: qty 2 → 5 ===
+[INPUT] qty=5 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Item PCS · pcs
+[SUM] Jumlah kemasan | 5 pcs
+[SUM] Tambahan stok | 5 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 15.000
+
+=== step 2: qty 5 → 10 ===
+[INPUT] qty=10 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Item PCS · pcs
+[SUM] Jumlah kemasan | 10 pcs
+[SUM] Tambahan stok | 10 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 30.000
+
+=== step 3: qty 10 → 0 (kosong) ===
+[INPUT] qty=0 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Item PCS · pcs
+[SUM] Jumlah kemasan | 0 pcs
+[SUM] Tambahan stok | 0 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 0
+
+=== step 4: qty 0 → 3 ===
+[INPUT] qty=3 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Item PCS · pcs
+[SUM] Jumlah kemasan | 3 pcs
+[SUM] Tambahan stok | 3 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 9.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Naikkan Jumlah kemasan bertahap > snapshot: existing + sachet · qty 2 → 5 → 10 → 0 → 3 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item SACHET · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 sachet (= 2 pcs)
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: qty 2 → 5 ===
+[INPUT] qty=5 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item SACHET · sachet 1 pcs
+[SUM] Jumlah kemasan | 5 sachet
+[SUM] Tambahan stok | 5 sachet (= 5 pcs)
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 50.000
+
+=== step 2: qty 5 → 10 ===
+[INPUT] qty=10 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item SACHET · sachet 1 pcs
+[SUM] Jumlah kemasan | 10 sachet
+[SUM] Tambahan stok | 10 sachet (= 10 pcs)
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 100.000
+
+=== step 3: qty 10 → 0 (kosong) ===
+[INPUT] qty=0 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item SACHET · sachet 1 pcs
+[SUM] Jumlah kemasan | 0 sachet
+[SUM] Tambahan stok | 0 sachet (= 0 pcs)
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Total biaya | Rp 0
+
+=== step 4: qty 0 → 3 ===
+[INPUT] qty=3 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Item SACHET · sachet 1 pcs
+[SUM] Jumlah kemasan | 3 sachet
+[SUM] Tambahan stok | 3 sachet (= 3 pcs)
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 30.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Naikkan Jumlah kemasan bertahap > snapshot: new + botol · qty 2 → 5 → 10 → 0 → 3 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: qty 2 → 5 ===
+[INPUT] qty=5 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 5 botol
+[SUM] Tambahan stok | 2.500 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 50.000
+
+=== step 2: qty 5 → 10 ===
+[INPUT] qty=10 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 10 botol
+[SUM] Tambahan stok | 5.000 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 100.000
+
+=== step 3: qty 10 → 0 (kosong) ===
+[INPUT] qty=0 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 0 botol
+[SUM] Tambahan stok | 0 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Total biaya | Rp 0
+
+=== step 4: qty 0 → 3 ===
+[INPUT] qty=3 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 3 botol
+[SUM] Tambahan stok | 1.500 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 30.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Naikkan Jumlah kemasan bertahap > snapshot: new + gram · qty 2 → 5 → 10 → 0 → 3 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: qty 2 → 5 ===
+[INPUT] qty=5 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 5 gram
+[SUM] Tambahan stok | 5 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 50.000
+
+=== step 2: qty 5 → 10 ===
+[INPUT] qty=10 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 10 gram
+[SUM] Tambahan stok | 10 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 100.000
+
+=== step 3: qty 10 → 0 (kosong) ===
+[INPUT] qty=0 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Total biaya | Rp 0
+
+=== step 4: qty 0 → 3 ===
+[INPUT] qty=3 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 3 gram
+[SUM] Tambahan stok | 3 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 30.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Naikkan Jumlah kemasan bertahap > snapshot: new + pcs · qty 2 → 5 → 10 → 0 → 3 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 6.000
+
+=== step 1: qty 2 → 5 ===
+[INPUT] qty=5 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 5 pcs
+[SUM] Tambahan stok | 5 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 15.000
+
+=== step 2: qty 5 → 10 ===
+[INPUT] qty=10 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 10 pcs
+[SUM] Tambahan stok | 10 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 30.000
+
+=== step 3: qty 10 → 0 (kosong) ===
+[INPUT] qty=0 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 0 pcs
+[SUM] Tambahan stok | 0 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 0
+
+=== step 4: qty 0 → 3 ===
+[INPUT] qty=3 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 3 pcs
+[SUM] Tambahan stok | 3 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 9.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Naikkan Jumlah kemasan bertahap > snapshot: new + sachet · qty 2 → 5 → 10 → 0 → 3 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: qty 2 → 5 ===
+[INPUT] qty=5 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 5 sachet
+[SUM] Tambahan stok | 5 pcs
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 50.000
+
+=== step 2: qty 5 → 10 ===
+[INPUT] qty=10 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 10 sachet
+[SUM] Tambahan stok | 10 pcs
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 100.000
+
+=== step 3: qty 10 → 0 (kosong) ===
+[INPUT] qty=0 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 0 sachet
+[SUM] Tambahan stok | 0 pcs
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Total biaya | Rp 0
+
+=== step 4: qty 0 → 3 ===
+[INPUT] qty=3 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 3 sachet
+[SUM] Tambahan stok | 3 pcs
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 30.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Toggle priceMode (package ↔ base) + ubah harga > snapshot: new + botol · priceMode package → base → package 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: switch priceMode → base + isi pricePerBase 25 ===
+[INPUT] qty=2 · pricePkg=- · priceBase=25 · mode=base
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 12.500
+[SUM] Harga per pcs | Rp 25
+[SUM] Total biaya | Rp 25.000
+
+=== step 2: ubah pricePerBase 25 → 40 ===
+[INPUT] qty=2 · pricePkg=- · priceBase=40 · mode=base
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 20.000
+[SUM] Harga per pcs | Rp 40
+[SUM] Total biaya | Rp 40.000
+
+=== step 3: switch balik → package + pricePerPackage 12000 ===
+[INPUT] qty=2 · pricePkg=12000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 12.000
+[SUM] Harga per pcs | Rp 24
+[SUM] Total biaya | Rp 24.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Toggle priceMode (package ↔ base) + ubah harga > snapshot: new + gram · priceMode package → base → package 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: switch priceMode → base + isi pricePerBase 25 ===
+[INPUT] qty=2 · pricePkg=- · priceBase=25 · mode=base
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 25.000
+[SUM] Harga per g | Rp 25
+[SUM] Total biaya | Rp 50.000
+
+=== step 2: ubah pricePerBase 25 → 40 ===
+[INPUT] qty=2 · pricePkg=- · priceBase=40 · mode=base
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 40.000
+[SUM] Harga per g | Rp 40
+[SUM] Total biaya | Rp 80.000
+
+=== step 3: switch balik → package + pricePerPackage 12000 ===
+[INPUT] qty=2 · pricePkg=12000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 12.000
+[SUM] Harga per g | Rp 12
+[SUM] Total biaya | Rp 24.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Toggle priceMode (package ↔ base) + ubah harga > snapshot: new + sachet · priceMode package → base → package 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: switch priceMode → base + isi pricePerBase 25 ===
+[INPUT] qty=2 · pricePkg=- · priceBase=25 · mode=base
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 25
+[SUM] Harga per pcs | Rp 25
+[SUM] Total biaya | Rp 50
+
+=== step 2: ubah pricePerBase 25 → 40 ===
+[INPUT] qty=2 · pricePkg=- · priceBase=40 · mode=base
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 40
+[SUM] Harga per pcs | Rp 40
+[SUM] Total biaya | Rp 80
+
+=== step 3: switch balik → package + pricePerPackage 12000 ===
+[INPUT] qty=2 · pricePkg=12000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 12.000
+[SUM] Harga per pcs | Rp 12.000
+[SUM] Total biaya | Rp 24.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Ubah Harga bertahap > snapshot: new + botol · harga/kemasan 10000 → 12500 → 9000 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: harga 10000 → 12500 ===
+[INPUT] qty=2 · pricePkg=12500 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 12.500
+[SUM] Harga per pcs | Rp 25
+[SUM] Total biaya | Rp 25.000
+
+=== step 2: harga 12500 → 9000 ===
+[INPUT] qty=2 · pricePkg=9000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 9.000
+[SUM] Harga per pcs | Rp 18
+[SUM] Total biaya | Rp 18.000
+
+=== step 3: harga 9000 → 0 (kosong) ===
+[INPUT] qty=2 · pricePkg=0 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 0
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+
+=== step 4: harga 0 → 15000 ===
+[INPUT] qty=2 · pricePkg=15000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 15.000
+[SUM] Harga per pcs | Rp 30
+[SUM] Total biaya | Rp 30.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Ubah Harga bertahap > snapshot: new + gram · harga/kemasan 10000 → 12500 → 9000 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: harga 10000 → 12500 ===
+[INPUT] qty=2 · pricePkg=12500 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 12.500
+[SUM] Harga per g | Rp 13
+[SUM] Total biaya | Rp 25.000
+
+=== step 2: harga 12500 → 9000 ===
+[INPUT] qty=2 · pricePkg=9000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 9.000
+[SUM] Harga per g | Rp 9
+[SUM] Total biaya | Rp 18.000
+
+=== step 3: harga 9000 → 0 (kosong) ===
+[INPUT] qty=2 · pricePkg=0 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 0
+[SUM] Harga per g | Rp 0
+[SUM] Total biaya | Rp 0
+
+=== step 4: harga 0 → 15000 ===
+[INPUT] qty=2 · pricePkg=15000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 15.000
+[SUM] Harga per g | Rp 15
+[SUM] Total biaya | Rp 30.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Ubah Harga bertahap > snapshot: new + pcs (priceMode base) · harga/pcs 3000 → 4500 → 2000 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=3000 · mode=base
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 6.000
+
+=== step 1: harga/pcs 3000 → 4500 ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=4500 · mode=base
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 4.500
+[SUM] Total biaya | Rp 9.000
+
+=== step 2: harga/pcs 4500 → 2000 ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=2000 · mode=base
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 2.000
+[SUM] Total biaya | Rp 4.000
+
+=== step 3: harga/pcs 2000 → 0 ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=0 · mode=base
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+
+=== step 4: harga/pcs 0 → 5000 ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=5000 · mode=base
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 5.000
+[SUM] Total biaya | Rp 10.000"
+`;
+
+exports[`Gudang — snapshot ringkasan setelah mutasi Jumlah & Harga > Ubah Harga bertahap > snapshot: new + sachet · harga/kemasan 10000 → 12500 → 9000 1`] = `
+"=== step 0: initial ===
+[INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 20.000
+
+=== step 1: harga 10000 → 12500 ===
+[INPUT] qty=2 · pricePkg=12500 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 12.500
+[SUM] Harga per pcs | Rp 12.500
+[SUM] Total biaya | Rp 25.000
+
+=== step 2: harga 12500 → 9000 ===
+[INPUT] qty=2 · pricePkg=9000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 9.000
+[SUM] Harga per pcs | Rp 9.000
+[SUM] Total biaya | Rp 18.000
+
+=== step 3: harga 9000 → 0 (kosong) ===
+[INPUT] qty=2 · pricePkg=0 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 0
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+
+=== step 4: harga 0 → 15000 ===
+[INPUT] qty=2 · pricePkg=15000 · priceBase=- · mode=package
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 15.000
+[SUM] Harga per pcs | Rp 15.000
+[SUM] Total biaya | Rp 30.000"
+`;
