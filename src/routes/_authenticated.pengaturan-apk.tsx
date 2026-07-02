@@ -17,10 +17,12 @@ import {
   listApkReleaseAdminPanel,
   upsertApkReleaseMeta,
   setApkMinSupported,
+  getApkDownloadStats,
   type AdminApkEntry,
   type AdminApkListResult,
   type MinSupported,
   type ApkVariant,
+  type ApkDownloadStats,
 } from "@/lib/apk.functions";
 import {
   validateApkFileName,
@@ -150,6 +152,7 @@ function PengaturanApkPage() {
             current={data?.minSupported.chat ?? null}
           />
           <VariantSection title="MCM Chat" rows={grouped.chat} />
+          <DownloadAnalyticsCard />
           {data && data.entries.length === 0 && (
             <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
               Belum ada berkas APK di bucket.
