@@ -87,7 +87,11 @@ jobs:
           # Paksa vitest memakai runtime Node yang di-setup di step atas
           # kecuali job Bun-baseline.
           NODE_OPTIONS: "--max-old-space-size=4096"
-        run: bun run test:package-switch
+        run: |
+          mkdir -p .ci-reports
+          bun run test:package-switch \
+            --reporter=default --reporter=json \
+            --outputFile.json=.ci-reports/vitest-report.json
         if: matrix.runtime == 'bun'
 
       - name: Run full package-switch matrix (node)
@@ -97,7 +101,10 @@ jobs:
         # `npx vitest` menjalankan test lewat Node runtime yang aktif
         # (bukan Bun), sehingga variasi versi Node benar-benar teruji.
         run: |
+          mkdir -p .ci-reports
           npx --yes vitest@$(node -p "require('./package.json').devDependencies.vitest || require('./package.json').dependencies.vitest || 'latest'") run \
+            --reporter=default --reporter=json \
+            --outputFile.json=.ci-reports/vitest-report.json \
             "src/routes/_authenticated.gudang.package-switch-matrix.test.ts" \
             "src/routes/_authenticated.gudang.new-mode-gram-labels.test.ts" \
             "src/routes/_authenticated.gudang.package-switch-snapshots.test.ts" \
@@ -109,6 +116,33 @@ jobs:
             "src/lib/wa-special-chars-package-switch.test.ts" \
             "src/routes/_authenticated.index.wa-message-package-switch.test.ts"
 
+      - name: Collect snapshot diffs (on failure)
+        if: failure()
+        run: |
+          mkdir -p .ci-reports/snapshot-diffs
+          node scripts/collect-snapshot-diffs.mjs \
+            .ci-reports/vitest-report.json \
+            .ci-reports/snapshot-diffs || true
+          if [ -f .ci-reports/snapshot-diffs/SUMMARY.md ]; then
+            {
+              echo "";
+              echo "---";
+              echo "";
+              cat .ci-reports/snapshot-diffs/SUMMARY.md;
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload snapshot diff artifact (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: snapshot-diffs-node${{ matrix.node }}-${{ matrix.runtime }}
+          path: |
+            .ci-reports/snapshot-diffs/**
+            .ci-reports/vitest-report.json
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Job summary on failure
         if: failure()
         run: |
@@ -119,6 +153,8 @@ jobs:
             echo "";
             echo "Runtime: **${{ matrix.runtime }}**, Node.js **${{ matrix.node }}**.";
             echo "Jika hanya versi Node tertentu yang gagal, curigai perbedaan `Intl` / `toLocaleString` / regex look-behind / atau perilaku formatter antar versi.";
+            echo "";
+            echo "🔍 **Snapshot diff artifact:** unduh \`snapshot-diffs-node${{ matrix.node }}-${{ matrix.runtime }}\` di panel _Artifacts_ untuk melihat \`expected.txt\` / \`received.txt\` / \`diff.patch\` per snapshot yang gagal.";
             echo "";
             echo "Cakupan suite:";
             echo "- \`src/routes/_authenticated.gudang.package-switch-matrix.test.ts\` — matrix penuh (30 test) new/existing/round-trip";
