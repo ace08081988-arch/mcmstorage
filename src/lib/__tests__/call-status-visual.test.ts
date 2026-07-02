@@ -65,7 +65,7 @@ describe("getCallStatusVisual — pemetaan ikon status kritis", () => {
       {
         "colorClass": "text-emerald-500",
         "hint": "Diterima — panggilan berhasil tersambung.",
-        "icon": "CheckCircle2",
+        "icon": "CircleCheck",
         "label": "Diterima",
       }
     `);
@@ -98,7 +98,7 @@ describe("getCallStatusVisual — pemetaan ikon status kritis", () => {
       {
         "colorClass": "text-red-500",
         "hint": "Gagal — panggilan tidak dapat tersambung.",
-        "icon": "AlertCircle",
+        "icon": "CircleAlert",
         "label": "Gagal",
       }
     `);
