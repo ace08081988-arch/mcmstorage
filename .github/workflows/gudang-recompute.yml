@@ -12,6 +12,8 @@ on:
       - "src/lib/beli-reset-key.ts"
       - "src/lib/beli-fixtures.ts"
       - "src/lib/stress-diagnostic.ts"
+      - "src/lib/bench-baseline.ts"
+      - "benchmarks/**"
       - "package.json"
       - "bun.lock*"
       - "vitest.config.ts"
@@ -27,11 +29,22 @@ on:
       - "src/lib/beli-reset-key.ts"
       - "src/lib/beli-fixtures.ts"
       - "src/lib/stress-diagnostic.ts"
+      - "src/lib/bench-baseline.ts"
+      - "benchmarks/**"
       - "package.json"
       - "bun.lock*"
       - "vitest.config.ts"
       - ".github/workflows/gudang-recompute.yml"
   workflow_dispatch:
+    inputs:
+      regression_pct:
+        description: "Ambang regresi (%) vs baseline"
+        required: false
+        default: "50"
+      skip_baseline:
+        description: "Set true untuk skip perbandingan baseline"
+        required: false
+        default: "false"
 
 concurrency:
   group: gudang-recompute-${{ github.ref }}
@@ -42,6 +55,11 @@ jobs:
     name: computeBeliDerived / computeBeliWarnings counts
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    env:
+      # Aktifkan enforce baseline di CI (juga default lewat CI=true).
+      BENCH_STRICT: "1"
+      BENCH_REGRESSION_PCT: ${{ github.event.inputs.regression_pct || '50' }}
+      SKIP_BENCH_BASELINE: ${{ github.event.inputs.skip_baseline == 'true' && '1' || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
