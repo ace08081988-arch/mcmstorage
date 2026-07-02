@@ -2,6 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const STATUS_BUCKET = "statuses";
 
+export type StatusVisibility = "public" | "friends";
+
 export type StatusRow = {
   id: string;
   user_id: string;
@@ -12,6 +14,7 @@ export type StatusRow = {
   bg_color: string | null;
   created_at: string;
   expires_at: string;
+  visibility?: StatusVisibility;
 };
 
 export type StatusCommentRow = {
@@ -87,6 +90,7 @@ export async function insertStatus(row: {
   media_type: StatusRow["media_type"];
   caption?: string | null;
   bg_color?: string | null;
+  visibility?: StatusVisibility;
 }): Promise<StatusRow | null> {
   const { data: userData } = await supabase.auth.getUser();
   const uid = userData.user?.id;
@@ -100,6 +104,7 @@ export async function insertStatus(row: {
       media_type: row.media_type,
       caption: row.caption ?? null,
       bg_color: row.bg_color ?? null,
+      visibility: row.visibility ?? "public",
     })
     .select("*")
     .single();
@@ -108,6 +113,39 @@ export async function insertStatus(row: {
     return null;
   }
   return data as StatusRow;
+}
+
+/** Ambil preferensi default visibilitas status milik user. */
+export async function getDefaultStatusVisibility(): Promise<StatusVisibility> {
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u.user?.id;
+  if (!uid) return "public";
+  const { data } = await supabase
+    .from("profiles")
+    .select("default_status_visibility")
+    .eq("id", uid)
+    .maybeSingle();
+  const v = (data as { default_status_visibility?: StatusVisibility } | null)
+    ?.default_status_visibility;
+  return v === "friends" ? "friends" : "public";
+}
+
+/** Simpan preferensi default visibilitas status. */
+export async function setDefaultStatusVisibility(
+  v: StatusVisibility,
+): Promise<boolean> {
+  const { data: u } = await supabase.auth.getUser();
+  const uid = u.user?.id;
+  if (!uid) return false;
+  const { error } = await supabase
+    .from("profiles")
+    .update({ default_status_visibility: v })
+    .eq("id", uid);
+  if (error) {
+    console.error("[status] set default visibility failed", error);
+    return false;
+  }
+  return true;
 }
 
 export async function deleteStatus(id: string, path: string): Promise<boolean> {

@@ -31,6 +31,7 @@ import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticate
 import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authenticated.profil-chat'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
 import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
+import { Route as AuthenticatedPengaturanPrivasiRouteImport } from './routes/_authenticated.pengaturan-privasi'
 import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes/_authenticated.pengaturan-penyimpanan'
 import { Route as AuthenticatedPengaturanOauthGoogleRouteImport } from './routes/_authenticated.pengaturan-oauth-google'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
@@ -196,6 +197,12 @@ const AuthenticatedPengaturanScrollGuardRoute =
   AuthenticatedPengaturanScrollGuardRouteImport.update({
     id: '/pengaturan-scroll-guard',
     path: '/pengaturan-scroll-guard',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanPrivasiRoute =
+  AuthenticatedPengaturanPrivasiRouteImport.update({
+    id: '/pengaturan-privasi',
+    path: '/pengaturan-privasi',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPengaturanPenyimpananRoute =
@@ -546,6 +553,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
+  '/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/profil-chat': typeof AuthenticatedProfilChatRoute
@@ -622,6 +630,7 @@ export interface FileRoutesByTo {
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
+  '/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/profil-chat': typeof AuthenticatedProfilChatRoute
@@ -702,6 +711,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/_authenticated/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
   '/_authenticated/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
+  '/_authenticated/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
   '/_authenticated/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/profil-chat': typeof AuthenticatedProfilChatRoute
@@ -783,6 +793,7 @@ export interface FileRouteTypes {
     | '/pengaturan-kunci'
     | '/pengaturan-oauth-google'
     | '/pengaturan-penyimpanan'
+    | '/pengaturan-privasi'
     | '/pengaturan-scroll-guard'
     | '/profil'
     | '/profil-chat'
@@ -859,6 +870,7 @@ export interface FileRouteTypes {
     | '/pengaturan-kunci'
     | '/pengaturan-oauth-google'
     | '/pengaturan-penyimpanan'
+    | '/pengaturan-privasi'
     | '/pengaturan-scroll-guard'
     | '/profil'
     | '/profil-chat'
@@ -938,6 +950,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-kunci'
     | '/_authenticated/pengaturan-oauth-google'
     | '/_authenticated/pengaturan-penyimpanan'
+    | '/_authenticated/pengaturan-privasi'
     | '/_authenticated/pengaturan-scroll-guard'
     | '/_authenticated/profil'
     | '/_authenticated/profil-chat'
@@ -1165,6 +1178,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-scroll-guard'
       fullPath: '/pengaturan-scroll-guard'
       preLoaderRoute: typeof AuthenticatedPengaturanScrollGuardRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-privasi': {
+      id: '/_authenticated/pengaturan-privasi'
+      path: '/pengaturan-privasi'
+      fullPath: '/pengaturan-privasi'
+      preLoaderRoute: typeof AuthenticatedPengaturanPrivasiRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-penyimpanan': {
@@ -1635,6 +1655,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
   AuthenticatedPengaturanOauthGoogleRoute: typeof AuthenticatedPengaturanOauthGoogleRoute
   AuthenticatedPengaturanPenyimpananRoute: typeof AuthenticatedPengaturanPenyimpananRoute
+  AuthenticatedPengaturanPrivasiRoute: typeof AuthenticatedPengaturanPrivasiRoute
   AuthenticatedPengaturanScrollGuardRoute: typeof AuthenticatedPengaturanScrollGuardRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedProfilChatRoute: typeof AuthenticatedProfilChatRoute
@@ -1685,6 +1706,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedPengaturanOauthGoogleRoute,
   AuthenticatedPengaturanPenyimpananRoute:
     AuthenticatedPengaturanPenyimpananRoute,
+  AuthenticatedPengaturanPrivasiRoute: AuthenticatedPengaturanPrivasiRoute,
   AuthenticatedPengaturanScrollGuardRoute:
     AuthenticatedPengaturanScrollGuardRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
@@ -1754,13 +1776,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
