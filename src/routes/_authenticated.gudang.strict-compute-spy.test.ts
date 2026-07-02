@@ -59,7 +59,8 @@ describe("strict-compute-spy: matcher hanya menghitung panggilan pipeline", () =
 
     // Helper luar pipeline — memakai fungsi asli, TIDAK terkait spy.
     for (let i = 0; i < 50; i++) {
-      realComputeDerived(baseInp({ selectedItem: { ...ITEM, stock_base: i } }));
+      const withStock: Item = { ...ITEM, stock_base: i };
+      realComputeDerived(baseInp({ selectedItem: withStock }));
     }
 
     expect(spy.pipelineCalls).toBe(0);
@@ -124,16 +125,19 @@ describe("strict-compute-spy: matcher hanya menghitung panggilan pipeline", () =
   it("stabilitas ekspektasi: 500 helper-calls + 3 pipeline-calls → tetap 3", () => {
     const spy = createStrictDerivedSpy();
     for (let i = 0; i < 500; i++) {
-      realComputeDerived(baseInp({ selectedItem: { ...ITEM, stock_base: i } }));
+      const withStock: Item = { ...ITEM, stock_base: i };
+      realComputeDerived(baseInp({ selectedItem: withStock }));
     }
     spy.call(baseInp({ selectedItem: ITEM }));
     for (let i = 0; i < 250; i++) {
-      realComputeDerived(baseInp({ selectedItem: { ...ITEM, stock_base: i } }));
+      const withStock: Item = { ...ITEM, stock_base: i };
+      realComputeDerived(baseInp({ selectedItem: withStock }));
     }
     spy.call(baseInp({ selectedItem: ITEM, packageQty: "3" }));
     spy.call(baseInp({ selectedItem: ITEM, packageQty: "4" }));
     for (let i = 0; i < 250; i++) {
-      realComputeDerived(baseInp({ selectedItem: { ...ITEM, stock_base: i } }));
+      const withStock: Item = { ...ITEM, stock_base: i };
+      realComputeDerived(baseInp({ selectedItem: withStock }));
     }
     expect(spy.pipelineCalls).toBe(3);
     expect(spy.invalidCalls).toBe(0);
