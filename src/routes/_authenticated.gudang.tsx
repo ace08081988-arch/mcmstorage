@@ -1655,6 +1655,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // Catatan: `itemId` adalah proxy dep untuk konten item — di aplikasi ini
   // fields packaging pada satu itemId bersifat immutable dari perspektif
   // form (perubahan schema akan menghasilkan itemId berbeda / mode 'new').
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const derived = useMemo(
     () =>
       computeBeliDerived({
@@ -1668,7 +1669,6 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         pricePerBase,
         inputKarton,
       }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       mode,
       itemId,
@@ -1686,6 +1686,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // `warnings` — memoized: dep array minimal (mode, itemId, packageType,
   // derived, priceMode, inputKarton). Refetch identitas selectedItem tidak
   // menembak memo karena selectedItem TIDAK ada di deps.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const warnings = useMemo(
     () =>
       computeBeliWarnings({
@@ -1695,7 +1696,6 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         priceMode,
         inputKarton,
       }).filter((w) => w.level !== "error"),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
     [mode, itemId, packageType, derived, priceMode, inputKarton],
   );
 
@@ -1707,11 +1707,11 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // adalah proxy identitas item — refetch dengan itemId sama TIDAK memicu
   // effect. `selectedItem` dibaca via closure untuk mengambil package_type
   // pada saat effect dijalankan.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isWItem(selectedItem)) return;
     if (selectedItem.package_type !== "botol" && inputKarton) setInputKarton(false);
     if (selectedItem.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mode, itemId, inputKarton, priceMode]);
 
   // Kunci/reset state saat pengguna cepat mengganti item atau mode agar
