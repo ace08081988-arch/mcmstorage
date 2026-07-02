@@ -412,6 +412,7 @@ function TugasBaruPage() {
         qty: Number(r.qty),
         unit: r.unit.trim() || null,
         warehouse_item_id: r.warehouse_item_id,
+        ecer_title_id: r.title_id || null,
       }))
       .filter((r) => r.name.length > 0);
     if (items.length === 0) return toast.error("Tambahkan minimal 1 barang");
@@ -433,6 +434,7 @@ function TugasBaruPage() {
       unit_label: r.unit,
       ref_photo_path: null,
       warehouse_item_id: r.warehouse_item_id,
+      ecer_title_id: r.ecer_title_id,
     }));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { error } = await (supabase.rpc as any)("prep_create_task", {
