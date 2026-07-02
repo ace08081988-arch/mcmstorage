@@ -62,6 +62,10 @@ export function DownloadChatApkShortcut() {
           id: loadingId,
           description:
             "Server belum menyediakan berkas APK Chat terbaru. Coba lagi nanti atau hubungi admin.",
+          action: {
+            label: "Coba lagi",
+            onClick: () => void startDownload(),
+          },
         });
         return;
       }
@@ -114,6 +118,10 @@ export function DownloadChatApkShortcut() {
           id: loadingId,
           description: errorDetail,
           duration: 8000,
+          action: {
+            label: "Coba lagi",
+            onClick: () => void startDownload(),
+          },
         },
       );
       setStage("Gagal");
