@@ -1,7 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, Phone, Video as VideoIcon } from "lucide-react";
+import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
