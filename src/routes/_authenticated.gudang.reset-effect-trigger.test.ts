@@ -312,3 +312,110 @@ describe("BeliTab — reset dipanggil TEPAT SEKALI per perubahan efektif", () =>
     expect(h.resetCount).toBe(transitions.length);
   });
 });
+
+// =============================================================
+// TES BATCH — perubahan bersamaan mode + itemId + packageType di
+// satu render batch harus menghasilkan TEPAT 1 reset, bukan 3.
+// Kontrak useEffect React: dep array dievaluasi sekali per commit,
+// jadi meskipun tiga input trigger berubah bersamaan, effect body
+// hanya dieksekusi sekali.
+// =============================================================
+describe("BeliTab — reset dipanggil TEPAT SEKALI dalam satu render batch", () => {
+  it("mode + itemId + packageType berubah bersamaan → 1 reset", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: { id: "botol-500" },
+    });
+    h.batch({ mode: "new", itemId: "", packageType: "gram" });
+    expect(h.resetCount).toBe(1);
+  });
+
+  it("dua batch berturut-turut (masing-masing mengubah 3 field) → 2 reset total", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "a",
+      packageType: "botol",
+      selectedItem: { id: "a" },
+    });
+    h.batch({ mode: "new", itemId: "", packageType: "pcs" });
+    expect(h.resetCount).toBe(1);
+    h.batch({ mode: "existing", itemId: "b", packageType: "gram" });
+    expect(h.resetCount).toBe(2);
+  });
+
+  it("batch dengan hanya 2 field trigger berubah (mode + itemId) tetap 1 reset", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "a",
+      packageType: "botol",
+      selectedItem: { id: "a" },
+    });
+    h.batch({ mode: "new", itemId: "" });
+    expect(h.resetCount).toBe(1);
+  });
+
+  it("batch yang meng-update selectedItem BERSAMA mode/itemId → tetap 1 reset (bukan 2)", () => {
+    // Skenario nyata: pengguna klik item lain → setItemId + setSelectedItem
+    // dipanggil dalam satu handler React. React batching → 1 commit → 1 reset.
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "a",
+      packageType: "botol",
+      selectedItem: { id: "a" },
+    });
+    h.batch({ itemId: "b", selectedItem: { id: "b" } });
+    expect(h.resetCount).toBe(1);
+  });
+
+  it("batch yang HANYA mengubah selectedItem (tanpa mode/itemId/packageType) → 0 reset", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "a",
+      packageType: "botol",
+      selectedItem: { id: "a" },
+    });
+    h.batch({ selectedItem: { id: "a", rev: 2 } });
+    h.batch({ selectedItem: { id: "a", rev: 3 } });
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("batch idempoten (nilai baru = nilai lama untuk semua field) → 0 reset", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "a",
+      packageType: "botol",
+      selectedItem: { id: "a" },
+    });
+    h.batch({ mode: "existing", itemId: "a", packageType: "botol" });
+    h.batch({ mode: "existing", itemId: "a", packageType: "gram" }); // packageType diabaikan di mode existing
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("kontrol negatif: 3 setter TERPISAH (bukan batch) di mode 'new' → hanya field kunci yang naikkan count", () => {
+    // Konfirmasi bahwa batching benar-benar menyatukan commit — jika 3
+    // setter dipanggil terpisah, tiap commit yang benar-benar mengubah
+    // resetKey akan naik. Di mode 'new' hanya packageType relevan (itemId
+    // diabaikan), jadi setMode('new') + setPackageType('pcs') = 2 reset
+    // (existing→new lalu botol→pcs), tapi batch keduanya = 1.
+    const separate = createResetLifecycle({
+      mode: "existing",
+      itemId: "a",
+      packageType: "botol",
+      selectedItem: { id: "a" },
+    });
+    separate.setMode("new"); // +1
+    separate.setPackageType("pcs"); // +1
+    expect(separate.resetCount).toBe(2);
+
+    const batched = createResetLifecycle({
+      mode: "existing",
+      itemId: "a",
+      packageType: "botol",
+      selectedItem: { id: "a" },
+    });
+    batched.batch({ mode: "new", packageType: "pcs" });
+    expect(batched.resetCount).toBe(1);
+  });
+});
