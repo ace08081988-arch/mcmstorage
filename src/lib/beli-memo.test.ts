@@ -247,3 +247,122 @@ describe("guard menahan recompute untuk perubahan object pendukung", () => {
     }
   });
 });
+
+// =============================================================
+// TES — refetch selectedItem dengan package_type null/undefined.
+// Kasus nyata: server sesekali mengembalikan item dengan field
+// packaging yang belum di-set (null) atau baru dibuat (undefined).
+// Selama nilai efektif tidak berubah antar refetch, derived dan
+// warnings HARUS tetap referensi yang sama.
+// =============================================================
+describe("guard stabil saat selectedItem punya package_type null/undefined", () => {
+  beforeEach(() => {
+    __resetBeliDerivedMemo();
+    __resetBeliWarningsMemo();
+  });
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const NULL_ITEM: any = {
+    package_type: null,
+    package_size: null,
+    base_unit: null,
+    stock_base: 0,
+    avg_cost_per_base: 0,
+    name: "Belum di-set",
+  };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const UNDEF_ITEM: any = {
+    package_type: undefined,
+    package_size: undefined,
+    base_unit: undefined,
+    stock_base: 0,
+    avg_cost_per_base: 0,
+    name: "Belum di-set",
+  };
+
+  it("derived stabil saat refetch item dengan package_type null (referensi baru, isi sama)", () => {
+    const a = computeBeliDerived(inp({ selectedItem: { ...NULL_ITEM } }));
+    const b = computeBeliDerived(inp({ selectedItem: { ...NULL_ITEM } }));
+    const c = computeBeliDerived(inp({ selectedItem: { ...NULL_ITEM, name: "X" } }));
+    expect(b).toBe(a);
+    expect(c).toBe(a);
+  });
+
+  it("derived stabil saat refetch item dengan package_type undefined", () => {
+    const a = computeBeliDerived(inp({ selectedItem: { ...UNDEF_ITEM } }));
+    const b = computeBeliDerived(inp({ selectedItem: { ...UNDEF_ITEM } }));
+    expect(b).toBe(a);
+  });
+
+  it("warnings stabil saat refetch item dengan package_type null", () => {
+    const d1 = computeBeliDerived(inp({ selectedItem: { ...NULL_ITEM } }));
+    const w1 = computeBeliWarnings({
+      mode: "existing",
+      selectedItem: { ...NULL_ITEM },
+      derived: d1,
+      priceMode: "package",
+      inputKarton: false,
+    });
+    const d2 = computeBeliDerived(inp({ selectedItem: { ...NULL_ITEM } }));
+    const w2 = computeBeliWarnings({
+      mode: "existing",
+      selectedItem: { ...NULL_ITEM },
+      derived: d2,
+      priceMode: "package",
+      inputKarton: false,
+    });
+    expect(d2).toBe(d1);
+    expect(w2).toBe(w1);
+  });
+
+  it("warnings stabil saat refetch item dengan package_type undefined", () => {
+    const d1 = computeBeliDerived(inp({ selectedItem: { ...UNDEF_ITEM } }));
+    const w1 = computeBeliWarnings({
+      mode: "existing",
+      selectedItem: { ...UNDEF_ITEM },
+      derived: d1,
+      priceMode: "package",
+      inputKarton: false,
+    });
+    const d2 = computeBeliDerived(inp({ selectedItem: { ...UNDEF_ITEM } }));
+    const w2 = computeBeliWarnings({
+      mode: "existing",
+      selectedItem: { ...UNDEF_ITEM },
+      derived: d2,
+      priceMode: "package",
+      inputKarton: false,
+    });
+    expect(d2).toBe(d1);
+    expect(w2).toBe(w1);
+  });
+
+  it("null dan undefined DIPERLAKUKAN SAMA — refetch bolak-balik null↔undefined tidak memicu alokasi baru bila field lain identik", () => {
+    // Kontrak: `beliDerivedSig` mem-stringify field pakai template literal,
+    // jadi `null` → "null" dan `undefined` → "undefined". Nilai-nilai ini
+    // BEDA sig, jadi TES INI adalah kontrol negatif: tukar null↔undefined
+    // memang memicu alokasi baru. Ini melindungi guard dari false-positive.
+    const a = computeBeliDerived(inp({ selectedItem: { ...NULL_ITEM } }));
+    const b = computeBeliDerived(inp({ selectedItem: { ...UNDEF_ITEM } }));
+    expect(b).not.toBe(a);
+  });
+
+  it("burst refetch (20×) untuk item null-packaging tetap 0 alokasi baru", () => {
+    const first = computeBeliDerived(inp({ selectedItem: { ...NULL_ITEM } }));
+    for (let i = 0; i < 20; i++) {
+      const next = computeBeliDerived(
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        inp({ selectedItem: { ...NULL_ITEM, ...(({ id: `rev-${i}`, updated_at: `t-${i}` } as any)) } }),
+      );
+      expect(next).toBe(first);
+    }
+  });
+
+  it("transisi null → punya packaging benar-benar memicu alokasi baru (kontrol positif)", () => {
+    const a = computeBeliDerived(inp({ selectedItem: { ...NULL_ITEM } }));
+    const b = computeBeliDerived(inp({ selectedItem: { ...ITEM } }));
+    expect(b).not.toBe(a);
+    // Kembali ke null: alokasi baru lagi karena sig beda dari `b`.
+    const c = computeBeliDerived(inp({ selectedItem: { ...NULL_ITEM } }));
+    expect(c).not.toBe(b);
+  });
+});
