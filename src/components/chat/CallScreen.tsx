@@ -33,8 +33,8 @@ type Props = {
 };
 
 export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Props) {
-  const [phase, setPhase] = useState<"connecting" | "ringing" | "in-call" | "ended">(
-    role === "caller" ? "ringing" : "connecting",
+  const [phase, setPhase] = useState<"connecting" | "dialing" | "ringing" | "in-call" | "ended">(
+    role === "caller" ? "dialing" : "connecting",
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [micOn, setMicOn] = useState(true);
@@ -104,6 +104,12 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             },
             onError: (err) => {
               setErrorMsg(err.message);
+            },
+            onRingingAck: () => {
+              // Callee sudah menampilkan dialog masuk — beralih dari
+              // "Memanggil…" ke "Berdering…". Hanya berpengaruh saat
+              // caller masih di fase awal.
+              setPhase((p) => (p === "dialing" ? "ringing" : p));
             },
           },
         });
@@ -177,10 +183,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     })();
   }, [role, phase, callId, finalize]);
 
-  // Timeout ringing (caller) — 45 detik.
+  // Timeout ringing (caller) — 45 detik. Berlaku untuk fase dialing
+  // maupun ringing supaya panggilan tidak menggantung tanpa jawaban.
   useEffect(() => {
     if (role !== "caller") return;
-    if (phase !== "ringing") return;
+    if (phase !== "ringing" && phase !== "dialing") return;
     const t = setTimeout(() => {
       void finalize("missed", "no-answer");
     }, 45_000);
@@ -214,10 +221,59 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const status = useMemo(() => {
     if (errorMsg && phase === "ended") return errorMsg;
     if (phase === "connecting") return "Menghubungkan…";
-    if (phase === "ringing") return "Memanggil…";
+    if (phase === "dialing") return "Memanggil…";
+    if (phase === "ringing") return "Berdering…";
     if (phase === "in-call") return formatCallDuration(seconds);
     return "Panggilan berakhir";
   }, [phase, seconds, errorMsg]);
+
+  // Ringback tone (nada tut-tut) untuk caller selama menunggu jawaban.
+  // Pola tipe Indonesia: ~1 detik nada 425 Hz + ~4 detik hening,
+  // sedikit dipersingkat supaya feedback terasa cepat.
+  useEffect(() => {
+    if (role !== "caller") return;
+    if (phase !== "dialing" && phase !== "ringing") return;
+    const Ctor =
+      typeof window !== "undefined"
+        ? window.AudioContext ||
+          (window as unknown as { webkitAudioContext?: typeof AudioContext })
+            .webkitAudioContext
+        : undefined;
+    if (!Ctor) return;
+    let ctx: AudioContext | null = null;
+    let osc: OscillatorNode | null = null;
+    let gain: GainNode | null = null;
+    let interval: ReturnType<typeof setInterval> | null = null;
+    try {
+      ctx = new Ctor();
+      osc = ctx.createOscillator();
+      gain = ctx.createGain();
+      osc.type = "sine";
+      osc.frequency.value = 425;
+      gain.gain.value = 0;
+      osc.connect(gain).connect(ctx.destination);
+      osc.start();
+      // Beep panjang ~1s, jeda ~2s (dipercepat untuk feedback UX).
+      const play = () => {
+        if (!ctx || !gain) return;
+        const now = ctx.currentTime;
+        gain.gain.cancelScheduledValues(now);
+        gain.gain.setValueAtTime(0.0001, now);
+        gain.gain.exponentialRampToValueAtTime(0.18, now + 0.02);
+        gain.gain.setValueAtTime(0.18, now + 1.0);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 1.05);
+      };
+      play();
+      interval = setInterval(play, 3000);
+    } catch {
+      /* ignore — silent fallback */
+    }
+    return () => {
+      if (interval) clearInterval(interval);
+      try { osc?.stop(); } catch { /* ignore */ }
+      try { void ctx?.close(); } catch { /* ignore */ }
+    };
+  }, [role, phase]);
 
   return (
     <div
