@@ -1413,6 +1413,7 @@ export type Database = {
         Row: {
           category_snapshot: string | null
           created_at: string
+          ecer_title_id: string | null
           id: string
           name_snapshot: string
           note: string | null
@@ -1428,6 +1429,7 @@ export type Database = {
         Insert: {
           category_snapshot?: string | null
           created_at?: string
+          ecer_title_id?: string | null
           id?: string
           name_snapshot: string
           note?: string | null
@@ -1443,6 +1445,7 @@ export type Database = {
         Update: {
           category_snapshot?: string | null
           created_at?: string
+          ecer_title_id?: string | null
           id?: string
           name_snapshot?: string
           note?: string | null
@@ -1456,6 +1459,13 @@ export type Database = {
           warehouse_item_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "prep_task_items_ecer_title_id_fkey"
+            columns: ["ecer_title_id"]
+            isOneToOne: false
+            referencedRelation: "ecer_titles"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "prep_task_items_task_id_fkey"
             columns: ["task_id"]
