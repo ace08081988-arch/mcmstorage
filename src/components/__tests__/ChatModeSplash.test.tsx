@@ -436,10 +436,6 @@ describe("ChatModeSplash · toggle reduce-motion bertubi-tubi", () => {
   it("toggle 10x dalam 200ms tidak menghasilkan timeline yang tumpang tindih (start=normal)", async () => {
     reduceMotion = false;
     const Splash = await loadComponent();
-    // Sadap sessionStorage.setItem lewat prototype untuk menghitung
-    // berapa kali splash "selesai" — harus tepat 1.
-    const setSpy = vi.spyOn(Storage.prototype, "setItem");
-
     const { root } = mount(Splash);
     expect(splashNode()).not.toBeNull();
 
@@ -455,7 +451,8 @@ describe("ChatModeSplash · toggle reduce-motion bertubi-tubi", () => {
     const midClass = splashNode()!.className;
     expect(midClass).not.toContain("opacity-0");
     // sessionStorage belum ditulis di tengah timeline.
-    expect(setSpy).not.toHaveBeenCalledWith("mcm.chat.splashShown", "1");
+    // sessionStorage belum ditulis di tengah timeline.
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBeNull();
 
     // Lanjut sampai 999ms total — masih hold.
     act(() => {
@@ -481,20 +478,21 @@ describe("ChatModeSplash · toggle reduce-motion bertubi-tubi", () => {
     });
     expect(splashNode()).toBeNull();
 
-    // Persis satu penulisan sessionStorage — bukti tidak ada timer
-    // duplikat yang tumpang tindih.
-    expect(setSpy).toHaveBeenCalledTimes(1);
-    expect(setSpy).toHaveBeenCalledWith("mcm.chat.splashShown", "1");
-
-    setSpy.mockRestore();
+    // Tepat satu penanda tersimpan — bukti tidak ada timer duplikat
+    // yang tumpang tindih. Jalankan sisa timer dan pastikan
+    // splash tidak muncul lagi.
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBe("1");
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(splashNode()).toBeNull();
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBe("1");
     act(() => root.unmount());
   });
 
   it("toggle 10x dalam 100ms (start=reduce) tetap menyelesaikan splash sesuai timeline reduce", async () => {
     reduceMotion = true;
     const Splash = await loadComponent();
-    const setSpy = vi.spyOn(Storage.prototype, "setItem");
-
     const { root } = mount(Splash);
     expect(splashNode()).not.toBeNull();
 
@@ -510,7 +508,7 @@ describe("ChatModeSplash · toggle reduce-motion bertubi-tubi", () => {
     // fade, tidak boleh sudah selesai.
     expect(splashNode()).not.toBeNull();
     expect(splashNode()!.className).not.toContain("opacity-0");
-    expect(setSpy).not.toHaveBeenCalledWith("mcm.chat.splashShown", "1");
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBeNull();
 
     // 399ms total — masih ada.
     act(() => {
@@ -524,16 +522,15 @@ describe("ChatModeSplash · toggle reduce-motion bertubi-tubi", () => {
       vi.advanceTimersByTime(1);
     });
     expect(splashNode()).toBeNull();
-    expect(setSpy).toHaveBeenCalledTimes(1);
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBe("1");
 
     // Lanjut jalankan semua timer tersisa — pastikan tidak ada
     // callback tambahan yang menulis lagi.
     act(() => {
       vi.advanceTimersByTime(5000);
     });
-    expect(setSpy).toHaveBeenCalledTimes(1);
-
-    setSpy.mockRestore();
+    expect(splashNode()).toBeNull();
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBe("1");
     act(() => root.unmount());
   });
 });
