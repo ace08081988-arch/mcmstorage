@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X } from "lucide-react";
+import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X, CheckCircle2, XCircle } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import {
@@ -926,6 +926,54 @@ function PengaturanTampilanPage() {
               gudang tidak terpengaruh. Tekan <span className="font-semibold text-foreground">Simpan</span>{" "}
               agar hasilnya diterapkan ke aplikasi.
             </p>
+            <div className="grid grid-cols-1 gap-2 rounded-md border bg-muted/30 p-3 sm:grid-cols-2">
+              <div>
+                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-400" />
+                  Yang disimpan
+                </p>
+                <ul className="space-y-1 text-[11px] leading-snug text-muted-foreground">
+                  {[
+                    "Tema (terang / gelap / ikut sistem)",
+                    "Aksen warna & radius sudut",
+                    "Font & ukuran teks",
+                    "Skala teks (fontScale)",
+                    "Mode kerapatan (compact)",
+                    "Kontras tinggi & kurangi animasi",
+                    "Foto latar, overlay, blur",
+                    "Versi skema (untuk kompatibilitas)",
+                  ].map((t) => (
+                    <li key={t} className="flex gap-1.5">
+                      <CheckCircle2 className="mt-[2px] h-3 w-3 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div>
+                <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-foreground">
+                  <XCircle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+                  Yang tidak disimpan
+                </p>
+                <ul className="space-y-1 text-[11px] leading-snug text-muted-foreground">
+                  {[
+                    "Akun, email, PIN & sesi login",
+                    "Isi chat, kontak & lampiran",
+                    "Data gudang, stok, dan penjualan",
+                    "Pelanggan, pemasok, hutang piutang",
+                    "Riwayat unduhan APK",
+                    "Bahasa & format mata uang/tanggal",
+                    "Notifikasi & izin perangkat",
+                    "Password / kunci akses",
+                  ].map((t) => (
+                    <li key={t} className="flex gap-1.5">
+                      <XCircle className="mt-[2px] h-3 w-3 shrink-0 text-red-600 dark:text-red-400" />
+                      <span>{t}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            </div>
             <input
               ref={importInputRef}
               type="file"
