@@ -81,6 +81,15 @@ export type StrictDerivedSpy = {
   readonly pipelineCalls: number;
   /** Jumlah panggilan pipeline yang GAGAL validasi (harus 0 di test hijau). */
   readonly invalidCalls: number;
+  /**
+   * Rekaman berurutan setiap panggilan pipeline yang sah, dalam urutan
+   * observasi. Bentuknya ORDER-INDEPENDENT di sisi ekspektasi: gunakan
+   * `sortedPayloads()` bila hanya multiset payload yang penting; gunakan
+   * `payloads` bila urutan juga bagian dari kontrak.
+   */
+  readonly payloads: readonly BeliDerivedInput[];
+  /** Payload di-hash-kan lalu diurutkan — stabil di bawah interleaving. */
+  sortedPayloads(): readonly string[];
   reset(): void;
 };
 
@@ -89,16 +98,65 @@ export type StrictWarningsSpy = {
   readonly mock: ReturnType<typeof vi.fn>;
   readonly pipelineCalls: number;
   readonly invalidCalls: number;
+  readonly payloads: readonly BeliWarnInput[];
+  sortedPayloads(): readonly string[];
   reset(): void;
 };
+
+/**
+ * Payload-hash kanonik. Order-independent secara isi:
+ * dua payload dengan field yang sama menghasilkan hash sama walau
+ * referensi objeknya berbeda (mis. setelah refetch).
+ */
+function hashDerived(i: BeliDerivedInput): string {
+  const it = i.selectedItem
+    ? `${i.selectedItem.package_type}|${i.selectedItem.package_size}|${i.selectedItem.base_unit}`
+    : "-";
+  return [
+    i.mode,
+    it,
+    i.newPackageType,
+    String(i.newPackageSize),
+    String(i.packageQty),
+    String(i.pricePerPackage),
+    i.priceMode,
+    String(i.pricePerBase),
+    i.inputKarton ? "1" : "0",
+  ].join("::");
+}
+
+function hashWarn(i: BeliWarnInput): string {
+  const it = i.selectedItem
+    ? `${i.selectedItem.package_type}|${i.selectedItem.package_size}|${i.selectedItem.base_unit}|${i.selectedItem.stock_base ?? 0}|${i.selectedItem.avg_cost_per_base ?? 0}`
+    : "-";
+  const d = i.derived;
+  return [
+    i.mode,
+    it,
+    i.priceMode,
+    i.inputKarton ? "1" : "0",
+    d.effPackageType,
+    d.effBaseUnit,
+    d.effectivePkgSize,
+    d.pkgQ,
+    d.price,
+    d.baseAdded,
+    d.totalCost,
+    d.kartonActive ? "1" : "0",
+  ].join("::");
+}
 
 export function createStrictDerivedSpy(): StrictDerivedSpy {
   let valid = 0;
   let invalid = 0;
+  const payloads: BeliDerivedInput[] = [];
   const impl = (input: BeliDerivedInput) => {
     try {
       assertShape<BeliDerivedInput>(input, DERIVED_KEYS, "computeBeliDerived");
       valid++;
+      // Simpan snapshot dangkal untuk urutan/payload check. Kita menyalin
+      // supaya mutasi kemudian terhadap objek input tidak mengubah rekam.
+      payloads.push({ ...input });
     } catch (e) {
       invalid++;
       throw e;
@@ -115,9 +173,16 @@ export function createStrictDerivedSpy(): StrictDerivedSpy {
     get invalidCalls() {
       return invalid;
     },
+    get payloads() {
+      return payloads;
+    },
+    sortedPayloads() {
+      return payloads.map(hashDerived).slice().sort();
+    },
     reset() {
       valid = 0;
       invalid = 0;
+      payloads.length = 0;
       mock.mockClear();
     },
   };
@@ -126,10 +191,12 @@ export function createStrictDerivedSpy(): StrictDerivedSpy {
 export function createStrictWarningsSpy(): StrictWarningsSpy {
   let valid = 0;
   let invalid = 0;
+  const payloads: BeliWarnInput[] = [];
   const impl = (input: BeliWarnInput) => {
     try {
       assertShape<BeliWarnInput>(input, WARN_KEYS, "computeBeliWarnings");
       valid++;
+      payloads.push({ ...input });
     } catch (e) {
       invalid++;
       throw e;
@@ -146,9 +213,16 @@ export function createStrictWarningsSpy(): StrictWarningsSpy {
     get invalidCalls() {
       return invalid;
     },
+    get payloads() {
+      return payloads;
+    },
+    sortedPayloads() {
+      return payloads.map(hashWarn).slice().sort();
+    },
     reset() {
       valid = 0;
       invalid = 0;
+      payloads.length = 0;
       mock.mockClear();
     },
   };
