@@ -81,6 +81,50 @@ function ProfilChatPage() {
   const [apkPickerOpen, setApkPickerOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [qrTarget, setQrTarget] = useState<ApkQrTarget | null>(null);
+  const [validating, setValidating] = useState(false);
+  const [validation, setValidation] = useState<
+    | (ValidateApkLinkResult & { checkedUrl: string })
+    | null
+  >(null);
+  const validateFn = useServerFn(validateChatApkLink);
+
+  const validateClipboardLink = async () => {
+    let url = "";
+    try {
+      url = (await navigator.clipboard.readText()).trim();
+    } catch {
+      toast.error("Tidak bisa membaca clipboard. Salin ulang lalu coba lagi.");
+      return;
+    }
+    if (!url) {
+      toast.error("Clipboard kosong. Salin link unduh terlebih dahulu.");
+      return;
+    }
+    setValidating(true);
+    try {
+      const res = await validateFn({ data: { url } });
+      setValidation({ ...res, checkedUrl: url });
+      if (res.active) {
+        toast.success("Link masih aktif.");
+      } else if (res.reason === "expired") {
+        toast.message("Link kedaluwarsa — tersedia link baru.");
+      } else if (res.reason === "not_found") {
+        toast.error("Berkas APK sudah tidak tersedia.");
+      } else if (res.reason === "unpublished") {
+        toast.error("Versi ini sudah tidak dipublikasikan.");
+      } else if (res.reason === "wrong_variant") {
+        toast.error("Link bukan APK MCM Chat.");
+      } else if (res.reason === "invalid_url") {
+        toast.error("Format link tidak dikenali.");
+      } else {
+        toast.error("Gagal memvalidasi link. Coba lagi.");
+      }
+    } catch {
+      toast.error("Gagal memvalidasi link. Coba lagi.");
+    } finally {
+      setValidating(false);
+    }
+  };
 
   const copyLink = async (key: string, url: string) => {
     try {
