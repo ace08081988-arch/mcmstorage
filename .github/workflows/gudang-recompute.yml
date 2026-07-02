@@ -152,6 +152,26 @@ jobs:
             echo "" >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Baseline vs build terbaru (compare p50/p95/CV)
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-compare.md ]; then
+            cat test-artifacts/conflict-wide-fields-compare.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload compare artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-compare-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-artifacts/conflict-wide-fields-compare.md
+            test-artifacts/conflict-wide-fields-compare.json
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Upload histogram artifact (always)
         if: always()
         uses: actions/upload-artifact@v4

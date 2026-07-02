@@ -36,6 +36,11 @@ import {
   type HistogramSummary,
 } from "@/lib/bench-histogram";
 import {
+  buildCompareRows,
+  formatCompareMarkdown,
+  type CompareInput,
+} from "@/lib/bench-compare";
+import {
   createProfiler,
   isProfilingEnabled,
   formatProfileMarkdown,
@@ -384,7 +389,12 @@ function recordAndAssertBaseline(
   // Update baseline in memory bila diminta.
   if (UPDATE_BASELINE && BASELINE) {
     const prev = BASELINE.scenarios[scenario];
-    BASELINE.scenarios[scenario] = { bestMs, mode, p95Ms: prev?.p95Ms };
+    BASELINE.scenarios[scenario] = {
+      ...prev,
+      bestMs,
+      mode,
+      p95Ms: prev?.p95Ms,
+    };
   }
   // Enforce hanya di CI / BENCH_STRICT=1. Lokal cukup lapor via artefak.
   if (ENFORCE_BASELINE && check.regression) {
@@ -421,9 +431,12 @@ function recordAndAssertFlakiness(
   if (UPDATE_BASELINE && BASELINE) {
     const prev = BASELINE.scenarios[scenario];
     BASELINE.scenarios[scenario] = {
+      ...prev,
       bestMs: prev?.bestMs ?? stats.best,
       mode,
       p95Ms: stats.p95,
+      p50Ms: stats.p50,
+      cv: stats.cv,
     };
   }
   if (ENFORCE_BASELINE && check.flaky) {
@@ -475,6 +488,24 @@ afterAll(() => {
       },
       entries: ARTIFACT_ENTRIES,
     };
+    // Sertakan compare rows di payload utama supaya konsumen JSON tunggal
+    // (mis. dashboard eksternal) tidak perlu membaca file compare terpisah.
+    try {
+      const compareInputs: CompareInput[] = ARTIFACT_ENTRIES.map((e) => ({
+        scenario: e.scenario,
+        mode: e.mode,
+        bestMs: e.bestMs,
+        p50Ms: e.p50Ms,
+        p95Ms: e.p95Ms,
+        cv: e.cv,
+      }));
+      (payload as unknown as { compare: unknown }).compare = buildCompareRows(
+        compareInputs,
+        BASELINE,
+      );
+    } catch {
+      /* non-fatal */
+    }
     writeFileSync(
       join(outDir, "conflict-wide-fields-benchmark.json"),
       JSON.stringify(payload, null, 2),
@@ -574,6 +605,43 @@ afterAll(() => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn("[bench:histogram] gagal menulis distribusi:", err);
+    }
+
+    // ----- Compare baseline vs build terbaru (p50/p95/CV) -----
+    // Tabel ringkas yang menaruh trend semua metrik distribusi per scenario
+    // di satu tempat, memudahkan review PR: dari sini kelihatan apakah p95
+    // naik meski best turun (indikasi ekor panjang) atau CV membaik.
+    try {
+      const compareInputs: CompareInput[] = ARTIFACT_ENTRIES.map((e) => ({
+        scenario: e.scenario,
+        mode: e.mode,
+        bestMs: e.bestMs,
+        p50Ms: e.p50Ms,
+        p95Ms: e.p95Ms,
+        cv: e.cv,
+      }));
+      const compareRows = buildCompareRows(compareInputs, BASELINE);
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-compare.md"),
+        formatCompareMarkdown(compareRows),
+        "utf8",
+      );
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-compare.json"),
+        JSON.stringify(
+          {
+            generatedAt: new Date().toISOString(),
+            baselineCapturedOn: BASELINE?.capturedOn ?? null,
+            rows: compareRows,
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[bench:compare] gagal menulis pembandingan:", err);
     }
 
     // ----- Tren durasi antar-run -----
