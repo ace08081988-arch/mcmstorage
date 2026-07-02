@@ -14,11 +14,14 @@ import {
   loadBaseline,
   saveBaseline,
   checkRegression,
+  checkFlakiness,
   shouldEnforceBaseline,
   shouldUpdateBaseline,
   type BaselineFile,
   type RegressionCheck,
+  type FlakinessCheck,
 } from "@/lib/bench-baseline";
+import { summarize, type SampleSummary } from "@/lib/bench-stats";
 
 // ============================================================
 // Micro-benchmark untuk skenario KONFLIK LEBAR (banyak field derived +
@@ -231,15 +234,30 @@ function runWide(mutations: Mutation[], mode: "batched" | "sequential") {
   };
 }
 
-function bestOfN<T extends { ms: number }>(fn: () => T, n: number): { best: T; worst: T } {
-  let best: T | null = null;
-  let worst: T | null = null;
-  for (let i = 0; i < n; i++) {
-    const r = fn();
-    if (!best || r.ms < best.ms) best = r;
-    if (!worst || r.ms > worst.ms) worst = r;
-  }
-  return { best: best!, worst: worst! };
+type RunSample = ReturnType<typeof runWide>;
+type MultiRunResult = {
+  best: RunSample;
+  worst: RunSample;
+  samples: number[];
+  stats: SampleSummary;
+  /** Snapshot recompute counts dari run terbaik (deterministik). */
+  derivedCalls: number;
+  warningsCalls: number;
+};
+function runN(fn: () => RunSample, n: number): MultiRunResult {
+  const results: RunSample[] = [];
+  for (let i = 0; i < n; i++) results.push(fn());
+  const samples = results.map((r) => r.ms);
+  const best = results.reduce((a, b) => (a.ms <= b.ms ? a : b));
+  const worst = results.reduce((a, b) => (a.ms >= b.ms ? a : b));
+  return {
+    best,
+    worst,
+    samples,
+    stats: summarize(samples),
+    derivedCalls: best.derivedCalls,
+    warningsCalls: best.warningsCalls,
+  };
 }
 
 const ROUNDS = 20; // 20 × 10 = 200 mutasi bertumpuk per batch.
@@ -247,7 +265,7 @@ const MAX_MS_BATCHED = 40;
 const MAX_MS_SEQUENTIAL = 200;
 const BATCHED_VS_SEQ_RATIO = 0.6;
 const VARIANCE_RATIO = 4;
-const RUNS = 5;
+const RUNS = 15; // ≥ 15 sample untuk p50/p95 yang bermakna.
 
 // Artefak durasi untuk CI — ditulis ke `test-artifacts/` dan diunggah oleh
 // workflow. Ringkasannya juga dicantumkan di GITHUB_STEP_SUMMARY.
@@ -266,6 +284,16 @@ type BenchEntry = {
   deltaPct?: number | null;
   regression?: boolean;
   regressionReason?: string;
+  samples?: number[];
+  meanMs?: number;
+  p50Ms?: number;
+  p95Ms?: number;
+  stddevMs?: number;
+  cv?: number;
+  baselineP95Ms?: number | null;
+  p95DeltaPct?: number | null;
+  flaky?: boolean;
+  flakyReasons?: string[];
 };
 const ARTIFACT_ENTRIES: BenchEntry[] = [];
 
@@ -275,6 +303,7 @@ const BASELINE: BaselineFile | null = loadBaseline(BASELINE_PATH);
 const ENFORCE_BASELINE = shouldEnforceBaseline();
 const UPDATE_BASELINE = shouldUpdateBaseline();
 const REGRESSION_CHECKS: RegressionCheck[] = [];
+const FLAKINESS_CHECKS: FlakinessCheck[] = [];
 
 function recordAndAssertBaseline(
   scenario: string,
@@ -290,7 +319,8 @@ function recordAndAssertBaseline(
   entry.regressionReason = check.reason;
   // Update baseline in memory bila diminta.
   if (UPDATE_BASELINE && BASELINE) {
-    BASELINE.scenarios[scenario] = { bestMs, mode };
+    const prev = BASELINE.scenarios[scenario];
+    BASELINE.scenarios[scenario] = { bestMs, mode, p95Ms: prev?.p95Ms };
   }
   // Enforce hanya di CI / BENCH_STRICT=1. Lokal cukup lapor via artefak.
   if (ENFORCE_BASELINE && check.regression) {
@@ -299,6 +329,44 @@ function recordAndAssertBaseline(
       `[bench:baseline] Regresi terdeteksi di scenario "${scenario}" (${mode}): ` +
         `current=${bestMs.toFixed(3)}ms vs baseline=${check.baselineMs?.toFixed(3)}ms — ${check.reason}. ` +
         `Set UPDATE_BENCH_BASELINE=1 untuk memperbarui baseline jika regresi diharapkan.`,
+    );
+  }
+}
+
+function attachStats(entry: BenchEntry, stats: SampleSummary, samples: number[]): void {
+  entry.samples = samples;
+  entry.meanMs = stats.mean;
+  entry.p50Ms = stats.p50;
+  entry.p95Ms = stats.p95;
+  entry.stddevMs = stats.stddev;
+  entry.cv = stats.cv;
+}
+
+function recordAndAssertFlakiness(
+  scenario: string,
+  mode: "batched" | "sequential",
+  stats: SampleSummary,
+  entry: BenchEntry,
+): void {
+  const check = checkFlakiness(scenario, stats, BASELINE);
+  FLAKINESS_CHECKS.push(check);
+  entry.baselineP95Ms = check.baselineP95Ms;
+  entry.p95DeltaPct = check.p95DeltaPct;
+  entry.flaky = check.flaky;
+  entry.flakyReasons = check.reasons;
+  if (UPDATE_BASELINE && BASELINE) {
+    const prev = BASELINE.scenarios[scenario];
+    BASELINE.scenarios[scenario] = {
+      bestMs: prev?.bestMs ?? stats.best,
+      mode,
+      p95Ms: stats.p95,
+    };
+  }
+  if (ENFORCE_BASELINE && check.flaky) {
+    throw new Error(
+      `[bench:flaky] Flakiness terdeteksi di scenario "${scenario}" (${mode}): ` +
+        `${check.reasons.join("; ")}. ` +
+        `Set UPDATE_BENCH_BASELINE=1 bila trend p95 memang naik, atau BENCH_MAX_CV / BENCH_P95_PCT untuk override sementara.`,
     );
   }
 }
@@ -324,9 +392,18 @@ afterAll(() => {
         capturedOn: BASELINE?.capturedOn ?? null,
         regressionPct:
           Number(process.env.BENCH_REGRESSION_PCT) || BASELINE?.regressionPctDefault || null,
+        p95Pct:
+          Number(process.env.BENCH_P95_PCT) ||
+          BASELINE?.flakiness?.p95PctDefault ||
+          null,
+        maxCv:
+          Number(process.env.BENCH_MAX_CV) ||
+          BASELINE?.flakiness?.maxCvDefault ||
+          null,
         enforced: ENFORCE_BASELINE,
         updated: UPDATE_BASELINE,
         checks: REGRESSION_CHECKS,
+        flakinessChecks: FLAKINESS_CHECKS,
       },
       entries: ARTIFACT_ENTRIES,
     };
@@ -354,19 +431,26 @@ afterAll(() => {
     }
     md.push("");
     md.push(
-      "| Scenario | Mode | Rounds | Muts | Best (ms) | Worst (ms) | D | W | Budget | Var | Baseline (ms) | Δ% | Status |",
+      "| Scenario | Mode | Best | p50 | p95 | Worst | Mean | CV | D | W | Baseline best | Δ% | Baseline p95 | p95 Δ% | Regresi | Flaky |",
     );
     md.push(
-      "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :---: | ---: | ---: | :--- |",
+      "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :--- | :--- |",
     );
     for (const e of ARTIFACT_ENTRIES) {
       const baseCell = e.baselineMs == null ? "—" : e.baselineMs.toFixed(3);
       const deltaCell = e.deltaPct == null ? "—" : `${e.deltaPct >= 0 ? "+" : ""}${e.deltaPct.toFixed(1)}%`;
-      const statusCell = e.regression ? "❌ regresi" : e.baselineMs == null ? "⏭ no-baseline" : "✅ ok";
+      const baseP95Cell = e.baselineP95Ms == null ? "—" : e.baselineP95Ms.toFixed(3);
+      const deltaP95Cell = e.p95DeltaPct == null ? "—" : `${e.p95DeltaPct >= 0 ? "+" : ""}${e.p95DeltaPct.toFixed(1)}%`;
+      const regCell = e.regression ? "❌" : e.baselineMs == null ? "⏭" : "✅";
+      const flakyCell = e.flaky ? `❌ ${(e.flakyReasons ?? []).join(" · ")}` : "✅";
+      const p50 = e.p50Ms != null ? e.p50Ms.toFixed(3) : "—";
+      const p95 = e.p95Ms != null ? e.p95Ms.toFixed(3) : "—";
+      const mn = e.meanMs != null ? e.meanMs.toFixed(3) : "—";
+      const cvC = e.cv != null ? e.cv.toFixed(3) : "—";
       md.push(
-        `| ${e.scenario} | ${e.mode} | ${e.rounds} | ${e.mutations} | ` +
-          `${e.bestMs.toFixed(3)} | ${e.worstMs.toFixed(3)} | ${e.derivedCalls} | ${e.warningsCalls} | ` +
-          `${e.budgetMs} | ${e.variancePassed ? "✅" : "❌"} | ${baseCell} | ${deltaCell} | ${statusCell} |`,
+        `| ${e.scenario} | ${e.mode} | ${e.bestMs.toFixed(3)} | ${p50} | ${p95} | ` +
+          `${e.worstMs.toFixed(3)} | ${mn} | ${cvC} | ${e.derivedCalls} | ${e.warningsCalls} | ` +
+          `${baseCell} | ${deltaCell} | ${baseP95Cell} | ${deltaP95Cell} | ${regCell} | ${flakyCell} |`,
       );
     }
     writeFileSync(
