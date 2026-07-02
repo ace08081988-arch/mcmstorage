@@ -41,7 +41,7 @@ export function BuildVersionBadge() {
     let cancelled = false;
     const check = async () => {
       try {
-        const res = await fetch(`/version.json?t=${Date.now()}`, { cache: "no-store" });
+        const res = await fetch(`/api/version?t=${Date.now()}`, { cache: "no-store" });
         if (!res.ok) return;
         const data = (await res.json()) as { buildId?: string };
         if (cancelled) return;
