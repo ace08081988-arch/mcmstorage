@@ -20,7 +20,7 @@ function makeProduk(overrides: Partial<Produk> = {}): Produk {
     kategori: "Sembako",
     nama: "Gula Merah #1 & Aren",
     harga: 12500,
-    status: "Menunggu",
+    status: "Belum Dikirim",
     keterangan: "Stok terbatas + promo",
     lokasi: "Rak A/3",
     satuan: "gram",
