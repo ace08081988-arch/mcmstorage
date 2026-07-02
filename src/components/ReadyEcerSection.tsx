@@ -23,7 +23,7 @@ import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, History, Undo2 } from "lucide-react";
 import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
-import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, type IdemRecord } from "@/lib/idempotency";
+import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
 import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
 
 // Foto pegawai disimpan di bucket `prep-photos`; siapkan sendiri di `ecer-photos`.
@@ -1188,7 +1188,12 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       toast.info("Belum ada kiriman pegawai untuk judul ini.");
       return;
     }
-    const take = shots.slice(0, 6);
+    // Urutan kanonik: sort by id (naik) sebelum slice — sehingga urutan
+    // shots di UI (yang bisa berubah karena pegawai baru menyerobot masuk
+    // atau resort submitted_at) tidak mempengaruhi identitas idempotency
+    // maupun urutan foto/teks yang dikirim.
+    const canonicalShots = [...shots].sort((a, b) => a.id.localeCompare(b.id));
+    const take = canonicalShots.slice(0, 6);
     const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
     const idemKey = buildSendKey({ channel: "wa", ids: take.map((s) => s.id) });
     const existing = getIdem(idemKey);
@@ -1212,12 +1217,48 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
           ...(s.photo_path ? [s.photo_path] : []),
-        ])).filter(Boolean);
+        ])).filter(Boolean).sort();
         for (let pi = 0; pi < paths.length; pi++) {
           allSlots.push({ path: paths[pi], name: `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`, source: s.source });
         }
       }
-      const slots = allSlots.slice(0, 10);
+      const freshSlots = allSlots.slice(0, 10);
+      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const firstLocationFresh = take.find((s) => s.location_url)?.location_url ?? null;
+      const freshText = [
+        `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
+        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
+        ...lines,
+      ].join("\n");
+      const freshFingerprint = payloadFingerprint({
+        channel: "wa",
+        text: freshText,
+        url: firstLocationFresh ?? null,
+        expectedCount: freshSlots.length,
+        slots: freshSlots.map((s) => ({ path: s.path, name: s.name })),
+      });
+      // Snapshot idempoten — pengiriman kedua/ketiga menggunakan urutan &
+      // teks yang persis sama seperti pengiriman pertama, walaupun `shots`
+      // di UI sudah berubah di antara klik.
+      const snapshot = await getOrCreateSendSnapshot(idemKey, async () => ({
+        fingerprint: freshFingerprint,
+        orderedIds: take.map((s) => s.id),
+        text: freshText,
+        locationUrl: firstLocationFresh ?? null,
+        slotFileNames: freshSlots.map((s) => s.name),
+        slotPaths: freshSlots.map((s) => s.path),
+        expectedCount: freshSlots.length,
+        meta: { destination: r.name },
+      }));
+      // Rekonstruksi slots dari snapshot supaya path/nama/order = kali pertama.
+      // `source` diambil dari take saat ini bila cocok, fallback ke shot pertama.
+      const idToSource = new Map(canonicalShots.map((s) => [s.id, s.source]));
+      const slots: Slot[] = snapshot.slotPaths.map((p, i) => {
+        const name = snapshot.slotFileNames[i] ?? `${r.name}-${i + 1}.jpg`;
+        const ownerId = snapshot.orderedIds.find((id) => name.includes(id.slice(0, 6)));
+        const source = (ownerId && idToSource.get(ownerId)) || take[0]?.source || "worker";
+        return { path: p, name, source };
+      });
       async function fetchSlots(list: Slot[]): Promise<{ ok: File[]; failed: Slot[] }> {
         const ok: File[] = [];
         const failed: Slot[] = [];
@@ -1242,23 +1283,12 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       if (files.length === 0) {
         toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan via MCM.");
       }
-      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
-      const text = [
-        `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
-        ...lines,
-      ].join("\n");
-      // Fingerprint payload WA: caption + link + daftar slot foto (path & nama).
-      // Stabil terhadap urutan dan dipakai untuk membandingkan dengan payload
-      // kiriman sebelumnya pada idempotency key yang sama.
-      const waFingerprint = payloadFingerprint({
-        channel: "wa",
-        text,
-        url: firstLocation ?? null,
-        expectedCount,
-        slots: slots.map((s) => ({ path: s.path, name: s.name })),
-      });
+      // Payload TETAP diambil dari snapshot — pengiriman kedua/ketiga wajib
+      // menghasilkan teks, urutan foto, dan link lokasi yang identik dengan
+      // pengiriman pertama.
+      const text = snapshot.text;
+      const firstLocation = snapshot.locationUrl;
+      const waFingerprint = snapshot.fingerprint;
       // Ringkasan payload — disimpan di record idempotency agar saat klik
       // ganda terdeteksi, banner pratinjau bisa menampilkan perbedaan field
       // (caption / foto / lokasi / tujuan) dibanding kiriman sebelumnya.
