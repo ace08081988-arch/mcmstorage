@@ -1255,4 +1255,267 @@ BEGIN
   PERFORM pg_temp.as_postgres();
 END $$;
 
+-- =====================================================================
+-- 14) SELECT visibility on statuses / status_likes / status_comments
+--     Policies must honor the per-post `visibility` field:
+--       - visibility='public'   → any authenticated user can read (while active)
+--       - visibility='friends'  → only the author + accepted-friend peers
+--       - always: author sees own rows
+--       - expired statuses hidden from everyone except the author
+--       - anon sees nothing on any of the three tables
+--     Likes and comments inherit visibility of the parent status.
+-- =====================================================================
+DO $$
+DECLARE
+  v_a uuid;                     -- author
+  v_b uuid;                     -- accepted friend of A
+  v_c uuid;                     -- stranger
+  v_qual_status  text;
+  v_qual_likes   text;
+  v_qual_comments text;
+  v_pub_id     uuid;            -- public active status by A
+  v_fr_id      uuid;            -- friends-only active status by A
+  v_exp_id     uuid;            -- friends-only EXPIRED status by A
+  v_like_pub   uuid;            -- (author-like on public status)
+  v_like_fr    uuid;            -- (author-like on friends-only status)
+  v_cmt_pub    uuid;
+  v_cmt_fr     uuid;
+  v_seen int;
+BEGIN
+  ----------------------------------------------------------------
+  -- 14-static) Confirm all three SELECT policies reference the
+  -- visibility field + are_friends() helper. Guards against
+  -- accidental drift back to `USING (true)` or dropping the join.
+  ----------------------------------------------------------------
+  SELECT qual INTO v_qual_status FROM pg_policies
+   WHERE schemaname='public' AND tablename='statuses' AND cmd='SELECT';
+  IF v_qual_status IS NULL THEN
+    RAISE EXCEPTION 'FAIL 14-static: no SELECT policy on statuses';
+  END IF;
+  IF v_qual_status !~ 'visibility' OR v_qual_status !~ 'are_friends' THEN
+    RAISE EXCEPTION 'FAIL 14-static: statuses SELECT policy no longer gates on visibility+are_friends: %', v_qual_status;
+  END IF;
+
+  SELECT qual INTO v_qual_likes FROM pg_policies
+   WHERE schemaname='public' AND tablename='status_likes' AND cmd='SELECT';
+  IF v_qual_likes IS NULL THEN
+    RAISE EXCEPTION 'FAIL 14-static: no SELECT policy on status_likes';
+  END IF;
+  IF v_qual_likes = 'true' THEN
+    RAISE EXCEPTION 'FAIL 14-static: status_likes SELECT policy is USING (true) — cross-user leak';
+  END IF;
+  IF v_qual_likes !~ 'statuses' OR v_qual_likes !~ 'are_friends' THEN
+    RAISE EXCEPTION 'FAIL 14-static: status_likes SELECT policy does not inherit statuses visibility: %', v_qual_likes;
+  END IF;
+
+  SELECT qual INTO v_qual_comments FROM pg_policies
+   WHERE schemaname='public' AND tablename='status_comments' AND cmd='SELECT';
+  IF v_qual_comments IS NULL THEN
+    RAISE EXCEPTION 'FAIL 14-static: no SELECT policy on status_comments';
+  END IF;
+  IF v_qual_comments = 'true' THEN
+    RAISE EXCEPTION 'FAIL 14-static: status_comments SELECT policy is USING (true) — cross-user leak';
+  END IF;
+  IF v_qual_comments !~ 'statuses' OR v_qual_comments !~ 'are_friends' THEN
+    RAISE EXCEPTION 'FAIL 14-static: status_comments SELECT policy does not inherit statuses visibility: %', v_qual_comments;
+  END IF;
+  RAISE NOTICE 'PASS 14-static: statuses/likes/comments SELECT policies gate on visibility + are_friends';
+
+  IF NOT pg_temp.can_switch_roles() THEN
+    RAISE NOTICE 'SKIP 14 runtime: role switching unavailable';
+    RETURN;
+  END IF;
+
+  SELECT id INTO v_a FROM auth.users ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_b FROM auth.users WHERE id <> v_a ORDER BY created_at LIMIT 1;
+  SELECT id INTO v_c FROM auth.users WHERE id NOT IN (v_a, v_b) ORDER BY created_at LIMIT 1;
+  IF v_a IS NULL OR v_b IS NULL OR v_c IS NULL THEN
+    RAISE NOTICE 'SKIP 14 runtime: need at least 3 auth.users';
+    RETURN;
+  END IF;
+
+  ----------------------------------------------------------------
+  -- Seed accepted friendship A↔B and three statuses by A.
+  -- Everything is inside the outer transaction so ROLLBACK cleans up.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_postgres();
+
+  DELETE FROM public.friend_requests
+   WHERE (from_user, to_user) IN ((v_a,v_b),(v_b,v_a),(v_a,v_c),(v_c,v_a),(v_b,v_c),(v_c,v_b));
+  INSERT INTO public.friend_requests(from_user, to_user, status, responded_at)
+  VALUES (v_a, v_b, 'accepted', now());
+
+  INSERT INTO public.statuses(user_id, media_url, media_path, media_type, caption, visibility)
+  VALUES (v_a, '', '', 'text', 'rls-14 public', 'public')
+  RETURNING id INTO v_pub_id;
+
+  INSERT INTO public.statuses(user_id, media_url, media_path, media_type, caption, visibility)
+  VALUES (v_a, '', '', 'text', 'rls-14 friends', 'friends')
+  RETURNING id INTO v_fr_id;
+
+  -- Backdated expiry so this row is "expired" from the RLS point of view.
+  INSERT INTO public.statuses(user_id, media_url, media_path, media_type, caption, visibility, created_at, expires_at)
+  VALUES (v_a, '', '', 'text', 'rls-14 expired-friends', 'friends',
+          now() - interval '2 days', now() - interval '1 day')
+  RETURNING id INTO v_exp_id;
+
+  -- Likes and comments by author A on both live statuses.
+  INSERT INTO public.status_likes(status_id, user_id) VALUES (v_pub_id, v_a);
+  INSERT INTO public.status_likes(status_id, user_id) VALUES (v_fr_id,  v_a);
+
+  INSERT INTO public.status_comments(status_id, user_id, body)
+  VALUES (v_pub_id, v_a, 'rls-14 comment on public')
+  RETURNING id INTO v_cmt_pub;
+  INSERT INTO public.status_comments(status_id, user_id, body)
+  VALUES (v_fr_id,  v_a, 'rls-14 comment on friends')
+  RETURNING id INTO v_cmt_fr;
+
+  ----------------------------------------------------------------
+  -- 14a) Author A sees all three of their own statuses
+  --      (including the expired one — self-visibility overrides expiry).
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_a);
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id IN (v_pub_id, v_fr_id, v_exp_id);
+  IF v_seen <> 3 THEN
+    RAISE EXCEPTION 'FAIL 14a: author saw % of 3 own statuses', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 14a: author always sees own statuses (incl. expired)';
+
+  ----------------------------------------------------------------
+  -- 14b) Accepted friend B sees the public + friends-only statuses,
+  --      but NOT the expired one, and can read A's likes/comments
+  --      on both live statuses.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_b);
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_pub_id;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 14b: friend cannot see public status of accepted-friend author';
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_fr_id;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 14b: friend cannot see friends-only status of accepted-friend author';
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_exp_id;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14b: friend leaked into expired status';
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.status_likes
+   WHERE status_id IN (v_pub_id, v_fr_id) AND user_id = v_a;
+  IF v_seen <> 2 THEN
+    RAISE EXCEPTION 'FAIL 14b: friend saw % of 2 author likes', v_seen;
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.status_comments
+   WHERE id IN (v_cmt_pub, v_cmt_fr);
+  IF v_seen <> 2 THEN
+    RAISE EXCEPTION 'FAIL 14b: friend saw % of 2 author comments', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 14b: accepted friend sees public + friends-only statuses and their likes/comments';
+
+  ----------------------------------------------------------------
+  -- 14c) Stranger C sees ONLY the public status. The friends-only
+  --      status and all of its likes/comments must be invisible.
+  --      Expired status also invisible.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_user(v_c);
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_pub_id;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger cannot see public status';
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_fr_id;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger LEAKED into friends-only status';
+  END IF;
+
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id = v_exp_id;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger leaked into expired friends-only status';
+  END IF;
+
+  -- Likes on friends-only status must be hidden from C.
+  SELECT count(*) INTO v_seen FROM public.status_likes
+   WHERE status_id = v_fr_id;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger LEAKED % likes on friends-only status', v_seen;
+  END IF;
+  -- Likes on public status stay readable.
+  SELECT count(*) INTO v_seen FROM public.status_likes
+   WHERE status_id = v_pub_id;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger cannot see % likes on public status', v_seen;
+  END IF;
+
+  -- Comments on friends-only status hidden; public visible.
+  SELECT count(*) INTO v_seen FROM public.status_comments
+   WHERE id = v_cmt_fr;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger LEAKED comment on friends-only status';
+  END IF;
+  SELECT count(*) INTO v_seen FROM public.status_comments
+   WHERE id = v_cmt_pub;
+  IF v_seen <> 1 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger cannot see comment on public status';
+  END IF;
+
+  -- Broad unfiltered SELECTs must return zero rows across the seeded set
+  -- for the friends-only side. This catches wildcard leaks where a broken
+  -- policy might return the row but strip filtered columns.
+  SELECT count(*) INTO v_seen FROM public.statuses
+   WHERE id IN (v_fr_id, v_exp_id);
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14c: stranger unfiltered SELECT surfaced friends-only rows (%)', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 14c: stranger sees only public status + its likes/comments; friends-only is fully hidden';
+
+  ----------------------------------------------------------------
+  -- 14d) anon must see nothing across all three tables.
+  ----------------------------------------------------------------
+  PERFORM pg_temp.as_anon();
+  BEGIN
+    SELECT count(*) INTO v_seen FROM public.statuses
+     WHERE id IN (v_pub_id, v_fr_id, v_exp_id);
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_seen := 0;
+  END;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14d: anon SELECT on statuses returned % rows', v_seen;
+  END IF;
+
+  BEGIN
+    SELECT count(*) INTO v_seen FROM public.status_likes
+     WHERE status_id IN (v_pub_id, v_fr_id);
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_seen := 0;
+  END;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14d: anon SELECT on status_likes returned % rows', v_seen;
+  END IF;
+
+  BEGIN
+    SELECT count(*) INTO v_seen FROM public.status_comments
+     WHERE id IN (v_cmt_pub, v_cmt_fr);
+  EXCEPTION WHEN insufficient_privilege THEN
+    v_seen := 0;
+  END;
+  IF v_seen <> 0 THEN
+    RAISE EXCEPTION 'FAIL 14d: anon SELECT on status_comments returned % rows', v_seen;
+  END IF;
+  RAISE NOTICE 'PASS 14d: anon reads zero rows from statuses / likes / comments';
+
+  PERFORM pg_temp.as_postgres();
+END $$;
+
 ROLLBACK;
