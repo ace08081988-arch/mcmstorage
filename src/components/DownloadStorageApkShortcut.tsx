@@ -17,18 +17,25 @@ export function DownloadStorageApkShortcut() {
   async function onClick() {
     if (busy) return;
     setBusy(true);
+    const loadingId = toast.loading("Menyiapkan unduhan APK MCM Storage…");
     try {
       const detail = await fetchDetail({ data: { variant: "storage" } });
       const url = detail?.latest?.url;
       if (!url) {
-        toast.error("Belum ada APK MCM Storage yang tersedia.");
+        toast.error("Belum ada APK MCM Storage yang tersedia.", { id: loadingId });
         return;
       }
-      // Trigger unduh langsung — server memberi header `download`.
+      const version =
+        detail?.latest?.versionName || detail?.latest?.name || "terbaru";
       window.location.href = url;
-      toast.success("Mulai mengunduh APK MCM Storage…");
+      toast.success(`Mulai mengunduh APK MCM Storage (${version})…`, {
+        id: loadingId,
+        description: "Cek folder Unduhan pada perangkat Anda.",
+      });
     } catch (e) {
-      toast.error((e as Error)?.message || "Gagal memulai unduhan APK.");
+      toast.error((e as Error)?.message || "Gagal memulai unduhan APK.", {
+        id: loadingId,
+      });
     } finally {
       setBusy(false);
     }
@@ -40,7 +47,7 @@ export function DownloadStorageApkShortcut() {
       onClick={() => void onClick()}
       disabled={busy}
       aria-label="Unduh APK MCM Storage"
-      className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left hover:border-primary/40 hover:bg-accent disabled:opacity-60"
+      className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
     >
       <span className="text-base leading-none">
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "⬇️"}
