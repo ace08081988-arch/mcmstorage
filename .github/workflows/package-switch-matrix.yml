@@ -108,6 +108,7 @@ jobs:
             "src/routes/_authenticated.gudang.package-switch-matrix.test.ts" \
             "src/routes/_authenticated.gudang.new-mode-gram-labels.test.ts" \
             "src/routes/_authenticated.gudang.package-switch-snapshots.test.ts" \
+            "src/routes/_authenticated.gudang.qty-price-mutation-snapshots.test.ts" \
             "src/routes/_authenticated.gudang.viewport-snapshots.test.ts" \
             "src/lib/beli-derived-gram-switch.test.ts" \
             "src/lib/beli-derived-memo-freshness.test.ts" \
