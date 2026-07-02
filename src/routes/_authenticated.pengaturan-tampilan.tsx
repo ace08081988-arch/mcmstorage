@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Card,
@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload } from "lucide-react";
+import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import {
@@ -20,7 +20,7 @@ import {
   BG_PRESETS,
   LS,
 } from "@/components/appearance-settings";
-import { useAppPrefs, getAppPrefs, setAppPrefs } from "@/lib/app-prefs";
+import { useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 
 const COMPACT_LS = "app-compact-mode";
@@ -130,53 +130,167 @@ function readSize(): FontSize {
     : "md");
 }
 
+
+type Draft = {
+  theme: Theme;
+  font: FontFamily;
+  size: FontSize;
+  accent: string;
+  radius: number;
+  bgImage: string;
+  bgOverlay: number;
+  bgBlur: number;
+  compact: boolean;
+  fontScale: number;
+  highContrast: boolean;
+  reduceMotion: boolean;
+};
+
+function resolveThemeLocal(t: Theme): "light" | "dark" {
+  if (t === "system") {
+    return typeof window !== "undefined" &&
+      window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+  }
+  return t;
+}
+
+/** Terapkan draft ke <html> TANPA menulis localStorage. */
+function applyDraftDom(v: Draft) {
+  if (typeof document === "undefined") return;
+  const root = document.documentElement;
+  root.classList.toggle("dark", resolveThemeLocal(v.theme) === "dark");
+  root.dataset.font = v.font;
+  root.dataset.fontSize = v.size;
+  const acc = ACCENTS.find((a) => a.id === v.accent) ?? ACCENTS[0];
+  root.style.setProperty("--primary", acc.value);
+  root.style.setProperty("--ring", acc.value);
+  root.style.setProperty("--primary-foreground", "oklch(0.985 0 0)");
+  root.style.setProperty("--radius", `${v.radius}rem`);
+  root.style.setProperty(
+    "--app-bg-image",
+    v.bgImage ? `url("${v.bgImage.replace(/"/g, '\\"')}")` : "none",
+  );
+  root.style.setProperty("--app-bg-overlay", String(v.bgImage ? v.bgOverlay : 1));
+  root.style.setProperty("--app-bg-blur", `${v.bgImage ? v.bgBlur : 0}px`);
+  if (v.bgImage) root.dataset.hasBg = "1";
+  else delete root.dataset.hasBg;
+  root.classList.toggle("compact", v.compact);
+  root.style.setProperty("--app-font-scale", String(v.fontScale));
+  root.dataset.highContrast = v.highContrast ? "on" : "off";
+  root.dataset.reduceMotion = v.reduceMotion ? "on" : "off";
+}
+
+function readSnapshot(prefsSeed: { fontScale: number; highContrast: boolean; reduceMotion: boolean }): Draft {
+  if (typeof window === "undefined") {
+    return {
+      theme: "dark", font: "sans", size: "md", accent: "emerald",
+      radius: 0.625, bgImage: "", bgOverlay: 0.7, bgBlur: 0,
+      compact: true, fontScale: 1, highContrast: false, reduceMotion: false,
+    };
+  }
+  return {
+    theme: readTheme(),
+    font: readFont(),
+    size: readSize(),
+    accent: localStorage.getItem(LS.accent) ?? "emerald",
+    radius: Number(localStorage.getItem(LS.radius) ?? "0.625"),
+    bgImage: localStorage.getItem(LS.bgImage) ?? "",
+    bgOverlay: Number(localStorage.getItem(LS.bgOverlay) ?? "0.7"),
+    bgBlur: Number(localStorage.getItem(LS.bgBlur) ?? "0"),
+    compact: readCompact(),
+    fontScale: prefsSeed.fontScale,
+    highContrast: prefsSeed.highContrast,
+    reduceMotion: prefsSeed.reduceMotion,
+  };
+}
+
+const DEFAULT_DRAFT: Draft = {
+  theme: "dark",
+  font: "sans",
+  size: "md",
+  accent: "emerald",
+  radius: 0.625,
+  bgImage: "",
+  bgOverlay: 0.7,
+  bgBlur: 0,
+  compact: false,
+  fontScale: 1,
+  highContrast: false,
+  reduceMotion: false,
+};
+
+function draftsEqual(a: Draft, b: Draft): boolean {
+  return (
+    a.theme === b.theme &&
+    a.font === b.font &&
+    a.size === b.size &&
+    a.accent === b.accent &&
+    a.radius === b.radius &&
+    a.bgImage === b.bgImage &&
+    a.bgOverlay === b.bgOverlay &&
+    a.bgBlur === b.bgBlur &&
+    a.compact === b.compact &&
+    a.fontScale === b.fontScale &&
+    a.highContrast === b.highContrast &&
+    a.reduceMotion === b.reduceMotion
+  );
+}
+
 function PengaturanTampilanPage() {
-  const { prefs, set } = useAppPrefs();
-  const [theme, setTheme] = useState<Theme>(readTheme);
-  const [font, setFont] = useState<FontFamily>(readFont);
-  const [size, setSize] = useState<FontSize>(readSize);
-  const [accent, setAccent] = useState<string>(() =>
-    typeof window !== "undefined" ? localStorage.getItem(LS.accent) ?? "emerald" : "emerald",
+  const { prefs } = useAppPrefs();
+
+  // Snapshot dari nilai yang tersimpan saat halaman dibuka.
+  // Dipakai untuk revert saat "Batalkan" atau keluar tanpa Simpan.
+  const [snapshot, setSnapshot] = useState<Draft>(() =>
+    readSnapshot({
+      fontScale: prefs.fontScale,
+      highContrast: prefs.highContrast,
+      reduceMotion: prefs.reduceMotion,
+    }),
   );
-  const [radius, setRadius] = useState<number>(() =>
-    typeof window !== "undefined" ? Number(localStorage.getItem(LS.radius) ?? "0.625") : 0.625,
-  );
-  const [bgImage, setBgImage] = useState<string>(() =>
-    typeof window !== "undefined" ? localStorage.getItem(LS.bgImage) ?? "" : "",
-  );
-  const [bgOverlay, setBgOverlay] = useState<number>(() =>
-    typeof window !== "undefined" ? Number(localStorage.getItem(LS.bgOverlay) ?? "0.7") : 0.7,
-  );
-  const [bgBlur, setBgBlur] = useState<number>(() =>
-    typeof window !== "undefined" ? Number(localStorage.getItem(LS.bgBlur) ?? "0") : 0,
-  );
-  const [compact, setCompact] = useState<boolean>(() => readCompact());
+
+  // Draft yang sedang dipratinjau (belum disimpan).
+  const [draft, setDraft] = useState<Draft>(snapshot);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
   const importInputRef = useRef<HTMLInputElement>(null);
+  const savedRef = useRef(false);
+  const snapshotRef = useRef<Draft>(snapshot);
+  snapshotRef.current = snapshot;
 
-  const save = (k: string, v: string) => {
-    localStorage.setItem(k, v);
-    applyAppearance();
-  };
+  // Terapkan draft ke DOM setiap kali berubah — hanya visual, tanpa persist.
+  useEffect(() => {
+    applyDraftDom(draft);
+  }, [draft]);
+
+  // Kalau user meninggalkan halaman tanpa Simpan, kembalikan tampilan
+  // aplikasi utama ke snapshot terakhir yang tersimpan.
+  useEffect(() => {
+    return () => {
+      if (!savedRef.current) {
+        applyDraftDom(snapshotRef.current);
+      }
+    };
+  }, []);
+
+  const dirty = useMemo(() => !draftsEqual(draft, snapshot), [draft, snapshot]);
+
+  const patch = (p: Partial<Draft>) => setDraft((d) => ({ ...d, ...p }));
 
   const applyPreset = (p: Preset) => {
-    localStorage.setItem(LS.theme, p.values.theme);
-    localStorage.setItem(LS.accent, p.values.accent);
-    localStorage.setItem(LS.radius, String(p.values.radius));
-    localStorage.setItem(LS.font, p.values.font);
-    localStorage.setItem(LS.size, p.values.size);
-    setTheme(p.values.theme);
-    setAccent(p.values.accent);
-    setRadius(p.values.radius);
-    setFont(p.values.font);
-    setSize(p.values.size);
-    applyAppearance();
-    // Density + font scale via app-prefs / compact-mode
-    setCompact(p.values.compact);
-    writeCompact(p.values.compact);
-    set({ fontScale: p.values.fontScale });
-    toast.success(`Preset "${p.label}" diterapkan`, {
-      description: p.desc,
+    patch({
+      theme: p.values.theme,
+      accent: p.values.accent,
+      radius: p.values.radius,
+      font: p.values.font,
+      size: p.values.size,
+      compact: p.values.compact,
+      fontScale: p.values.fontScale,
+    });
+    toast.success(`Preset "${p.label}" dipratinjau`, {
+      description: `${p.desc} — tekan Simpan untuk menerapkan.`,
     });
   };
 
@@ -189,25 +303,47 @@ function PengaturanTampilanPage() {
     const reader = new FileReader();
     reader.onload = () => {
       const url = String(reader.result ?? "");
-      setBgImage(url);
-      save(LS.bgImage, url);
-      toast.success("Latar diperbarui");
+      patch({ bgImage: url });
     };
     reader.readAsDataURL(file);
   };
 
   const resetAll = () => {
-    [
-      LS.theme, LS.font, LS.size, LS.accent, LS.radius,
-      LS.bgImage, LS.bgOverlay, LS.bgBlur,
-    ].forEach((k) => localStorage.removeItem(k));
+    setDraft(DEFAULT_DRAFT);
+    toast.info("Draft direset ke bawaan — tekan Simpan untuk menerapkan.");
+  };
+
+  const commitSave = () => {
+    // Persist appearance-* LS
+    localStorage.setItem(LS.theme, draft.theme);
+    localStorage.setItem(LS.font, draft.font);
+    localStorage.setItem(LS.size, draft.size);
+    localStorage.setItem(LS.accent, draft.accent);
+    localStorage.setItem(LS.radius, String(draft.radius));
+    if (draft.bgImage) localStorage.setItem(LS.bgImage, draft.bgImage);
+    else localStorage.removeItem(LS.bgImage);
+    localStorage.setItem(LS.bgOverlay, String(draft.bgOverlay));
+    localStorage.setItem(LS.bgBlur, String(draft.bgBlur));
     applyAppearance();
-    setTheme("dark"); setFont("sans"); setSize("md");
-    setAccent("emerald"); setRadius(0.625);
-    setBgImage(""); setBgOverlay(0.7); setBgBlur(0);
-    setCompact(false); writeCompact(false);
-    set({ fontScale: 1 });
-    toast.success("Tampilan dikembalikan ke bawaan");
+
+    // Compact + app-prefs
+    writeCompact(draft.compact);
+    setAppPrefs({
+      fontScale: draft.fontScale,
+      highContrast: draft.highContrast,
+      reduceMotion: draft.reduceMotion,
+    });
+
+    savedRef.current = true;
+    setSnapshot(draft);
+    // Izinkan draft berikutnya kembali di-revert saat unmount.
+    setTimeout(() => { savedRef.current = false; }, 0);
+    toast.success("Pengaturan tampilan disimpan");
+  };
+
+  const commitCancel = () => {
+    setDraft(snapshot);
+    toast.info("Perubahan dibatalkan");
   };
 
   const exportSettings = () => {
@@ -217,20 +353,20 @@ function PengaturanTampilanPage() {
         version: 1,
         exportedAt: new Date().toISOString(),
         appearance: {
-          theme: localStorage.getItem(LS.theme),
-          font: localStorage.getItem(LS.font),
-          size: localStorage.getItem(LS.size),
-          accent: localStorage.getItem(LS.accent),
-          radius: localStorage.getItem(LS.radius),
-          bgImage: localStorage.getItem(LS.bgImage),
-          bgOverlay: localStorage.getItem(LS.bgOverlay),
-          bgBlur: localStorage.getItem(LS.bgBlur),
+          theme: draft.theme,
+          font: draft.font,
+          size: draft.size,
+          accent: draft.accent,
+          radius: String(draft.radius),
+          bgImage: draft.bgImage,
+          bgOverlay: String(draft.bgOverlay),
+          bgBlur: String(draft.bgBlur),
         },
-        compact: readCompact(),
+        compact: draft.compact,
         appPrefs: {
-          fontScale: prefs.fontScale,
-          highContrast: prefs.highContrast,
-          reduceMotion: prefs.reduceMotion,
+          fontScale: draft.fontScale,
+          highContrast: draft.highContrast,
+          reduceMotion: draft.reduceMotion,
         },
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -264,42 +400,23 @@ function PengaturanTampilanPage() {
           return;
         }
         const ap = data.appearance ?? {};
-        const setOrRemove = (k: string, v: unknown) => {
-          if (v == null || v === "") localStorage.removeItem(k);
-          else localStorage.setItem(k, String(v));
-        };
-        setOrRemove(LS.theme, ap.theme);
-        setOrRemove(LS.font, ap.font);
-        setOrRemove(LS.size, ap.size);
-        setOrRemove(LS.accent, ap.accent);
-        setOrRemove(LS.radius, ap.radius);
-        setOrRemove(LS.bgImage, ap.bgImage);
-        setOrRemove(LS.bgOverlay, ap.bgOverlay);
-        setOrRemove(LS.bgBlur, ap.bgBlur);
-        applyAppearance();
-
-        setTheme((ap.theme as Theme) ?? "dark");
-        setFont((ap.font as FontFamily) ?? "sans");
-        setSize((ap.size as FontSize) ?? "md");
-        setAccent(ap.accent ?? "emerald");
-        setRadius(Number(ap.radius ?? 0.625));
-        setBgImage(ap.bgImage ?? "");
-        setBgOverlay(Number(ap.bgOverlay ?? 0.7));
-        setBgBlur(Number(ap.bgBlur ?? 0));
-
-        if (typeof data.compact === "boolean") {
-          setCompact(data.compact);
-          writeCompact(data.compact);
-        }
-        if (data.appPrefs && typeof data.appPrefs === "object") {
-          const cur = getAppPrefs();
-          setAppPrefs({
-            fontScale: Number.isFinite(data.appPrefs.fontScale) ? Number(data.appPrefs.fontScale) : cur.fontScale,
-            highContrast: Boolean(data.appPrefs.highContrast),
-            reduceMotion: Boolean(data.appPrefs.reduceMotion),
-          });
-        }
-        toast.success("Pengaturan tampilan berhasil diimpor");
+        const ap2 = data.appPrefs ?? {};
+        setDraft((d) => ({
+          ...d,
+          theme: (ap.theme as Theme) ?? d.theme,
+          font: (ap.font as FontFamily) ?? d.font,
+          size: (ap.size as FontSize) ?? d.size,
+          accent: ap.accent ?? d.accent,
+          radius: Number.isFinite(Number(ap.radius)) ? Number(ap.radius) : d.radius,
+          bgImage: typeof ap.bgImage === "string" ? ap.bgImage : d.bgImage,
+          bgOverlay: Number.isFinite(Number(ap.bgOverlay)) ? Number(ap.bgOverlay) : d.bgOverlay,
+          bgBlur: Number.isFinite(Number(ap.bgBlur)) ? Number(ap.bgBlur) : d.bgBlur,
+          compact: typeof data.compact === "boolean" ? data.compact : d.compact,
+          fontScale: Number.isFinite(Number(ap2.fontScale)) ? Number(ap2.fontScale) : d.fontScale,
+          highContrast: typeof ap2.highContrast === "boolean" ? ap2.highContrast : d.highContrast,
+          reduceMotion: typeof ap2.reduceMotion === "boolean" ? ap2.reduceMotion : d.reduceMotion,
+        }));
+        toast.success("Pengaturan diimpor — tekan Simpan untuk menerapkan.");
       } catch {
         toast.error("File tidak valid atau rusak.");
       } finally {
@@ -309,20 +426,18 @@ function PengaturanTampilanPage() {
     reader.readAsText(file);
   };
 
-  useEffect(() => {
-    // Refresh state saat kembali ke tab
-    const on = () => {
-      setTheme(readTheme()); setFont(readFont()); setSize(readSize());
-    };
-    window.addEventListener("focus", on);
-    return () => window.removeEventListener("focus", on);
-  }, []);
-
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-10">
+    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-32">
       <SettingsHeader title="Tampilan" subtitle="Preset, tema, aksen, font, latar & kerapatan" />
 
       <div className="space-y-4 px-4 pt-2">
+        {/* Info draft */}
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] leading-snug text-muted-foreground">
+          Perubahan di halaman ini adalah <span className="font-semibold text-foreground">pratinjau</span>.
+          Tampilan halaman lain tidak berubah sampai Anda menekan{" "}
+          <span className="font-semibold text-foreground">Simpan</span> di bagian bawah.
+        </div>
+
         {/* Preset profesional */}
         <Card>
           <CardHeader className="pb-3">
@@ -330,7 +445,7 @@ function PengaturanTampilanPage() {
               <Sparkles className="h-4 w-4 text-primary" /> Preset profesional
             </CardTitle>
             <CardDescription className="text-xs">
-              Satu klik untuk mengubah tema, aksen, radius, font, dan kerapatan sekaligus.
+              Satu klik untuk mempratinjau tema, aksen, radius, font, dan kerapatan sekaligus.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-1 gap-2 sm:grid-cols-3">
@@ -365,8 +480,8 @@ function PengaturanTampilanPage() {
               ]).map(({ v, label, Icon }) => (
                 <button
                   key={v}
-                  onClick={() => { setTheme(v); save(LS.theme, v); }}
-                  className={`flex flex-col items-center gap-1 rounded-md border px-2 py-3 text-xs font-medium transition-all hover:bg-accent active:scale-[0.97] ${theme === v ? "border-primary bg-accent" : ""}`}
+                  onClick={() => patch({ theme: v })}
+                  className={`flex flex-col items-center gap-1 rounded-md border px-2 py-3 text-xs font-medium transition-all hover:bg-accent active:scale-[0.97] ${draft.theme === v ? "border-primary bg-accent" : ""}`}
                 >
                   <Icon className="h-4 w-4" />
                   {label}
@@ -388,10 +503,10 @@ function PengaturanTampilanPage() {
               {ACCENTS.map((a) => (
                 <button
                   key={a.id}
-                  onClick={() => { setAccent(a.id); save(LS.accent, a.id); }}
+                  onClick={() => patch({ accent: a.id })}
                   title={a.label}
                   aria-label={a.label}
-                  className={`relative h-9 w-9 rounded-full border-2 transition-transform active:scale-90 ${accent === a.id ? "border-foreground ring-2 ring-primary/50 ring-offset-2 ring-offset-background" : "border-transparent"}`}
+                  className={`relative h-9 w-9 rounded-full border-2 transition-transform active:scale-90 ${draft.accent === a.id ? "border-foreground ring-2 ring-primary/50 ring-offset-2 ring-offset-background" : "border-transparent"}`}
                   style={{ backgroundColor: a.swatch }}
                 />
               ))}
@@ -418,9 +533,9 @@ function PengaturanTampilanPage() {
                 ]).map((o) => (
                   <button
                     key={o.v}
-                    onClick={() => { setFont(o.v); save(LS.font, o.v); }}
+                    onClick={() => patch({ font: o.v })}
                     style={{ fontFamily: o.family }}
-                    className={`rounded-md border px-2 py-2 text-left text-xs font-medium hover:bg-accent active:scale-[0.97] transition-transform ${font === o.v ? "border-primary bg-accent" : ""}`}
+                    className={`rounded-md border px-2 py-2 text-left text-xs font-medium hover:bg-accent active:scale-[0.97] transition-transform ${draft.font === o.v ? "border-primary bg-accent" : ""}`}
                   >
                     {o.label}
                   </button>
@@ -439,8 +554,8 @@ function PengaturanTampilanPage() {
                 ]).map((o) => (
                   <button
                     key={o.v}
-                    onClick={() => { setSize(o.v); save(LS.size, o.v); }}
-                    className={`rounded-md border px-2 py-2 text-sm font-semibold hover:bg-accent active:scale-[0.97] transition-transform ${size === o.v ? "border-primary bg-accent" : ""}`}
+                    onClick={() => patch({ size: o.v })}
+                    className={`rounded-md border px-2 py-2 text-sm font-semibold hover:bg-accent active:scale-[0.97] transition-transform ${draft.size === o.v ? "border-primary bg-accent" : ""}`}
                   >
                     {o.label}
                   </button>
@@ -451,14 +566,14 @@ function PengaturanTampilanPage() {
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">Skala font (in-app)</p>
-                <span className="text-xs font-semibold tabular-nums">{Math.round(prefs.fontScale * 100)}%</span>
+                <span className="text-xs font-semibold tabular-nums">{Math.round(draft.fontScale * 100)}%</span>
               </div>
               <Slider
-                value={[prefs.fontScale]}
+                value={[draft.fontScale]}
                 min={0.9}
                 max={1.4}
                 step={0.05}
-                onValueChange={(v) => set({ fontScale: v[0] ?? 1 })}
+                onValueChange={(v) => patch({ fontScale: v[0] ?? 1 })}
                 aria-label="Skala font"
               />
             </div>
@@ -481,26 +596,22 @@ function PengaturanTampilanPage() {
                 </p>
               </div>
               <Switch
-                checked={compact}
-                onCheckedChange={(v) => { setCompact(v); writeCompact(v); }}
+                checked={draft.compact}
+                onCheckedChange={(v) => patch({ compact: v })}
               />
             </div>
 
             <div>
               <div className="mb-2 flex items-center justify-between">
                 <p className="text-xs text-muted-foreground">Kelengkungan sudut</p>
-                <span className="text-xs font-semibold tabular-nums">{radius.toFixed(2)}rem</span>
+                <span className="text-xs font-semibold tabular-nums">{draft.radius.toFixed(2)}rem</span>
               </div>
               <Slider
-                value={[radius]}
+                value={[draft.radius]}
                 min={0}
                 max={1.5}
                 step={0.05}
-                onValueChange={(v) => {
-                  const n = v[0] ?? 0.625;
-                  setRadius(n);
-                  save(LS.radius, String(n));
-                }}
+                onValueChange={(v) => patch({ radius: v[0] ?? 0.625 })}
                 aria-label="Kelengkungan sudut"
               />
             </div>
@@ -513,8 +624,8 @@ function PengaturanTampilanPage() {
                 </p>
               </div>
               <Switch
-                checked={prefs.reduceMotion}
-                onCheckedChange={(v) => set({ reduceMotion: v })}
+                checked={draft.reduceMotion}
+                onCheckedChange={(v) => patch({ reduceMotion: v })}
               />
             </div>
 
@@ -526,8 +637,8 @@ function PengaturanTampilanPage() {
                 </p>
               </div>
               <Switch
-                checked={prefs.highContrast}
-                onCheckedChange={(v) => set({ highContrast: v })}
+                checked={draft.highContrast}
+                onCheckedChange={(v) => patch({ highContrast: v })}
               />
             </div>
           </CardContent>
@@ -550,41 +661,37 @@ function PengaturanTampilanPage() {
                 aria-hidden
                 className="absolute inset-0"
                 style={{
-                  backgroundImage: bgImage ? `url("${bgImage}")` : undefined,
-                  backgroundColor: bgImage ? undefined : "var(--muted)",
+                  backgroundImage: draft.bgImage ? `url("${draft.bgImage}")` : undefined,
+                  backgroundColor: draft.bgImage ? undefined : "var(--muted)",
                   backgroundSize: "cover",
                   backgroundPosition: "center",
-                  filter: bgImage ? `blur(${bgBlur}px)` : undefined,
+                  filter: draft.bgImage ? `blur(${draft.bgBlur}px)` : undefined,
                   transform: "scale(1.06)",
                 }}
               />
-              {bgImage && (
+              {draft.bgImage && (
                 <div
                   aria-hidden
                   className="absolute inset-0"
                   style={{
-                    background: `color-mix(in oklab, var(--background) ${Math.round(bgOverlay * 100)}%, transparent)`,
+                    background: `color-mix(in oklab, var(--background) ${Math.round(draft.bgOverlay * 100)}%, transparent)`,
                   }}
                 />
               )}
               <div className="absolute inset-0 flex items-center justify-center text-center">
                 <p className="text-xs font-semibold text-foreground">
-                  {bgImage ? `Overlay ${Math.round(bgOverlay * 100)}%, blur ${bgBlur}px` : "Belum ada foto latar"}
+                  {draft.bgImage ? `Overlay ${Math.round(draft.bgOverlay * 100)}%, blur ${draft.bgBlur}px` : "Belum ada foto latar"}
                 </p>
               </div>
             </div>
 
             <div className="grid grid-cols-3 gap-2">
               {BG_PRESETS.map((p) => {
-                const active = (p.url === "" && !bgImage) || bgImage === p.url;
+                const active = (p.url === "" && !draft.bgImage) || draft.bgImage === p.url;
                 return (
                   <button
                     key={p.id}
-                    onClick={() => {
-                      setBgImage(p.url);
-                      if (p.url) save(LS.bgImage, p.url);
-                      else { localStorage.removeItem(LS.bgImage); applyAppearance(); }
-                    }}
+                    onClick={() => patch({ bgImage: p.url })}
                     className={`relative h-14 overflow-hidden rounded-md border text-[10px] font-medium transition-transform hover:opacity-90 active:scale-95 ${active ? "border-primary ring-2 ring-primary" : "border-muted"}`}
                     style={p.url ? { backgroundImage: `url("${p.url}")`, backgroundSize: "cover", backgroundPosition: "center" } : undefined}
                     title={p.label}
@@ -608,14 +715,9 @@ function PengaturanTampilanPage() {
                   onChange={(e) => onPickFile(e.target.files?.[0] ?? null)}
                 />
               </label>
-              {bgImage && (
+              {draft.bgImage && (
                 <button
-                  onClick={() => {
-                    setBgImage("");
-                    localStorage.removeItem(LS.bgImage);
-                    applyAppearance();
-                    toast.success("Foto latar dihapus");
-                  }}
+                  onClick={() => patch({ bgImage: "" })}
                   className="rounded-md border px-3 py-2 text-xs font-medium text-destructive hover:bg-destructive/10"
                 >
                   Hapus latar
@@ -623,23 +725,19 @@ function PengaturanTampilanPage() {
               )}
             </div>
 
-            {bgImage && (
+            {draft.bgImage && (
               <>
                 <div>
                   <div className="mb-1 flex items-center justify-between">
                     <p className="text-xs text-muted-foreground">Transparansi (overlay)</p>
-                    <span className="text-xs font-semibold tabular-nums">{Math.round(bgOverlay * 100)}%</span>
+                    <span className="text-xs font-semibold tabular-nums">{Math.round(draft.bgOverlay * 100)}%</span>
                   </div>
                   <Slider
-                    value={[bgOverlay]}
+                    value={[draft.bgOverlay]}
                     min={0}
                     max={0.95}
                     step={0.05}
-                    onValueChange={(v) => {
-                      const n = v[0] ?? 0.7;
-                      setBgOverlay(n);
-                      save(LS.bgOverlay, String(n));
-                    }}
+                    onValueChange={(v) => patch({ bgOverlay: v[0] ?? 0.7 })}
                     aria-label="Kegelapan overlay latar"
                   />
                   <p className="mt-1 text-[10px] text-muted-foreground">
@@ -649,18 +747,14 @@ function PengaturanTampilanPage() {
                 <div>
                   <div className="mb-1 flex items-center justify-between">
                     <p className="text-xs text-muted-foreground">Blur foto</p>
-                    <span className="text-xs font-semibold tabular-nums">{bgBlur}px</span>
+                    <span className="text-xs font-semibold tabular-nums">{draft.bgBlur}px</span>
                   </div>
                   <Slider
-                    value={[bgBlur]}
+                    value={[draft.bgBlur]}
                     min={0}
                     max={20}
                     step={1}
-                    onValueChange={(v) => {
-                      const n = v[0] ?? 0;
-                      setBgBlur(n);
-                      save(LS.bgBlur, String(n));
-                    }}
+                    onValueChange={(v) => patch({ bgBlur: v[0] ?? 0 })}
                     aria-label="Blur foto latar"
                   />
                 </div>
@@ -669,7 +763,7 @@ function PengaturanTampilanPage() {
           </CardContent>
         </Card>
 
-        {/* Tautan pengaturan lanjutan */}
+        {/* Ekspor & impor */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
@@ -707,14 +801,15 @@ function PengaturanTampilanPage() {
                 <div>
                   <p className="text-sm font-semibold">Impor dari file</p>
                   <p className="text-[11px] text-muted-foreground">
-                    Pilih file hasil ekspor untuk langsung menerapkan pengaturannya.
+                    Pilih file hasil ekspor untuk memuatnya sebagai pratinjau.
                   </p>
                 </div>
               </button>
             </div>
             <p className="text-[11px] leading-snug text-muted-foreground">
-              Yang diimpor hanya pengaturan tampilan — data akun, chat, dan gudang tidak
-              terpengaruh. Impor akan menimpa pengaturan tampilan Anda saat ini.
+              Hasil impor hanya menimpa pratinjau di halaman ini — data akun, chat, dan
+              gudang tidak terpengaruh. Tekan <span className="font-semibold text-foreground">Simpan</span>{" "}
+              agar hasilnya diterapkan ke aplikasi.
             </p>
             <input
               ref={importInputRef}
@@ -760,6 +855,29 @@ function PengaturanTampilanPage() {
             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
             Kembalikan ke bawaan
           </Button>
+        </div>
+      </div>
+
+      {/* Sticky action bar — muncul saat ada perubahan belum disimpan */}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur transition-transform ${dirty ? "translate-y-0" : "translate-y-full"}`}
+        role="region"
+        aria-label="Simpan pengaturan tampilan"
+      >
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3">
+          <p className="text-xs text-muted-foreground">
+            Ada perubahan belum disimpan. Tampilan aplikasi utama belum berubah.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={commitCancel}>
+              <X className="mr-1.5 h-3.5 w-3.5" />
+              Batalkan
+            </Button>
+            <Button size="sm" onClick={commitSave}>
+              <Check className="mr-1.5 h-3.5 w-3.5" />
+              Simpan
+            </Button>
+          </div>
         </div>
       </div>
     </main>
