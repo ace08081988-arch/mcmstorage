@@ -221,6 +221,11 @@ describe("Matriks pergantian Jenis kemasan (Barang baru) — semua field ikut, t
         // 3) setelah reset effect, isi angka baru supaya baris "Harga per base" muncul.
         s.setPackageSize(to === "pcs" ? "1" : to === "sachet" ? "20" : to === "gram" ? "1000" : "500");
         s.setInputs("2", "8000");
+        // Untuk `pcs`, priceMode dipaksa ke "base" → gunakan pricePerBase.
+        if (to === "pcs") {
+          s.state.pricePerBase = "8000";
+          s.state.priceMode = "base";
+        }
 
         const rendered = s.renderAll();
         const tb = defaultBaseUnit(to);
