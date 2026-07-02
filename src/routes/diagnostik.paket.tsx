@@ -213,6 +213,7 @@ function DiagnostikPaket() {
             <Field label="packageType (form)">
               <select
                 className="input"
+                data-testid="diag-input-package-type"
                 value={packageType}
                 onChange={(e) => setPackageType(e.target.value as PackageType)}
               >
