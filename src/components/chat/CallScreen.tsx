@@ -242,6 +242,20 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return "Panggilan berakhir";
   }, [phase, seconds, errorMsg, finalStatus]);
 
+  // Deskripsi lengkap untuk tooltip/toast saat status pill ditekan.
+  const statusHint = useMemo(() => {
+    if (phase === "connecting") return "Menghubungkan — sedang menyiapkan panggilan.";
+    if (phase === "dialing") return "Memanggil — menunggu perangkat penerima.";
+    if (phase === "ringing") return "Berdering — panggilan sedang menunggu dijawab.";
+    if (phase === "in-call") return "Diterima — panggilan berhasil tersambung.";
+    if (finalStatus === "missed") return "Tidak dijawab — panggilan tidak diangkat penerima.";
+    if (finalStatus === "declined") return "Ditolak — penerima menolak panggilan.";
+    if (finalStatus === "cancelled") return "Dibatalkan — panggilan dihentikan sebelum diangkat.";
+    if (finalStatus === "failed") return "Gagal — panggilan tidak dapat tersambung.";
+    if (finalStatus === "ended") return "Diterima — panggilan berhasil tersambung dan selesai.";
+    return "Panggilan berakhir.";
+  }, [phase, finalStatus]);
+
   // Ikon + warna untuk status bar sesuai fase / status akhir.
   const { StatusIcon, statusIconClass } = useMemo(() => {
     if (phase === "connecting" || phase === "dialing") {
@@ -380,10 +394,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
 
         {/* Status bar atas */}
         <div className="absolute top-0 left-0 right-0 flex items-start justify-between p-4">
-          <div className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-xs backdrop-blur">
+          <button
+            type="button"
+            onClick={() => toast.info(statusHint)}
+            title={statusHint}
+            aria-label={statusHint}
+            className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-xs backdrop-blur hover:bg-black/60"
+          >
             <StatusIcon className={`h-3.5 w-3.5 ${statusIconClass}`} />
             <span>{status}</span>
-          </div>
+          </button>
           {phase === "connecting" || phase === "ringing" ? (
             <Loader2 className="h-4 w-4 animate-spin text-white/70" />
           ) : null}
