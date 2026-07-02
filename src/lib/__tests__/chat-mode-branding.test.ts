@@ -231,3 +231,59 @@ describe("applyChatModeBranding — SSR / no document", () => {
     }
   });
 });
+
+describe("applyChatModeBranding — toggle berulang tidak menduplikasi node", () => {
+  function countByRel() {
+    return {
+      manifest: document.querySelectorAll('link[rel="manifest"]').length,
+      icon: document.querySelectorAll('link[rel="icon"]').length,
+      shortcut: document.querySelectorAll('link[rel="shortcut icon"]').length,
+      apple: document.querySelectorAll('link[rel="apple-touch-icon"]').length,
+    };
+  }
+
+  it("jumlah node per jenis link tetap identik setelah 5x toggle chat↔full", async () => {
+    const baseline = countByRel();
+    // Sanity: BASE_HEAD memberi 1 manifest, 3 icon, 1 shortcut, 1 apple-touch-icon.
+    expect(baseline).toEqual({ manifest: 1, icon: 3, shortcut: 1, apple: 1 });
+
+    const { applyChatModeBranding } = await loadModule();
+
+    for (let i = 0; i < 5; i++) {
+      window.localStorage.setItem("mcm.appMode", "chat");
+      applyChatModeBranding();
+      expect(countByRel()).toEqual(baseline);
+
+      window.localStorage.removeItem("mcm.appMode");
+      applyChatModeBranding();
+      expect(countByRel()).toEqual(baseline);
+    }
+  });
+
+  it("tidak menduplikasi apple-touch-icon meskipun applyChatModeBranding dipanggil berulang dalam satu mode", async () => {
+    window.localStorage.setItem("mcm.appMode", "chat");
+    const { applyChatModeBranding } = await loadModule();
+    for (let i = 0; i < 10; i++) applyChatModeBranding();
+    expect(
+      document.querySelectorAll('link[rel="apple-touch-icon"]').length,
+    ).toBe(1);
+    expect(
+      document.querySelectorAll('link[rel="shortcut icon"]').length,
+    ).toBe(1);
+    expect(document.querySelectorAll('link[rel="manifest"]').length).toBe(1);
+  });
+
+  it("jumlah <link rel=icon> tetap sama dengan awal setelah banyak toggle acak", async () => {
+    const baselineIcons = document.querySelectorAll('link[rel="icon"]').length;
+    const { applyChatModeBranding } = await loadModule();
+    const sequence = ["chat", "full", "chat", "chat", "full", "chat", "full", "full", "chat"];
+    for (const mode of sequence) {
+      if (mode === "chat") window.localStorage.setItem("mcm.appMode", "chat");
+      else window.localStorage.removeItem("mcm.appMode");
+      applyChatModeBranding();
+      expect(
+        document.querySelectorAll('link[rel="icon"]').length,
+      ).toBe(baselineIcons);
+    }
+  });
+});
