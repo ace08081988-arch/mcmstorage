@@ -23,11 +23,12 @@ function AuthBrand() {
         />
       ) : (
         <img
-          src="/icon-512.png"
+          src="/icon-192.png"
           alt={full}
           width={64}
           height={64}
           fetchPriority="high"
+          decoding="async"
           className="mx-auto h-16 w-16 rounded-2xl"
         />
       )}
@@ -51,7 +52,7 @@ export const Route = createFileRoute("/auth")({
     ],
     links: [
       { rel: "canonical", href: "https://mcmstorage.lovable.app/auth" },
-      { rel: "preload", as: "image", href: "/icon-512.png", fetchpriority: "high" },
+      { rel: "preload", as: "image", href: "/icon-192.png", fetchpriority: "high" },
     ],
   }),
   component: AuthPage,
