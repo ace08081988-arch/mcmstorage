@@ -298,9 +298,16 @@ function ProfilChatPage() {
                     >
                     <a
                       href={r.url}
-                      onClick={() =>
-                        trackApkDownload("chat", isLatest ? "button" : "copy_page")
-                      }
+                      onClick={() => {
+                        trackApkDownload("chat", isLatest ? "button" : "copy_page");
+                        recordChatApkDownload({
+                          name: r.name,
+                          versionName: r.versionName ?? null,
+                          versionCode: r.versionCode ?? null,
+                          url: r.url,
+                          sizeMB: r.sizeMB ?? null,
+                        });
+                      }}
                       className="flex min-w-0 flex-1 items-center gap-3"
                     >
                       <Download
