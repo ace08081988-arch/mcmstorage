@@ -114,6 +114,17 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E konsistensi label /diagnostik/paket: memverifikasi bahwa
+      // "Isi / kemasan", "Harga per", dan "Ringkasan · yang tersedia"
+      // SELALU konsisten dengan pilihan dropdown Jenis kemasan
+      // (gram / botol / pcs) — baik setelah impor payload maupun
+      // setelah mengganti dropdown pasca impor. Halaman publik no-auth.
+      name: "diagnostik-paket-label-consistency-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /diagnostik-paket-label-consistency\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
       // E2E visibilitas menu admin. Harness publik no-auth memverifikasi
       // (a) `filterSidebarItemsForAdmin` menyembunyikan `/pengaturan-apk`
       // & `/email-queue` dari non-admin, (b) klasifikasi halaman APK
