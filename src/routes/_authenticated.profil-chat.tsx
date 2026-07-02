@@ -6,6 +6,7 @@ import {
   Bell, RefreshCcw, Link as LinkIcon, Accessibility, Languages, ChevronRight,
   UserPlus, Download, Loader2,
   Copy, Check, Palette, QrCode as QrCodeIcon,
+  ShieldCheck, AlertTriangle, ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyProfile, useAvatarSignedUrl, useMyProfileRealtime } from "@/lib/profile";
@@ -13,7 +14,13 @@ import { useState } from "react";
 import { ProfileQrDialog } from "@/components/chat/ProfileQrDialog";
 import { ApkQrDialog, type ApkQrTarget } from "@/components/ApkQrDialog";
 import { formatInviteCode } from "@/lib/invite";
-import { getLatestApkVariants, getApkVariantDetail, type ApkRelease } from "@/lib/apk.functions";
+import {
+  getLatestApkVariants,
+  getApkVariantDetail,
+  validateChatApkLink,
+  type ApkRelease,
+  type ValidateApkLinkResult,
+} from "@/lib/apk.functions";
 import { trackApkDownload } from "@/lib/apk-download-track";
 import {
   useChatApkHistory,
