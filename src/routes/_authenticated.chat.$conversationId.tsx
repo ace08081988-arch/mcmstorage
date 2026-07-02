@@ -78,6 +78,7 @@ import { SaveAsNoteDialog } from "@/components/chat/SaveAsNoteDialog";
 import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog";
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { StickerPickerDialog, parseStickerFromBody } from "@/components/chat/StickerPickerDialog";
+import { ProductSharePopover } from "@/components/chat/ProductSharePopover";
 import {
   ConversationSearchDialog,
   MediaLinksDialog,
@@ -1473,6 +1474,12 @@ function ChatRoomPage() {
           <Button type="submit" size="icon" disabled={!body.trim() || chatBlocked} aria-label="Kirim">
             <Send className="h-4 w-4" />
           </Button>
+          <ProductSharePopover
+            conversationId={conversationId}
+            disabled={chatBlocked}
+            peerName={displayedPeerName}
+            onSent={() => { void othersRead.refetch(); }}
+          />
           {!body.trim() ? (
             <VoiceRecorderButton
               conversationId={conversationId}
