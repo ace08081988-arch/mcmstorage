@@ -300,7 +300,7 @@ describe("E2E (screen-level) — urutan botol→gram→pcs→botol di Catat Pemb
     // 2) → gram
     s.selectItem("gram-1000");
     trace.push(`[gram]\n${s.renderSummary()}`);
-    expect(s.renderSummary()).toMatch(/Gula Curah · gram 1\.000 g/);
+    expect(s.renderSummary()).toMatch(/Gula Curah · gram 1000 g/);
     expect(s.renderSummary()).not.toMatch(/karton/);
     expect(s.renderSummary()).not.toMatch(/Sirup Botol/);
 
