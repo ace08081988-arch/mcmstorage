@@ -27,6 +27,7 @@ import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
 import { ReadyEcerSection } from "@/components/ReadyEcerSection";
 import { ReadyRequestSection } from "@/components/ReadyRequestSection";
+import { DownloadStorageApkShortcut } from "@/components/DownloadStorageApkShortcut";
 
 export const Route = createFileRoute("/_authenticated/")({
   beforeLoad: async () => {
@@ -795,6 +796,7 @@ function Index() {
                   <span className="text-[10px] leading-tight text-muted-foreground">{s.desc}</span>
                 </Link>
               ))}
+              <DownloadStorageApkShortcut />
             </div>
           </div>
 
