@@ -97,12 +97,16 @@ test.describe("Mode aplikasi · branding runtime", () => {
     expect(after.themeColor).toBe("#064e3b");
     // Setiap <link rel="icon"> harus di-swap — tidak boleh ada yang
     // masih menunjuk ikon MCM Storage.
+    // `applyChatModeBranding` menambahkan cache-buster (?v=chat-<ts>)
+    // untuk memaksa fetch ulang di WebView & service worker. Bandingkan
+    // pathname-nya, bukan href mentah.
+    const pathOf = (href: string | null) => (href ? href.split("?")[0] : href);
     expect(after.iconHrefs.length).toBeGreaterThan(0);
     for (const href of after.iconHrefs) {
-      expect(href).toBe("/mcm-chat-icon.png");
+      expect(pathOf(href)).toBe("/mcm-chat-icon.png");
     }
-    expect(after.appleTouch).toBe("/mcm-chat-icon.png");
-    expect(after.manifest).toBe("/manifest-chat.webmanifest");
+    expect(pathOf(after.appleTouch)).toBe("/mcm-chat-icon.png");
+    expect(pathOf(after.manifest)).toBe("/manifest-chat.webmanifest");
 
     // Cleanup — kembalikan ke mode default supaya test lain tidak
     // mewarisi state chat lewat storage state (kalau ada).
