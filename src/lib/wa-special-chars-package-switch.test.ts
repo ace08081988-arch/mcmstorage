@@ -81,16 +81,25 @@ function decodeWaText(url: string): string {
   return raw!;
 }
 
+/**
+ * Ekstrak 5 baris header dari `buildPesan()` dengan memindai posisi
+ * marker (📦/⚖️/💰/📍/Ket:), sehingga `\n` mentah di dalam
+ * nama/lokasi/keterangan tidak menggeser indeks baris.
+ */
 function extractLines(msg: string) {
-  const lines = msg.split("\n");
-  return {
-    kategori: lines[0] ?? "",
-    scale: lines[1] ?? "",
-    price: lines[2] ?? "",
-    lokasi: lines[3] ?? "",
-    ket: lines[4] ?? "",
-    all: lines,
-  };
+  const iKat = msg.indexOf("📦 [");
+  const iScale = msg.indexOf("⚖️ ", iKat);
+  const iPrice = msg.indexOf("💰 Harga: Rp", iScale);
+  const iLoc = msg.indexOf("📍 ", iPrice);
+  const iKet = msg.indexOf("Ket: ", iLoc);
+  // Setiap baris header dibatasi oleh newline yang *ditulis oleh buildPesan*,
+  // yaitu newline tepat sebelum marker berikutnya.
+  const kategori = msg.slice(iKat, msg.lastIndexOf("\n", iScale - 1));
+  const scale = msg.slice(iScale, msg.lastIndexOf("\n", iPrice - 1));
+  const price = msg.slice(iPrice, msg.lastIndexOf("\n", iLoc - 1));
+  const lokasi = msg.slice(iLoc, msg.lastIndexOf("\n", iKet - 1));
+  const ket = msg.slice(iKet);
+  return { kategori, scale, price, lokasi, ket };
 }
 
 describe("buildPesan() tetap valid dengan karakter khusus + package switch", () => {
