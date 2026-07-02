@@ -143,6 +143,26 @@ jobs:
             echo "" >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Histogram distribusi sampel durasi
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-histogram.md ]; then
+            cat test-artifacts/conflict-wide-fields-histogram.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload histogram artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-histogram-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-artifacts/conflict-wide-fields-histogram.md
+            test-artifacts/conflict-wide-fields-histogram.json
+          if-no-files-found: ignore
+          retention-days: 30
+
       - name: Upload benchmark trend artifact (always)
         if: always()
         uses: actions/upload-artifact@v4
