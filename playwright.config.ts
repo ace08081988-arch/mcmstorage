@@ -990,6 +990,20 @@ export default defineConfig({
     //   sama persis dengan `/pengaturan-tampilan`. Menguji v1, v2, versi
     //   lebih baru, `unknown_type`, dan payload rusak — kontrak backward
     //   compat impor untuk rilis berikutnya.
+    //
+    //   Portabilitas lokal: sandbox / mesin dev sering punya versi Chromium
+    //   yang tidak cocok dengan versi bawaan `@playwright/test` (mis. hasil
+    //   `bunx playwright install` gagal karena mirror diblokir, atau
+    //   `PLAYWRIGHT_BROWSERS_PATH` menunjuk ke build lain). Supaya spec
+    //   tetap bisa dijalankan tanpa reinstall, project ini menghormati:
+    //     - `PLAYWRIGHT_CHROMIUM_EXECUTABLE` (atau alias `CHROMIUM_PATH`)
+    //       → path absolut ke binary Chromium/Chrome yang sudah ada di
+    //       mesin. Dipakai sebagai `launchOptions.executablePath`.
+    //     - `PLAYWRIGHT_CHANNEL` → nama channel (`chromium`, `chrome`,
+    //       `msedge`) untuk memakai browser sistem via `channel`. Dipakai
+    //       bila `executablePath` tidak diset.
+    //   Kalau keduanya kosong, Playwright fallback ke Chromium bawaan seperti
+    //   biasa (perilaku CI tidak berubah).
     {
       name: "appearance-import-migrator-e2e",
       testDir: "./tests/e2e",
@@ -997,6 +1011,19 @@ export default defineConfig({
       use: {
         ...devices["Desktop Chrome"],
         viewport: { width: 1280, height: 800 },
+        ...(process.env.PLAYWRIGHT_CHANNEL
+          ? { channel: process.env.PLAYWRIGHT_CHANNEL }
+          : {}),
+        launchOptions: {
+          ...(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ||
+          process.env.CHROMIUM_PATH
+            ? {
+                executablePath:
+                  process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE ||
+                  process.env.CHROMIUM_PATH,
+              }
+            : {}),
+        },
       },
     },
   ],
