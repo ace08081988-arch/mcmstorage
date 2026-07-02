@@ -15,6 +15,13 @@ import { formatInviteCode } from "@/lib/invite";
 import { getLatestApkVariants, getApkVariantDetail, type ApkRelease } from "@/lib/apk.functions";
 import { trackApkDownload } from "@/lib/apk-download-track";
 import {
+  useChatApkHistory,
+  recordChatApkDownload,
+  clearChatApkHistory,
+  formatAgoID,
+} from "@/lib/chat-apk-history";
+import { History, Trash2 } from "lucide-react";
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 
@@ -96,6 +103,7 @@ function ProfilChatPage() {
     enabled: apkPickerOpen,
   });
   const chatReleases = detailQuery.data?.releases ?? [];
+  const history = useChatApkHistory();
   const latestKey = chatReleases[0]?.name ?? null;
 
   return (
@@ -266,6 +274,64 @@ function ProfilChatPage() {
               Unduh versi terbaru atau pilih rilis sebelumnya bila diperlukan.
             </DialogDescription>
           </DialogHeader>
+          {history.length > 0 && (
+            <section className="rounded-lg border bg-muted/30 p-2">
+              <div className="mb-1.5 flex items-center justify-between px-1">
+                <div className="flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                  <History className="h-3.5 w-3.5" />
+                  Riwayat unduhan Anda ({history.length})
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearChatApkHistory();
+                    toast.success("Riwayat unduhan dihapus.");
+                  }}
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-muted-foreground hover:text-destructive"
+                  aria-label="Hapus riwayat unduhan"
+                >
+                  <Trash2 className="h-3 w-3" />
+                  Hapus
+                </button>
+              </div>
+              <ul className="max-h-40 space-y-1 overflow-y-auto pr-1">
+                {history.slice(0, 8).map((h) => (
+                  <li key={`${h.name}-${h.downloadedAt}`}>
+                    <a
+                      href={h.url}
+                      onClick={() => {
+                        trackApkDownload("chat", "copy_page");
+                        recordChatApkDownload({
+                          name: h.name,
+                          versionName: h.versionName,
+                          versionCode: h.versionCode,
+                          url: h.url,
+                          sizeMB: h.sizeMB,
+                        });
+                      }}
+                      className="flex items-center gap-2 rounded-md px-2 py-1.5 hover:bg-accent"
+                    >
+                      <Download className="h-4 w-4 shrink-0 text-muted-foreground" />
+                      <div className="min-w-0 flex-1">
+                        <div className="truncate text-xs font-medium">
+                          {h.versionName ? `v${h.versionName}` : h.name}
+                          {h.versionCode !== null && (
+                            <span className="ml-1 text-[10px] text-muted-foreground">
+                              (build {h.versionCode})
+                            </span>
+                          )}
+                        </div>
+                        <div className="truncate text-[10px] text-muted-foreground">
+                          {formatAgoID(h.downloadedAt)}
+                          {h.sizeMB ? ` · ${h.sizeMB} MB` : ""}
+                        </div>
+                      </div>
+                    </a>
+                  </li>
+                ))}
+              </ul>
+            </section>
+          )}
           {detailQuery.isLoading ? (
             <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" />
@@ -290,9 +356,16 @@ function ProfilChatPage() {
                     >
                     <a
                       href={r.url}
-                      onClick={() =>
-                        trackApkDownload("chat", isLatest ? "button" : "copy_page")
-                      }
+                      onClick={() => {
+                        trackApkDownload("chat", isLatest ? "button" : "copy_page");
+                        recordChatApkDownload({
+                          name: r.name,
+                          versionName: r.versionName ?? null,
+                          versionCode: r.versionCode ?? null,
+                          url: r.url,
+                          sizeMB: r.sizeMB ?? null,
+                        });
+                      }}
                       className="flex min-w-0 flex-1 items-center gap-3"
                     >
                       <Download
