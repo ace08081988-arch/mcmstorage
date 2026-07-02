@@ -171,3 +171,127 @@ describe("BeliTab — effect reset trigger", () => {
     expect(h.resetCount).toBe(4);
   });
 });
+
+// =============================================================
+// TES TAMBAHAN — assertion jumlah eksak (exact-count) untuk reset.
+// Tujuan: mengunci kontrak "tepat sekali per perubahan efektif" dan
+// "nol kali untuk perubahan identitas selectedItem".
+// =============================================================
+describe("BeliTab — reset dipanggil TEPAT SEKALI per perubahan efektif", () => {
+  it("setItemId ke nilai yang SAMA (idempoten) tidak menaikkan count", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: { id: "botol-500" },
+    });
+    h.setItemId("botol-500");
+    h.setItemId("botol-500");
+    h.setItemId("botol-500");
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("setiap perubahan itemId berturut-turut menaikkan count TEPAT satu", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "a",
+      packageType: "botol",
+      selectedItem: { id: "a" },
+    });
+    const ids = ["b", "c", "d", "e", "f"];
+    ids.forEach((id, i) => {
+      h.setItemId(id);
+      expect(h.resetCount).toBe(i + 1);
+    });
+    expect(h.resetCount).toBe(ids.length);
+  });
+
+  it("burst 20 refetch identitas antar dua transisi nyata tetap = 2 reset", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "a",
+      packageType: "botol",
+      selectedItem: { id: "a" },
+    });
+    for (let i = 0; i < 20; i++) h.refetchSelectedItemIdentity({ id: "a", rev: i });
+    expect(h.resetCount).toBe(0);
+    h.setItemId("b"); // +1
+    for (let i = 0; i < 20; i++) h.refetchSelectedItemIdentity({ id: "b", rev: i });
+    expect(h.resetCount).toBe(1);
+    h.setItemId("c"); // +1
+    for (let i = 0; i < 20; i++) h.refetchSelectedItemIdentity({ id: "c", rev: i });
+    expect(h.resetCount).toBe(2);
+  });
+
+  it("toggle mode existing↔new bolak-balik menaikkan count setiap kali (tepat 1 per toggle)", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "a",
+      packageType: "botol",
+      selectedItem: { id: "a" },
+    });
+    h.setMode("new");
+    expect(h.resetCount).toBe(1);
+    h.setMode("existing");
+    expect(h.resetCount).toBe(2);
+    h.setMode("new");
+    expect(h.resetCount).toBe(3);
+    // Refetch di antara toggle tidak menambah.
+    h.refetchSelectedItemIdentity({ id: "a" });
+    h.refetchSelectedItemIdentity({ id: "a" });
+    expect(h.resetCount).toBe(3);
+  });
+
+  it("mode 'new' — packageType siklus botol→pcs→gram→botol menghasilkan tepat 3 reset", () => {
+    const h = createResetLifecycle({
+      mode: "new",
+      itemId: "",
+      packageType: "botol",
+      selectedItem: null,
+    });
+    h.setPackageType("pcs"); // 1
+    h.setPackageType("gram"); // 2
+    h.setPackageType("botol"); // 3
+    expect(h.resetCount).toBe(3);
+    // Set ke nilai yang sama = idempoten.
+    h.setPackageType("botol");
+    h.setPackageType("botol");
+    expect(h.resetCount).toBe(3);
+  });
+
+  it("mode 'existing' — 100 refetch identitas berturut-turut menghasilkan 0 reset", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: { id: "botol-500" },
+    });
+    for (let i = 0; i < 100; i++) {
+      h.refetchSelectedItemIdentity({ id: "botol-500", rev: i, name: `n-${i}` });
+    }
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("kombinasi: N transisi itemId + M refetch acak → count = N", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "start",
+      packageType: "botol",
+      selectedItem: { id: "start" },
+    });
+    const transitions = ["a", "b", "c", "d", "e", "f", "g"];
+    let expected = 0;
+    let currentId = "start";
+    for (const id of transitions) {
+      // 3 refetch identitas sebelum transisi berikutnya.
+      for (let i = 0; i < 3; i++) h.refetchSelectedItemIdentity({ id: currentId, rev: i });
+      h.setItemId(id);
+      currentId = id;
+      expected += 1;
+      expect(h.resetCount).toBe(expected);
+    }
+    // Refetch tambahan di akhir tidak boleh menambah.
+    for (let i = 0; i < 10; i++) h.refetchSelectedItemIdentity({ id: "g", rev: i });
+    expect(h.resetCount).toBe(transitions.length);
+  });
+});
