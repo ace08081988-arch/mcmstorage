@@ -313,6 +313,40 @@ type BenchEntry = {
   flakyReasons?: string[];
 };
 const ARTIFACT_ENTRIES: BenchEntry[] = [];
+const PROFILE_REPORTS: ProfileReport[] = [];
+const PROFILE_ALWAYS = isProfilingEnabled();
+
+/**
+ * Jalankan 1 pass profiled untuk `scenario`. Dipanggil bila:
+ *  - `BENCH_PROFILE=1` (setiap scenario di-profile), atau
+ *  - scenario tersebut regresi/flaky (auto-profile agar CI punya konteks).
+ *
+ * Pass profiling terpisah dari loop pengukuran normal supaya overhead
+ * `performance.now()` per-call TIDAK mencemari angka best/p95.
+ */
+function maybeProfile(
+  scenario: string,
+  mode: "batched" | "sequential",
+  mutations: Mutation[],
+  entry: BenchEntry,
+): void {
+  const forced = entry.regression === true || entry.flaky === true;
+  if (!PROFILE_ALWAYS && !forced) return;
+  const profiler = createProfiler(true);
+  const t0 = performance.now();
+  runWide(mutations, mode, profiler);
+  const totalMs = performance.now() - t0;
+  const report = profiler.finalize(scenario, mode, totalMs);
+  PROFILE_REPORTS.push(report);
+  // eslint-disable-next-line no-console
+  console.info(
+    `[bench:profile] ${scenario} (${mode}) — ` +
+      report.bottlenecks
+        .map((b) => `${b.name}: ${b.totalMs.toFixed(3)}ms×${b.calls} (${b.sharePct.toFixed(1)}%)`)
+        .join(" · ") +
+      (forced && !PROFILE_ALWAYS ? " [auto: threshold breached]" : ""),
+  );
+}
 
 // ----- Baseline (perbandingan persentase vs run tersimpan) -----
 const BASELINE_PATH = join(process.cwd(), "benchmarks", "conflict-wide-fields.baseline.json");
@@ -403,6 +437,10 @@ afterAll(() => {
         varianceRatio: VARIANCE_RATIO,
         runs: RUNS,
       },
+      profiling: {
+        enabled: PROFILE_ALWAYS,
+        reports: PROFILE_REPORTS,
+      },
       baseline: {
         path: "benchmarks/conflict-wide-fields.baseline.json",
         loaded: BASELINE !== null,
@@ -475,6 +513,32 @@ afterAll(() => {
       md.join("\n") + "\n",
       "utf8",
     );
+
+    // Profile artefak — hanya ditulis bila ada report (BENCH_PROFILE=1 atau
+    // ambang terlampaui). File JSON verbose (durasi per-call untuk analisis
+    // lanjut); MD ringkas untuk step summary.
+    if (PROFILE_REPORTS.length > 0) {
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-profile.json"),
+        JSON.stringify(
+          {
+            generatedAt: new Date().toISOString(),
+            node: process.version,
+            platform: `${process.platform}-${process.arch}`,
+            triggeredBy: PROFILE_ALWAYS ? "env:BENCH_PROFILE" : "threshold-breach",
+            reports: PROFILE_REPORTS,
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-profile.md"),
+        formatProfileMarkdown(PROFILE_REPORTS),
+        "utf8",
+      );
+    }
 
     // Tulis kembali baseline bila diminta secara eksplisit.
     if (UPDATE_BASELINE && BASELINE) {
