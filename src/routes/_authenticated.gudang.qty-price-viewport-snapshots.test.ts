@@ -374,11 +374,14 @@ describe("Gudang — snapshot qty × price mutation × viewport", () => {
    * baseAdded ≥ 1000 g dan tidak bocor ke sachet/pcs.
    */
   describe("anti-artefak label satuan konsisten lintas walk × viewport", () => {
+    // Catatan: base_unit untuk `botol` & `sachet` adalah `pcs` — token
+    // "pcs" muncul sah pada baris "Tambahan stok" mereka. Larangan `pcs`
+    // dibatasi ke tipe kemasan yang base_unit-nya `g` (gram).
     const FORBIDDEN: Record<PackageType, RegExp[]> = {
       gram: [/\bbotol\b/, /\bsachet\b/, /\bpcs\b/],
-      botol: [/\bgram\b/, /\bsachet\b/, /\bpcs\b/],
+      botol: [/\bgram\b/, /\bsachet\b/],
       pcs: [/\bgram\b/, /\bbotol\b/, /\bsachet\b/, /\bkg\b/, /\bmg\b/],
-      sachet: [/\bgram\b/, /\bbotol\b/, /\bpcs\b/],
+      sachet: [/\bgram\b/, /\bbotol\b/],
     };
     for (const vp of VIEWPORTS) {
       for (const pt of PACKAGE_TYPES) {
