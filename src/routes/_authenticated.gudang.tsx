@@ -1668,6 +1668,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         pricePerBase,
         inputKarton,
       }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [
       mode,
       itemId,
@@ -1694,6 +1695,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         priceMode,
         inputKarton,
       }).filter((w) => w.level !== "error"),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     [mode, itemId, packageType, derived, priceMode, inputKarton],
   );
 
