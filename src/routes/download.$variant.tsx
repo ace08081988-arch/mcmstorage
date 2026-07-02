@@ -119,6 +119,7 @@ function DetailPage() {
               <ApkDownloadQr
                 url={data.latest.url}
                 versionName={data.latest.versionName}
+                onExpired={() => refetch()}
               />
             )}
 
