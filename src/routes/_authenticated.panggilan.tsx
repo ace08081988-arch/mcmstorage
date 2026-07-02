@@ -1,10 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  ArrowLeft, Phone, PhoneMissed, PhoneIncoming, PhoneOutgoing, PhoneOff,
-  Ban, AlertCircle, Video as VideoIcon,
-} from "lucide-react";
+import { ArrowLeft, Phone, Video as VideoIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
@@ -12,6 +9,7 @@ import { listMyCalls, formatCallDuration, type CallRow } from "@/lib/calls";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyUserId } from "@/lib/chat";
 import { formatInviteCode } from "@/lib/invite";
+import { getCallStatusVisual, type CallVisualStatus } from "@/lib/call-status-visual";
 
 export const Route = createFileRoute("/_authenticated/panggilan")({
   component: PanggilanPage,
@@ -169,72 +167,14 @@ function CallRowItem({
   const outgoing = row.caller_id === myId;
   const peerId = outgoing ? row.callee_id : row.caller_id;
   const peerName = (peerId && nameMap[peerId]) || "Kontak";
-  const missed = row.status === "missed" || (row.status === "declined" && !outgoing);
-  const rejected = row.status === "declined" || row.status === "cancelled";
-  const answered = row.status === "ended";
   const Icon = row.kind === "video" ? VideoIcon : Phone;
-  // Ikon berbeda per status:
-  // - Tidak dijawab → PhoneMissed
-  // - Ditolak       → PhoneOff
-  // - Dibatalkan    → Ban
-  // - Gagal         → AlertCircle
-  // - Berdering     → Phone
-  // - Diterima      → PhoneIncoming / PhoneOutgoing (sesuai arah)
-  const DirIcon =
-    row.status === "missed"
-      ? PhoneMissed
-      : row.status === "declined"
-      ? PhoneOff
-      : row.status === "cancelled"
-      ? Ban
-      : row.status === "failed"
-      ? AlertCircle
-      : row.status === "ringing"
-      ? Phone
-      : outgoing
-      ? PhoneOutgoing
-      : PhoneIncoming;
-  // Warna dibedakan: tidak dijawab (merah), ditolak/dibatalkan (amber),
-  // diterima/selesai (emerald), gagal (muted), berdering (primary).
-  const statusClass = missed
-    ? "text-red-600"
-    : rejected
-    ? "text-amber-600"
-    : answered
-    ? "text-emerald-600"
-    : row.status === "failed"
-    ? "text-muted-foreground"
-    : "text-primary";
-  const dirClass = statusClass;
+  // Pemetaan ikon+warna+label+hint terpusat — dipakai juga oleh CallScreen.
+  const visual = getCallStatusVisual(row.status as CallVisualStatus, { outgoing });
+  const missed = row.status === "missed" || (row.status === "declined" && !outgoing);
+  const { Icon: DirIcon, colorClass: statusClass, hint: statusHint } = visual;
+  // Untuk status "ended", tampilkan durasi alih-alih label "Diterima".
   const statusLabel =
-    row.status === "ended"
-      ? formatCallDuration(row.duration_sec)
-      : row.status === "missed"
-      ? "Tidak dijawab"
-      : row.status === "declined"
-      ? "Ditolak"
-      : row.status === "cancelled"
-      ? "Dibatalkan"
-      : row.status === "failed"
-      ? "Gagal"
-      : row.status === "ringing"
-      ? "Berdering…"
-      : "Diterima";
-  // Deskripsi panjang untuk tooltip/toast saat ikon status ditekan.
-  const statusHint =
-    row.status === "missed"
-      ? "Tidak dijawab — panggilan tidak diangkat penerima."
-      : row.status === "declined"
-      ? "Ditolak — penerima menolak panggilan."
-      : row.status === "cancelled"
-      ? "Dibatalkan — panggilan dihentikan sebelum diangkat."
-      : row.status === "failed"
-      ? "Gagal — panggilan tidak dapat tersambung."
-      : row.status === "ringing"
-      ? "Berdering — panggilan sedang menunggu dijawab."
-      : row.status === "ended"
-      ? "Diterima — panggilan berhasil tersambung."
-      : "Diterima — panggilan berhasil tersambung.";
+    row.status === "ended" ? formatCallDuration(row.duration_sec) : visual.label;
 
   return (
     <li className="flex items-center gap-3 px-4 py-3">
@@ -254,7 +194,7 @@ function CallRowItem({
           aria-label={statusHint}
           className="flex items-center gap-1 text-[11px] text-muted-foreground hover:underline"
         >
-          <DirIcon className={`h-3 w-3 ${dirClass}`} />
+          <DirIcon className={`h-3 w-3 ${statusClass}`} />
           <span className={statusClass}>{statusLabel}</span>
           <span>·</span>
           <span>{timeLabel(row.started_at)}</span>
