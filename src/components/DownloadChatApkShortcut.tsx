@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getApkVariantDetail } from "@/lib/apk.functions";
+import { recordChatApkDownload } from "@/lib/chat-apk-history";
 
 /**
  * Tombol pintas di menu Pengaturan untuk langsung mengunduh APK MCM
@@ -27,6 +28,16 @@ export function DownloadChatApkShortcut() {
       }
       const version =
         detail?.latest?.versionName || detail?.latest?.name || "terbaru";
+      // Catat ke riwayat versi lokal sebelum navigasi.
+      if (detail?.latest) {
+        recordChatApkDownload({
+          name: detail.latest.name,
+          versionName: detail.latest.versionName ?? null,
+          versionCode: detail.latest.versionCode ?? null,
+          url,
+          sizeMB: detail.latest.sizeMB ?? null,
+        });
+      }
       window.location.href = url;
       toast.success(`Mulai mengunduh APK MCM Chat (${version})…`, {
         id: loadingId,
