@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
-import { ArrowLeft, ImagePlus, Type as TypeIcon, Loader2 } from "lucide-react";
+import { ArrowLeft, ImagePlus, Type as TypeIcon, Loader2, Globe, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +9,8 @@ import {
   insertStatus,
   uploadStatusMedia,
   statusSignedUrl,
+  getDefaultStatusVisibility,
+  type StatusVisibility,
 } from "@/lib/status";
 
 export const Route = createFileRoute("/_authenticated/status/baru")({
@@ -32,6 +34,17 @@ function BuatStatusPage() {
   const [bg, setBg] = useState("#0f172a");
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+  const [visibility, setVisibility] = useState<StatusVisibility>("public");
+
+  useEffect(() => {
+    let alive = true;
+    getDefaultStatusVisibility().then((v) => {
+      if (alive) setVisibility(v);
+    });
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const pickFile = () => fileRef.current?.click();
 
@@ -71,6 +84,7 @@ function BuatStatusPage() {
           media_type: "text",
           caption: trimmed,
           bg_color: bg,
+          visibility,
         });
         if (!row) {
           toast.error("Gagal menyimpan status");
@@ -96,6 +110,7 @@ function BuatStatusPage() {
         media_path: path,
         media_type: file.type.startsWith("video/") ? "video" : "image",
         caption: caption.trim() || null,
+        visibility,
       });
       if (!row) {
         toast.error("Gagal menyimpan status");
@@ -140,6 +155,53 @@ function BuatStatusPage() {
             Teks
           </Button>
         </div>
+
+        <fieldset className="rounded-2xl border p-3">
+          <legend className="px-1 text-xs font-medium text-muted-foreground">
+            Siapa yang bisa melihat
+          </legend>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setVisibility("public")}
+              aria-pressed={visibility === "public"}
+              className="flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm aria-[pressed=true]:border-primary aria-[pressed=true]:bg-primary/10"
+            >
+              <Globe className="size-4" />
+              <div>
+                <div className="font-medium">Semua orang</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Semua pengguna aplikasi
+                </div>
+              </div>
+            </button>
+            <button
+              type="button"
+              onClick={() => setVisibility("friends")}
+              aria-pressed={visibility === "friends"}
+              className="flex items-center gap-2 rounded-xl border px-3 py-2 text-left text-sm aria-[pressed=true]:border-primary aria-[pressed=true]:bg-primary/10"
+            >
+              <Users className="size-4" />
+              <div>
+                <div className="font-medium">Teman saja</div>
+                <div className="text-[11px] text-muted-foreground">
+                  Kontak yang diterima
+                </div>
+              </div>
+            </button>
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Ubah default di{" "}
+            <button
+              type="button"
+              className="underline"
+              onClick={() => navigate({ to: "/pengaturan-privasi" })}
+            >
+              Pengaturan Privasi
+            </button>
+            .
+          </p>
+        </fieldset>
 
         {mode === "media" ? (
           <>
