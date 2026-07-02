@@ -298,7 +298,6 @@ function PengaturanTampilanPage() {
             highContrast: Boolean(data.appPrefs.highContrast),
             reduceMotion: Boolean(data.appPrefs.reduceMotion),
           });
-          set({});
         }
         toast.success("Pengaturan tampilan berhasil diimpor");
       } catch {
