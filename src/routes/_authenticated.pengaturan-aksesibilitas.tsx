@@ -276,6 +276,30 @@ function PengaturanAksesibilitasPage() {
           </div>
         </div>
       </div>
+
+      {/* Dialog konfirmasi keluar halaman dengan perubahan belum disimpan */}
+      <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden="true" />
+              Perubahan belum disimpan
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Anda memiliki perubahan aksesibilitas yang belum disimpan. Jika meninggalkan
+              halaman ini, perubahan tersebut akan dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={handleLeaveCancel}>
+              Tetap di halaman ini
+            </Button>
+            <Button variant="destructive" onClick={handleLeaveConfirm}>
+              Tinggalkan halaman
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
