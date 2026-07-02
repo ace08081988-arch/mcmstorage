@@ -107,7 +107,7 @@ function derivedDeps(item: Item, form: Form): readonly unknown[] {
     form.inputKarton,
   ] as const;
 }
-function warningsDeps(item: Item, form: Form): readonly unknown[] {
+function warningsDeps(item: Item, form: Form, derived: unknown): readonly unknown[] {
   return [
     "existing",
     item.id,
@@ -118,6 +118,7 @@ function warningsDeps(item: Item, form: Form): readonly unknown[] {
     item.avg_cost_per_base ?? 0,
     form.priceMode,
     form.inputKarton,
+    derived,
   ] as const;
 }
 
@@ -136,7 +137,7 @@ function makeHarness() {
     factory: () => spyD(inp(item, form)),
   });
   const memoW = createMemo({
-    deps: warningsDeps(item, form),
+    deps: warningsDeps(item, form, memoD.value),
     factory: () =>
       spyW({
         mode: "existing",
@@ -149,7 +150,7 @@ function makeHarness() {
 
   function commit() {
     memoD.commit(derivedDeps(item, form), () => spyD(inp(item, form)));
-    memoW.commit(warningsDeps(item, form), () =>
+    memoW.commit(warningsDeps(item, form, memoD.value), () =>
       spyW({
         mode: "existing",
         selectedItem: item,
