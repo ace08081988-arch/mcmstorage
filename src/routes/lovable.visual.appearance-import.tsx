@@ -48,7 +48,7 @@ function AppearanceImportHarness() {
       raw = JSON.parse(json);
     } catch (e) {
       setParseError(e instanceof Error ? e.message : "parse error");
-      const invalid = { ok: false, reason: "invalid" as const };
+      const invalid: MigrateResult = { ok: false, reason: "invalid" };
       logAppearanceMigration("paste", invalid);
       setResult(invalid);
       return;
