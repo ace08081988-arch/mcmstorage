@@ -60,6 +60,10 @@ const ITEMS: WItem[] = [
  * ke ringkasan real-time yang dilihat user setelah interaksi tersebut).
  */
 function createBeliTabHarness() {
+  // Simpan items di dalam harness supaya kita bisa mensimulasi refetch —
+  // mengganti identitas object item tanpa mengubah kontennya (analog ke
+  // hasil re-query supabase yang mengembalikan row baru dengan nilai sama).
+  let items: WItem[] = ITEMS.map((it) => ({ ...it }));
   const state = {
     mode: "existing" as "existing" | "new",
     itemId: "botol-500",
@@ -82,7 +86,7 @@ function createBeliTabHarness() {
 
   function selectedItem(): WItem | null {
     return state.mode === "existing"
-      ? ITEMS.find((i) => i.id === state.itemId) ?? null
+      ? items.find((i) => i.id === state.itemId) ?? null
       : null;
   }
 
@@ -123,6 +127,23 @@ function createBeliTabHarness() {
   return {
     state,
     selectedItem,
+    /** Snapshot resetKey saat ini — dipakai test guard resetKey. */
+    resetKey() {
+      return beliResetKey({
+        mode: state.mode,
+        itemId: state.itemId,
+        packageType: state.newPackageType,
+      });
+    },
+    /**
+     * Simulasi refetch daftar items dari server: setiap object diganti
+     * dengan clone (identitas baru) tapi konten sama. resetKey TIDAK
+     * berubah karena mode/itemId/packageType tetap.
+     */
+    refetchItems() {
+      items = items.map((it) => ({ ...it }));
+      commitRender();
+    },
     setItemId(id: string) {
       state.itemId = id;
       commitRender();
@@ -298,5 +319,101 @@ describe("BeliTab — ringkasan real-time saat mengganti itemId / packageType", 
     expect(w2Text).not.toBe(w1Text);
     // Setelah reset, harga = 0 → tidak boleh ada warning "harga jauh di atas avg".
     expect(w2Text.toLowerCase()).not.toMatch(/di atas rata|di atas avg|terlalu tinggi/);
+  });
+});
+
+describe("BeliTab — derived/warnings diperbarui HANYA setelah resetKey berubah", () => {
+  let h: ReturnType<typeof createBeliTabHarness>;
+
+  beforeEach(() => {
+    h = createBeliTabHarness();
+  });
+
+  it("refetch items (identitas baru, konten sama) TIDAK mengubah resetKey, derived, warnings", () => {
+    // Isi form dengan nilai bermakna agar warnings pasti tercompute.
+    h.setPricePerPackage("50000");
+    h.setPackageQty("3");
+    const before = h.snapshot();
+    const keyBefore = h.resetKey();
+
+    // Refetch: setiap item punya identitas baru tapi konten identik.
+    h.refetchItems();
+
+    const after = h.snapshot();
+    const keyAfter = h.resetKey();
+
+    // resetKey stabil — trigger (mode/itemId/packageType) tidak berubah.
+    expect(keyAfter).toBe(keyBefore);
+    // Nilai efektif derived tetap sama meski object items diganti.
+    expect(after.derived.effPackageType).toBe(before.derived.effPackageType);
+    expect(after.derived.effBaseUnit).toBe(before.derived.effBaseUnit);
+    expect(after.derived.effectivePkgSize).toBe(before.derived.effectivePkgSize);
+    expect(after.derived.pkgQ).toBe(before.derived.pkgQ);
+    expect(after.derived.price).toBe(before.derived.price);
+    expect(after.derived.baseAdded).toBe(before.derived.baseAdded);
+    expect(after.derived.totalCost).toBe(before.derived.totalCost);
+    // Warnings identik pesannya (content-based, bukan by reference).
+    expect(after.warnings.map((w) => `${w.level}:${w.message}`)).toEqual(
+      before.warnings.map((w) => `${w.level}:${w.message}`),
+    );
+  });
+
+  it("ganti itemId → resetKey berubah lalu derived & warnings mengikuti item baru", () => {
+    h.setPricePerPackage("50000");
+    const before = h.snapshot();
+    const keyBefore = h.resetKey();
+    expect(before.derived.effPackageType).toBe("botol");
+    expect(before.derived.effectivePkgSize).toBe(500);
+
+    h.setItemId("gram-1000");
+    const keyAfter = h.resetKey();
+    const after = h.snapshot();
+
+    // resetKey wajib berubah sebagai prasyarat pembaruan.
+    expect(keyAfter).not.toBe(keyBefore);
+    // derived sekarang wajib mencerminkan item BARU, bukan botol lama.
+    expect(after.derived.effPackageType).toBe("gram");
+    expect(after.derived.effBaseUnit).toBe("g");
+    expect(after.derived.effectivePkgSize).toBe(1000);
+    // Reset effect telah menghapus harga item sebelumnya — tercermin di derived.
+    expect(h.state.pricePerPackage).toBe("");
+    expect(after.derived.price).toBe(0);
+  });
+
+  it("ganti packageType di mode 'new' → resetKey berubah, derived mengikuti packageType baru", () => {
+    h.setMode("new");
+    h.setNewPackageType("botol");
+    h.setPricePerPackage("30000");
+    const keyBefore = h.resetKey();
+    const before = h.snapshot();
+    expect(before.derived.effPackageType).toBe("botol");
+
+    h.setNewPackageType("gram");
+    const keyAfter = h.resetKey();
+    const after = h.snapshot();
+
+    expect(keyAfter).not.toBe(keyBefore);
+    expect(after.derived.effPackageType).toBe("gram");
+    // Harga direset sesuai kontrak reset effect.
+    expect(h.state.pricePerPackage).toBe("");
+    expect(after.derived.price).toBe(0);
+  });
+
+  it("ganti mode existing↔new → resetKey berubah, derived beralih ke source data yang sesuai", () => {
+    // Awal: existing/botol.
+    const keyExisting = h.resetKey();
+    const beforeExisting = h.snapshot();
+    expect(beforeExisting.derived.effPackageType).toBe("botol");
+    expect(beforeExisting.derived.effectivePkgSize).toBe(500);
+
+    h.setMode("new");
+    const keyNew = h.resetKey();
+    const afterNew = h.snapshot();
+
+    expect(keyNew).not.toBe(keyExisting);
+    // Di mode new, sumber effPackageType/size = state.new*, bukan item.
+    expect(afterNew.derived.effPackageType).toBe(h.state.newPackageType);
+    // Ukuran mengikuti state.newPackageSize (bukan 500 dari botol lama).
+    expect(afterNew.derived.effectivePkgSize).toBe(Number(h.state.newPackageSize));
   });
 });
