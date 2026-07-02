@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { getScrollGuardConfig } from "@/lib/scroll-guard-config";
 import { useAdminStatus } from "@/hooks/use-is-admin";
 import { ADMIN_ONLY_URLS, filterSidebarItemsForAdmin } from "@/lib/admin-sidebar-visibility";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Global "scroll aktif" flag. Sekali ada scroll event dari elemen apapun
@@ -345,7 +346,33 @@ export function AppSidebar() {
     window.addEventListener("mcm:app-mode-change", on);
     return () => window.removeEventListener("mcm:app-mode-change", on);
   }, []);
-  const chatOnly = isChatOnly();
+  // Chat-only bisa berasal dari (a) build/localStorage flag, atau (b)
+  // profil akun (`profiles.chat_only`) — pengguna yang mendaftar via
+  // pilihan "Chat" hanya boleh melihat fitur komunikasi walaupun sedang
+  // membuka build MCM Storage penuh.
+  const [dbChatOnly, setDbChatOnly] = useState(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const { data: userData } = await supabase.auth.getUser();
+        const uid = userData.user?.id;
+        if (!uid) return;
+        const { data } = await supabase
+          .from("profiles")
+          .select("chat_only")
+          .eq("id", uid)
+          .maybeSingle();
+        if (!cancelled) setDbChatOnly(Boolean(data?.chat_only));
+      } catch {
+        /* abaikan — fallback ke flag build */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const chatOnly = isChatOnly() || dbChatOnly;
   // Sampai status admin dipastikan (`isCheckingAdmin`), perlakukan sebagai
   // non-admin agar menu admin TIDAK berkedip muncul lalu hilang untuk user
   // biasa. Setelah query `has_role` selesai, sidebar akan diperbarui.
