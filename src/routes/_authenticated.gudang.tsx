@@ -1706,6 +1706,18 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   );
   const { effPackageType, effBaseUnit, effectivePkgSize, kartonActive, pkgQ, price, baseAdded, totalCost } = derived;
   const baseUnit = effBaseUnit;
+  // Label & ringkasan HARUS mengikuti pilihan Jenis kemasan pada mode "new"
+  // atau item terpilih pada mode "existing" — dihitung langsung tanpa
+  // memoization agar tidak pernah tertinggal sinkron dengan dropdown.
+  const displayPackageType: PackageType = mode === "existing" && isWItem(selectedItem)
+    ? (selectedItem.package_type as PackageType)
+    : packageType;
+  const displayBaseUnit: "g" | "pcs" = mode === "existing" && isWItem(selectedItem)
+    ? (selectedItem.base_unit as "g" | "pcs")
+    : defaultBase(packageType);
+  const displayPkgSize: number = mode === "existing" && isWItem(selectedItem)
+    ? Number(selectedItem.package_size) || 0
+    : (packageType === "pcs" ? 1 : Number(packageSize) || 0);
   // `warnings` — memoized: dep array minimal (mode, itemId, packageType,
   // derived, priceMode, inputKarton). Refetch identitas selectedItem tidak
   // menembak memo karena selectedItem TIDAK ada di deps.
