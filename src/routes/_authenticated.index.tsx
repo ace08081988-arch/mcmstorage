@@ -801,6 +801,7 @@ function Index() {
               ))}
               <DownloadStorageApkShortcut />
               <DownloadChatApkShortcut />
+              <CopyChatApkLinksButton />
             </div>
           </div>
 
