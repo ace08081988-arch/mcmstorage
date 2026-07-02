@@ -1238,10 +1238,13 @@ export type Database = {
       }
       order_requests: {
         Row: {
+          cart_group_id: string | null
+          conversation_id: string | null
           created_at: string
           customer_id: string | null
           id: string
-          item_id: string
+          item_id: string | null
+          item_name: string | null
           note: string | null
           price_per_unit: number | null
           qty: number
@@ -1251,10 +1254,13 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          cart_group_id?: string | null
+          conversation_id?: string | null
           created_at?: string
           customer_id?: string | null
           id?: string
-          item_id: string
+          item_id?: string | null
+          item_name?: string | null
           note?: string | null
           price_per_unit?: number | null
           qty: number
@@ -1264,10 +1270,13 @@ export type Database = {
           user_id: string
         }
         Update: {
+          cart_group_id?: string | null
+          conversation_id?: string | null
           created_at?: string
           customer_id?: string | null
           id?: string
-          item_id?: string
+          item_id?: string | null
+          item_name?: string | null
           note?: string | null
           price_per_unit?: number | null
           qty?: number
@@ -1277,6 +1286,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "order_requests_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "order_requests_customer_id_fkey"
             columns: ["customer_id"]
@@ -2877,6 +2893,10 @@ export type Database = {
         Returns: undefined
       }
       check_acknowledge_rate_limit: { Args: never; Returns: Json }
+      create_chat_cart: {
+        Args: { p_conversation_id: string; p_lines: Json; p_note?: string }
+        Returns: string
+      }
       create_group: {
         Args: { _member_ids: string[]; _title: string }
         Returns: string

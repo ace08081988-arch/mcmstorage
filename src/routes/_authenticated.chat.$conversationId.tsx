@@ -79,6 +79,7 @@ import { SaveAsQuickReplyDialog } from "@/components/chat/SaveAsQuickReplyDialog
 import { QuickReplyPopover } from "@/components/chat/QuickReplyPopover";
 import { StickerPickerDialog, parseStickerFromBody } from "@/components/chat/StickerPickerDialog";
 import { ProductSharePopover } from "@/components/chat/ProductSharePopover";
+import { CartComposer } from "@/components/chat/CartComposer";
 import {
   ConversationSearchDialog,
   MediaLinksDialog,
@@ -1478,6 +1479,11 @@ function ChatRoomPage() {
             conversationId={conversationId}
             disabled={chatBlocked}
             peerName={displayedPeerName}
+            onSent={() => { void othersRead.refetch(); }}
+          />
+          <CartComposer
+            conversationId={conversationId}
+            disabled={chatBlocked}
             onSent={() => { void othersRead.refetch(); }}
           />
           {!body.trim() ? (
