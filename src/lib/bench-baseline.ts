@@ -25,6 +25,9 @@ export type BaselineScenario = {
   bestMs: number;
   /** p95 baseline (opsional; hanya untuk cek flakiness). */
   p95Ms?: number;
+  /** Override per-scenario untuk ambang flakiness. */
+  maxCv?: number;
+  p95Pct?: number;
   mode: "batched" | "sequential";
 };
 export type BaselineFile = {
@@ -153,11 +156,13 @@ export function checkFlakiness(
   const entry = baseline?.scenarios[scenario];
   const p95Pct =
     opts.p95Pct ??
+    entry?.p95Pct ??
     (Number(process.env.BENCH_P95_PCT) ||
       baseline?.flakiness?.p95PctDefault ||
       DEFAULT_P95_PCT);
   const maxCv =
     opts.maxCv ??
+    entry?.maxCv ??
     (Number(process.env.BENCH_MAX_CV) ||
       baseline?.flakiness?.maxCvDefault ||
       DEFAULT_MAX_CV);
