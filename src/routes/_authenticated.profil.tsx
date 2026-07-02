@@ -43,6 +43,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { PushNotificationSettings } from "@/components/chat/PushNotificationSettings";
 import { OrgNameSettings } from "@/components/OrgNameSettings";
 import { UpgradeToStorageCard } from "@/components/UpgradeToStorageCard";
+import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
 
 export const Route = createFileRoute("/_authenticated/profil")({
   component: ProfilPage,
@@ -476,6 +477,20 @@ function ProfilPage() {
       <Separator />
 
       <UpgradeToStorageCard />
+
+      <Separator />
+
+      <section className="space-y-2">
+        <div>
+          <h2 className="text-sm font-semibold">Pintasan unduhan</h2>
+          <p className="text-[11px] text-muted-foreground">
+            Unduh APK MCM Chat versi terbaru tanpa membuka halaman /download.
+          </p>
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:max-w-sm">
+          <DownloadChatApkShortcut />
+        </div>
+      </section>
     </main>
   );
 }
