@@ -125,6 +125,17 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
+      // E2E banner mismatch di /diagnostik/paket: memverifikasi
+      // `diag-mismatch` muncul saat payload mengandung override display
+      // yang menyimpang dari derived (mis. displayBaseUnitOverride="pcs"
+      // padahal effBaseUnit="g"), lalu hilang setelah impor payload
+      // benar (override direset ke null).
+      name: "diagnostik-paket-mismatch-banner-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /diagnostik-paket-mismatch-banner\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
       // E2E visibilitas menu admin. Harness publik no-auth memverifikasi
       // (a) `filterSidebarItemsForAdmin` menyembunyikan `/pengaturan-apk`
       // & `/email-queue` dari non-admin, (b) klasifikasi halaman APK
