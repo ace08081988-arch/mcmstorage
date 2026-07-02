@@ -1,0 +1,197 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Gudang — snapshot tombol Reset / Batal > Batal edit qty/price — kembali ke snapshot awal > simpan snapshot awal → user mutasi qty & price → tombol Batal restore 1`] = `
+"[FORM] mode=existing · pt=gram · size=1000 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 gram (= 2 kg)
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=2000 · totalCost=20000
+
+---USER EDIT (belum submit)---
+
+[FORM] mode=existing · pt=gram · size=1000 · qty="8" · pricePkg="17500.5" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 8 gram
+[SUM] Tambahan stok | 8 gram (= 8 kg)
+[SUM] Harga per gram | Rp 17.501
+[SUM] Harga per g | Rp 18
+[SUM] Total biaya | Rp 140.004
+[RAW] pkgQ=8 · price=17500.5 · baseAdded=8000 · totalCost=140004
+
+---BATAL (restore)---
+
+[FORM] mode=existing · pt=gram · size=1000 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 gram (= 2 kg)
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=2000 · totalCost=20000"
+`;
+
+exports[`Gudang — snapshot tombol Reset / Batal > Hard reset (resetBeliForm) — snapshot default pabrik > hard reset dari dirty: existing + botol + karton ON + qty=3 + price=20000 → identik dengan default pabrik 1`] = `
+"[FORM] mode=existing · pt=botol · size=500 · qty="3" · pricePkg="20000" · priceBase="" · priceMode=package · karton=ON
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 300 botol (3 karton)
+[SUM] Tambahan stok | 300 botol (= 150.000 pcs) · = 3 karton
+[SUM] Harga per botol | Rp 200
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 60.000
+[RAW] pkgQ=300 · price=200 · baseAdded=150000 · totalCost=60000
+
+---HARD RESET---
+
+[FORM] mode=new · pt=botol · size=500 · qty="1" · pricePkg="" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 1 botol
+[SUM] Tambahan stok | 500 pcs
+[SUM] Harga per botol | Rp 0
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=1 · price=0 · baseAdded=500 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot tombol Reset / Batal > Hard reset (resetBeliForm) — snapshot default pabrik > hard reset dari dirty: new + gram + qty=5 + price=15000 → identik dengan default pabrik 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="5" · pricePkg="15000" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 5 gram
+[SUM] Tambahan stok | 5 kg
+[SUM] Harga per gram | Rp 15.000
+[SUM] Harga per g | Rp 15
+[SUM] Total biaya | Rp 75.000
+[RAW] pkgQ=5 · price=15000 · baseAdded=5000 · totalCost=75000
+
+---HARD RESET---
+
+[FORM] mode=new · pt=botol · size=500 · qty="1" · pricePkg="" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 1 botol
+[SUM] Tambahan stok | 500 pcs
+[SUM] Harga per botol | Rp 0
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=1 · price=0 · baseAdded=500 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot tombol Reset / Batal > Hard reset (resetBeliForm) — snapshot default pabrik > hard reset dari dirty: new + pcs + priceMode=base + pricePerBase=4500 → identik dengan default pabrik 1`] = `
+"[FORM] mode=new · pt=pcs · size=1 · qty="10" · pricePkg="" · priceBase="4500" · priceMode=base · karton=OFF
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 10 pcs
+[SUM] Tambahan stok | 10 pcs
+[SUM] Harga per pcs | Rp 4.500
+[SUM] Total biaya | Rp 45.000
+[RAW] pkgQ=10 · price=4500 · baseAdded=10 · totalCost=45000
+
+---HARD RESET---
+
+[FORM] mode=new · pt=botol · size=500 · qty="1" · pricePkg="" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 1 botol
+[SUM] Tambahan stok | 500 pcs
+[SUM] Harga per botol | Rp 0
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=1 · price=0 · baseAdded=500 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot tombol Reset / Batal > Hard reset (resetBeliForm) — snapshot default pabrik > hard reset dari dirty: nilai ekstrem (qty negatif desimal + price desimal) → identik dengan default pabrik 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="-1.5" · pricePkg="12500.75" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | -1,5 gram
+[SUM] Tambahan stok | -1,5 kg
+[SUM] Harga per gram | Rp 12.501
+[SUM] Harga per g | Rp 13
+[SUM] Total biaya | -Rp 18.751
+[RAW] pkgQ=-1.5 · price=12500.75 · baseAdded=-1500 · totalCost=-18751.125
+
+---HARD RESET---
+
+[FORM] mode=new · pt=botol · size=500 · qty="1" · pricePkg="" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 1 botol
+[SUM] Tambahan stok | 500 pcs
+[SUM] Harga per botol | Rp 0
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=1 · price=0 · baseAdded=500 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot tombol Reset / Batal > Hard reset (resetBeliForm) — snapshot default pabrik > snapshot: state default setelah hard reset 1`] = `
+"[FORM] mode=new · pt=botol · size=500 · qty="1" · pricePkg="" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 1 botol
+[SUM] Tambahan stok | 500 pcs
+[SUM] Harga per botol | Rp 0
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=1 · price=0 · baseAdded=500 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot tombol Reset / Batal > Soft reset (ganti item/mode/packageType) — angka nol-kan otomatis > soft reset existing+botol karton ON → ganti mode=new (angka & karton reset) 1`] = `
+"[FORM] mode=existing · pt=botol · size=500 · qty="4" · pricePkg="20000" · priceBase="" · priceMode=package · karton=ON
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 400 botol (4 karton)
+[SUM] Tambahan stok | 400 botol (= 200.000 pcs) · = 4 karton
+[SUM] Harga per botol | Rp 200
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 80.000
+[RAW] pkgQ=400 · price=200 · baseAdded=200000 · totalCost=80000
+
+---SOFT RESET (resetKey effect)---
+
+[FORM] mode=new · pt=botol · size=500 · qty="1" · pricePkg="" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 1 botol
+[SUM] Tambahan stok | 500 pcs
+[SUM] Harga per botol | Rp 0
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=1 · price=0 · baseAdded=500 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot tombol Reset / Batal > Soft reset (ganti item/mode/packageType) — angka nol-kan otomatis > soft reset new+gram qty=5 price=15000 → ganti packageType=botol 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="5" · pricePkg="15000" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 5 gram
+[SUM] Tambahan stok | 5 kg
+[SUM] Harga per gram | Rp 15.000
+[SUM] Harga per g | Rp 15
+[SUM] Total biaya | Rp 75.000
+[RAW] pkgQ=5 · price=15000 · baseAdded=5000 · totalCost=75000
+
+---SOFT RESET (resetKey effect)---
+
+[FORM] mode=new · pt=botol · size=500 · qty="1" · pricePkg="" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 1 botol
+[SUM] Tambahan stok | 500 pcs
+[SUM] Harga per botol | Rp 0
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=1 · price=0 · baseAdded=500 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot tombol Reset / Batal > Soft reset (ganti item/mode/packageType) — angka nol-kan otomatis > soft reset new+gram → ganti packageType=pcs (priceMode auto → base) 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="3" · pricePkg="9000" · priceBase="" · priceMode=package · karton=OFF
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 3 gram
+[SUM] Tambahan stok | 3 kg
+[SUM] Harga per gram | Rp 9.000
+[SUM] Harga per g | Rp 9
+[SUM] Total biaya | Rp 27.000
+[RAW] pkgQ=3 · price=9000 · baseAdded=3000 · totalCost=27000
+
+---SOFT RESET (resetKey effect)---
+
+[FORM] mode=new · pt=pcs · size=1 · qty="1" · pricePkg="" · priceBase="" · priceMode=base · karton=OFF
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 1 pcs
+[SUM] Tambahan stok | 1 pcs
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=1 · price=0 · baseAdded=1 · totalCost=0"
+`;
