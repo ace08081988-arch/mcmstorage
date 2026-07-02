@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
-  Phone, PhoneMissed, PhoneCall, Ban, AlertCircle, CheckCircle2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -19,6 +18,7 @@ import {
   type CallRow,
 } from "@/lib/calls";
 import { supabase } from "@/integrations/supabase/client";
+import { getCallStatusVisual, type CallVisualStatus } from "@/lib/call-status-visual";
 
 /**
  * Full-screen UI panggilan. Bertanggung jawab atas: setup peer, negosiasi
@@ -228,63 +228,24 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     if (a && a.paused && a.srcObject) void a.play().catch(() => { /* ignore */ });
   }, []);
 
+  // Pemetaan ikon/warna/label/hint terpusat — sama dengan halaman /panggilan.
+  const visualKey: CallVisualStatus =
+    phase === "connecting" || phase === "dialing" || phase === "ringing" || phase === "in-call"
+      ? (phase as CallVisualStatus)
+      : (finalStatus ?? "ended");
+  const visual = useMemo(
+    () => getCallStatusVisual(visualKey, { outgoing: role === "caller" }),
+    [visualKey, role],
+  );
+  const StatusIcon = visual.Icon;
+  const statusIconClass = visual.colorClass;
+  const statusHint = visual.hint;
+
   const status = useMemo(() => {
     if (errorMsg && phase === "ended") return errorMsg;
-    if (phase === "connecting") return "Menghubungkan…";
-    if (phase === "dialing") return "Memanggil…";
-    if (phase === "ringing") return "Berdering…";
     if (phase === "in-call") return formatCallDuration(seconds);
-    if (finalStatus === "missed") return "Tidak dijawab";
-    if (finalStatus === "declined") return "Ditolak";
-    if (finalStatus === "cancelled") return "Dibatalkan";
-    if (finalStatus === "failed") return "Panggilan gagal";
-    if (finalStatus === "ended") return "Diterima · selesai";
-    return "Panggilan berakhir";
-  }, [phase, seconds, errorMsg, finalStatus]);
-
-  // Deskripsi lengkap untuk tooltip/toast saat status pill ditekan.
-  const statusHint = useMemo(() => {
-    if (phase === "connecting") return "Menghubungkan — sedang menyiapkan panggilan.";
-    if (phase === "dialing") return "Memanggil — menunggu perangkat penerima.";
-    if (phase === "ringing") return "Berdering — panggilan sedang menunggu dijawab.";
-    if (phase === "in-call") return "Diterima — panggilan berhasil tersambung.";
-    if (finalStatus === "missed") return "Tidak dijawab — panggilan tidak diangkat penerima.";
-    if (finalStatus === "declined") return "Ditolak — penerima menolak panggilan.";
-    if (finalStatus === "cancelled") return "Dibatalkan — panggilan dihentikan sebelum diangkat.";
-    if (finalStatus === "failed") return "Gagal — panggilan tidak dapat tersambung.";
-    if (finalStatus === "ended") return "Diterima — panggilan berhasil tersambung dan selesai.";
-    return "Panggilan berakhir.";
-  }, [phase, finalStatus]);
-
-  // Ikon + warna untuk status bar sesuai fase / status akhir.
-  const { StatusIcon, statusIconClass } = useMemo(() => {
-    if (phase === "connecting" || phase === "dialing") {
-      return { StatusIcon: PhoneCall, statusIconClass: "text-white/70" };
-    }
-    if (phase === "ringing") {
-      return { StatusIcon: Phone, statusIconClass: "text-sky-300" };
-    }
-    if (phase === "in-call") {
-      return { StatusIcon: PhoneCall, statusIconClass: "text-emerald-300" };
-    }
-    // ended — bedakan per status akhir
-    if (finalStatus === "missed") {
-      return { StatusIcon: PhoneMissed, statusIconClass: "text-red-400" };
-    }
-    if (finalStatus === "declined") {
-      return { StatusIcon: PhoneOff, statusIconClass: "text-amber-300" };
-    }
-    if (finalStatus === "cancelled") {
-      return { StatusIcon: Ban, statusIconClass: "text-amber-300" };
-    }
-    if (finalStatus === "failed") {
-      return { StatusIcon: AlertCircle, statusIconClass: "text-red-400" };
-    }
-    if (finalStatus === "ended") {
-      return { StatusIcon: CheckCircle2, statusIconClass: "text-emerald-300" };
-    }
-    return { StatusIcon: PhoneOff, statusIconClass: "text-white/70" };
-  }, [phase, finalStatus]);
+    return visual.label;
+  }, [phase, seconds, errorMsg, visual.label]);
 
   // Ringback tone (nada tut-tut) untuk caller selama menunggu jawaban.
   // Pola tipe Indonesia: ~1 detik nada 425 Hz + ~4 detik hening,
