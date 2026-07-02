@@ -1,6 +1,10 @@
 // ============================================================================
 // Migrator skema ekspor/impor pengaturan tampilan (mcm.appearance-settings)
 // ----------------------------------------------------------------------------
+// Kontrak lengkap per-versi, aturan clamping, dan checklist rilis:
+//   docs/appearance-schema.md
+// Wajib dibaca sebelum menaikkan EXPORT_SCHEMA_VERSION.
+// ----------------------------------------------------------------------------
 // Diekstrak dari `src/routes/_authenticated.pengaturan-tampilan.tsx` agar dapat
 // diuji unit-per-unit. Aturan migrasi:
 //   - v1  : field appearance ada di root payload (mis. `raw.theme`,
