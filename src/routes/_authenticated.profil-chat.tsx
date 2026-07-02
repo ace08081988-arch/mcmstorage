@@ -103,6 +103,7 @@ function ProfilChatPage() {
     enabled: apkPickerOpen,
   });
   const chatReleases = detailQuery.data?.releases ?? [];
+  const history = useChatApkHistory();
   const latestKey = chatReleases[0]?.name ?? null;
 
   return (
