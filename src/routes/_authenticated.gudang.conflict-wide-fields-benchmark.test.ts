@@ -580,8 +580,12 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     attachStats(entry, stats, samples);
     ARTIFACT_ENTRIES.push(entry);
     expect(varianceOk).toBe(true);
-    recordAndAssertBaseline("batched-20-rounds", "batched", best.ms, entry);
-    recordAndAssertFlakiness("batched-20-rounds", "batched", stats, entry);
+    try {
+      recordAndAssertBaseline("batched-20-rounds", "batched", best.ms, entry);
+      recordAndAssertFlakiness("batched-20-rounds", "batched", stats, entry);
+    } finally {
+      maybeProfile("batched-20-rounds", "batched", mutations, entry);
+    }
 
     // eslint-disable-next-line no-console
     console.info(
@@ -616,8 +620,12 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     attachStats(entry, stats, samples);
     ARTIFACT_ENTRIES.push(entry);
     expect(varianceOk).toBe(true);
-    recordAndAssertBaseline("sequential-20-rounds", "sequential", best.ms, entry);
-    recordAndAssertFlakiness("sequential-20-rounds", "sequential", stats, entry);
+    try {
+      recordAndAssertBaseline("sequential-20-rounds", "sequential", best.ms, entry);
+      recordAndAssertFlakiness("sequential-20-rounds", "sequential", stats, entry);
+    } finally {
+      maybeProfile("sequential-20-rounds", "sequential", mutations, entry);
+    }
 
     // eslint-disable-next-line no-console
     console.info(
@@ -670,10 +678,15 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     };
     attachStats(seqEntry, seqRun.stats, seqRun.samples);
     ARTIFACT_ENTRIES.push(batEntry, seqEntry);
-    recordAndAssertBaseline("ratio-batched", "batched", bat.ms, batEntry);
-    recordAndAssertBaseline("ratio-sequential", "sequential", seq.ms, seqEntry);
-    recordAndAssertFlakiness("ratio-batched", "batched", batRun.stats, batEntry);
-    recordAndAssertFlakiness("ratio-sequential", "sequential", seqRun.stats, seqEntry);
+    try {
+      recordAndAssertBaseline("ratio-batched", "batched", bat.ms, batEntry);
+      recordAndAssertBaseline("ratio-sequential", "sequential", seq.ms, seqEntry);
+      recordAndAssertFlakiness("ratio-batched", "batched", batRun.stats, batEntry);
+      recordAndAssertFlakiness("ratio-sequential", "sequential", seqRun.stats, seqEntry);
+    } finally {
+      maybeProfile("ratio-batched", "batched", mutations, batEntry);
+      maybeProfile("ratio-sequential", "sequential", mutations, seqEntry);
+    }
   });
 
   it("skala ronde: 4× ronde tidak boleh > 8× waktu batched (sub-kuadratik)", () => {
@@ -716,9 +729,14 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     };
     attachStats(bigEntry, bigRun.stats, bigRun.samples);
     ARTIFACT_ENTRIES.push(smallEntry, bigEntry);
-    recordAndAssertBaseline("scale-rounds-5", "batched", small.ms, smallEntry);
-    recordAndAssertBaseline("scale-rounds-20", "batched", big.ms, bigEntry);
-    recordAndAssertFlakiness("scale-rounds-5", "batched", smallRun.stats, smallEntry);
-    recordAndAssertFlakiness("scale-rounds-20", "batched", bigRun.stats, bigEntry);
+    try {
+      recordAndAssertBaseline("scale-rounds-5", "batched", small.ms, smallEntry);
+      recordAndAssertBaseline("scale-rounds-20", "batched", big.ms, bigEntry);
+      recordAndAssertFlakiness("scale-rounds-5", "batched", smallRun.stats, smallEntry);
+      recordAndAssertFlakiness("scale-rounds-20", "batched", bigRun.stats, bigEntry);
+    } finally {
+      maybeProfile("scale-rounds-5", "batched", buildWideConflict(5), smallEntry);
+      maybeProfile("scale-rounds-20", "batched", buildWideConflict(20), bigEntry);
+    }
   });
 });
