@@ -2920,6 +2920,7 @@ export type Database = {
         }[]
       }
       get_email_cron_secret: { Args: never; Returns: string }
+      get_worker_portal_public_config: { Args: never; Returns: Json }
       has_active_pro: { Args: { _uid: string }; Returns: boolean }
       has_role: {
         Args: {
@@ -2999,6 +3000,7 @@ export type Database = {
       prep_peek_task: { Args: { _token: string }; Returns: Json }
       prep_pin_locked_until: { Args: { _token: string }; Returns: string }
       prep_pin_reset: { Args: { _token: string }; Returns: Json }
+      prep_read_allowed: { Args: { _share_token: string }; Returns: boolean }
       prep_reset_pin: {
         Args: { _pin: string; _task_id: string }
         Returns: boolean
