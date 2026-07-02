@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility } from "lucide-react";
+import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import {
@@ -20,7 +20,7 @@ import {
   BG_PRESETS,
   LS,
 } from "@/components/appearance-settings";
-import { useAppPrefs } from "@/lib/app-prefs";
+import { useAppPrefs, getAppPrefs, setAppPrefs } from "@/lib/app-prefs";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 
 const COMPACT_LS = "app-compact-mode";
@@ -152,6 +152,7 @@ function PengaturanTampilanPage() {
   );
   const [compact, setCompact] = useState<boolean>(() => readCompact());
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const importInputRef = useRef<HTMLInputElement>(null);
 
   const save = (k: string, v: string) => {
     localStorage.setItem(k, v);
@@ -207,6 +208,105 @@ function PengaturanTampilanPage() {
     setCompact(false); writeCompact(false);
     set({ fontScale: 1 });
     toast.success("Tampilan dikembalikan ke bawaan");
+  };
+
+  const exportSettings = () => {
+    try {
+      const payload = {
+        __type: "mcm.appearance-settings",
+        version: 1,
+        exportedAt: new Date().toISOString(),
+        appearance: {
+          theme: localStorage.getItem(LS.theme),
+          font: localStorage.getItem(LS.font),
+          size: localStorage.getItem(LS.size),
+          accent: localStorage.getItem(LS.accent),
+          radius: localStorage.getItem(LS.radius),
+          bgImage: localStorage.getItem(LS.bgImage),
+          bgOverlay: localStorage.getItem(LS.bgOverlay),
+          bgBlur: localStorage.getItem(LS.bgBlur),
+        },
+        compact: readCompact(),
+        appPrefs: {
+          fontScale: prefs.fontScale,
+          highContrast: prefs.highContrast,
+          reduceMotion: prefs.reduceMotion,
+        },
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().slice(0, 10);
+      a.href = url;
+      a.download = `mcm-pengaturan-tampilan-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      toast.success("Pengaturan tampilan diekspor");
+    } catch {
+      toast.error("Gagal mengekspor pengaturan");
+    }
+  };
+
+  const importSettings = (file: File | null) => {
+    if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File terlalu besar (maks 10MB).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const data = JSON.parse(String(reader.result ?? "{}"));
+        if (!data || data.__type !== "mcm.appearance-settings") {
+          toast.error("File tidak dikenali sebagai pengaturan tampilan MCM.");
+          return;
+        }
+        const ap = data.appearance ?? {};
+        const setOrRemove = (k: string, v: unknown) => {
+          if (v == null || v === "") localStorage.removeItem(k);
+          else localStorage.setItem(k, String(v));
+        };
+        setOrRemove(LS.theme, ap.theme);
+        setOrRemove(LS.font, ap.font);
+        setOrRemove(LS.size, ap.size);
+        setOrRemove(LS.accent, ap.accent);
+        setOrRemove(LS.radius, ap.radius);
+        setOrRemove(LS.bgImage, ap.bgImage);
+        setOrRemove(LS.bgOverlay, ap.bgOverlay);
+        setOrRemove(LS.bgBlur, ap.bgBlur);
+        applyAppearance();
+
+        setTheme((ap.theme as Theme) ?? "dark");
+        setFont((ap.font as FontFamily) ?? "sans");
+        setSize((ap.size as FontSize) ?? "md");
+        setAccent(ap.accent ?? "emerald");
+        setRadius(Number(ap.radius ?? 0.625));
+        setBgImage(ap.bgImage ?? "");
+        setBgOverlay(Number(ap.bgOverlay ?? 0.7));
+        setBgBlur(Number(ap.bgBlur ?? 0));
+
+        if (typeof data.compact === "boolean") {
+          setCompact(data.compact);
+          writeCompact(data.compact);
+        }
+        if (data.appPrefs && typeof data.appPrefs === "object") {
+          const cur = getAppPrefs();
+          setAppPrefs({
+            fontScale: Number.isFinite(data.appPrefs.fontScale) ? Number(data.appPrefs.fontScale) : cur.fontScale,
+            highContrast: Boolean(data.appPrefs.highContrast),
+            reduceMotion: Boolean(data.appPrefs.reduceMotion),
+          });
+        }
+        toast.success("Pengaturan tampilan berhasil diimpor");
+      } catch {
+        toast.error("File tidak valid atau rusak.");
+      } finally {
+        if (importInputRef.current) importInputRef.current.value = "";
+      }
+    };
+    reader.readAsText(file);
   };
 
   useEffect(() => {
@@ -566,6 +666,39 @@ function PengaturanTampilanPage() {
                 </div>
               </>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Tautan pengaturan lanjutan */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Download className="h-4 w-4" /> Ekspor & impor
+            </CardTitle>
+            <CardDescription className="text-xs">
+              Simpan pengaturan tampilan ke file JSON untuk dipindahkan atau dibagikan antar perangkat.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex flex-wrap gap-2">
+            <Button variant="outline" size="sm" onClick={exportSettings}>
+              <Download className="mr-1.5 h-3.5 w-3.5" />
+              Ekspor ke file
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => importInputRef.current?.click()}
+            >
+              <Upload className="mr-1.5 h-3.5 w-3.5" />
+              Impor dari file
+            </Button>
+            <input
+              ref={importInputRef}
+              type="file"
+              accept="application/json,.json"
+              className="hidden"
+              onChange={(e) => importSettings(e.target.files?.[0] ?? null)}
+            />
           </CardContent>
         </Card>
 
