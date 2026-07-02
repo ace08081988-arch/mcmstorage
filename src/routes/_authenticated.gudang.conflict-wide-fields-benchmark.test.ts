@@ -31,6 +31,11 @@ import {
 import { formatFlakinessMarkdown } from "@/lib/bench-flakiness-report";
 import { summarize, type SampleSummary } from "@/lib/bench-stats";
 import {
+  buildHistogram,
+  formatHistogramMarkdown,
+  type HistogramSummary,
+} from "@/lib/bench-histogram";
+import {
   createProfiler,
   isProfilingEnabled,
   formatProfileMarkdown,
@@ -540,6 +545,35 @@ afterAll(() => {
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn("[bench:flakiness] gagal menulis breakdown:", err);
+    }
+
+    // ----- Histogram / distribusi sampel per-scenario -----
+    // Memberi konteks visual untuk sebaran durasi: kita bisa langsung lihat
+    // di bin mana p50/p95 jatuh dan berapa banyak outlier di ekor kanan.
+    // Tanpa ini, angka best/p95/worst di tabel utama tak menunjukkan
+    // apakah distribusi menggendong ekor panjang (indikator flakiness real
+    // vs blip tunggal).
+    try {
+      const histograms: HistogramSummary[] = ARTIFACT_ENTRIES.map((e) =>
+        buildHistogram(e.scenario, e.mode, e.samples ?? []),
+      );
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-histogram.md"),
+        formatHistogramMarkdown(histograms),
+        "utf8",
+      );
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-histogram.json"),
+        JSON.stringify(
+          { generatedAt: new Date().toISOString(), histograms },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[bench:histogram] gagal menulis distribusi:", err);
     }
 
     // ----- Tren durasi antar-run -----
