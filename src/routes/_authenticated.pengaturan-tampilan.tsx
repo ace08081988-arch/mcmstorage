@@ -21,7 +21,20 @@ import {
   LS,
 } from "@/components/appearance-settings";
 import { useAppPrefs } from "@/lib/app-prefs";
-import { applyCompactMode, getCompactMode } from "@/components/CompactModeToggle";
+import { applyCompactMode, COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
+
+const COMPACT_LS = "app-compact-mode";
+function readCompact(): boolean {
+  if (typeof window === "undefined") return false;
+  const raw = localStorage.getItem(COMPACT_LS);
+  return raw == null ? true : raw === "1";
+}
+function writeCompact(v: boolean) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(COMPACT_LS, v ? "1" : "0");
+  document.documentElement.classList.toggle("compact", v);
+  try { window.dispatchEvent(new CustomEvent(COMPACT_MODE_EVENT, { detail: { on: v } })); } catch { /* ignore */ }
+}
 
 type Theme = "light" | "dark" | "system";
 type FontFamily = "sans" | "serif" | "mono" | "display";
@@ -137,9 +150,7 @@ function PengaturanTampilanPage() {
   const [bgBlur, setBgBlur] = useState<number>(() =>
     typeof window !== "undefined" ? Number(localStorage.getItem(LS.bgBlur) ?? "0") : 0,
   );
-  const [compact, setCompact] = useState<boolean>(() =>
-    typeof window !== "undefined" ? getCompactMode() : false,
-  );
+  const [compact, setCompact] = useState<boolean>(() => readCompact());
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const save = (k: string, v: string) => {
@@ -161,7 +172,7 @@ function PengaturanTampilanPage() {
     applyAppearance();
     // Density + font scale via app-prefs / compact-mode
     setCompact(p.values.compact);
-    applyCompactMode(p.values.compact);
+    writeCompact(p.values.compact);
     set({ fontScale: p.values.fontScale });
     toast.success(`Preset "${p.label}" diterapkan`, {
       description: p.desc,
@@ -193,7 +204,7 @@ function PengaturanTampilanPage() {
     setTheme("dark"); setFont("sans"); setSize("md");
     setAccent("emerald"); setRadius(0.625);
     setBgImage(""); setBgOverlay(0.7); setBgBlur(0);
-    setCompact(false); applyCompactMode(false);
+    setCompact(false); writeCompact(false);
     set({ fontScale: 1 });
     toast.success("Tampilan dikembalikan ke bawaan");
   };
@@ -371,7 +382,7 @@ function PengaturanTampilanPage() {
               </div>
               <Switch
                 checked={compact}
-                onCheckedChange={(v) => { setCompact(v); applyCompactMode(v); }}
+                onCheckedChange={(v) => { setCompact(v); writeCompact(v); }}
               />
             </div>
 
