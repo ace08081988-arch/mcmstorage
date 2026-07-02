@@ -382,6 +382,13 @@ describe("selektivitas: harga/quantity item berubah, packaging tetap", () => {
     __resetBeliWarningsMemo();
   });
 
+  // Helper: bikin varian item dengan override sembarang. Cast ke tipe
+  // BeliDerivedItem karena `stock_base`/`avg_cost_per_base` bukan bagian dari
+  // tipe derived (mereka hanya dipakai di warnings). Semua fungsi produksi
+  // menerima objek yang lebih luas — cast di sini hanya untuk memuaskan TS.
+  const mkItem = (over: Record<string, unknown> = {}) =>
+    ({ ...ITEM, ...over } as unknown as typeof ITEM & { package_type: string; package_size: number; base_unit: string });
+
   // Helper: bikin input warnings dari input derived.
   function warnInp(over?: Partial<BeliDerivedInput>) {
     const dIn = inp(over);
@@ -396,28 +403,28 @@ describe("selektivitas: harga/quantity item berubah, packaging tetap", () => {
   }
 
   it("derived STABIL saat hanya avg_cost_per_base yang berubah pada selectedItem", () => {
-    const a = computeBeliDerived(inp({ selectedItem: ({ ...ITEM, avg_cost_per_base: 20 } as any }));
-    const b = computeBeliDerived(inp({ selectedItem: ({ ...ITEM, avg_cost_per_base: 25 } as any }));
-    const c = computeBeliDerived(inp({ selectedItem: ({ ...ITEM, avg_cost_per_base: 999 } as any }));
+    const a = computeBeliDerived(inp({ selectedItem: mkItem({ avg_cost_per_base: 20 }) }));
+    const b = computeBeliDerived(inp({ selectedItem: mkItem({ avg_cost_per_base: 25 }) }));
+    const c = computeBeliDerived(inp({ selectedItem: mkItem({ avg_cost_per_base: 999 }) }));
     // packaging tuple identik → memo hit; referensi sama.
     expect(b).toBe(a);
     expect(c).toBe(a);
   });
 
   it("derived STABIL saat hanya stock_base yang berubah pada selectedItem", () => {
-    const a = computeBeliDerived(inp({ selectedItem: ({ ...ITEM, stock_base: 10_000 } as any }));
-    const b = computeBeliDerived(inp({ selectedItem: ({ ...ITEM, stock_base: 0 } as any }));
-    const c = computeBeliDerived(inp({ selectedItem: ({ ...ITEM, stock_base: 1_000_000 } as any }));
+    const a = computeBeliDerived(inp({ selectedItem: mkItem({ stock_base: 10_000 }) }));
+    const b = computeBeliDerived(inp({ selectedItem: mkItem({ stock_base: 0 }) }));
+    const c = computeBeliDerived(inp({ selectedItem: mkItem({ stock_base: 1_000_000 }) }));
     expect(b).toBe(a);
     expect(c).toBe(a);
   });
 
   it("derived STABIL saat stock_base + avg_cost_per_base berubah bersamaan", () => {
     const a = computeBeliDerived(
-      inp({ selectedItem: ({ ...ITEM, stock_base: 10_000, avg_cost_per_base: 20 } as any }),
+      inp({ selectedItem: mkItem({ stock_base: 10_000, avg_cost_per_base: 20 }) }),
     );
     const b = computeBeliDerived(
-      inp({ selectedItem: ({ ...ITEM, stock_base: 500, avg_cost_per_base: 5 } as any }),
+      inp({ selectedItem: mkItem({ stock_base: 500, avg_cost_per_base: 5 }) }),
     );
     expect(b).toBe(a);
   });
@@ -426,16 +433,16 @@ describe("selektivitas: harga/quantity item berubah, packaging tetap", () => {
     // pkgQ=2, pricePerPackage=10000, effectivePkgSize=500 → baseAdded=1000,
     // pricePerBase (agregat) = (2*10000)/1000 = 20.
     // avg=20 → ratio=1.0 → tidak ada warning harga.
-    const w1 = computeBeliWarnings(warnInp({ selectedItem: ({ ...ITEM, avg_cost_per_base: 20 } as any }));
+    const w1 = computeBeliWarnings(warnInp({ selectedItem: mkItem({ avg_cost_per_base: 20 }) }));
     expect(w1.some((w) => w.code === "PRICE_PER_BASE_HIGH")).toBe(false);
     expect(w1.some((w) => w.code === "PRICE_PER_BASE_LOW")).toBe(false);
 
     // Turunkan avg drastis: ratio 20/5 = 4 → PRICE_PER_BASE_HIGH.
-    const w2 = computeBeliWarnings(warnInp({ selectedItem: ({ ...ITEM, avg_cost_per_base: 5 } as any }));
+    const w2 = computeBeliWarnings(warnInp({ selectedItem: mkItem({ avg_cost_per_base: 5 }) }));
     expect(w2.some((w) => w.code === "PRICE_PER_BASE_HIGH")).toBe(true);
 
     // Naikkan avg drastis: ratio 20/100 = 0.2 → PRICE_PER_BASE_LOW.
-    const w3 = computeBeliWarnings(warnInp({ selectedItem: ({ ...ITEM, avg_cost_per_base: 100 } as any }));
+    const w3 = computeBeliWarnings(warnInp({ selectedItem: mkItem({ avg_cost_per_base: 100 }) }));
     expect(w3.some((w) => w.code === "PRICE_PER_BASE_LOW")).toBe(true);
 
     // Referensi warnings BERUBAH antar-skenario karena signature-nya
@@ -447,13 +454,13 @@ describe("selektivitas: harga/quantity item berubah, packaging tetap", () => {
 
   it("warnings STABIL (referensi sama) saat avg_cost_per_base berubah TAPI masih di dalam ambang deviasi", () => {
     // Ratio deviasi = 0.5 → aman selama avg antara ~13 dan 40 (harga aktual 20).
-    const w1 = computeBeliWarnings(warnInp({ selectedItem: ({ ...ITEM, avg_cost_per_base: 20 } as any }));
-    const w2 = computeBeliWarnings(warnInp({ selectedItem: ({ ...ITEM, avg_cost_per_base: 20 } as any }));
+    const w1 = computeBeliWarnings(warnInp({ selectedItem: mkItem({ avg_cost_per_base: 20 }) }));
+    const w2 = computeBeliWarnings(warnInp({ selectedItem: mkItem({ avg_cost_per_base: 20 }) }));
     expect(w2).toBe(w1); // memo hit langsung
     // Nilai berbeda tapi signature warnings tetap unik → refetch dengan nilai
     // baru menghasilkan alokasi baru (kontrol) — TAPI hasilnya tetap kosong
     // dari warning harga.
-    const w3 = computeBeliWarnings(warnInp({ selectedItem: ({ ...ITEM, avg_cost_per_base: 22 } as any }));
+    const w3 = computeBeliWarnings(warnInp({ selectedItem: mkItem({ avg_cost_per_base: 22 }) }));
     expect(w3.some((w) => w.code === "PRICE_PER_BASE_HIGH")).toBe(false);
     expect(w3.some((w) => w.code === "PRICE_PER_BASE_LOW")).toBe(false);
   });
@@ -461,25 +468,25 @@ describe("selektivitas: harga/quantity item berubah, packaging tetap", () => {
   it("warnings BERUBAH konten saat stock_base melintasi ambang BASE_ADDED_HUGE", () => {
     // baseAdded = 1000. Ambang: baseAdded > stock * 100 → stock < 10.
     // stock 10_000 → aman.
-    const wSafe = computeBeliWarnings(warnInp({ selectedItem: ({ ...ITEM, stock_base: 10_000 } as any }));
+    const wSafe = computeBeliWarnings(warnInp({ selectedItem: mkItem({ stock_base: 10_000 }) }));
     expect(wSafe.some((w) => w.code === "BASE_ADDED_HUGE")).toBe(false);
 
     // stock 5 → 1000 > 500 → trigger BASE_ADDED_HUGE.
-    const wHuge = computeBeliWarnings(warnInp({ selectedItem: ({ ...ITEM, stock_base: 5 } as any }));
+    const wHuge = computeBeliWarnings(warnInp({ selectedItem: mkItem({ stock_base: 5 }) }));
     expect(wHuge.some((w) => w.code === "BASE_ADDED_HUGE")).toBe(true);
     expect(wHuge).not.toBe(wSafe);
   });
 
   it("burst refetch (30×) yang mengubah HANYA avg_cost_per_base dalam ambang aman → derived tetap referensi awal, warnings tetap tanpa warning harga", () => {
     const dFirst = computeBeliDerived(
-      inp({ selectedItem: ({ ...ITEM, avg_cost_per_base: 20 } as any }),
+      inp({ selectedItem: mkItem({ avg_cost_per_base: 20 }) }),
     );
     for (let i = 0; i < 30; i++) {
       // Jitter kecil di sekitar 20 (masih dalam ±50%).
       const avg = 15 + (i % 10);
-      const dNext = computeBeliDerived(inp({ selectedItem: ({ ...ITEM, avg_cost_per_base: avg } }));
+      const dNext = computeBeliDerived(inp({ selectedItem: mkItem({ avg_cost_per_base: avg }) }));
       expect(dNext).toBe(dFirst); // derived referensi stabil
-      const w = computeBeliWarnings(warnInp({ selectedItem: ({ ...ITEM, avg_cost_per_base: avg } }));
+      const w = computeBeliWarnings(warnInp({ selectedItem: mkItem({ avg_cost_per_base: avg }) }));
       expect(w.some((x) => x.code === "PRICE_PER_BASE_HIGH")).toBe(false);
       expect(w.some((x) => x.code === "PRICE_PER_BASE_LOW")).toBe(false);
     }
