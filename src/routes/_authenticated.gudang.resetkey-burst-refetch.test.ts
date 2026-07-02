@@ -81,12 +81,14 @@ const ITEMS: Record<string, Item> = {
 };
 
 function refetch(id: string, seed: number): Item {
-  // Refetch: identitas baru, hanya field non-efektif yang bergeser.
+  // Refetch: identitas objek baru; hanya field yang TIDAK dipakai oleh
+  // derived maupun warnings yang bergeser (stock_base & name). Dengan
+  // begitu memoisasi berbasis resetKey harus selalu identik dengan
+  // fresh compute untuk resetKey aktif.
   const src = ITEMS[id];
   return {
     ...src,
     stock_base: (src.stock_base ?? 0) + seed,
-    avg_cost_per_base: (src.avg_cost_per_base ?? 0) + (seed % 3),
     name: `${id}-r${seed}`,
   };
 }
