@@ -278,7 +278,10 @@ function PengaturanAksesibilitasPage() {
       </div>
 
       {/* Dialog konfirmasi keluar halaman dengan perubahan belum disimpan */}
-      <AlertDialog open={leaveOpen} onOpenChange={setLeaveOpen}>
+      <AlertDialog open={leaveOpen} onOpenChange={(open) => {
+        setLeaveOpen(open);
+        if (!open) handleLeaveCancel();
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
