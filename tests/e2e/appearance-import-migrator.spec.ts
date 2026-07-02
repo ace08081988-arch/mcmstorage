@@ -31,6 +31,111 @@ async function runImport(page: Page, payload: unknown | string) {
 }
 
 /**
+ * Assertion end-to-end: nilai hasil migrasi TIDAK cuma echo balik ke tabel
+ * patch, tapi juga benar-benar tersalur ke pratinjau (readout `ai-preview-*`
+ * + inline style / data-* pada `ai-preview`). Dipanggil setelah setiap
+ * skenario impor sukses (v1, v2, v3) sehingga regresi "patch benar tapi UI
+ * tidak konsisten" langsung tertangkap.
+ */
+async function expectPreviewMatches(
+  page: Page,
+  expected: {
+    theme: string;
+    font: string;
+    size: string;
+    accent: string;
+    radius: string;
+    fontScale: number | string;
+    bgImage: string;
+    bgOverlay: number | string;
+    bgBlur: number | string;
+    compact: boolean;
+    highContrast: boolean;
+    reduceMotion: boolean;
+  },
+) {
+  const preview = page.getByTestId("ai-preview");
+
+  // Readout teks per field — bukti render text-node di UI konsisten.
+  await expect(page.getByTestId("ai-preview-theme")).toHaveText(expected.theme);
+  await expect(page.getByTestId("ai-preview-accent")).toHaveText(
+    expected.accent,
+  );
+  await expect(page.getByTestId("ai-preview-font")).toHaveText(expected.font);
+  await expect(page.getByTestId("ai-preview-size")).toHaveText(expected.size);
+  await expect(page.getByTestId("ai-preview-radius")).toHaveText(
+    expected.radius,
+  );
+  await expect(page.getByTestId("ai-preview-font-scale")).toHaveText(
+    String(expected.fontScale),
+  );
+  await expect(page.getByTestId("ai-preview-bg-image")).toHaveText(
+    expected.bgImage,
+  );
+  await expect(page.getByTestId("ai-preview-bg-overlay")).toHaveText(
+    String(expected.bgOverlay),
+  );
+  await expect(page.getByTestId("ai-preview-bg-blur")).toHaveText(
+    String(expected.bgBlur),
+  );
+  await expect(page.getByTestId("ai-preview-compact")).toHaveText(
+    String(expected.compact),
+  );
+  await expect(page.getByTestId("ai-preview-high-contrast")).toHaveText(
+    String(expected.highContrast),
+  );
+  await expect(page.getByTestId("ai-preview-reduce-motion")).toHaveText(
+    String(expected.reduceMotion),
+  );
+
+  // data-* di root pratinjau — bukti binding React state → DOM attribute
+  // konsisten (mis. dipakai selector CSS/analytics).
+  await expect(preview).toHaveAttribute("data-theme", expected.theme);
+  await expect(preview).toHaveAttribute("data-font", expected.font);
+  await expect(preview).toHaveAttribute("data-size", expected.size);
+  await expect(preview).toHaveAttribute("data-accent", expected.accent);
+  await expect(preview).toHaveAttribute(
+    "data-compact",
+    String(expected.compact),
+  );
+  await expect(preview).toHaveAttribute(
+    "data-high-contrast",
+    String(expected.highContrast),
+  );
+  await expect(preview).toHaveAttribute(
+    "data-reduce-motion",
+    String(expected.reduceMotion),
+  );
+
+  // Inline style + custom property — bukti nilai numerik (radius, fontScale,
+  // bgOverlay, bgBlur) benar-benar sampai ke computed style, bukan cuma
+  // readout teks.
+  const computed = await preview.evaluate((el) => {
+    const cs = window.getComputedStyle(el);
+    return {
+      borderRadius: cs.borderRadius,
+      fontSize: cs.fontSize,
+      paddingInline: cs.paddingInline || cs.paddingLeft,
+      overlay: cs.getPropertyValue("--ai-bg-overlay").trim(),
+      blur: cs.getPropertyValue("--ai-bg-blur").trim(),
+      backgroundImage: cs.backgroundImage,
+    };
+  });
+  // `border-radius: ${radius}rem` → dikonversi ke px oleh browser; cukup
+  // pastikan bukan nol dan bukan default (kalau radius > 0).
+  if (Number(expected.radius) > 0) {
+    expect(computed.borderRadius).not.toBe("0px");
+  }
+  expect(computed.overlay).toBe(String(expected.bgOverlay));
+  expect(computed.blur).toBe(`${expected.bgBlur}px`);
+  if (expected.bgImage) {
+    expect(computed.backgroundImage).toContain(expected.bgImage);
+  } else {
+    expect(computed.backgroundImage).toBe("none");
+  }
+}
+
+/**
  * Buffer console + pageerror + failed request events per test. Diattach ke
  * hasil test HANYA saat gagal (afterEach) supaya:
  *   - run yang sukses tidak dipenuhi log/screenshot,
