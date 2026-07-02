@@ -154,9 +154,8 @@ function createScreen(mode: "existing" | "new") {
 }
 
 /** Regex satuan lain yang TIDAK boleh muncul saat target adalah `to`. */
-function forbiddenLabels(to: PT): RegExp[] {
+function forbiddenLabels(to: PT, targetBase: "g" | "pcs"): RegExp[] {
   const others = ALL.filter((p) => p !== to);
-  const targetBase = defaultBaseUnit(to);
   const patterns: RegExp[] = [];
   for (const o of others) {
     // "pcs" adalah baik packageType maupun label base unit — jangan
@@ -180,14 +179,13 @@ function forbiddenLabels(to: PT): RegExp[] {
   return patterns;
 }
 
-function assertNoArtifacts(rendered: string, to: PT) {
-  for (const rx of forbiddenLabels(to)) {
+function assertNoArtifacts(rendered: string, to: PT, targetBase: "g" | "pcs") {
+  for (const rx of forbiddenLabels(to, targetBase)) {
     expect(rendered, `expected no ${rx} for target ${to}:\n${rendered}`).not.toMatch(rx);
   }
 }
 
-function assertTargetLabels(rendered: string, to: PT) {
-  const base = defaultBaseUnit(to);
+function assertTargetLabels(rendered: string, to: PT, base: "g" | "pcs") {
   if (to !== "pcs") {
     expect(rendered).toContain(`FORM: Isi / kemasan (${base})`);
     expect(rendered).toContain(`FORM: [toggle] Harga per ${to}`);
@@ -225,14 +223,15 @@ describe("Matriks pergantian Jenis kemasan (Barang baru) — semua field ikut, t
         s.setInputs("2", "8000");
 
         const rendered = s.renderAll();
-        assertTargetLabels(rendered, to);
-        assertNoArtifacts(rendered, to);
+        const tb = defaultBaseUnit(to);
+        assertTargetLabels(rendered, to, tb);
+        assertNoArtifacts(rendered, to, tb);
 
         // Verifikasi angka: baseAdded & totalCost bersih.
         const d = s.derive();
         const size = to === "pcs" ? 1 : to === "sachet" ? 20 : to === "gram" ? 1000 : 500;
         expect(d.effPackageType).toBe(to);
-        expect(d.effBaseUnit).toBe(defaultBaseUnit(to));
+        expect(d.effBaseUnit).toBe(tb);
         expect(d.effectivePkgSize).toBe(size);
         expect(d.pkgQ).toBe(2);
         expect(d.baseAdded).toBe(2 * size);
@@ -265,16 +264,16 @@ describe("Matriks pergantian item (Barang yang ada) — label & angka ikut item 
         }
 
         const rendered = s.renderAll();
-        assertTargetLabels(rendered, to);
+        const it = ITEM[to];
+        assertTargetLabels(rendered, to, it.base_unit);
         // Header memakai NAMA item baru — tidak menyisakan nama lama.
-        expect(rendered).toContain(ITEM[to].name);
+        expect(rendered).toContain(it.name);
         for (const other of ALL) {
           if (other !== to) expect(rendered).not.toContain(ITEM[other].name);
         }
-        assertNoArtifacts(rendered, to);
+        assertNoArtifacts(rendered, to, it.base_unit);
 
         const d = s.derive();
-        const it = ITEM[to];
         expect(d.effPackageType).toBe(it.package_type);
         expect(d.effBaseUnit).toBe(it.base_unit);
         expect(d.effectivePkgSize).toBe(it.package_type === "pcs" ? 1 : it.package_size);
@@ -309,8 +308,9 @@ describe("Round-trip gram ↔ botol/pcs/sachet — tidak menahan artefak dari la
       }
       // Setiap render bersih untuk target di langkah tsb.
       renders.forEach((r, i) => {
-        assertTargetLabels(r, seq[i]);
-        assertNoArtifacts(r, seq[i]);
+        const tb = defaultBaseUnit(seq[i]);
+        assertTargetLabels(r, seq[i], tb);
+        assertNoArtifacts(r, seq[i], tb);
       });
       // Render awal (a) dan akhir (c=a) menghasilkan struktur label yang IDENTIK
       // (buktinya tidak ada state yang bocor melintasi loop).
