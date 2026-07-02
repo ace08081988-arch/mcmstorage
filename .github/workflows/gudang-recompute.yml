@@ -62,6 +62,30 @@ jobs:
           set -e
           bunx vitest run "src/routes/_authenticated.gudang.strict-compute-spy.test.ts" --reporter=verbose
 
+      - name: Benchmark summary (conflict-wide fields)
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-benchmark.md ]; then
+            cat test-artifacts/conflict-wide-fields-benchmark.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "### ⏱️ Conflict-wide fields benchmark" >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+            echo "_Artefak durasi tidak tersedia — benchmark tidak berjalan._" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload benchmark artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-benchmark-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-artifacts/conflict-wide-fields-benchmark.json
+            test-artifacts/conflict-wide-fields-benchmark.md
+          if-no-files-found: warn
+          retention-days: 30
+
       - name: Upload stress diagnostic artifacts (on failure)
         if: failure()
         uses: actions/upload-artifact@v4
