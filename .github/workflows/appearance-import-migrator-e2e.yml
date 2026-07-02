@@ -1,0 +1,99 @@
+name: Appearance Import Migrator E2E
+
+# Menjalankan project Playwright `appearance-import-migrator-e2e` pada
+# setiap PR yang menyentuh migrator appearance atau harness impornya.
+# Kontrak backward-compat impor `mcm.appearance-settings` (v1, v2, versi
+# masa depan, `unknown_type`, payload rusak) harus tetap hijau sebelum
+# merge — regresi di sini berpotensi merusak setting tampilan pengguna
+# lama saat rilis berikutnya.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/lib/appearance-migrator.ts"
+      - "src/lib/appearance-*.ts"
+      - "src/routes/lovable.visual.appearance-import.tsx"
+      - "src/routes/_authenticated.pengaturan-tampilan*.tsx"
+      - "tests/e2e/appearance-import-migrator.spec.ts"
+      - "docs/appearance-schema.md"
+      - "playwright.config.ts"
+      - ".github/workflows/appearance-import-migrator-e2e.yml"
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: appearance-import-migrator-e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  appearance-import-migrator:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      BASE_URL: http://localhost:4173
+      # Retry terbatas untuk fluke hidrasi; kontrak migrator deterministik
+      # sehingga retry tidak menyembunyikan regresi format payload.
+      PWTEST_RETRIES: "1"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Install Playwright Chromium
+        # Pakai Chromium bawaan Playwright supaya versi match dengan
+        # `@playwright/test` — tidak perlu env `PLAYWRIGHT_CHROMIUM_EXECUTABLE`
+        # yang khusus dev lokal.
+        run: bunx playwright install --with-deps chromium
+
+      - name: Build app
+        run: bun run build
+
+      - name: Start preview server
+        run: bunx vite preview --port 4173 --host 127.0.0.1 &
+
+      - name: Wait for server
+        run: |
+          for i in {1..60}; do
+            if curl -sf http://localhost:4173 > /dev/null; then exit 0; fi
+            sleep 1
+          done
+          echo "Preview server did not become ready in 60s" >&2
+          exit 1
+
+      - name: Run appearance-import-migrator-e2e
+        run: |
+          bunx playwright test \
+            --reporter=list,html \
+            --retries=1 \
+            --project=appearance-import-migrator-e2e
+
+      - name: Upload Playwright report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report-appearance-import-migrator
+          path: playwright-report
+          retention-days: 14
+
+      # `afterEach` di spec sudah melampirkan screenshot + console log
+      # per test yang gagal. Trace/video Playwright juga di-`retain-on-failure`
+      # via CI=true di playwright.config supaya bisa direplay.
+      - name: Upload Playwright traces, videos & debug dumps (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-traces-appearance-import-migrator
+          path: |
+            test-results/**/trace.zip
+            test-results/**/*.webm
+            test-results/**/failure-screenshot.png
+            test-results/**/console-logs.json
+          retention-days: 14
+          if-no-files-found: ignore
