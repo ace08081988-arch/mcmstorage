@@ -1862,7 +1862,19 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
             {packageType !== "pcs" && (
               <label className="block">
                 <span className="text-[11px] text-muted-foreground">Isi / kemasan ({baseUnit})</span>
-                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} required />
+                {baseUnit === "g" ? (
+                  <SmartWeightInput
+                    value={packageSize}
+                    onChange={setPackageSize}
+                    baseUnit="g"
+                    className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                    required
+                    min={0.01}
+                    ariaLabel="Isi per kemasan (gram/kg/ons)"
+                  />
+                ) : (
+                  <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} required />
+                )}
               </label>
             )}
           </div>
