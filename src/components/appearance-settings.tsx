@@ -12,7 +12,7 @@ type Theme = "light" | "dark" | "system";
 type FontFamily = "sans" | "serif" | "mono" | "display";
 type FontSize = "sm" | "md" | "lg" | "xl";
 
-const LS = {
+export const LS = {
   theme: "app-theme",
   font: "app-font",
   size: "app-font-size",
@@ -23,7 +23,7 @@ const LS = {
   bgBlur: "app-bg-blur",
 };
 
-const ACCENTS: { id: string; label: string; value: string; swatch: string }[] = [
+export const ACCENTS: { id: string; label: string; value: string; swatch: string }[] = [
   { id: "emerald", label: "Hijau",  value: "oklch(0.62 0.17 155)", swatch: "#10b981" },
   { id: "blue",    label: "Biru",   value: "oklch(0.60 0.18 250)", swatch: "#3b82f6" },
   { id: "violet",  label: "Ungu",   value: "oklch(0.58 0.22 295)", swatch: "#8b5cf6" },
@@ -32,7 +32,7 @@ const ACCENTS: { id: string; label: string; value: string; swatch: string }[] = 
   { id: "slate",   label: "Netral", value: "oklch(0.30 0.04 260)", swatch: "#475569" },
 ];
 
-const BG_PRESETS: { id: string; label: string; url: string }[] = [
+export const BG_PRESETS: { id: string; label: string; url: string }[] = [
   { id: "none",     label: "Tanpa foto", url: "" },
   { id: "mountain", label: "Gunung",     url: "https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1600&q=80" },
   { id: "ocean",    label: "Laut",       url: "https://images.unsplash.com/photo-1505142468610-359e7d316be0?auto=format&fit=crop&w=1600&q=80" },

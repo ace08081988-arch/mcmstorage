@@ -5,7 +5,7 @@ import {
   ArrowLeft, Search, QrCode, Smile, KeyRound, Lock, Users, MessageSquare,
   Bell, RefreshCcw, Link as LinkIcon, Accessibility, Languages, ChevronRight,
   UserPlus, Download, Loader2,
-  Copy, Check,
+  Copy, Check, Palette,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyProfile, useAvatarSignedUrl, useMyProfileRealtime } from "@/lib/profile";
@@ -36,6 +36,7 @@ const ROWS: Row[] = [
   { icon: Lock, title: "Privasi", desc: "Akun diblokir, pesan sementara", to: "/pengaturan-kunci" },
   { icon: Users, title: "Daftar", desc: "Kelola orang dan grup", to: "/buku-alamat" },
   { icon: MessageSquare, title: "Chat", desc: "Tema, wallpaper, riwayat obrolan", to: "/chat-audit" },
+  { icon: Palette, title: "Tampilan", desc: "Tema, aksen, font, latar & preset", to: "/pengaturan-tampilan" },
   { icon: Bell, title: "Notifikasi", desc: "Pesan, grup & nada dering panggilan", to: "/chat" },
   { icon: RefreshCcw, title: "Penyimpanan dan data", desc: "Penggunaan jaringan, unduh otomatis", to: "/pengaturan-penyimpanan" },
   { icon: LinkIcon, title: "Facebook & Instagram", desc: "Hubungkan untuk menjangkau lebih banyak pelanggan", to: "/pengaturan-integrasi-sosial" },

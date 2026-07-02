@@ -785,6 +785,7 @@ function Index() {
                 { to: "/kontak", label: "Pelanggan & Pemasok", emoji: "👥", desc: "Tautkan akun pengguna" },
                 { to: "/label-preview", label: "Pratinjau Label", emoji: "🏷️", desc: "Cetak label produk" },
                 { to: "/pengaturan-kunci", label: "Pengaturan Kunci", emoji: "🔒", desc: "PIN, pola, sidik jari" },
+                { to: "/pengaturan-tampilan", label: "Tampilan", emoji: "🎨", desc: "Tema, aksen, font, latar" },
               ].map((s) => (
                 <Link
                   key={s.to}
