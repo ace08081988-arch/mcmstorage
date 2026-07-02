@@ -2,7 +2,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
-  ArrowLeft, Phone, PhoneMissed, PhoneIncoming, PhoneOutgoing, Video as VideoIcon,
+  ArrowLeft, Phone, PhoneMissed, PhoneIncoming, PhoneOutgoing, PhoneOff,
+  Ban, AlertCircle, Video as VideoIcon,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
@@ -171,11 +172,27 @@ function CallRowItem({
   const rejected = row.status === "declined" || row.status === "cancelled";
   const answered = row.status === "ended";
   const Icon = row.kind === "video" ? VideoIcon : Phone;
-  const DirIcon = missed
-    ? PhoneMissed
-    : outgoing
-    ? PhoneOutgoing
-    : PhoneIncoming;
+  // Ikon berbeda per status:
+  // - Tidak dijawab → PhoneMissed
+  // - Ditolak       → PhoneOff
+  // - Dibatalkan    → Ban
+  // - Gagal         → AlertCircle
+  // - Berdering     → Phone
+  // - Diterima      → PhoneIncoming / PhoneOutgoing (sesuai arah)
+  const DirIcon =
+    row.status === "missed"
+      ? PhoneMissed
+      : row.status === "declined"
+      ? PhoneOff
+      : row.status === "cancelled"
+      ? Ban
+      : row.status === "failed"
+      ? AlertCircle
+      : row.status === "ringing"
+      ? Phone
+      : outgoing
+      ? PhoneOutgoing
+      : PhoneIncoming;
   // Warna dibedakan: tidak dijawab (merah), ditolak/dibatalkan (amber),
   // diterima/selesai (emerald), gagal (muted), berdering (primary).
   const statusClass = missed
