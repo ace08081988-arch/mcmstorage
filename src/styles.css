@@ -409,17 +409,36 @@ html.reduce-motion set {
 html {
   font-size: calc(16px * var(--app-font-scale));
 }
+/*
+ * High contrast: perkuat border (light: hampir hitam, dark: hampir putih)
+ * dan buat ring fokus lebih jelas. Nilai memakai OKLCH agar konsisten dengan
+ * token proyek. Berlaku ke seluruh dokumen — termasuk portal Radix (dialog,
+ * dropdown, popover) dan toast Sonner yang di-mount di <body>.
+ */
 html[data-high-contrast="on"] {
-  --border: 0 0% 20%;
-  --ring: 210 90% 45%;
+  --border: oklch(0.25 0 0);
+  --input: oklch(0.35 0 0);
+  --ring: var(--primary);
+  --muted-foreground: oklch(0.35 0 0);
 }
 html[data-high-contrast="on"].dark {
-  --border: 0 0% 85%;
-  --ring: 210 100% 70%;
+  --border: oklch(0.92 0 0);
+  --input: oklch(0.75 0 0);
+  --ring: var(--primary);
+  --muted-foreground: oklch(0.85 0 0);
 }
 html[data-high-contrast="on"] *:focus-visible {
-  outline: 2px solid hsl(var(--ring));
+  outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+/* Perkuat border pada permukaan berlapis (dialog, popover, card, sheet). */
+html[data-high-contrast="on"] [role="dialog"],
+html[data-high-contrast="on"] [role="alertdialog"],
+html[data-high-contrast="on"] [data-sonner-toast],
+html[data-high-contrast="on"] [data-radix-popper-content-wrapper] > * {
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--border);
 }
 html[data-reduce-motion="on"] *,
 html[data-reduce-motion="on"] *::before,
