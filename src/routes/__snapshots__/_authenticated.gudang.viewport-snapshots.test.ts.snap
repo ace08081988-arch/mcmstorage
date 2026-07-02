@@ -1,0 +1,357 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: desktop (1280px) > snapshot: existing · botol 1`] = `
+"# viewport=desktop (1280px) · mode=existing · pt=botol
+[layout] header: flex-row (sm+)
+[layout] form-row: grid-cols-2 (sm+)
+[layout] summary: grid-cols-3 (lg+)
+[layout] karton-toggle-flow: inline
+[layout] heading-truncate: off
+[FORM] Jenis kemasan: botol
+[FORM] Jumlah kemasan (botol): 2
+[FORM] Harga beli / botol: 10000
+[FORM] Toggle Harga per botol | Harga per pcs
+[FORM] Karton toggle: OFF (= 100 botol) · flow=inline
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: desktop (1280px) > snapshot: existing · botol · karton ON 1`] = `
+"# viewport=desktop (1280px) · mode=existing · pt=botol
+[layout] header: flex-row (sm+)
+[layout] form-row: grid-cols-2 (sm+)
+[layout] summary: grid-cols-3 (lg+)
+[layout] karton-toggle-flow: inline
+[layout] heading-truncate: off
+[FORM] Jenis kemasan: botol
+[FORM] Jumlah karton (botol): 2
+[FORM] Harga beli / botol: 10000
+[FORM] Toggle Harga per botol | Harga per pcs
+[FORM] Karton toggle: ON (= 100 botol) · flow=inline
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 200 botol (2 karton)
+[SUM] Tambahan stok | 200 botol (= 100.000 pcs) · = 2 karton
+[SUM] Harga per botol | Rp 100
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: desktop (1280px) > snapshot: existing · gram 1`] = `
+"# viewport=desktop (1280px) · mode=existing · pt=gram
+[layout] header: flex-row (sm+)
+[layout] form-row: grid-cols-2 (sm+)
+[layout] summary: grid-cols-3 (lg+)
+[layout] karton-toggle-flow: inline
+[layout] heading-truncate: off
+[FORM] Jenis kemasan: gram
+[FORM] Jumlah kemasan (gram): 2
+[FORM] Harga beli / gram: 10000
+[FORM] Toggle Harga per gram | Harga per g
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 gram (= 2 kg)
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: desktop (1280px) > snapshot: existing · pcs 1`] = `
+"# viewport=desktop (1280px) · mode=existing · pt=pcs
+[layout] header: flex-row (sm+)
+[layout] form-row: grid-cols-2 (sm+)
+[layout] summary: grid-cols-3 (lg+)
+[layout] karton-toggle-flow: inline
+[layout] heading-truncate: off
+[FORM] Jenis kemasan: pcs
+[FORM] Jumlah kemasan (pcs): 2
+[FORM] Harga beli / pcs: 10000
+[FORM] Harga per pcs (forced)
+[SUM] Ringkasan | Item PCS · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: desktop (1280px) > snapshot: existing · sachet 1`] = `
+"# viewport=desktop (1280px) · mode=existing · pt=sachet
+[layout] header: flex-row (sm+)
+[layout] form-row: grid-cols-2 (sm+)
+[layout] summary: grid-cols-3 (lg+)
+[layout] karton-toggle-flow: inline
+[layout] heading-truncate: off
+[FORM] Jenis kemasan: sachet
+[FORM] Jumlah kemasan (sachet): 2
+[FORM] Harga beli / sachet: 10000
+[FORM] Toggle Harga per sachet | Harga per pcs
+[SUM] Ringkasan | Item SACHET · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 sachet (= 2 pcs)
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: desktop (1280px) > snapshot: new · botol 1`] = `
+"# viewport=desktop (1280px) · mode=new · pt=botol
+[layout] header: flex-row (sm+)
+[layout] form-row: grid-cols-2 (sm+)
+[layout] summary: grid-cols-3 (lg+)
+[layout] karton-toggle-flow: inline
+[layout] heading-truncate: off
+[FORM] Jenis kemasan: botol
+[FORM] Isi/kemasan (pcs): 500
+[FORM] Stok disimpan dalam pcs
+[FORM] Jumlah kemasan (botol): 2
+[FORM] Harga beli / botol: 10000
+[FORM] Toggle Harga per botol | Harga per pcs
+[FORM] Karton toggle: OFF (= 100 botol) · flow=inline
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: desktop (1280px) > snapshot: new · gram 1`] = `
+"# viewport=desktop (1280px) · mode=new · pt=gram
+[layout] header: flex-row (sm+)
+[layout] form-row: grid-cols-2 (sm+)
+[layout] summary: grid-cols-3 (lg+)
+[layout] karton-toggle-flow: inline
+[layout] heading-truncate: off
+[FORM] Jenis kemasan: gram
+[FORM] Isi/kemasan (g): 1000
+[FORM] Stok disimpan dalam g
+[FORM] Jumlah kemasan (gram): 2
+[FORM] Harga beli / gram: 10000
+[FORM] Toggle Harga per gram | Harga per g
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: desktop (1280px) > snapshot: new · pcs 1`] = `
+"# viewport=desktop (1280px) · mode=new · pt=pcs
+[layout] header: flex-row (sm+)
+[layout] form-row: grid-cols-2 (sm+)
+[layout] summary: grid-cols-3 (lg+)
+[layout] karton-toggle-flow: inline
+[layout] heading-truncate: off
+[FORM] Jenis kemasan: pcs
+[FORM] Jumlah kemasan (pcs): 2
+[FORM] Harga beli / pcs: 10000
+[FORM] Harga per pcs (forced)
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: desktop (1280px) > snapshot: new · sachet 1`] = `
+"# viewport=desktop (1280px) · mode=new · pt=sachet
+[layout] header: flex-row (sm+)
+[layout] form-row: grid-cols-2 (sm+)
+[layout] summary: grid-cols-3 (lg+)
+[layout] karton-toggle-flow: inline
+[layout] heading-truncate: off
+[FORM] Jenis kemasan: sachet
+[FORM] Isi/kemasan (pcs): 1
+[FORM] Stok disimpan dalam pcs
+[FORM] Jumlah kemasan (sachet): 2
+[FORM] Harga beli / sachet: 10000
+[FORM] Toggle Harga per sachet | Harga per pcs
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: mobile (390px) > snapshot: existing · botol 1`] = `
+"# viewport=mobile (390px) · mode=existing · pt=botol
+[layout] header: grid-cols-[1fr_auto] (mobile)
+[layout] form-row: grid-cols-1 (mobile)
+[layout] summary: grid-cols-1 (mobile)
+[layout] karton-toggle-flow: stacked
+[layout] heading-truncate: on
+[FORM] Jenis kemasan: botol
+[FORM] Jumlah kemasan (botol): 2
+[FORM] Harga beli / botol: 10000
+[FORM] Toggle Harga per botol | Harga per pcs
+[FORM] Karton toggle: OFF (= 100 botol) · flow=stacked
+[SUM] Ringkasan | Item BOTOL · botol 500 …
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: mobile (390px) > snapshot: existing · botol · karton ON 1`] = `
+"# viewport=mobile (390px) · mode=existing · pt=botol
+[layout] header: grid-cols-[1fr_auto] (mobile)
+[layout] form-row: grid-cols-1 (mobile)
+[layout] summary: grid-cols-1 (mobile)
+[layout] karton-toggle-flow: stacked
+[layout] heading-truncate: on
+[FORM] Jenis kemasan: botol
+[FORM] Jumlah karton (botol): 2
+[FORM] Harga beli / botol: 10000
+[FORM] Toggle Harga per botol | Harga per pcs
+[FORM] Karton toggle: ON (= 100 botol) · flow=stacked
+[SUM] Ringkasan | Item BOTOL · botol 500 …
+[SUM] Jumlah kemasan | 200 botol (2 karton)
+[SUM] Tambahan stok | 200 botol (= 100.000 pcs) · = 2 karton
+[SUM] Harga per botol | Rp 100
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: mobile (390px) > snapshot: existing · gram 1`] = `
+"# viewport=mobile (390px) · mode=existing · pt=gram
+[layout] header: grid-cols-[1fr_auto] (mobile)
+[layout] form-row: grid-cols-1 (mobile)
+[layout] summary: grid-cols-1 (mobile)
+[layout] karton-toggle-flow: stacked
+[layout] heading-truncate: on
+[FORM] Jenis kemasan: gram
+[FORM] Jumlah kemasan (gram): 2
+[FORM] Harga beli / gram: 10000
+[FORM] Toggle Harga per gram | Harga per g
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 gram (= 2 kg)
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: mobile (390px) > snapshot: existing · pcs 1`] = `
+"# viewport=mobile (390px) · mode=existing · pt=pcs
+[layout] header: grid-cols-[1fr_auto] (mobile)
+[layout] form-row: grid-cols-1 (mobile)
+[layout] summary: grid-cols-1 (mobile)
+[layout] karton-toggle-flow: stacked
+[layout] heading-truncate: on
+[FORM] Jenis kemasan: pcs
+[FORM] Jumlah kemasan (pcs): 2
+[FORM] Harga beli / pcs: 10000
+[FORM] Harga per pcs (forced)
+[SUM] Ringkasan | Item PCS · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: mobile (390px) > snapshot: existing · sachet 1`] = `
+"# viewport=mobile (390px) · mode=existing · pt=sachet
+[layout] header: grid-cols-[1fr_auto] (mobile)
+[layout] form-row: grid-cols-1 (mobile)
+[layout] summary: grid-cols-1 (mobile)
+[layout] karton-toggle-flow: stacked
+[layout] heading-truncate: on
+[FORM] Jenis kemasan: sachet
+[FORM] Jumlah kemasan (sachet): 2
+[FORM] Harga beli / sachet: 10000
+[FORM] Toggle Harga per sachet | Harga per pcs
+[SUM] Ringkasan | Item SACHET · sachet 1 …
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 sachet (= 2 pcs)
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: mobile (390px) > snapshot: new · botol 1`] = `
+"# viewport=mobile (390px) · mode=new · pt=botol
+[layout] header: grid-cols-[1fr_auto] (mobile)
+[layout] form-row: grid-cols-1 (mobile)
+[layout] summary: grid-cols-1 (mobile)
+[layout] karton-toggle-flow: stacked
+[layout] heading-truncate: on
+[FORM] Jenis kemasan: botol
+[FORM] Isi/kemasan (pcs): 500
+[FORM] Stok disimpan dalam pcs
+[FORM] Jumlah kemasan (botol): 2
+[FORM] Harga beli / botol: 10000
+[FORM] Toggle Harga per botol | Harga per pcs
+[FORM] Karton toggle: OFF (= 100 botol) · flow=stacked
+[SUM] Ringkasan | Barang baru · botol 500…
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: mobile (390px) > snapshot: new · gram 1`] = `
+"# viewport=mobile (390px) · mode=new · pt=gram
+[layout] header: grid-cols-[1fr_auto] (mobile)
+[layout] form-row: grid-cols-1 (mobile)
+[layout] summary: grid-cols-1 (mobile)
+[layout] karton-toggle-flow: stacked
+[layout] heading-truncate: on
+[FORM] Jenis kemasan: gram
+[FORM] Isi/kemasan (g): 1000
+[FORM] Stok disimpan dalam g
+[FORM] Jumlah kemasan (gram): 2
+[FORM] Harga beli / gram: 10000
+[FORM] Toggle Harga per gram | Harga per g
+[SUM] Ringkasan | Barang baru · gram 1000…
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: mobile (390px) > snapshot: new · pcs 1`] = `
+"# viewport=mobile (390px) · mode=new · pt=pcs
+[layout] header: grid-cols-[1fr_auto] (mobile)
+[layout] form-row: grid-cols-1 (mobile)
+[layout] summary: grid-cols-1 (mobile)
+[layout] karton-toggle-flow: stacked
+[layout] heading-truncate: on
+[FORM] Jenis kemasan: pcs
+[FORM] Jumlah kemasan (pcs): 2
+[FORM] Harga beli / pcs: 10000
+[FORM] Harga per pcs (forced)
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0"
+`;
+
+exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > viewport: mobile (390px) > snapshot: new · sachet 1`] = `
+"# viewport=mobile (390px) · mode=new · pt=sachet
+[layout] header: grid-cols-[1fr_auto] (mobile)
+[layout] form-row: grid-cols-1 (mobile)
+[layout] summary: grid-cols-1 (mobile)
+[layout] karton-toggle-flow: stacked
+[layout] heading-truncate: on
+[FORM] Jenis kemasan: sachet
+[FORM] Isi/kemasan (pcs): 1
+[FORM] Stok disimpan dalam pcs
+[FORM] Jumlah kemasan (sachet): 2
+[FORM] Harga beli / sachet: 10000
+[FORM] Toggle Harga per sachet | Harga per pcs
+[SUM] Ringkasan | Barang baru · sachet 1 …
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 20.000"
+`;
