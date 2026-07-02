@@ -131,7 +131,12 @@ function PengaturanAksesibilitasPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Skala teks</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              Skala teks
+              {draft.fontScale !== snapshot.fontScale && (
+                <UnsavedDot title={`Tersimpan: ${Math.round(snapshot.fontScale * 100)}%`} />
+              )}
+            </CardTitle>
             <CardDescription className="text-xs">
               Perbesar teks di seluruh aplikasi. Diterapkan lewat variabel CSS <code>--app-font-scale</code>.
             </CardDescription>
@@ -168,12 +173,14 @@ function PengaturanAksesibilitasPage() {
           <CardContent className="space-y-4">
             <ToggleRow
               label="Tingkatkan kontras"
+              unsaved={draft.highContrast !== snapshot.highContrast}
               help="Perkuat border dan ring fokus supaya elemen lebih terlihat."
               checked={draft.highContrast}
               onChange={(v) => setDraft((d) => ({ ...d, highContrast: v }))}
             />
             <ToggleRow
               label="Kurangi animasi"
+              unsaved={draft.reduceMotion !== snapshot.reduceMotion}
               help={
                 systemReducedMotion
                   ? "Sistem juga sedang meminta reduce-motion — pengaturan ini menambah cakupan ke animasi in-app."
