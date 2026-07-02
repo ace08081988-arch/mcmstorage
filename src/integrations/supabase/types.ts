@@ -92,6 +92,36 @@ export type Database = {
         }
         Relationships: []
       }
+      apk_download_events: {
+        Row: {
+          created_at: string
+          id: string
+          referrer: string | null
+          source: string
+          user_agent: string | null
+          user_id: string | null
+          variant: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          referrer?: string | null
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+          variant: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          referrer?: string | null
+          source?: string
+          user_agent?: string | null
+          user_id?: string | null
+          variant?: string
+        }
+        Relationships: []
+      }
       apk_min_supported: {
         Row: {
           created_at: string

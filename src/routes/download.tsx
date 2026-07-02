@@ -21,6 +21,7 @@ import { PublicHeader } from "@/components/PublicHeader";
 import { PublicFooter } from "@/components/PublicFooter";
 import { useState } from "react";
 import { toast } from "sonner";
+import { trackApkDownload } from "@/lib/apk-download-track";
 
 export const Route = createFileRoute("/download")({
   head: () => ({
@@ -195,6 +196,7 @@ function ApkCard({
           )}
           <a
             href={apk.url}
+            onClick={() => trackApkDownload(variant, "button")}
             className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow transition ${btn}`}
           >
             <Download className="h-4 w-4" />
@@ -282,7 +284,10 @@ function CopyLinkButtons({
     <div className="mt-3 grid grid-cols-2 gap-2">
       <button
         type="button"
-        onClick={() => doCopy(pageUrl, "page", "Link halaman")}
+        onClick={() => {
+          trackApkDownload(variant, "copy_page");
+          void doCopy(pageUrl, "page", "Link halaman");
+        }}
         className="flex items-center justify-center gap-1.5 rounded-lg border bg-background px-2 py-2 text-xs font-medium hover:bg-muted"
         aria-label={`Salin link halaman ${title}`}
       >
@@ -295,7 +300,10 @@ function CopyLinkButtons({
       </button>
       <button
         type="button"
-        onClick={() => doCopy(apk.url, "file", "Link unduh langsung")}
+        onClick={() => {
+          trackApkDownload(variant, "copy_file");
+          void doCopy(apk.url, "file", "Link unduh langsung");
+        }}
         className="flex items-center justify-center gap-1.5 rounded-lg border bg-background px-2 py-2 text-xs font-medium hover:bg-muted"
         aria-label={`Salin link unduh langsung ${title}`}
         title="Berlaku ± 1 jam sebelum kedaluwarsa"

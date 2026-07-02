@@ -12,15 +12,18 @@ import {
   AlertTriangle,
   ShieldAlert,
   History,
+  BarChart3,
 } from "lucide-react";
 import {
   listApkReleaseAdminPanel,
   upsertApkReleaseMeta,
   setApkMinSupported,
+  getApkDownloadStats,
   type AdminApkEntry,
   type AdminApkListResult,
   type MinSupported,
   type ApkVariant,
+  type ApkDownloadStats,
 } from "@/lib/apk.functions";
 import {
   validateApkFileName,
@@ -150,6 +153,7 @@ function PengaturanApkPage() {
             current={data?.minSupported.chat ?? null}
           />
           <VariantSection title="MCM Chat" rows={grouped.chat} />
+          <DownloadAnalyticsCard />
           {data && data.entries.length === 0 && (
             <div className="rounded-xl border border-dashed p-6 text-center text-sm text-muted-foreground">
               Belum ada berkas APK di bucket.
@@ -664,4 +668,135 @@ function toLocalInput(iso: string): string {
   const off = d.getTimezoneOffset();
   const local = new Date(d.getTime() - off * 60_000);
   return local.toISOString().slice(0, 16);
+}
+
+// -------- Analitik klik unduh APK --------
+function DownloadAnalyticsCard() {
+  const fetchStats = useServerFn(getApkDownloadStats);
+  const { data, isLoading, isError, refetch, isFetching } = useQuery({
+    queryKey: ["apk-download-stats"],
+    queryFn: () => fetchStats() as Promise<ApkDownloadStats>,
+    staleTime: 30_000,
+    retry: false,
+  });
+
+  const totals = data?.totals;
+  const chatBtn = totals?.chat.button ?? 0;
+  const storageBtn = totals?.storage.button ?? 0;
+  const btnTotal = chatBtn + storageBtn;
+  const chatShare = btnTotal > 0 ? Math.round((chatBtn / btnTotal) * 100) : 0;
+
+  return (
+    <div className="rounded-xl border bg-card p-4 shadow-sm">
+      <div className="mb-3 flex items-center gap-2">
+        <BarChart3 className="h-4 w-4 text-primary" />
+        <h3 className="text-sm font-semibold">Analitik klik unduh (30 hari)</h3>
+        <button
+          type="button"
+          onClick={() => refetch()}
+          disabled={isFetching}
+          className="ml-auto text-[11px] font-medium text-muted-foreground hover:text-foreground"
+        >
+          {isFetching ? "Memuat…" : "Segarkan"}
+        </button>
+      </div>
+      {isLoading ? (
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memuat data…
+        </div>
+      ) : isError ? (
+        <div className="text-xs text-red-600">Gagal memuat data analitik.</div>
+      ) : !data ? null : (
+        <>
+          <div className="grid grid-cols-2 gap-2">
+            <StatTile
+              label="MCM Storage — tombol"
+              value={storageBtn}
+              totalHint={`Semua: ${totals?.storage.total ?? 0}`}
+              tone="emerald"
+            />
+            <StatTile
+              label="MCM Chat — tombol"
+              value={chatBtn}
+              totalHint={`Semua: ${totals?.chat.total ?? 0}`}
+              tone="sky"
+            />
+          </div>
+          <p className="mt-2 text-[11px] text-muted-foreground">
+            Konversi klik tombol unduh: MCM Chat {chatShare}% dari total{" "}
+            {btnTotal}. Data mencakup 30 hari terakhir.
+          </p>
+
+          <div className="mt-3 overflow-hidden rounded-lg border">
+            <table className="w-full text-[11px]">
+              <thead className="bg-muted/50 text-left">
+                <tr>
+                  <th className="px-2 py-1.5 font-medium">Varian</th>
+                  <th className="px-2 py-1.5 font-medium">Sumber</th>
+                  <th className="px-2 py-1.5 text-right font-medium">24 jam</th>
+                  <th className="px-2 py-1.5 text-right font-medium">7 hari</th>
+                  <th className="px-2 py-1.5 text-right font-medium">Total</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.rows.length === 0 ? (
+                  <tr>
+                    <td colSpan={5} className="px-2 py-3 text-center text-muted-foreground">
+                      Belum ada klik tercatat.
+                    </td>
+                  </tr>
+                ) : (
+                  data.rows.map((r) => (
+                    <tr key={`${r.variant}:${r.source}`} className="border-t">
+                      <td className="px-2 py-1.5 capitalize">{r.variant}</td>
+                      <td className="px-2 py-1.5 text-muted-foreground">
+                        {sourceLabel(r.source)}
+                      </td>
+                      <td className="px-2 py-1.5 text-right font-mono">{r.last24h}</td>
+                      <td className="px-2 py-1.5 text-right font-mono">{r.last7d}</td>
+                      <td className="px-2 py-1.5 text-right font-mono font-semibold">
+                        {r.total}
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
+function StatTile({
+  label,
+  value,
+  totalHint,
+  tone,
+}: {
+  label: string;
+  value: number;
+  totalHint: string;
+  tone: "emerald" | "sky";
+}) {
+  const cls =
+    tone === "emerald"
+      ? "border-emerald-300/60 bg-emerald-50 dark:border-emerald-900/60 dark:bg-emerald-950/30"
+      : "border-sky-300/60 bg-sky-50 dark:border-sky-900/60 dark:bg-sky-950/30";
+  return (
+    <div className={`rounded-lg border p-2.5 ${cls}`}>
+      <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
+        {label}
+      </div>
+      <div className="mt-0.5 font-mono text-lg font-semibold">{value}</div>
+      <div className="text-[10px] text-muted-foreground">{totalHint}</div>
+    </div>
+  );
+}
+
+function sourceLabel(s: "button" | "copy_page" | "copy_file"): string {
+  if (s === "button") return "Tombol unduh";
+  if (s === "copy_page") return "Salin link halaman";
+  return "Salin link file";
 }

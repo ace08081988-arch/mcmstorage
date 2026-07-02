@@ -642,3 +642,83 @@ export const setApkMinSupported = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true as const };
   });
+
+// ---------- Download click analytics (admin) ----------
+export type ApkDownloadStatsRow = {
+  variant: "storage" | "chat";
+  source: "button" | "copy_page" | "copy_file";
+  total: number;
+  last24h: number;
+  last7d: number;
+};
+
+export type ApkDownloadStats = {
+  rows: ApkDownloadStatsRow[];
+  totals: {
+    storage: { button: number; total: number };
+    chat: { button: number; total: number };
+    windowStart: string;
+  };
+  recent: Array<{
+    id: string;
+    variant: "storage" | "chat";
+    source: "button" | "copy_page" | "copy_file";
+    created_at: string;
+    referrer: string | null;
+    user_agent: string | null;
+  }>;
+};
+
+export const getApkDownloadStats = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }): Promise<ApkDownloadStats> => {
+    await requireAdmin(context);
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const { data, error } = await context.supabase
+      .from("apk_download_events")
+      .select("id,variant,source,created_at,referrer,user_agent")
+      .gte("created_at", since)
+      .order("created_at", { ascending: false })
+      .limit(2000);
+    if (error) throw new Error(error.message);
+    const now = Date.now();
+    const t24 = now - 24 * 60 * 60 * 1000;
+    const t7d = now - 7 * 24 * 60 * 60 * 1000;
+    const bucket = new Map<string, ApkDownloadStatsRow>();
+    const totals = {
+      storage: { button: 0, total: 0 },
+      chat: { button: 0, total: 0 },
+      windowStart: since,
+    };
+    for (const row of data ?? []) {
+      const variant = row.variant as "storage" | "chat";
+      const source = row.source as "button" | "copy_page" | "copy_file";
+      const key = `${variant}:${source}`;
+      const created = new Date(row.created_at).getTime();
+      const cur = bucket.get(key) ?? {
+        variant,
+        source,
+        total: 0,
+        last24h: 0,
+        last7d: 0,
+      };
+      cur.total += 1;
+      if (created >= t24) cur.last24h += 1;
+      if (created >= t7d) cur.last7d += 1;
+      bucket.set(key, cur);
+      totals[variant].total += 1;
+      if (source === "button") totals[variant].button += 1;
+    }
+    return {
+      rows: Array.from(bucket.values()).sort((a, b) => b.total - a.total),
+      totals,
+      recent: (data ?? []).slice(0, 20).map((r) => ({
+        id: r.id as string,
+        variant: r.variant as "storage" | "chat",
+        source: r.source as "button" | "copy_page" | "copy_file",
+        created_at: r.created_at as string,
+        referrer: (r.referrer as string | null) ?? null,
+        user_agent: (r.user_agent as string | null) ?? null,
+      })),
+    };
+  });
