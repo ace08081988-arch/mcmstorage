@@ -1,12 +1,13 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, Check, X } from "lucide-react";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
-import { DEFAULT_APP_PREFS, useAppPrefs } from "@/lib/app-prefs";
+import { DEFAULT_APP_PREFS, useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-aksesibilitas")({
   head: () => ({ meta: [{ title: "Aksesibilitas · MCM Storage" }] }),
@@ -14,8 +15,41 @@ export const Route = createFileRoute("/_authenticated/pengaturan-aksesibilitas")
 });
 
 function PengaturanAksesibilitasPage() {
-  const { prefs, set, reset } = useAppPrefs();
+  const { prefs } = useAppPrefs();
   const [systemReducedMotion, setSystemReducedMotion] = useState(false);
+
+  // Snapshot nilai tersimpan saat halaman dibuka — dipakai untuk revert.
+  const [snapshot, setSnapshot] = useState(() => ({
+    fontScale: prefs.fontScale,
+    highContrast: prefs.highContrast,
+    reduceMotion: prefs.reduceMotion,
+  }));
+  // Draft — hanya pratinjau, belum ditulis ke penyimpanan.
+  const [draft, setDraft] = useState(snapshot);
+  const savedRef = useRef(false);
+  const snapshotRef = useRef(snapshot);
+  snapshotRef.current = snapshot;
+
+  // Terapkan draft ke <html> tanpa persist.
+  useEffect(() => {
+    const root = document.documentElement;
+    root.style.setProperty("--app-font-scale", String(draft.fontScale));
+    root.dataset.highContrast = draft.highContrast ? "on" : "off";
+    root.dataset.reduceMotion = draft.reduceMotion ? "on" : "off";
+  }, [draft]);
+
+  // Kalau keluar tanpa Simpan, kembalikan tampilan ke snapshot terakhir.
+  useEffect(() => {
+    return () => {
+      if (!savedRef.current) {
+        const s = snapshotRef.current;
+        const root = document.documentElement;
+        root.style.setProperty("--app-font-scale", String(s.fontScale));
+        root.dataset.highContrast = s.highContrast ? "on" : "off";
+        root.dataset.reduceMotion = s.reduceMotion ? "on" : "off";
+      }
+    };
+  }, []);
 
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
@@ -25,13 +59,51 @@ function PengaturanAksesibilitasPage() {
     return () => mq.removeEventListener("change", on);
   }, []);
 
+  const dirty = useMemo(
+    () =>
+      draft.fontScale !== snapshot.fontScale ||
+      draft.highContrast !== snapshot.highContrast ||
+      draft.reduceMotion !== snapshot.reduceMotion,
+    [draft, snapshot],
+  );
+
+  const commitSave = () => {
+    setAppPrefs({
+      fontScale: draft.fontScale,
+      highContrast: draft.highContrast,
+      reduceMotion: draft.reduceMotion,
+    });
+    savedRef.current = true;
+    setSnapshot(draft);
+    setTimeout(() => { savedRef.current = false; }, 0);
+    toast.success("Preferensi aksesibilitas disimpan");
+  };
+  const commitCancel = () => {
+    setDraft(snapshot);
+    toast.info("Perubahan dibatalkan");
+  };
+  const resetDraft = () => {
+    setDraft({
+      fontScale: DEFAULT_APP_PREFS.fontScale,
+      highContrast: DEFAULT_APP_PREFS.highContrast,
+      reduceMotion: DEFAULT_APP_PREFS.reduceMotion,
+    });
+    toast.info("Draft direset ke bawaan — tekan Simpan untuk menerapkan.");
+  };
+
   return (
-    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-8">
+    <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-32">
       <SettingsHeader
         title="Aksesibilitas"
         subtitle="Skala teks, kontras, dan animasi"
       />
       <div className="space-y-4 px-4 pt-2">
+        <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] leading-snug text-muted-foreground">
+          Perubahan di halaman ini adalah <span className="font-semibold text-foreground">pratinjau</span>.
+          Tampilan tersimpan tidak berubah sampai Anda menekan{" "}
+          <span className="font-semibold text-foreground">Simpan</span> di bagian bawah.
+        </div>
+
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base">Skala teks</CardTitle>
@@ -43,21 +115,21 @@ function PengaturanAksesibilitasPage() {
             <div className="flex items-baseline justify-between">
               <span className="text-sm">Kecil</span>
               <span className="text-sm tabular-nums font-semibold">
-                {Math.round(prefs.fontScale * 100)}%
+                {Math.round(draft.fontScale * 100)}%
               </span>
               <span className="text-sm">Besar</span>
             </div>
             <Slider
-              value={[prefs.fontScale]}
+              value={[draft.fontScale]}
               min={0.9}
               max={1.4}
               step={0.05}
-              onValueChange={(v) => set({ fontScale: v[0] ?? 1 })}
+              onValueChange={(v) => setDraft((d) => ({ ...d, fontScale: v[0] ?? 1 }))}
               aria-label="Skala teks"
             />
             <div
               className="rounded-md border bg-muted/30 p-3 text-muted-foreground"
-              style={{ fontSize: `${prefs.fontScale}rem` }}
+              style={{ fontSize: `${draft.fontScale}rem` }}
             >
               Pratinjau — teks pesan chat, tombol, dan header ikut menyesuaikan.
             </div>
@@ -72,8 +144,8 @@ function PengaturanAksesibilitasPage() {
             <ToggleRow
               label="Tingkatkan kontras"
               help="Perkuat border dan ring fokus supaya elemen lebih terlihat."
-              checked={prefs.highContrast}
-              onChange={(v) => set({ highContrast: v })}
+              checked={draft.highContrast}
+              onChange={(v) => setDraft((d) => ({ ...d, highContrast: v }))}
             />
             <ToggleRow
               label="Kurangi animasi"
@@ -82,8 +154,8 @@ function PengaturanAksesibilitasPage() {
                   ? "Sistem juga sedang meminta reduce-motion — pengaturan ini menambah cakupan ke animasi in-app."
                   : "Hilangkan slide/fade non-esensial (mis. hint scroll-guard)."
               }
-              checked={prefs.reduceMotion}
-              onChange={(v) => set({ reduceMotion: v })}
+              checked={draft.reduceMotion}
+              onChange={(v) => setDraft((d) => ({ ...d, reduceMotion: v }))}
             />
           </CardContent>
         </Card>
@@ -92,16 +164,39 @@ function PengaturanAksesibilitasPage() {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => reset()}
+            onClick={resetDraft}
             disabled={
-              prefs.fontScale === DEFAULT_APP_PREFS.fontScale &&
-              !prefs.highContrast &&
-              !prefs.reduceMotion
+              draft.fontScale === DEFAULT_APP_PREFS.fontScale &&
+              !draft.highContrast &&
+              !draft.reduceMotion
             }
           >
             <RotateCcw className="mr-1.5 h-3.5 w-3.5" />
-            Reset aksesibilitas
+            Kembalikan ke bawaan (draft)
           </Button>
+        </div>
+      </div>
+
+      {/* Sticky action bar — muncul saat ada perubahan belum disimpan */}
+      <div
+        className={`fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 backdrop-blur transition-transform ${dirty ? "translate-y-0" : "translate-y-full"}`}
+        role="region"
+        aria-label="Simpan preferensi aksesibilitas"
+      >
+        <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3">
+          <p className="text-xs text-muted-foreground">
+            Ada perubahan belum disimpan. Aplikasi utama belum berubah.
+          </p>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={commitCancel} aria-label="Batalkan perubahan">
+              <X className="mr-1.5 h-3.5 w-3.5" />
+              Batalkan
+            </Button>
+            <Button size="sm" onClick={commitSave} aria-label="Simpan preferensi">
+              <Check className="mr-1.5 h-3.5 w-3.5" />
+              Simpan
+            </Button>
+          </div>
         </div>
       </div>
     </main>
