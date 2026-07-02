@@ -111,13 +111,6 @@ function PengaturanAksesibilitasPage() {
     return () => mq.removeEventListener("change", on);
   }, []);
 
-  const dirty = useMemo(
-    () =>
-      draft.fontScale !== snapshot.fontScale ||
-      draft.highContrast !== snapshot.highContrast ||
-      draft.reduceMotion !== snapshot.reduceMotion,
-    [draft, snapshot],
-  );
 
   const commitSave = () => {
     setAppPrefs({
