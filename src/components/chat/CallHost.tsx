@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Phone, PhoneOff, Video as VideoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
-import { userInboxChannelName, type CallKind, type CallSignal } from "@/lib/webrtc";
+import { callChannelName, userInboxChannelName, type CallKind, type CallSignal } from "@/lib/webrtc";
 import { fetchCall, markEnded } from "@/lib/calls";
 import { CallScreen } from "@/components/chat/CallScreen";
 
@@ -128,6 +128,41 @@ export function CallHost() {
       return;
     }
   }, [incoming]);
+
+  // Ack "berdering" ke caller: begitu dialog incoming muncul, callee
+  // gabung sebentar ke channel `call:<id>` dan broadcast signal
+  // `ringing` supaya CallScreen di sisi caller beralih dari
+  // "Memanggil…" → "Berdering…". Diulang beberapa kali untuk mengatasi
+  // race saat caller belum sempat subscribe channel-nya.
+  useEffect(() => {
+    if (!incoming || !meId) return;
+    let closed = false;
+    const ch = supabase.channel(callChannelName(incoming.callId), {
+      config: { broadcast: { self: false, ack: false } },
+    });
+    const payload: CallSignal = { t: "ringing", from: meId, callId: incoming.callId };
+    let ticks = 0;
+    let interval: ReturnType<typeof setInterval> | null = null;
+    ch.subscribe((status) => {
+      if (status !== "SUBSCRIBED" || closed) return;
+      void ch.send({ type: "broadcast", event: "signal", payload });
+      interval = setInterval(() => {
+        ticks += 1;
+        void ch.send({ type: "broadcast", event: "signal", payload });
+        // Berhenti setelah ±15 detik; caller sudah pasti tahu, atau
+        // sudah timeout sendiri.
+        if (ticks >= 10) {
+          if (interval) clearInterval(interval);
+          interval = null;
+        }
+      }, 1500);
+    });
+    return () => {
+      closed = true;
+      if (interval) clearInterval(interval);
+      try { void supabase.removeChannel(ch); } catch { /* ignore */ }
+    };
+  }, [incoming, meId]);
 
   const acceptIncoming = useCallback(() => {
     if (!incoming) return;
