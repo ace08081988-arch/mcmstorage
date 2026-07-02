@@ -2,13 +2,18 @@ import { describe, it, expect } from "vitest";
 import {
   computeBeliDerived,
   computeBeliDerived as realComputeDerived,
-  type BeliDerivedInput,
 } from "@/lib/beli-derived";
 import { computeBeliWarnings } from "@/lib/beli-warnings";
 import {
   createStrictDerivedSpy,
   createStrictWarningsSpy,
 } from "./_authenticated.gudang.strict-compute-spy";
+import {
+  FIXTURE_ITEM,
+  makeBeliItem,
+  makeBeliDerivedInput,
+  type BeliItemFixture,
+} from "@/lib/beli-fixtures";
 
 // ============================================================
 // Memastikan matcher strict-compute-spy:
@@ -20,38 +25,8 @@ import {
 //   4) ekspektasi tetap deterministik walau tercampur helper.
 // ============================================================
 
-type Item = {
-  id: string;
-  package_type: "botol" | "gram" | "pcs" | "sachet";
-  package_size: number;
-  base_unit: "g" | "pcs";
-  stock_base?: number;
-  avg_cost_per_base?: number;
-};
-
-function baseInp(over: Partial<BeliDerivedInput> = {}): BeliDerivedInput {
-  return {
-    mode: "existing",
-    selectedItem: null,
-    newPackageType: "botol",
-    newPackageSize: "500",
-    packageQty: "2",
-    pricePerPackage: "10000",
-    priceMode: "package",
-    pricePerBase: "",
-    inputKarton: false,
-    ...over,
-  };
-}
-
-const ITEM: Item = {
-  id: "botol-500",
-  package_type: "botol",
-  package_size: 500,
-  base_unit: "g",
-  stock_base: 10_000,
-  avg_cost_per_base: 20,
-};
+const baseInp = makeBeliDerivedInput;
+const ITEM: BeliItemFixture = FIXTURE_ITEM;
 
 describe("strict-compute-spy: matcher hanya menghitung panggilan pipeline", () => {
   it("panggilan via `.call` menaikkan pipelineCalls; panggilan real langsung tidak", () => {
@@ -59,7 +34,7 @@ describe("strict-compute-spy: matcher hanya menghitung panggilan pipeline", () =
 
     // Helper luar pipeline — memakai fungsi asli, TIDAK terkait spy.
     for (let i = 0; i < 50; i++) {
-      const withStock: Item = { ...ITEM, stock_base: i };
+      const withStock = makeBeliItem({ stock_base: i });
       realComputeDerived(baseInp({ selectedItem: withStock }));
     }
 
@@ -83,7 +58,7 @@ describe("strict-compute-spy: matcher hanya menghitung panggilan pipeline", () =
     for (let i = 0; i < 200; i++) {
       computeBeliWarnings({
         mode: "existing",
-        selectedItem: { ...ITEM, avg_cost_per_base: 20 + (i % 5) },
+        selectedItem: makeBeliItem({ avg_cost_per_base: 20 + (i % 5) }),
         derived,
         priceMode: "package",
         inputKarton: false,
@@ -125,18 +100,18 @@ describe("strict-compute-spy: matcher hanya menghitung panggilan pipeline", () =
   it("stabilitas ekspektasi: 500 helper-calls + 3 pipeline-calls → tetap 3", () => {
     const spy = createStrictDerivedSpy();
     for (let i = 0; i < 500; i++) {
-      const withStock: Item = { ...ITEM, stock_base: i };
+      const withStock = makeBeliItem({ stock_base: i });
       realComputeDerived(baseInp({ selectedItem: withStock }));
     }
     spy.call(baseInp({ selectedItem: ITEM }));
     for (let i = 0; i < 250; i++) {
-      const withStock: Item = { ...ITEM, stock_base: i };
+      const withStock = makeBeliItem({ stock_base: i });
       realComputeDerived(baseInp({ selectedItem: withStock }));
     }
     spy.call(baseInp({ selectedItem: ITEM, packageQty: "3" }));
     spy.call(baseInp({ selectedItem: ITEM, packageQty: "4" }));
     for (let i = 0; i < 250; i++) {
-      const withStock: Item = { ...ITEM, stock_base: i };
+      const withStock = makeBeliItem({ stock_base: i });
       realComputeDerived(baseInp({ selectedItem: withStock }));
     }
     expect(spy.pipelineCalls).toBe(3);
