@@ -1,7 +1,15 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash, Send, CheckSquare, Square, Trash2, ListChecks } from "lucide-react";
+import { Scale, Plus, ChevronRight, Search, X, MessageCircle, MapPin, Inbox, RefreshCw, Radio, Loader2, Check, CheckCircle2, XCircle, CircleSlash, Send, CheckSquare, Square, Trash2, ListChecks, MoreVertical } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -777,6 +785,10 @@ export function ReadyEcerSection() {
                 selectMode={selectMode}
                 selected={selectedIds.has(r.id)}
                 onToggleSelect={() => toggleSelect(r.id)}
+                onEnterSelect={() => {
+                  setSelectMode(true);
+                  setSelectedIds(new Set([r.id]));
+                }}
               />
             ))
           )}
@@ -967,6 +979,7 @@ type EcerCardProps = {
   selectMode?: boolean;
   selected?: boolean;
   onToggleSelect?: () => void;
+  onEnterSelect?: () => void;
 };
 function EcerCard(props: EcerCardProps) {
   return <EcerCardImpl {...props} />;
@@ -1149,8 +1162,44 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, onToggleSelect }: EcerCardProps) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
   const [sending, setSending] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  function startLongPress() {
+    if (selectMode) return;
+    longPressFired.current = false;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      try { navigator.vibrate?.(30); } catch { /* noop */ }
+      setMenuOpen(true);
+    }, 500);
+  }
+  function cancelLongPress() {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  }
+  function doDelete() {
+    if (shots.length > 0) {
+      if (view === "sent") {
+        unmarkSent(shots.map((s) => s.id));
+        toast.success("Kartu dikembalikan ke daftar aktif.");
+      } else {
+        markSent(shots.map((s) => s.id), {
+          channel: "wa",
+          mapsUrl: null,
+          status: "success",
+          idemKey: `manual-skip-${r.id}-${Date.now()}`,
+        });
+        toast.success("Kartu ditandai terkirim & dipindah ke Riwayat.");
+      }
+    } else {
+      toast.info("Belum ada kiriman pegawai untuk kartu ini.");
+    }
+    setConfirmDelete(false);
+  }
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
   const [sendError, setSendError] = useState<string | null>(null);
@@ -1698,9 +1747,82 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               e.stopPropagation();
               onToggleSelect?.();
             }
-          : undefined
+          : (e) => {
+              if (longPressFired.current) {
+                e.preventDefault();
+                e.stopPropagation();
+                longPressFired.current = false;
+              }
+            }
       }
+      onPointerDown={selectMode ? undefined : startLongPress}
+      onPointerUp={cancelLongPress}
+      onPointerLeave={cancelLongPress}
+      onPointerCancel={cancelLongPress}
+      onContextMenu={(e) => { e.preventDefault(); setMenuOpen(true); }}
     >
+      {!selectMode && (
+        <DropdownMenu open={menuOpen} onOpenChange={setMenuOpen}>
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              aria-label="Menu kartu"
+              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setMenuOpen(true); }}
+              onPointerDown={(e) => e.stopPropagation()}
+              className="absolute right-1.5 top-1.5 z-30 inline-flex h-6 w-6 items-center justify-center rounded-md border border-border/60 bg-card/90 text-muted-foreground shadow-sm backdrop-blur-sm transition hover:bg-accent hover:text-foreground"
+            >
+              <MoreVertical className="h-3.5 w-3.5" />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-52" onClick={(e) => e.stopPropagation()}>
+            <DropdownMenuLabel className="truncate">{r.name}</DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            {view === "sent" ? (
+              <DropdownMenuItem onSelect={() => { setMenuOpen(false); doDelete(); }}>
+                <Undo2 className="mr-2 h-3.5 w-3.5" />
+                Kembalikan ke aktif
+              </DropdownMenuItem>
+            ) : (
+              <DropdownMenuItem onSelect={() => { setMenuOpen(false); setConfirmDelete(true); }} className="text-destructive focus:text-destructive">
+                <Trash2 className="mr-2 h-3.5 w-3.5" />
+                Hapus (tandai terkirim)
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem
+              onSelect={() => {
+                setMenuOpen(false);
+                onEnterSelect?.();
+              }}
+            >
+              <CheckSquare className="mr-2 h-3.5 w-3.5" />
+              Pilih beberapa
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                setMenuOpen(false);
+                onRefresh();
+              }}
+            >
+              <RefreshCw className="mr-2 h-3.5 w-3.5" />
+              Segarkan
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
+      )}
+      <AlertDialog open={confirmDelete} onOpenChange={setConfirmDelete}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus kartu "{r.name}"?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Kartu akan ditandai terkirim tanpa mengirim ke WA atau Chat, lalu pindah ke tab Riwayat terkirim. Anda bisa mengembalikannya dari sana.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={doDelete}>Ya, hapus</AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {selectMode && (
         <button
           type="button"
@@ -1736,7 +1858,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             {shots.length} foto
           </span>
           {thumbs[0]?.location_url && (
-            <span className="absolute right-1.5 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-[11px] font-medium leading-none text-white backdrop-blur-sm">
+            <span className="absolute right-9 top-1.5 inline-flex h-5 shrink-0 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-[11px] font-medium leading-none text-white backdrop-blur-sm">
               <MapPin className="h-2.5 w-2.5" /> GPS
             </span>
           )}
