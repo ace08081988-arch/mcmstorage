@@ -6,10 +6,23 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 
+const BUILD_ID = (() => {
+  const t = Date.now().toString(36);
+  const r = Math.random().toString(36).slice(2, 8);
+  return `${t}-${r}`;
+})();
+const BUILD_TIME = new Date().toISOString();
+
 export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
     server: { entry: "server" },
+  },
+  vite: {
+    define: {
+      __BUILD_ID__: JSON.stringify(BUILD_ID),
+      __BUILD_TIME__: JSON.stringify(BUILD_TIME),
+    },
   },
 });
