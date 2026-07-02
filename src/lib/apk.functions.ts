@@ -722,3 +722,154 @@ export const getApkDownloadStats = createServerFn({ method: "GET" })
       })),
     };
   });
+
+export type ValidateApkLinkResult = {
+  active: boolean;
+  name: string | null;
+  variant: ApkVariant | null;
+  reason:
+    | "ok"
+    | "invalid_url"
+    | "wrong_variant"
+    | "not_found"
+    | "unpublished"
+    | "expired"
+    | "server_error";
+  freshUrl: string | null;
+  sizeMB: number | null;
+  updatedAt: string | null;
+  versionName: string | null;
+  versionCode: number | null;
+  belowMinimum: boolean;
+};
+
+/**
+ * Parse nama berkas APK dari URL signed Supabase Storage.
+ * Contoh URL:
+ *   https://<host>/storage/v1/object/sign/apk-releases/<name>?token=...
+ * Kembalikan null bila URL tidak dikenali sebagai signed URL bucket apk-releases.
+ */
+function parseApkFileNameFromUrl(url: string): string | null {
+  try {
+    const u = new URL(url);
+    const m = u.pathname.match(
+      /\/storage\/v1\/object\/(?:sign|public)\/apk-releases\/([^/?#]+)$/,
+    );
+    if (!m) return null;
+    const name = decodeURIComponent(m[1]);
+    if (!/\.apk$/i.test(name)) return null;
+    return name;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Validasi apakah link unduhan APK chat masih aktif.
+ * - URL tidak dikenali → invalid_url
+ * - Nama bukan varian chat → wrong_variant
+ * - Berkas tidak ada lagi di bucket → not_found
+ * - Meta rilis menandai non-publik/tertunda → unpublished
+ * - Token signed URL kedaluwarsa → expired (berkas masih ada; kirim URL baru)
+ * - OK → active=true + freshUrl untuk unduh ulang
+ */
+export const validateChatApkLink = createServerFn({ method: "POST" })
+  .inputValidator((data: { url: string }) => {
+    if (typeof data?.url !== "string" || data.url.length === 0) {
+      throw new Error("URL tidak valid");
+    }
+    return { url: data.url.trim() };
+  })
+  .handler(async ({ data }): Promise<ValidateApkLinkResult> => {
+    const base: ValidateApkLinkResult = {
+      active: false,
+      name: null,
+      variant: null,
+      reason: "invalid_url",
+      freshUrl: null,
+      sizeMB: null,
+      updatedAt: null,
+      versionName: null,
+      versionCode: null,
+      belowMinimum: false,
+    };
+    const name = parseApkFileNameFromUrl(data.url);
+    if (!name) return base;
+    const variant: ApkVariant = isChatName(name) ? "chat" : "storage";
+    if (variant !== "chat") {
+      return { ...base, name, variant, reason: "wrong_variant" };
+    }
+
+    try {
+      const { supabaseAdmin } = await import(
+        "@/integrations/supabase/client.server"
+      );
+      const BUCKET = "apk-releases";
+      const { data: files, error } = await supabaseAdmin.storage
+        .from(BUCKET)
+        .list("", { limit: 500, sortBy: { column: "updated_at", order: "desc" } });
+      if (error || !files) {
+        return { ...base, name, variant, reason: "server_error" };
+      }
+      const file = files.find((f) => f.name === name);
+      if (!file) {
+        return { ...base, name, variant, reason: "not_found" };
+      }
+      const meta = await loadReleaseMetaMap();
+      if (!isPublic(name, meta)) {
+        return { ...base, name, variant, reason: "unpublished" };
+      }
+
+      const parsed = parseApkFileName(name);
+      const size = (file.metadata as { size?: number } | null)?.size ?? null;
+      const sizeMB = size
+        ? Math.round((size / (1024 * 1024)) * 10) / 10
+        : null;
+      const mins = await loadMinSupportedMap();
+      const belowMinimum = isBelowMinimum(parsed, mins.chat ?? null);
+
+      // Cek token signed URL: bila kedaluwarsa/invalid, tetap kembalikan
+      // freshUrl agar user bisa segera memakai link baru.
+      let tokenValid = false;
+      try {
+        const u = new URL(data.url);
+        const token = u.searchParams.get("token");
+        if (token) {
+          const parts = token.split(".");
+          if (parts.length === 3) {
+            const payload = JSON.parse(
+              Buffer.from(
+                parts[1].replace(/-/g, "+").replace(/_/g, "/"),
+                "base64",
+              ).toString("utf-8"),
+            ) as { exp?: number };
+            if (typeof payload.exp === "number") {
+              tokenValid = payload.exp * 1000 > Date.now();
+            }
+          }
+        }
+      } catch {
+        tokenValid = false;
+      }
+
+      const { data: signed } = await supabaseAdmin.storage
+        .from(BUCKET)
+        .createSignedUrl(name, 60 * 60, { download: name });
+      const freshUrl = signed?.signedUrl ?? null;
+
+      return {
+        active: tokenValid,
+        name,
+        variant,
+        reason: tokenValid ? "ok" : "expired",
+        freshUrl,
+        sizeMB,
+        updatedAt: file.updated_at ?? file.created_at ?? null,
+        versionName: parsed.versionName,
+        versionCode: parsed.versionCode,
+        belowMinimum,
+      };
+    } catch {
+      return { ...base, name, variant, reason: "server_error" };
+    }
+  });
