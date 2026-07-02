@@ -2028,7 +2028,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Tambahan stok</span>
-          <b>{isWItem(selectedItem) ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, baseUnit)}</b>
+          <b>{isWItem(selectedItem) ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, displayBaseUnit)}</b>
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Harga per {displayPackageType}</span>
