@@ -1,5 +1,5 @@
 {
-  "_note": "Baseline durasi micro-benchmark konflik lebar (ms). bestMs = best-of-N (regresi), p95Ms = flakiness. Update via: UPDATE_BENCH_BASELINE=1 bunx vitest run src/routes/_authenticated.gudang.conflict-wide-fields-benchmark.test.ts",
+  "_note": "Baseline durasi micro-benchmark konflik lebar (ms). bestMs = best-of-N (regresi durasi), p95Ms = flakiness p95. Per-scenario `maxCv`/`p95Pct` mengoverride ambang flakiness untuk run yang sangat singkat. Update: UPDATE_BENCH_BASELINE=1 bunx vitest run src/routes/_authenticated.gudang.conflict-wide-fields-benchmark.test.ts",
   "capturedOn": "ubuntu-latest-node22-x64",
   "regressionPctDefault": 50,
   "floorMs": {
