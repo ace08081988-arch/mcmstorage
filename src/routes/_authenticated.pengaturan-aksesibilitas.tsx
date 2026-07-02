@@ -112,7 +112,7 @@ function PengaturanAksesibilitasPage() {
     savedRef.current = true;
     setSnapshot(draft);
     setTimeout(() => { savedRef.current = false; }, 0);
-    toast.success("Preferensi aksesibilitas disimpan");
+    toast.success("Pengaturan disimpan");
   };
   const commitCancel = () => {
     if (!dirty) return;
