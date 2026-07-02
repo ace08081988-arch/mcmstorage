@@ -918,6 +918,36 @@ function PengaturanTampilanPage() {
                   </p>
                 </div>
               </button>
+              <button
+                type="button"
+                data-testid="import-from-paste"
+                onClick={importFromPaste}
+                className="flex items-start gap-3 rounded-md border p-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+              >
+                <ClipboardPaste className="h-4 w-4 mt-0.5 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">Impor dari clipboard</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tempel JSON pengaturan dari clipboard. Fallback prompt manual
+                    jika izin clipboard tidak tersedia.
+                  </p>
+                </div>
+              </button>
+              <button
+                type="button"
+                data-testid="import-from-url"
+                onClick={importFromUrl}
+                className="flex items-start gap-3 rounded-md border p-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+              >
+                <Link2 className="h-4 w-4 mt-0.5 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">Impor dari URL</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Ambil file JSON dari tautan <code className="rounded bg-muted px-1">https://…</code>{" "}
+                    (dibatasi 10MB).
+                  </p>
+                </div>
+              </button>
             </div>
             <p className="text-[11px] leading-snug text-muted-foreground">
               Hasil impor hanya menimpa pratinjau di halaman ini — data akun, chat, dan
