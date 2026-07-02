@@ -21,7 +21,7 @@ import {
   LS,
 } from "@/components/appearance-settings";
 import { useAppPrefs } from "@/lib/app-prefs";
-import { applyCompactMode, COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
+import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 
 const COMPACT_LS = "app-compact-mode";
 function readCompact(): boolean {
