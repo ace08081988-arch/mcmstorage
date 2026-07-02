@@ -1,0 +1,82 @@
+name: gudang-recompute matrix
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'src/lib/beli-derived.ts'
+      - 'src/routes/_authenticated.gudang.*'
+      - 'package.json'
+      - '.github/workflows/gudang-recompute-matrix.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/lib/beli-derived.ts'
+      - 'src/routes/_authenticated.gudang.*'
+      - 'package.json'
+      - '.github/workflows/gudang-recompute-matrix.yml'
+  workflow_dispatch:
+
+jobs:
+  node-matrix:
+    name: node ${{ matrix.node }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        node: ['20', '22', '24']
+        include:
+          - os: macos-latest
+            node: '22'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+      - name: Install deps (bun)
+        run: bun install --frozen-lockfile
+      - name: Run gudang recompute suite on Node
+        run: node --version && npx --no-install vitest run --reporter=default $(node -e "const p=require('./package.json');const s=p.scripts['test:gudang-recompute'];process.stdout.write(s.replace(/^vitest run /,''))")
+
+  bun-matrix:
+    name: bun ${{ matrix.bun }} (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        bun: ['1.1.34', '1.2.0', 'latest']
+        include:
+          - os: macos-latest
+            bun: 'latest'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: ${{ matrix.bun }}
+      - name: Print versions
+        run: bun --version
+      - name: Install deps
+        run: bun install --frozen-lockfile
+      - name: Run gudang recompute suite on Bun
+        run: bun run test:gudang-recompute
+
+  summary:
+    name: recompute matrix summary
+    needs: [node-matrix, bun-matrix]
+    if: always()
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any matrix job failed
+        run: |
+          if [ "${{ needs.node-matrix.result }}" != "success" ] || [ "${{ needs.bun-matrix.result }}" != "success" ]; then
+            echo "One or more recompute matrix jobs failed."
+            echo "node-matrix: ${{ needs.node-matrix.result }}"
+            echo "bun-matrix:  ${{ needs.bun-matrix.result }}"
+            exit 1
+          fi
+          echo "All recompute matrix jobs passed."
