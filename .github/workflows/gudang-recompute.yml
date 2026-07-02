@@ -134,6 +134,15 @@ jobs:
             echo "" >> "$GITHUB_STEP_SUMMARY"
           fi
 
+      - name: Flakiness breakdown (p95 / CV / floor guard)
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-flakiness.md ]; then
+            cat test-artifacts/conflict-wide-fields-flakiness.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
       - name: Upload benchmark trend artifact (always)
         if: always()
         uses: actions/upload-artifact@v4
@@ -145,6 +154,17 @@ jobs:
             test-artifacts/conflict-wide-fields-trend.md
           if-no-files-found: ignore
           retention-days: 60
+
+      - name: Upload flakiness breakdown artifact (always)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-flakiness-breakdown-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-artifacts/conflict-wide-fields-flakiness.md
+            test-artifacts/conflict-wide-fields-flakiness.json
+          if-no-files-found: ignore
+          retention-days: 30
 
       - name: Upload benchmark artifact (always)
         if: always()
