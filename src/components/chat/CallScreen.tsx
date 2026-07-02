@@ -156,7 +156,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             if (!doneRef.current) {
               doneRef.current = true;
               setPhase("ended");
-              setFinalStatus(row.status as typeof finalStatus extends null ? never : Exclude<typeof finalStatus, null>);
+              setFinalStatus(
+                row.status as "ended" | "declined" | "missed" | "cancelled" | "failed",
+              );
               void sessionRef.current?.close(row.status);
               onClose();
             }
