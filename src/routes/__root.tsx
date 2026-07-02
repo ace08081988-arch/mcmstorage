@@ -467,6 +467,7 @@ function RootComponent() {
       <ConfirmHost />
       <WhatsAppTargetHost />
       <WaPreviewHost />
+      <ChatModeSplash />
     </QueryClientProvider>
   );
 }
