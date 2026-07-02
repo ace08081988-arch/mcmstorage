@@ -44,6 +44,8 @@ import { PushNotificationSettings } from "@/components/chat/PushNotificationSett
 import { OrgNameSettings } from "@/components/OrgNameSettings";
 import { UpgradeToStorageCard } from "@/components/UpgradeToStorageCard";
 import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
+import { Link } from "@tanstack/react-router";
+import { Palette } from "lucide-react";
 
 export const Route = createFileRoute("/_authenticated/profil")({
   component: ProfilPage,
@@ -490,6 +492,30 @@ function ProfilPage() {
         <div className="grid grid-cols-2 gap-2 sm:max-w-sm">
           <DownloadChatApkShortcut />
         </div>
+      </section>
+
+      <Separator />
+
+      <section className="space-y-2">
+        <div>
+          <h2 className="text-sm font-semibold">Tampilan</h2>
+          <p className="text-[11px] text-muted-foreground">
+            Ubah tema, aksen, font, latar, dan pilih preset profesional.
+          </p>
+        </div>
+        <Link
+          to="/pengaturan-tampilan"
+          className="flex items-center gap-3 rounded-md border p-3 hover:bg-accent transition-transform active:scale-[0.99] sm:max-w-sm"
+        >
+          <div className="grid h-9 w-9 place-items-center rounded-md bg-primary/10 text-primary">
+            <Palette className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-semibold">Pengaturan tampilan</p>
+            <p className="text-[11px] text-muted-foreground">Tema, aksen, font, latar & preset</p>
+          </div>
+          <span className="text-muted-foreground">›</span>
+        </Link>
       </section>
     </main>
   );
