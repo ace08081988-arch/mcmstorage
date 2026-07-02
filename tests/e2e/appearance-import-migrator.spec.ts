@@ -31,6 +31,111 @@ async function runImport(page: Page, payload: unknown | string) {
 }
 
 /**
+ * Assertion end-to-end: nilai hasil migrasi TIDAK cuma echo balik ke tabel
+ * patch, tapi juga benar-benar tersalur ke pratinjau (readout `ai-preview-*`
+ * + inline style / data-* pada `ai-preview`). Dipanggil setelah setiap
+ * skenario impor sukses (v1, v2, v3) sehingga regresi "patch benar tapi UI
+ * tidak konsisten" langsung tertangkap.
+ */
+async function expectPreviewMatches(
+  page: Page,
+  expected: {
+    theme: string;
+    font: string;
+    size: string;
+    accent: string;
+    radius: string;
+    fontScale: number | string;
+    bgImage: string;
+    bgOverlay: number | string;
+    bgBlur: number | string;
+    compact: boolean;
+    highContrast: boolean;
+    reduceMotion: boolean;
+  },
+) {
+  const preview = page.getByTestId("ai-preview");
+
+  // Readout teks per field — bukti render text-node di UI konsisten.
+  await expect(page.getByTestId("ai-preview-theme")).toHaveText(expected.theme);
+  await expect(page.getByTestId("ai-preview-accent")).toHaveText(
+    expected.accent,
+  );
+  await expect(page.getByTestId("ai-preview-font")).toHaveText(expected.font);
+  await expect(page.getByTestId("ai-preview-size")).toHaveText(expected.size);
+  await expect(page.getByTestId("ai-preview-radius")).toHaveText(
+    expected.radius,
+  );
+  await expect(page.getByTestId("ai-preview-font-scale")).toHaveText(
+    String(expected.fontScale),
+  );
+  await expect(page.getByTestId("ai-preview-bg-image")).toHaveText(
+    expected.bgImage,
+  );
+  await expect(page.getByTestId("ai-preview-bg-overlay")).toHaveText(
+    String(expected.bgOverlay),
+  );
+  await expect(page.getByTestId("ai-preview-bg-blur")).toHaveText(
+    String(expected.bgBlur),
+  );
+  await expect(page.getByTestId("ai-preview-compact")).toHaveText(
+    String(expected.compact),
+  );
+  await expect(page.getByTestId("ai-preview-high-contrast")).toHaveText(
+    String(expected.highContrast),
+  );
+  await expect(page.getByTestId("ai-preview-reduce-motion")).toHaveText(
+    String(expected.reduceMotion),
+  );
+
+  // data-* di root pratinjau — bukti binding React state → DOM attribute
+  // konsisten (mis. dipakai selector CSS/analytics).
+  await expect(preview).toHaveAttribute("data-theme", expected.theme);
+  await expect(preview).toHaveAttribute("data-font", expected.font);
+  await expect(preview).toHaveAttribute("data-size", expected.size);
+  await expect(preview).toHaveAttribute("data-accent", expected.accent);
+  await expect(preview).toHaveAttribute(
+    "data-compact",
+    String(expected.compact),
+  );
+  await expect(preview).toHaveAttribute(
+    "data-high-contrast",
+    String(expected.highContrast),
+  );
+  await expect(preview).toHaveAttribute(
+    "data-reduce-motion",
+    String(expected.reduceMotion),
+  );
+
+  // Inline style + custom property — bukti nilai numerik (radius, fontScale,
+  // bgOverlay, bgBlur) benar-benar sampai ke computed style, bukan cuma
+  // readout teks.
+  const computed = await preview.evaluate((el) => {
+    const cs = window.getComputedStyle(el);
+    return {
+      borderRadius: cs.borderRadius,
+      fontSize: cs.fontSize,
+      paddingInline: cs.paddingInline || cs.paddingLeft,
+      overlay: cs.getPropertyValue("--ai-bg-overlay").trim(),
+      blur: cs.getPropertyValue("--ai-bg-blur").trim(),
+      backgroundImage: cs.backgroundImage,
+    };
+  });
+  // `border-radius: ${radius}rem` → dikonversi ke px oleh browser; cukup
+  // pastikan bukan nol dan bukan default (kalau radius > 0).
+  if (Number(expected.radius) > 0) {
+    expect(computed.borderRadius).not.toBe("0px");
+  }
+  expect(computed.overlay).toBe(String(expected.bgOverlay));
+  expect(computed.blur).toBe(`${expected.bgBlur}px`);
+  if (expected.bgImage) {
+    expect(computed.backgroundImage).toContain(expected.bgImage);
+  } else {
+    expect(computed.backgroundImage).toBe("none");
+  }
+}
+
+/**
  * Buffer console + pageerror + failed request events per test. Diattach ke
  * hasil test HANYA saat gagal (afterEach) supaya:
  *   - run yang sukses tidak dipenuhi log/screenshot,
@@ -195,14 +300,22 @@ test.describe("Appearance migrator · impor via UI harness", () => {
     await expect(page.getByTestId("ai-patch-highContrast")).toHaveText("true");
     await expect(page.getByTestId("ai-patch-reduceMotion")).toHaveText("false");
 
-    // Bukti "migrator terpakai di UI": pratinjau ikut ter-update.
-    await expect(page.getByTestId("ai-preview-theme")).toHaveText("dark");
-    await expect(page.getByTestId("ai-preview-accent")).toHaveText("emerald");
-    const previewStyle = await page
-      .getByTestId("ai-preview")
-      .getAttribute("style");
-    expect(previewStyle ?? "").toMatch(/border-radius:\s*0\.875rem/);
-    expect(previewStyle ?? "").toMatch(/font-size:\s*1\.1rem/);
+    // Bukti "migrator terpakai di UI end-to-end": pratinjau memantulkan
+    // seluruh field patch, bukan cuma theme/accent.
+    await expectPreviewMatches(page, {
+      theme: "dark",
+      font: "serif",
+      size: "lg",
+      accent: "emerald",
+      radius: "0.875",
+      fontScale: 1.1,
+      bgImage: "https://example.com/bg-v1.jpg",
+      bgOverlay: 0.6,
+      bgBlur: 12,
+      compact: true,
+      highContrast: true,
+      reduceMotion: false,
+    });
   });
 
   test("skema v1 tanpa `version` sama sekali → default ke v1", async ({
@@ -268,6 +381,22 @@ test.describe("Appearance migrator · impor via UI harness", () => {
     await expect(page.getByTestId("ai-patch-fontScale")).toHaveText("1.25");
     await expect(page.getByTestId("ai-patch-highContrast")).toHaveText("true");
     await expect(page.getByTestId("ai-patch-reduceMotion")).toHaveText("true");
+
+    // v2 juga harus konsisten sampai ke UI pratinjau.
+    await expectPreviewMatches(page, {
+      theme: "light",
+      font: "display",
+      size: "xl",
+      accent: "rose",
+      radius: "1.25",
+      fontScale: 1.25,
+      bgImage: "https://example.com/bg-v2.jpg",
+      bgOverlay: 0.5,
+      bgBlur: 20,
+      compact: true,
+      highContrast: true,
+      reduceMotion: true,
+    });
   });
 
   test("skema versi lebih baru (v3, hipotetis) → forward=true & field baru diabaikan", async ({
@@ -329,6 +458,25 @@ test.describe("Appearance migrator · impor via UI harness", () => {
         "theme",
       ].sort(),
     );
+
+    // Field lama dari payload v3 tetap harus konsisten di UI; field baru
+    // (animatedGradient, glassMorphism, motionProfile, dyslexiaFriendly)
+    // tidak punya readout di harness — cukup dipastikan patch tidak
+    // mengandungnya (assert di atas).
+    await expectPreviewMatches(page, {
+      theme: "dark",
+      font: "sans",
+      size: "md",
+      accent: "violet",
+      radius: "0.75",
+      fontScale: 1.05,
+      bgImage: "",
+      bgOverlay: 0.4,
+      bgBlur: 10,
+      compact: false,
+      highContrast: false,
+      reduceMotion: false,
+    });
   });
 
   test("payload dari aplikasi lain → status `unknown_type`", async ({

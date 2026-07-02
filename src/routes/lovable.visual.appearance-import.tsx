@@ -159,6 +159,13 @@ function AppearanceImportHarness() {
       <section
         data-testid="ai-preview"
         className="rounded border p-4"
+        data-theme={patch?.theme ?? ""}
+        data-font={patch?.font ?? ""}
+        data-size={patch?.size ?? ""}
+        data-accent={patch?.accent ?? ""}
+        data-compact={patch ? String(patch.compact) : ""}
+        data-high-contrast={patch ? String(patch.highContrast) : ""}
+        data-reduce-motion={patch ? String(patch.reduceMotion) : ""}
         style={
           patch
             ? {
@@ -166,12 +173,43 @@ function AppearanceImportHarness() {
                 fontSize: `${patch.fontScale}rem`,
                 filter: patch.highContrast ? "contrast(1.4)" : undefined,
                 transitionProperty: patch.reduceMotion ? "none" : undefined,
+                backgroundImage: patch.bgImage
+                  ? `url(${patch.bgImage})`
+                  : undefined,
+                // `bgOverlay` (0..1) & `bgBlur` (px) di-expose sebagai
+                // custom property supaya bisa dibaca test via
+                // getPropertyValue — bukti nilai numerik ikut nyampe UI.
+                ["--ai-bg-overlay" as string]: patch.bgOverlay,
+                ["--ai-bg-blur" as string]: `${patch.bgBlur}px`,
+                paddingInline: patch.compact ? "0.5rem" : "1rem",
               }
             : undefined
         }
       >
         <div data-testid="ai-preview-theme">{patch?.theme ?? "—"}</div>
         <div data-testid="ai-preview-accent">{patch?.accent ?? "—"}</div>
+        <div data-testid="ai-preview-font">{patch?.font ?? "—"}</div>
+        <div data-testid="ai-preview-size">{patch?.size ?? "—"}</div>
+        <div data-testid="ai-preview-radius">{patch?.radius ?? "—"}</div>
+        <div data-testid="ai-preview-font-scale">
+          {patch ? String(patch.fontScale) : "—"}
+        </div>
+        <div data-testid="ai-preview-bg-image">{patch?.bgImage ?? "—"}</div>
+        <div data-testid="ai-preview-bg-overlay">
+          {patch ? String(patch.bgOverlay) : "—"}
+        </div>
+        <div data-testid="ai-preview-bg-blur">
+          {patch ? String(patch.bgBlur) : "—"}
+        </div>
+        <div data-testid="ai-preview-compact">
+          {patch ? String(patch.compact) : "—"}
+        </div>
+        <div data-testid="ai-preview-high-contrast">
+          {patch ? String(patch.highContrast) : "—"}
+        </div>
+        <div data-testid="ai-preview-reduce-motion">
+          {patch ? String(patch.reduceMotion) : "—"}
+        </div>
       </section>
     </main>
   );
