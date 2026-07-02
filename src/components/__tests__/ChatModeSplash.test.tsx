@@ -207,3 +207,126 @@ describe("ChatModeSplash · konsistensi antar-navigasi", () => {
     act(() => root.unmount());
   });
 });
+
+describe("ChatModeSplash · toggle prefers-reduced-motion", () => {
+  // Kontrak yang diverifikasi:
+  //  - `matchMedia("prefers-reduced-motion: reduce")` dibaca SEKALI pada
+  //     mount di dalam useEffect. Toggle nilai media query di tengah
+  //     siklus splash TIDAK boleh mengubah timeline yang sudah
+  //     terjadwal — kalau berubah, user akan melihat transisi janggal
+  //     (mis. splash tiba-tiba hilang di tengah fade, atau fade muncul
+  //     padahal reduce baru saja aktif).
+  //  - Sebaliknya, mount berikutnya di session/import baru HARUS
+  //     memakai nilai reduce-motion terbaru — bukan value yang di-cache.
+
+  it("toggle reduce→normal setelah mount TIDAK memperpanjang atau memicu fade", async () => {
+    reduceMotion = true;
+    const Splash = await loadComponent();
+    const { root } = mount(Splash);
+    expect(splashNode()).not.toBeNull();
+
+    // Simulasikan user menonaktifkan reduce-motion setelah splash
+    // mulai — timeline reduce (hold 400ms, fade 0ms) tetap berlaku.
+    reduceMotion = false;
+    installMatchMedia();
+
+    // Setelah 399ms masih ada; setelah 400ms sudah hilang tanpa fade.
+    act(() => {
+      vi.advanceTimersByTime(399);
+    });
+    const midway = splashNode();
+    expect(midway).not.toBeNull();
+    // Tidak boleh masuk fase fade (className opacity-0) — reduce tetap.
+    expect(midway!.className).not.toContain("opacity-0");
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(splashNode()).toBeNull();
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBe("1");
+
+    act(() => root.unmount());
+  });
+
+  it("toggle normal→reduce setelah mount TIDAK memangkas fade yang sudah terjadwal", async () => {
+    reduceMotion = false;
+    const Splash = await loadComponent();
+    const { root } = mount(Splash);
+    expect(splashNode()).not.toBeNull();
+
+    // User baru saja mengaktifkan reduce-motion di tengah hold —
+    // seharusnya tidak memaksa splash hilang lebih cepat.
+    reduceMotion = true;
+    installMatchMedia();
+
+    act(() => {
+      vi.advanceTimersByTime(999);
+    });
+    // Masih di fase hold, belum fade.
+    expect(splashNode()).not.toBeNull();
+    expect(splashNode()!.className).not.toContain("opacity-0");
+
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    // hold selesai → masuk fase fade (opacity-0), node MASIH ada.
+    const fading = splashNode();
+    expect(fading).not.toBeNull();
+    expect(fading!.className).toContain("opacity-0");
+    expect(fading!.getAttribute("style") ?? "").toContain(
+      "transition-duration: 500ms",
+    );
+
+    // Fade penuh 500ms harus diselesaikan — bukan dipotong ke 0.
+    act(() => {
+      vi.advanceTimersByTime(499);
+    });
+    expect(splashNode()).not.toBeNull();
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(splashNode()).toBeNull();
+
+    act(() => root.unmount());
+  });
+
+  it("mount berikutnya di session baru memakai nilai reduce-motion yang baru", async () => {
+    // Session #1 dengan reduce=true → selesai singkat.
+    reduceMotion = true;
+    const Splash1 = await loadComponent();
+    const first = mount(Splash1);
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(splashNode()).toBeNull();
+    act(() => first.root.unmount());
+
+    // Simulasi session baru: bersihkan session storage & re-import
+    // modul supaya `shownThisSession` flag reset — lalu toggle
+    // reduce-motion ke OFF. Timeline mount berikutnya harus penuh.
+    window.sessionStorage.clear();
+    reduceMotion = false;
+    installMatchMedia();
+    const Splash2 = await loadComponent();
+    const second = mount(Splash2);
+    expect(splashNode()).not.toBeNull();
+
+    // Belum masuk fade sebelum hold penuh (1000ms).
+    act(() => {
+      vi.advanceTimersByTime(999);
+    });
+    expect(splashNode()!.className).not.toContain("opacity-0");
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    // Sekarang fase fade — bukti timeline reduce=false benar-benar
+    // terpakai di mount baru, bukan value lama.
+    expect(splashNode()!.className).toContain("opacity-0");
+
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(splashNode()).toBeNull();
+    act(() => second.root.unmount());
+  });
+});
