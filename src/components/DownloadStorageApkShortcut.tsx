@@ -17,18 +17,25 @@ export function DownloadStorageApkShortcut() {
   async function onClick() {
     if (busy) return;
     setBusy(true);
+    const loadingId = toast.loading("Menyiapkan unduhan APK MCM Storage…");
     try {
       const detail = await fetchDetail({ data: { variant: "storage" } });
       const url = detail?.latest?.url;
       if (!url) {
-        toast.error("Belum ada APK MCM Storage yang tersedia.");
+        toast.error("Belum ada APK MCM Storage yang tersedia.", { id: loadingId });
         return;
       }
-      // Trigger unduh langsung — server memberi header `download`.
+      const version =
+        detail?.latest?.versionName || detail?.latest?.name || "terbaru";
       window.location.href = url;
-      toast.success("Mulai mengunduh APK MCM Storage…");
+      toast.success(`Mulai mengunduh APK MCM Storage (${version})…`, {
+        id: loadingId,
+        description: "Cek folder Unduhan pada perangkat Anda.",
+      });
     } catch (e) {
-      toast.error((e as Error)?.message || "Gagal memulai unduhan APK.");
+      toast.error((e as Error)?.message || "Gagal memulai unduhan APK.", {
+        id: loadingId,
+      });
     } finally {
       setBusy(false);
     }
