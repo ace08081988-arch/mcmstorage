@@ -10,6 +10,7 @@ import {
   Link2,
   Check,
   AlertTriangle,
+  Sparkles,
 } from "lucide-react";
 import {
   getLatestApkVariants,
@@ -103,6 +104,7 @@ function DownloadPage() {
               apk={data?.chat ?? null}
               variant="chat"
               min={data?.minSupported.chat ?? null}
+              highlight
             />
             <p className="text-center text-[11px] leading-relaxed text-muted-foreground">
               Setelah terunduh, buka berkas dan izinkan instalasi dari sumber tidak dikenal jika diminta.
@@ -124,6 +126,7 @@ function ApkCard({
   apk,
   variant,
   min,
+  highlight = false,
 }: {
   title: string;
   subtitle: string;
@@ -132,6 +135,7 @@ function ApkCard({
   apk: LatestApk;
   variant: "storage" | "chat";
   min: MinSupported | null;
+  highlight?: boolean;
 }) {
   const badge =
     accent === "emerald"
@@ -142,7 +146,19 @@ function ApkCard({
       ? "bg-emerald-600 hover:bg-emerald-700"
       : "bg-sky-600 hover:bg-sky-700";
   return (
-    <div className="w-full rounded-2xl border bg-card p-5 shadow-sm">
+    <div
+      className={`relative w-full rounded-2xl border bg-card p-5 shadow-sm ${
+        highlight
+          ? "border-sky-400/70 ring-2 ring-sky-400/40 shadow-md dark:border-sky-500/50"
+          : ""
+      }`}
+    >
+      {highlight && (
+        <span className="absolute -top-2 right-4 inline-flex items-center gap-1 rounded-full bg-sky-600 px-2 py-0.5 text-[10px] font-semibold text-white shadow">
+          <Sparkles className="h-3 w-3" />
+          Baru — bisa dipasang bersama
+        </span>
+      )}
       <div className="mb-3 flex items-center gap-3">
         <div className={`rounded-xl p-3 ${badge}`}>{icon}</div>
         <div>
