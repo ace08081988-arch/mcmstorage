@@ -23,6 +23,7 @@ export type CallSignal =
   | { t: "answer"; sdp: RTCSessionDescriptionInit; from: string }
   | { t: "ice"; candidate: RTCIceCandidateInit; from: string }
   | { t: "bye"; from: string; reason?: string }
+  | { t: "ringing"; from: string; callId: string }
   | { t: "ring"; from: string; callId: string; kind: CallKind; conversationId: string; callerName?: string };
 
 // STUN publik Google — cukup untuk 90% kasus di jaringan seluler /
@@ -45,6 +46,9 @@ export type PeerHandlers = {
   onRemoteStream: (stream: MediaStream) => void;
   onIceState?: (state: RTCIceConnectionState) => void;
   onError?: (err: Error) => void;
+  /** Callee sudah menerima ring & menampilkan dialog — caller boleh
+   *  beralih dari "Memanggil…" ke "Berdering…". */
+  onRingingAck?: () => void;
 };
 
 export type PeerSession = {
@@ -143,6 +147,8 @@ export async function createPeerSession(opts: {
         try { await pc.addIceCandidate(sig.candidate); } catch { /* candidate stale */ }
       } else if (sig.t === "bye") {
         handlers.onError?.(new Error(sig.reason ?? "Panggilan diakhiri"));
+      } else if (sig.t === "ringing") {
+        handlers.onRingingAck?.();
       }
     } catch (e) {
       handlers.onError?.(e as Error);
@@ -175,6 +181,8 @@ export async function createPeerSession(opts: {
     meId,
     close,
     sendBye: (reason?: string) => send({ t: "bye", from: meId, reason }),
+    /** Callee: kirim ack "sedang berdering" ke channel panggilan. */
+    sendRinging: () => send({ t: "ringing", from: meId, callId }),
     toggleAudio: (enabled: boolean) => {
       localStream.getAudioTracks().forEach((t) => { t.enabled = enabled; });
     },
