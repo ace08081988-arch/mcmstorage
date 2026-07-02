@@ -762,6 +762,12 @@ function ChatRoomPage() {
         </div>
         {meta.data?.kind === "dm" && dmPeer?.peerUserId && myId ? (
           <>
+            <ChatHeaderDebtControls
+              myId={myId}
+              peerUserId={dmPeer.peerUserId}
+              peerPhone={dmPeer.peerPhone ?? null}
+              peerName={displayedPeerName}
+            />
             <Button
               variant="ghost"
               size="icon"
