@@ -51,7 +51,8 @@ describe("computeBeliDerived — memo freshness (per-field invalidation)", () =>
       expect: (before, after) => {
         expect(before.effPackageType).toBe("gram");
         expect(after.effPackageType).toBe("botol");
-        expect(after.effBaseUnit).toBe("g");
+        // defaultBaseUnit(botol) = "pcs" (hanya "gram" yang default ke "g")
+        expect(after.effBaseUnit).toBe("pcs");
       },
     },
     {
@@ -68,7 +69,7 @@ describe("computeBeliDerived — memo freshness (per-field invalidation)", () =>
       patch: { newPackageType: "sachet" },
       expect: (_b, after) => {
         expect(after.effPackageType).toBe("sachet");
-        expect(after.effBaseUnit).toBe("g");
+        expect(after.effBaseUnit).toBe("pcs");
       },
     },
     {
@@ -144,7 +145,8 @@ describe("computeBeliDerived — memo freshness (per-field invalidation)", () =>
     expect(uniq.size).toBe(outputs.length);
     outputs.forEach((o, i) => {
       expect(o.effPackageType).toBe(seq[i]);
-      expect(o.effBaseUnit).toBe(seq[i] === "pcs" ? "pcs" : "g");
+      // Hanya "gram" yang punya defaultBaseUnit "g"; sisanya "pcs".
+      expect(o.effBaseUnit).toBe(seq[i] === "gram" ? "g" : "pcs");
     });
   });
 });
