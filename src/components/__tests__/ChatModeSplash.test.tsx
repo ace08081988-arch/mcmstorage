@@ -36,7 +36,15 @@ vi.mock("@/lib/app-mode", () => ({
 // Fabrikasi `window.matchMedia` yang bisa diarahkan per-test untuk
 // mensimulasikan `prefers-reduced-motion: reduce`.
 let reduceMotion = false;
+// Instrumentasi listener untuk memverifikasi cleanup (add/remove
+// listener) — kalau komponen mendaftarkan `change` listener ke
+// media query, harus melepasnya saat unmount agar tidak memicu
+// `setState` setelah komponen hilang (misal setelah navigasi klien).
+let mmListenerAdds = 0;
+let mmListenerRemoves = 0;
 function installMatchMedia() {
+  mmListenerAdds = 0;
+  mmListenerRemoves = 0;
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,
@@ -44,10 +52,18 @@ function installMatchMedia() {
       matches: reduceMotion && query.includes("prefers-reduced-motion"),
       media: query,
       onchange: null,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      addListener: () => {},
-      removeListener: () => {},
+      addEventListener: () => {
+        mmListenerAdds += 1;
+      },
+      removeEventListener: () => {
+        mmListenerRemoves += 1;
+      },
+      addListener: () => {
+        mmListenerAdds += 1;
+      },
+      removeListener: () => {
+        mmListenerRemoves += 1;
+      },
       dispatchEvent: () => false,
     }),
   });
