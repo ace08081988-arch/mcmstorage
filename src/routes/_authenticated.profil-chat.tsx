@@ -1,14 +1,18 @@
 import { createFileRoute, Link, useRouter } from "@tanstack/react-router";
+import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import {
   ArrowLeft, Search, QrCode, Smile, KeyRound, Lock, Users, MessageSquare,
   Bell, RefreshCcw, Link as LinkIcon, Accessibility, Languages, ChevronRight,
-  UserPlus,
+  UserPlus, Download, Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyProfile, useAvatarSignedUrl, useMyProfileRealtime } from "@/lib/profile";
 import { useState } from "react";
 import { ProfileQrDialog } from "@/components/chat/ProfileQrDialog";
 import { formatInviteCode } from "@/lib/invite";
+import { getLatestApkVariants } from "@/lib/apk.functions";
+import { trackApkDownload } from "@/lib/apk-download-track";
 
 export const Route = createFileRoute("/_authenticated/profil-chat")({
   component: ProfilChatPage,
@@ -54,6 +58,15 @@ function ProfilChatPage() {
     || "Saya";
   const initial = initialOf(name);
   const [qrOpen, setQrOpen] = useState(false);
+
+  // Pintasan unduh APK Chat saja — ambil URL varian chat terbaru.
+  const fetchApk = useServerFn(getLatestApkVariants);
+  const apkQuery = useQuery({
+    queryKey: ["latest-apk-variants"],
+    queryFn: () => fetchApk(),
+    staleTime: 60_000,
+  });
+  const chatApk = apkQuery.data?.chat ?? null;
 
   return (
     <main className="mx-auto min-h-screen max-w-2xl bg-background">
@@ -127,6 +140,49 @@ function ProfilChatPage() {
       </section>
 
       <div className="h-px bg-border" />
+
+      {/* Pintasan: unduh APK Chat saja tanpa membuka /download */}
+      <div className="px-4 pt-3">
+        {chatApk?.url ? (
+          <a
+            href={chatApk.url}
+            onClick={() => trackApkDownload("chat", "button")}
+            className="flex items-center gap-4 rounded-xl border bg-primary/5 px-4 py-3 hover:bg-primary/10"
+          >
+            <Download className="h-6 w-6 shrink-0 text-primary" />
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-base font-medium">Unduh APK MCM Chat</div>
+              <div className="truncate text-sm text-muted-foreground">
+                {chatApk.versionName ? `v${chatApk.versionName}` : "Versi terbaru"}
+                {chatApk.sizeMB ? ` · ${chatApk.sizeMB} MB` : ""} · Langsung unduh
+              </div>
+            </div>
+            <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+          </a>
+        ) : (
+          <div className="flex items-center gap-4 rounded-xl border bg-muted/40 px-4 py-3 text-muted-foreground">
+            {apkQuery.isLoading ? (
+              <Loader2 className="h-6 w-6 shrink-0 animate-spin" />
+            ) : (
+              <Download className="h-6 w-6 shrink-0" />
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="truncate text-base font-medium">Unduh APK MCM Chat</div>
+              <div className="truncate text-sm">
+                {apkQuery.isLoading
+                  ? "Memuat versi terbaru..."
+                  : "APK belum tersedia — buka halaman /download."}
+              </div>
+            </div>
+            <Link
+              to="/download"
+              className="text-xs font-semibold text-primary hover:underline"
+            >
+              Buka
+            </Link>
+          </div>
+        )}
+      </div>
 
       {/* Rows */}
       <ul className="py-1">
