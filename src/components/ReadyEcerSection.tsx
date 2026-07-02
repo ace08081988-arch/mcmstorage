@@ -785,6 +785,10 @@ export function ReadyEcerSection() {
                 selectMode={selectMode}
                 selected={selectedIds.has(r.id)}
                 onToggleSelect={() => toggleSelect(r.id)}
+                onEnterSelect={() => {
+                  setSelectMode(true);
+                  setSelectedIds(new Set([r.id]));
+                }}
               />
             ))
           )}
