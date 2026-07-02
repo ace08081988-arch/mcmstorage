@@ -973,5 +973,17 @@ export default defineConfig({
         viewport: { width: 1280, height: 800 },
       },
     },
+    // ── Branding runtime: toggle Mode aplikasi ke "chat" harus
+    //   mengganti title, theme-color, favicon, apple-touch-icon, dan
+    //   target manifest tanpa reload.
+    {
+      name: "chat-mode-branding-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /chat-mode-branding\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 800 },
+      },
+    },
   ],
 });
