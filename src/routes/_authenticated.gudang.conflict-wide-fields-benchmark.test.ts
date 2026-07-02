@@ -399,7 +399,7 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     expect(best.ms).toBeLessThan(MAX_MS_BATCHED);
     // Stabilitas: worst tidak boleh jauh > best (deteksi variance ekstrem).
     const varianceOk = worst.ms < Math.max(best.ms * VARIANCE_RATIO, MAX_MS_BATCHED);
-    ARTIFACT_ENTRIES.push({
+    const entry: BenchEntry = {
       scenario: "batched-20-rounds",
       rounds: ROUNDS,
       mutations: mutations.length,
@@ -410,8 +410,10 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
       warningsCalls: best.warningsCalls,
       budgetMs: MAX_MS_BATCHED,
       variancePassed: varianceOk,
-    });
+    };
+    ARTIFACT_ENTRIES.push(entry);
     expect(varianceOk).toBe(true);
+    recordAndAssertBaseline("batched-20-rounds", "batched", best.ms, entry);
 
     // eslint-disable-next-line no-console
     console.info(
@@ -430,7 +432,7 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
 
     expect(best.ms).toBeLessThan(MAX_MS_SEQUENTIAL);
     const varianceOk = worst.ms < Math.max(best.ms * VARIANCE_RATIO, MAX_MS_SEQUENTIAL);
-    ARTIFACT_ENTRIES.push({
+    const entry: BenchEntry = {
       scenario: "sequential-20-rounds",
       rounds: ROUNDS,
       mutations: mutations.length,
@@ -441,8 +443,10 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
       warningsCalls: best.warningsCalls,
       budgetMs: MAX_MS_SEQUENTIAL,
       variancePassed: varianceOk,
-    });
+    };
+    ARTIFACT_ENTRIES.push(entry);
     expect(varianceOk).toBe(true);
+    recordAndAssertBaseline("sequential-20-rounds", "sequential", best.ms, entry);
 
     // eslint-disable-next-line no-console
     console.info(
@@ -466,8 +470,7 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     expect(seq.derivedCalls).toBeGreaterThan(bat.derivedCalls);
     expect(seq.warningsCalls).toBeGreaterThan(bat.warningsCalls);
 
-    ARTIFACT_ENTRIES.push(
-      {
+    const batEntry: BenchEntry = {
         scenario: "ratio-batched",
         rounds: ROUNDS,
         mutations: mutations.length,
@@ -478,8 +481,8 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
         warningsCalls: bat.warningsCalls,
         budgetMs: MAX_MS_BATCHED,
         variancePassed: true,
-      },
-      {
+    };
+    const seqEntry: BenchEntry = {
         scenario: "ratio-sequential",
         rounds: ROUNDS,
         mutations: mutations.length,
@@ -490,8 +493,10 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
         warningsCalls: seq.warningsCalls,
         budgetMs: MAX_MS_SEQUENTIAL,
         variancePassed: true,
-      },
-    );
+    };
+    ARTIFACT_ENTRIES.push(batEntry, seqEntry);
+    recordAndAssertBaseline("ratio-batched", "batched", bat.ms, batEntry);
+    recordAndAssertBaseline("ratio-sequential", "sequential", seq.ms, seqEntry);
   });
 
   it("skala ronde: 4× ronde tidak boleh > 8× waktu batched (sub-kuadratik)", () => {
@@ -505,8 +510,7 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     expect(big.derivedCalls).toBe(1);
     expect(big.warningsCalls).toBe(1);
 
-    ARTIFACT_ENTRIES.push(
-      {
+    const smallEntry: BenchEntry = {
         scenario: "scale-rounds-5",
         rounds: 5,
         mutations: 50,
@@ -517,8 +521,8 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
         warningsCalls: small.warningsCalls,
         budgetMs: MAX_MS_BATCHED,
         variancePassed: true,
-      },
-      {
+    };
+    const bigEntry: BenchEntry = {
         scenario: "scale-rounds-20",
         rounds: 20,
         mutations: 200,
@@ -529,7 +533,9 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
         warningsCalls: big.warningsCalls,
         budgetMs: MAX_MS_BATCHED,
         variancePassed: true,
-      },
-    );
+    };
+    ARTIFACT_ENTRIES.push(smallEntry, bigEntry);
+    recordAndAssertBaseline("scale-rounds-5", "batched", small.ms, smallEntry);
+    recordAndAssertBaseline("scale-rounds-20", "batched", big.ms, bigEntry);
   });
 });
