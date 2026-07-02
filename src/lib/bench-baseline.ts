@@ -21,12 +21,27 @@ import {
 } from "node:fs";
 import { dirname } from "node:path";
 
-export type BaselineScenario = { bestMs: number; mode: "batched" | "sequential" };
+export type BaselineScenario = {
+  bestMs: number;
+  /** p95 baseline (opsional; hanya untuk cek flakiness). */
+  p95Ms?: number;
+  /** Override per-scenario untuk ambang flakiness. */
+  maxCv?: number;
+  p95Pct?: number;
+  mode: "batched" | "sequential";
+};
 export type BaselineFile = {
   _note?: string;
   capturedOn?: string;
   regressionPctDefault: number;
   floorMs: { batched: number; sequential: number };
+  /** Ambang flakiness — opsional; kalau tidak ada helper pakai default. */
+  flakiness?: {
+    /** Ambang persen tambahan yang boleh dilewati p95 vs baseline p95. */
+    p95PctDefault?: number;
+    /** Batas coefficient-of-variation (stddev/mean). */
+    maxCvDefault?: number;
+  };
   scenarios: Record<string, BaselineScenario>;
 };
 
@@ -108,4 +123,85 @@ export function shouldEnforceBaseline(): boolean {
 
 export function shouldUpdateBaseline(): boolean {
   return process.env.UPDATE_BENCH_BASELINE === "1";
+}
+
+// ============================================================
+// Flakiness — dipisah dari regresi durasi.
+// Aturan gagal (ENFORCE_BASELINE):
+//   - p95 > baseline.p95Ms * (1 + p95Pct/100) DAN Δ > floorMs (mode)
+//   - ATAU cv > maxCv
+// ============================================================
+
+export type FlakinessCheck = {
+  scenario: string;
+  p95Ms: number;
+  baselineP95Ms: number | null;
+  allowedP95Ms: number | null;
+  p95DeltaPct: number | null;
+  cv: number;
+  maxCv: number;
+  flaky: boolean;
+  reasons: string[];
+};
+
+const DEFAULT_P95_PCT = 100;
+const DEFAULT_MAX_CV = 1.0;
+
+export function checkFlakiness(
+  scenario: string,
+  stats: { p95: number; cv: number },
+  baseline: BaselineFile | null,
+  opts: { p95Pct?: number; maxCv?: number } = {},
+): FlakinessCheck {
+  const entry = baseline?.scenarios[scenario];
+  const p95Pct =
+    opts.p95Pct ??
+    entry?.p95Pct ??
+    (Number(process.env.BENCH_P95_PCT) ||
+      baseline?.flakiness?.p95PctDefault ||
+      DEFAULT_P95_PCT);
+  const maxCv =
+    opts.maxCv ??
+    entry?.maxCv ??
+    (Number(process.env.BENCH_MAX_CV) ||
+      baseline?.flakiness?.maxCvDefault ||
+      DEFAULT_MAX_CV);
+
+  const reasons: string[] = [];
+  let p95Regression = false;
+  let baselineP95: number | null = null;
+  let allowedP95: number | null = null;
+  let p95DeltaPct: number | null = null;
+
+  if (entry?.p95Ms != null && baseline) {
+    baselineP95 = entry.p95Ms;
+    allowedP95 = entry.p95Ms * (1 + p95Pct / 100);
+    const delta = stats.p95 - entry.p95Ms;
+    p95DeltaPct = entry.p95Ms > 0 ? (delta / entry.p95Ms) * 100 : Number.POSITIVE_INFINITY;
+    const floor = baseline.floorMs[entry.mode] ?? 1;
+    if (stats.p95 > allowedP95 && delta > floor) {
+      p95Regression = true;
+      reasons.push(
+        `p95=${stats.p95.toFixed(2)}ms > baseline·(1+${p95Pct}%)=${allowedP95.toFixed(2)}ms ` +
+          `(Δ ${delta.toFixed(2)}ms > floor ${floor}ms)`,
+      );
+    }
+  }
+
+  const highCv = stats.cv > maxCv;
+  if (highCv) {
+    reasons.push(`cv=${stats.cv.toFixed(3)} > maxCv=${maxCv}`);
+  }
+
+  return {
+    scenario,
+    p95Ms: stats.p95,
+    baselineP95Ms: baselineP95,
+    allowedP95Ms: allowedP95,
+    p95DeltaPct,
+    cv: stats.cv,
+    maxCv,
+    flaky: p95Regression || highCv,
+    reasons,
+  };
 }
