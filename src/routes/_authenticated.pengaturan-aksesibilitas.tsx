@@ -103,6 +103,7 @@ function PengaturanAksesibilitasPage() {
 
 
   const commitSave = () => {
+    if (!dirty) return;
     setAppPrefs({
       fontScale: draft.fontScale,
       highContrast: draft.highContrast,
@@ -114,6 +115,7 @@ function PengaturanAksesibilitasPage() {
     toast.success("Preferensi aksesibilitas disimpan");
   };
   const commitCancel = () => {
+    if (!dirty) return;
     setDraft(snapshot);
     toast.info("Perubahan dibatalkan");
   };
@@ -125,6 +127,33 @@ function PengaturanAksesibilitasPage() {
     });
     toast.info("Draft direset ke bawaan — tekan Simpan untuk menerapkan.");
   };
+
+  // Shortcut keyboard: Ctrl/Cmd+S menyimpan draft, Esc membatalkan draft.
+  const commitSaveRef = useRef(commitSave);
+  const commitCancelRef = useRef(commitCancel);
+  commitSaveRef.current = commitSave;
+  commitCancelRef.current = commitCancel;
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (leaveOpen) return;
+      const isSave = (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && (e.key === "s" || e.key === "S");
+      if (isSave) {
+        e.preventDefault();
+        commitSaveRef.current();
+        return;
+      }
+      if (e.key === "Escape") {
+        const t = e.target as HTMLElement | null;
+        const tag = t?.tagName;
+        if (t?.isContentEditable || tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+        if (!dirty) return;
+        e.preventDefault();
+        commitCancelRef.current();
+      }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [dirty, leaveOpen]);
 
   return (
     <main className="mx-auto min-h-dvh max-w-2xl bg-background pb-32">
@@ -253,13 +282,22 @@ function PengaturanAksesibilitasPage() {
         <div className="mx-auto flex max-w-2xl items-center justify-between gap-2 px-4 py-3">
           <p className="text-xs text-muted-foreground">
             Ada perubahan belum disimpan. Aplikasi utama belum berubah.
+            <span className="ml-1 hidden sm:inline">
+              Pintasan:{" "}
+              <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">Ctrl</kbd>
+              <span className="mx-0.5">+</span>
+              <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">S</kbd>
+              {" "}menyimpan,{" "}
+              <kbd className="rounded border bg-muted px-1 py-0.5 text-[10px] font-mono">Esc</kbd>
+              {" "}membatalkan.
+            </span>
           </p>
           <div className="flex gap-2">
-            <Button variant="outline" size="sm" onClick={commitCancel} aria-label="Batalkan perubahan">
+            <Button variant="outline" size="sm" onClick={commitCancel} aria-label="Batalkan perubahan" title="Esc">
               <X className="mr-1.5 h-3.5 w-3.5" />
               Batalkan
             </Button>
-            <Button size="sm" onClick={commitSave} aria-label="Simpan preferensi">
+            <Button size="sm" onClick={commitSave} aria-label="Simpan preferensi" title="Ctrl+S">
               <Check className="mr-1.5 h-3.5 w-3.5" />
               Simpan
             </Button>
