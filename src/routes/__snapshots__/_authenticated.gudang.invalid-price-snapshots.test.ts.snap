@@ -1,0 +1,335 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: hutang tanpa supplier > snapshot: hutang + qty=0 → prioritas error 'Periksa jumlah & harga' 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="0" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=hutang · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=0 · price=10000 · baseAdded=0 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: hutang tanpa supplier > snapshot: paymentMethod=hutang & supplier kosong 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=hutang · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Pembelian hutang wajib memilih supplier"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=2000 · totalCost=20000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: mode 'existing' — item belum dipilih > snapshot: mode=existing tanpa item (noItem) 1`] = `
+"[FORM] mode=existing (noItem) · pt=gram · size=1000 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Pilih barang"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=2000 · totalCost=20000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: mode 'new' — nama & ukuran kemasan > snapshot: nama kosong (whitespace) 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="   "
+[VALIDATE] ok=false · error="Nama barang wajib"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=2000 · totalCost=20000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: mode 'new' — nama & ukuran kemasan > snapshot: nama kosong + qty valid + harga valid 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name=""
+[VALIDATE] ok=false · error="Nama barang wajib"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=2000 · totalCost=20000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: mode 'new' — nama & ukuran kemasan > snapshot: packageSize='' pada botol 1`] = `
+"[FORM] mode=new · pt=botol · size= · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Ukuran kemasan harus > 0"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · botol 0 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 0 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | —
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=0 · totalCost=20000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: mode 'new' — nama & ukuran kemasan > snapshot: packageSize=0 pada gram (Ukuran kemasan harus > 0) 1`] = `
+"[FORM] mode=new · pt=gram · size=0 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Ukuran kemasan harus > 0"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 0 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=0 · totalCost=20000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: mode 'new' — nama & ukuran kemasan > snapshot: packageSize=0 pada pcs — TETAP VALID (pcs paksa size=1) 1`] = `
+"[FORM] mode=new · pt=pcs · size=0 · qty="2" · pricePkg="" · priceBase="3000" · priceMode=base · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=true · error=null
+[BUTTON] Simpan disabled=false
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Harga per pcs | —
+[SUM] Total biaya | Rp 6.000
+[RAW] pkgQ=2 · price=3000 · baseAdded=2 · totalCost=6000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: qty & harga invalid > snapshot: price = 'abc' (bukan angka, dianggap 0 — valid non-negatif tapi qty tetap 2) 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="2" · pricePkg="abc" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=true · error=null
+[BUTTON] Simpan disabled=false
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 0
+[SUM] Harga per g | Rp 0
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=2 · price=0 · baseAdded=2000 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: qty & harga invalid > snapshot: price = -5000 (negatif) 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="2" · pricePkg="-5000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | -Rp 5.000
+[SUM] Harga per g | -Rp 5
+[SUM] Total biaya | -Rp 10.000
+[RAW] pkgQ=2 · price=-5000 · baseAdded=2000 · totalCost=-10000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: qty & harga invalid > snapshot: qty = 'abc' (bukan angka) 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="abc" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=0 · price=10000 · baseAdded=0 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: qty & harga invalid > snapshot: qty = -3 (negatif) 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="-3" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | -3 gram
+[SUM] Tambahan stok | -3 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | -Rp 30.000
+[RAW] pkgQ=-3 · price=10000 · baseAdded=-3000 · totalCost=-30000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: qty & harga invalid > snapshot: qty = 0 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="0" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=0 · price=10000 · baseAdded=0 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: qty & harga invalid > snapshot: qty = kosong 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=0 · price=10000 · baseAdded=0 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: qty & harga invalid > snapshot: qty = whitespace 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="   " · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=0 · price=10000 · baseAdded=0 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Kategori error: qty & harga invalid > snapshot: qty=0 & price=-1 (dua-duanya invalid) 1`] = `
+"[FORM] mode=new · pt=gram · size=1000 · qty="0" · pricePkg="-1" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | -Rp 1
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=0 · price=-1 · baseAdded=0 · totalCost=0"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Transisi input invalid A → invalid B → valid (anti-artefak) > perbaikan bertahap: nama+ukuran+qty semua invalid → dibetulkan satu-per-satu 1`] = `
+"=== s0 all-bad ===
+[FORM] mode=new · pt=gram · size=0 · qty="0" · pricePkg="-1" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name=""
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 0 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | -Rp 1
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=0 · price=-1 · baseAdded=0 · totalCost=0
+
+=== s1 fix qty ===
+[FORM] mode=new · pt=gram · size=0 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name=""
+[VALIDATE] ok=false · error="Nama barang wajib"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 0 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=0 · totalCost=20000
+
+=== s2 fix ukuran ===
+[FORM] mode=new · pt=gram · size=1000 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name=""
+[VALIDATE] ok=false · error="Nama barang wajib"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=2000 · totalCost=20000
+
+=== s3 fix nama (valid) ===
+[FORM] mode=new · pt=gram · size=1000 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=true · error=null
+[BUTTON] Simpan disabled=false
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=2000 · totalCost=20000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Transisi input invalid A → invalid B → valid (anti-artefak) > qty=-3 → qty='' → qty=2 (valid): pesan error & ringkasan bersih 1`] = `
+"=== A: qty=-3 ===
+[FORM] mode=new · pt=gram · size=1000 · qty="-3" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | -3 gram
+[SUM] Tambahan stok | -3 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | -Rp 30.000
+[RAW] pkgQ=-3 · price=10000 · baseAdded=-3000 · totalCost=-30000
+
+=== B: qty='' ===
+[FORM] mode=new · pt=gram · size=1000 · qty="" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=0 · price=10000 · baseAdded=0 · totalCost=0
+
+=== C: qty=2 (valid) ===
+[FORM] mode=new · pt=gram · size=1000 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=true · error=null
+[BUTTON] Simpan disabled=false
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=2000 · totalCost=20000"
+`;
+
+exports[`Gudang — snapshot input tidak valid / error perhitungan > Transisi input invalid A → invalid B → valid (anti-artefak) > transisi error class: 'Nama wajib' → 'Ukuran > 0' → 'Periksa jumlah & harga' 1`] = `
+"=== nama kosong ===
+[FORM] mode=new · pt=gram · size=1000 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name=""
+[VALIDATE] ok=false · error="Nama barang wajib"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=2000 · totalCost=20000
+
+=== ukuran=0 ===
+[FORM] mode=new · pt=gram · size=0 · qty="2" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Ukuran kemasan harus > 0"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 0 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 20.000
+[RAW] pkgQ=2 · price=10000 · baseAdded=0 · totalCost=20000
+
+=== qty=0 ===
+[FORM] mode=new · pt=gram · size=1000 · qty="0" · pricePkg="10000" · priceBase="" · priceMode=package · karton=OFF · payment=kas · supplier=- · name="Beras Premium"
+[VALIDATE] ok=false · error="Periksa jumlah & harga"
+[BUTTON] Simpan disabled=true
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 0 gram
+[SUM] Tambahan stok | 0 g
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | —
+[SUM] Total biaya | Rp 0
+[RAW] pkgQ=0 · price=10000 · baseAdded=0 · totalCost=0"
+`;
