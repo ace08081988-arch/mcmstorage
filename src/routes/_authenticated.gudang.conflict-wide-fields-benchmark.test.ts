@@ -15,6 +15,14 @@ import {
   saveBaseline,
   checkRegression,
   checkFlakiness,
+} from "@/lib/bench-baseline";
+import {
+  appendTrendRun,
+  buildTrendRun,
+  formatTrendMarkdown,
+  loadTrendHistory,
+  summarizeTrend,
+} from "@/lib/bench-trend";
   shouldEnforceBaseline,
   shouldUpdateBaseline,
   type BaselineFile,
