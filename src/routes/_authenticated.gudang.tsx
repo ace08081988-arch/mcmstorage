@@ -112,6 +112,7 @@ export { BOTOL_PER_KARTON, fmtBase, fmtItemPrice, fmtItemQty, fmtQtyDual, rupiah
 import { computeBeliDerived } from "@/lib/beli-derived";
 import { computeBeliWarnings } from "@/lib/beli-warnings";
 import { beliResetKey } from "@/lib/beli-reset-key";
+import { SmartWeightInput } from "@/components/SmartWeightInput";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
