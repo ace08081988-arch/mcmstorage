@@ -42,13 +42,20 @@ let reduceMotion = false;
 // `setState` setelah komponen hilang (misal setelah navigasi klien).
 let mmListenerAdds = 0;
 let mmListenerRemoves = 0;
+// Rekam setiap query yang diminta ke `window.matchMedia` supaya kita
+// bisa memverifikasi splash membaca ulang preferensi setiap mount
+// (bukan memakai nilai cache lama antar-navigasi).
+let mmQueries: string[] = [];
 function installMatchMedia() {
   mmListenerAdds = 0;
   mmListenerRemoves = 0;
+  mmQueries = [];
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,
-    value: (query: string) => ({
+    value: (query: string) => {
+      mmQueries.push(query);
+      return {
       matches: reduceMotion && query.includes("prefers-reduced-motion"),
       media: query,
       onchange: null,
@@ -65,7 +72,8 @@ function installMatchMedia() {
         mmListenerRemoves += 1;
       },
       dispatchEvent: () => false,
-    }),
+    };
+    },
   });
 }
 
