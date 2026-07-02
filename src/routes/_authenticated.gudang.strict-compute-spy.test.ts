@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import {
   computeBeliDerived,
   computeBeliDerived as realComputeDerived,
+  type BeliDerivedInput,
 } from "@/lib/beli-derived";
 import { computeBeliWarnings } from "@/lib/beli-warnings";
 import {
