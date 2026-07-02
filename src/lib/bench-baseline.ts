@@ -95,7 +95,7 @@ export function checkRegression(
   const pct =
     opts.pct ??
     (Number(process.env.BENCH_REGRESSION_PCT) ||
-      entry.regressionPct ??
+      entry.regressionPct ||
       baseline.regressionPctDefault);
   const floor =
     opts.floorMs ??
