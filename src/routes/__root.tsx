@@ -20,6 +20,8 @@ import { ConfirmHost } from "@/lib/confirm";
 import { WhatsAppTargetHost } from "@/lib/wa-target";
 import { WaPreviewHost } from "@/lib/wa-preview";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
+import { ChatModeSplash } from "@/components/ChatModeSplash";
+import { applyChatModeBranding } from "@/lib/chat-mode-branding";
 
 function NotFoundComponent() {
   return (
