@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X, CheckCircle2, XCircle } from "lucide-react";
+import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X, CheckCircle2, XCircle, ClipboardPaste, Link2 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import {
@@ -396,44 +396,147 @@ function PengaturanTampilanPage() {
     }
   };
 
+  // ---------------------------------------------------------------
+  // Jalur impor (upload/paste/URL) — SEMUA harus melewati satu-satunya
+  // titik masuk `runImportFromText` di bawah, sehingga `migrateImportedAppearance`
+  // adalah satu-satunya migrator dan tidak ada format lama yang di-parse
+  // secara terpisah. Jangan tambahkan `JSON.parse` payload appearance di
+  // tempat lain di file ini — tambahkan jalur baru sebagai wrapper tipis
+  // yang memanggil helper ini.
+  // ---------------------------------------------------------------
+  const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
+
+  const runImportFromText = (text: string, source: "file" | "paste" | "url") => {
+    let data: unknown;
+    try {
+      data = JSON.parse(text || "{}");
+    } catch {
+      toast.error(
+        source === "url"
+          ? "URL tidak berisi JSON yang valid."
+          : "Teks tidak valid atau rusak.",
+      );
+      return;
+    }
+    setDraft((d) => {
+      const result = migrateImportedAppearance(data, d);
+      if (!result.ok) {
+        if (result.reason === "unknown_type") {
+          toast.error(
+            `Payload tidak dikenali sebagai pengaturan tampilan MCM (${source}).`,
+          );
+        } else {
+          toast.error(
+            source === "url"
+              ? "URL tidak berisi payload valid."
+              : "Payload tidak valid atau rusak.",
+          );
+        }
+        return d;
+      }
+      if (result.forward) {
+        toast.warning(
+          `Payload dari skema v${result.fromVersion} (lebih baru dari v${EXPORT_SCHEMA_VERSION}). Field yang dikenal dimuat; sisanya diabaikan.`,
+        );
+      } else {
+        toast.success(
+          `Pengaturan diimpor via ${source} (skema v${result.fromVersion}) — tekan Simpan untuk menerapkan.`,
+        );
+      }
+      return { ...d, ...result.patch };
+    });
+  };
+
   const importSettings = (file: File | null) => {
     if (!file) return;
-    if (file.size > 10 * 1024 * 1024) {
+    if (file.size > MAX_IMPORT_BYTES) {
       toast.error("File terlalu besar (maks 10MB).");
       return;
     }
     const reader = new FileReader();
     reader.onload = () => {
       try {
-        const data = JSON.parse(String(reader.result ?? "{}"));
-        setDraft((d) => {
-          const result = migrateImportedAppearance(data, d);
-          if (!result.ok) {
-            if (result.reason === "unknown_type") {
-              toast.error("File tidak dikenali sebagai pengaturan tampilan MCM.");
-            } else {
-              toast.error("File tidak valid atau rusak.");
-            }
-            return d;
-          }
-          if (result.forward) {
-            toast.warning(
-              `File dari skema v${result.fromVersion} (lebih baru dari v${EXPORT_SCHEMA_VERSION}). Field yang dikenal dimuat; sisanya diabaikan.`,
-            );
-          } else {
-            toast.success(
-              `Pengaturan diimpor (skema v${result.fromVersion}) — tekan Simpan untuk menerapkan.`,
-            );
-          }
-          return { ...d, ...result.patch };
-        });
-      } catch {
-        toast.error("File tidak valid atau rusak.");
+        runImportFromText(String(reader.result ?? "{}"), "file");
       } finally {
         if (importInputRef.current) importInputRef.current.value = "";
       }
     };
     reader.readAsText(file);
+  };
+
+  const importFromPaste = async () => {
+    let text: string | null = null;
+    try {
+      if (
+        typeof navigator !== "undefined" &&
+        navigator.clipboard &&
+        typeof navigator.clipboard.readText === "function"
+      ) {
+        text = await navigator.clipboard.readText();
+      }
+    } catch {
+      // Izin clipboard ditolak atau tidak tersedia — jatuh ke prompt manual.
+      text = null;
+    }
+    if (text == null || text.trim() === "") {
+      const manual = window.prompt(
+        "Tempel JSON pengaturan tampilan MCM di sini:",
+        "",
+      );
+      if (manual == null) return;
+      text = manual;
+    }
+    if (text.length > MAX_IMPORT_BYTES) {
+      toast.error("Teks terlalu besar (maks 10MB).");
+      return;
+    }
+    runImportFromText(text, "paste");
+  };
+
+  const importFromUrl = async () => {
+    const raw = window.prompt(
+      "Masukkan URL file JSON pengaturan tampilan (https://...):",
+      "",
+    );
+    if (raw == null) return;
+    const url = raw.trim();
+    if (url === "") return;
+    let parsed: URL;
+    try {
+      parsed = new URL(url);
+    } catch {
+      toast.error("URL tidak valid.");
+      return;
+    }
+    if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+      toast.error("URL harus memakai http(s)://.");
+      return;
+    }
+    try {
+      const res = await fetch(parsed.toString(), {
+        method: "GET",
+        redirect: "follow",
+        credentials: "omit",
+        cache: "no-store",
+      });
+      if (!res.ok) {
+        toast.error(`Gagal mengambil URL (HTTP ${res.status}).`);
+        return;
+      }
+      const lenHeader = res.headers.get("content-length");
+      if (lenHeader && Number(lenHeader) > MAX_IMPORT_BYTES) {
+        toast.error("File di URL terlalu besar (maks 10MB).");
+        return;
+      }
+      const text = await res.text();
+      if (text.length > MAX_IMPORT_BYTES) {
+        toast.error("File di URL terlalu besar (maks 10MB).");
+        return;
+      }
+      runImportFromText(text, "url");
+    } catch {
+      toast.error("Gagal mengambil URL (jaringan/CORS).");
+    }
   };
 
   return (
@@ -812,6 +915,36 @@ function PengaturanTampilanPage() {
                   <p className="text-sm font-semibold">Impor dari file</p>
                   <p className="text-[11px] text-muted-foreground">
                     Pilih file hasil ekspor untuk memuatnya sebagai pratinjau.
+                  </p>
+                </div>
+              </button>
+              <button
+                type="button"
+                data-testid="import-from-paste"
+                onClick={importFromPaste}
+                className="flex items-start gap-3 rounded-md border p-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+              >
+                <ClipboardPaste className="h-4 w-4 mt-0.5 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">Impor dari clipboard</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Tempel JSON pengaturan dari clipboard. Fallback prompt manual
+                    jika izin clipboard tidak tersedia.
+                  </p>
+                </div>
+              </button>
+              <button
+                type="button"
+                data-testid="import-from-url"
+                onClick={importFromUrl}
+                className="flex items-start gap-3 rounded-md border p-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+              >
+                <Link2 className="h-4 w-4 mt-0.5 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">Impor dari URL</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Ambil file JSON dari tautan <code className="rounded bg-muted px-1">https://…</code>{" "}
+                    (dibatasi 10MB).
                   </p>
                 </div>
               </button>
