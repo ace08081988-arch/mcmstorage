@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import {
   Card,
@@ -11,7 +11,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
-import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload } from "lucide-react";
+import { RotateCcw, Sparkles, Sun, Moon, Monitor, Palette, Type, Image as ImageIcon, Layers, Languages, Accessibility, Download, Upload, Check, X } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import {
@@ -20,7 +20,7 @@ import {
   BG_PRESETS,
   LS,
 } from "@/components/appearance-settings";
-import { useAppPrefs, getAppPrefs, setAppPrefs } from "@/lib/app-prefs";
+import { useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
 import { COMPACT_MODE_EVENT } from "@/components/CompactModeToggle";
 
 const COMPACT_LS = "app-compact-mode";
