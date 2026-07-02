@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
@@ -26,12 +26,26 @@ export function DownloadChatApkShortcut() {
   const fetchDetail = useServerFn(getApkVariantDetail);
   const [busy, setBusy] = useState(false);
   const [open, setOpen] = useState(false);
+  // Label progres bertahap yang tampil di dalam tombol saat unduhan
+  // berjalan — memberi tahu pengguna proses sedang jalan tanpa hanya
+  // menampilkan spinner.
+  const [stage, setStage] = useState<string | null>(null);
+  const [cooldown, setCooldown] = useState(0);
+
+  useEffect(() => {
+    if (cooldown <= 0) return;
+    const t = setInterval(() => setCooldown((c) => Math.max(0, c - 1)), 1000);
+    return () => clearInterval(t);
+  }, [cooldown]);
 
   async function startDownload() {
     if (busy) return;
     setOpen(false);
     setBusy(true);
-    const loadingId = toast.loading("Menyiapkan unduhan APK MCM Chat…");
+    setStage("Menghubungi server…");
+    const loadingId = toast.loading("Menghubungi server unduhan…", {
+      description: "Mengambil metadata APK MCM Chat terbaru.",
+    });
     // Simpan info terakhir yang berhasil didapat supaya bila error terjadi
     // setelah metadata terbaca (mis. saat window.location.href), toast error
     // tetap bisa menyebut versi + ukuran berkas.
@@ -58,6 +72,11 @@ export function DownloadChatApkShortcut() {
           ? `${sizeMB.toFixed(2)} MB`
           : "ukuran tidak diketahui";
       attemptLabel = `v${version} • ${sizeLabel}`;
+      setStage(`Menyiapkan v${version}`);
+      toast.loading(`Menyiapkan v${version} • ${sizeLabel}`, {
+        id: loadingId,
+        description: `Berkas: ${apk.name}`,
+      });
       // Catat ke riwayat versi lokal sebelum navigasi.
       recordChatApkDownload({
         name: apk.name,
@@ -66,11 +85,17 @@ export function DownloadChatApkShortcut() {
         url,
         sizeMB,
       });
+      setStage("Memicu unduhan…");
+      toast.loading(`Memicu unduhan v${version}…`, {
+        id: loadingId,
+        description: `Ukuran: ${sizeLabel}`,
+      });
       window.location.href = url;
       toast.success(`Mulai mengunduh APK MCM Chat v${version} • ${sizeLabel}`, {
         id: loadingId,
         description: `Berkas: ${apk.name} — cek folder Unduhan pada perangkat Anda.`,
       });
+      setStage("Unduhan dipicu");
     } catch (e) {
       const err = e as { message?: string; name?: string; status?: number; code?: string };
       const detailParts = [
@@ -91,12 +116,17 @@ export function DownloadChatApkShortcut() {
           duration: 8000,
         },
       );
+      setStage("Gagal");
     } finally {
       // Jangan langsung buka kunci tombol: unduhan APK memicu download
       // browser (bukan navigasi), sehingga tanpa jeda tombol langsung bisa
       // ditekan ulang dan berpotensi menembak unduhan ganda. Kunci selama
       // 5 detik memberi cukup waktu bagi browser untuk mulai mengunduh.
-      setTimeout(() => setBusy(false), 5000);
+      setCooldown(5);
+      setTimeout(() => {
+        setBusy(false);
+        setStage(null);
+      }, 5000);
     }
   }
 
@@ -113,10 +143,14 @@ export function DownloadChatApkShortcut() {
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "💬"}
           </span>
           <span className="mt-1 text-xs font-semibold leading-tight">
-            Unduh APK Chat
+            {busy ? stage ?? "Memproses…" : "Unduh APK Chat"}
           </span>
           <span className="text-[10px] leading-tight text-muted-foreground">
-            Langsung unduh versi terbaru
+            {busy
+              ? cooldown > 0
+                ? `Menunggu browser… ${cooldown}s`
+                : "Sedang berjalan…"
+              : "Langsung unduh versi terbaru"}
           </span>
         </button>
       </AlertDialogTrigger>
