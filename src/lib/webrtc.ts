@@ -59,6 +59,7 @@ export type PeerSession = {
   meId: string;
   close: (reason?: string) => Promise<void>;
   sendBye: (reason?: string) => void;
+  sendRinging: () => void;
   toggleAudio: (enabled: boolean) => void;
   toggleVideo: (enabled: boolean) => void;
 };
