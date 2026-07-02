@@ -985,5 +985,19 @@ export default defineConfig({
         viewport: { width: 1280, height: 800 },
       },
     },
+    // ── E2E migrator ekspor/impor `mcm.appearance-settings`: harness
+    //   publik `/lovable/visual/appearance-import` memakai fungsi yang
+    //   sama persis dengan `/pengaturan-tampilan`. Menguji v1, v2, versi
+    //   lebih baru, `unknown_type`, dan payload rusak — kontrak backward
+    //   compat impor untuk rilis berikutnya.
+    {
+      name: "appearance-import-migrator-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /appearance-import-migrator\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1280, height: 800 },
+      },
+    },
   ],
 });

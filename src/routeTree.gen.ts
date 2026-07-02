@@ -72,6 +72,7 @@ import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/
 import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovable.visual.komponen-review'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
 import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from './routes/lovable.visual.attachment-duration-consistency'
+import { Route as LovableVisualAppearanceImportRouteImport } from './routes/lovable.visual.appearance-import'
 import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
@@ -428,6 +429,12 @@ const LovableVisualAttachmentDurationConsistencyRoute =
     path: '/lovable/visual/attachment-duration-consistency',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualAppearanceImportRoute =
+  LovableVisualAppearanceImportRouteImport.update({
+    id: '/lovable/visual/appearance-import',
+    path: '/lovable/visual/appearance-import',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualAdminVisibilityRoute =
   LovableVisualAdminVisibilityRouteImport.update({
     id: '/lovable/visual/admin-visibility',
@@ -585,6 +592,7 @@ export interface FileRoutesByFullPath {
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
+  '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
@@ -664,6 +672,7 @@ export interface FileRoutesByTo {
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
+  '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
@@ -746,6 +755,7 @@ export interface FileRoutesById {
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
+  '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
@@ -828,6 +838,7 @@ export interface FileRouteTypes {
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
+    | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
@@ -907,6 +918,7 @@ export interface FileRouteTypes {
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
+    | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
@@ -988,6 +1000,7 @@ export interface FileRouteTypes {
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
+    | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/komponen-review'
@@ -1022,6 +1035,7 @@ export interface RootRouteChildren {
   ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
   LovableVisualAdminVisibilityRoute: typeof LovableVisualAdminVisibilityRoute
+  LovableVisualAppearanceImportRoute: typeof LovableVisualAppearanceImportRoute
   LovableVisualAttachmentDurationConsistencyRoute: typeof LovableVisualAttachmentDurationConsistencyRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
   LovableVisualKomponenReviewRoute: typeof LovableVisualKomponenReviewRoute
@@ -1480,6 +1494,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualAttachmentDurationConsistencyRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/appearance-import': {
+      id: '/lovable/visual/appearance-import'
+      path: '/lovable/visual/appearance-import'
+      fullPath: '/lovable/visual/appearance-import'
+      preLoaderRoute: typeof LovableVisualAppearanceImportRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/admin-visibility': {
       id: '/lovable/visual/admin-visibility'
       path: '/lovable/visual/admin-visibility'
@@ -1779,6 +1800,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
   LovableVisualAdminVisibilityRoute: LovableVisualAdminVisibilityRoute,
+  LovableVisualAppearanceImportRoute: LovableVisualAppearanceImportRoute,
   LovableVisualAttachmentDurationConsistencyRoute:
     LovableVisualAttachmentDurationConsistencyRoute,
   LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
@@ -1798,3 +1820,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
