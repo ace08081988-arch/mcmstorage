@@ -11,19 +11,29 @@ import { beliResetKey } from "@/lib/beli-reset-key";
 //      sama), karena resetKey tetap sama.
 
 type PackageType = "gram" | "pcs" | "botol" | "sachet";
+type BeliMode = "existing" | "new";
+
+/**
+ * Bentuk state harness — didefinisikan eksplisit agar TypeScript tidak
+ * pernah jatuh ke implicit-any saat mengindex properti (TS7053). Semua
+ * setter/batch mengacu ke tipe ini via `keyof LifecycleState`.
+ */
+interface LifecycleState {
+  mode: BeliMode;
+  itemId: string;
+  packageType: PackageType;
+  selectedItem: object | null;
+}
+
+type LifecycleUpdates = Partial<LifecycleState>;
 
 /**
  * Harness minimal untuk lifecycle useEffect dep `[resetKey]`.
  * `commit()` mensimulasi selesai satu render cycle: bila `resetKey` berubah
  * dibanding cycle sebelumnya, effect body dijalankan (counter naik).
  */
-function createResetLifecycle(initial: {
-  mode: "existing" | "new";
-  itemId: string;
-  packageType: PackageType;
-  selectedItem: object | null;
-}) {
-  const state = { ...initial };
+function createResetLifecycle(initial: LifecycleState) {
+  const state: LifecycleState = { ...initial };
   let lastResetKey = beliResetKey({
     mode: state.mode,
     itemId: state.itemId,
@@ -51,7 +61,7 @@ function createResetLifecycle(initial: {
       state.itemId = id;
       commit();
     },
-    setMode(m: "existing" | "new") {
+    setMode(m: BeliMode) {
       state.mode = m;
       commit();
     },
@@ -64,16 +74,19 @@ function createResetLifecycle(initial: {
      * satu render → hanya satu commit di akhir. Effect body jalan
      * maksimal SEKALI walau tiga input trigger berubah bersamaan.
      */
-    batch(updates: Partial<{
-      mode: "existing" | "new";
-      itemId: string;
-      packageType: PackageType;
-      selectedItem: object | null;
-    }>) {
-      if (updates.mode !== undefined) state.mode = updates.mode;
-      if (updates.itemId !== undefined) state.itemId = updates.itemId;
-      if (updates.packageType !== undefined) state.packageType = updates.packageType;
-      if (updates.selectedItem !== undefined) state.selectedItem = updates.selectedItem;
+    batch(updates: LifecycleUpdates) {
+      // Iterasi berbasis `keyof LifecycleState` — TypeScript tahu tipe
+      // masing-masing properti sehingga tidak ada implicit-any indexing
+      // (TS7053) meski akses via bracket.
+      const keys = Object.keys(updates) as Array<keyof LifecycleState>;
+      for (const key of keys) {
+        const value = updates[key];
+        if (value === undefined) continue;
+        // Cast eksplisit ke tipe properti tujuan untuk menjaga varians
+        // saat menulis balik ke `state[key]`.
+        (state[key] as LifecycleState[typeof key]) =
+          value as LifecycleState[typeof key];
+      }
       commit();
     },
     /** Simulasi refetch: `selectedItem` dapat referensi objek baru tapi
@@ -508,7 +521,11 @@ describe("BeliTab — NOL reset saat hanya metadata/derived pendukung berubah", 
       selectedItem: { id: "botol-500" },
     });
     const types: PackageType[] = ["gram", "pcs", "botol", "sachet"];
-    for (let i = 0; i < 20; i++) h.setPackageType(types[i % types.length]);
+    for (let i = 0; i < 20; i++) {
+      // Non-null assertion aman: indeks selalu 0..types.length-1.
+      const next = types[i % types.length]!;
+      h.setPackageType(next);
+    }
     expect(h.resetCount).toBe(0);
   });
 
