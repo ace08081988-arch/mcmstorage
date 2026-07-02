@@ -1,17 +1,21 @@
 {
-  "_note": "Baseline durasi micro-benchmark konflik lebar (ms). Diambil dari GitHub Actions ubuntu-latest (Node 22, x64) sebagai referensi. Update via: UPDATE_BENCH_BASELINE=1 bunx vitest run src/routes/_authenticated.gudang.conflict-wide-fields-benchmark.test.ts",
+  "_note": "Baseline durasi micro-benchmark konflik lebar (ms). bestMs = best-of-N (regresi), p95Ms = flakiness. Update via: UPDATE_BENCH_BASELINE=1 bunx vitest run src/routes/_authenticated.gudang.conflict-wide-fields-benchmark.test.ts",
   "capturedOn": "ubuntu-latest-node22-x64",
   "regressionPctDefault": 50,
   "floorMs": {
     "batched": 2,
     "sequential": 5
   },
+  "flakiness": {
+    "p95PctDefault": 100,
+    "maxCvDefault": 1.0
+  },
   "scenarios": {
-    "batched-20-rounds":   { "bestMs": 0.10, "mode": "batched" },
-    "sequential-20-rounds":{ "bestMs": 2.00, "mode": "sequential" },
-    "ratio-batched":       { "bestMs": 0.05, "mode": "batched" },
-    "ratio-sequential":    { "bestMs": 1.50, "mode": "sequential" },
-    "scale-rounds-5":      { "bestMs": 0.03, "mode": "batched" },
-    "scale-rounds-20":     { "bestMs": 0.10, "mode": "batched" }
+    "batched-20-rounds":    { "bestMs": 0.10, "p95Ms": 0.60, "mode": "batched" },
+    "sequential-20-rounds": { "bestMs": 2.00, "p95Ms": 6.00, "mode": "sequential" },
+    "ratio-batched":        { "bestMs": 0.05, "p95Ms": 0.40, "mode": "batched" },
+    "ratio-sequential":     { "bestMs": 1.50, "p95Ms": 5.00, "mode": "sequential" },
+    "scale-rounds-5":       { "bestMs": 0.03, "p95Ms": 0.25, "mode": "batched" },
+    "scale-rounds-20":      { "bestMs": 0.10, "p95Ms": 0.60, "mode": "batched" }
   }
 }
