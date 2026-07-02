@@ -369,6 +369,63 @@ function Row({
   );
 }
 
+function CopyLinkButton({
+  url,
+  label,
+  variant,
+}: {
+  url: string;
+  label: string;
+  variant: "solid" | "ghost";
+}) {
+  const [copied, setCopied] = useState(false);
+  const onCopy = async () => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopied(true);
+      toast.success(`Link ${label} disalin — siap dibagikan.`);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      toast.error("Gagal menyalin link. Coba lagi.");
+    }
+  };
+  if (variant === "solid") {
+    return (
+      <button
+        type="button"
+        onClick={onCopy}
+        aria-label={`Salin link unduh ${label}`}
+        title="Salin link unduh"
+        className="inline-flex shrink-0 items-center justify-center gap-1.5 rounded-xl border bg-background px-3 text-sm font-semibold hover:bg-accent"
+      >
+        {copied ? (
+          <Check className="h-4 w-4 text-emerald-600" />
+        ) : (
+          <Copy className="h-4 w-4" />
+        )}
+        <span className="hidden sm:inline">
+          {copied ? "Tersalin" : "Salin"}
+        </span>
+      </button>
+    );
+  }
+  return (
+    <button
+      type="button"
+      onClick={onCopy}
+      aria-label={`Salin link unduh ${label}`}
+      title="Salin link unduh"
+      className="grid h-7 w-7 place-items-center rounded-md border hover:bg-accent"
+    >
+      {copied ? (
+        <Check className="h-3.5 w-3.5 text-emerald-600" />
+      ) : (
+        <Copy className="h-3.5 w-3.5 text-muted-foreground" />
+      )}
+    </button>
+  );
+}
+
 function ApkDownloadQr({
   url,
   versionName,
