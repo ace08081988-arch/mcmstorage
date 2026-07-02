@@ -87,7 +87,7 @@ describe("Harga & buildPesan — TZ/locale invariance (id-ID locked)", () => {
     // Snapshot penuh (5 baris) untuk regresi total.
     expect(msg).toBe(
       [
-        "📦 [SMB] *Gula Aren*",
+        "📦 [Sem] *Gula Aren*",
         "⚖️ 1.000 g",
         "💰 Harga: Rp 12.500",
         "📍 Rak A/3",
