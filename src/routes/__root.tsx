@@ -389,8 +389,11 @@ function RootComponent() {
       pullPrefsFromCloud().catch(() => {});
       unsub = subscribeRemotePrefs(() => {});
     }).catch(() => {});
-    return () => { if (unsub) unsub(); if (authUnsub) authUnsub(); };
-    // Note: mode listener cleanup handled below via separate return
+    return () => {
+      if (unsub) unsub();
+      if (authUnsub) authUnsub();
+      window.removeEventListener("mcm:app-mode-change", onModeChange);
+    };
   }, []);
 
   // Tangani pesan dari service worker push (klik notifikasi / aksi cepat)
