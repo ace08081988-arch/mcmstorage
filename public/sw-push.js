@@ -1,11 +1,12 @@
 /* MCM Storage — Web Push service worker (Play Store-grade UX) */
 // Ubah SW_VERSION untuk memaksa browser mengambil SW baru + memicu update
 // asset (manifest, ikon) tanpa harus uninstall aplikasi.
-const SW_VERSION = "2026-07-01-1";
+const SW_VERSION = "2026-07-02-1";
 const ASSET_CACHE = `mcm-assets-${SW_VERSION}`;
 // Aset yang wajib selalu segar setelah SW baru aktif (manifest & ikon).
 const FRESH_ASSETS = [
   "/manifest.webmanifest",
+  "/manifest-chat.webmanifest",
   "/favicon.ico",
   "/favicon-16.png",
   "/favicon-32.png",
@@ -14,6 +15,7 @@ const FRESH_ASSETS = [
   "/icon-192.png",
   "/icon-512.png",
   "/icon-maskable-512.png",
+  "/mcm-chat-icon.png",
   "/mask-icon.svg",
   "/og-image.jpg",
 ];
@@ -233,5 +235,18 @@ self.addEventListener("message", (event) => {
   }
   if (d && d.type === "GET_VERSION") {
     try { event.source && event.source.postMessage({ type: "sw-version", version: SW_VERSION }); } catch (_) {}
+  }
+  if (d && d.type === "INVALIDATE_ASSETS" && Array.isArray(d.paths)) {
+    // Hapus entri cache yang cocok agar fetch berikutnya wajib jaringan.
+    event.waitUntil((async () => {
+      try {
+        const cache = await caches.open(ASSET_CACHE);
+        await Promise.allSettled(
+          d.paths.map((p) => cache.delete(new Request(p, { method: "GET" })))
+            .concat(d.paths.map((p) => cache.delete(p))),
+        );
+      } catch (_) {}
+      try { event.source && event.source.postMessage({ type: "assets-invalidated", paths: d.paths }); } catch (_) {}
+    })());
   }
 });
