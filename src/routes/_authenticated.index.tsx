@@ -137,7 +137,14 @@ function isToday(ts: number | undefined): boolean {
 export function buildPesan(p: Produk) {
   const s = p.satuan ?? "pcs";
   const j = p.jumlah ?? 1;
-  return `📦 [${tagFor(p.kategori)}] *${p.nama}*\n⚖️ ${formatJumlah(j, s)}\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
+  // Defensif: nama/lokasi/keterangan bisa `null` / `undefined` di jalur data
+  // cacat (row lama, import mentah). Jangan biarkan literal "null" /
+  // "undefined" muncul ke user; jangan pula throw di `.toLocaleString`.
+  const nama = p.nama ?? "";
+  const lokasi = p.lokasi ?? "";
+  const ket = p.keterangan ?? "";
+  const harga = Number.isFinite(p.harga as number) ? (p.harga as number) : 0;
+  return `📦 [${tagFor(p.kategori)}] *${nama}*\n⚖️ ${formatJumlah(j, s)}\n💰 Harga: Rp ${harga.toLocaleString("id-ID")}\n📍 ${lokasi}\nKet: ${ket}`;
 }
 
 function fileToDataUrl(file: File): Promise<string> {
