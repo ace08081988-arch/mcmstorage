@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import { getScrollGuardConfig } from "@/lib/scroll-guard-config";
 import { useAdminStatus } from "@/hooks/use-is-admin";
 import { ADMIN_ONLY_URLS, filterSidebarItemsForAdmin } from "@/lib/admin-sidebar-visibility";
+import { supabase } from "@/integrations/supabase/client";
 
 /**
  * Global "scroll aktif" flag. Sekali ada scroll event dari elemen apapun
