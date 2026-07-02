@@ -45,6 +45,14 @@ on:
         description: "Set true untuk skip perbandingan baseline"
         required: false
         default: "false"
+      p95_pct:
+        description: "Ambang tambahan p95 (%) untuk flakiness"
+        required: false
+        default: "100"
+      max_cv:
+        description: "Batas coefficient-of-variation (0-∞)"
+        required: false
+        default: "2.0"
 
 concurrency:
   group: gudang-recompute-${{ github.ref }}
@@ -60,6 +68,8 @@ jobs:
       BENCH_STRICT: "1"
       BENCH_REGRESSION_PCT: ${{ github.event.inputs.regression_pct || '50' }}
       SKIP_BENCH_BASELINE: ${{ github.event.inputs.skip_baseline == 'true' && '1' || '' }}
+      BENCH_P95_PCT: ${{ github.event.inputs.p95_pct || '100' }}
+      BENCH_MAX_CV: ${{ github.event.inputs.max_cv || '2.0' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
