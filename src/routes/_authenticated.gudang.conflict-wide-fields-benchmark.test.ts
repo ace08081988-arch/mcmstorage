@@ -488,6 +488,24 @@ afterAll(() => {
       },
       entries: ARTIFACT_ENTRIES,
     };
+    // Sertakan compare rows di payload utama supaya konsumen JSON tunggal
+    // (mis. dashboard eksternal) tidak perlu membaca file compare terpisah.
+    try {
+      const compareInputs: CompareInput[] = ARTIFACT_ENTRIES.map((e) => ({
+        scenario: e.scenario,
+        mode: e.mode,
+        bestMs: e.bestMs,
+        p50Ms: e.p50Ms,
+        p95Ms: e.p95Ms,
+        cv: e.cv,
+      }));
+      (payload as unknown as { compare: unknown }).compare = buildCompareRows(
+        compareInputs,
+        BASELINE,
+      );
+    } catch {
+      /* non-fatal */
+    }
     writeFileSync(
       join(outDir, "conflict-wide-fields-benchmark.json"),
       JSON.stringify(payload, null, 2),
