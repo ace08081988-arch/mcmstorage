@@ -521,6 +521,33 @@ afterAll(() => {
       "utf8",
     );
 
+    // ----- Tren durasi antar-run -----
+    // Append satu baris JSON ke `benchmarks/*.trend.jsonl` lalu tulis ringkasan
+    // arah (membaik / memburuk / stabil) berbasis window run terakhir.
+    // Dinonaktifkan bila `SKIP_BENCH_TREND=1` (mis. run lokal cepat).
+    if (process.env.SKIP_BENCH_TREND !== "1") {
+      const trendPath = join(process.cwd(), "benchmarks", "conflict-wide-fields.trend.jsonl");
+      try {
+        const run = buildTrendRun(ARTIFACT_ENTRIES);
+        appendTrendRun(trendPath, run);
+        const history = loadTrendHistory(trendPath);
+        const summary = summarizeTrend(history);
+        writeFileSync(
+          join(outDir, "conflict-wide-fields-trend.json"),
+          JSON.stringify({ run, summary }, null, 2),
+          "utf8",
+        );
+        writeFileSync(
+          join(outDir, "conflict-wide-fields-trend.md"),
+          formatTrendMarkdown(summary),
+          "utf8",
+        );
+      } catch (err) {
+        // eslint-disable-next-line no-console
+        console.warn("[bench:trend] gagal menulis tren:", err);
+      }
+    }
+
     // Profile artefak — hanya ditulis bila ada report (BENCH_PROFILE=1 atau
     // ambang terlampaui). File JSON verbose (durasi per-call untuk analisis
     // lanjut); MD ringkas untuk step summary.
