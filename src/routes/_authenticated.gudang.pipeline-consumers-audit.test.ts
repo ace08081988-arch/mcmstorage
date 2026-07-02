@@ -38,6 +38,8 @@ function isProductionFile(p: string): boolean {
   // Buang test files & library sumber pipeline itu sendiri.
   if (/\.test\.(ts|tsx)$/.test(p)) return false;
   if (/[\\/]beli-(derived|warnings)\.ts$/.test(p)) return false;
+  // Test helper / spy — bukan konsumen produksi walaupun bukan file `.test.ts`.
+  if (/[\\/]_authenticated\.gudang\.strict-compute-spy\.ts$/.test(p)) return false;
   return true;
 }
 
