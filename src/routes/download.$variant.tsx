@@ -352,3 +352,91 @@ function Row({
     </div>
   );
 }
+
+function ApkDownloadQr({
+  url,
+  versionName,
+}: {
+  url: string;
+  versionName: string | null;
+}) {
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const [dataUrl, setDataUrl] = useState<string>("");
+  const [err, setErr] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const el = canvasRef.current;
+    if (!el || !url) return;
+    // Lazy-load: `qrcode` mem-bundle deps Node-only yang meng-crash workerd SSR.
+    import("qrcode")
+      .then(({ default: QRCode }) =>
+        QRCode.toCanvas(el, url, {
+          width: 220,
+          margin: 1,
+          errorCorrectionLevel: "M",
+        }),
+      )
+      .then(() => {
+        if (cancelled) return;
+        setErr("");
+        try {
+          setDataUrl(el.toDataURL("image/png"));
+        } catch {
+          /* ignore */
+        }
+      })
+      .catch((e: unknown) => {
+        if (cancelled) return;
+        setErr(e instanceof Error ? e.message : String(e));
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  const savePng = () => {
+    if (!dataUrl) return;
+    const a = document.createElement("a");
+    a.href = dataUrl;
+    a.download = `mcm-chat-apk-qr${versionName ? `-v${versionName}` : ""}.png`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    toast.success("QR code disimpan.");
+  };
+
+  return (
+    <section className="rounded-2xl border bg-card p-5 text-center shadow-sm">
+      <div className="mb-2 flex items-center justify-center gap-1.5 text-sm font-semibold">
+        <QrIcon className="h-4 w-4 text-sky-600" />
+        Pindai untuk unduh APK Chat
+      </div>
+      <p className="mb-3 text-[11px] text-muted-foreground">
+        Arahkan kamera HP ke QR code untuk membuka link unduh
+        {versionName ? ` v${versionName}` : ""} langsung — tanpa mengetik URL.
+      </p>
+      <div className="flex justify-center">
+        <canvas
+          ref={canvasRef}
+          className="rounded bg-white p-2"
+          aria-label="QR code unduh APK MCM Chat"
+        />
+      </div>
+      {err && (
+        <p className="mt-2 text-[11px] text-destructive">Gagal membuat QR: {err}</p>
+      )}
+      <button
+        type="button"
+        onClick={savePng}
+        disabled={!dataUrl}
+        className="mt-3 inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent disabled:opacity-50"
+      >
+        <Download className="h-3.5 w-3.5" /> Simpan QR (PNG)
+      </button>
+      <p className="mt-2 text-[10px] leading-relaxed text-muted-foreground/80">
+        Link ini kedaluwarsa dalam ±1 jam. Muat ulang halaman untuk QR baru.
+      </p>
+    </section>
+  );
+}
