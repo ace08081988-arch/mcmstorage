@@ -60,6 +60,15 @@ jobs:
           set -e
           bunx vitest run "src/routes/_authenticated.gudang.strict-compute-spy.test.ts" --reporter=verbose
 
+      - name: Upload stress diagnostic artifacts (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-stress-diagnostics-${{ github.run_id }}-${{ github.run_attempt }}
+          path: test-artifacts/**
+          if-no-files-found: ignore
+          retention-days: 14
+
       - name: Job summary on failure
         if: failure()
         run: |
@@ -75,4 +84,14 @@ jobs:
             echo "- Matcher \`strict-compute-spy\` menghitung panggilan yang bukan dari pipeline (lihat \`_authenticated.gudang.strict-compute-spy.test.ts\`).";
             echo "";
             echo "Jalankan lokal: \`bun run test:gudang-recompute\`.";
+            echo "";
+            echo "### Artefak diagnostik";
+            echo "Bila stress test gagal, file JSON per-seed berisi \`finalDerived\`, \`finalWarnings\`, snapshot \`item\`/\`form\`, dan diff antar-mode diunggah sebagai artifact \`gudang-stress-diagnostics-*\` (tab **Artifacts** pada run ini).";
+            if [ -d test-artifacts ]; then
+              echo "";
+              echo "File yang ditulis pada run ini:";
+              echo '```';
+              ls -1 test-artifacts || true;
+              echo '```';
+            fi
           } >> "$GITHUB_STEP_SUMMARY"

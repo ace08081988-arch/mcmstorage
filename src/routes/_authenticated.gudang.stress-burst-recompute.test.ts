@@ -8,6 +8,7 @@ import {
   computeBeliWarnings as realComputeWarnings,
   __resetBeliWarningsMemo,
 } from "@/lib/beli-warnings";
+import { writeStressDiagnosticArtifact } from "@/lib/stress-diagnostic";
 
 // ============================================================
 // Stress test: 10 seed berbeda × 200 mutasi burst per seed.
@@ -277,28 +278,51 @@ describe("stress burst: 10 seed × 200 mutasi → output deterministik lintas mo
       await mtH.stepMicrotask(mutations);
       const mt = mtH.snapshot();
 
-      // KRITIS: state final identik → tidak ada race/side-effect antar mode.
-      expect(bat.item).toEqual(seq.item);
-      expect(bat.form).toEqual(seq.form);
-      expect(mt.item).toEqual(seq.item);
-      expect(mt.form).toEqual(seq.form);
+      try {
+        // KRITIS: state final identik → tidak ada race/side-effect antar mode.
+        expect(bat.item).toEqual(seq.item);
+        expect(bat.form).toEqual(seq.form);
+        expect(mt.item).toEqual(seq.item);
+        expect(mt.form).toEqual(seq.form);
 
-      // Output pipeline identik lintas mode.
-      expect(bat.finalDerived).toEqual(seq.finalDerived);
-      expect(mt.finalDerived).toEqual(seq.finalDerived);
-      expect(bat.finalWarnings).toEqual(seq.finalWarnings);
-      expect(mt.finalWarnings).toEqual(seq.finalWarnings);
+        // Output pipeline identik lintas mode.
+        expect(bat.finalDerived).toEqual(seq.finalDerived);
+        expect(mt.finalDerived).toEqual(seq.finalDerived);
+        expect(bat.finalWarnings).toEqual(seq.finalWarnings);
+        expect(mt.finalWarnings).toEqual(seq.finalWarnings);
 
-      // Batched dan microtask hanya commit sekali → tepat 1 recompute per
-      // fungsi (di luar 1 kali inisialisasi factory saat memo dibuat).
-      expect(bat.derivedCalls).toBeLessThanOrEqual(2);
-      expect(bat.warningsCalls).toBeLessThanOrEqual(2);
-      expect(mt.derivedCalls).toBeLessThanOrEqual(2);
-      expect(mt.warningsCalls).toBeLessThanOrEqual(2);
+        // Batched dan microtask hanya commit sekali → tepat 1 recompute per
+        // fungsi (di luar 1 kali inisialisasi factory saat memo dibuat).
+        expect(bat.derivedCalls).toBeLessThanOrEqual(2);
+        expect(bat.warningsCalls).toBeLessThanOrEqual(2);
+        expect(mt.derivedCalls).toBeLessThanOrEqual(2);
+        expect(mt.warningsCalls).toBeLessThanOrEqual(2);
 
-      // Sequential recompute count TIDAK boleh melebihi jumlah mutasi + init.
-      expect(seq.derivedCalls).toBeLessThanOrEqual(BURST + 1);
-      expect(seq.warningsCalls).toBeLessThanOrEqual(BURST + 1);
+        // Sequential recompute count TIDAK boleh melebihi jumlah mutasi + init.
+        expect(seq.derivedCalls).toBeLessThanOrEqual(BURST + 1);
+        expect(seq.warningsCalls).toBeLessThanOrEqual(BURST + 1);
+      } catch (err) {
+        // Tulis artefak diff untuk CI: baseline = sequential, others = batched + microtask.
+        const file = writeStressDiagnosticArtifact({
+          label: "stress-burst",
+          seed,
+          burst: BURST,
+          baseline: { name: "sequential", snapshot: seq },
+          others: [
+            { name: "batched", snapshot: bat },
+            { name: "microtask", snapshot: mt },
+          ],
+          extra: {
+            error: err instanceof Error ? err.message : String(err),
+            mutationsHash: mutations.length,
+          },
+        });
+        if (file) {
+          // eslint-disable-next-line no-console
+          console.error(`[stress-burst] wrote diagnostic artifact: ${file}`);
+        }
+        throw err;
+      }
     });
   }
 
@@ -311,10 +335,26 @@ describe("stress burst: 10 seed × 200 mutasi → output deterministik lintas mo
       for (const m of mutations) b.stepSequential(m);
       const sa = a.snapshot();
       const sb = b.snapshot();
-      expect(sb.finalDerived).toEqual(sa.finalDerived);
-      expect(sb.finalWarnings).toEqual(sa.finalWarnings);
-      expect(sb.item).toEqual(sa.item);
-      expect(sb.form).toEqual(sa.form);
+      try {
+        expect(sb.finalDerived).toEqual(sa.finalDerived);
+        expect(sb.finalWarnings).toEqual(sa.finalWarnings);
+        expect(sb.item).toEqual(sa.item);
+        expect(sb.form).toEqual(sa.form);
+      } catch (err) {
+        const file = writeStressDiagnosticArtifact({
+          label: "stress-determinism",
+          seed,
+          burst: BURST,
+          baseline: { name: "run-a", snapshot: sa },
+          others: [{ name: "run-b", snapshot: sb }],
+          extra: { error: err instanceof Error ? err.message : String(err) },
+        });
+        if (file) {
+          // eslint-disable-next-line no-console
+          console.error(`[stress-determinism] wrote diagnostic artifact: ${file}`);
+        }
+        throw err;
+      }
     }
   });
 });
