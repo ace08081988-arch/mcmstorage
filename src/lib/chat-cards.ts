@@ -26,6 +26,20 @@ export type ProductCard = {
 };
 
 /**
+ * Keranjang belanja yang dikirim dari dalam chat. Setiap baris berisi
+ * nama barang (diketik manual), jumlah, dan harga satuan (opsional).
+ * `cart_group_id` menautkan bubble ini ke baris-baris `order_requests`
+ * yang dibuat lewat RPC `create_chat_cart`.
+ */
+export type CartCard = {
+  type: "cart";
+  cart_group_id: string;
+  lines: { name: string; qty: number; price?: number | null }[];
+  currency?: string;
+  note?: string | null;
+};
+
+/**
  * Stiker yang dirender langsung di gelembung chat. Semua field
  * kosmetik (warna, rotasi, skala, caption) bisa diedit ulang oleh
  * pengirim via menu "Edit stiker" → dialog stiker dibuka pre-filled.
@@ -52,7 +66,12 @@ export type StickerCard =
       rotation?: number; scale?: number; caption?: string;
     };
 
-export type Card = LocationCard | ContactCard | ProductCard | StickerCard;
+export type Card =
+  | LocationCard
+  | ContactCard
+  | ProductCard
+  | StickerCard
+  | CartCard;
 
 const SENTINEL = "[mcm-card:v1]";
 
@@ -84,6 +103,10 @@ export function previewText(body: string | null | undefined): string | null {
   if (c.type === "location") return c.live_until ? "📍 Berbagi live location" : "📍 Lokasi dibagikan";
   if (c.type === "contact") return `👤 Kontak: ${c.name}`;
   if (c.type === "product") return `🛒 Produk: ${c.name}`;
+  if (c.type === "cart") {
+    const n = c.lines.length;
+    return `🛒 Keranjang · ${n} item`;
+  }
   if (c.type === "sticker") {
     if (c.kind === "arrow") return `🧭 Stiker panah${c.caption ? ` · ${c.caption}` : ""}`;
     if (c.kind === "bank") return `🏦 Rekening ${c.bank} · ${c.account_number}`;
