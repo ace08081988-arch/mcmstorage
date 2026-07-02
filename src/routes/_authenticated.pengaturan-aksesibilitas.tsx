@@ -1,11 +1,19 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useBlocker } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Slider } from "@/components/ui/slider";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import { RotateCcw, Check, X } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { RotateCcw, Check, X, AlertTriangle } from "lucide-react";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
 import { DEFAULT_APP_PREFS, useAppPrefs, setAppPrefs } from "@/lib/app-prefs";
 
@@ -29,6 +37,40 @@ function PengaturanAksesibilitasPage() {
   const savedRef = useRef(false);
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
+
+  // Dialog konfirmasi saat mencoba keluar dengan perubahan belum disimpan.
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const leaveResolveRef = useRef<((proceed: boolean) => void) | null>(null);
+
+  const dirty = useMemo(
+    () =>
+      draft.fontScale !== snapshot.fontScale ||
+      draft.highContrast !== snapshot.highContrast ||
+      draft.reduceMotion !== snapshot.reduceMotion,
+    [draft, snapshot],
+  );
+
+  useBlocker({
+    shouldBlockFn: () => {
+      if (!dirty) return false;
+      return new Promise<boolean>((resolve) => {
+        leaveResolveRef.current = resolve;
+        setLeaveOpen(true);
+      });
+    },
+    enableBeforeUnload: true,
+  });
+
+  const handleLeaveConfirm = () => {
+    leaveResolveRef.current?.(true);
+    leaveResolveRef.current = null;
+    setLeaveOpen(false);
+  };
+  const handleLeaveCancel = () => {
+    leaveResolveRef.current?.(false);
+    leaveResolveRef.current = null;
+    setLeaveOpen(false);
+  };
 
   // Terapkan draft ke <html> tanpa persist.
   useEffect(() => {
@@ -59,13 +101,6 @@ function PengaturanAksesibilitasPage() {
     return () => mq.removeEventListener("change", on);
   }, []);
 
-  const dirty = useMemo(
-    () =>
-      draft.fontScale !== snapshot.fontScale ||
-      draft.highContrast !== snapshot.highContrast ||
-      draft.reduceMotion !== snapshot.reduceMotion,
-    [draft, snapshot],
-  );
 
   const commitSave = () => {
     setAppPrefs({
@@ -231,6 +266,33 @@ function PengaturanAksesibilitasPage() {
           </div>
         </div>
       </div>
+
+      {/* Dialog konfirmasi keluar halaman dengan perubahan belum disimpan */}
+      <AlertDialog open={leaveOpen} onOpenChange={(open) => {
+        setLeaveOpen(open);
+        if (!open) handleLeaveCancel();
+      }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-amber-500" aria-hidden="true" />
+              Perubahan belum disimpan
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              Anda memiliki perubahan aksesibilitas yang belum disimpan. Jika meninggalkan
+              halaman ini, perubahan tersebut akan dibatalkan.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <Button variant="outline" onClick={handleLeaveCancel}>
+              Tetap di halaman ini
+            </Button>
+            <Button variant="destructive" onClick={handleLeaveConfirm}>
+              Tinggalkan halaman
+            </Button>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </main>
   );
 }
