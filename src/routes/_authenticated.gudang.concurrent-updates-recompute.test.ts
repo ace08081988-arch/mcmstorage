@@ -246,10 +246,10 @@ describe("concurrent updates — beberapa field diubah hampir bersamaan tidak me
     const seq = runSequential(mutations);
     const bat = runBatched(mutations);
 
-    // Sekuensial: 1 + 5 = 6 (setiap transisi unik memicu recompute).
-    // priceMode & inputKarton juga di deps warnings → warnings pun 6.
+    // Sekuensial derived: 1 + 5 = 6 (semua 5 mutasi menyentuh deps derived).
+    // Sekuensial warnings: 1 + 4 = 5 (pricePerBase tidak ada di deps warnings).
     expect(seq.derivedCalls).toBe(6);
-    expect(seq.warningsCalls).toBe(6);
+    expect(seq.warningsCalls).toBe(5);
     // Batched: 1 + 1 = 2.
     expect(bat.derivedCalls).toBe(2);
     expect(bat.warningsCalls).toBe(2);
