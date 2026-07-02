@@ -92,7 +92,11 @@ export function DownloadChatApkShortcut() {
         },
       );
     } finally {
-      setBusy(false);
+      // Jangan langsung buka kunci tombol: unduhan APK memicu download
+      // browser (bukan navigasi), sehingga tanpa jeda tombol langsung bisa
+      // ditekan ulang dan berpotensi menembak unduhan ganda. Kunci selama
+      // 5 detik memberi cukup waktu bagi browser untuk mulai mengunduh.
+      setTimeout(() => setBusy(false), 5000);
     }
   }
 
