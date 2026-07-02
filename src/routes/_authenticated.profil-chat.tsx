@@ -420,6 +420,22 @@ function ProfilChatPage() {
                           <Copy className="h-4 w-4 text-muted-foreground" />
                         )}
                       </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setQrTarget({
+                            label: r.versionName ? `MCM Chat v${r.versionName}` : r.name,
+                            url: r.url,
+                            meta: r.sizeMB ? `${r.sizeMB} MB` : undefined,
+                          });
+                        }}
+                        aria-label="Tampilkan QR unduh"
+                        title="Pindai QR untuk unduh di perangkat lain"
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded-md border hover:bg-accent"
+                      >
+                        <QrCodeIcon className="h-4 w-4 text-muted-foreground" />
+                      </button>
                     </div>
                   </li>
                 );
@@ -428,6 +444,7 @@ function ProfilChatPage() {
           )}
         </DialogContent>
       </Dialog>
+      <ApkQrDialog target={qrTarget} onOpenChange={(o) => { if (!o) setQrTarget(null); }} />
     </main>
   );
 }
