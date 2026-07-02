@@ -98,6 +98,31 @@ function PengaturanAksesibilitasPage() {
         subtitle="Skala teks, kontras, dan animasi"
       />
       <div className="space-y-4 px-4 pt-2">
+        {/* Badge status "Belum disimpan" — hanya tampil kalau draft ≠ snapshot */}
+        <div
+          className="flex items-center gap-2 text-xs"
+          role="status"
+          aria-live="polite"
+        >
+          {dirty ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 font-medium text-amber-700 dark:text-amber-300">
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"
+                aria-hidden="true"
+              />
+              Belum disimpan
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-700 dark:text-emerald-300">
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                aria-hidden="true"
+              />
+              Tersimpan
+            </span>
+          )}
+        </div>
+
         <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] leading-snug text-muted-foreground">
           Perubahan di halaman ini adalah <span className="font-semibold text-foreground">pratinjau</span>.
           Tampilan tersimpan tidak berubah sampai Anda menekan{" "}
@@ -106,7 +131,12 @@ function PengaturanAksesibilitasPage() {
 
         <Card>
           <CardHeader className="pb-3">
-            <CardTitle className="text-base">Skala teks</CardTitle>
+            <CardTitle className="flex items-center gap-2 text-base">
+              Skala teks
+              {draft.fontScale !== snapshot.fontScale && (
+                <UnsavedDot title={`Tersimpan: ${Math.round(snapshot.fontScale * 100)}%`} />
+              )}
+            </CardTitle>
             <CardDescription className="text-xs">
               Perbesar teks di seluruh aplikasi. Diterapkan lewat variabel CSS <code>--app-font-scale</code>.
             </CardDescription>
@@ -143,12 +173,14 @@ function PengaturanAksesibilitasPage() {
           <CardContent className="space-y-4">
             <ToggleRow
               label="Tingkatkan kontras"
+              unsaved={draft.highContrast !== snapshot.highContrast}
               help="Perkuat border dan ring fokus supaya elemen lebih terlihat."
               checked={draft.highContrast}
               onChange={(v) => setDraft((d) => ({ ...d, highContrast: v }))}
             />
             <ToggleRow
               label="Kurangi animasi"
+              unsaved={draft.reduceMotion !== snapshot.reduceMotion}
               help={
                 systemReducedMotion
                   ? "Sistem juga sedang meminta reduce-motion — pengaturan ini menambah cakupan ke animasi in-app."
@@ -208,22 +240,40 @@ function ToggleRow({
   help,
   checked,
   onChange,
+  unsaved,
 }: {
   label: string;
   help: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  unsaved?: boolean;
 }) {
   const id = `t-${label.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
-        <label htmlFor={id} className="block text-sm font-medium">
+        <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium">
           {label}
+          {unsaved && <UnsavedDot />}
         </label>
         <p className="text-[11px] leading-snug text-muted-foreground">{help}</p>
       </div>
       <Switch id={id} checked={checked} onCheckedChange={onChange} />
     </div>
+  );
+}
+
+function UnsavedDot({ title }: { title?: string }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300"
+      title={title ?? "Nilai berbeda dari yang tersimpan"}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"
+        aria-hidden="true"
+      />
+      Belum disimpan
+    </span>
   );
 }
