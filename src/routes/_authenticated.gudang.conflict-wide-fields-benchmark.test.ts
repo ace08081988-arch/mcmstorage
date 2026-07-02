@@ -10,6 +10,15 @@ import {
   computeBeliWarnings as realComputeWarnings,
   __resetBeliWarningsMemo,
 } from "@/lib/beli-warnings";
+import {
+  loadBaseline,
+  saveBaseline,
+  checkRegression,
+  shouldEnforceBaseline,
+  shouldUpdateBaseline,
+  type BaselineFile,
+  type RegressionCheck,
+} from "@/lib/bench-baseline";
 
 // ============================================================
 // Micro-benchmark untuk skenario KONFLIK LEBAR (banyak field derived +
@@ -253,8 +262,46 @@ type BenchEntry = {
   warningsCalls: number;
   budgetMs: number;
   variancePassed: boolean;
+  baselineMs?: number | null;
+  deltaPct?: number | null;
+  regression?: boolean;
+  regressionReason?: string;
 };
 const ARTIFACT_ENTRIES: BenchEntry[] = [];
+
+// ----- Baseline (perbandingan persentase vs run tersimpan) -----
+const BASELINE_PATH = join(process.cwd(), "benchmarks", "conflict-wide-fields.baseline.json");
+const BASELINE: BaselineFile | null = loadBaseline(BASELINE_PATH);
+const ENFORCE_BASELINE = shouldEnforceBaseline();
+const UPDATE_BASELINE = shouldUpdateBaseline();
+const REGRESSION_CHECKS: RegressionCheck[] = [];
+
+function recordAndAssertBaseline(
+  scenario: string,
+  mode: "batched" | "sequential",
+  bestMs: number,
+  entry: BenchEntry,
+): void {
+  const check = checkRegression(scenario, bestMs, BASELINE);
+  REGRESSION_CHECKS.push(check);
+  entry.baselineMs = check.baselineMs;
+  entry.deltaPct = check.deltaPct;
+  entry.regression = check.regression;
+  entry.regressionReason = check.reason;
+  // Update baseline in memory bila diminta.
+  if (UPDATE_BASELINE && BASELINE) {
+    BASELINE.scenarios[scenario] = { bestMs, mode };
+  }
+  // Enforce hanya di CI / BENCH_STRICT=1. Lokal cukup lapor via artefak.
+  if (ENFORCE_BASELINE && check.regression) {
+    // Vitest akan menampilkan pesan gagal di CI dengan konteks jelas.
+    throw new Error(
+      `[bench:baseline] Regresi terdeteksi di scenario "${scenario}" (${mode}): ` +
+        `current=${bestMs.toFixed(3)}ms vs baseline=${check.baselineMs?.toFixed(3)}ms — ${check.reason}. ` +
+        `Set UPDATE_BENCH_BASELINE=1 untuk memperbarui baseline jika regresi diharapkan.`,
+    );
+  }
+}
 
 afterAll(() => {
   const outDir = join(process.cwd(), "test-artifacts");
@@ -271,6 +318,16 @@ afterAll(() => {
         varianceRatio: VARIANCE_RATIO,
         runs: RUNS,
       },
+      baseline: {
+        path: "benchmarks/conflict-wide-fields.baseline.json",
+        loaded: BASELINE !== null,
+        capturedOn: BASELINE?.capturedOn ?? null,
+        regressionPct:
+          Number(process.env.BENCH_REGRESSION_PCT) || BASELINE?.regressionPctDefault || null,
+        enforced: ENFORCE_BASELINE,
+        updated: UPDATE_BASELINE,
+        checks: REGRESSION_CHECKS,
+      },
       entries: ARTIFACT_ENTRIES,
     };
     writeFileSync(
@@ -284,14 +341,32 @@ afterAll(() => {
     md.push("### ⏱️ Conflict-wide fields benchmark");
     md.push("");
     md.push(`Node ${process.version} · ${process.platform}-${process.arch} · runs=${RUNS}`);
+    if (BASELINE) {
+      const pct =
+        Number(process.env.BENCH_REGRESSION_PCT) || BASELINE.regressionPctDefault;
+      md.push(
+        `Baseline: \`${BASELINE.capturedOn ?? "unknown"}\` · ambang regresi **+${pct}%** · ` +
+          `enforce=${ENFORCE_BASELINE ? "yes" : "no (report-only)"}` +
+          (UPDATE_BASELINE ? " · **updating baseline**" : ""),
+      );
+    } else {
+      md.push("Baseline: _tidak ditemukan_ — semua scenario dilaporkan `no-baseline`.");
+    }
     md.push("");
-    md.push("| Scenario | Mode | Rounds | Mutations | Best (ms) | Worst (ms) | D calls | W calls | Budget (ms) | Variance |");
-    md.push("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :---: |");
+    md.push(
+      "| Scenario | Mode | Rounds | Muts | Best (ms) | Worst (ms) | D | W | Budget | Var | Baseline (ms) | Δ% | Status |",
+    );
+    md.push(
+      "| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :---: | ---: | ---: | :--- |",
+    );
     for (const e of ARTIFACT_ENTRIES) {
+      const baseCell = e.baselineMs == null ? "—" : e.baselineMs.toFixed(3);
+      const deltaCell = e.deltaPct == null ? "—" : `${e.deltaPct >= 0 ? "+" : ""}${e.deltaPct.toFixed(1)}%`;
+      const statusCell = e.regression ? "❌ regresi" : e.baselineMs == null ? "⏭ no-baseline" : "✅ ok";
       md.push(
         `| ${e.scenario} | ${e.mode} | ${e.rounds} | ${e.mutations} | ` +
           `${e.bestMs.toFixed(3)} | ${e.worstMs.toFixed(3)} | ${e.derivedCalls} | ${e.warningsCalls} | ` +
-          `${e.budgetMs} | ${e.variancePassed ? "✅" : "❌"} |`,
+          `${e.budgetMs} | ${e.variancePassed ? "✅" : "❌"} | ${baseCell} | ${deltaCell} | ${statusCell} |`,
       );
     }
     writeFileSync(
@@ -299,6 +374,13 @@ afterAll(() => {
       md.join("\n") + "\n",
       "utf8",
     );
+
+    // Tulis kembali baseline bila diminta secara eksplisit.
+    if (UPDATE_BASELINE && BASELINE) {
+      saveBaseline(BASELINE_PATH, BASELINE);
+      // eslint-disable-next-line no-console
+      console.info(`[bench:baseline] Baseline diperbarui: ${BASELINE_PATH}`);
+    }
   } catch (err) {
     // eslint-disable-next-line no-console
     console.warn("[bench] gagal menulis artefak durasi:", err);
