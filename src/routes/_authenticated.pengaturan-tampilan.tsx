@@ -31,7 +31,12 @@ import {
   type FontFamily,
   type FontSize,
   type ImportedPatch,
+  type MigrateResult,
 } from "@/lib/appearance-migrator";
+import {
+  logAppearanceMigration,
+  type ImportSource,
+} from "@/lib/appearance-migrator.telemetry";
 
 const COMPACT_LS = "app-compact-mode";
 function readCompact(): boolean {
@@ -406,11 +411,13 @@ function PengaturanTampilanPage() {
   // ---------------------------------------------------------------
   const MAX_IMPORT_BYTES = 10 * 1024 * 1024;
 
-  const runImportFromText = (text: string, source: "file" | "paste" | "url") => {
+  const runImportFromText = (text: string, source: ImportSource) => {
     let data: unknown;
     try {
       data = JSON.parse(text || "{}");
     } catch {
+      const invalid: MigrateResult = { ok: false, reason: "invalid" };
+      logAppearanceMigration(source, invalid);
       toast.error(
         source === "url"
           ? "URL tidak berisi JSON yang valid."
@@ -420,6 +427,7 @@ function PengaturanTampilanPage() {
     }
     setDraft((d) => {
       const result = migrateImportedAppearance(data, d);
+      logAppearanceMigration(source, result);
       if (!result.ok) {
         if (result.reason === "unknown_type") {
           toast.error(
