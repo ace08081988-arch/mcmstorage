@@ -132,7 +132,7 @@ function makeHarness() {
     factory: () => spyD(inp(item, form)),
   });
   const memoW = createMemo({
-    deps: warningsDeps(item, form, undefined),
+    deps: warningsDeps(item, form, memoD.value),
     factory: () =>
       spyW({
         mode: "existing",
