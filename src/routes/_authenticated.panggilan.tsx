@@ -8,7 +8,7 @@ import { listMyCalls, formatCallDuration, type CallRow } from "@/lib/calls";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyUserId } from "@/lib/chat";
 import { formatInviteCode } from "@/lib/invite";
-import { getCallStatusVisual, type CallVisualStatus } from "@/lib/call-status-visual";
+import type { CallVisualStatus } from "@/lib/call-status-visual";
 import { CallStatusButton } from "@/components/chat/CallStatusButton";
 
 export const Route = createFileRoute("/_authenticated/panggilan")({
@@ -168,13 +168,10 @@ function CallRowItem({
   const peerId = outgoing ? row.callee_id : row.caller_id;
   const peerName = (peerId && nameMap[peerId]) || "Kontak";
   const Icon = row.kind === "video" ? VideoIcon : Phone;
-  // Pemetaan ikon+warna+label+hint terpusat — dipakai juga oleh CallScreen.
-  const visual = getCallStatusVisual(row.status as CallVisualStatus, { outgoing });
   const missed = row.status === "missed" || (row.status === "declined" && !outgoing);
   // Untuk status "ended", tampilkan durasi alih-alih label "Diterima".
   const overrideLabel =
     row.status === "ended" ? formatCallDuration(row.duration_sec) : undefined;
-  void visual; // hindari unused-var — visual masih dipakai lewat CallStatusButton.
 
   return (
     <li className="flex items-center gap-3 px-4 py-3">
