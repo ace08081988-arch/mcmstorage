@@ -69,10 +69,11 @@ export function CartComposer({
 
     setSending(true);
     try {
+      const trimmedNote = note.trim();
       const { data: cartId, error } = await supabase.rpc("create_chat_cart", {
         p_conversation_id: conversationId,
-        p_lines: clean as unknown as object,
-        p_note: note.trim() || null,
+        p_lines: clean as unknown as never,
+        ...(trimmedNote ? { p_note: trimmedNote } : {}),
       });
       if (error || !cartId) {
         toast.error(friendlyError(error) || "Gagal membuat pesanan.");
