@@ -23,6 +23,7 @@ import { useDeviceSessionGuard } from "@/lib/device-sessions";
 import { ChatModeSplash } from "@/components/ChatModeSplash";
 import { applyChatModeBranding } from "@/lib/chat-mode-branding";
 import { BuildVersionBadge } from "@/components/BuildVersionBadge";
+import { installBuildCacheBuster } from "@/lib/build-cache-buster";
 
 function NotFoundComponent() {
   return (
@@ -352,6 +353,10 @@ function RootComponent() {
     }).catch(() => {});
     applyCompactMode();
     applyReduceMotion();
+    // Cache-buster: hapus cache SW saat BUILD_ID berubah + hard reload otomatis
+    // bila server sudah mendeploy bundle baru, supaya JS lama tidak mencampur
+    // label/satuan dengan bundle baru.
+    installBuildCacheBuster();
     // Auto-update service worker: manifest & ikon selalu ambil versi terbaru
     // tanpa perlu uninstall/install ulang.
     import("@/lib/sw-auto-update").then(({ installSwAutoUpdate }) => {
