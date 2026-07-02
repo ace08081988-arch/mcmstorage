@@ -168,20 +168,33 @@ function CallRowItem({
   const peerId = outgoing ? row.callee_id : row.caller_id;
   const peerName = (peerId && nameMap[peerId]) || "Kontak";
   const missed = row.status === "missed" || (row.status === "declined" && !outgoing);
+  const rejected = row.status === "declined" || row.status === "cancelled";
+  const answered = row.status === "ended";
   const Icon = row.kind === "video" ? VideoIcon : Phone;
   const DirIcon = missed
     ? PhoneMissed
     : outgoing
     ? PhoneOutgoing
     : PhoneIncoming;
-  const dirClass = missed ? "text-red-600" : outgoing ? "text-emerald-600" : "text-primary";
+  // Warna dibedakan: tidak dijawab (merah), ditolak/dibatalkan (amber),
+  // diterima/selesai (emerald), gagal (muted), berdering (primary).
+  const statusClass = missed
+    ? "text-red-600"
+    : rejected
+    ? "text-amber-600"
+    : answered
+    ? "text-emerald-600"
+    : row.status === "failed"
+    ? "text-muted-foreground"
+    : "text-primary";
+  const dirClass = statusClass;
   const statusLabel =
     row.status === "ended"
       ? formatCallDuration(row.duration_sec)
       : row.status === "missed"
       ? "Tidak dijawab"
       : row.status === "declined"
-      ? outgoing ? "Ditolak" : "Ditolak"
+      ? "Ditolak"
       : row.status === "cancelled"
       ? "Dibatalkan"
       : row.status === "failed"
@@ -199,7 +212,7 @@ function CallRowItem({
         <div className={`truncate text-sm font-medium ${missed ? "text-red-600" : ""}`}>{peerName}</div>
         <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
           <DirIcon className={`h-3 w-3 ${dirClass}`} />
-          <span>{statusLabel}</span>
+          <span className={statusClass}>{statusLabel}</span>
           <span>·</span>
           <span>{timeLabel(row.started_at)}</span>
         </div>
