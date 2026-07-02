@@ -589,6 +589,43 @@ afterAll(() => {
       console.warn("[bench:histogram] gagal menulis distribusi:", err);
     }
 
+    // ----- Compare baseline vs build terbaru (p50/p95/CV) -----
+    // Tabel ringkas yang menaruh trend semua metrik distribusi per scenario
+    // di satu tempat, memudahkan review PR: dari sini kelihatan apakah p95
+    // naik meski best turun (indikasi ekor panjang) atau CV membaik.
+    try {
+      const compareInputs: CompareInput[] = ARTIFACT_ENTRIES.map((e) => ({
+        scenario: e.scenario,
+        mode: e.mode,
+        bestMs: e.bestMs,
+        p50Ms: e.p50Ms,
+        p95Ms: e.p95Ms,
+        cv: e.cv,
+      }));
+      const compareRows = buildCompareRows(compareInputs, BASELINE);
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-compare.md"),
+        formatCompareMarkdown(compareRows),
+        "utf8",
+      );
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-compare.json"),
+        JSON.stringify(
+          {
+            generatedAt: new Date().toISOString(),
+            baselineCapturedOn: BASELINE?.capturedOn ?? null,
+            rows: compareRows,
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[bench:compare] gagal menulis pembandingan:", err);
+    }
+
     // ----- Tren durasi antar-run -----
     // Append satu baris JSON ke `benchmarks/*.trend.jsonl` lalu tulis ringkasan
     // arah (membaik / memburuk / stabil) berbasis window run terakhir.
