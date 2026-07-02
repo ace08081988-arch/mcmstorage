@@ -901,11 +901,12 @@ export const uploadApkRelease = createServerFn({ method: "POST" })
       throw new Error("Payload harus FormData");
     }
     const file = data.get("file");
-    if (!(file instanceof File) && !(file instanceof Blob)) {
+    if (!file || typeof file === "string" || !(file instanceof Blob)) {
       throw new Error("Berkas .apk wajib disertakan");
     }
-    const rawName =
-      (file instanceof File && file.name) || String(data.get("file_name") ?? "");
+    const fileName =
+      (file as Blob & { name?: string }).name ?? String(data.get("file_name") ?? "");
+    const rawName = fileName;
     if (!rawName) throw new Error("Nama berkas wajib diisi");
     if (!/\.apk$/i.test(rawName)) throw new Error("Berkas harus .apk");
     if (file.size <= 0) throw new Error("Berkas kosong");
