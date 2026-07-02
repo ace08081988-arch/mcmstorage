@@ -6,6 +6,7 @@ import {
   Bell, RefreshCcw, Link as LinkIcon, Accessibility, Languages, ChevronRight,
   UserPlus, Download, Loader2,
   Copy, Check, Palette, QrCode as QrCodeIcon,
+  ShieldCheck, AlertTriangle, ClipboardCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyProfile, useAvatarSignedUrl, useMyProfileRealtime } from "@/lib/profile";
@@ -13,7 +14,13 @@ import { useState } from "react";
 import { ProfileQrDialog } from "@/components/chat/ProfileQrDialog";
 import { ApkQrDialog, type ApkQrTarget } from "@/components/ApkQrDialog";
 import { formatInviteCode } from "@/lib/invite";
-import { getLatestApkVariants, getApkVariantDetail, type ApkRelease } from "@/lib/apk.functions";
+import {
+  getLatestApkVariants,
+  getApkVariantDetail,
+  validateChatApkLink,
+  type ApkRelease,
+  type ValidateApkLinkResult,
+} from "@/lib/apk.functions";
 import { trackApkDownload } from "@/lib/apk-download-track";
 import {
   useChatApkHistory,
@@ -74,6 +81,50 @@ function ProfilChatPage() {
   const [apkPickerOpen, setApkPickerOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
   const [qrTarget, setQrTarget] = useState<ApkQrTarget | null>(null);
+  const [validating, setValidating] = useState(false);
+  const [validation, setValidation] = useState<
+    | (ValidateApkLinkResult & { checkedUrl: string })
+    | null
+  >(null);
+  const validateFn = useServerFn(validateChatApkLink);
+
+  const validateClipboardLink = async () => {
+    let url = "";
+    try {
+      url = (await navigator.clipboard.readText()).trim();
+    } catch {
+      toast.error("Tidak bisa membaca clipboard. Salin ulang lalu coba lagi.");
+      return;
+    }
+    if (!url) {
+      toast.error("Clipboard kosong. Salin link unduh terlebih dahulu.");
+      return;
+    }
+    setValidating(true);
+    try {
+      const res = await validateFn({ data: { url } });
+      setValidation({ ...res, checkedUrl: url });
+      if (res.active) {
+        toast.success("Link masih aktif.");
+      } else if (res.reason === "expired") {
+        toast.message("Link kedaluwarsa — tersedia link baru.");
+      } else if (res.reason === "not_found") {
+        toast.error("Berkas APK sudah tidak tersedia.");
+      } else if (res.reason === "unpublished") {
+        toast.error("Versi ini sudah tidak dipublikasikan.");
+      } else if (res.reason === "wrong_variant") {
+        toast.error("Link bukan APK MCM Chat.");
+      } else if (res.reason === "invalid_url") {
+        toast.error("Format link tidak dikenali.");
+      } else {
+        toast.error("Gagal memvalidasi link. Coba lagi.");
+      }
+    } catch {
+      toast.error("Gagal memvalidasi link. Coba lagi.");
+    } finally {
+      setValidating(false);
+    }
+  };
 
   const copyLink = async (key: string, url: string) => {
     try {
@@ -276,6 +327,123 @@ function ProfilChatPage() {
               Unduh versi terbaru atau pilih rilis sebelumnya bila diperlukan.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-2.5 py-2">
+            <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+              <ClipboardCheck className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                Cek apakah link yang Anda salin masih bisa dipakai.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={validateClipboardLink}
+              disabled={validating}
+              className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium hover:bg-accent disabled:opacity-60"
+            >
+              {validating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-3.5 w-3.5" />
+              )}
+              {validating ? "Memeriksa..." : "Validasi link tersalin"}
+            </button>
+          </div>
+          {validation && (
+            <div
+              className={`rounded-lg border px-3 py-2 text-xs ${
+                validation.active
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
+                  : validation.reason === "expired"
+                  ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                  : "border-destructive/40 bg-destructive/10 text-destructive"
+              }`}
+              role="status"
+            >
+              <div className="flex items-start gap-2">
+                {validation.active ? (
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                ) : (
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold">
+                    {validation.active
+                      ? "Link masih aktif"
+                      : validation.reason === "expired"
+                      ? "Link kedaluwarsa"
+                      : validation.reason === "not_found"
+                      ? "Berkas sudah tidak tersedia"
+                      : validation.reason === "unpublished"
+                      ? "Versi sudah tidak dipublikasikan"
+                      : validation.reason === "wrong_variant"
+                      ? "Link bukan APK MCM Chat"
+                      : validation.reason === "invalid_url"
+                      ? "Format link tidak dikenali"
+                      : "Gagal memvalidasi"}
+                  </div>
+                  <div className="mt-0.5 truncate opacity-80">
+                    {validation.name
+                      ? `${
+                          validation.versionName
+                            ? `v${validation.versionName}`
+                            : validation.name
+                        }${
+                          validation.sizeMB ? ` · ${validation.sizeMB} MB` : ""
+                        }`
+                      : validation.checkedUrl}
+                  </div>
+                  {validation.freshUrl && !validation.active && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <a
+                        href={validation.freshUrl}
+                        onClick={() => {
+                          if (!validation.name) return;
+                          trackApkDownload("chat", "button");
+                          recordChatApkDownload({
+                            name: validation.name,
+                            versionName: validation.versionName,
+                            versionCode: validation.versionCode,
+                            url: validation.freshUrl!,
+                            sizeMB: validation.sizeMB,
+                          });
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent"
+                      >
+                        <Download className="h-3 w-3" />
+                        Unduh link baru
+                      </a>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!validation.freshUrl) return;
+                          try {
+                            await navigator.clipboard.writeText(
+                              validation.freshUrl,
+                            );
+                            toast.success("Link baru disalin.");
+                          } catch {
+                            toast.error("Gagal menyalin.");
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent"
+                      >
+                        <Copy className="h-3 w-3" />
+                        Salin link baru
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setValidation(null)}
+                  aria-label="Tutup"
+                  className="text-current opacity-60 hover:opacity-100"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
           {history.length > 0 && (
             <section className="rounded-lg border bg-muted/30 p-2">
               <div className="mb-1.5 flex items-center justify-between px-1">
