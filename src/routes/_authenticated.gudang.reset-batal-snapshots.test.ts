@@ -425,12 +425,15 @@ describe("Gudang — snapshot tombol Reset / Batal", () => {
       // User ganti packageType → soft reset.
       const soft = softResetFrom({ ...dirty, packageType: "gram", packageSize: "1000" });
       const softStr = renderDerived(soft);
+      // Strip baris [FORM] karena berisi `karton=OFF` sebagai label state,
+      // bukan artefak ringkasan.
+      const softBody = stripFormLine(softStr);
 
-      expect(softStr).not.toMatch(/\bkarton\b/);
-      expect(softStr).not.toMatch(/300\s+/);
-      expect(softStr).not.toMatch(/Rp\s*20\.000\b/);
-      expect(softStr).toMatch(/1\s+gram/); // qty default 1 pada packageType gram
-      expect(softStr).toMatch(/Total biaya \| Rp\s*0/);
+      expect(softBody).not.toMatch(/\bkarton\b/);
+      expect(softBody).not.toMatch(/300\s+/);
+      expect(softBody).not.toMatch(/Rp\s*20\.000\b/);
+      expect(softBody).toMatch(/1\s+gram/); // qty default 1 pada packageType gram
+      expect(softBody).toMatch(/Total biaya \| Rp\s*0/);
     });
 
     it("batal edit qty/price restore render bit-exact tanpa residu", () => {
