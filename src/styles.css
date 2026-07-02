@@ -206,8 +206,10 @@ html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-
    "MCM" — token --wa-* dipertahankan sebagai alias agar file lain tetap kompatibel.
    ========================================================================== */
 :root {
-  --mcm-brand: #0f766e;
-  --mcm-brand-strong: #0b5f57;
+  /* Brand MCM mengikuti aksen aktif (--primary) supaya preset & pilihan
+     aksen di /pengaturan-tampilan juga mewarnai halaman chat & profil-chat. */
+  --mcm-brand: var(--primary, #0f766e);
+  --mcm-brand-strong: color-mix(in oklab, var(--primary, #0f766e) 80%, black 20%);
   --wa-surface: #ffffff;
   --wa-surface-2: #f0f2f5;
   --wa-header: #ffffff;
@@ -216,7 +218,7 @@ html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-
   --wa-border: #e9edef;
   --wa-green: var(--mcm-brand);
   --wa-green-strong: var(--mcm-brand-strong);
-  --wa-bubble-out: #d4efe6;
+  --wa-bubble-out: color-mix(in oklab, var(--mcm-brand) 22%, #ffffff);
   --wa-bubble-out-fg: #111b21;
   --wa-bubble-in: #ffffff;
   --wa-bubble-in-fg: #111b21;
@@ -224,8 +226,8 @@ html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-
   --wa-check: #53bdeb;
 }
 .dark {
-  --mcm-brand: #14b8a6;
-  --mcm-brand-strong: #2dd4bf;
+  --mcm-brand: var(--primary, #14b8a6);
+  --mcm-brand-strong: color-mix(in oklab, var(--primary, #14b8a6) 70%, white 30%);
   --wa-surface: #0b141a;
   --wa-surface-2: #111b21;
   --wa-header: #1f2c34;
@@ -234,7 +236,7 @@ html[data-font="display"] { --app-font-family: "Space Grotesk", system-ui, sans-
   --wa-border: rgba(134,150,160,0.15);
   --wa-green: var(--mcm-brand);
   --wa-green-strong: var(--mcm-brand-strong);
-  --wa-bubble-out: #0b5f57;
+  --wa-bubble-out: color-mix(in oklab, var(--mcm-brand) 45%, black 55%);
   --wa-bubble-out-fg: #e9edef;
   --wa-bubble-in: #1f2c34;
   --wa-bubble-in-fg: #e9edef;
