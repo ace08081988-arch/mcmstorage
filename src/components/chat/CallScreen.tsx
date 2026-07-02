@@ -1,5 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2 } from "lucide-react";
+import {
+  Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
+  Phone, PhoneMissed, PhoneCall, Ban, AlertCircle, CheckCircle2,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -37,6 +40,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     role === "caller" ? "dialing" : "connecting",
   );
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [finalStatus, setFinalStatus] = useState<
+    "ended" | "declined" | "missed" | "cancelled" | "failed" | null
+  >(null);
   const [micOn, setMicOn] = useState(true);
   const [camOn, setCamOn] = useState(kind === "video");
   const [remoteReady, setRemoteReady] = useState(false);
@@ -54,6 +60,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
       if (doneRef.current) return;
       doneRef.current = true;
       setPhase("ended");
+      setFinalStatus(status);
       try { sessionRef.current?.sendBye(reason); } catch { /* ignore */ }
       try { await sessionRef.current?.close(reason); } catch { /* ignore */ }
       try {
@@ -149,6 +156,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             if (!doneRef.current) {
               doneRef.current = true;
               setPhase("ended");
+              setFinalStatus(
+                row.status as "ended" | "declined" | "missed" | "cancelled" | "failed",
+              );
               void sessionRef.current?.close(row.status);
               onClose();
             }
@@ -224,8 +234,43 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     if (phase === "dialing") return "Memanggil…";
     if (phase === "ringing") return "Berdering…";
     if (phase === "in-call") return formatCallDuration(seconds);
+    if (finalStatus === "missed") return "Tidak dijawab";
+    if (finalStatus === "declined") return "Ditolak";
+    if (finalStatus === "cancelled") return "Dibatalkan";
+    if (finalStatus === "failed") return "Panggilan gagal";
+    if (finalStatus === "ended") return "Diterima · selesai";
     return "Panggilan berakhir";
-  }, [phase, seconds, errorMsg]);
+  }, [phase, seconds, errorMsg, finalStatus]);
+
+  // Ikon + warna untuk status bar sesuai fase / status akhir.
+  const { StatusIcon, statusIconClass } = useMemo(() => {
+    if (phase === "connecting" || phase === "dialing") {
+      return { StatusIcon: PhoneCall, statusIconClass: "text-white/70" };
+    }
+    if (phase === "ringing") {
+      return { StatusIcon: Phone, statusIconClass: "text-sky-300" };
+    }
+    if (phase === "in-call") {
+      return { StatusIcon: PhoneCall, statusIconClass: "text-emerald-300" };
+    }
+    // ended — bedakan per status akhir
+    if (finalStatus === "missed") {
+      return { StatusIcon: PhoneMissed, statusIconClass: "text-red-400" };
+    }
+    if (finalStatus === "declined") {
+      return { StatusIcon: PhoneOff, statusIconClass: "text-amber-300" };
+    }
+    if (finalStatus === "cancelled") {
+      return { StatusIcon: Ban, statusIconClass: "text-amber-300" };
+    }
+    if (finalStatus === "failed") {
+      return { StatusIcon: AlertCircle, statusIconClass: "text-red-400" };
+    }
+    if (finalStatus === "ended") {
+      return { StatusIcon: CheckCircle2, statusIconClass: "text-emerald-300" };
+    }
+    return { StatusIcon: PhoneOff, statusIconClass: "text-white/70" };
+  }, [phase, finalStatus]);
 
   // Ringback tone (nada tut-tut) untuk caller selama menunggu jawaban.
   // Pola tipe Indonesia: ~1 detik nada 425 Hz + ~4 detik hening,
@@ -335,8 +380,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
 
         {/* Status bar atas */}
         <div className="absolute top-0 left-0 right-0 flex items-start justify-between p-4">
-          <div className="rounded-full bg-black/40 px-3 py-1 text-xs backdrop-blur">
-            {status}
+          <div className="flex items-center gap-1.5 rounded-full bg-black/40 px-3 py-1 text-xs backdrop-blur">
+            <StatusIcon className={`h-3.5 w-3.5 ${statusIconClass}`} />
+            <span>{status}</span>
           </div>
           {phase === "connecting" || phase === "ringing" ? (
             <Loader2 className="h-4 w-4 animate-spin text-white/70" />
