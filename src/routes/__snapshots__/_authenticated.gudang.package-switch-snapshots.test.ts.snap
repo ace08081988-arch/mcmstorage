@@ -1,0 +1,179 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > kombinasi tambahan (karton, priceMode base) > snapshot: existing + botol + karton ON 1`] = `
+"[FORM] Mode: existing
+[FORM] Jenis kemasan: botol
+[FORM] Jumlah karton (botol): 1
+[FORM] Harga beli / botol: 10000
+[FORM] Harga beli / pcs: -
+[FORM] Toggle Harga per botol | Harga per pcs
+[FORM] Karton toggle: ON (= 100 botol)
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 100 botol (1 karton)
+[SUM] Tambahan stok | 100 botol (= 50.000 pcs) · = 1 karton
+[SUM] Harga per botol | Rp 100
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 10.000"
+`;
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > kombinasi tambahan (karton, priceMode base) > snapshot: existing + pcs (priceMode forced base) 1`] = `
+"[FORM] Mode: existing
+[FORM] Jenis kemasan: pcs
+[FORM] Jumlah kemasan (pcs): 2
+[FORM] Harga beli / pcs: -
+[FORM] Harga per pcs (forced)
+[FORM] Karton toggle: hidden
+[SUM] Ringkasan | Item PCS · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 3.000
+[SUM] Total biaya | Rp 6.000"
+`;
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > kombinasi tambahan (karton, priceMode base) > snapshot: new + gram + priceMode=base 1`] = `
+"[FORM] Mode: new
+[FORM] Jenis kemasan: gram
+[FORM] Isi/kemasan (g): 1000
+[FORM] Stok disimpan dalam g
+[FORM] Jumlah kemasan (gram): 2
+[FORM] Harga beli / gram: -
+[FORM] Harga beli / g: 20
+[FORM] Toggle Harga per gram | Harga per g
+[FORM] Karton toggle: hidden
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 20.000
+[SUM] Harga per g | Rp 20
+[SUM] Total biaya | Rp 40.000"
+`;
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > mode: existing (pilih item gudang) > snapshot: existing + botol 1`] = `
+"[FORM] Mode: existing
+[FORM] Jenis kemasan: botol
+[FORM] Jumlah kemasan (botol): 2
+[FORM] Harga beli / botol: 10000
+[FORM] Harga beli / pcs: -
+[FORM] Toggle Harga per botol | Harga per pcs
+[FORM] Karton toggle: OFF (= 100 botol)
+[SUM] Ringkasan | Item BOTOL · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > mode: existing (pilih item gudang) > snapshot: existing + gram 1`] = `
+"[FORM] Mode: existing
+[FORM] Jenis kemasan: gram
+[FORM] Jumlah kemasan (gram): 2
+[FORM] Harga beli / gram: 10000
+[FORM] Harga beli / g: -
+[FORM] Toggle Harga per gram | Harga per g
+[FORM] Karton toggle: hidden
+[SUM] Ringkasan | Item GRAM · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 gram (= 2 kg)
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > mode: existing (pilih item gudang) > snapshot: existing + pcs 1`] = `
+"[FORM] Mode: existing
+[FORM] Jenis kemasan: pcs
+[FORM] Jumlah kemasan (pcs): 2
+[FORM] Harga beli / pcs: 10000
+[FORM] Harga per pcs (forced)
+[FORM] Karton toggle: hidden
+[SUM] Ringkasan | Item PCS · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0"
+`;
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > mode: existing (pilih item gudang) > snapshot: existing + sachet 1`] = `
+"[FORM] Mode: existing
+[FORM] Jenis kemasan: sachet
+[FORM] Jumlah kemasan (sachet): 2
+[FORM] Harga beli / sachet: 10000
+[FORM] Harga beli / pcs: -
+[FORM] Toggle Harga per sachet | Harga per pcs
+[FORM] Karton toggle: hidden
+[SUM] Ringkasan | Item SACHET · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 sachet (= 2 pcs)
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > mode: new (Barang baru) > snapshot: new + botol 1`] = `
+"[FORM] Mode: new
+[FORM] Jenis kemasan: botol
+[FORM] Isi/kemasan (pcs): 500
+[FORM] Stok disimpan dalam pcs
+[FORM] Jumlah kemasan (botol): 2
+[FORM] Harga beli / botol: 10000
+[FORM] Harga beli / pcs: -
+[FORM] Toggle Harga per botol | Harga per pcs
+[FORM] Karton toggle: OFF (= 100 botol)
+[SUM] Ringkasan | Barang baru · botol 500 pcs
+[SUM] Jumlah kemasan | 2 botol
+[SUM] Tambahan stok | 1.000 pcs
+[SUM] Harga per botol | Rp 10.000
+[SUM] Harga per pcs | Rp 20
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > mode: new (Barang baru) > snapshot: new + gram 1`] = `
+"[FORM] Mode: new
+[FORM] Jenis kemasan: gram
+[FORM] Isi/kemasan (g): 1000
+[FORM] Stok disimpan dalam g
+[FORM] Jumlah kemasan (gram): 2
+[FORM] Harga beli / gram: 10000
+[FORM] Harga beli / g: -
+[FORM] Toggle Harga per gram | Harga per g
+[FORM] Karton toggle: hidden
+[SUM] Ringkasan | Barang baru · gram 1000 g
+[SUM] Jumlah kemasan | 2 gram
+[SUM] Tambahan stok | 2 kg
+[SUM] Harga per gram | Rp 10.000
+[SUM] Harga per g | Rp 10
+[SUM] Total biaya | Rp 20.000"
+`;
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > mode: new (Barang baru) > snapshot: new + pcs 1`] = `
+"[FORM] Mode: new
+[FORM] Jenis kemasan: pcs
+[FORM] Jumlah kemasan (pcs): 2
+[FORM] Harga beli / pcs: 10000
+[FORM] Harga per pcs (forced)
+[FORM] Karton toggle: hidden
+[SUM] Ringkasan | Barang baru · pcs
+[SUM] Jumlah kemasan | 2 pcs
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per pcs | Rp 0
+[SUM] Total biaya | Rp 0"
+`;
+
+exports[`Gudang — snapshot label & ringkasan per Jenis kemasan > mode: new (Barang baru) > snapshot: new + sachet 1`] = `
+"[FORM] Mode: new
+[FORM] Jenis kemasan: sachet
+[FORM] Isi/kemasan (pcs): 1
+[FORM] Stok disimpan dalam pcs
+[FORM] Jumlah kemasan (sachet): 2
+[FORM] Harga beli / sachet: 10000
+[FORM] Harga beli / pcs: -
+[FORM] Toggle Harga per sachet | Harga per pcs
+[FORM] Karton toggle: hidden
+[SUM] Ringkasan | Barang baru · sachet 1 pcs
+[SUM] Jumlah kemasan | 2 sachet
+[SUM] Tambahan stok | 2 pcs
+[SUM] Harga per sachet | Rp 10.000
+[SUM] Harga per pcs | Rp 10.000
+[SUM] Total biaya | Rp 20.000"
+`;
