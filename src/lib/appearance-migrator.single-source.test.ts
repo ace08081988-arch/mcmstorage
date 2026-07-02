@@ -48,10 +48,12 @@ describe("appearance import · satu migrator untuk semua jalur", () => {
   });
 
   it("jalur file / paste / URL semua memanggil `runImportFromText`", () => {
-    // Tiga tag sumber wajib muncul sebagai argumen kedua.
-    expect(src).toMatch(/runImportFromText\([^)]*,\s*"file"\s*\)/);
-    expect(src).toMatch(/runImportFromText\([^)]*,\s*"paste"\s*\)/);
-    expect(src).toMatch(/runImportFromText\([^)]*,\s*"url"\s*\)/);
+    // Tiga tag sumber wajib muncul sebagai argumen kedua. Regex non-greedy
+    // supaya toleran terhadap tanda kurung di argumen pertama (mis.
+    // `String(reader.result ?? "{}")`).
+    expect(src).toMatch(/runImportFromText\([\s\S]*?,\s*"file"\s*\)/);
+    expect(src).toMatch(/runImportFromText\([\s\S]*?,\s*"paste"\s*\)/);
+    expect(src).toMatch(/runImportFromText\([\s\S]*?,\s*"url"\s*\)/);
   });
 
   it("ketiga handler impor terdaftar di halaman", () => {
