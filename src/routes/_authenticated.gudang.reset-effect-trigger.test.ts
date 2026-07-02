@@ -281,10 +281,12 @@ describe("BeliTab — reset dipanggil TEPAT SEKALI per perubahan efektif", () =>
     });
     const transitions = ["a", "b", "c", "d", "e", "f", "g"];
     let expected = 0;
+    let currentId = "start";
     for (const id of transitions) {
       // 3 refetch identitas sebelum transisi berikutnya.
-      for (let i = 0; i < 3; i++) h.refetchSelectedItemIdentity({ id: h["state"]?.itemId ?? id, rev: i });
+      for (let i = 0; i < 3; i++) h.refetchSelectedItemIdentity({ id: currentId, rev: i });
       h.setItemId(id);
+      currentId = id;
       expected += 1;
       expect(h.resetCount).toBe(expected);
     }
