@@ -59,6 +59,23 @@ function createResetLifecycle(initial: {
       state.packageType = pt;
       commit();
     },
+    /**
+     * Simulasi React batching: beberapa setState di satu handler /
+     * satu render → hanya satu commit di akhir. Effect body jalan
+     * maksimal SEKALI walau tiga input trigger berubah bersamaan.
+     */
+    batch(updates: Partial<{
+      mode: "existing" | "new";
+      itemId: string;
+      packageType: PackageType;
+      selectedItem: object | null;
+    }>) {
+      if (updates.mode !== undefined) state.mode = updates.mode;
+      if (updates.itemId !== undefined) state.itemId = updates.itemId;
+      if (updates.packageType !== undefined) state.packageType = updates.packageType;
+      if (updates.selectedItem !== undefined) state.selectedItem = updates.selectedItem;
+      commit();
+    },
     /** Simulasi refetch: `selectedItem` dapat referensi objek baru tapi
      *  mode/itemId/packageType TIDAK berubah. */
     refetchSelectedItemIdentity(newRef: object) {
