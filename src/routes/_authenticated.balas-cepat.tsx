@@ -9,6 +9,12 @@ import { toast } from "sonner";
 import { useDeleteQuickReply, useQuickReplies, useSaveQuickReply, type QuickReply } from "@/lib/chat-extras";
 
 export const Route = createFileRoute("/_authenticated/balas-cepat")({
+  head: () => ({
+    meta: [
+      { title: "Balas Cepat · MCM Storage" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
   component: QuickRepliesPage,
 });
 
