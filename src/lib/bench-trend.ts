@@ -83,7 +83,7 @@ export function appendTrendRun(path: string, run: TrendRun, maxRuns?: number): v
   const line = JSON.stringify(run) + "\n";
   appendFileSync(path, line, "utf8");
   const limit =
-    maxRuns ?? Number(process.env.BENCH_TREND_MAX) || 50;
+    maxRuns ?? (Number(process.env.BENCH_TREND_MAX) || 50);
   if (limit > 0) trimTrendFile(path, limit);
 }
 
@@ -132,9 +132,9 @@ export function summarizeTrend(history: TrendRun[], opts?: {
   directionPct?: number;
 }): TrendSummary {
   const window =
-    opts?.window ?? Number(process.env.BENCH_TREND_WINDOW) || 10;
+    opts?.window ?? (Number(process.env.BENCH_TREND_WINDOW) || 10);
   const directionPct =
-    opts?.directionPct ?? Number(process.env.BENCH_TREND_DIR_PCT) || 5;
+    opts?.directionPct ?? (Number(process.env.BENCH_TREND_DIR_PCT) || 5);
   const slice = history.slice(-window);
   const scenarioNames = new Set<string>();
   for (const run of slice) {
