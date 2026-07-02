@@ -107,7 +107,12 @@ function warningsDeps(item: Item, form: Form): readonly unknown[] {
   ] as const;
 }
 
-function makePair(item: Item, form: Form, spyD: ReturnType<typeof vi.fn>, spyW: ReturnType<typeof vi.fn>) {
+function makePair(
+  item: Item,
+  form: Form,
+  spyD: (i: BeliDerivedInput) => ReturnType<typeof realComputeDerived>,
+  spyW: (i: Parameters<typeof realComputeWarnings>[0]) => ReturnType<typeof realComputeWarnings>,
+) {
   const memoD = createMemo({ deps: derivedDeps(item, form), factory: () => spyD(inp(item, form)) });
   const memoW = createMemo({
     deps: warningsDeps(item, form),
