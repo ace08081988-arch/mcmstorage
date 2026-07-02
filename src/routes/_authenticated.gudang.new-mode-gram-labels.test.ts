@@ -143,15 +143,16 @@ describe("Gudang → Barang baru: label form & ringkasan mengikuti Jenis kemasan
     s = createNewModeScreen();
   });
 
-  it("Awal (botol): form dan ringkasan menampilkan botol/g", () => {
+  it("Awal (botol): form dan ringkasan menampilkan label botol", () => {
     const form = s.renderForm();
     const sum = s.renderSummary();
-    expect(form).toContain("Isi / kemasan (g)");
+    // defaultBaseUnit("botol") === "pcs" → label satuan isi ikut "pcs".
+    expect(form).toContain("Isi / kemasan (pcs)");
     expect(form).toContain("Jumlah kemasan");
     expect(form).toContain("Harga beli / botol (Rp)");
     expect(form).toContain("[toggle] Harga per botol");
-    expect(form).toContain("[toggle] Harga per g");
-    expect(sum).toContain("Barang baru · botol 500 g");
+    expect(form).toContain("[toggle] Harga per pcs");
+    expect(sum).toContain("Barang baru · botol 500 pcs");
     expect(sum).toMatch(/Harga per botol \|/);
   });
 
