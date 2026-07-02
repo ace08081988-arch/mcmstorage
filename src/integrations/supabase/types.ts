@@ -1580,6 +1580,7 @@ export type Database = {
           created_at: string
           currency: string
           date_format: string
+          default_status_visibility: Database["public"]["Enums"]["status_visibility"]
           display_name: string | null
           email: string | null
           id: string
@@ -1597,6 +1598,7 @@ export type Database = {
           created_at?: string
           currency?: string
           date_format?: string
+          default_status_visibility?: Database["public"]["Enums"]["status_visibility"]
           display_name?: string | null
           email?: string | null
           id: string
@@ -1614,6 +1616,7 @@ export type Database = {
           created_at?: string
           currency?: string
           date_format?: string
+          default_status_visibility?: Database["public"]["Enums"]["status_visibility"]
           display_name?: string | null
           email?: string | null
           id?: string
@@ -2341,6 +2344,7 @@ export type Database = {
           media_type: string
           media_url: string
           user_id: string
+          visibility: Database["public"]["Enums"]["status_visibility"]
         }
         Insert: {
           bg_color?: string | null
@@ -2352,6 +2356,7 @@ export type Database = {
           media_type: string
           media_url: string
           user_id: string
+          visibility?: Database["public"]["Enums"]["status_visibility"]
         }
         Update: {
           bg_color?: string | null
@@ -2363,6 +2368,7 @@ export type Database = {
           media_type?: string
           media_url?: string
           user_id?: string
+          visibility?: Database["public"]["Enums"]["status_visibility"]
         }
         Relationships: []
       }
@@ -3169,6 +3175,7 @@ export type Database = {
         | "for_all_bulk"
         | "all_mine"
       friend_request_status: "pending" | "accepted" | "rejected" | "cancelled"
+      status_visibility: "public" | "friends"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -3305,6 +3312,7 @@ export const Constants = {
         "all_mine",
       ],
       friend_request_status: ["pending", "accepted", "rejected", "cancelled"],
+      status_visibility: ["public", "friends"],
     },
   },
 } as const
