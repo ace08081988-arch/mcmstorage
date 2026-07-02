@@ -22,6 +22,12 @@ import {
   type FlakinessCheck,
 } from "@/lib/bench-baseline";
 import { summarize, type SampleSummary } from "@/lib/bench-stats";
+import {
+  createProfiler,
+  isProfilingEnabled,
+  formatProfileMarkdown,
+  type ProfileReport,
+} from "@/lib/bench-profile";
 
 // ============================================================
 // Micro-benchmark untuk skenario KONFLIK LEBAR (banyak field derived +
@@ -172,11 +178,19 @@ function buildWideConflict(rounds: number): Mutation[] {
   return list;
 }
 
-function runWide(mutations: Mutation[], mode: "batched" | "sequential") {
+function runWide(
+  mutations: Mutation[],
+  mode: "batched" | "sequential",
+  profile: ReturnType<typeof createProfiler> | null = null,
+) {
   __resetBeliDerivedMemo();
   __resetBeliWarningsMemo();
-  const spyD = vi.fn(realComputeDerived);
-  const spyW = vi.fn(realComputeWarnings);
+  // Bungkus fungsi target dgn profiler (no-op bila disabled) SEBELUM
+  // dibungkus vi.fn agar timing per-call tercatat tanpa mengubah kontrak spy.
+  const wrappedD = profile ? profile.wrap("computeBeliDerived", realComputeDerived) : realComputeDerived;
+  const wrappedW = profile ? profile.wrap("computeBeliWarnings", realComputeWarnings) : realComputeWarnings;
+  const spyD = vi.fn(wrappedD);
+  const spyW = vi.fn(wrappedW);
   let item: Item = { ...BASE_ITEM };
   let form: Form = { ...BASE_FORM };
 
