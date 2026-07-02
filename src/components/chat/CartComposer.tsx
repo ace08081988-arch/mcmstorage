@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { encodeCard, type CartCard } from "@/lib/chat-cards";
 import { friendlyError } from "@/lib/friendly-error";
+import type { Json } from "@/integrations/supabase/types";
 
 type Line = { name: string; qty: string; price: string };
 
@@ -72,7 +73,7 @@ export function CartComposer({
       const trimmedNote = note.trim();
       const { data: cartId, error } = await supabase.rpc("create_chat_cart", {
         p_conversation_id: conversationId,
-        p_lines: clean as unknown as never,
+        p_lines: clean as unknown as Json,
         ...(trimmedNote ? { p_note: trimmedNote } : {}),
       });
       if (error || !cartId) {
