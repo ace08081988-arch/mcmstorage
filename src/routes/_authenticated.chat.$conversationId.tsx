@@ -86,6 +86,7 @@ import {
   MuteDialog,
 } from "@/components/chat/ConversationExtrasDialogs";
 import { useConvPrefs, setConvPrefs } from "@/lib/conversation-prefs";
+import { ChatHeaderDebtControls } from "@/components/chat/ChatHeaderDebtControls";
 import { usePinMessage, useStarMessage } from "@/lib/chat-extras";
 import {
   DELETED_PLACEHOLDER,
@@ -761,6 +762,12 @@ function ChatRoomPage() {
         </div>
         {meta.data?.kind === "dm" && dmPeer?.peerUserId && myId ? (
           <>
+            <ChatHeaderDebtControls
+              myId={myId}
+              peerUserId={dmPeer.peerUserId}
+              peerPhone={dmPeer.peerPhone ?? null}
+              peerName={displayedPeerName}
+            />
             <Button
               variant="ghost"
               size="icon"
