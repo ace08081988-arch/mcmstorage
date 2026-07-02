@@ -68,7 +68,7 @@ export const Route = createFileRoute("/_authenticated/")({
 type Status = "Belum Dikirim" | "Sudah Dikirim";
 type Kategori = string;
 
-type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
+export type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
 
 const SATUAN_LIST: Satuan[] = ["gram", "kg", "botol", "sachet", "pcs", "lusin", "pak", "dus"];
 
@@ -83,14 +83,14 @@ function satuanBounds(s: Satuan): { min: number; max: number; step: number } {
   }
 }
 
-function formatJumlah(j: number, s: Satuan): string {
+export function formatJumlah(j: number, s: Satuan): string {
   const n = Number.isFinite(j) ? j : 0;
   if (s === "gram") return `${n.toLocaleString("id-ID", { maximumFractionDigits: 2 })} g`;
   if (s === "kg") return `${n.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`;
   return `${n.toLocaleString("id-ID")} ${s}`;
 }
 
-type Produk = {
+export type Produk = {
   id: number;
   kategori: Kategori;
   nama: string;
@@ -134,7 +134,7 @@ function isToday(ts: number | undefined): boolean {
   );
 }
 
-function buildPesan(p: Produk) {
+export function buildPesan(p: Produk) {
   const s = p.satuan ?? "pcs";
   const j = p.jumlah ?? 1;
   return `📦 [${tagFor(p.kategori)}] *${p.nama}*\n⚖️ ${formatJumlah(j, s)}\n💰 Harga: Rp ${p.harga.toLocaleString("id-ID")}\n📍 ${p.lokasi}\nKet: ${p.keterangan}`;
