@@ -1,4 +1,6 @@
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, afterAll } from "vitest";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import {
   computeBeliDerived as realComputeDerived,
   __resetBeliDerivedMemo,
@@ -238,6 +240,71 @@ const BATCHED_VS_SEQ_RATIO = 0.6;
 const VARIANCE_RATIO = 4;
 const RUNS = 5;
 
+// Artefak durasi untuk CI — ditulis ke `test-artifacts/` dan diunggah oleh
+// workflow. Ringkasannya juga dicantumkan di GITHUB_STEP_SUMMARY.
+type BenchEntry = {
+  scenario: string;
+  rounds: number;
+  mutations: number;
+  mode: "batched" | "sequential";
+  bestMs: number;
+  worstMs: number;
+  derivedCalls: number;
+  warningsCalls: number;
+  budgetMs: number;
+  variancePassed: boolean;
+};
+const ARTIFACT_ENTRIES: BenchEntry[] = [];
+
+afterAll(() => {
+  const outDir = join(process.cwd(), "test-artifacts");
+  try {
+    mkdirSync(outDir, { recursive: true });
+    const payload = {
+      generatedAt: new Date().toISOString(),
+      node: process.version,
+      platform: `${process.platform}-${process.arch}`,
+      thresholds: {
+        maxMsBatched: MAX_MS_BATCHED,
+        maxMsSequential: MAX_MS_SEQUENTIAL,
+        batchedVsSeqRatio: BATCHED_VS_SEQ_RATIO,
+        varianceRatio: VARIANCE_RATIO,
+        runs: RUNS,
+      },
+      entries: ARTIFACT_ENTRIES,
+    };
+    writeFileSync(
+      join(outDir, "conflict-wide-fields-benchmark.json"),
+      JSON.stringify(payload, null, 2),
+      "utf8",
+    );
+
+    // Markdown summary — CI membaca file ini dan menyisipkan ke step summary.
+    const md: string[] = [];
+    md.push("### ⏱️ Conflict-wide fields benchmark");
+    md.push("");
+    md.push(`Node ${process.version} · ${process.platform}-${process.arch} · runs=${RUNS}`);
+    md.push("");
+    md.push("| Scenario | Mode | Rounds | Mutations | Best (ms) | Worst (ms) | D calls | W calls | Budget (ms) | Variance |");
+    md.push("| --- | --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :---: |");
+    for (const e of ARTIFACT_ENTRIES) {
+      md.push(
+        `| ${e.scenario} | ${e.mode} | ${e.rounds} | ${e.mutations} | ` +
+          `${e.bestMs.toFixed(3)} | ${e.worstMs.toFixed(3)} | ${e.derivedCalls} | ${e.warningsCalls} | ` +
+          `${e.budgetMs} | ${e.variancePassed ? "✅" : "❌"} |`,
+      );
+    }
+    writeFileSync(
+      join(outDir, "conflict-wide-fields-benchmark.md"),
+      md.join("\n") + "\n",
+      "utf8",
+    );
+  } catch (err) {
+    // eslint-disable-next-line no-console
+    console.warn("[bench] gagal menulis artefak durasi:", err);
+  }
+});
+
 describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang waktu)", () => {
   it("batched: 20 ronde × 10 field selesai di bawah budget mutlak", () => {
     const mutations = buildWideConflict(ROUNDS);
@@ -249,7 +316,20 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
 
     expect(best.ms).toBeLessThan(MAX_MS_BATCHED);
     // Stabilitas: worst tidak boleh jauh > best (deteksi variance ekstrem).
-    expect(worst.ms).toBeLessThan(Math.max(best.ms * VARIANCE_RATIO, MAX_MS_BATCHED));
+    const varianceOk = worst.ms < Math.max(best.ms * VARIANCE_RATIO, MAX_MS_BATCHED);
+    ARTIFACT_ENTRIES.push({
+      scenario: "batched-20-rounds",
+      rounds: ROUNDS,
+      mutations: mutations.length,
+      mode: "batched",
+      bestMs: best.ms,
+      worstMs: worst.ms,
+      derivedCalls: best.derivedCalls,
+      warningsCalls: best.warningsCalls,
+      budgetMs: MAX_MS_BATCHED,
+      variancePassed: varianceOk,
+    });
+    expect(varianceOk).toBe(true);
 
     // eslint-disable-next-line no-console
     console.info(
@@ -267,7 +347,20 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     expect(best.derivedCalls).toBeLessThanOrEqual(mutations.length);
 
     expect(best.ms).toBeLessThan(MAX_MS_SEQUENTIAL);
-    expect(worst.ms).toBeLessThan(Math.max(best.ms * VARIANCE_RATIO, MAX_MS_SEQUENTIAL));
+    const varianceOk = worst.ms < Math.max(best.ms * VARIANCE_RATIO, MAX_MS_SEQUENTIAL);
+    ARTIFACT_ENTRIES.push({
+      scenario: "sequential-20-rounds",
+      rounds: ROUNDS,
+      mutations: mutations.length,
+      mode: "sequential",
+      bestMs: best.ms,
+      worstMs: worst.ms,
+      derivedCalls: best.derivedCalls,
+      warningsCalls: best.warningsCalls,
+      budgetMs: MAX_MS_SEQUENTIAL,
+      variancePassed: varianceOk,
+    });
+    expect(varianceOk).toBe(true);
 
     // eslint-disable-next-line no-console
     console.info(
@@ -290,6 +383,33 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     expect(bat.warningsCalls).toBe(1);
     expect(seq.derivedCalls).toBeGreaterThan(bat.derivedCalls);
     expect(seq.warningsCalls).toBeGreaterThan(bat.warningsCalls);
+
+    ARTIFACT_ENTRIES.push(
+      {
+        scenario: "ratio-batched",
+        rounds: ROUNDS,
+        mutations: mutations.length,
+        mode: "batched",
+        bestMs: bat.ms,
+        worstMs: bat.ms,
+        derivedCalls: bat.derivedCalls,
+        warningsCalls: bat.warningsCalls,
+        budgetMs: MAX_MS_BATCHED,
+        variancePassed: true,
+      },
+      {
+        scenario: "ratio-sequential",
+        rounds: ROUNDS,
+        mutations: mutations.length,
+        mode: "sequential",
+        bestMs: seq.ms,
+        worstMs: seq.ms,
+        derivedCalls: seq.derivedCalls,
+        warningsCalls: seq.warningsCalls,
+        budgetMs: MAX_MS_SEQUENTIAL,
+        variancePassed: true,
+      },
+    );
   });
 
   it("skala ronde: 4× ronde tidak boleh > 8× waktu batched (sub-kuadratik)", () => {
@@ -302,5 +422,32 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     expect(big.ms).toBeLessThan(smallFloor * 8 + 10);
     expect(big.derivedCalls).toBe(1);
     expect(big.warningsCalls).toBe(1);
+
+    ARTIFACT_ENTRIES.push(
+      {
+        scenario: "scale-rounds-5",
+        rounds: 5,
+        mutations: 50,
+        mode: "batched",
+        bestMs: small.ms,
+        worstMs: small.ms,
+        derivedCalls: small.derivedCalls,
+        warningsCalls: small.warningsCalls,
+        budgetMs: MAX_MS_BATCHED,
+        variancePassed: true,
+      },
+      {
+        scenario: "scale-rounds-20",
+        rounds: 20,
+        mutations: 200,
+        mode: "batched",
+        bestMs: big.ms,
+        worstMs: big.ms,
+        derivedCalls: big.derivedCalls,
+        warningsCalls: big.warningsCalls,
+        budgetMs: MAX_MS_BATCHED,
+        variancePassed: true,
+      },
+    );
   });
 });
