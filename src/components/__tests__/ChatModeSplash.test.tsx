@@ -42,13 +42,20 @@ let reduceMotion = false;
 // `setState` setelah komponen hilang (misal setelah navigasi klien).
 let mmListenerAdds = 0;
 let mmListenerRemoves = 0;
+// Rekam setiap query yang diminta ke `window.matchMedia` supaya kita
+// bisa memverifikasi splash membaca ulang preferensi setiap mount
+// (bukan memakai nilai cache lama antar-navigasi).
+let mmQueries: string[] = [];
 function installMatchMedia() {
   mmListenerAdds = 0;
   mmListenerRemoves = 0;
+  mmQueries = [];
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,
-    value: (query: string) => ({
+    value: (query: string) => {
+      mmQueries.push(query);
+      return {
       matches: reduceMotion && query.includes("prefers-reduced-motion"),
       media: query,
       onchange: null,
@@ -65,7 +72,8 @@ function installMatchMedia() {
         mmListenerRemoves += 1;
       },
       dispatchEvent: () => false,
-    }),
+    };
+    },
   });
 }
 
@@ -532,5 +540,126 @@ describe("ChatModeSplash · toggle reduce-motion bertubi-tubi", () => {
     expect(splashNode()).toBeNull();
     expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBe("1");
     act(() => root.unmount());
+  });
+});
+
+describe("ChatModeSplash · re-read matchMedia pada navigasi tanpa reload", () => {
+  // Kontrak: setiap kali komponen mount di session baru (mis. karena
+  // client-side navigation memicu remount subtree), ia HARUS memanggil
+  // `window.matchMedia("(prefers-reduced-motion: reduce)")` lagi dan
+  // memakai nilai terbaru — bukan hasil cache dari mount sebelumnya.
+
+  it("mount berikutnya (setelah nav tanpa reload) memanggil matchMedia ulang & memakai nilai terbaru", async () => {
+    // ==== Mount #1: session pertama, reduce=true ====
+    reduceMotion = true;
+    installMatchMedia(); // reset counter query
+    const Splash1 = await loadComponent();
+    const first = mount(Splash1);
+    // matchMedia harus terpanggil setidaknya sekali dengan query
+    // prefers-reduced-motion pada mount ini.
+    const queriesMount1 = mmQueries.filter((q) =>
+      q.includes("prefers-reduced-motion"),
+    );
+    expect(queriesMount1.length).toBeGreaterThan(0);
+
+    // Selesaikan splash timeline reduce (400ms).
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(splashNode()).toBeNull();
+    act(() => first.root.unmount());
+
+    // ==== Simulasi client-side navigation tanpa reload penuh ====
+    // - sessionStorage dibersihkan (mis. user membuka tab baru atau
+    //   session guard di-reset oleh test lain),
+    // - preferensi OS berubah menjadi no-preference,
+    // - module ChatModeSplash di-reset agar flag modul juga fresh
+    //   (setara import ulang setelah HMR / fresh subtree).
+    window.sessionStorage.clear();
+    reduceMotion = false;
+    installMatchMedia(); // ← reset mmQueries counter
+    expect(mmQueries.length).toBe(0);
+
+    // ==== Mount #2: session baru, reduce=false ====
+    const Splash2 = await loadComponent();
+    const second = mount(Splash2);
+
+    // Bukti "membaca ulang": matchMedia dipanggil lagi di mount ini,
+    // meski sebelumnya sudah pernah dipanggil di mount #1.
+    const queriesMount2 = mmQueries.filter((q) =>
+      q.includes("prefers-reduced-motion"),
+    );
+    expect(queriesMount2.length).toBeGreaterThan(0);
+
+    // Dan bukti "memakai nilai terbaru (bukan cache lama)": timeline
+    // sekarang harus penuh (hold 1000ms + fade 500ms), bukan reduce
+    // (400ms). Kalau nilai lama masih di-cache, splash sudah hilang
+    // di 400ms — ini gagal.
+    act(() => {
+      vi.advanceTimersByTime(400);
+    });
+    expect(splashNode()).not.toBeNull();
+    // Masih di fase hold, belum fade.
+    expect(splashNode()!.className).not.toContain("opacity-0");
+
+    // 1000ms → masuk fade dengan transitionDuration 500ms.
+    act(() => {
+      vi.advanceTimersByTime(600);
+    });
+    const fadeEl = splashNode();
+    expect(fadeEl).not.toBeNull();
+    expect(fadeEl!.className).toContain("opacity-0");
+    expect(fadeEl!.getAttribute("style") ?? "").toContain(
+      "transition-duration: 500ms",
+    );
+
+    // 1500ms → benar-benar unmount.
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(splashNode()).toBeNull();
+    act(() => second.root.unmount());
+  });
+
+  it("kebalikannya: mount #1 no-preference → mount #2 reduce memakai timeline reduce (400ms, tanpa fade)", async () => {
+    // Mount #1: full motion.
+    reduceMotion = false;
+    installMatchMedia();
+    const Splash1 = await loadComponent();
+    const first = mount(Splash1);
+    // Selesaikan timeline penuh.
+    act(() => {
+      vi.advanceTimersByTime(1500);
+    });
+    expect(splashNode()).toBeNull();
+    act(() => first.root.unmount());
+
+    // Nav tanpa reload → sesi baru, preferensi berubah ke reduce.
+    window.sessionStorage.clear();
+    reduceMotion = true;
+    installMatchMedia();
+
+    const Splash2 = await loadComponent();
+    const second = mount(Splash2);
+
+    // matchMedia dipanggil lagi di mount #2.
+    expect(
+      mmQueries.some((q) => q.includes("prefers-reduced-motion")),
+    ).toBe(true);
+
+    // 399ms: masih ada, tidak fade (className bukan opacity-0).
+    act(() => {
+      vi.advanceTimersByTime(399);
+    });
+    expect(splashNode()).not.toBeNull();
+    expect(splashNode()!.className).not.toContain("opacity-0");
+
+    // 400ms: sudah hilang — timeline reduce dipakai, bukan cache
+    // lama (yang akan menahan sampai 1500ms).
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(splashNode()).toBeNull();
+    act(() => second.root.unmount());
   });
 });
