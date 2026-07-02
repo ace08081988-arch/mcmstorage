@@ -300,14 +300,22 @@ test.describe("Appearance migrator · impor via UI harness", () => {
     await expect(page.getByTestId("ai-patch-highContrast")).toHaveText("true");
     await expect(page.getByTestId("ai-patch-reduceMotion")).toHaveText("false");
 
-    // Bukti "migrator terpakai di UI": pratinjau ikut ter-update.
-    await expect(page.getByTestId("ai-preview-theme")).toHaveText("dark");
-    await expect(page.getByTestId("ai-preview-accent")).toHaveText("emerald");
-    const previewStyle = await page
-      .getByTestId("ai-preview")
-      .getAttribute("style");
-    expect(previewStyle ?? "").toMatch(/border-radius:\s*0\.875rem/);
-    expect(previewStyle ?? "").toMatch(/font-size:\s*1\.1rem/);
+    // Bukti "migrator terpakai di UI end-to-end": pratinjau memantulkan
+    // seluruh field patch, bukan cuma theme/accent.
+    await expectPreviewMatches(page, {
+      theme: "dark",
+      font: "serif",
+      size: "lg",
+      accent: "emerald",
+      radius: "0.875",
+      fontScale: 1.1,
+      bgImage: "https://example.com/bg-v1.jpg",
+      bgOverlay: 0.6,
+      bgBlur: 12,
+      compact: true,
+      highContrast: true,
+      reduceMotion: false,
+    });
   });
 
   test("skema v1 tanpa `version` sama sekali → default ke v1", async ({
@@ -373,6 +381,22 @@ test.describe("Appearance migrator · impor via UI harness", () => {
     await expect(page.getByTestId("ai-patch-fontScale")).toHaveText("1.25");
     await expect(page.getByTestId("ai-patch-highContrast")).toHaveText("true");
     await expect(page.getByTestId("ai-patch-reduceMotion")).toHaveText("true");
+
+    // v2 juga harus konsisten sampai ke UI pratinjau.
+    await expectPreviewMatches(page, {
+      theme: "light",
+      font: "display",
+      size: "xl",
+      accent: "rose",
+      radius: "1.25",
+      fontScale: 1.25,
+      bgImage: "https://example.com/bg-v2.jpg",
+      bgOverlay: 0.5,
+      bgBlur: 20,
+      compact: true,
+      highContrast: true,
+      reduceMotion: true,
+    });
   });
 
   test("skema versi lebih baru (v3, hipotetis) → forward=true & field baru diabaikan", async ({
@@ -434,6 +458,25 @@ test.describe("Appearance migrator · impor via UI harness", () => {
         "theme",
       ].sort(),
     );
+
+    // Field lama dari payload v3 tetap harus konsisten di UI; field baru
+    // (animatedGradient, glassMorphism, motionProfile, dyslexiaFriendly)
+    // tidak punya readout di harness — cukup dipastikan patch tidak
+    // mengandungnya (assert di atas).
+    await expectPreviewMatches(page, {
+      theme: "dark",
+      font: "sans",
+      size: "md",
+      accent: "violet",
+      radius: "0.75",
+      fontScale: 1.05,
+      bgImage: "",
+      bgOverlay: 0.4,
+      bgBlur: 10,
+      compact: false,
+      highContrast: false,
+      reduceMotion: false,
+    });
   });
 
   test("payload dari aplikasi lain → status `unknown_type`", async ({
