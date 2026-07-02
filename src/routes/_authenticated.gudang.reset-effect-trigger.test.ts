@@ -563,3 +563,94 @@ describe("BeliTab — NOL reset saat hanya metadata/derived pendukung berubah", 
     expect(h.resetCount).toBe(1);
   });
 });
+
+// =============================================================
+// TES TAMBAHAN — identitas selectedItem yang STABIL (referensi objek
+// SAMA) dikombinasikan dengan rerender berulang tidak boleh memicu
+// reset. Ini menjaga kontrak "effect dep = [resetKey]" — bukan
+// identitas objek selectedItem — dari regresi diam-diam.
+// =============================================================
+describe("BeliTab — refetchSelectedItemIdentity dgn REF SAMA + rerender berulang", () => {
+  it("refetch pakai ref yg sama persis (identity ===) 50× → 0 reset", () => {
+    const stableRef = { id: "botol-500", rev: 0 };
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: stableRef,
+    });
+    for (let i = 0; i < 50; i++) h.refetchSelectedItemIdentity(stableRef);
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("refetch ref sama diselingi rerender() 100× → 0 reset", () => {
+    const stableRef = { id: "botol-500" };
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: stableRef,
+    });
+    for (let i = 0; i < 100; i++) {
+      h.refetchSelectedItemIdentity(stableRef);
+      h.rerender();
+      h.rerender();
+    }
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("rerender() saja 500× (tanpa refetch) → 0 reset", () => {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: { id: "botol-500" },
+    });
+    for (let i = 0; i < 500; i++) h.rerender();
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("interleave: refetch ref sama + rerender + refetch ref BEDA (id sama) → tetap 0 reset", () => {
+    // Kunci: id tetap "botol-500" — apapun identitas objeknya, resetKey
+    // tidak berubah. Verifikasi bahwa BAIK ref sama maupun ref beda
+    // (tapi id sama) sama-sama tidak memicu reset.
+    const stableRef = { id: "botol-500" };
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: stableRef,
+    });
+    for (let i = 0; i < 30; i++) {
+      h.refetchSelectedItemIdentity(stableRef); // ref sama
+      h.rerender();
+      h.refetchSelectedItemIdentity({ id: "botol-500", rev: i }); // ref beda, id sama
+      h.rerender();
+    }
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("kontrol positif: setelah rentetan ref-sama + rerender, 1 transisi itemId → resetCount = 1", () => {
+    // Menjamin harness tetap responsif setelah dibanjiri operasi non-trigger.
+    const stableRef = { id: "botol-500" };
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: stableRef,
+    });
+    for (let i = 0; i < 200; i++) {
+      h.refetchSelectedItemIdentity(stableRef);
+      h.rerender();
+    }
+    expect(h.resetCount).toBe(0);
+    h.setItemId("gram-1000");
+    expect(h.resetCount).toBe(1);
+    // Kembali ke ref lama pun tidak berpengaruh setelah transisi.
+    for (let i = 0; i < 50; i++) {
+      h.refetchSelectedItemIdentity({ id: "gram-1000" });
+      h.rerender();
+    }
+    expect(h.resetCount).toBe(1);
+  });
+});
