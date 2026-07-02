@@ -20,6 +20,8 @@ import { ConfirmHost } from "@/lib/confirm";
 import { WhatsAppTargetHost } from "@/lib/wa-target";
 import { WaPreviewHost } from "@/lib/wa-preview";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
+import { ChatModeSplash } from "@/components/ChatModeSplash";
+import { applyChatModeBranding } from "@/lib/chat-mode-branding";
 
 function NotFoundComponent() {
   return (
@@ -329,6 +331,10 @@ function RootComponent() {
     bootstrapNativePermissions().catch((e) =>
       console.warn("[perm-bootstrap]", e),
     );
+    // Terapkan branding MCM Chat (judul, ikon, manifest) bila mode chat aktif.
+    applyChatModeBranding();
+    const onModeChange = () => applyChatModeBranding();
+    window.addEventListener("mcm:app-mode-change", onModeChange);
     // Aktifkan notifikasi native (FCM) — hanya di APK/native, no-op di web
     import("@/lib/native-push").then(({ startNativePush }) => {
       startNativePush({
@@ -383,7 +389,11 @@ function RootComponent() {
       pullPrefsFromCloud().catch(() => {});
       unsub = subscribeRemotePrefs(() => {});
     }).catch(() => {});
-    return () => { if (unsub) unsub(); if (authUnsub) authUnsub(); };
+    return () => {
+      if (unsub) unsub();
+      if (authUnsub) authUnsub();
+      window.removeEventListener("mcm:app-mode-change", onModeChange);
+    };
   }, []);
 
   // Tangani pesan dari service worker push (klik notifikasi / aksi cepat)
@@ -457,6 +467,7 @@ function RootComponent() {
       <ConfirmHost />
       <WhatsAppTargetHost />
       <WaPreviewHost />
+      <ChatModeSplash />
     </QueryClientProvider>
   );
 }

@@ -1,0 +1,15 @@
+{
+  "name": "MCM Chat",
+  "short_name": "MCM Chat",
+  "description": "MCM Chat — pesan cepat, panggilan, dan pembaruan dalam satu aplikasi.",
+  "start_url": "/chat",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#064e3b",
+  "theme_color": "#0a7a4a",
+  "icons": [
+    { "src": "/mcm-chat-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/mcm-chat-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
