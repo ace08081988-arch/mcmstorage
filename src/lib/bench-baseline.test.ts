@@ -159,4 +159,17 @@ describe("checkFlakiness", () => {
     expect(c.flaky).toBe(true);
     expect(c.reasons.length).toBe(2);
   });
+
+  it("per-scenario override menang atas default file", () => {
+    const b: BaselineFile = {
+      ...BASE,
+      scenarios: {
+        loose: { bestMs: 10, p95Ms: 20, mode: "batched", maxCv: 5.0, p95Pct: 500 },
+      },
+    };
+    // cv 3 > default 1, tapi override 5 → tidak flaky.
+    expect(checkFlakiness("loose", { p95: 20, cv: 3 }, b).flaky).toBe(false);
+    // p95 100 vs baseline 20: default pct=100 → flaky, override 500 → tidak.
+    expect(checkFlakiness("loose", { p95: 100, cv: 0.1 }, b).flaky).toBe(false);
+  });
 });
