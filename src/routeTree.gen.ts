@@ -22,6 +22,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
+import { Route as DiagnostikPaketRouteImport } from './routes/diagnostik.paket'
 import { Route as ApiVersionRouteImport } from './routes/api/version'
 import { Route as AuthenticatedUndangRouteImport } from './routes/_authenticated.undang'
 import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
@@ -154,6 +155,11 @@ const DownloadVariantRoute = DownloadVariantRouteImport.update({
   id: '/$variant',
   path: '/$variant',
   getParentRoute: () => DownloadRoute,
+} as any)
+const DiagnostikPaketRoute = DiagnostikPaketRouteImport.update({
+  id: '/diagnostik/paket',
+  path: '/diagnostik/paket',
+  getParentRoute: () => rootRouteImport,
 } as any)
 const ApiVersionRoute = ApiVersionRouteImport.update({
   id: '/api/version',
@@ -585,6 +591,7 @@ export interface FileRoutesByFullPath {
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/undang': typeof AuthenticatedUndangRoute
   '/api/version': typeof ApiVersionRoute
+  '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
@@ -665,6 +672,7 @@ export interface FileRoutesByTo {
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/undang': typeof AuthenticatedUndangRoute
   '/api/version': typeof ApiVersionRoute
+  '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
@@ -749,6 +757,7 @@ export interface FileRoutesById {
   '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
   '/_authenticated/undang': typeof AuthenticatedUndangRoute
   '/api/version': typeof ApiVersionRoute
+  '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
@@ -834,6 +843,7 @@ export interface FileRouteTypes {
     | '/tugas-baru'
     | '/undang'
     | '/api/version'
+    | '/diagnostik/paket'
     | '/download/$variant'
     | '/i/$code'
     | '/t/$token'
@@ -914,6 +924,7 @@ export interface FileRouteTypes {
     | '/tugas-baru'
     | '/undang'
     | '/api/version'
+    | '/diagnostik/paket'
     | '/download/$variant'
     | '/i/$code'
     | '/t/$token'
@@ -997,6 +1008,7 @@ export interface FileRouteTypes {
     | '/_authenticated/tugas-baru'
     | '/_authenticated/undang'
     | '/api/version'
+    | '/diagnostik/paket'
     | '/download/$variant'
     | '/i/$code'
     | '/t/$token'
@@ -1042,6 +1054,7 @@ export interface RootRouteChildren {
   TermsRoute: typeof TermsRoute
   TrustRoute: typeof TrustRoute
   ApiVersionRoute: typeof ApiVersionRoute
+  DiagnostikPaketRoute: typeof DiagnostikPaketRoute
   ICodeRoute: typeof ICodeRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
@@ -1156,6 +1169,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/download/$variant'
       preLoaderRoute: typeof DownloadVariantRouteImport
       parentRoute: typeof DownloadRoute
+    }
+    '/diagnostik/paket': {
+      id: '/diagnostik/paket'
+      path: '/diagnostik/paket'
+      fullPath: '/diagnostik/paket'
+      preLoaderRoute: typeof DiagnostikPaketRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/version': {
       id: '/api/version'
@@ -1815,6 +1835,7 @@ const rootRouteChildren: RootRouteChildren = {
   TermsRoute: TermsRoute,
   TrustRoute: TrustRoute,
   ApiVersionRoute: ApiVersionRoute,
+  DiagnostikPaketRoute: DiagnostikPaketRoute,
   ICodeRoute: ICodeRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
