@@ -28,6 +28,11 @@ export function DownloadChatApkShortcut() {
       }
       const version =
         detail?.latest?.versionName || detail?.latest?.name || "terbaru";
+      const sizeMB = detail?.latest?.sizeMB ?? null;
+      const sizeLabel =
+        typeof sizeMB === "number" && Number.isFinite(sizeMB)
+          ? `${sizeMB.toFixed(2)} MB`
+          : "ukuran tidak diketahui";
       // Catat ke riwayat versi lokal sebelum navigasi.
       if (detail?.latest) {
         recordChatApkDownload({
@@ -39,9 +44,9 @@ export function DownloadChatApkShortcut() {
         });
       }
       window.location.href = url;
-      toast.success(`Mulai mengunduh APK MCM Chat (${version})…`, {
+      toast.success(`Mulai mengunduh APK MCM Chat v${version} • ${sizeLabel}`, {
         id: loadingId,
-        description: "Cek folder Unduhan pada perangkat Anda.",
+        description: `Berkas: ${detail?.latest?.name ?? "APK Chat"} — cek folder Unduhan pada perangkat Anda.`,
       });
     } catch (e) {
       toast.error((e as Error)?.message || "Gagal memulai unduhan APK Chat.", {
