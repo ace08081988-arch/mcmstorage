@@ -6,6 +6,7 @@ import {
   loadBaseline,
   saveBaseline,
   checkRegression,
+  checkFlakiness,
   shouldEnforceBaseline,
   shouldUpdateBaseline,
   type BaselineFile,
@@ -15,9 +16,10 @@ const BASE: BaselineFile = {
   capturedOn: "test",
   regressionPctDefault: 50,
   floorMs: { batched: 2, sequential: 5 },
+  flakiness: { p95PctDefault: 100, maxCvDefault: 1.0 },
   scenarios: {
-    a: { bestMs: 10, mode: "batched" },
-    b: { bestMs: 100, mode: "sequential" },
+    a: { bestMs: 10, p95Ms: 20, mode: "batched" },
+    b: { bestMs: 100, p95Ms: 150, mode: "sequential" },
   },
 };
 
@@ -29,6 +31,8 @@ describe("bench-baseline", () => {
     delete process.env.UPDATE_BENCH_BASELINE;
     delete process.env.BENCH_STRICT;
     delete process.env.CI;
+    delete process.env.BENCH_P95_PCT;
+    delete process.env.BENCH_MAX_CV;
   });
   afterEach(() => {
     process.env = { ...originalEnv };
