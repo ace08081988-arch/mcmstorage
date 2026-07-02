@@ -1750,6 +1750,24 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     setPriceMode(nextPriceModeRef.current);
   }, [resetKey]);
 
+  function resetBeliForm() {
+    setSupplierId("");
+    setMode("new");
+    setItemId("");
+    setName("");
+    setCategory("");
+    setPackageType("botol");
+    setPackageSize("500");
+    setNewImagePath(null);
+    setPackageQty("1");
+    setPricePerPackage("");
+    setPriceMode("package");
+    setPricePerBase("");
+    setPaymentMethod(defaultPayment);
+    setInputKarton(false);
+    toast.success("Form direset");
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!uid) return;
@@ -1801,7 +1819,17 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
 
   return (
     <form onSubmit={submit} className="space-y-3 rounded-lg border bg-card p-3">
-      <div className="text-xs font-semibold">Catat Pembelian</div>
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-semibold">Catat Pembelian</div>
+        <button
+          type="button"
+          onClick={resetBeliForm}
+          className="rounded border px-2 py-1 text-[11px] hover:bg-muted"
+          aria-label="Reset form pembelian"
+        >
+          Reset
+        </button>
+      </div>
 
       <label className="block">
         <span className="text-[11px] text-muted-foreground">Supplier</span>
