@@ -39,12 +39,34 @@ concurrency:
 
 jobs:
   package-switch-matrix:
-    name: Package switch matrix (gram ↔ botol/pcs/sachet)
+    name: Package switch matrix (node ${{ matrix.node }} · ${{ matrix.runtime }})
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    strategy:
+      fail-fast: false
+      matrix:
+        # Uji lintas versi Node.js LTS aktif + current, plus runtime alternatif
+        # (Bun) untuk memastikan output package-switch identik di setiap runtime.
+        include:
+          - node: "18"
+            runtime: "node"
+          - node: "20"
+            runtime: "node"
+          - node: "22"
+            runtime: "node"
+          - node: "24"
+            runtime: "node"
+          # Baseline lama tetap: eksekusi via Bun (runtime yang dipakai dev).
+          - node: "20"
+            runtime: "bun"
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+
+      - name: Setup Node.js ${{ matrix.node }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
@@ -54,22 +76,75 @@ jobs:
       - name: Install dependencies
         run: bun install --frozen-lockfile
 
-      - name: Run full package-switch matrix
+      - name: Print runtime versions
+        run: |
+          echo "node:  $(node -v)"
+          echo "bun:   $(bun -v)"
+          echo "matrix.runtime = ${{ matrix.runtime }}"
+
+      - name: Run full package-switch matrix (${{ matrix.runtime }})
+        env:
+          # Paksa vitest memakai runtime Node yang di-setup di step atas
+          # kecuali job Bun-baseline.
+          NODE_OPTIONS: "--max-old-space-size=4096"
         run: bun run test:package-switch
+        if: matrix.runtime == 'bun'
+
+      - name: Run full package-switch matrix (node)
+        if: matrix.runtime == 'node'
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+        # `npx vitest` menjalankan test lewat Node runtime yang aktif
+        # (bukan Bun), sehingga variasi versi Node benar-benar teruji.
+        run: |
+          npx --yes vitest@$(node -p "require('./package.json').devDependencies.vitest || require('./package.json').dependencies.vitest || 'latest'") run \
+            "src/routes/_authenticated.gudang.package-switch-matrix.test.ts" \
+            "src/routes/_authenticated.gudang.new-mode-gram-labels.test.ts" \
+            "src/routes/_authenticated.gudang.package-switch-snapshots.test.ts" \
+            "src/routes/_authenticated.gudang.viewport-snapshots.test.ts" \
+            "src/lib/beli-derived-gram-switch.test.ts" \
+            "src/lib/beli-derived-memo-freshness.test.ts" \
+            "src/lib/wa-url-encode-package-switch.test.ts" \
+            "src/lib/wa-bulk-package-switch.test.ts" \
+            "src/lib/wa-special-chars-package-switch.test.ts" \
+            "src/routes/_authenticated.index.wa-message-package-switch.test.ts"
 
       - name: Job summary on failure
         if: failure()
         run: |
           {
-            echo "## ❌ Package switch matrix failed";
+            echo "## ❌ Package switch matrix failed (node ${{ matrix.node }} · ${{ matrix.runtime }})";
             echo "";
             echo "Salah satu skenario pergantian **Jenis kemasan** (gram ↔ botol/pcs/sachet) menghasilkan label/output yang tidak konsisten.";
+            echo "";
+            echo "Runtime: **${{ matrix.runtime }}**, Node.js **${{ matrix.node }}**.";
+            echo "Jika hanya versi Node tertentu yang gagal, curigai perbedaan `Intl` / `toLocaleString` / regex look-behind / atau perilaku formatter antar versi.";
             echo "";
             echo "Cakupan suite:";
             echo "- \`src/routes/_authenticated.gudang.package-switch-matrix.test.ts\` — matrix penuh (30 test) new/existing/round-trip";
             echo "- \`src/routes/_authenticated.gudang.new-mode-gram-labels.test.ts\` — label form 'Barang baru' saat pindah ke gram";
+            echo "- \`src/routes/_authenticated.gudang.package-switch-snapshots.test.ts\` — snapshot label & ringkasan";
+            echo "- \`src/routes/_authenticated.gudang.viewport-snapshots.test.ts\` — snapshot desktop vs mobile";
             echo "- \`src/lib/beli-derived-gram-switch.test.ts\` — invalidasi memo \`computeBeliDerived\` lintas satuan";
+            echo "- \`src/lib/beli-derived-memo-freshness.test.ts\` — memoisasi single-slot menghormati input terbaru";
+            echo "- \`src/lib/wa-url-encode-package-switch.test.ts\` — encoding URL wa.me";
+            echo "- \`src/lib/wa-bulk-package-switch.test.ts\` — bulk WA multi-item";
+            echo "- \`src/lib/wa-special-chars-package-switch.test.ts\` — nama/lokasi karakter khusus";
             echo "- \`src/routes/_authenticated.index.wa-message-package-switch.test.ts\` — teks WA (Nama produk, jumlah, harga, lokasi) ikut satuan terbaru";
             echo "";
             echo "Jalankan lokal: \`bun run test:package-switch\`.";
           } >> "$GITHUB_STEP_SUMMARY"
+
+  package-switch-matrix-summary:
+    name: Package switch matrix summary
+    if: always()
+    needs: package-switch-matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Fail if any matrix job failed
+        run: |
+          if [ "${{ needs.package-switch-matrix.result }}" != "success" ]; then
+            echo "One or more runtime jobs failed: ${{ needs.package-switch-matrix.result }}"
+            exit 1
+          fi
+          echo "All runtimes green."
