@@ -15,6 +15,11 @@ import {
   saveBaseline,
   checkRegression,
   checkFlakiness,
+  shouldEnforceBaseline,
+  shouldUpdateBaseline,
+  type BaselineFile,
+  type RegressionCheck,
+  type FlakinessCheck,
 } from "@/lib/bench-baseline";
 import {
   appendTrendRun,
@@ -23,12 +28,6 @@ import {
   loadTrendHistory,
   summarizeTrend,
 } from "@/lib/bench-trend";
-  shouldEnforceBaseline,
-  shouldUpdateBaseline,
-  type BaselineFile,
-  type RegressionCheck,
-  type FlakinessCheck,
-} from "@/lib/bench-baseline";
 import { summarize, type SampleSummary } from "@/lib/bench-stats";
 import {
   createProfiler,
