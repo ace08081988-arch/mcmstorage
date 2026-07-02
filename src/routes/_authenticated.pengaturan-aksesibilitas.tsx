@@ -51,25 +51,15 @@ function PengaturanAksesibilitasPage() {
   );
 
   useBlocker({
-    condition: dirty,
-    blockerFn: () => {
+    shouldBlockFn: () => {
+      if (!dirty) return false;
       return new Promise<boolean>((resolve) => {
         leaveResolveRef.current = resolve;
         setLeaveOpen(true);
       });
     },
+    enableBeforeUnload: true,
   });
-
-  useEffect(() => {
-    const onBeforeUnload = (e: BeforeUnloadEvent) => {
-      if (dirty) {
-        e.preventDefault();
-        e.returnValue = "";
-      }
-    };
-    window.addEventListener("beforeunload", onBeforeUnload);
-    return () => window.removeEventListener("beforeunload", onBeforeUnload);
-  }, [dirty]);
 
   const handleLeaveConfirm = () => {
     leaveResolveRef.current?.(true);
