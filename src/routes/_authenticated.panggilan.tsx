@@ -5,6 +5,7 @@ import {
   ArrowLeft, Phone, PhoneMissed, PhoneIncoming, PhoneOutgoing, PhoneOff,
   Ban, AlertCircle, Video as VideoIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
 import { listMyCalls, formatCallDuration, type CallRow } from "@/lib/calls";
@@ -219,6 +220,21 @@ function CallRowItem({
       : row.status === "ringing"
       ? "Berdering…"
       : "Diterima";
+  // Deskripsi panjang untuk tooltip/toast saat ikon status ditekan.
+  const statusHint =
+    row.status === "missed"
+      ? "Tidak dijawab — panggilan tidak diangkat penerima."
+      : row.status === "declined"
+      ? "Ditolak — penerima menolak panggilan."
+      : row.status === "cancelled"
+      ? "Dibatalkan — panggilan dihentikan sebelum diangkat."
+      : row.status === "failed"
+      ? "Gagal — panggilan tidak dapat tersambung."
+      : row.status === "ringing"
+      ? "Berdering — panggilan sedang menunggu dijawab."
+      : row.status === "ended"
+      ? "Diterima — panggilan berhasil tersambung."
+      : "Diterima — panggilan berhasil tersambung.";
 
   return (
     <li className="flex items-center gap-3 px-4 py-3">
@@ -227,12 +243,22 @@ function CallRowItem({
       </div>
       <div className="min-w-0 flex-1">
         <div className={`truncate text-sm font-medium ${missed ? "text-red-600" : ""}`}>{peerName}</div>
-        <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toast.info(statusHint);
+          }}
+          title={statusHint}
+          aria-label={statusHint}
+          className="flex items-center gap-1 text-[11px] text-muted-foreground hover:underline"
+        >
           <DirIcon className={`h-3 w-3 ${dirClass}`} />
           <span className={statusClass}>{statusLabel}</span>
           <span>·</span>
           <span>{timeLabel(row.started_at)}</span>
-        </div>
+        </button>
       </div>
       <Icon className={`h-5 w-5 ${row.kind === "video" ? "text-primary" : "text-muted-foreground"}`} />
     </li>
