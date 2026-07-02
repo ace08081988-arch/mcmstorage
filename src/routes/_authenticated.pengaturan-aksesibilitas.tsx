@@ -98,6 +98,31 @@ function PengaturanAksesibilitasPage() {
         subtitle="Skala teks, kontras, dan animasi"
       />
       <div className="space-y-4 px-4 pt-2">
+        {/* Badge status "Belum disimpan" — hanya tampil kalau draft ≠ snapshot */}
+        <div
+          className="flex items-center gap-2 text-xs"
+          role="status"
+          aria-live="polite"
+        >
+          {dirty ? (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-amber-500/40 bg-amber-500/10 px-2.5 py-1 font-medium text-amber-700 dark:text-amber-300">
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"
+                aria-hidden="true"
+              />
+              Belum disimpan
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-emerald-500/40 bg-emerald-500/10 px-2.5 py-1 font-medium text-emerald-700 dark:text-emerald-300">
+              <span
+                className="h-1.5 w-1.5 rounded-full bg-emerald-500"
+                aria-hidden="true"
+              />
+              Tersimpan
+            </span>
+          )}
+        </div>
+
         <div className="rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-[11px] leading-snug text-muted-foreground">
           Perubahan di halaman ini adalah <span className="font-semibold text-foreground">pratinjau</span>.
           Tampilan tersimpan tidak berubah sampai Anda menekan{" "}
