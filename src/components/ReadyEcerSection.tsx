@@ -1283,23 +1283,12 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       if (files.length === 0) {
         toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan via MCM.");
       }
-      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
-      const text = [
-        `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
-        ...lines,
-      ].join("\n");
-      // Fingerprint payload WA: caption + link + daftar slot foto (path & nama).
-      // Stabil terhadap urutan dan dipakai untuk membandingkan dengan payload
-      // kiriman sebelumnya pada idempotency key yang sama.
-      const waFingerprint = payloadFingerprint({
-        channel: "wa",
-        text,
-        url: firstLocation ?? null,
-        expectedCount,
-        slots: slots.map((s) => ({ path: s.path, name: s.name })),
-      });
+      // Payload TETAP diambil dari snapshot — pengiriman kedua/ketiga wajib
+      // menghasilkan teks, urutan foto, dan link lokasi yang identik dengan
+      // pengiriman pertama.
+      const text = snapshot.text;
+      const firstLocation = snapshot.locationUrl;
+      const waFingerprint = snapshot.fingerprint;
       // Ringkasan payload — disimpan di record idempotency agar saat klik
       // ganda terdeteksi, banner pratinjau bisa menampilkan perbedaan field
       // (caption / foto / lokasi / tujuan) dibanding kiriman sebelumnya.
