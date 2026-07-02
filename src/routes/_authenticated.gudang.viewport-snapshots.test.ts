@@ -186,7 +186,11 @@ describe("Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan", (
             s
               .split("\n")
               .filter((l) => !l.startsWith("[layout]") && !l.startsWith("#"))
-              .map((l) => l.replace(/…$/, "")) // buang ellipsis mobile
+              .map((l) =>
+                l
+                  .replace(/…$/, "") // buang ellipsis mobile
+                  .replace(/ · flow=(inline|stacked)$/, ""), // flow karton = layout-only
+              )
               .join("\n");
           const desktop = strip(
             renderScreen({ viewport: VIEWPORTS[0], mode, packageType: pt }),
