@@ -22,6 +22,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
+// React 19: perlu flag ini di test env agar `act()` tidak memancarkan
+// warning "The current testing environment is not configured...".
+(globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean })
+  .IS_REACT_ACT_ENVIRONMENT = true;
+
 // Kontrol return value `isChatOnly()` per-test.
 let chatOnly = true;
 vi.mock("@/lib/app-mode", () => ({
