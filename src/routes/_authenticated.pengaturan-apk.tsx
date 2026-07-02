@@ -12,6 +12,7 @@ import {
   AlertTriangle,
   ShieldAlert,
   History,
+  BarChart3,
 } from "lucide-react";
 import {
   listApkReleaseAdminPanel,
