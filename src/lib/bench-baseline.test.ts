@@ -107,3 +107,56 @@ describe("bench-baseline", () => {
     }
   });
 });
+
+describe("checkFlakiness", () => {
+  it("no-baseline: hanya cek CV", () => {
+    const c = checkFlakiness("x", { p95: 100, cv: 0.5 }, null);
+    expect(c.flaky).toBe(false);
+    expect(c.baselineP95Ms).toBeNull();
+  });
+
+  it("baseline tanpa p95Ms: skip p95 check, cek CV saja", () => {
+    const b: BaselineFile = { ...BASE, scenarios: { z: { bestMs: 10, mode: "batched" } } };
+    const c = checkFlakiness("z", { p95: 999, cv: 0.2 }, b);
+    expect(c.flaky).toBe(false);
+    expect(c.baselineP95Ms).toBeNull();
+  });
+
+  it("flaky karena p95 melewati ambang persen + floor", () => {
+    // baseline p95=20, allow +100% → 40. delta > floor 2 wajib.
+    const c = checkFlakiness("a", { p95: 50, cv: 0.1 }, BASE);
+    expect(c.flaky).toBe(true);
+    expect(c.reasons.some((r) => r.includes("p95="))).toBe(true);
+  });
+
+  it("p95 lewat pct tapi delta < floor → tidak flaky", () => {
+    // baseline p95=20, pct=1 → allow 20.2; current 21 → delta 1 < floor 2
+    const c = checkFlakiness("a", { p95: 21, cv: 0.1 }, BASE, { p95Pct: 1 });
+    expect(c.flaky).toBe(false);
+  });
+
+  it("flaky karena cv terlalu tinggi", () => {
+    const c = checkFlakiness("a", { p95: 20, cv: 1.5 }, BASE);
+    expect(c.flaky).toBe(true);
+    expect(c.reasons.some((r) => r.includes("cv="))).toBe(true);
+  });
+
+  it("override via env: BENCH_MAX_CV", () => {
+    process.env.BENCH_MAX_CV = "0.3";
+    const c = checkFlakiness("a", { p95: 20, cv: 0.5 }, BASE);
+    expect(c.flaky).toBe(true);
+  });
+
+  it("override via env: BENCH_P95_PCT", () => {
+    process.env.BENCH_P95_PCT = "10";
+    // allow 20*1.1=22. current 30 → delta 10 > floor 2 → flaky
+    const c = checkFlakiness("a", { p95: 30, cv: 0.1 }, BASE);
+    expect(c.flaky).toBe(true);
+  });
+
+  it("gabungan kedua alasan dilaporkan", () => {
+    const c = checkFlakiness("a", { p95: 100, cv: 2.0 }, BASE);
+    expect(c.flaky).toBe(true);
+    expect(c.reasons.length).toBe(2);
+  });
+});
