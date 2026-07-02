@@ -156,23 +156,26 @@ function createScreen(mode: "existing" | "new") {
 /** Regex satuan lain yang TIDAK boleh muncul saat target adalah `to`. */
 function forbiddenLabels(to: PT): RegExp[] {
   const others = ALL.filter((p) => p !== to);
-  const otherBase = new Set<string>(
-    others.map((p) => defaultBaseUnit(p) as "g" | "pcs"),
-  );
   const targetBase = defaultBaseUnit(to);
   const patterns: RegExp[] = [];
   for (const o of others) {
+    // "pcs" adalah baik packageType maupun label base unit — jangan
+    // larang bila kebetulan sama dengan base unit target (mis. target
+    // botol/sachet punya base "pcs" sehingga "Harga per pcs" sah).
+    if (o === targetBase) continue;
     // "Harga per botol" / "[toggle] Harga per botol" / "Harga beli / botol"
     patterns.push(new RegExp(`Harga per ${o}\\b`));
     patterns.push(new RegExp(`Harga beli / ${o}\\b`));
     // Header ringkasan: "· botol 500 g" ← angka bebas
     patterns.push(new RegExp(`· ${o}\\b`));
   }
-  for (const b of otherBase) {
-    if (b !== targetBase) {
-      patterns.push(new RegExp(`Isi / kemasan \\(${b}\\)`));
-      patterns.push(new RegExp(`Stok disimpan dalam ${b}\\.`));
-    }
+  // Base unit lawan (g vs pcs) tidak boleh muncul sebagai label satuan isi/stok.
+  const oppositeBase = targetBase === "g" ? "pcs" : "g";
+  patterns.push(new RegExp(`Isi / kemasan \\(${oppositeBase}\\)`));
+  patterns.push(new RegExp(`Stok disimpan dalam ${oppositeBase}\\.`));
+  // Header ringkasan tidak boleh menyertakan base unit lawan.
+  if (to !== "pcs") {
+    patterns.push(new RegExp(`· ${to} \\d+ ${oppositeBase}\\b`));
   }
   return patterns;
 }
