@@ -112,6 +112,7 @@ export { BOTOL_PER_KARTON, fmtBase, fmtItemPrice, fmtItemQty, fmtQtyDual, rupiah
 import { computeBeliDerived } from "@/lib/beli-derived";
 import { computeBeliWarnings } from "@/lib/beli-warnings";
 import { beliResetKey } from "@/lib/beli-reset-key";
+import { SmartWeightInput } from "@/components/SmartWeightInput";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
@@ -1347,14 +1348,36 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
           {packageType !== "pcs" && (
             <label className="block">
               <span className="text-[11px] text-muted-foreground">Isi / kemasan ({baseUnit})</span>
-              <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
+              {baseUnit === "g" ? (
+                <SmartWeightInput
+                  value={packageSize}
+                  onChange={setPackageSize}
+                  baseUnit="g"
+                  className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                  min={0.01}
+                  ariaLabel="Isi per kemasan (gram/kg/ons)"
+                />
+              ) : (
+                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
+              )}
             </label>
           )}
         </div>
         <div className="grid grid-cols-2 gap-2">
           <label className="block">
             <span className="text-[11px] text-muted-foreground">Stok ({baseUnit})</span>
-            <input type="number" step="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={stockBase} onChange={(e) => setStockBase(e.target.value)} />
+            {baseUnit === "g" ? (
+              <SmartWeightInput
+                value={stockBase}
+                onChange={setStockBase}
+                baseUnit="g"
+                className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                min={0}
+                ariaLabel="Stok saat ini (gram/kg/ons)"
+              />
+            ) : (
+              <input type="number" step="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={stockBase} onChange={(e) => setStockBase(e.target.value)} />
+            )}
           </label>
           <label className="block">
             <span className="text-[11px] text-muted-foreground">HPP / {baseUnit} (Rp)</span>
@@ -1861,7 +1884,19 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
             {packageType !== "pcs" && (
               <label className="block">
                 <span className="text-[11px] text-muted-foreground">Isi / kemasan ({baseUnit})</span>
-                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} required />
+                {baseUnit === "g" ? (
+                  <SmartWeightInput
+                    value={packageSize}
+                    onChange={setPackageSize}
+                    baseUnit="g"
+                    className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                    required
+                    min={0.01}
+                    ariaLabel="Isi per kemasan (gram/kg/ons)"
+                  />
+                ) : (
+                  <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} required />
+                )}
               </label>
             )}
           </div>
@@ -2166,7 +2201,19 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
               <span className="text-[11px] text-muted-foreground">
                 Jumlah ({sellMode === "base" ? item.base_unit : sellMode === "karton" ? "karton" : item.package_type})
               </span>
-              <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+              {sellMode === "base" && item.base_unit === "g" ? (
+                <SmartWeightInput
+                  value={qty}
+                  onChange={setQty}
+                  baseUnit="g"
+                  className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                  required
+                  min={0.01}
+                  ariaLabel="Jumlah jual (gram/kg/ons)"
+                />
+              ) : (
+                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+              )}
             </label>
             {sellMode === "base" ? (
               <label className="block">
@@ -2908,7 +2955,19 @@ function PesananTab({
                 <span className="text-[11px] text-muted-foreground">
                   Jumlah ({qtyMode === "base" ? item.base_unit : qtyMode === "karton" ? "karton" : item.package_type})
                 </span>
-                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+                {qtyMode === "base" && item.base_unit === "g" ? (
+                  <SmartWeightInput
+                    value={qty}
+                    onChange={setQty}
+                    baseUnit="g"
+                    className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                    required
+                    min={0.01}
+                    ariaLabel="Jumlah pesanan (gram/kg/ons)"
+                  />
+                ) : (
+                  <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+                )}
               </label>
               <label className="block">
                 <span className="text-[11px] text-muted-foreground">

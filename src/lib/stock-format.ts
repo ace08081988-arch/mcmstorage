@@ -17,6 +17,11 @@ export function fmtBase(n: number, u: "g" | "pcs") {
     if (Math.abs(v) >= 1000) {
       return `${(v / 1000).toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`;
     }
+    if (Math.abs(v) > 0 && Math.abs(v) < 1) {
+      // Tampilkan dalam mg untuk nilai sub-gram (1 gr = 1000 mg).
+      const mg = v * 1000;
+      return `${mg.toLocaleString("id-ID", { maximumFractionDigits: 2 })} mg`;
+    }
     return `${v.toLocaleString("id-ID", { maximumFractionDigits: 2 })} g`;
   }
   return `${v.toLocaleString("id-ID")} pcs`;
