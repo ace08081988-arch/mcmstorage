@@ -22,6 +22,12 @@ import {
   type FlakinessCheck,
 } from "@/lib/bench-baseline";
 import { summarize, type SampleSummary } from "@/lib/bench-stats";
+import {
+  createProfiler,
+  isProfilingEnabled,
+  formatProfileMarkdown,
+  type ProfileReport,
+} from "@/lib/bench-profile";
 
 // ============================================================
 // Micro-benchmark untuk skenario KONFLIK LEBAR (banyak field derived +
@@ -172,11 +178,19 @@ function buildWideConflict(rounds: number): Mutation[] {
   return list;
 }
 
-function runWide(mutations: Mutation[], mode: "batched" | "sequential") {
+function runWide(
+  mutations: Mutation[],
+  mode: "batched" | "sequential",
+  profile: ReturnType<typeof createProfiler> | null = null,
+) {
   __resetBeliDerivedMemo();
   __resetBeliWarningsMemo();
-  const spyD = vi.fn(realComputeDerived);
-  const spyW = vi.fn(realComputeWarnings);
+  // Bungkus fungsi target dgn profiler (no-op bila disabled) SEBELUM
+  // dibungkus vi.fn agar timing per-call tercatat tanpa mengubah kontrak spy.
+  const wrappedD = profile ? profile.wrap("computeBeliDerived", realComputeDerived) : realComputeDerived;
+  const wrappedW = profile ? profile.wrap("computeBeliWarnings", realComputeWarnings) : realComputeWarnings;
+  const spyD = vi.fn(wrappedD);
+  const spyW = vi.fn(wrappedW);
   let item: Item = { ...BASE_ITEM };
   let form: Form = { ...BASE_FORM };
 
@@ -299,6 +313,40 @@ type BenchEntry = {
   flakyReasons?: string[];
 };
 const ARTIFACT_ENTRIES: BenchEntry[] = [];
+const PROFILE_REPORTS: ProfileReport[] = [];
+const PROFILE_ALWAYS = isProfilingEnabled();
+
+/**
+ * Jalankan 1 pass profiled untuk `scenario`. Dipanggil bila:
+ *  - `BENCH_PROFILE=1` (setiap scenario di-profile), atau
+ *  - scenario tersebut regresi/flaky (auto-profile agar CI punya konteks).
+ *
+ * Pass profiling terpisah dari loop pengukuran normal supaya overhead
+ * `performance.now()` per-call TIDAK mencemari angka best/p95.
+ */
+function maybeProfile(
+  scenario: string,
+  mode: "batched" | "sequential",
+  mutations: Mutation[],
+  entry: BenchEntry,
+): void {
+  const forced = entry.regression === true || entry.flaky === true;
+  if (!PROFILE_ALWAYS && !forced) return;
+  const profiler = createProfiler(true);
+  const t0 = performance.now();
+  runWide(mutations, mode, profiler);
+  const totalMs = performance.now() - t0;
+  const report = profiler.finalize(scenario, mode, totalMs);
+  PROFILE_REPORTS.push(report);
+  // eslint-disable-next-line no-console
+  console.info(
+    `[bench:profile] ${scenario} (${mode}) — ` +
+      report.bottlenecks
+        .map((b) => `${b.name}: ${b.totalMs.toFixed(3)}ms×${b.calls} (${b.sharePct.toFixed(1)}%)`)
+        .join(" · ") +
+      (forced && !PROFILE_ALWAYS ? " [auto: threshold breached]" : ""),
+  );
+}
 
 // ----- Baseline (perbandingan persentase vs run tersimpan) -----
 const BASELINE_PATH = join(process.cwd(), "benchmarks", "conflict-wide-fields.baseline.json");
@@ -389,6 +437,10 @@ afterAll(() => {
         varianceRatio: VARIANCE_RATIO,
         runs: RUNS,
       },
+      profiling: {
+        enabled: PROFILE_ALWAYS,
+        reports: PROFILE_REPORTS,
+      },
       baseline: {
         path: "benchmarks/conflict-wide-fields.baseline.json",
         loaded: BASELINE !== null,
@@ -462,6 +514,32 @@ afterAll(() => {
       "utf8",
     );
 
+    // Profile artefak — hanya ditulis bila ada report (BENCH_PROFILE=1 atau
+    // ambang terlampaui). File JSON verbose (durasi per-call untuk analisis
+    // lanjut); MD ringkas untuk step summary.
+    if (PROFILE_REPORTS.length > 0) {
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-profile.json"),
+        JSON.stringify(
+          {
+            generatedAt: new Date().toISOString(),
+            node: process.version,
+            platform: `${process.platform}-${process.arch}`,
+            triggeredBy: PROFILE_ALWAYS ? "env:BENCH_PROFILE" : "threshold-breach",
+            reports: PROFILE_REPORTS,
+          },
+          null,
+          2,
+        ),
+        "utf8",
+      );
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-profile.md"),
+        formatProfileMarkdown(PROFILE_REPORTS),
+        "utf8",
+      );
+    }
+
     // Tulis kembali baseline bila diminta secara eksplisit.
     if (UPDATE_BASELINE && BASELINE) {
       saveBaseline(BASELINE_PATH, BASELINE);
@@ -502,8 +580,12 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     attachStats(entry, stats, samples);
     ARTIFACT_ENTRIES.push(entry);
     expect(varianceOk).toBe(true);
-    recordAndAssertBaseline("batched-20-rounds", "batched", best.ms, entry);
-    recordAndAssertFlakiness("batched-20-rounds", "batched", stats, entry);
+    try {
+      recordAndAssertBaseline("batched-20-rounds", "batched", best.ms, entry);
+      recordAndAssertFlakiness("batched-20-rounds", "batched", stats, entry);
+    } finally {
+      maybeProfile("batched-20-rounds", "batched", mutations, entry);
+    }
 
     // eslint-disable-next-line no-console
     console.info(
@@ -538,8 +620,12 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     attachStats(entry, stats, samples);
     ARTIFACT_ENTRIES.push(entry);
     expect(varianceOk).toBe(true);
-    recordAndAssertBaseline("sequential-20-rounds", "sequential", best.ms, entry);
-    recordAndAssertFlakiness("sequential-20-rounds", "sequential", stats, entry);
+    try {
+      recordAndAssertBaseline("sequential-20-rounds", "sequential", best.ms, entry);
+      recordAndAssertFlakiness("sequential-20-rounds", "sequential", stats, entry);
+    } finally {
+      maybeProfile("sequential-20-rounds", "sequential", mutations, entry);
+    }
 
     // eslint-disable-next-line no-console
     console.info(
@@ -592,10 +678,15 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     };
     attachStats(seqEntry, seqRun.stats, seqRun.samples);
     ARTIFACT_ENTRIES.push(batEntry, seqEntry);
-    recordAndAssertBaseline("ratio-batched", "batched", bat.ms, batEntry);
-    recordAndAssertBaseline("ratio-sequential", "sequential", seq.ms, seqEntry);
-    recordAndAssertFlakiness("ratio-batched", "batched", batRun.stats, batEntry);
-    recordAndAssertFlakiness("ratio-sequential", "sequential", seqRun.stats, seqEntry);
+    try {
+      recordAndAssertBaseline("ratio-batched", "batched", bat.ms, batEntry);
+      recordAndAssertBaseline("ratio-sequential", "sequential", seq.ms, seqEntry);
+      recordAndAssertFlakiness("ratio-batched", "batched", batRun.stats, batEntry);
+      recordAndAssertFlakiness("ratio-sequential", "sequential", seqRun.stats, seqEntry);
+    } finally {
+      maybeProfile("ratio-batched", "batched", mutations, batEntry);
+      maybeProfile("ratio-sequential", "sequential", mutations, seqEntry);
+    }
   });
 
   it("skala ronde: 4× ronde tidak boleh > 8× waktu batched (sub-kuadratik)", () => {
@@ -638,9 +729,14 @@ describe("konflik lebar — micro-benchmark durasi recompute (regresi ambang wak
     };
     attachStats(bigEntry, bigRun.stats, bigRun.samples);
     ARTIFACT_ENTRIES.push(smallEntry, bigEntry);
-    recordAndAssertBaseline("scale-rounds-5", "batched", small.ms, smallEntry);
-    recordAndAssertBaseline("scale-rounds-20", "batched", big.ms, bigEntry);
-    recordAndAssertFlakiness("scale-rounds-5", "batched", smallRun.stats, smallEntry);
-    recordAndAssertFlakiness("scale-rounds-20", "batched", bigRun.stats, bigEntry);
+    try {
+      recordAndAssertBaseline("scale-rounds-5", "batched", small.ms, smallEntry);
+      recordAndAssertBaseline("scale-rounds-20", "batched", big.ms, bigEntry);
+      recordAndAssertFlakiness("scale-rounds-5", "batched", smallRun.stats, smallEntry);
+      recordAndAssertFlakiness("scale-rounds-20", "batched", bigRun.stats, bigEntry);
+    } finally {
+      maybeProfile("scale-rounds-5", "batched", buildWideConflict(5), smallEntry);
+      maybeProfile("scale-rounds-20", "batched", buildWideConflict(20), bigEntry);
+    }
   });
 });
