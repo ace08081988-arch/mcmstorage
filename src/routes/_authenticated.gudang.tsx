@@ -1642,40 +1642,25 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // Dipakai di setiap titik akses agar tidak ada properti yang dibaca
   // dari nilai null saat itemId kosong / item terhapus.
   const isWItem = (v: WItem | null): v is WItem => v !== null;
-  // GUARD PARAMETER EFEKTIF — turunan (derived/warnings) dan effect
-  // downstream tidak boleh menghitung ulang saat `selectedItem` hanya
-  // berubah identitasnya karena refetch `items`. Kita ekstrak hanya
-  // field yang benar-benar dipakai computeBeliDerived/computeBeliWarnings
-  // ke object baru yang identitasnya STABIL selama nilai primitifnya
-  // tidak berubah. Semua konsumen selectedItem di bawah wajib melewati
-  // effSelected agar guard ini efektif.
-  const effSelected = useMemo(
-    () =>
-      isWItem(selectedItem)
-        ? {
-            package_type: selectedItem.package_type,
-            package_size: selectedItem.package_size,
-            base_unit: selectedItem.base_unit,
-            stock_base: selectedItem.stock_base,
-            avg_cost_per_base: selectedItem.avg_cost_per_base,
-          }
-        : null,
-    [
-      selectedItem?.package_type,
-      selectedItem?.package_size,
-      selectedItem?.base_unit,
-      selectedItem?.stock_base,
-      selectedItem?.avg_cost_per_base,
-    ],
-  );
-  // `derived` — memoized: dep array MENCAKUP semua input yang dipakai
-  // computeBeliDerived. Bila salah satu berubah, ringkasan real-time dan
-  // warnings ikut memperbarui pada render yang sama.
+  // GUARD DEP ARRAY MINIMAL — turunan (derived/warnings) dan effect
+  // downstream hanya bergantung pada TIGA primitif yang jadi kunci
+  // identitas item: `mode`, `itemId`, `packageType`. Field selectedItem
+  // yang dibutuhkan compute (package_type, package_size, base_unit,
+  // stock_base, avg_cost_per_base) dibaca via closure di dalam body memo,
+  // sehingga refetch `items` yang mengganti identitas objek TIDAK memicu
+  // useMemo untuk re-eksekusi. Selain itu, computeBeliDerived/Warnings
+  // sudah content-memoize hasilnya jadi walau factory sesekali jalan
+  // ulang, referensi output tetap stabil.
+  //
+  // Catatan: `itemId` adalah proxy dep untuk konten item — di aplikasi ini
+  // fields packaging pada satu itemId bersifat immutable dari perspektif
+  // form (perubahan schema akan menghasilkan itemId berbeda / mode 'new').
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const derived = useMemo(
     () =>
       computeBeliDerived({
         mode,
-        selectedItem: effSelected as WItem | null,
+        selectedItem: isWItem(selectedItem) ? selectedItem : null,
         newPackageType: packageType,
         newPackageSize: packageSize,
         packageQty,
@@ -1686,7 +1671,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
       }),
     [
       mode,
-      effSelected,
+      itemId,
       packageType,
       packageSize,
       packageQty,
@@ -1698,32 +1683,36 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   );
   const { effPackageType, effBaseUnit, effectivePkgSize, kartonActive, pkgQ, price, baseAdded, totalCost } = derived;
   const baseUnit = effBaseUnit;
-  // `warnings` — memoized: bergantung pada `derived` (identitas stabil dari
-  // useMemo di atas) plus mode/selectedItem/priceMode/inputKarton.
-  // error-level sudah ditangani di submit(), jadi filter di sini.
+  // `warnings` — memoized: dep array minimal (mode, itemId, packageType,
+  // derived, priceMode, inputKarton). Refetch identitas selectedItem tidak
+  // menembak memo karena selectedItem TIDAK ada di deps.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   const warnings = useMemo(
     () =>
       computeBeliWarnings({
         mode,
-        selectedItem: effSelected as WItem | null,
+        selectedItem: isWItem(selectedItem) ? selectedItem : null,
         derived,
         priceMode,
         inputKarton,
       }).filter((w) => w.level !== "error"),
-    [mode, effSelected, derived, priceMode, inputKarton],
+    [mode, itemId, packageType, derived, priceMode, inputKarton],
   );
 
   // Bila item terpilih bukan botol, mode karton wajib mati agar tidak
   // ×100 dari qty. Bila pindah ke item pcs, harga per-kemasan tidak
   // punya arti — paksa priceMode ke "base".
+  //
+  // Dep array minimal: [mode, itemId, inputKarton, priceMode]. `itemId`
+  // adalah proxy identitas item — refetch dengan itemId sama TIDAK memicu
+  // effect. `selectedItem` dibaca via closure untuk mengambil package_type
+  // pada saat effect dijalankan.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
-    if (!effSelected) return;
-    if (effSelected.package_type !== "botol" && inputKarton) setInputKarton(false);
-    if (effSelected.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
-    // Guard: bergantung pada `effSelected` (identitas stabil bila field
-    // efektif tidak berubah), bukan `selectedItem` yang bisa dapat
-    // referensi baru setiap kali `items` di-refetch.
-  }, [effSelected, inputKarton, priceMode]);
+    if (!isWItem(selectedItem)) return;
+    if (selectedItem.package_type !== "botol" && inputKarton) setInputKarton(false);
+    if (selectedItem.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
+  }, [mode, itemId, inputKarton, priceMode]);
 
   // Kunci/reset state saat pengguna cepat mengganti item atau mode agar
   // sisa state (karton, priceMode, harga, qty, nilai "barang baru") dari
