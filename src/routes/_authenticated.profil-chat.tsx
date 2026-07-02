@@ -327,6 +327,123 @@ function ProfilChatPage() {
               Unduh versi terbaru atau pilih rilis sebelumnya bila diperlukan.
             </DialogDescription>
           </DialogHeader>
+          <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/20 px-2.5 py-2">
+            <div className="flex min-w-0 items-center gap-1.5 text-[11px] text-muted-foreground">
+              <ClipboardCheck className="h-3.5 w-3.5 shrink-0" />
+              <span className="truncate">
+                Cek apakah link yang Anda salin masih bisa dipakai.
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={validateClipboardLink}
+              disabled={validating}
+              className="inline-flex items-center gap-1.5 rounded-md border bg-background px-2.5 py-1 text-[11px] font-medium hover:bg-accent disabled:opacity-60"
+            >
+              {validating ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-3.5 w-3.5" />
+              )}
+              {validating ? "Memeriksa..." : "Validasi link tersalin"}
+            </button>
+          </div>
+          {validation && (
+            <div
+              className={`rounded-lg border px-3 py-2 text-xs ${
+                validation.active
+                  ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
+                  : validation.reason === "expired"
+                  ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+                  : "border-destructive/40 bg-destructive/10 text-destructive"
+              }`}
+              role="status"
+            >
+              <div className="flex items-start gap-2">
+                {validation.active ? (
+                  <ShieldCheck className="mt-0.5 h-4 w-4 shrink-0" />
+                ) : (
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <div className="font-semibold">
+                    {validation.active
+                      ? "Link masih aktif"
+                      : validation.reason === "expired"
+                      ? "Link kedaluwarsa"
+                      : validation.reason === "not_found"
+                      ? "Berkas sudah tidak tersedia"
+                      : validation.reason === "unpublished"
+                      ? "Versi sudah tidak dipublikasikan"
+                      : validation.reason === "wrong_variant"
+                      ? "Link bukan APK MCM Chat"
+                      : validation.reason === "invalid_url"
+                      ? "Format link tidak dikenali"
+                      : "Gagal memvalidasi"}
+                  </div>
+                  <div className="mt-0.5 truncate opacity-80">
+                    {validation.name
+                      ? `${
+                          validation.versionName
+                            ? `v${validation.versionName}`
+                            : validation.name
+                        }${
+                          validation.sizeMB ? ` · ${validation.sizeMB} MB` : ""
+                        }`
+                      : validation.checkedUrl}
+                  </div>
+                  {validation.freshUrl && !validation.active && (
+                    <div className="mt-2 flex flex-wrap gap-1.5">
+                      <a
+                        href={validation.freshUrl}
+                        onClick={() => {
+                          if (!validation.name) return;
+                          trackApkDownload("chat", "button");
+                          recordChatApkDownload({
+                            name: validation.name,
+                            versionName: validation.versionName,
+                            versionCode: validation.versionCode,
+                            url: validation.freshUrl!,
+                            sizeMB: validation.sizeMB,
+                          });
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent"
+                      >
+                        <Download className="h-3 w-3" />
+                        Unduh link baru
+                      </a>
+                      <button
+                        type="button"
+                        onClick={async () => {
+                          if (!validation.freshUrl) return;
+                          try {
+                            await navigator.clipboard.writeText(
+                              validation.freshUrl,
+                            );
+                            toast.success("Link baru disalin.");
+                          } catch {
+                            toast.error("Gagal menyalin.");
+                          }
+                        }}
+                        className="inline-flex items-center gap-1 rounded-md border bg-background px-2 py-1 text-[11px] font-medium text-foreground hover:bg-accent"
+                      >
+                        <Copy className="h-3 w-3" />
+                        Salin link baru
+                      </button>
+                    </div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setValidation(null)}
+                  aria-label="Tutup"
+                  className="text-current opacity-60 hover:opacity-100"
+                >
+                  ×
+                </button>
+              </div>
+            </div>
+          )}
           {history.length > 0 && (
             <section className="rounded-lg border bg-muted/30 p-2">
               <div className="mb-1.5 flex items-center justify-between px-1">
