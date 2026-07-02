@@ -36,7 +36,15 @@ vi.mock("@/lib/app-mode", () => ({
 // Fabrikasi `window.matchMedia` yang bisa diarahkan per-test untuk
 // mensimulasikan `prefers-reduced-motion: reduce`.
 let reduceMotion = false;
+// Instrumentasi listener untuk memverifikasi cleanup (add/remove
+// listener) — kalau komponen mendaftarkan `change` listener ke
+// media query, harus melepasnya saat unmount agar tidak memicu
+// `setState` setelah komponen hilang (misal setelah navigasi klien).
+let mmListenerAdds = 0;
+let mmListenerRemoves = 0;
 function installMatchMedia() {
+  mmListenerAdds = 0;
+  mmListenerRemoves = 0;
   Object.defineProperty(window, "matchMedia", {
     configurable: true,
     writable: true,
@@ -44,10 +52,18 @@ function installMatchMedia() {
       matches: reduceMotion && query.includes("prefers-reduced-motion"),
       media: query,
       onchange: null,
-      addEventListener: () => {},
-      removeEventListener: () => {},
-      addListener: () => {},
-      removeListener: () => {},
+      addEventListener: () => {
+        mmListenerAdds += 1;
+      },
+      removeEventListener: () => {
+        mmListenerRemoves += 1;
+      },
+      addListener: () => {
+        mmListenerAdds += 1;
+      },
+      removeListener: () => {
+        mmListenerRemoves += 1;
+      },
       dispatchEvent: () => false,
     }),
   });
@@ -328,5 +344,81 @@ describe("ChatModeSplash · toggle prefers-reduced-motion", () => {
     });
     expect(splashNode()).toBeNull();
     act(() => second.root.unmount());
+  });
+});
+
+describe("ChatModeSplash · cleanup saat unmount", () => {
+  // Kontrak: setelah komponen unmount (mis. karena navigasi klien
+  // pindah route dan __root remount subtree), TIDAK boleh ada
+  // `setState` yang terpicu dari timer/listener yang masih hidup —
+  // ini menyebabkan warning "state update on unmounted component"
+  // di React dan bisa menulis sessionStorage secara janggal.
+
+  it("unmount mid-splash membatalkan timer sehingga tidak ada setState pascanavigasi", async () => {
+    reduceMotion = false;
+    const Splash = await loadComponent();
+    const { root } = mount(Splash);
+    expect(splashNode()).not.toBeNull();
+
+    // Unmount SEBELUM hold selesai — mensimulasikan user pindah
+    // halaman di tengah splash.
+    act(() => {
+      vi.advanceTimersByTime(300);
+    });
+    act(() => root.unmount());
+
+    // Kalau timer tidak dibersihkan, `setFading(true)` @1000ms dan
+    // `setVisible(false)` @1500ms akan tetap jalan → biasanya juga
+    // menulis sessionStorage. Kita jalankan seluruh timeline dan
+    // pastikan tidak ada efek samping.
+    const errors: unknown[] = [];
+    const origError = console.error;
+    console.error = (...args: unknown[]) => {
+      errors.push(args);
+    };
+    try {
+      act(() => {
+        vi.advanceTimersByTime(5000);
+      });
+    } finally {
+      console.error = origError;
+    }
+
+    // Tidak ada warning React "update on unmounted component".
+    const joined = errors
+      .map((a) => (Array.isArray(a) ? a.join(" ") : String(a)))
+      .join("\n");
+    expect(joined).not.toMatch(/unmounted component/i);
+    expect(joined).not.toMatch(/act\(\)/i);
+
+    // Node tidak muncul kembali.
+    expect(splashNode()).toBeNull();
+
+    // sessionStorage TIDAK boleh ditulis karena t2 dibatalkan sebelum
+    // sempat menandai splash selesai — session berikutnya harus tetap
+    // bisa memutar splash penuh kalau tab tidak ditutup.
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBeNull();
+  });
+
+  it("jumlah addEventListener matchMedia diimbangi removeEventListener saat unmount", async () => {
+    reduceMotion = true;
+    const Splash = await loadComponent();
+    const { root } = mount(Splash);
+
+    // Snapshot counter setelah mount + effect berjalan.
+    const addsAfterMount = mmListenerAdds;
+    const removesBeforeUnmount = mmListenerRemoves;
+
+    act(() => root.unmount());
+
+    // Kontrak: setiap listener yang didaftarkan pada media query
+    // harus dibersihkan saat unmount. Implementasi sekarang tidak
+    // memasang listener sama sekali (0 === 0), test ini juga
+    // mengunci kontrak itu supaya penambahan listener di masa
+    // depan wajib disertai cleanup.
+    const netListeners =
+      addsAfterMount - removesBeforeUnmount - (mmListenerRemoves - removesBeforeUnmount);
+    expect(netListeners).toBe(0);
+    expect(mmListenerAdds).toBe(mmListenerRemoves);
   });
 });
