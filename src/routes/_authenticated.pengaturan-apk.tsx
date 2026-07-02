@@ -14,11 +14,13 @@ import {
   History,
   BarChart3,
 } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 import {
   listApkReleaseAdminPanel,
   upsertApkReleaseMeta,
   setApkMinSupported,
   getApkDownloadStats,
+  uploadApkRelease,
   type AdminApkEntry,
   type AdminApkListResult,
   type MinSupported,
@@ -141,6 +143,7 @@ function PengaturanApkPage() {
         </div>
       ) : (
         <>
+          <UploadApkCard />
           <MinSupportedCard
             variant="storage"
             title="MCM Storage"
