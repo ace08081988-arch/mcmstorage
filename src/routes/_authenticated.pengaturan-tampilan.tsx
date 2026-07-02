@@ -673,25 +673,49 @@ function PengaturanTampilanPage() {
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Download className="h-4 w-4" /> Ekspor & impor
+              <Download className="h-4 w-4" /> Ekspor & impor pengaturan
             </CardTitle>
             <CardDescription className="text-xs">
-              Simpan pengaturan tampilan ke file JSON untuk dipindahkan atau dibagikan antar perangkat.
+              Simpan semua pengaturan di halaman ini (tema, aksen, font, ukuran, skala,
+              kerapatan, radius, kontras, animasi, dan latar) menjadi satu file.
+              Berguna untuk memindahkan tampilan yang sudah Anda atur ke HP/laptop
+              lain, atau membagikannya ke rekan.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-wrap gap-2">
-            <Button variant="outline" size="sm" onClick={exportSettings}>
-              <Download className="mr-1.5 h-3.5 w-3.5" />
-              Ekspor ke file
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => importInputRef.current?.click()}
-            >
-              <Upload className="mr-1.5 h-3.5 w-3.5" />
-              Impor dari file
-            </Button>
+          <CardContent className="space-y-3">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <button
+                type="button"
+                onClick={exportSettings}
+                className="flex items-start gap-3 rounded-md border p-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+              >
+                <Download className="h-4 w-4 mt-0.5 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">Ekspor ke file</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Unduh file <code className="rounded bg-muted px-1">.json</code> berisi
+                    pengaturan tampilan Anda saat ini.
+                  </p>
+                </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => importInputRef.current?.click()}
+                className="flex items-start gap-3 rounded-md border p-3 text-left hover:bg-accent transition-transform active:scale-[0.98]"
+              >
+                <Upload className="h-4 w-4 mt-0.5 text-primary" />
+                <div>
+                  <p className="text-sm font-semibold">Impor dari file</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Pilih file hasil ekspor untuk langsung menerapkan pengaturannya.
+                  </p>
+                </div>
+              </button>
+            </div>
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              Yang diimpor hanya pengaturan tampilan — data akun, chat, dan gudang tidak
+              terpengaruh. Impor akan menimpa pengaturan tampilan Anda saat ini.
+            </p>
             <input
               ref={importInputRef}
               type="file"
