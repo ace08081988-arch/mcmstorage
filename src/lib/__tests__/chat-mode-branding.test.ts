@@ -222,7 +222,6 @@ describe("applyChatModeBranding — pindah balik ke mode full", () => {
 describe("applyChatModeBranding — SSR / no document", () => {
   it("aman dipanggil saat document tidak tersedia (no-throw)", async () => {
     const originalDocument = globalThis.document;
-    // @ts-expect-error simulate SSR
     delete (globalThis as { document?: unknown }).document;
     try {
       const { applyChatModeBranding } = await loadModule();
