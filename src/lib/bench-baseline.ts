@@ -72,7 +72,8 @@ export function checkRegression(
       reason: "no-baseline",
     };
   }
-  const pct = opts.pct ?? Number(process.env.BENCH_REGRESSION_PCT) || baseline.regressionPctDefault;
+  const pct =
+    opts.pct ?? (Number(process.env.BENCH_REGRESSION_PCT) || baseline.regressionPctDefault);
   const floor = baseline.floorMs[entry.mode] ?? 1;
   const allowedMs = entry.bestMs * (1 + pct / 100);
   const delta = currentMs - entry.bestMs;
