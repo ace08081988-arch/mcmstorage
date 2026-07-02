@@ -37,6 +37,51 @@ function DiagnostikPaket() {
   const [itemPackageSize, setItemPackageSize] = useState<string>("600");
   const [itemBaseUnit, setItemBaseUnit] = useState<BeliBaseUnit>("pcs");
 
+  // ------- IMPORT PAYLOAD (untuk E2E & debugging cepat) -------
+  const [payloadText, setPayloadText] = useState<string>("");
+  const [payloadError, setPayloadError] = useState<string>("");
+
+  const applyPayload = (raw: string) => {
+    try {
+      const p = JSON.parse(raw) as Partial<{
+        mode: Mode;
+        packageType: PackageType;
+        packageSize: string | number;
+        packageQty: string | number;
+        priceMode: "package" | "base";
+        pricePerPackage: string | number;
+        pricePerBase: string | number;
+        inputKarton: boolean;
+        selectedItem: {
+          package_type?: PackageType;
+          package_size?: string | number;
+          base_unit?: BeliBaseUnit;
+        } | null;
+      }>;
+      if (p.mode) setMode(p.mode);
+      if (p.packageType) setPackageType(p.packageType);
+      if (p.packageSize !== undefined) setPackageSize(String(p.packageSize));
+      if (p.packageQty !== undefined) setPackageQty(String(p.packageQty));
+      if (p.priceMode) setPriceMode(p.priceMode);
+      if (p.pricePerPackage !== undefined)
+        setPricePerPackage(String(p.pricePerPackage));
+      if (p.pricePerBase !== undefined)
+        setPricePerBase(String(p.pricePerBase));
+      if (typeof p.inputKarton === "boolean") setInputKarton(p.inputKarton);
+      if (p.selectedItem) {
+        if (p.selectedItem.package_type)
+          setItemPackageType(p.selectedItem.package_type);
+        if (p.selectedItem.package_size !== undefined)
+          setItemPackageSize(String(p.selectedItem.package_size));
+        if (p.selectedItem.base_unit)
+          setItemBaseUnit(p.selectedItem.base_unit);
+      }
+      setPayloadError("");
+    } catch (e) {
+      setPayloadError(e instanceof Error ? e.message : "Payload tidak valid");
+    }
+  };
+
   const selectedItem = mode === "existing"
     ? {
         package_type: itemPackageType,
