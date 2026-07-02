@@ -200,21 +200,22 @@ export function ReadyEcerSection() {
       // Map prep_submissions → task_item attributes, then bucket by product+size.
       const subRows = (subs ?? []) as Array<{ id: string; photo_path: string | null; photo_paths: string[] | null; location_url: string | null; submitted_at: string; task_item_id: string }>;
       const taskItemIds = Array.from(new Set(subRows.map((s) => s.task_item_id))).filter(Boolean);
-      type TaskItemMeta = { name: string; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null };
+      type TaskItemMeta = { name: string; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null; ecer_title_id: string | null };
       let metaByItemId = new Map<string, TaskItemMeta>();
       if (taskItemIds.length > 0) {
         const { data: tItems } = await sb
           .from("prep_task_items")
-          .select("id,name_snapshot,warehouse_item_id,qty_requested,unit_label")
+          .select("id,name_snapshot,warehouse_item_id,qty_requested,unit_label,ecer_title_id")
           .in("id", taskItemIds);
         metaByItemId = new Map(
-          ((tItems ?? []) as Array<{ id: string; name_snapshot: string | null; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null }>).map((i) => [
+          ((tItems ?? []) as Array<{ id: string; name_snapshot: string | null; warehouse_item_id: string | null; qty_requested: number | null; unit_label: string | null; ecer_title_id: string | null }>).map((i) => [
             i.id,
             {
               name: (i.name_snapshot ?? "").trim().toLowerCase(),
               warehouse_item_id: i.warehouse_item_id,
               qty_requested: i.qty_requested,
               unit_label: (i.unit_label ?? "").trim().toLowerCase(),
+              ecer_title_id: i.ecer_title_id,
             } as TaskItemMeta,
           ])
         );
@@ -252,7 +253,13 @@ export function ReadyEcerSection() {
         if (wid) subsPerWid.set(wid, (subsPerWid.get(wid) ?? 0) + 1);
         let titleId: string | undefined;
         let matchKind: "strict" | "fallback_grams" | "fallback_wid" | null = null;
-        if (wid) {
+        // Prefer explicit ecer_title_id captured when the task was created.
+        // This makes worker submissions land at the exact variant (1G/ST/SPR/GS)
+        // regardless of how many units were requested vs. the title's target_grams.
+        if (meta.ecer_title_id && titleIds.includes(meta.ecer_title_id)) {
+          titleId = meta.ecer_title_id;
+          matchKind = "strict";
+        } else if (wid) {
           const strictId = titleStrict.get(`${wid}|${g}|${u}`);
           if (strictId) { titleId = strictId; matchKind = "strict"; }
           else {
