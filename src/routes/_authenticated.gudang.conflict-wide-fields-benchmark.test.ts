@@ -245,9 +245,9 @@ type MultiRunResult = {
   warningsCalls: number;
 };
 function runN(fn: () => RunSample, n: number): MultiRunResult {
-  // Warmup — buang 2 run pertama agar JIT / lazy allocation tidak
+  // Warmup — buang 5 run pertama agar JIT / lazy allocation tidak
   // menskew CV/p95 (batched < 1ms sangat sensitif thd warmup).
-  for (let i = 0; i < 2; i++) fn();
+  for (let i = 0; i < 5; i++) fn();
   const results: RunSample[] = [];
   for (let i = 0; i < n; i++) results.push(fn());
   const samples = results.map((r) => r.ms);
