@@ -28,6 +28,7 @@ import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
 import { ReadyEcerSection } from "@/components/ReadyEcerSection";
 import { ReadyRequestSection } from "@/components/ReadyRequestSection";
 import { DownloadStorageApkShortcut } from "@/components/DownloadStorageApkShortcut";
+import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
 
 export const Route = createFileRoute("/_authenticated/")({
   beforeLoad: async () => {
@@ -797,6 +798,7 @@ function Index() {
                 </Link>
               ))}
               <DownloadStorageApkShortcut />
+              <DownloadChatApkShortcut />
             </div>
           </div>
 
