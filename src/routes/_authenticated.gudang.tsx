@@ -1895,8 +1895,8 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
             </label>
             {packageType !== "pcs" && (
               <label className="block">
-                <span className="text-[11px] text-muted-foreground">Isi / kemasan ({baseUnit})</span>
-                {baseUnit === "g" ? (
+                <span className="text-[11px] text-muted-foreground">Isi / kemasan ({displayBaseUnit})</span>
+                {displayBaseUnit === "g" ? (
                   <SmartWeightInput
                     value={packageSize}
                     onChange={setPackageSize}
@@ -1913,7 +1913,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
             )}
           </div>
           <div className="text-[11px] text-muted-foreground">
-            Stok disimpan dalam <b>{baseUnit}</b>. Saat dijual per {baseUnit}, akan dikurangi otomatis.
+            Stok disimpan dalam <b>{displayBaseUnit}</b>. Saat dijual per {displayBaseUnit}, akan dikurangi otomatis.
           </div>
           <PhotoPicker value={newImagePath} onChange={setNewImagePath} uid={uid} />
         </div>
