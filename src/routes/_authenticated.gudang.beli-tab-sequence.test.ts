@@ -60,6 +60,10 @@ const ITEMS: WItem[] = [
  * ke ringkasan real-time yang dilihat user setelah interaksi tersebut).
  */
 function createBeliTabHarness() {
+  // Simpan items di dalam harness supaya kita bisa mensimulasi refetch —
+  // mengganti identitas object item tanpa mengubah kontennya (analog ke
+  // hasil re-query supabase yang mengembalikan row baru dengan nilai sama).
+  let items: WItem[] = ITEMS.map((it) => ({ ...it }));
   const state = {
     mode: "existing" as "existing" | "new",
     itemId: "botol-500",
@@ -82,7 +86,7 @@ function createBeliTabHarness() {
 
   function selectedItem(): WItem | null {
     return state.mode === "existing"
-      ? ITEMS.find((i) => i.id === state.itemId) ?? null
+      ? items.find((i) => i.id === state.itemId) ?? null
       : null;
   }
 
@@ -123,6 +127,23 @@ function createBeliTabHarness() {
   return {
     state,
     selectedItem,
+    /** Snapshot resetKey saat ini — dipakai test guard resetKey. */
+    resetKey() {
+      return beliResetKey({
+        mode: state.mode,
+        itemId: state.itemId,
+        packageType: state.newPackageType,
+      });
+    },
+    /**
+     * Simulasi refetch daftar items dari server: setiap object diganti
+     * dengan clone (identitas baru) tapi konten sama. resetKey TIDAK
+     * berubah karena mode/itemId/packageType tetap.
+     */
+    refetchItems() {
+      items = items.map((it) => ({ ...it }));
+      commitRender();
+    },
     setItemId(id: string) {
       state.itemId = id;
       commitRender();
