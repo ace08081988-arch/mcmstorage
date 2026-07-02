@@ -243,7 +243,7 @@ describe("E2E (screen-level) — urutan botol→gram→pcs→botol di Catat Pemb
     const screen = s.renderSummary();
 
     // Header mengikuti item baru — tidak boleh menyisakan "Sirup Botol".
-    expect(screen).toContain("Gula Curah · gram 1.000 g");
+    expect(screen).toContain("Gula Curah · gram 1000 g");
     expect(screen).not.toContain("Sirup Botol");
     // Reset effect: qty=1, harga="", karton mati.
     expect(screen).toContain("Jumlah kemasan | 1 gram");
