@@ -581,6 +581,19 @@ export function AppSidebar() {
         </div>
         <CompactModeToggle />
         <ReduceMotionToggle />
+        {!chatOnly && (
+          <a
+            href="/download#chat"
+            className="mt-2 flex items-center gap-2 rounded-md border border-sky-400/40 bg-sky-500/10 px-2 py-1.5 text-[11px] font-medium text-sky-700 hover:bg-sky-500/15 dark:text-sky-300"
+            title="Unduh MCM Chat — APK khusus komunikasi, akun sama"
+          >
+            <span className="inline-flex h-5 w-5 items-center justify-center rounded-full bg-sky-600 text-white">💬</span>
+            <span className="flex-1 leading-tight">
+              Coba <b>MCM Chat</b>
+              <span className="block text-[10px] opacity-70">APK khusus chat · akun sama</span>
+            </span>
+          </a>
+        )}
       </SidebarFooter>
     </Sidebar>
   );
