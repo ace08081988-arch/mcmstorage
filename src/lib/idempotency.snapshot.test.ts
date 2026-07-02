@@ -1,5 +1,24 @@
-// @vitest-environment jsdom
 import { describe, it, expect, beforeEach } from "vitest";
+
+// Shim minimal `window.localStorage` (Map-backed) untuk lingkungan Node.
+// Idempotency store hanya butuh getItem/setItem/removeItem.
+if (typeof (globalThis as { window?: unknown }).window === "undefined") {
+  const store = new Map<string, string>();
+  const localStorage = {
+    getItem: (k: string) => (store.has(k) ? store.get(k)! : null),
+    setItem: (k: string, v: string) => { store.set(k, String(v)); },
+    removeItem: (k: string) => { store.delete(k); },
+    clear: () => { store.clear(); },
+    key: (i: number) => Array.from(store.keys())[i] ?? null,
+    get length() { return store.size; },
+  };
+  (globalThis as unknown as { window: unknown }).window = {
+    localStorage,
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => true,
+  };
+}
 import {
   buildSendKey,
   getOrCreateSendSnapshot,
