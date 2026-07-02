@@ -1,4 +1,4 @@
-import { test, expect, type Page } from "@playwright/test";
+import { test, expect, type ConsoleMessage, type Page } from "@playwright/test";
 
 /**
  * E2E: harness publik `/lovable/visual/appearance-import` memakai fungsi
@@ -29,6 +29,129 @@ async function runImport(page: Page, payload: unknown | string) {
   await page.getByTestId("ai-json").fill(json);
   await page.getByTestId("ai-run").click();
 }
+
+/**
+ * Buffer console + pageerror + failed request events per test. Diattach ke
+ * hasil test HANYA saat gagal (afterEach) supaya:
+ *   - run yang sukses tidak dipenuhi log/screenshot,
+ *   - kegagalan lokal langsung punya konteks lengkap tanpa harus rerun
+ *     dengan flag debug tambahan (bukti reproduksi otomatis).
+ *
+ * `screenshot: "only-on-failure"` + `trace: "retain-on-failure"` di
+ * playwright.config.ts menangani screenshot bawaan; helper ini menambahkan
+ * screenshot FRAME AKHIR eksplisit (nama file stabil) + JSON log konsol +
+ * daftar request gagal, jadi pesan error di terminal sudah cukup untuk
+ * mendiagnosis tanpa membuka HTML report.
+ */
+type ConsoleEntry = {
+  type: string;
+  text: string;
+  location?: { url: string; lineNumber: number; columnNumber: number } | null;
+  timeMs: number;
+};
+type FailedRequestEntry = {
+  url: string;
+  method: string;
+  failure: string | null;
+  timeMs: number;
+};
+
+const consoleBuffers = new WeakMap<Page, ConsoleEntry[]>();
+const pageErrorBuffers = new WeakMap<Page, string[]>();
+const requestFailBuffers = new WeakMap<Page, FailedRequestEntry[]>();
+
+test.beforeEach(async ({ page }) => {
+  const t0 = Date.now();
+  const consoleLogs: ConsoleEntry[] = [];
+  const pageErrors: string[] = [];
+  const requestFails: FailedRequestEntry[] = [];
+  consoleBuffers.set(page, consoleLogs);
+  pageErrorBuffers.set(page, pageErrors);
+  requestFailBuffers.set(page, requestFails);
+
+  page.on("console", (msg: ConsoleMessage) => {
+    const loc = msg.location();
+    consoleLogs.push({
+      type: msg.type(),
+      text: msg.text(),
+      location: loc && loc.url ? loc : null,
+      timeMs: Date.now() - t0,
+    });
+  });
+  page.on("pageerror", (err) => {
+    pageErrors.push(`${err.name}: ${err.message}\n${err.stack ?? ""}`);
+  });
+  page.on("requestfailed", (req) => {
+    requestFails.push({
+      url: req.url(),
+      method: req.method(),
+      failure: req.failure()?.errorText ?? null,
+      timeMs: Date.now() - t0,
+    });
+  });
+});
+
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.status === testInfo.expectedStatus) return;
+
+  // Screenshot eksplisit dengan nama stabil supaya path-nya predictable
+  // di terminal output — beda dari `screenshot: only-on-failure` yang
+  // memakai UUID.
+  try {
+    const buf = await page.screenshot({ fullPage: true });
+    await testInfo.attach("failure-screenshot.png", {
+      body: buf,
+      contentType: "image/png",
+    });
+  } catch {
+    // Halaman mungkin sudah di-close; abaikan.
+  }
+
+  const consoleLogs = consoleBuffers.get(page) ?? [];
+  const pageErrors = pageErrorBuffers.get(page) ?? [];
+  const requestFails = requestFailBuffers.get(page) ?? [];
+
+  await testInfo.attach("console-logs.json", {
+    body: JSON.stringify(
+      { consoleLogs, pageErrors, requestFails, url: page.url() },
+      null,
+      2,
+    ),
+    contentType: "application/json",
+  });
+
+  // Ringkasan human-readable — dicetak ke stderr supaya langsung terlihat
+  // di terminal, tidak hanya di HTML report.
+  const errorCount = consoleLogs.filter((c) => c.type === "error").length;
+  const summary = [
+    `\n──── [appearance-import-e2e] Debug dump untuk: ${testInfo.title} ────`,
+    `URL saat gagal   : ${page.url()}`,
+    `Console entries  : ${consoleLogs.length} (${errorCount} error)`,
+    `Page errors      : ${pageErrors.length}`,
+    `Request failed   : ${requestFails.length}`,
+  ];
+  if (errorCount > 0) {
+    summary.push("  · error terakhir:");
+    for (const c of consoleLogs.filter((c) => c.type === "error").slice(-3)) {
+      summary.push(`    [${c.timeMs}ms] ${c.text}`);
+    }
+  }
+  if (pageErrors.length > 0) {
+    summary.push("  · page error terakhir:");
+    summary.push(`    ${pageErrors[pageErrors.length - 1].split("\n")[0]}`);
+  }
+  if (requestFails.length > 0) {
+    summary.push("  · request gagal terakhir:");
+    const r = requestFails[requestFails.length - 1];
+    summary.push(`    ${r.method} ${r.url} → ${r.failure ?? "unknown"}`);
+  }
+  summary.push(
+    `Attachments      : failure-screenshot.png, console-logs.json`,
+    `──────────────────────────────────────────────────────────────\n`,
+  );
+  // eslint-disable-next-line no-console
+  console.error(summary.join("\n"));
+});
 
 test.describe("Appearance migrator · impor via UI harness", () => {
   test("skema v1 (field di root) → patch lengkap + pratinjau ter-update", async ({
