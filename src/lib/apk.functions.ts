@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { validateApkFileName } from "@/lib/apk-name-validate";
 
 export type LatestApk = {
   name: string;
@@ -872,4 +873,111 @@ export const validateChatApkLink = createServerFn({ method: "POST" })
     } catch {
       return { ...base, name, variant, reason: "server_error" };
     }
+  });
+// ============================================================================
+// Admin: unggah berkas APK baru ke bucket `apk-releases`
+// ============================================================================
+
+export type UploadApkResult = {
+  ok: true;
+  file_name: string;
+  variant: ApkVariant;
+  sizeMB: number | null;
+};
+
+const MAX_APK_BYTES = 200 * 1024 * 1024; // 200 MB — cukup longgar untuk APK biasa
+
+/**
+ * Server fn menerima FormData berisi:
+ *   - `file`   : Blob berkas .apk
+ *   - `variant`: "storage" | "chat" (opsional; kalau ada akan dipakai untuk validasi nama)
+ *   - `overwrite`: "1" untuk timpa berkas berama sama
+ *   - `enabled`: "1"/"0" — default "1" (publish otomatis)
+ */
+export const uploadApkRelease = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => {
+    if (!(data instanceof FormData)) {
+      throw new Error("Payload harus FormData");
+    }
+    const file = data.get("file");
+    if (!file || typeof file === "string" || !(file instanceof Blob)) {
+      throw new Error("Berkas .apk wajib disertakan");
+    }
+    const fileName =
+      (file as Blob & { name?: string }).name ?? String(data.get("file_name") ?? "");
+    const rawName = fileName;
+    if (!rawName) throw new Error("Nama berkas wajib diisi");
+    if (!/\.apk$/i.test(rawName)) throw new Error("Berkas harus .apk");
+    if (file.size <= 0) throw new Error("Berkas kosong");
+    if (file.size > MAX_APK_BYTES) {
+      throw new Error(
+        `Berkas terlalu besar (>${Math.round(MAX_APK_BYTES / 1024 / 1024)} MB)`,
+      );
+    }
+    const variantRaw = data.get("variant");
+    const variant =
+      variantRaw === "chat" || variantRaw === "storage"
+        ? (variantRaw as ApkVariant)
+        : null;
+    const overwrite = data.get("overwrite") === "1";
+    const enabledRaw = data.get("enabled");
+    const enabled = enabledRaw === null ? true : enabledRaw === "1";
+    return { file, file_name: rawName, variant, overwrite, enabled };
+  })
+  .handler(async ({ data, context }): Promise<UploadApkResult> => {
+    await requireAdmin(context);
+
+    // Validasi nama sesuai konvensi /download.
+    const check = validateApkFileName(data.file_name, data.variant ?? undefined);
+    if (check.severity === "error") {
+      const msg = check.issues.find((i) => i.severity === "error")?.message ??
+        "Nama berkas tidak valid";
+      throw new Error(msg);
+    }
+    const variant: ApkVariant = data.variant ?? check.variant;
+
+    const { supabaseAdmin } = await import(
+      "@/integrations/supabase/client.server"
+    );
+    const BUCKET = "apk-releases";
+
+    const bytes = new Uint8Array(await data.file.arrayBuffer());
+    const { error: upErr } = await supabaseAdmin.storage
+      .from(BUCKET)
+      .upload(data.file_name, bytes, {
+        contentType: "application/vnd.android.package-archive",
+        upsert: data.overwrite,
+      });
+    if (upErr) {
+      // Duplicate → beri pesan lebih ramah.
+      if (/exists|duplicate/i.test(upErr.message)) {
+        throw new Error(
+          "Berkas dengan nama sama sudah ada. Centang 'Timpa' untuk mengganti.",
+        );
+      }
+      throw new Error(upErr.message);
+    }
+
+    // Catat meta rilis supaya langsung publish (atau nonaktif bila diminta).
+    const { error: metaErr } = await supabaseAdmin
+      .from("apk_release_meta")
+      .upsert(
+        {
+          file_name: data.file_name,
+          variant,
+          enabled: data.enabled,
+          publish_at: null,
+          notes: null,
+          updated_by: context.userId,
+        },
+        { onConflict: "file_name" },
+      );
+    if (metaErr) {
+      // Jangan gagalkan upload utuh; log dan biarkan admin atur di daftar.
+      console.warn("apk_release_meta upsert failed", metaErr.message);
+    }
+
+    const sizeMB = Math.round((data.file.size / (1024 * 1024)) * 10) / 10;
+    return { ok: true, file_name: data.file_name, variant, sizeMB };
   });

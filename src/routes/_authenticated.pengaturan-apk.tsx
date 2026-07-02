@@ -14,11 +14,13 @@ import {
   History,
   BarChart3,
 } from "lucide-react";
+import { UploadCloud } from "lucide-react";
 import {
   listApkReleaseAdminPanel,
   upsertApkReleaseMeta,
   setApkMinSupported,
   getApkDownloadStats,
+  uploadApkRelease,
   type AdminApkEntry,
   type AdminApkListResult,
   type MinSupported,
@@ -141,6 +143,7 @@ function PengaturanApkPage() {
         </div>
       ) : (
         <>
+          <UploadApkCard />
           <MinSupportedCard
             variant="storage"
             title="MCM Storage"
@@ -799,4 +802,156 @@ function sourceLabel(s: "button" | "copy_page" | "copy_file"): string {
   if (s === "button") return "Tombol unduh";
   if (s === "copy_page") return "Salin link halaman";
   return "Salin link file";
+}
+
+// ============================================================================
+// Panel unggah APK baru
+// ============================================================================
+function UploadApkCard() {
+  const uploadFn = useServerFn(uploadApkRelease);
+  const qc = useQueryClient();
+  const [file, setFile] = useState<File | null>(null);
+  const [variant, setVariant] = useState<ApkVariant>("chat");
+  const [overwrite, setOverwrite] = useState(false);
+  const [enabled, setEnabled] = useState(true);
+  const [busy, setBusy] = useState(false);
+
+  const validation: ApkNameValidation | null = useMemo(
+    () => (file ? validateApkFileName(file.name, variant) : null),
+    [file, variant],
+  );
+
+  const sizeMB = file ? Math.round((file.size / (1024 * 1024)) * 10) / 10 : null;
+  const canSubmit = !!file && (!validation || validation.severity !== "error") && !busy;
+
+  async function onSubmit() {
+    if (!file) return;
+    setBusy(true);
+    const toastId = toast.loading(`Mengunggah ${file.name}…`);
+    try {
+      const fd = new FormData();
+      fd.append("file", file, file.name);
+      fd.append("variant", variant);
+      fd.append("overwrite", overwrite ? "1" : "0");
+      fd.append("enabled", enabled ? "1" : "0");
+      const res = await uploadFn({ data: fd });
+      toast.success(
+        `APK ${res.variant === "chat" ? "Chat" : "Storage"} terunggah • ${res.sizeMB ?? "?"} MB`,
+        { id: toastId },
+      );
+      setFile(null);
+      setOverwrite(false);
+      qc.invalidateQueries({ queryKey: ["apk-release-admin"] });
+      qc.invalidateQueries({ queryKey: ["latest-apk-variants"] });
+      qc.invalidateQueries({ queryKey: ["apk-variant-detail"] });
+    } catch (err) {
+      toast.error(
+        `Gagal unggah: ${err instanceof Error ? err.message : "unknown"}`,
+        { id: toastId },
+      );
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="rounded-xl border bg-card p-3 shadow-sm">
+      <header className="flex items-center gap-2">
+        <UploadCloud className="h-4 w-4 text-primary" />
+        <h2 className="text-sm font-semibold">Unggah berkas APK baru</h2>
+      </header>
+      <p className="mt-1 text-[11px] leading-snug text-muted-foreground">
+        Pilih berkas <span className="font-mono">.apk</span> dan varian target. Berkas akan diunggah ke bucket{" "}
+        <span className="font-mono">apk-releases</span>. Untuk varian <b>Chat</b>, nama file wajib memuat token{" "}
+        <span className="font-mono">chat</span> (mis. <span className="font-mono">mcm-chat-v1.0.0-1.apk</span>).
+      </p>
+
+      <div className="mt-3 space-y-3">
+        <div>
+          <label className="text-[11px] font-medium">Varian</label>
+          <div className="mt-1 grid grid-cols-2 gap-2">
+            {(["storage", "chat"] as ApkVariant[]).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setVariant(v)}
+                className={`rounded-lg border px-3 py-2 text-xs font-medium transition ${
+                  variant === v
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-input bg-background text-muted-foreground hover:bg-accent"
+                }`}
+              >
+                {v === "chat" ? "MCM Chat" : "MCM Storage"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div>
+          <label className="text-[11px] font-medium" htmlFor="apk-file-input">
+            Berkas .apk
+          </label>
+          <Input
+            id="apk-file-input"
+            type="file"
+            accept=".apk,application/vnd.android.package-archive"
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+            className="mt-1 h-9 cursor-pointer text-xs file:mr-3 file:rounded-md file:border-0 file:bg-primary file:px-3 file:py-1.5 file:text-xs file:font-medium file:text-primary-foreground"
+          />
+          {file && (
+            <p className="mt-1 truncate font-mono text-[11px] text-muted-foreground">
+              {file.name} • {sizeMB ?? "?"} MB
+            </p>
+          )}
+        </div>
+
+        {validation && validation.issues.length > 0 && (
+          <div
+            className={`rounded-lg border p-2 text-[11px] leading-snug ${
+              validation.severity === "error"
+                ? "border-red-300 bg-red-50 text-red-700 dark:border-red-900/60 dark:bg-red-950/40 dark:text-red-200"
+                : "border-amber-300 bg-amber-50 text-amber-900 dark:border-amber-900/60 dark:bg-amber-950/40 dark:text-amber-200"
+            }`}
+          >
+            <div className="flex items-start gap-1.5">
+              <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <div className="min-w-0 space-y-1">
+                {validation.issues.map((i, idx) => (
+                  <p key={idx}>{i.message}</p>
+                ))}
+                <p className="text-[10px] opacity-80">{validation.suggestion}</p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
+          <label className="flex cursor-pointer items-center gap-2 text-xs">
+            <Switch checked={overwrite} onCheckedChange={setOverwrite} />
+            <span>Timpa jika nama sama</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-xs">
+            <Switch checked={enabled} onCheckedChange={setEnabled} />
+            <span>Langsung publish</span>
+          </label>
+        </div>
+
+        <div className="flex justify-end">
+          <Button type="button" size="sm" disabled={!canSubmit} onClick={onSubmit}>
+            {busy ? (
+              <>
+                <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" />
+                Mengunggah…
+              </>
+            ) : (
+              <>
+                <UploadCloud className="mr-1.5 h-3.5 w-3.5" />
+                Unggah APK
+              </>
+            )}
+          </Button>
+        </div>
+      </div>
+    </section>
+  );
 }
