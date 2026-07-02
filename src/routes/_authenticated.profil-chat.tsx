@@ -11,8 +11,11 @@ import { useMyProfile, useAvatarSignedUrl, useMyProfileRealtime } from "@/lib/pr
 import { useState } from "react";
 import { ProfileQrDialog } from "@/components/chat/ProfileQrDialog";
 import { formatInviteCode } from "@/lib/invite";
-import { getLatestApkVariants } from "@/lib/apk.functions";
+import { getLatestApkVariants, getApkVariantDetail, type ApkRelease } from "@/lib/apk.functions";
 import { trackApkDownload } from "@/lib/apk-download-track";
+import {
+  Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
+} from "@/components/ui/dialog";
 
 export const Route = createFileRoute("/_authenticated/profil-chat")({
   component: ProfilChatPage,
@@ -58,6 +61,7 @@ function ProfilChatPage() {
     || "Saya";
   const initial = initialOf(name);
   const [qrOpen, setQrOpen] = useState(false);
+  const [apkPickerOpen, setApkPickerOpen] = useState(false);
 
   // Pintasan unduh APK Chat saja — ambil URL varian chat terbaru.
   const fetchApk = useServerFn(getLatestApkVariants);
@@ -67,6 +71,17 @@ function ProfilChatPage() {
     staleTime: 60_000,
   });
   const chatApk = apkQuery.data?.chat ?? null;
+
+  // Daftar semua versi (untuk dialog pemilih versi).
+  const fetchDetail = useServerFn(getApkVariantDetail);
+  const detailQuery = useQuery({
+    queryKey: ["apk-variant-detail", "chat"],
+    queryFn: () => fetchDetail({ data: { variant: "chat" } }),
+    staleTime: 60_000,
+    enabled: apkPickerOpen,
+  });
+  const chatReleases = detailQuery.data?.releases ?? [];
+  const latestKey = chatReleases[0]?.name ?? null;
 
   return (
     <main className="mx-auto min-h-screen max-w-2xl bg-background">
@@ -144,21 +159,21 @@ function ProfilChatPage() {
       {/* Pintasan: unduh APK Chat saja tanpa membuka /download */}
       <div className="px-4 pt-3">
         {chatApk?.url ? (
-          <a
-            href={chatApk.url}
-            onClick={() => trackApkDownload("chat", "button")}
-            className="flex items-center gap-4 rounded-xl border bg-primary/5 px-4 py-3 hover:bg-primary/10"
+          <button
+            type="button"
+            onClick={() => setApkPickerOpen(true)}
+            className="flex w-full items-center gap-4 rounded-xl border bg-primary/5 px-4 py-3 text-left hover:bg-primary/10"
           >
             <Download className="h-6 w-6 shrink-0 text-primary" />
             <div className="min-w-0 flex-1">
               <div className="truncate text-base font-medium">Unduh APK MCM Chat</div>
               <div className="truncate text-sm text-muted-foreground">
-                {chatApk.versionName ? `v${chatApk.versionName}` : "Versi terbaru"}
-                {chatApk.sizeMB ? ` · ${chatApk.sizeMB} MB` : ""} · Langsung unduh
+                Terbaru: {chatApk.versionName ? `v${chatApk.versionName}` : "?"}
+                {chatApk.sizeMB ? ` · ${chatApk.sizeMB} MB` : ""} · Pilih versi
               </div>
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
-          </a>
+          </button>
         ) : (
           <div className="flex items-center gap-4 rounded-xl border bg-muted/40 px-4 py-3 text-muted-foreground">
             {apkQuery.isLoading ? (
@@ -227,6 +242,83 @@ function ProfilChatPage() {
         userId={profile?.id ?? null}
         avatarUrl={avatarUrl ?? null}
       />
+
+      <Dialog open={apkPickerOpen} onOpenChange={setApkPickerOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Pilih versi MCM Chat</DialogTitle>
+            <DialogDescription>
+              Unduh versi terbaru atau pilih rilis sebelumnya bila diperlukan.
+            </DialogDescription>
+          </DialogHeader>
+          {detailQuery.isLoading ? (
+            <div className="flex items-center justify-center gap-2 py-6 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Memuat daftar versi...
+            </div>
+          ) : chatReleases.length === 0 ? (
+            <p className="py-6 text-center text-sm text-muted-foreground">
+              Belum ada rilis APK yang tersedia.
+            </p>
+          ) : (
+            <ul className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+              {chatReleases.map((r: ApkRelease) => {
+                const isLatest = r.name === latestKey;
+                return (
+                  <li key={r.name}>
+                    <a
+                      href={r.url}
+                      onClick={() =>
+                        trackApkDownload("chat", isLatest ? "button" : "copy_page")
+                      }
+                      className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition ${
+                        isLatest
+                          ? "border-primary/60 bg-primary/5 hover:bg-primary/10"
+                          : "hover:bg-accent"
+                      }`}
+                    >
+                      <Download
+                        className={`h-5 w-5 shrink-0 ${
+                          isLatest ? "text-primary" : "text-muted-foreground"
+                        }`}
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <span className="truncate text-sm font-medium">
+                            {r.versionName ? `v${r.versionName}` : r.name}
+                            {r.versionCode !== null && (
+                              <span className="ml-1 text-[11px] text-muted-foreground">
+                                (build {r.versionCode})
+                              </span>
+                            )}
+                          </span>
+                          {isLatest && (
+                            <span className="rounded-full bg-primary px-2 py-0.5 text-[10px] font-semibold text-primary-foreground">
+                              Terbaru
+                            </span>
+                          )}
+                          {r.belowMinimum && !isLatest && (
+                            <span className="rounded-full bg-amber-500/15 px-2 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                              Lawas
+                            </span>
+                          )}
+                        </div>
+                        <div className="truncate text-[11px] text-muted-foreground">
+                          {r.sizeMB ? `${r.sizeMB} MB` : "Ukuran ?"}
+                          {r.updatedAt
+                            ? ` · ${new Date(r.updatedAt).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "numeric" })}`
+                            : ""}
+                        </div>
+                      </div>
+                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
+                    </a>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
