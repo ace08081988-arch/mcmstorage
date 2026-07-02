@@ -73,8 +73,60 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Compute cache keys
+        id: cachekeys
+        # Key di-scope per runtime (bun vs node) DAN per versi Node — cache
+        # `node_modules` yang di-build dengan Node 18 tidak boleh dipakai
+        # ulang di Node 24 (bindings native / prebuilt bisa mismatch).
+        # Bun cache dipisahkan sendiri agar tidak tercampur dengan artifact
+        # npm install ala Node.
+        run: |
+          echo "os=${{ runner.os }}" >> "$GITHUB_OUTPUT"
+          echo "scope=${{ matrix.runtime }}-node${{ matrix.node }}" >> "$GITHUB_OUTPUT"
+          echo "lockhash=${{ hashFiles('bun.lock', 'bun.lockb', 'package.json') }}" >> "$GITHUB_OUTPUT"
+
+      - name: Cache Bun global store
+        uses: actions/cache@v4
+        with:
+          path: ~/.bun/install/cache
+          key: bun-store-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-${{ steps.cachekeys.outputs.lockhash }}
+          restore-keys: |
+            bun-store-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-
+            bun-store-${{ steps.cachekeys.outputs.os }}-${{ matrix.runtime }}-
+
+      - name: Cache node_modules (per runtime × node)
+        id: nm-cache
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          # Jangan share antar runtime/versi Node: prebuilt binaries (esbuild,
+          # lightningcss, rollup, sharp, dsl) bisa berbeda ABI. Kunci meliputi
+          # runtime, versi Node, dan hash lockfile+package.json.
+          key: node_modules-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-${{ steps.cachekeys.outputs.lockhash }}
+          # TIDAK ada `restore-keys` cross-scope — mismatch native binding
+          # antar versi Node adalah penyebab flakiness yang justru ingin
+          # dihindari. Jika miss → install ulang bersih (cache miss ≠ error).
+
+      - name: Cache Vitest transform (per runtime × node)
+        uses: actions/cache@v4
+        with:
+          path: |
+            node_modules/.vite
+            node_modules/.cache/vitest
+          key: vitest-cache-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-${{ steps.cachekeys.outputs.lockhash }}
+          restore-keys: |
+            vitest-cache-${{ steps.cachekeys.outputs.os }}-${{ steps.cachekeys.outputs.scope }}-
+
       - name: Install dependencies
+        if: steps.nm-cache.outputs.cache-hit != 'true'
         run: bun install --frozen-lockfile
+
+      - name: Verify cached install (no-op fast path)
+        if: steps.nm-cache.outputs.cache-hit == 'true'
+        # Cache-hit: `node_modules` sudah lengkap. Jalankan `--dry-run` untuk
+        # memastikan lockfile & node_modules masih konsisten (mendeteksi
+        # cache stale) tanpa mengunduh ulang.
+        run: bun install --frozen-lockfile --dry-run || bun install --frozen-lockfile
 
       - name: Print runtime versions
         run: |
