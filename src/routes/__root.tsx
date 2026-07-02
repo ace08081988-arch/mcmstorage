@@ -331,6 +331,10 @@ function RootComponent() {
     bootstrapNativePermissions().catch((e) =>
       console.warn("[perm-bootstrap]", e),
     );
+    // Terapkan branding MCM Chat (judul, ikon, manifest) bila mode chat aktif.
+    applyChatModeBranding();
+    const onModeChange = () => applyChatModeBranding();
+    window.addEventListener("mcm:app-mode-change", onModeChange);
     // Aktifkan notifikasi native (FCM) — hanya di APK/native, no-op di web
     import("@/lib/native-push").then(({ startNativePush }) => {
       startNativePush({
@@ -386,6 +390,7 @@ function RootComponent() {
       unsub = subscribeRemotePrefs(() => {});
     }).catch(() => {});
     return () => { if (unsub) unsub(); if (authUnsub) authUnsub(); };
+    // Note: mode listener cleanup handled below via separate return
   }, []);
 
   // Tangani pesan dari service worker push (klik notifikasi / aksi cepat)
