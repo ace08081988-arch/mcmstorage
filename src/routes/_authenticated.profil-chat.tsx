@@ -5,12 +5,13 @@ import {
   ArrowLeft, Search, QrCode, Smile, KeyRound, Lock, Users, MessageSquare,
   Bell, RefreshCcw, Link as LinkIcon, Accessibility, Languages, ChevronRight,
   UserPlus, Download, Loader2,
-  Copy, Check, Palette,
+  Copy, Check, Palette, QrCode as QrCodeIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyProfile, useAvatarSignedUrl, useMyProfileRealtime } from "@/lib/profile";
 import { useState } from "react";
 import { ProfileQrDialog } from "@/components/chat/ProfileQrDialog";
+import { ApkQrDialog, type ApkQrTarget } from "@/components/ApkQrDialog";
 import { formatInviteCode } from "@/lib/invite";
 import { getLatestApkVariants, getApkVariantDetail, type ApkRelease } from "@/lib/apk.functions";
 import { trackApkDownload } from "@/lib/apk-download-track";
@@ -72,6 +73,7 @@ function ProfilChatPage() {
   const [qrOpen, setQrOpen] = useState(false);
   const [apkPickerOpen, setApkPickerOpen] = useState(false);
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
+  const [qrTarget, setQrTarget] = useState<ApkQrTarget | null>(null);
 
   const copyLink = async (key: string, url: string) => {
     try {
@@ -418,6 +420,22 @@ function ProfilChatPage() {
                           <Copy className="h-4 w-4 text-muted-foreground" />
                         )}
                       </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setQrTarget({
+                            label: r.versionName ? `MCM Chat v${r.versionName}` : r.name,
+                            url: r.url,
+                            meta: r.sizeMB ? `${r.sizeMB} MB` : undefined,
+                          });
+                        }}
+                        aria-label="Tampilkan QR unduh"
+                        title="Pindai QR untuk unduh di perangkat lain"
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded-md border hover:bg-accent"
+                      >
+                        <QrCodeIcon className="h-4 w-4 text-muted-foreground" />
+                      </button>
                     </div>
                   </li>
                 );
@@ -426,6 +444,7 @@ function ProfilChatPage() {
           )}
         </DialogContent>
       </Dialog>
+      <ApkQrDialog target={qrTarget} onOpenChange={(o) => { if (!o) setQrTarget(null); }} />
     </main>
   );
 }
