@@ -119,6 +119,7 @@ function DetailPage() {
               <ApkDownloadQr
                 url={data.latest.url}
                 versionName={data.latest.versionName}
+                versionCode={data.latest.versionCode}
                 onExpired={() => refetch()}
               />
             )}
@@ -430,10 +431,12 @@ function CopyLinkButton({
 function ApkDownloadQr({
   url,
   versionName,
+  versionCode,
   onExpired,
 }: {
   url: string;
   versionName: string | null;
+  versionCode: number | null;
   onExpired?: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -539,15 +542,39 @@ function ApkDownloadQr({
     };
   }, [url]);
 
+  const qrFileName = (() => {
+    const parts = ["mcm-chat-apk-qr"];
+    if (versionName) parts.push(`v${versionName}`);
+    if (versionCode !== null) parts.push(`b${versionCode}`);
+    const d = new Date();
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    parts.push(`${y}${m}${day}`);
+    const raw = parts.join("-");
+    // Sanitasi karakter yang tidak aman untuk nama berkas lintas OS.
+    const safe = raw.replace(/[^\w.-]+/g, "-").replace(/-+/g, "-");
+    return `${safe}.png`;
+  })();
+
   const savePng = () => {
-    if (!dataUrl) return;
-    const a = document.createElement("a");
-    a.href = dataUrl;
-    a.download = `mcm-chat-apk-qr${versionName ? `-v${versionName}` : ""}.png`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    toast.success("QR code disimpan.");
+    if (!dataUrl) {
+      toast.error("QR belum siap. Coba lagi sebentar.");
+      return;
+    }
+    try {
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = qrFileName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast.success("QR berhasil disimpan.", {
+        description: qrFileName,
+      });
+    } catch {
+      toast.error("Gagal menyimpan QR. Coba lagi.");
+    }
   };
 
   return (
