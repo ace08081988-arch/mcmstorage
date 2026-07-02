@@ -24,6 +24,7 @@ import {
   type ImportedPatch,
 } from "@/lib/appearance-migrator";
 import { CURRENT_DEFAULT } from "@/lib/appearance-migrator.fixtures";
+import { logAppearanceMigration } from "@/lib/appearance-migrator.telemetry";
 
 export const Route = createFileRoute("/lovable/visual/appearance-import")({
   head: () => ({
@@ -47,10 +48,14 @@ function AppearanceImportHarness() {
       raw = JSON.parse(json);
     } catch (e) {
       setParseError(e instanceof Error ? e.message : "parse error");
-      setResult({ ok: false, reason: "invalid" });
+      const invalid = { ok: false, reason: "invalid" as const };
+      logAppearanceMigration("paste", invalid);
+      setResult(invalid);
       return;
     }
-    setResult(migrateImportedAppearance(raw, CURRENT_DEFAULT));
+    const res = migrateImportedAppearance(raw, CURRENT_DEFAULT);
+    logAppearanceMigration("paste", res);
+    setResult(res);
   };
 
   const patch: ImportedPatch | null = result && result.ok ? result.patch : null;
