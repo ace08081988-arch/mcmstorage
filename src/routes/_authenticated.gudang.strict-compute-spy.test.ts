@@ -219,3 +219,114 @@ describe("strict-compute-spy: helper lain tidak memicu pipelineCalls", () => {
     expect(spy.invalidCalls).toBe(0);
   });
 });
+
+// ============================================================
+// URUTAN & PAYLOAD — pipelineCalls harus tetap stabil meski
+// interleaving async berubah. Ekspektasi dinyatakan pada
+// `sortedPayloads()` (order-independent hash) supaya scheduler
+// mikrotask/promise berbeda tidak mengubah verdict.
+// ============================================================
+describe("strict-compute-spy: validasi urutan & payload di bawah async", () => {
+  const derivedHash = (i: BeliDerivedInput): string =>
+    [
+      i.mode,
+      i.selectedItem
+        ? `${i.selectedItem.package_type}|${i.selectedItem.package_size}|${i.selectedItem.base_unit}`
+        : "-",
+      i.newPackageType,
+      String(i.newPackageSize),
+      String(i.packageQty),
+      String(i.pricePerPackage),
+      i.priceMode,
+      String(i.pricePerBase),
+      i.inputKarton ? "1" : "0",
+    ].join("::");
+
+  it("panggilan async berurutan: payload set = ekspektasi (order-independent)", async () => {
+    const spy = createStrictDerivedSpy();
+    const qtys = ["1", "2", "3", "4", "5"];
+    // Interleave via microtask antrian yang berbeda-beda.
+    await Promise.all(
+      qtys.map(async (q, i) => {
+        // Jitter mikrotask: awaits berbeda untuk memaksa urutan berubah.
+        for (let k = 0; k < i; k++) await Promise.resolve();
+        spy.call(baseInp({ selectedItem: ITEM, packageQty: q }));
+      }),
+    );
+    const expected = qtys
+      .map((q) => derivedHash(baseInp({ selectedItem: ITEM, packageQty: q })))
+      .sort();
+    expect(spy.pipelineCalls).toBe(qtys.length);
+    expect(spy.sortedPayloads()).toEqual(expected);
+  });
+
+  it("payloads jujur: rekam snapshot per panggilan (bukan referensi mutable)", () => {
+    const spy = createStrictDerivedSpy();
+    const inp = baseInp({ selectedItem: ITEM, packageQty: "2" });
+    spy.call(inp);
+    // Mutasi setelah panggilan tidak boleh memengaruhi rekam.
+    inp.packageQty = "999";
+    expect(spy.payloads).toHaveLength(1);
+    expect(spy.payloads[0].packageQty).toBe("2");
+  });
+
+  it("2 skenario interleaving berbeda → sortedPayloads identik (stabilitas verdict)", async () => {
+    const inputs = [
+      baseInp({ selectedItem: ITEM, packageQty: "1" }),
+      baseInp({ selectedItem: ITEM, packageQty: "2" }),
+      baseInp({ selectedItem: ITEM, packageQty: "3", pricePerPackage: "12000" }),
+    ];
+
+    const runInOrder = async (order: number[]) => {
+      const s = createStrictDerivedSpy();
+      await Promise.all(
+        order.map(async (idx, k) => {
+          for (let j = 0; j < k; j++) await Promise.resolve();
+          s.call(inputs[idx]);
+        }),
+      );
+      return s.sortedPayloads();
+    };
+
+    const runA = await runInOrder([0, 1, 2]);
+    const runB = await runInOrder([2, 0, 1]);
+    const runC = await runInOrder([1, 2, 0]);
+
+    expect(runA).toEqual(runB);
+    expect(runB).toEqual(runC);
+    expect(runA).toHaveLength(3);
+  });
+
+  it("warnings: sortedPayloads stabil di bawah interleaving Promise.all", async () => {
+    const spyW = createStrictWarningsSpy();
+    const derived = computeBeliDerived(baseInp({ selectedItem: ITEM }));
+    const modes: Array<"package" | "base"> = ["package", "base", "package", "base"];
+    await Promise.all(
+      modes.map(async (m, i) => {
+        for (let k = 0; k < (i % 3); k++) await Promise.resolve();
+        spyW.call({
+          mode: "existing",
+          selectedItem: ITEM,
+          derived,
+          priceMode: m,
+          inputKarton: false,
+        });
+      }),
+    );
+    expect(spyW.pipelineCalls).toBe(modes.length);
+    // 2× "package" + 2× "base" — verdict multiset harus stabil.
+    const set = new Set(spyW.sortedPayloads());
+    expect(set.size).toBe(2);
+  });
+
+  it("reset() mengosongkan payloads sekaligus counter", () => {
+    const spy = createStrictDerivedSpy();
+    spy.call(baseInp({ selectedItem: ITEM, packageQty: "1" }));
+    spy.call(baseInp({ selectedItem: ITEM, packageQty: "2" }));
+    expect(spy.payloads).toHaveLength(2);
+    spy.reset();
+    expect(spy.payloads).toHaveLength(0);
+    expect(spy.sortedPayloads()).toEqual([]);
+    expect(spy.pipelineCalls).toBe(0);
+  });
+});
