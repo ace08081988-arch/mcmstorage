@@ -53,6 +53,10 @@ on:
         description: "Batas coefficient-of-variation (0-∞)"
         required: false
         default: "2.0"
+      profile:
+        description: "Aktifkan profiling per-fungsi (BENCH_PROFILE=1)"
+        required: false
+        default: "false"
 
 concurrency:
   group: gudang-recompute-${{ github.ref }}
@@ -70,6 +74,7 @@ jobs:
       SKIP_BENCH_BASELINE: ${{ github.event.inputs.skip_baseline == 'true' && '1' || '' }}
       BENCH_P95_PCT: ${{ github.event.inputs.p95_pct || '100' }}
       BENCH_MAX_CV: ${{ github.event.inputs.max_cv || '2.0' }}
+      BENCH_PROFILE: ${{ github.event.inputs.profile == 'true' && '1' || '' }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -112,6 +117,26 @@ jobs:
             test-artifacts/conflict-wide-fields-benchmark.json
             test-artifacts/conflict-wide-fields-benchmark.md
           if-no-files-found: warn
+          retention-days: 30
+
+      - name: Profile summary (bottleneck per-fungsi)
+        if: always()
+        run: |
+          set -e
+          if [ -f test-artifacts/conflict-wide-fields-profile.md ]; then
+            cat test-artifacts/conflict-wide-fields-profile.md >> "$GITHUB_STEP_SUMMARY"
+            echo "" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Upload profile artifact (only when profile emitted)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: gudang-profile-conflict-wide-fields-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            test-artifacts/conflict-wide-fields-profile.json
+            test-artifacts/conflict-wide-fields-profile.md
+          if-no-files-found: ignore
           retention-days: 30
 
       - name: Upload stress diagnostic artifacts (on failure)
