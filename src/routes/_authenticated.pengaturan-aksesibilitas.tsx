@@ -103,6 +103,7 @@ function PengaturanAksesibilitasPage() {
 
 
   const commitSave = () => {
+    if (!dirty) return;
     setAppPrefs({
       fontScale: draft.fontScale,
       highContrast: draft.highContrast,
@@ -114,6 +115,7 @@ function PengaturanAksesibilitasPage() {
     toast.success("Preferensi aksesibilitas disimpan");
   };
   const commitCancel = () => {
+    if (!dirty) return;
     setDraft(snapshot);
     toast.info("Perubahan dibatalkan");
   };
