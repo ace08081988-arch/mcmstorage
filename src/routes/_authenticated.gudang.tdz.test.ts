@@ -96,17 +96,16 @@ describe("gudang.tsx — dependency arrays selectedItem/derived/warnings", () =>
     expect(deps.sort()).toEqual(["items", "itemId", "mode"].sort());
   });
 
-  it("derived = useMemo mencakup SEMUA input computeBeliDerived", () => {
+  it("derived = useMemo dengan dep MINIMAL (mode, itemId, packageType, + input scalar) — TIDAK ada effSelected/selectedItem", () => {
     const deps = extractDepArray(
       /const\s+derived\s*=\s*useMemo\(\s*\(\)\s*=>\s*[\s\S]*?computeBeliDerived\(\{[\s\S]*?\}\)\s*,\s*\[([^\]]*)\]\s*,?\s*\)/,
     );
-    // Semua state dan input yang dipakai computeBeliDerived harus muncul —
-    // menghapus salah satu = risiko ringkasan stale. Catatan: sumber item
-    // dilewatkan sebagai `effSelected` (memo primitif) — bukan `selectedItem`
-    // langsung — supaya refetch items tidak mengubah identitas dep.
+    // Identitas item diwakili oleh `itemId` (proxy dep primitif) — bukan
+    // objek `selectedItem`/`effSelected`. Ini menjamin refetch items yang
+    // hanya mengganti identitas objek TIDAK memicu useMemo re-eksekusi.
     const required = [
       "mode",
-      "effSelected",
+      "itemId",
       "packageType",
       "packageSize",
       "packageQty",
@@ -118,47 +117,36 @@ describe("gudang.tsx — dependency arrays selectedItem/derived/warnings", () =>
     for (const dep of required) {
       expect(deps, `dep '${dep}' harus ada di useMemo(derived)`).toContain(dep);
     }
-    // Guard: `selectedItem` mentah TIDAK boleh muncul di dep array derived,
-    // karena identitasnya berubah setiap refetch items sekalipun kontennya
-    // sama.
+    // Guard: `selectedItem` maupun `effSelected` TIDAK boleh muncul.
     expect(deps).not.toContain("selectedItem");
+    expect(deps).not.toContain("effSelected");
   });
 
-  it("warnings = useMemo(..., [mode, effSelected, derived, priceMode, inputKarton])", () => {
+  it("warnings = useMemo(..., [mode, itemId, packageType, derived, priceMode, inputKarton])", () => {
     const deps = extractDepArray(
       /const\s+warnings\s*=\s*useMemo\(\s*\(\)\s*=>\s*[\s\S]*?computeBeliWarnings\(\{[\s\S]*?\}\)[\s\S]*?,\s*\[([^\]]*)\]\s*,?\s*\)/,
     );
     expect(deps.sort()).toEqual(
-      ["mode", "effSelected", "derived", "priceMode", "inputKarton"].sort(),
+      ["mode", "itemId", "packageType", "derived", "priceMode", "inputKarton"].sort(),
     );
     expect(deps).not.toContain("selectedItem");
+    expect(deps).not.toContain("effSelected");
   });
 
-  it("effect karton/priceMode berdep [effSelected, inputKarton, priceMode]", () => {
+  it("effect karton/priceMode berdep MINIMAL [mode, itemId, inputKarton, priceMode]", () => {
     const deps = extractDepArray(
-      /if\s*\(!effSelected\)\s*return;[\s\S]*?\}\s*,\s*\[([^\]]*)\]\s*\)/,
+      /if\s*\(!isWItem\(selectedItem\)\)\s*return;[\s\S]*?\}\s*,\s*\[([^\]]*)\]\s*\)/,
     );
-    expect(deps.sort()).toEqual(["effSelected", "inputKarton", "priceMode"].sort());
+    expect(deps.sort()).toEqual(["mode", "itemId", "inputKarton", "priceMode"].sort());
     expect(deps).not.toContain("selectedItem");
+    expect(deps).not.toContain("effSelected");
   });
 
-  it("effSelected = useMemo dengan dep primitif dari selectedItem (bukan object identity)", () => {
-    const deps = extractDepArray(
-      /const\s+effSelected\s*=\s*useMemo\(\s*\(\)\s*=>[\s\S]*?,\s*\[([^\]]*)\]\s*,?\s*\)/,
-    );
-    // Dep array harus optional-chaining terhadap field primitif — bukan
-    // `selectedItem` mentah.
-    expect(deps).not.toContain("selectedItem");
-    const required = [
-      "selectedItem?.package_type",
-      "selectedItem?.package_size",
-      "selectedItem?.base_unit",
-      "selectedItem?.stock_base",
-      "selectedItem?.avg_cost_per_base",
-    ];
-    for (const dep of required) {
-      expect(deps, `dep '${dep}' harus ada di useMemo(effSelected)`).toContain(dep);
-    }
+  it("`effSelected` sudah TIDAK ada — semua konsumen langsung membaca selectedItem via closure", () => {
+    // Simbol `effSelected` sengaja dihilangkan agar tidak ada indirection
+    // object yang mengaburkan dep minimal. Jika muncul kembali, kemungkinan
+    // seseorang me-restore skema lama.
+    expect(src).not.toMatch(/\beffSelected\b/);
   });
 
   it("effect reset HANYA bergantung pada resetKey (nilai lain lewat ref) agar tidak refire", () => {
