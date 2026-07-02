@@ -2,14 +2,14 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
 import { listMyCalls, formatCallDuration, type CallRow } from "@/lib/calls";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyUserId } from "@/lib/chat";
 import { formatInviteCode } from "@/lib/invite";
-import { getCallStatusVisual, type CallVisualStatus } from "@/lib/call-status-visual";
+import type { CallVisualStatus } from "@/lib/call-status-visual";
+import { CallStatusButton } from "@/components/chat/CallStatusButton";
 
 export const Route = createFileRoute("/_authenticated/panggilan")({
   component: PanggilanPage,
@@ -168,13 +168,10 @@ function CallRowItem({
   const peerId = outgoing ? row.callee_id : row.caller_id;
   const peerName = (peerId && nameMap[peerId]) || "Kontak";
   const Icon = row.kind === "video" ? VideoIcon : Phone;
-  // Pemetaan ikon+warna+label+hint terpusat — dipakai juga oleh CallScreen.
-  const visual = getCallStatusVisual(row.status as CallVisualStatus, { outgoing });
   const missed = row.status === "missed" || (row.status === "declined" && !outgoing);
-  const { Icon: DirIcon, colorClass: statusClass, hint: statusHint } = visual;
   // Untuk status "ended", tampilkan durasi alih-alih label "Diterima".
-  const statusLabel =
-    row.status === "ended" ? formatCallDuration(row.duration_sec) : visual.label;
+  const overrideLabel =
+    row.status === "ended" ? formatCallDuration(row.duration_sec) : undefined;
 
   return (
     <li className="flex items-center gap-3 px-4 py-3">
@@ -183,22 +180,17 @@ function CallRowItem({
       </div>
       <div className="min-w-0 flex-1">
         <div className={`truncate text-sm font-medium ${missed ? "text-red-600" : ""}`}>{peerName}</div>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            toast.info(statusHint);
-          }}
-          title={statusHint}
-          aria-label={statusHint}
-          className="flex items-center gap-1 text-[11px] text-muted-foreground hover:underline"
-        >
-          <DirIcon className={`h-3 w-3 ${statusClass}`} />
-          <span className={statusClass}>{statusLabel}</span>
-          <span>·</span>
-          <span>{timeLabel(row.started_at)}</span>
-        </button>
+        <CallStatusButton
+          status={row.status as CallVisualStatus}
+          outgoing={outgoing}
+          overrideLabel={overrideLabel}
+          trailing={
+            <>
+              <span>·</span>
+              <span>{timeLabel(row.started_at)}</span>
+            </>
+          }
+        />
       </div>
       <Icon className={`h-5 w-5 ${row.kind === "video" ? "text-primary" : "text-muted-foreground"}`} />
     </li>
