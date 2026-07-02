@@ -10,6 +10,8 @@ import {
   AlertTriangle,
   History,
   QrCode as QrIcon,
+  Copy,
+  Check,
 } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -194,14 +196,21 @@ function HeaderCard({
               </div>
             </div>
           )}
-          <a
-            href={latest.url}
-            className={`flex w-full items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow transition ${btn}`}
-          >
-            <Download className="h-4 w-4" />
-            Unduh versi terbaru
-            {latest.sizeMB ? ` (${latest.sizeMB} MB)` : ""}
-          </a>
+          <div className="flex items-stretch gap-2">
+            <a
+              href={latest.url}
+              className={`flex flex-1 items-center justify-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white shadow transition ${btn}`}
+            >
+              <Download className="h-4 w-4" />
+              Unduh versi terbaru
+              {latest.sizeMB ? ` (${latest.sizeMB} MB)` : ""}
+            </a>
+            <CopyLinkButton
+              url={latest.url}
+              label={`MCM Chat${latest.versionName ? ` v${latest.versionName}` : ""}`}
+              variant="solid"
+            />
+          </div>
           <dl className="mt-3 space-y-1 text-[11px] text-muted-foreground">
             {(latest.versionName || latest.versionCode !== null) && (
               <Row label="Versi">
@@ -312,24 +321,31 @@ function ReleaseHistoryCard({
               </div>
             </div>
             {r.url && (
-              <a
-                href={r.url}
-                className={`shrink-0 text-xs font-semibold ${
-                  r.belowMinimum ? "text-amber-700 dark:text-amber-300" : linkColor
-                } hover:underline`}
-                onClick={(e) => {
-                  if (
-                    r.belowMinimum &&
-                    !window.confirm(
-                      "Build ini di bawah minimum yang direkomendasikan dan mungkin tidak kompatibel. Tetap unduh?",
-                    )
-                  ) {
-                    e.preventDefault();
-                  }
-                }}
-              >
-                Unduh
-              </a>
+              <div className="flex shrink-0 items-center gap-1">
+                <a
+                  href={r.url}
+                  className={`text-xs font-semibold ${
+                    r.belowMinimum ? "text-amber-700 dark:text-amber-300" : linkColor
+                  } hover:underline`}
+                  onClick={(e) => {
+                    if (
+                      r.belowMinimum &&
+                      !window.confirm(
+                        "Build ini di bawah minimum yang direkomendasikan dan mungkin tidak kompatibel. Tetap unduh?",
+                      )
+                    ) {
+                      e.preventDefault();
+                    }
+                  }}
+                >
+                  Unduh
+                </a>
+                <CopyLinkButton
+                  url={r.url}
+                  label={`MCM Chat${r.versionName ? ` v${r.versionName}` : ""}`}
+                  variant="ghost"
+                />
+              </div>
             )}
           </li>
         ))}
