@@ -44,6 +44,7 @@ import { PushNotificationSettings } from "@/components/chat/PushNotificationSett
 import { OrgNameSettings } from "@/components/OrgNameSettings";
 import { UpgradeToStorageCard } from "@/components/UpgradeToStorageCard";
 import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
+import { CopyChatApkLinksButton } from "@/components/CopyChatApkLinksButton";
 import { Link } from "@tanstack/react-router";
 import { Palette } from "lucide-react";
 
@@ -491,6 +492,7 @@ function ProfilPage() {
         </div>
         <div className="grid grid-cols-2 gap-2 sm:max-w-sm">
           <DownloadChatApkShortcut />
+          <CopyChatApkLinksButton />
         </div>
       </section>
 
