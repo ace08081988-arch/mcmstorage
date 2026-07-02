@@ -249,4 +249,26 @@ self.addEventListener("message", (event) => {
       try { event.source && event.source.postMessage({ type: "assets-invalidated", paths: d.paths }); } catch (_) {}
     })());
   }
+  if (d && d.type === "PURGE_ALL_CACHES") {
+    // Dipicu klien saat mendeteksi BUILD_ID berubah (bundle JS baru).
+    // Semua cache milik SW ini dikosongkan sehingga request berikutnya
+    // wajib mengambil dari jaringan; hindari mencampur aset lama+baru.
+    event.waitUntil((async () => {
+      let deleted = [];
+      try {
+        if ("caches" in self) {
+          const names = await caches.keys();
+          const results = await Promise.allSettled(names.map((n) => caches.delete(n)));
+          deleted = names.filter((_, i) => results[i].status === "fulfilled");
+        }
+      } catch (_) {}
+      try {
+        event.source && event.source.postMessage({
+          type: "caches-purged",
+          buildId: d.buildId || null,
+          deleted,
+        });
+      } catch (_) {}
+    })());
+  }
 });
