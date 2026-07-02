@@ -1162,8 +1162,44 @@ function SyncBadgeImpl({ row: r }: { row: Row }) {
   );
 }
 
-function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, onToggleSelect }: EcerCardProps) {
+function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, view, lastSentAt, sentDetails, selectMode = false, selected = false, onToggleSelect, onEnterSelect }: EcerCardProps) {
   const [sending, setSending] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const longPressFired = useRef(false);
+  function startLongPress() {
+    if (selectMode) return;
+    longPressFired.current = false;
+    if (longPressTimer.current) clearTimeout(longPressTimer.current);
+    longPressTimer.current = setTimeout(() => {
+      longPressFired.current = true;
+      try { navigator.vibrate?.(30); } catch { /* noop */ }
+      setMenuOpen(true);
+    }, 500);
+  }
+  function cancelLongPress() {
+    if (longPressTimer.current) { clearTimeout(longPressTimer.current); longPressTimer.current = null; }
+  }
+  function doDelete() {
+    if (shots.length > 0) {
+      if (view === "sent") {
+        unmarkSent(shots.map((s) => s.id));
+        toast.success("Kartu dikembalikan ke daftar aktif.");
+      } else {
+        markSent(shots.map((s) => s.id), {
+          channel: "wa",
+          mapsUrl: null,
+          status: "success",
+          idemKey: `manual-skip-${r.id}-${Date.now()}`,
+        });
+        toast.success("Kartu ditandai terkirim & dipindah ke Riwayat.");
+      }
+    } else {
+      toast.info("Belum ada kiriman pegawai untuk kartu ini.");
+    }
+    setConfirmDelete(false);
+  }
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
   const [sendError, setSendError] = useState<string | null>(null);
