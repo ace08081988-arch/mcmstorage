@@ -19,6 +19,9 @@ function AuthBrand() {
           alt={full}
           width={64}
           height={64}
+          fetchPriority="high"
+          loading="eager"
+          decoding="async"
           className="mx-auto h-16 w-16 rounded-2xl object-cover"
         />
       ) : (
@@ -28,6 +31,7 @@ function AuthBrand() {
           width={64}
           height={64}
           fetchPriority="high"
+          loading="eager"
           decoding="async"
           className="mx-auto h-16 w-16 rounded-2xl"
         />
