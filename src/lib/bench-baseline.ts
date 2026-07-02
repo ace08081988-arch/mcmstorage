@@ -25,6 +25,10 @@ export type BaselineScenario = {
   bestMs: number;
   /** p95 baseline (opsional; hanya untuk cek flakiness). */
   p95Ms?: number;
+  /** p50 baseline (opsional; hanya untuk trend/compare, tidak menentukan gagal-lulus). */
+  p50Ms?: number;
+  /** Coefficient of variation baseline (opsional; untuk compare vs run terbaru). */
+  cv?: number;
   /** Override per-scenario untuk ambang flakiness. */
   maxCv?: number;
   p95Pct?: number;
