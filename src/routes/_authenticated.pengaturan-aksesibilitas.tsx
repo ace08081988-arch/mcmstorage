@@ -240,22 +240,40 @@ function ToggleRow({
   help,
   checked,
   onChange,
+  unsaved,
 }: {
   label: string;
   help: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  unsaved?: boolean;
 }) {
   const id = `t-${label.replace(/\s+/g, "-").toLowerCase()}`;
   return (
     <div className="flex items-start justify-between gap-4">
       <div className="min-w-0 flex-1">
-        <label htmlFor={id} className="block text-sm font-medium">
+        <label htmlFor={id} className="flex items-center gap-2 text-sm font-medium">
           {label}
+          {unsaved && <UnsavedDot />}
         </label>
         <p className="text-[11px] leading-snug text-muted-foreground">{help}</p>
       </div>
       <Switch id={id} checked={checked} onCheckedChange={onChange} />
     </div>
+  );
+}
+
+function UnsavedDot({ title }: { title?: string }) {
+  return (
+    <span
+      className="inline-flex items-center gap-1 rounded-full bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-300"
+      title={title ?? "Nilai berbeda dari yang tersimpan"}
+    >
+      <span
+        className="h-1.5 w-1.5 rounded-full bg-amber-500 animate-pulse"
+        aria-hidden="true"
+      />
+      Belum disimpan
+    </span>
   );
 }
