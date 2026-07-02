@@ -430,13 +430,83 @@ function CopyLinkButton({
 function ApkDownloadQr({
   url,
   versionName,
+  onExpired,
 }: {
   url: string;
   versionName: string | null;
+  onExpired?: () => void;
 }) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const [dataUrl, setDataUrl] = useState<string>("");
   const [err, setErr] = useState<string>("");
+  const [now, setNow] = useState(() => Date.now());
+  const expiredFiredRef = useRef<string | null>(null);
+
+  // Ekstrak `exp` dari JWT signed URL Supabase Storage.
+  const expiresAt = (() => {
+    try {
+      const u = new URL(url);
+      const token = u.searchParams.get("token");
+      if (!token) return null;
+      const parts = token.split(".");
+      if (parts.length !== 3) return null;
+      const payload = JSON.parse(
+        atob(parts[1].replace(/-/g, "+").replace(/_/g, "/")),
+      ) as { exp?: number };
+      return typeof payload.exp === "number" ? payload.exp * 1000 : null;
+    } catch {
+      return null;
+    }
+  })();
+
+  const remainingMs =
+    expiresAt !== null ? Math.max(0, expiresAt - now) : null;
+  const isExpired = remainingMs !== null && remainingMs <= 0;
+
+  // Detak jam untuk countdown.
+  useEffect(() => {
+    if (expiresAt === null) return;
+    const t = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(t);
+  }, [expiresAt]);
+
+  // Auto-refresh saat halaman kembali fokus dan link sudah kedaluwarsa.
+  useEffect(() => {
+    if (expiresAt === null || !onExpired) return;
+    const check = () => {
+      if (Date.now() >= expiresAt && expiredFiredRef.current !== url) {
+        expiredFiredRef.current = url;
+        onExpired();
+      }
+    };
+    check();
+    const onFocus = () => check();
+    const onVisible = () => {
+      if (document.visibilityState === "visible") check();
+    };
+    window.addEventListener("focus", onFocus);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("focus", onFocus);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [expiresAt, onExpired, url]);
+
+  // Segera minta URL baru begitu countdown menyentuh nol.
+  useEffect(() => {
+    if (!isExpired || !onExpired) return;
+    if (expiredFiredRef.current === url) return;
+    expiredFiredRef.current = url;
+    onExpired();
+  }, [isExpired, onExpired, url]);
+
+  const fmtRemaining = (ms: number) => {
+    const s = Math.floor(ms / 1000);
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, "0")}`;
+  };
+  const warn = remainingMs !== null && remainingMs > 0 && remainingMs < 5 * 60_000;
 
   useEffect(() => {
     let cancelled = false;
@@ -499,6 +569,31 @@ function ApkDownloadQr({
       </div>
       {err && (
         <p className="mt-2 text-[11px] text-destructive">Gagal membuat QR: {err}</p>
+      )}
+      {remainingMs !== null && (
+        <div
+          className={`mt-3 inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[11px] font-medium ${
+            isExpired
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : warn
+              ? "border-amber-500/40 bg-amber-500/10 text-amber-800 dark:text-amber-300"
+              : "border-emerald-500/40 bg-emerald-500/10 text-emerald-800 dark:text-emerald-300"
+          }`}
+          role="status"
+          aria-live="polite"
+        >
+          {isExpired ? (
+            <>
+              <Loader2 className="h-3 w-3 animate-spin" />
+              QR kedaluwarsa — memperbarui...
+            </>
+          ) : (
+            <>
+              <History className="h-3 w-3" />
+              Kedaluwarsa dalam {fmtRemaining(remainingMs)}
+            </>
+          )}
+        </div>
       )}
       <button
         type="button"
