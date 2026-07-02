@@ -404,6 +404,24 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
   function startEdit(c: Customer) {
     setEditingId(c.id); setName(c.name); setContact(c.contact ?? ""); setNotes(c.notes ?? "");
   }
+  function resetForm() {
+    setSupplierId("");
+    setMode("new");
+    setItemId("");
+    setName("");
+    setCategory("");
+    setPackageType("botol");
+    setPackageSize("500");
+    setNewImagePath(null);
+    setPackageQty("1");
+    setPricePerPackage("");
+    setPriceMode("package");
+    setPricePerBase("");
+    setPaymentMethod(defaultPayment);
+    setInputKarton(false);
+    toast.success("Form direset");
+  }
+
   async function submit(e: React.FormEvent) {
     e.preventDefault();
     if (!uid || !name.trim()) return;
