@@ -144,8 +144,24 @@ export function DownloadChatApkShortcut() {
         <button
           type="button"
           disabled={busy}
-          aria-label="Unduh APK MCM Chat"
-          className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+          aria-label={
+            busy
+              ? `Unduhan APK MCM Chat sedang berjalan${stage ? `: ${stage}` : ""}${cooldown > 0 ? `, tunggu ${cooldown} detik` : ""}`
+              : "Unduh APK MCM Chat versi terbaru"
+          }
+          aria-busy={busy}
+          aria-live="polite"
+          aria-disabled={busy}
+          onKeyDown={(e) => {
+            // <button> menangani Enter/Space secara native, tapi kami
+            // tambahkan penangan eksplisit sebagai jaring pengaman jika
+            // ada wrapper yang men-intercept event bawaan.
+            if ((e.key === "Enter" || e.key === " ") && !busy) {
+              e.preventDefault();
+              (e.currentTarget as HTMLButtonElement).click();
+            }
+          }}
+          className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
         >
           <span className="text-base leading-none">
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "💬"}
