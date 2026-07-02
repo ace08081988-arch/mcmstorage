@@ -68,7 +68,7 @@ export const Route = createFileRoute("/_authenticated/")({
 type Status = "Belum Dikirim" | "Sudah Dikirim";
 type Kategori = string;
 
-type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
+export type Satuan = "gram" | "kg" | "botol" | "sachet" | "pcs" | "lusin" | "pak" | "dus";
 
 const SATUAN_LIST: Satuan[] = ["gram", "kg", "botol", "sachet", "pcs", "lusin", "pak", "dus"];
 
@@ -90,7 +90,7 @@ export function formatJumlah(j: number, s: Satuan): string {
   return `${n.toLocaleString("id-ID")} ${s}`;
 }
 
-type Produk = {
+export type Produk = {
   id: number;
   kategori: Kategori;
   nama: string;
