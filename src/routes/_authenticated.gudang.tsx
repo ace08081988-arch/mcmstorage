@@ -2921,7 +2921,19 @@ function PesananTab({
                 <span className="text-[11px] text-muted-foreground">
                   Jumlah ({qtyMode === "base" ? item.base_unit : qtyMode === "karton" ? "karton" : item.package_type})
                 </span>
-                <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+                {qtyMode === "base" && item.base_unit === "g" ? (
+                  <SmartWeightInput
+                    value={qty}
+                    onChange={setQty}
+                    baseUnit="g"
+                    className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm"
+                    required
+                    min={0.01}
+                    ariaLabel="Jumlah pesanan (gram/kg/ons)"
+                  />
+                ) : (
+                  <input type="number" step="0.01" min="0.01" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={qty} onChange={(e) => setQty(e.target.value)} required />
+                )}
               </label>
               <label className="block">
                 <span className="text-[11px] text-muted-foreground">
