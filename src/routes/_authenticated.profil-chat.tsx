@@ -15,6 +15,13 @@ import { formatInviteCode } from "@/lib/invite";
 import { getLatestApkVariants, getApkVariantDetail, type ApkRelease } from "@/lib/apk.functions";
 import { trackApkDownload } from "@/lib/apk-download-track";
 import {
+  useChatApkHistory,
+  recordChatApkDownload,
+  clearChatApkHistory,
+  formatAgoID,
+} from "@/lib/chat-apk-history";
+import { History, Trash2 } from "lucide-react";
+import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription,
 } from "@/components/ui/dialog";
 
