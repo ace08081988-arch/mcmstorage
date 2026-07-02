@@ -72,6 +72,7 @@ import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.v
 import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from './routes/lovable.visual.attachment-duration-consistency'
 import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
+import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
 import { Route as AuthenticatedStatusBaruRouteImport } from './routes/_authenticated.status.baru'
 import { Route as AuthenticatedStatusIdRouteImport } from './routes/_authenticated.status.$id'
@@ -425,6 +426,12 @@ const ApiPublicPrepRealtimeTokenRoute =
     path: '/api/public/prep-realtime-token',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicApkDownloadTrackRoute =
+  ApiPublicApkDownloadTrackRouteImport.update({
+    id: '/api/public/apk-download-track',
+    path: '/api/public/apk-download-track',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicAiPingRoute = ApiPublicAiPingRouteImport.update({
   id: '/api/public/ai-ping',
   path: '/api/public/ai-ping',
@@ -559,6 +566,7 @@ export interface FileRoutesByFullPath {
   '/status/$id': typeof AuthenticatedStatusIdRoute
   '/status/baru': typeof AuthenticatedStatusBaruRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
+  '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
@@ -635,6 +643,7 @@ export interface FileRoutesByTo {
   '/status/$id': typeof AuthenticatedStatusIdRoute
   '/status/baru': typeof AuthenticatedStatusBaruRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
+  '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
@@ -714,6 +723,7 @@ export interface FileRoutesById {
   '/_authenticated/status/$id': typeof AuthenticatedStatusIdRoute
   '/_authenticated/status/baru': typeof AuthenticatedStatusBaruRoute
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
+  '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
@@ -793,6 +803,7 @@ export interface FileRouteTypes {
     | '/status/$id'
     | '/status/baru'
     | '/api/public/ai-ping'
+    | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
     | '/lovable/visual/attachment-duration-consistency'
@@ -869,6 +880,7 @@ export interface FileRouteTypes {
     | '/status/$id'
     | '/status/baru'
     | '/api/public/ai-ping'
+    | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
     | '/lovable/visual/attachment-duration-consistency'
@@ -947,6 +959,7 @@ export interface FileRouteTypes {
     | '/_authenticated/status/$id'
     | '/_authenticated/status/baru'
     | '/api/public/ai-ping'
+    | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
     | '/lovable/visual/attachment-duration-consistency'
@@ -980,6 +993,7 @@ export interface RootRouteChildren {
   ICodeRoute: typeof ICodeRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
+  ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
   LovableVisualAdminVisibilityRoute: typeof LovableVisualAdminVisibilityRoute
   LovableVisualAttachmentDurationConsistencyRoute: typeof LovableVisualAttachmentDurationConsistencyRoute
@@ -1440,6 +1454,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicPrepRealtimeTokenRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/apk-download-track': {
+      id: '/api/public/apk-download-track'
+      path: '/api/public/apk-download-track'
+      fullPath: '/api/public/apk-download-track'
+      preLoaderRoute: typeof ApiPublicApkDownloadTrackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/ai-ping': {
       id: '/api/public/ai-ping'
       path: '/api/public/ai-ping'
@@ -1711,6 +1732,7 @@ const rootRouteChildren: RootRouteChildren = {
   ICodeRoute: ICodeRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
+  ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
   LovableVisualAdminVisibilityRoute: LovableVisualAdminVisibilityRoute,
   LovableVisualAttachmentDurationConsistencyRoute:
