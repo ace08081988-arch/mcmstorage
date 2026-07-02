@@ -18,6 +18,7 @@ import { NewDmDialog } from "@/components/chat/NewDmDialog";
 import { NewGroupDialog } from "@/components/chat/NewGroupDialog";
 import { AddContactFab } from "@/components/chat/AddContactFab";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
+import { ChatOnboarding } from "@/components/chat/ChatOnboarding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
@@ -448,6 +449,11 @@ function ChatListPage() {
             <TabsTrigger value="active">Aktif {active.length ? `(${active.length})` : ""}</TabsTrigger>
             <TabsTrigger value="archived">Arsip {archived.length ? `(${archived.length})` : ""}</TabsTrigger>
           </TabsList>
+          {!isLoading && active.length === 0 && archived.length === 0 ? (
+            <div className="mt-3">
+              <ChatOnboarding onNewGroup={() => setGrupOpen(true)} />
+            </div>
+          ) : null}
           <TabsContent value="active">
             <ConvList
               list={filteredActive}
