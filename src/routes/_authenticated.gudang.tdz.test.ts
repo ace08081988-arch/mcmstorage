@@ -101,10 +101,12 @@ describe("gudang.tsx — dependency arrays selectedItem/derived/warnings", () =>
       /const\s+derived\s*=\s*useMemo\(\s*\(\)\s*=>\s*[\s\S]*?computeBeliDerived\(\{[\s\S]*?\}\)\s*,\s*\[([^\]]*)\]\s*,?\s*\)/,
     );
     // Semua state dan input yang dipakai computeBeliDerived harus muncul —
-    // menghapus salah satu = risiko ringkasan stale.
+    // menghapus salah satu = risiko ringkasan stale. Catatan: sumber item
+    // dilewatkan sebagai `effSelected` (memo primitif) — bukan `selectedItem`
+    // langsung — supaya refetch items tidak mengubah identitas dep.
     const required = [
       "mode",
-      "selectedItem",
+      "effSelected",
       "packageType",
       "packageSize",
       "packageQty",
@@ -116,22 +118,47 @@ describe("gudang.tsx — dependency arrays selectedItem/derived/warnings", () =>
     for (const dep of required) {
       expect(deps, `dep '${dep}' harus ada di useMemo(derived)`).toContain(dep);
     }
+    // Guard: `selectedItem` mentah TIDAK boleh muncul di dep array derived,
+    // karena identitasnya berubah setiap refetch items sekalipun kontennya
+    // sama.
+    expect(deps).not.toContain("selectedItem");
   });
 
-  it("warnings = useMemo(..., [mode, selectedItem, derived, priceMode, inputKarton])", () => {
+  it("warnings = useMemo(..., [mode, effSelected, derived, priceMode, inputKarton])", () => {
     const deps = extractDepArray(
       /const\s+warnings\s*=\s*useMemo\(\s*\(\)\s*=>\s*[\s\S]*?computeBeliWarnings\(\{[\s\S]*?\}\)[\s\S]*?,\s*\[([^\]]*)\]\s*,?\s*\)/,
     );
     expect(deps.sort()).toEqual(
-      ["mode", "selectedItem", "derived", "priceMode", "inputKarton"].sort(),
+      ["mode", "effSelected", "derived", "priceMode", "inputKarton"].sort(),
     );
+    expect(deps).not.toContain("selectedItem");
   });
 
-  it("effect karton/priceMode berdep [selectedItem, inputKarton, priceMode]", () => {
+  it("effect karton/priceMode berdep [effSelected, inputKarton, priceMode]", () => {
     const deps = extractDepArray(
-      /if\s*\(!isWItem\(selectedItem\)\)\s*return;[\s\S]*?\}\s*,\s*\[([^\]]*)\]\s*\)/,
+      /if\s*\(!effSelected\)\s*return;[\s\S]*?\}\s*,\s*\[([^\]]*)\]\s*\)/,
     );
-    expect(deps.sort()).toEqual(["selectedItem", "inputKarton", "priceMode"].sort());
+    expect(deps.sort()).toEqual(["effSelected", "inputKarton", "priceMode"].sort());
+    expect(deps).not.toContain("selectedItem");
+  });
+
+  it("effSelected = useMemo dengan dep primitif dari selectedItem (bukan object identity)", () => {
+    const deps = extractDepArray(
+      /const\s+effSelected\s*=\s*useMemo\(\s*\(\)\s*=>[\s\S]*?,\s*\[([^\]]*)\]\s*,?\s*\)/,
+    );
+    // Dep array harus optional-chaining terhadap field primitif — bukan
+    // `selectedItem` mentah.
+    expect(deps).not.toContain("selectedItem");
+    const required = [
+      "selectedItem?.package_type",
+      "selectedItem?.package_size",
+      "selectedItem?.base_unit",
+      "selectedItem?.stock_base",
+      "selectedItem?.avg_cost_per_base",
+    ];
+    for (const dep of required) {
+      expect(deps, `dep '${dep}' harus ada di useMemo(effSelected)`).toContain(dep);
+    }
   });
 
   it("effect reset HANYA bergantung pada resetKey (nilai lain lewat ref) agar tidak refire", () => {
