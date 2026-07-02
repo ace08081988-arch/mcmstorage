@@ -40,6 +40,13 @@ function DiagnostikPaket() {
   // ------- IMPORT PAYLOAD (untuk E2E & debugging cepat) -------
   const [payloadText, setPayloadText] = useState<string>("");
   const [payloadError, setPayloadError] = useState<string>("");
+  // Override display fields — mensimulasikan bug "render stale" di mana
+  // label yang tampil tidak sinkron dengan derived. Berguna untuk E2E
+  // mismatch banner. Null = pakai perhitungan asli.
+  const [displayBaseUnitOverride, setDisplayBaseUnitOverride] =
+    useState<BeliBaseUnit | null>(null);
+  const [displayPackageTypeOverride, setDisplayPackageTypeOverride] =
+    useState<PackageType | null>(null);
 
   const applyPayload = (raw: string) => {
     try {
@@ -57,6 +64,8 @@ function DiagnostikPaket() {
           package_size?: string | number;
           base_unit?: BeliBaseUnit;
         } | null;
+        displayBaseUnitOverride: BeliBaseUnit | null;
+        displayPackageTypeOverride: PackageType | null;
       }>;
       if (p.mode) setMode(p.mode);
       if (p.packageType) setPackageType(p.packageType);
@@ -75,6 +84,13 @@ function DiagnostikPaket() {
           setItemPackageSize(String(p.selectedItem.package_size));
         if (p.selectedItem.base_unit)
           setItemBaseUnit(p.selectedItem.base_unit);
+      }
+      // Override eksplisit — reset ke null bila field tidak ada / null.
+      if ("displayBaseUnitOverride" in p) {
+        setDisplayBaseUnitOverride(p.displayBaseUnitOverride ?? null);
+      }
+      if ("displayPackageTypeOverride" in p) {
+        setDisplayPackageTypeOverride(p.displayPackageTypeOverride ?? null);
       }
       setPayloadError("");
     } catch (e) {
@@ -117,13 +133,16 @@ function DiagnostikPaket() {
     ],
   );
 
-  // Display fields — SAMA PERSIS dengan gudang.tsx baris 1712-1720
-  const displayPackageType: PackageType = mode === "existing" && selectedItem
-    ? (selectedItem.package_type as PackageType)
-    : packageType;
-  const displayBaseUnit: BeliBaseUnit = mode === "existing" && selectedItem
-    ? (selectedItem.base_unit as BeliBaseUnit)
-    : defaultBaseUnit(packageType);
+  // Display fields — SAMA PERSIS dengan gudang.tsx baris 1712-1720.
+  // `*Override` mensimulasikan render stale untuk memicu mismatch banner.
+  const displayPackageType: PackageType = displayPackageTypeOverride
+    ?? (mode === "existing" && selectedItem
+      ? (selectedItem.package_type as PackageType)
+      : packageType);
+  const displayBaseUnit: BeliBaseUnit = displayBaseUnitOverride
+    ?? (mode === "existing" && selectedItem
+      ? (selectedItem.base_unit as BeliBaseUnit)
+      : defaultBaseUnit(packageType));
   const displayPkgSize: number = mode === "existing" && selectedItem
     ? Number(selectedItem.package_size) || 0
     : (packageType === "pcs" ? 1 : Number(packageSize) || 0);
