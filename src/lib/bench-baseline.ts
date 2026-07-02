@@ -28,6 +28,10 @@ export type BaselineScenario = {
   /** Override per-scenario untuk ambang flakiness. */
   maxCv?: number;
   p95Pct?: number;
+  /** Override per-scenario untuk ambang regresi durasi (persen). */
+  regressionPct?: number;
+  /** Override per-scenario untuk floor selisih mutlak (ms) — menang atas `floorMs[mode]`. */
+  floorMs?: number;
   mode: "batched" | "sequential";
 };
 export type BaselineFile = {
@@ -73,7 +77,7 @@ export function checkRegression(
   scenario: string,
   currentMs: number,
   baseline: BaselineFile | null,
-  opts: { pct?: number } = {},
+  opts: { pct?: number; floorMs?: number } = {},
 ): RegressionCheck {
   const entry = baseline?.scenarios[scenario];
   if (!entry || !baseline) {
@@ -87,9 +91,17 @@ export function checkRegression(
       reason: "no-baseline",
     };
   }
+  // Precedence: explicit opts → env override → per-scenario override → file default.
   const pct =
-    opts.pct ?? (Number(process.env.BENCH_REGRESSION_PCT) || baseline.regressionPctDefault);
-  const floor = baseline.floorMs[entry.mode] ?? 1;
+    opts.pct ??
+    (Number(process.env.BENCH_REGRESSION_PCT) ||
+      entry.regressionPct ||
+      baseline.regressionPctDefault);
+  const floor =
+    opts.floorMs ??
+    entry.floorMs ??
+    baseline.floorMs[entry.mode] ??
+    1;
   const allowedMs = entry.bestMs * (1 + pct / 100);
   const delta = currentMs - entry.bestMs;
   const deltaPct = entry.bestMs > 0 ? (delta / entry.bestMs) * 100 : Number.POSITIVE_INFINITY;
@@ -178,7 +190,7 @@ export function checkFlakiness(
     allowedP95 = entry.p95Ms * (1 + p95Pct / 100);
     const delta = stats.p95 - entry.p95Ms;
     p95DeltaPct = entry.p95Ms > 0 ? (delta / entry.p95Ms) * 100 : Number.POSITIVE_INFINITY;
-    const floor = baseline.floorMs[entry.mode] ?? 1;
+    const floor = entry.floorMs ?? baseline.floorMs[entry.mode] ?? 1;
     if (stats.p95 > allowedP95 && delta > floor) {
       p95Regression = true;
       reasons.push(

@@ -173,3 +173,71 @@ describe("checkFlakiness", () => {
     expect(checkFlakiness("loose", { p95: 100, cv: 0.1 }, b).flaky).toBe(false);
   });
 });
+
+describe("checkRegression per-scenario overrides", () => {
+  const originalEnv = { ...process.env };
+  beforeEach(() => { delete process.env.BENCH_REGRESSION_PCT; });
+  afterEach(() => { process.env = { ...originalEnv }; });
+
+  it("regressionPct per-scenario menang atas file default", () => {
+    const b: BaselineFile = {
+      ...BASE,
+      scenarios: {
+        tight: { bestMs: 10, mode: "batched", regressionPct: 10 },
+      },
+    };
+    // 10 → 13 = +30%, delta 3 > floor 2, pct override 10 → regresi.
+    expect(checkRegression("tight", 13, b).regression).toBe(true);
+    // Tanpa override (pakai default 50%): tidak regresi.
+    const noOverride: BaselineFile = {
+      ...BASE,
+      scenarios: { tight: { bestMs: 10, mode: "batched" } },
+    };
+    expect(checkRegression("tight", 13, noOverride).regression).toBe(false);
+  });
+
+  it("floorMs per-scenario menang atas floorMs[mode]", () => {
+    const b: BaselineFile = {
+      ...BASE,
+      scenarios: {
+        loose: { bestMs: 10, mode: "batched", floorMs: 20 },
+      },
+    };
+    // 10 → 25 = +150% (pct default 50 lewat), tapi delta 15 < floor 20 → bukan regresi.
+    expect(checkRegression("loose", 25, b).regression).toBe(false);
+    // Sekali di atas floor override → regresi.
+    expect(checkRegression("loose", 40, b).regression).toBe(true);
+  });
+
+  it("env BENCH_REGRESSION_PCT menang atas per-scenario override", () => {
+    process.env.BENCH_REGRESSION_PCT = "500";
+    const b: BaselineFile = {
+      ...BASE,
+      scenarios: { tight: { bestMs: 10, mode: "batched", regressionPct: 1 } },
+    };
+    // Tanpa env, +30% > 1% → regresi; dengan env=500 → tidak.
+    expect(checkRegression("tight", 13, b).regression).toBe(false);
+  });
+
+  it("opts.floorMs menang atas semua", () => {
+    const b: BaselineFile = {
+      ...BASE,
+      scenarios: { s: { bestMs: 10, mode: "batched", floorMs: 20 } },
+    };
+    // delta 15 < scenario floor 20 → tidak regresi, tapi opts.floorMs=1 → regresi.
+    expect(checkRegression("s", 25, b, { floorMs: 1 }).regression).toBe(true);
+  });
+
+  it("floorMs per-scenario juga dipakai di checkFlakiness p95 check", () => {
+    const b: BaselineFile = {
+      ...BASE,
+      scenarios: {
+        loose: { bestMs: 10, p95Ms: 20, mode: "batched", floorMs: 50 },
+      },
+    };
+    // p95 100 vs 20: delta 80 melewati default pct 100% (allow 40) tetapi floor 50 → 80 > 50, jadi flaky.
+    expect(checkFlakiness("loose", { p95: 100, cv: 0.1 }, b).flaky).toBe(true);
+    // p95 45: delta 25 < floor 50 → tidak flaky meskipun +125%.
+    expect(checkFlakiness("loose", { p95: 45, cv: 0.1 }, b).flaky).toBe(false);
+  });
+});
