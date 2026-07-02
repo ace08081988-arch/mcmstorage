@@ -30,6 +30,7 @@ import { Route as AuthenticatedSesiRouteImport } from './routes/_authenticated.s
 import { Route as AuthenticatedRequestRouteImport } from './routes/_authenticated.request'
 import { Route as AuthenticatedProfilChatRouteImport } from './routes/_authenticated.profil-chat'
 import { Route as AuthenticatedProfilRouteImport } from './routes/_authenticated.profil'
+import { Route as AuthenticatedPengaturanTampilanRouteImport } from './routes/_authenticated.pengaturan-tampilan'
 import { Route as AuthenticatedPengaturanScrollGuardRouteImport } from './routes/_authenticated.pengaturan-scroll-guard'
 import { Route as AuthenticatedPengaturanPrivasiRouteImport } from './routes/_authenticated.pengaturan-privasi'
 import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes/_authenticated.pengaturan-penyimpanan'
@@ -193,6 +194,12 @@ const AuthenticatedProfilRoute = AuthenticatedProfilRouteImport.update({
   path: '/profil',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedPengaturanTampilanRoute =
+  AuthenticatedPengaturanTampilanRouteImport.update({
+    id: '/pengaturan-tampilan',
+    path: '/pengaturan-tampilan',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedPengaturanScrollGuardRoute =
   AuthenticatedPengaturanScrollGuardRouteImport.update({
     id: '/pengaturan-scroll-guard',
@@ -555,6 +562,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
+  '/pengaturan-tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/profil-chat': typeof AuthenticatedProfilChatRoute
   '/request': typeof AuthenticatedRequestRoute
@@ -632,6 +640,7 @@ export interface FileRoutesByTo {
   '/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
   '/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
+  '/pengaturan-tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/profil': typeof AuthenticatedProfilRoute
   '/profil-chat': typeof AuthenticatedProfilChatRoute
   '/request': typeof AuthenticatedRequestRoute
@@ -713,6 +722,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-penyimpanan': typeof AuthenticatedPengaturanPenyimpananRoute
   '/_authenticated/pengaturan-privasi': typeof AuthenticatedPengaturanPrivasiRoute
   '/_authenticated/pengaturan-scroll-guard': typeof AuthenticatedPengaturanScrollGuardRoute
+  '/_authenticated/pengaturan-tampilan': typeof AuthenticatedPengaturanTampilanRoute
   '/_authenticated/profil': typeof AuthenticatedProfilRoute
   '/_authenticated/profil-chat': typeof AuthenticatedProfilChatRoute
   '/_authenticated/request': typeof AuthenticatedRequestRoute
@@ -795,6 +805,7 @@ export interface FileRouteTypes {
     | '/pengaturan-penyimpanan'
     | '/pengaturan-privasi'
     | '/pengaturan-scroll-guard'
+    | '/pengaturan-tampilan'
     | '/profil'
     | '/profil-chat'
     | '/request'
@@ -872,6 +883,7 @@ export interface FileRouteTypes {
     | '/pengaturan-penyimpanan'
     | '/pengaturan-privasi'
     | '/pengaturan-scroll-guard'
+    | '/pengaturan-tampilan'
     | '/profil'
     | '/profil-chat'
     | '/request'
@@ -952,6 +964,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-penyimpanan'
     | '/_authenticated/pengaturan-privasi'
     | '/_authenticated/pengaturan-scroll-guard'
+    | '/_authenticated/pengaturan-tampilan'
     | '/_authenticated/profil'
     | '/_authenticated/profil-chat'
     | '/_authenticated/request'
@@ -1171,6 +1184,13 @@ declare module '@tanstack/react-router' {
       path: '/profil'
       fullPath: '/profil'
       preLoaderRoute: typeof AuthenticatedProfilRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-tampilan': {
+      id: '/_authenticated/pengaturan-tampilan'
+      path: '/pengaturan-tampilan'
+      fullPath: '/pengaturan-tampilan'
+      preLoaderRoute: typeof AuthenticatedPengaturanTampilanRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-scroll-guard': {
@@ -1657,6 +1677,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanPenyimpananRoute: typeof AuthenticatedPengaturanPenyimpananRoute
   AuthenticatedPengaturanPrivasiRoute: typeof AuthenticatedPengaturanPrivasiRoute
   AuthenticatedPengaturanScrollGuardRoute: typeof AuthenticatedPengaturanScrollGuardRoute
+  AuthenticatedPengaturanTampilanRoute: typeof AuthenticatedPengaturanTampilanRoute
   AuthenticatedProfilRoute: typeof AuthenticatedProfilRoute
   AuthenticatedProfilChatRoute: typeof AuthenticatedProfilChatRoute
   AuthenticatedRequestRoute: typeof AuthenticatedRequestRoute
@@ -1709,6 +1730,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPengaturanPrivasiRoute: AuthenticatedPengaturanPrivasiRoute,
   AuthenticatedPengaturanScrollGuardRoute:
     AuthenticatedPengaturanScrollGuardRoute,
+  AuthenticatedPengaturanTampilanRoute: AuthenticatedPengaturanTampilanRoute,
   AuthenticatedProfilRoute: AuthenticatedProfilRoute,
   AuthenticatedProfilChatRoute: AuthenticatedProfilChatRoute,
   AuthenticatedRequestRoute: AuthenticatedRequestRoute,
