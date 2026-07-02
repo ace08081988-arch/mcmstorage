@@ -3,6 +3,11 @@ import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { act, createElement } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
+// React 18+ butuh flag ini agar `act(...)` tidak mem-print peringatan
+// "The current testing environment is not configured to support act(...)".
+(globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean })
+  .IS_REACT_ACT_ENVIRONMENT = true;
+
 /**
  * End-to-end kecil untuk `CallStatusButton` — komponen yang dipakai di
  * /panggilan pada tiap baris riwayat.
