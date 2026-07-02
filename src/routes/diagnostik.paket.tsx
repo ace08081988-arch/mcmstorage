@@ -323,6 +323,44 @@ function DiagnostikPaket() {
           )}
         </section>
 
+        {/* ------- IMPORT PAYLOAD ------- */}
+        <section className="rounded-lg border p-3" data-testid="diag-import-payload">
+          <h2 className="mb-2 text-sm font-semibold">Impor payload</h2>
+          <p className="mb-2 text-[11px] text-muted-foreground">
+            Tempel JSON payload (mode, packageType, packageSize, packageQty,
+            priceMode, pricePerPackage, pricePerBase, inputKarton,
+            selectedItem) lalu klik <em>Terapkan</em>. Berguna untuk E2E:
+            memastikan label render selalu konsisten dengan dropdown Jenis
+            kemasan setelah state di-hydrate dari payload.
+          </p>
+          <textarea
+            className="input font-mono"
+            rows={4}
+            data-testid="diag-payload-input"
+            value={payloadText}
+            onChange={(e) => setPayloadText(e.target.value)}
+            placeholder='{"mode":"new","packageType":"gram","packageSize":"500","packageQty":"2","pricePerPackage":"10000"}'
+          />
+          <div className="mt-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              data-testid="diag-payload-apply"
+              onClick={() => applyPayload(payloadText)}
+              className="rounded-md border bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:opacity-90"
+            >
+              Terapkan
+            </button>
+            {payloadError ? (
+              <span
+                className="text-[11px] text-red-600 dark:text-red-400"
+                data-testid="diag-payload-error"
+              >
+                {payloadError}
+              </span>
+            ) : null}
+          </div>
+        </section>
+
         {/* ------- MISMATCH ALERT ------- */}
         {mismatches.length > 0 ? (
           <section
