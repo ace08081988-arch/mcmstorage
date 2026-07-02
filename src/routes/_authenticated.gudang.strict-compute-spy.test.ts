@@ -118,3 +118,104 @@ describe("strict-compute-spy: matcher hanya menghitung panggilan pipeline", () =
     expect(spy.invalidCalls).toBe(0);
   });
 });
+
+// ============================================================
+// NEGATIVE TESTS — memastikan helper di sekitar test TIDAK ikut
+// menaikkan pipelineCalls / mock counter matcher strict-spy.
+// Setiap skenario berikut adalah pola realistis yang bisa
+// menyebabkan false positive kalau matcher salah pasang.
+// ============================================================
+describe("strict-compute-spy: helper lain tidak memicu pipelineCalls", () => {
+  it("fixture builder yang men-derive baseline TIDAK menambah counter", () => {
+    const spy = createStrictDerivedSpy();
+    // Snapshot builder yang lazim ada di test: menghitung baseline via
+    // fungsi asli untuk membuat ekspektasi. Tidak boleh dihitung.
+    const baselines = Array.from({ length: 25 }, (_, i) =>
+      realComputeDerived(
+        baseInp({ selectedItem: makeBeliItem({ stock_base: i }) }),
+      ),
+    );
+    expect(baselines).toHaveLength(25);
+    expect(spy.pipelineCalls).toBe(0);
+    expect(spy.invalidCalls).toBe(0);
+    expect(spy.mock).not.toHaveBeenCalled();
+  });
+
+  it("kontrol positif (assertion setup) via computeBeliDerived asli TIDAK dihitung", () => {
+    const spy = createStrictDerivedSpy();
+    // Pola “expected = realCompute(input); pipeline.call(input); expect(...)”
+    const input = baseInp({ selectedItem: ITEM, packageQty: "7" });
+    const expected = realComputeDerived(input);
+    const actual = spy.call(input);
+    expect(actual).toEqual(expected);
+    expect(spy.pipelineCalls).toBe(1); // hanya `.call`, bukan expected
+    expect(spy.mock).toHaveBeenCalledTimes(1);
+  });
+
+  it("warnings: helper yang re-derive lewat computeBeliDerived asli tidak menyentuh spy warnings", () => {
+    const spyW = createStrictWarningsSpy();
+    // Helper luar: butuh derived → panggil compute asli (bukan via spy).
+    for (let i = 0; i < 30; i++) {
+      const d = realComputeDerived(baseInp({ selectedItem: ITEM, packageQty: String(i + 1) }));
+      // Snapshot builder juga panggil computeBeliWarnings asli.
+      computeBeliWarnings({
+        mode: "existing",
+        selectedItem: ITEM,
+        derived: d,
+        priceMode: "package",
+        inputKarton: false,
+      });
+    }
+    expect(spyW.pipelineCalls).toBe(0);
+    expect(spyW.mock).not.toHaveBeenCalled();
+  });
+
+  it("dua spy independen: helper untuk spy A tidak bocor ke spy B", () => {
+    const spyA = createStrictDerivedSpy();
+    const spyB = createStrictDerivedSpy();
+    // Spy A menerima 4 panggilan pipeline.
+    for (let i = 0; i < 4; i++) {
+      spyA.call(baseInp({ selectedItem: ITEM, packageQty: String(i + 1) }));
+    }
+    // Sementara itu banyak helper luar pipeline berjalan.
+    for (let i = 0; i < 100; i++) {
+      realComputeDerived(baseInp({ selectedItem: makeBeliItem({ stock_base: i }) }));
+    }
+    expect(spyA.pipelineCalls).toBe(4);
+    expect(spyB.pipelineCalls).toBe(0);
+    expect(spyB.mock).not.toHaveBeenCalled();
+  });
+
+  it("panggilan derived DAN warnings asli tercampur → kedua counter tetap 0", () => {
+    const spyD = createStrictDerivedSpy();
+    const spyW = createStrictWarningsSpy();
+    const derived = realComputeDerived(baseInp({ selectedItem: ITEM }));
+    for (let i = 0; i < 60; i++) {
+      realComputeDerived(baseInp({ selectedItem: ITEM, packageQty: String(i) }));
+      computeBeliWarnings({
+        mode: "existing",
+        selectedItem: ITEM,
+        derived,
+        priceMode: "package",
+        inputKarton: false,
+      });
+    }
+    expect(spyD.pipelineCalls).toBe(0);
+    expect(spyW.pipelineCalls).toBe(0);
+    expect(spyD.mock).not.toHaveBeenCalled();
+    expect(spyW.mock).not.toHaveBeenCalled();
+  });
+
+  it("reset() tidak menghidupkan counter dari helper yang berjalan sebelum spy ada", () => {
+    // Simulasikan helper yang dieksekusi SEBELUM spy dibuat.
+    for (let i = 0; i < 40; i++) {
+      realComputeDerived(baseInp({ selectedItem: makeBeliItem({ stock_base: i }) }));
+    }
+    const spy = createStrictDerivedSpy();
+    expect(spy.pipelineCalls).toBe(0);
+    // Setelah reset masih 0, walau helper sebelumnya banyak.
+    spy.reset();
+    expect(spy.pipelineCalls).toBe(0);
+    expect(spy.invalidCalls).toBe(0);
+  });
+});
