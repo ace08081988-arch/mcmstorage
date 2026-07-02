@@ -31,6 +31,7 @@ import {
   type FontFamily,
   type FontSize,
   type ImportedPatch,
+  type MigrateResult,
 } from "@/lib/appearance-migrator";
 import {
   logAppearanceMigration,
@@ -415,7 +416,8 @@ function PengaturanTampilanPage() {
     try {
       data = JSON.parse(text || "{}");
     } catch {
-      logAppearanceMigration(source, { ok: false, reason: "invalid" });
+      const invalid: MigrateResult = { ok: false, reason: "invalid" };
+      logAppearanceMigration(source, invalid);
       toast.error(
         source === "url"
           ? "URL tidak berisi JSON yang valid."
