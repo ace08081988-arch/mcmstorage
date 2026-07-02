@@ -32,6 +32,10 @@ export function DownloadChatApkShortcut() {
     setOpen(false);
     setBusy(true);
     const loadingId = toast.loading("Menyiapkan unduhan APK MCM Chat…");
+    // Simpan info terakhir yang berhasil didapat supaya bila error terjadi
+    // setelah metadata terbaca (mis. saat window.location.href), toast error
+    // tetap bisa menyebut versi + ukuran berkas.
+    let attemptLabel: string | null = null;
     try {
       const detail = await fetchDetail({ data: { variant: "chat" } });
       // Ambil snapshot APK terbaru sekali, lalu turunkan url + label dari
@@ -40,7 +44,11 @@ export function DownloadChatApkShortcut() {
       const apk = detail?.latest;
       const url = apk?.url;
       if (!apk || !url) {
-        toast.error("Belum ada APK MCM Chat yang tersedia.", { id: loadingId });
+        toast.error("Belum ada APK MCM Chat yang tersedia.", {
+          id: loadingId,
+          description:
+            "Server belum menyediakan berkas APK Chat terbaru. Coba lagi nanti atau hubungi admin.",
+        });
         return;
       }
       const version = apk.versionName || apk.name || "terbaru";
@@ -49,6 +57,7 @@ export function DownloadChatApkShortcut() {
         typeof sizeMB === "number" && Number.isFinite(sizeMB)
           ? `${sizeMB.toFixed(2)} MB`
           : "ukuran tidak diketahui";
+      attemptLabel = `v${version} • ${sizeLabel}`;
       // Catat ke riwayat versi lokal sebelum navigasi.
       recordChatApkDownload({
         name: apk.name,
@@ -63,9 +72,25 @@ export function DownloadChatApkShortcut() {
         description: `Berkas: ${apk.name} — cek folder Unduhan pada perangkat Anda.`,
       });
     } catch (e) {
-      toast.error((e as Error)?.message || "Gagal memulai unduhan APK Chat.", {
-        id: loadingId,
-      });
+      const err = e as { message?: string; name?: string; status?: number; code?: string };
+      const detailParts = [
+        err?.name && err.name !== "Error" ? err.name : null,
+        typeof err?.status === "number" ? `status ${err.status}` : null,
+        err?.code ? `kode ${err.code}` : null,
+        err?.message,
+      ].filter(Boolean);
+      const errorDetail =
+        detailParts.length > 0 ? detailParts.join(" • ") : "Penyebab tidak diketahui.";
+      toast.error(
+        attemptLabel
+          ? `Gagal mengunduh APK MCM Chat ${attemptLabel}`
+          : "Gagal memulai unduhan APK Chat.",
+        {
+          id: loadingId,
+          description: errorDetail,
+          duration: 8000,
+        },
+      );
     } finally {
       setBusy(false);
     }
