@@ -38,6 +38,50 @@ function PengaturanAksesibilitasPage() {
   const snapshotRef = useRef(snapshot);
   snapshotRef.current = snapshot;
 
+  // Dialog konfirmasi saat mencoba keluar dengan perubahan belum disimpan.
+  const [leaveOpen, setLeaveOpen] = useState(false);
+  const leaveResolveRef = useRef<((proceed: boolean) => void) | null>(null);
+
+  const dirty = useMemo(
+    () =>
+      draft.fontScale !== snapshot.fontScale ||
+      draft.highContrast !== snapshot.highContrast ||
+      draft.reduceMotion !== snapshot.reduceMotion,
+    [draft, snapshot],
+  );
+
+  useBlocker({
+    condition: dirty,
+    blockerFn: () => {
+      return new Promise<boolean>((resolve) => {
+        leaveResolveRef.current = resolve;
+        setLeaveOpen(true);
+      });
+    },
+  });
+
+  useEffect(() => {
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (dirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  const handleLeaveConfirm = () => {
+    leaveResolveRef.current?.(true);
+    leaveResolveRef.current = null;
+    setLeaveOpen(false);
+  };
+  const handleLeaveCancel = () => {
+    leaveResolveRef.current?.(false);
+    leaveResolveRef.current = null;
+    setLeaveOpen(false);
+  };
+
   // Terapkan draft ke <html> tanpa persist.
   useEffect(() => {
     const root = document.documentElement;
