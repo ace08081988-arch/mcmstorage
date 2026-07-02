@@ -422,3 +422,115 @@ describe("ChatModeSplash · cleanup saat unmount", () => {
     expect(mmListenerAdds).toBe(mmListenerRemoves);
   });
 });
+
+describe("ChatModeSplash · toggle reduce-motion bertubi-tubi", () => {
+  // Kontrak: timeline (hold + fade) ditetapkan sekali di mount dari
+  // snapshot `matchMedia` awal. Toggle media query berkali-kali
+  // dalam waktu singkat TIDAK boleh:
+  //   - menjadwalkan timer tambahan (splash tidak boleh "flicker"
+  //     antara opacity-100/opacity-0 lebih dari sekali),
+  //   - memperpanjang atau memangkas total durasi yang sudah
+  //     terjadwal,
+  //   - menulis sessionStorage lebih dari sekali.
+
+  it("toggle 10x dalam 200ms tidak menghasilkan timeline yang tumpang tindih (start=normal)", async () => {
+    reduceMotion = false;
+    const Splash = await loadComponent();
+    const { root } = mount(Splash);
+    expect(splashNode()).not.toBeNull();
+
+    // Toggle 10x dalam 200ms (fase hold masih berjalan).
+    for (let i = 0; i < 10; i++) {
+      reduceMotion = i % 2 === 0;
+      installMatchMedia();
+      act(() => {
+        vi.advanceTimersByTime(20);
+      });
+    }
+    // Total 200ms — masih fase hold penuh (1000ms). Belum fade.
+    const midClass = splashNode()!.className;
+    expect(midClass).not.toContain("opacity-0");
+    // sessionStorage belum ditulis di tengah timeline.
+    // sessionStorage belum ditulis di tengah timeline.
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBeNull();
+
+    // Lanjut sampai 999ms total — masih hold.
+    act(() => {
+      vi.advanceTimersByTime(799);
+    });
+    expect(splashNode()!.className).not.toContain("opacity-0");
+
+    // 1000ms → fade mulai (opacity-0), transitionDuration tetap 500ms
+    // sesuai timeline mount (tidak dipotong oleh toggle terakhir).
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    const fadeEl = splashNode();
+    expect(fadeEl).not.toBeNull();
+    expect(fadeEl!.className).toContain("opacity-0");
+    expect(fadeEl!.getAttribute("style") ?? "").toContain(
+      "transition-duration: 500ms",
+    );
+
+    // 1500ms total → unmount.
+    act(() => {
+      vi.advanceTimersByTime(500);
+    });
+    expect(splashNode()).toBeNull();
+
+    // Tepat satu penanda tersimpan — bukti tidak ada timer duplikat
+    // yang tumpang tindih. Jalankan sisa timer dan pastikan
+    // splash tidak muncul lagi.
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBe("1");
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(splashNode()).toBeNull();
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBe("1");
+    act(() => root.unmount());
+  });
+
+  it("toggle 10x dalam 100ms (start=reduce) tetap menyelesaikan splash sesuai timeline reduce", async () => {
+    reduceMotion = true;
+    const Splash = await loadComponent();
+    const { root } = mount(Splash);
+    expect(splashNode()).not.toBeNull();
+
+    // Toggle cepat 10x dalam 100ms total.
+    for (let i = 0; i < 10; i++) {
+      reduceMotion = i % 2 === 1; // mulai flip ke false
+      installMatchMedia();
+      act(() => {
+        vi.advanceTimersByTime(10);
+      });
+    }
+    // 100ms — masih di dalam hold reduce (400ms). Tidak boleh sudah
+    // fade, tidak boleh sudah selesai.
+    expect(splashNode()).not.toBeNull();
+    expect(splashNode()!.className).not.toContain("opacity-0");
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBeNull();
+
+    // 399ms total — masih ada.
+    act(() => {
+      vi.advanceTimersByTime(299);
+    });
+    expect(splashNode()).not.toBeNull();
+
+    // 400ms total → reduce timeline: hold+fade(0) bareng → langsung
+    // hilang. Persis satu tulis sessionStorage.
+    act(() => {
+      vi.advanceTimersByTime(1);
+    });
+    expect(splashNode()).toBeNull();
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBe("1");
+
+    // Lanjut jalankan semua timer tersisa — pastikan tidak ada
+    // callback tambahan yang menulis lagi.
+    act(() => {
+      vi.advanceTimersByTime(5000);
+    });
+    expect(splashNode()).toBeNull();
+    expect(window.sessionStorage.getItem("mcm.chat.splashShown")).toBe("1");
+    act(() => root.unmount());
+  });
+});
