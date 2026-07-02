@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { FileText, Download, MapPin, Phone, MessageCircle, Package, Navigation } from "lucide-react";
+import { FileText, Download, MapPin, Phone, MessageCircle, Package, Navigation, ShoppingCart } from "lucide-react";
 import { signedChatUrl } from "@/lib/chat-attachments";
 import { decodeCard, type Card } from "@/lib/chat-cards";
 import { Button } from "@/components/ui/button";
@@ -136,6 +136,65 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
   }
   if (card.type === "sticker") {
     return <StickerView card={card} mine={mine} />;
+  }
+  if (card.type === "cart") {
+    const currency = card.currency || "Rp";
+    const fmt = (n: number) =>
+      `${currency} ${new Intl.NumberFormat("id-ID").format(Math.round(n))}`;
+    let total = 0;
+    let hasPrice = false;
+    for (const l of card.lines) {
+      if (typeof l.price === "number" && Number.isFinite(l.price)) {
+        total += l.price * l.qty;
+        hasPrice = true;
+      }
+    }
+    return (
+      <div
+        className={`min-w-[16rem] max-w-xs rounded-lg border px-2 py-2 text-xs ${
+          mine
+            ? "border-primary-foreground/30 bg-primary-foreground/10"
+            : "border-border bg-background/70"
+        }`}
+      >
+        <div className="mb-1 flex items-center gap-1 font-semibold">
+          <ShoppingCart className="h-3.5 w-3.5" /> Keranjang
+          <span className="ml-auto opacity-70">
+            {card.lines.length} item
+          </span>
+        </div>
+        <ul className="divide-y divide-current/10">
+          {card.lines.map((l, i) => (
+            <li key={i} className="flex items-start gap-2 py-1">
+              <div className="min-w-0 flex-1">
+                <div className="truncate font-medium">{l.name}</div>
+                <div className="opacity-70">
+                  {new Intl.NumberFormat("id-ID").format(l.qty)}
+                  {typeof l.price === "number" && Number.isFinite(l.price)
+                    ? ` × ${fmt(l.price)}`
+                    : ""}
+                </div>
+              </div>
+              {typeof l.price === "number" && Number.isFinite(l.price) ? (
+                <div className="shrink-0 tabular-nums">{fmt(l.price * l.qty)}</div>
+              ) : null}
+            </li>
+          ))}
+        </ul>
+        {hasPrice ? (
+          <div className="mt-1 flex items-center justify-between border-t pt-1 font-semibold">
+            <span>Total</span>
+            <span className="tabular-nums">{fmt(total)}</span>
+          </div>
+        ) : null}
+        {card.note ? (
+          <div className="mt-1 whitespace-pre-wrap opacity-80">Catatan: {card.note}</div>
+        ) : null}
+        <div className="mt-1 text-[10px] opacity-60">
+          Pesanan otomatis tercatat di daftar pesanan.
+        </div>
+      </div>
+    );
   }
   return null;
 }
