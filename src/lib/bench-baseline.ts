@@ -146,12 +146,19 @@ export function shouldUpdateBaseline(): boolean {
 
 export type FlakinessCheck = {
   scenario: string;
+  mode?: "batched" | "sequential";
   p95Ms: number;
   baselineP95Ms: number | null;
   allowedP95Ms: number | null;
   p95DeltaPct: number | null;
+  p95AbsDeltaMs: number | null;
+  p95Pct: number;
+  floorMs: number | null;
   cv: number;
   maxCv: number;
+  p95GuardTripped: boolean;
+  cvGuardTripped: boolean;
+  floorGuardBlocked: boolean;
   flaky: boolean;
   reasons: string[];
 };
@@ -184,19 +191,27 @@ export function checkFlakiness(
   let baselineP95: number | null = null;
   let allowedP95: number | null = null;
   let p95DeltaPct: number | null = null;
+  let p95AbsDelta: number | null = null;
+  let floorGuardBlocked = false;
+  let floor: number | null = null;
 
   if (entry?.p95Ms != null && baseline) {
     baselineP95 = entry.p95Ms;
     allowedP95 = entry.p95Ms * (1 + p95Pct / 100);
     const delta = stats.p95 - entry.p95Ms;
+    p95AbsDelta = delta;
     p95DeltaPct = entry.p95Ms > 0 ? (delta / entry.p95Ms) * 100 : Number.POSITIVE_INFINITY;
-    const floor = entry.floorMs ?? baseline.floorMs[entry.mode] ?? 1;
-    if (stats.p95 > allowedP95 && delta > floor) {
+    floor = entry.floorMs ?? baseline.floorMs[entry.mode] ?? 1;
+    const overAllowed = stats.p95 > allowedP95;
+    if (overAllowed && delta > floor) {
       p95Regression = true;
       reasons.push(
         `p95=${stats.p95.toFixed(2)}ms > baseline·(1+${p95Pct}%)=${allowedP95.toFixed(2)}ms ` +
           `(Δ ${delta.toFixed(2)}ms > floor ${floor}ms)`,
       );
+    } else if (overAllowed && delta <= floor) {
+      // p95 melewati ambang persen, tapi diselamatkan oleh floor guard.
+      floorGuardBlocked = true;
     }
   }
 
@@ -207,12 +222,19 @@ export function checkFlakiness(
 
   return {
     scenario,
+    mode: entry?.mode,
     p95Ms: stats.p95,
     baselineP95Ms: baselineP95,
     allowedP95Ms: allowedP95,
     p95DeltaPct,
+    p95AbsDeltaMs: p95AbsDelta,
+    p95Pct,
+    floorMs: floor,
     cv: stats.cv,
     maxCv,
+    p95GuardTripped: p95Regression,
+    cvGuardTripped: highCv,
+    floorGuardBlocked,
     flaky: p95Regression || highCv,
     reasons,
   };

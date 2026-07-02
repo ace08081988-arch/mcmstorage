@@ -28,6 +28,7 @@ import {
   loadTrendHistory,
   summarizeTrend,
 } from "@/lib/bench-trend";
+import { formatFlakinessMarkdown } from "@/lib/bench-flakiness-report";
 import { summarize, type SampleSummary } from "@/lib/bench-stats";
 import {
   createProfiler,
@@ -520,6 +521,26 @@ afterAll(() => {
       md.join("\n") + "\n",
       "utf8",
     );
+
+    // ----- Breakdown flakiness per-scenario -----
+    // Section terpisah supaya akar penyebab (guard p95, guard CV, atau floor
+    // guard yang memblokir) langsung terlihat di step summary CI tanpa harus
+    // membaca kolom "Flaky" satu per satu.
+    try {
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-flakiness.md"),
+        formatFlakinessMarkdown(FLAKINESS_CHECKS),
+        "utf8",
+      );
+      writeFileSync(
+        join(outDir, "conflict-wide-fields-flakiness.json"),
+        JSON.stringify({ generatedAt: new Date().toISOString(), checks: FLAKINESS_CHECKS }, null, 2),
+        "utf8",
+      );
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("[bench:flakiness] gagal menulis breakdown:", err);
+    }
 
     // ----- Tren durasi antar-run -----
     // Append satu baris JSON ke `benchmarks/*.trend.jsonl` lalu tulis ringkasan
