@@ -5,6 +5,7 @@ import {
   ArrowLeft, Search, QrCode, Smile, KeyRound, Lock, Users, MessageSquare,
   Bell, RefreshCcw, Link as LinkIcon, Accessibility, Languages, ChevronRight,
   UserPlus, Download, Loader2,
+  Copy, Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useMyProfile, useAvatarSignedUrl, useMyProfileRealtime } from "@/lib/profile";
@@ -62,6 +63,19 @@ function ProfilChatPage() {
   const initial = initialOf(name);
   const [qrOpen, setQrOpen] = useState(false);
   const [apkPickerOpen, setApkPickerOpen] = useState(false);
+  const [copiedKey, setCopiedKey] = useState<string | null>(null);
+
+  const copyLink = async (key: string, url: string) => {
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopiedKey(key);
+      trackApkDownload("chat", "copy_file");
+      toast.success("Link unduh disalin — tempel di perangkat lain.");
+      setTimeout(() => setCopiedKey((k) => (k === key ? null : k)), 1600);
+    } catch {
+      toast.error("Gagal menyalin link. Coba lagi.");
+    }
+  };
 
   // Pintasan unduh APK Chat saja — ambil URL varian chat terbaru.
   const fetchApk = useServerFn(getLatestApkVariants);
@@ -266,16 +280,19 @@ function ProfilChatPage() {
                 const isLatest = r.name === latestKey;
                 return (
                   <li key={r.name}>
+                    <div
+                      className={`flex items-center gap-2 rounded-lg border px-3 py-2.5 transition ${
+                        isLatest
+                          ? "border-primary/60 bg-primary/5"
+                          : ""
+                      }`}
+                    >
                     <a
                       href={r.url}
                       onClick={() =>
                         trackApkDownload("chat", isLatest ? "button" : "copy_page")
                       }
-                      className={`flex items-center gap-3 rounded-lg border px-3 py-2.5 transition ${
-                        isLatest
-                          ? "border-primary/60 bg-primary/5 hover:bg-primary/10"
-                          : "hover:bg-accent"
-                      }`}
+                      className="flex min-w-0 flex-1 items-center gap-3"
                     >
                       <Download
                         className={`h-5 w-5 shrink-0 ${
@@ -310,8 +327,24 @@ function ProfilChatPage() {
                             : ""}
                         </div>
                       </div>
-                      <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground/60" />
                     </a>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.preventDefault();
+                          void copyLink(r.name, r.url);
+                        }}
+                        aria-label="Salin link unduh"
+                        title="Salin link unduh"
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded-md border hover:bg-accent"
+                      >
+                        {copiedKey === r.name ? (
+                          <Check className="h-4 w-4 text-emerald-600" />
+                        ) : (
+                          <Copy className="h-4 w-4 text-muted-foreground" />
+                        )}
+                      </button>
+                    </div>
                   </li>
                 );
               })}
