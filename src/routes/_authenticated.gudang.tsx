@@ -1940,19 +1940,19 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         {priceMode === "package" ? (
           <label className="block">
             <span className="text-[11px] text-muted-foreground">
-              Harga beli / {kartonActive ? "karton" : effPackageType} (Rp)
+              Harga beli / {kartonActive ? "karton" : displayPackageType} (Rp)
             </span>
             <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
           </label>
         ) : (
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">Harga beli / {baseUnit} (Rp)</span>
+            <span className="text-[11px] text-muted-foreground">Harga beli / {displayBaseUnit} (Rp)</span>
             <input type="number" step="0.01" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
           </label>
         )}
       </div>
 
-      {effPackageType === "botol" && (
+      {displayPackageType === "botol" && (
         <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
           <input
             type="checkbox"
@@ -1969,13 +1969,13 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         </label>
       )}
 
-      {effPackageType !== "pcs" && (
+      {displayPackageType !== "pcs" && (
         <div className="flex gap-1 text-xs">
           <button type="button" onClick={() => setPriceMode("package")} className={`flex-1 rounded border px-2 py-1 ${priceMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
-            Harga per {effPackageType}
+            Harga per {displayPackageType}
           </button>
           <button type="button" onClick={() => setPriceMode("base")} className={`flex-1 rounded border px-2 py-1 ${priceMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
-            Harga per {baseUnit}
+            Harga per {displayBaseUnit}
           </button>
         </div>
       )}
@@ -2009,20 +2009,20 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <span className="font-semibold text-foreground">Ringkasan</span>
           {isWItem(selectedItem) ? (
             <span className="text-[10px] text-muted-foreground">
-              {selectedItem.name} · {effPackageType}
-              {effPackageType !== "pcs" ? ` ${effectivePkgSize} ${baseUnit}` : ""}
+              {selectedItem.name} · {displayPackageType}
+              {displayPackageType !== "pcs" ? ` ${displayPkgSize} ${displayBaseUnit}` : ""}
             </span>
           ) : (
             <span className="text-[10px] text-muted-foreground">
-              Barang baru · {effPackageType}
-              {effPackageType !== "pcs" ? ` ${effectivePkgSize} ${baseUnit}` : ""}
+              Barang baru · {displayPackageType}
+              {displayPackageType !== "pcs" ? ` ${displayPkgSize} ${displayBaseUnit}` : ""}
             </span>
           )}
         </div>
         <div className="flex justify-between">
           <span className="text-muted-foreground">Jumlah kemasan</span>
           <b>
-            {pkgQ.toLocaleString("id-ID")} {effPackageType}
+            {pkgQ.toLocaleString("id-ID")} {displayPackageType}
             {kartonActive ? ` (${(pkgQ / BOTOL_PER_KARTON).toLocaleString("id-ID")} karton)` : ""}
           </b>
         </div>
@@ -2031,12 +2031,12 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <b>{isWItem(selectedItem) ? fmtItemQty(baseAdded, selectedItem) : fmtBase(baseAdded, baseUnit)}</b>
         </div>
         <div className="flex justify-between">
-          <span className="text-muted-foreground">Harga per {effPackageType}</span>
+          <span className="text-muted-foreground">Harga per {displayPackageType}</span>
           <b>{rupiah(price)}</b>
         </div>
-        {effPackageType !== "pcs" && baseAdded > 0 && (
+        {displayPackageType !== "pcs" && baseAdded > 0 && (
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Harga per {baseUnit}</span>
+            <span className="text-muted-foreground">Harga per {displayBaseUnit}</span>
             <b>{rupiah(totalCost / baseAdded)}</b>
           </div>
         )}
