@@ -419,3 +419,130 @@ describe("BeliTab — reset dipanggil TEPAT SEKALI dalam satu render batch", () 
     expect(batched.resetCount).toBe(1);
   });
 });
+
+// =============================================================
+// TES NEGATIF — perubahan metadata/derived pendukung TIDAK boleh
+// memicu reset. Effect reset hanya bergantung pada `resetKey` yang
+// dihitung dari mode+itemId+packageType — apa pun yang berubah di
+// luar tiga field ini harus menghasilkan resetCount = 0.
+// =============================================================
+describe("BeliTab — NOL reset saat hanya metadata/derived pendukung berubah", () => {
+  /**
+   * Harness luas yang mensimulasi state pendukung form pembelian
+   * (packageQty, priceMode, inputKarton, pricePerPackage, packageSize,
+   * derived-object, dst.) — semua ini BUKAN input `beliResetKey`, jadi
+   * mengubahnya tidak boleh menaikkan resetCount.
+   */
+  function createWideLifecycle() {
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: { id: "botol-500" },
+    });
+    return h;
+  }
+
+  it("mengubah selectedItem identity 50× → 0 reset", () => {
+    const h = createWideLifecycle();
+    for (let i = 0; i < 50; i++) {
+      h.refetchSelectedItemIdentity({ id: "botol-500", rev: i, updated_at: `t-${i}` });
+    }
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("batch update yang HANYA berisi supporting field (bukan mode/itemId/packageType) → 0 reset", () => {
+    const h = createWideLifecycle();
+    // batch() harness kita mengizinkan selectedItem berubah tanpa kunci.
+    h.batch({ selectedItem: { id: "botol-500", stock_base: 100 } });
+    h.batch({ selectedItem: { id: "botol-500", stock_base: 200 } });
+    h.batch({ selectedItem: { id: "botol-500", avg_cost_per_base: 42 } });
+    h.batch({ selectedItem: null });
+    h.batch({ selectedItem: { id: "botol-500" } });
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("rerender berturut-turut (mensimulasi perubahan derived/warnings/state form) → 0 reset", () => {
+    // rerender() commit tanpa mengubah kunci. Pada aplikasi nyata, ini
+    // mewakili render ulang karena state pendukung berubah (mis. packageQty,
+    // priceMode, inputKarton, pricePerPackage) — tidak satupun masuk kunci.
+    const h = createWideLifecycle();
+    for (let i = 0; i < 100; i++) h.rerender();
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("kombinasi luas: refetch identitas + rerender + batch supporting-only → 0 reset", () => {
+    const h = createWideLifecycle();
+    for (let i = 0; i < 30; i++) {
+      h.refetchSelectedItemIdentity({ id: "botol-500", rev: i });
+      h.rerender();
+      h.batch({ selectedItem: { id: "botol-500", rev: i * 10 } });
+    }
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("batch yang menyertakan mode/itemId/packageType dengan NILAI SAMA (no-op) → 0 reset", () => {
+    // Idempotency: React masih akan commit, tapi resetKey tidak berubah.
+    const h = createWideLifecycle();
+    h.batch({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: { id: "botol-500", rev: 999 },
+    });
+    h.batch({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+    });
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("mode 'existing' — mengubah packageType (yang diabaikan di kunci existing) 20× → 0 reset", () => {
+    // beliResetKey mode 'existing' HANYA memakai itemId — packageType
+    // dihitung sebagai supporting metadata. Ganti berulang tidak menembak.
+    const h = createResetLifecycle({
+      mode: "existing",
+      itemId: "botol-500",
+      packageType: "botol",
+      selectedItem: { id: "botol-500" },
+    });
+    const types: PackageType[] = ["gram", "pcs", "botol", "sachet"];
+    for (let i = 0; i < 20; i++) h.setPackageType(types[i % types.length]);
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("mode 'new' — mengubah itemId (yang diabaikan di kunci new) 20× → 0 reset", () => {
+    // beliResetKey mode 'new' HANYA memakai packageType. itemId supporting.
+    const h = createResetLifecycle({
+      mode: "new",
+      itemId: "",
+      packageType: "botol",
+      selectedItem: null,
+    });
+    for (let i = 0; i < 20; i++) h.setItemId(`whatever-${i}`);
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("interleave supporting-only setter + refetch dalam sequence panjang → 0 reset", () => {
+    const h = createWideLifecycle();
+    for (let i = 0; i < 200; i++) {
+      const kind = i % 4;
+      if (kind === 0) h.refetchSelectedItemIdentity({ id: "botol-500", rev: i });
+      else if (kind === 1) h.rerender();
+      else if (kind === 2) h.batch({ selectedItem: { id: "botol-500", meta: i } });
+      else h.batch({ mode: "existing", itemId: "botol-500", packageType: "botol" });
+    }
+    expect(h.resetCount).toBe(0);
+  });
+
+  it("kontrol positif akhir: setelah 100 supporting-only ops, SATU transisi itemId menaikkan count TEPAT ke 1", () => {
+    // Menjamin bahwa harness benar-benar mendeteksi transisi nyata, bukan
+    // "buta" terhadap perubahan.
+    const h = createWideLifecycle();
+    for (let i = 0; i < 100; i++) h.refetchSelectedItemIdentity({ id: "botol-500", rev: i });
+    expect(h.resetCount).toBe(0);
+    h.setItemId("gram-1000");
+    expect(h.resetCount).toBe(1);
+  });
+});
