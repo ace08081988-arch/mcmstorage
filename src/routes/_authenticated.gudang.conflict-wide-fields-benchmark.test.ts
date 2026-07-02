@@ -36,6 +36,11 @@ import {
   type HistogramSummary,
 } from "@/lib/bench-histogram";
 import {
+  buildCompareRows,
+  formatCompareMarkdown,
+  type CompareInput,
+} from "@/lib/bench-compare";
+import {
   createProfiler,
   isProfilingEnabled,
   formatProfileMarkdown,
@@ -384,7 +389,12 @@ function recordAndAssertBaseline(
   // Update baseline in memory bila diminta.
   if (UPDATE_BASELINE && BASELINE) {
     const prev = BASELINE.scenarios[scenario];
-    BASELINE.scenarios[scenario] = { bestMs, mode, p95Ms: prev?.p95Ms };
+    BASELINE.scenarios[scenario] = {
+      ...prev,
+      bestMs,
+      mode,
+      p95Ms: prev?.p95Ms,
+    };
   }
   // Enforce hanya di CI / BENCH_STRICT=1. Lokal cukup lapor via artefak.
   if (ENFORCE_BASELINE && check.regression) {
@@ -421,9 +431,12 @@ function recordAndAssertFlakiness(
   if (UPDATE_BASELINE && BASELINE) {
     const prev = BASELINE.scenarios[scenario];
     BASELINE.scenarios[scenario] = {
+      ...prev,
       bestMs: prev?.bestMs ?? stats.best,
       mode,
       p95Ms: stats.p95,
+      p50Ms: stats.p50,
+      cv: stats.cv,
     };
   }
   if (ENFORCE_BASELINE && check.flaky) {
