@@ -461,8 +461,12 @@ function PengaturanTampilanPage() {
   const exportSettings = () => {
     try {
       const payload = {
-        __type: "mcm.appearance-settings",
-        version: 1,
+        __type: EXPORT_SCHEMA_TYPE,
+        schemaVersion: EXPORT_SCHEMA_VERSION,
+        // `version` dipertahankan untuk kompatibilitas importer versi lama
+        // (rilis <=Q3-2026) yang membaca field `version` alih-alih `schemaVersion`.
+        version: EXPORT_SCHEMA_VERSION,
+        app: APPEARANCE_APP_ID,
         exportedAt: new Date().toISOString(),
         appearance: {
           theme: draft.theme,
@@ -507,28 +511,27 @@ function PengaturanTampilanPage() {
     reader.onload = () => {
       try {
         const data = JSON.parse(String(reader.result ?? "{}"));
-        if (!data || data.__type !== "mcm.appearance-settings") {
-          toast.error("File tidak dikenali sebagai pengaturan tampilan MCM.");
-          return;
-        }
-        const ap = data.appearance ?? {};
-        const ap2 = data.appPrefs ?? {};
-        setDraft((d) => ({
-          ...d,
-          theme: (ap.theme as Theme) ?? d.theme,
-          font: (ap.font as FontFamily) ?? d.font,
-          size: (ap.size as FontSize) ?? d.size,
-          accent: ap.accent ?? d.accent,
-          radius: Number.isFinite(Number(ap.radius)) ? Number(ap.radius) : d.radius,
-          bgImage: typeof ap.bgImage === "string" ? ap.bgImage : d.bgImage,
-          bgOverlay: Number.isFinite(Number(ap.bgOverlay)) ? Number(ap.bgOverlay) : d.bgOverlay,
-          bgBlur: Number.isFinite(Number(ap.bgBlur)) ? Number(ap.bgBlur) : d.bgBlur,
-          compact: typeof data.compact === "boolean" ? data.compact : d.compact,
-          fontScale: Number.isFinite(Number(ap2.fontScale)) ? Number(ap2.fontScale) : d.fontScale,
-          highContrast: typeof ap2.highContrast === "boolean" ? ap2.highContrast : d.highContrast,
-          reduceMotion: typeof ap2.reduceMotion === "boolean" ? ap2.reduceMotion : d.reduceMotion,
-        }));
-        toast.success("Pengaturan diimpor — tekan Simpan untuk menerapkan.");
+        setDraft((d) => {
+          const result = migrateImportedAppearance(data, d);
+          if (!result.ok) {
+            if (result.reason === "unknown_type") {
+              toast.error("File tidak dikenali sebagai pengaturan tampilan MCM.");
+            } else {
+              toast.error("File tidak valid atau rusak.");
+            }
+            return d;
+          }
+          if (result.forward) {
+            toast.warning(
+              `File dari skema v${result.fromVersion} (lebih baru dari v${EXPORT_SCHEMA_VERSION}). Field yang dikenal dimuat; sisanya diabaikan.`,
+            );
+          } else {
+            toast.success(
+              `Pengaturan diimpor (skema v${result.fromVersion}) — tekan Simpan untuk menerapkan.`,
+            );
+          }
+          return { ...d, ...result.patch };
+        });
       } catch {
         toast.error("File tidak valid atau rusak.");
       } finally {
