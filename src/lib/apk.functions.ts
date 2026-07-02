@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { validateApkFileName } from "@/lib/apk-name-validate";
 
 export type LatestApk = {
   name: string;
