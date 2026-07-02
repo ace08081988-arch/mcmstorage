@@ -1,0 +1,70 @@
+name: Gudang Recompute Counts Guard
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.gudang*.ts"
+      - "src/routes/_authenticated.gudang*.tsx"
+      - "src/lib/beli-derived.ts"
+      - "src/lib/beli-warnings.ts"
+      - "src/lib/beli-compute.ts"
+      - "src/lib/beli-reset-key.ts"
+      - "package.json"
+      - "bun.lock*"
+      - "vitest.config.ts"
+      - ".github/workflows/gudang-recompute.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "src/routes/_authenticated.gudang*.ts"
+      - "src/routes/_authenticated.gudang*.tsx"
+      - "src/lib/beli-derived.ts"
+      - "src/lib/beli-warnings.ts"
+      - "src/lib/beli-compute.ts"
+      - "src/lib/beli-reset-key.ts"
+      - "package.json"
+      - "bun.lock*"
+      - "vitest.config.ts"
+      - ".github/workflows/gudang-recompute.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: gudang-recompute-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  recompute-counts:
+    name: computeBeliDerived / computeBeliWarnings counts
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Install dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run gudang recompute suite
+        run: bun run test:gudang-recompute
+
+      - name: Job summary on failure
+        if: failure()
+        run: |
+          {
+            echo "## ❌ Gudang recompute counts regressed";
+            echo "";
+            echo "Salah satu tes menegaskan jumlah panggilan \`computeBeliDerived\` / \`computeBeliWarnings\` yang tepat pada pipeline memo (deps minimal: \`[mode, itemId, packageType, ...scalar]\`).";
+            echo "";
+            echo "Kemungkinan penyebab:";
+            echo "- Deps \`useMemo\` di \`src/routes/_authenticated.gudang.tsx\` bertambah/berkurang atau memasukkan identitas objek (mis. \`selectedItem\` langsung).";
+            echo "- Signature/memo internal di \`src/lib/beli-derived.ts\` atau \`src/lib/beli-warnings.ts\` berubah.";
+            echo "- Pipeline consumer baru ditambahkan tanpa mengikuti kontrak (lihat \`_authenticated.gudang.pipeline-consumers-audit.test.ts\`).";
+            echo "";
+            echo "Jalankan lokal: \`bun run test:gudang-recompute\`.";
+          } >> "$GITHUB_STEP_SUMMARY"
