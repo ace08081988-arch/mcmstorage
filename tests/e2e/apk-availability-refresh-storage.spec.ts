@@ -82,6 +82,12 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
         name: /Cek ulang ketersediaan APK MCM Chat/i,
       }),
     ).toBeVisible();
+
+    // === Post-active quiescent guard ===
+    // Storage aktif; chat masih idle. TIDAK boleh ada request tambahan
+    // untuk kedua varian setelah state stabil.
+    await stub.assertQuiescent("storage", { windowMs: 1000 });
+    await stub.assertQuiescent("chat", { windowMs: 500 });
   });
 
   test("storage: tap refresh → label 'Memeriksa…' & tombol refresh disabled sampai rilis tersedia", async ({
@@ -165,5 +171,12 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
       }),
     ).toHaveCount(0);
     await expect(storageDl.getByText("Memeriksa…")).toHaveCount(0);
+
+    // === Post-active quiescent guard ===
+    // Setelah storage aktif (fetch di-fulfill dengan rilis tersedia),
+    // handler harus benar-benar idle — tidak ada refetch background /
+    // interval query yang lolos.
+    await stub.assertQuiescent("storage", { windowMs: 1000 });
+    await stub.assertQuiescent("chat", { windowMs: 500 });
   });
 });
