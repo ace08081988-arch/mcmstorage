@@ -1,4 +1,4 @@
-import { test, expect, type Route } from "@playwright/test";
+import { test, expect } from "@playwright/test";
 import { installApkStub, makeRelease } from "./_apk-availability-stub";
 
 /**
@@ -18,33 +18,8 @@ import { installApkStub, makeRelease } from "./_apk-availability-stub";
 
 const URL = "/lovable/visual/apk-availability-shortcuts";
 
-type ApkRelease = {
-  name: string;
-  url: string;
-  sizeMB: number | null;
-  updatedAt: string | null;
-  versionName: string | null;
-  versionCode: number | null;
-  belowMinimum: boolean;
-};
-
-function makeStorageRelease(): ApkRelease {
+function makeStorageRelease() {
   return makeRelease("storage");
-}
-
-function makeDetail(
-  variant: "chat" | "storage",
-  releases: ApkRelease[],
-): Record<string, unknown> {
-  return {
-    variant,
-    title: variant === "chat" ? "MCM Chat" : "MCM Storage",
-    subtitle: "Harness stub.",
-    latest: releases[0] ?? null,
-    releases,
-    changelog: null,
-    minSupported: null,
-  };
 }
 
 test.describe("APK availability · storage shortcut refresh flow", () => {
@@ -57,8 +32,8 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     const stub = await installApkStub(page);
     // Fetch awal (mount): kedua varian kosong. Varian Chat sengaja
     // dibiarkan kosong sepanjang test untuk assert independensi query.
-    stub.enqueue("chat", []);
-    stub.enqueue("storage", []);
+    stub.primeInitial();
+    stub.assertPrimed();
     await page.goto(URL);
 
     const storageDl = page.getByTestId("apk-shortcut-download-storage");
@@ -112,55 +87,13 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
   test("storage: tap refresh → label 'Memeriksa…' & tombol refresh disabled sampai rilis tersedia", async ({
     page,
   }) => {
-    // Kontrol respons per-fase: fase 1 (initial load) fulfill langsung
-    // dengan releases kosong. Fase 2 (setelah tap refresh) tahan
-    // respons sampai test siap merilisnya, supaya assertion state
-    // checking/busy sempat terobservasi sebelum data masuk.
-    let phase: "initial" | "holding" = "initial";
-    let releaseNext: (() => void) | null = null;
-    const heldGate = new Promise<void>((resolve) => {
-      releaseNext = resolve;
-    });
-
-    await page.route("**/_serverFn/**", async (route: Route) => {
-      const req = route.request();
-      const url = req.url();
-      let raw = decodeURIComponent(url.split("?")[1] ?? "");
-      if (!raw && req.method() === "POST") {
-        raw = req.postData() ?? "";
-      }
-      const variant: "chat" | "storage" = raw.includes("storage")
-        ? "storage"
-        : "chat";
-
-      // Chat tetap kosong sepanjang test — fokus pada varian storage.
-      if (variant !== "storage") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(makeDetail("chat", [])),
-        });
-        return;
-      }
-
-      if (phase === "initial") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(makeDetail("storage", [])),
-        });
-        return;
-      }
-      // phase === "holding": tunda respons sampai test membuka gate,
-      // baru fulfill dengan rilis tersedia.
-      await heldGate;
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(makeDetail("storage", [makeStorageRelease()])),
-      });
-    });
-
+    // Semua stubbing lewat helper bersama — pola: enqueue awal SEBELUM
+    // goto, lalu tunda enqueue refetch sampai state "Memeriksa…"
+    // terobservasi. Handler menahan waiter storage selama antrian
+    // kosong, memberi jendela deterministik untuk assertion busy.
+    const stub = await installApkStub(page);
+    stub.primeInitial();
+    stub.assertPrimed();
     await page.goto(URL);
 
     const storageDl = page.getByTestId("apk-shortcut-download-storage");
@@ -174,8 +107,8 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     await expect(storageRefresh).toBeVisible();
     await expect(storageRefresh).toBeEnabled();
 
-    // Balik ke fase holding SEBELUM tap — respons refetch akan ditahan.
-    phase = "holding";
+    // Jangan enqueue dulu — handler akan menahan waiter storage sampai
+    // test siap merilis, sehingga state "Memeriksa…" bisa diobservasi.
     await storageRefresh.click();
 
     // === State checking/busy tervalidasi ===
@@ -209,7 +142,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     ).toHaveCount(0);
 
     // === Rilis dirilis → tombol menjadi aktif ===
-    releaseNext?.();
+    stub.enqueue("storage", [makeStorageRelease()]);
 
     await expect(
       storageDl.getByText("Unduh APK Storage", { exact: true }),

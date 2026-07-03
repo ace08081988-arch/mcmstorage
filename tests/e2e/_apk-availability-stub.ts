@@ -76,6 +76,23 @@ export type ApkStub = {
   servedCount: (variant: ApkVariant) => number;
   /** Jumlah antrian tersisa & waiter yang belum dilayani. */
   pending: () => { chat: number; storage: number; waiters: number };
+  /**
+   * Enqueue respons untuk fetch AWAL kedua varian (dipanggil SEBELUM
+   * `page.goto`). Default: kedua varian kosong. Menetapkan flag
+   * `primed=true` yang divalidasi oleh {@link assertPrimed}.
+   */
+  primeInitial: (
+    chatReleases?: ApkRelease[],
+    storageReleases?: ApkRelease[],
+  ) => void;
+  /**
+   * Penegasan bahwa halaman siap dinavigasi. Wajib dipanggil TEPAT
+   * sebelum `page.goto(URL)` di setiap spec — melempar error kalau
+   * `primeInitial` belum dipanggil atau salah satu antrian awal
+   * (chat / storage) belum terisi. Mencegah race di mana test lupa
+   * setup dan initial fetch tergantung menunggu waiter selamanya.
+   */
+  assertPrimed: () => void;
 };
 
 function detectVariant(raw: string): ApkVariant {
@@ -86,6 +103,7 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
   const queued: Record<ApkVariant, ApkRelease[][]> = { chat: [], storage: [] };
   const waiters: Record<ApkVariant, PendingWaiter[]> = { chat: [], storage: [] };
   const served: Record<ApkVariant, number> = { chat: 0, storage: 0 };
+  let primed = false;
 
   function nextResponse(variant: ApkVariant): Promise<ApkRelease[]> {
     const ready = queued[variant].shift();
@@ -127,6 +145,34 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
         storage: queued.storage.length,
         waiters: waiters.chat.length + waiters.storage.length,
       };
+    },
+    primeInitial(chatReleases = [], storageReleases = []) {
+      // Enqueue respons untuk fetch awal (mount) kedua varian.
+      const enqueueOne = (variant: ApkVariant, releases: ApkRelease[]) => {
+        const waiter = waiters[variant].shift();
+        if (waiter) waiter(releases);
+        else queued[variant].push(releases);
+      };
+      enqueueOne("chat", chatReleases);
+      enqueueOne("storage", storageReleases);
+      primed = true;
+    },
+    assertPrimed() {
+      if (!primed) {
+        throw new Error(
+          "[apk-stub] Panggil stub.primeInitial(...) sebelum page.goto — " +
+            "harness memanggil getApkVariantDetail untuk chat & storage " +
+            "saat mount, dan handler menunggu antrian sebelum fulfill.",
+        );
+      }
+      if (queued.chat.length < 1 || queued.storage.length < 1) {
+        throw new Error(
+          "[apk-stub] Antrian fetch awal tidak lengkap sebelum goto " +
+            `(chat=${queued.chat.length}, storage=${queued.storage.length}). ` +
+            "Pastikan tidak ada enqueue lain yang mengonsumsi antrian " +
+            "sebelum navigasi.",
+        );
+      }
     },
   };
 }

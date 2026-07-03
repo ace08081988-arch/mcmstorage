@@ -1,4 +1,5 @@
-import { test, expect, type Route } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { installApkStub, makeRelease } from "./_apk-availability-stub";
 
 /**
  * E2E: verifikasi `aria-label` <CopyChatApkLinksButton variant="shortcut">
@@ -24,43 +25,6 @@ import { test, expect, type Route } from "@playwright/test";
 
 const URL = "/lovable/visual/apk-availability-shortcuts";
 
-type ApkRelease = {
-  name: string;
-  url: string;
-  sizeMB: number | null;
-  updatedAt: string | null;
-  versionName: string | null;
-  versionCode: number | null;
-  belowMinimum: boolean;
-};
-
-function makeRelease(): ApkRelease {
-  return {
-    name: "MCM-Chat-1.0.0.apk",
-    url: "https://example.test/MCM-Chat-1.0.0.apk",
-    sizeMB: 12,
-    updatedAt: "2026-07-03T00:00:00.000Z",
-    versionName: "1.0.0",
-    versionCode: 1,
-    belowMinimum: false,
-  };
-}
-
-function makeDetail(
-  variant: "chat" | "storage",
-  releases: ApkRelease[],
-): Record<string, unknown> {
-  return {
-    variant,
-    title: variant === "chat" ? "MCM Chat" : "MCM Storage",
-    subtitle: "Harness stub.",
-    latest: releases[0] ?? null,
-    releases,
-    changelog: null,
-    minSupported: null,
-  };
-}
-
 test.describe("CopyChatApkLinksButton · aria-label per state", () => {
   test("idle → checking(disabled) → tersedia → busy(disabled) → tersalin", async ({
     page,
@@ -70,50 +34,12 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // state "busy → tersalin" berhasil di sisi Chromium.
     await context.grantPermissions(["clipboard-read", "clipboard-write"]);
 
-    let chatReleases: ApkRelease[] = [];
-    let holdChat: Promise<void> | null = null;
-    let releaseHold: (() => void) | null = null;
-
-    function armHold() {
-      holdChat = new Promise<void>((resolve) => {
-        releaseHold = () => {
-          const prev = holdChat;
-          holdChat = null;
-          releaseHold = null;
-          resolve();
-          void prev;
-        };
-      });
-    }
-
-    await page.route("**/_serverFn/**", async (route: Route) => {
-      const req = route.request();
-      const url = req.url();
-      let raw = decodeURIComponent(url.split("?")[1] ?? "");
-      if (!raw && req.method() === "POST") {
-        raw = req.postData() ?? "";
-      }
-      const variant: "chat" | "storage" = raw.includes("storage")
-        ? "storage"
-        : "chat";
-
-      if (variant !== "chat") {
-        await route.fulfill({
-          status: 200,
-          contentType: "application/json",
-          body: JSON.stringify(makeDetail("storage", [])),
-        });
-        return;
-      }
-
-      if (holdChat) await holdChat;
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(makeDetail("chat", chatReleases)),
-      });
-    });
-
+    // Semua respons server-fn di-stub via helper bersama. Pola
+    // "hold → release" = jangan enqueue dulu → handler menahan
+    // waiter, lalu enqueue saat test siap melanjutkan.
+    const stub = await installApkStub(page);
+    stub.primeInitial();
+    stub.assertPrimed();
     await page.goto(URL);
 
     const wrapper = page.getByTestId("apk-shortcut-copy-chat-links");
@@ -142,8 +68,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // `availability.refetch()` (karena !isAvailable). Selama refetch
     // berjalan, isFetching = true → aria-label harus berubah ke
     // state "Memeriksa…".
-    chatReleases = [makeRelease()];
-    armHold();
+    // (tidak enqueue chat → handler menahan waiter → state Memeriksa…)
     await mainByAria(
       /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
     ).click();
@@ -163,7 +88,8 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     ).toHaveCount(0);
 
     // ============ (3) Idle · tersedia ============
-    releaseHold?.();
+    // Rilis waiter chat dengan rilis tersedia.
+    stub.enqueue("chat", [makeRelease("chat")]);
     const idleAvailableLabel = /^Salin semua link APK Chat$/;
     await expect(mainByAria(idleAvailableLabel)).toBeVisible();
     await expect(mainByAria(idleAvailableLabel)).toBeEnabled();
@@ -173,7 +99,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // memanggil fetchDetail sebelum menulis clipboard; selama request
     // digantung, busy=true → aria-label harus berubah ke state
     // "Memproses…" dan tombol disabled.
-    armHold();
+    // (tidak enqueue chat → onClick fetchDetail menggantung → busy=true)
     await mainByAria(idleAvailableLabel).click();
 
     const busyLabel =
@@ -185,7 +111,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     await expect(mainByAria(checkingLabel)).toHaveCount(0);
 
     // ============ (5) Aktif · tersalin ============
-    releaseHold?.();
+    stub.enqueue("chat", [makeRelease("chat")]);
     const copiedLabel =
       /^Tersalin: semua link APK MCM Chat sudah disalin ke clipboard$/;
     // `copied` di-reset setelah 2 detik — assertion default (5s) cukup
