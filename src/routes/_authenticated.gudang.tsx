@@ -1928,7 +1928,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)} required>
             {items.map((i) => (
               <option key={i.id} value={i.id}>
-                {i.name} ({i.package_type}{i.package_type !== "pcs" ? ` ${i.package_size} ${i.base_unit}` : ""}) · stok {fmtItemQty(i.stock_base, i)}
+                {i.name} ({i.package_type}{i.package_type !== "pcs" ? ` ${i.package_size} ${humanBaseUnit(i.package_type, i.base_unit)}` : ""}) · stok {fmtItemQty(i.stock_base, i)}
               </option>
             ))}
           </select>
@@ -2064,7 +2064,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <div className="flex justify-between text-[10px] text-muted-foreground">
             <span>Rata-rata modal item</span>
             <span>
-              {rupiah(selectedItem.avg_cost_per_base)}/{selectedItem.base_unit}
+              {rupiah(selectedItem.avg_cost_per_base)}/{humanBaseUnit(selectedItem.package_type, selectedItem.base_unit)}
             </span>
           </div>
         )}
@@ -2195,7 +2195,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
         <select className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={itemId} onChange={(e) => setItemId(e.target.value)}>
           {items.map((i) => (
             <option key={i.id} value={i.id}>
-              {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base", i.name)} · HPP {rupiah(i.avg_cost_per_base)}/{i.base_unit}
+              {i.name} · stok {fmtQtyDual(i.stock_base, i.base_unit, i.package_type, i.package_size, i.package_type !== "pcs" ? "package" : "base", i.name)} · HPP {rupiah(i.avg_cost_per_base)}/{humanBaseUnit(i.package_type, i.base_unit)}
             </option>
           ))}
         </select>
@@ -2205,7 +2205,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
         <>
           <div className="flex gap-1 text-xs">
             <button type="button" onClick={() => setSellMode("base")} className={`flex-1 rounded border px-2 py-1 ${sellMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
-              Jual per {item.base_unit}
+              Jual per {humanBaseUnit(item.package_type, item.base_unit)}
             </button>
             {item.package_type !== "pcs" && (
               <button type="button" onClick={() => setSellMode("package")} className={`flex-1 rounded border px-2 py-1 ${sellMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
@@ -2222,7 +2222,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
           <div className="grid grid-cols-2 gap-2">
             <label className="block">
               <span className="text-[11px] text-muted-foreground">
-                Jumlah ({sellMode === "base" ? item.base_unit : sellMode === "karton" ? "karton" : item.package_type})
+                Jumlah ({sellMode === "base" ? humanBaseUnit(item.package_type, item.base_unit) : sellMode === "karton" ? "karton" : item.package_type})
               </span>
               {sellMode === "base" && item.base_unit === "g" ? (
                 <SmartWeightInput
@@ -2240,7 +2240,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             </label>
             {sellMode === "base" ? (
               <label className="block">
-                <span className="text-[11px] text-muted-foreground">Harga / {item.base_unit} (Rp)</span>
+                <span className="text-[11px] text-muted-foreground">Harga / {humanBaseUnit(item.package_type, item.base_unit)} (Rp)</span>
                 <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
               </label>
             ) : (
@@ -2428,7 +2428,7 @@ function RiwayatTab({
                     </div>
                   </div>
                   <div className="mt-1 grid grid-cols-3 gap-2">
-                    <div><span className="text-muted-foreground">Kemasan </span><b>{Number(p.package_qty)} × {Number(p.package_size_snapshot)}{it?.base_unit || ""}</b></div>
+                  <div><span className="text-muted-foreground">Kemasan </span><b>{Number(p.package_qty)} × {Number(p.package_size_snapshot)}{it ? humanBaseUnit(it.package_type, it.base_unit) : ""}</b></div>
                     <div><span className="text-muted-foreground">Harga </span><b>{rupiah(Number(p.price_per_package))}</b></div>
                     <div><span className="text-muted-foreground">Total </span><b>{rupiah(Number(p.total_cost))}</b></div>
                   </div>
@@ -2854,7 +2854,7 @@ function PesananTab({
     const it = itemMap[o.item_id];
     const qBase = it ? (o.qty_mode === "base" ? Number(o.qty) : Number(o.qty) * it.package_size) : 0;
     const ringkasan = it
-      ? `${it.name} — ${fmtItemQty(qBase, it)}${o.price_per_unit != null ? ` × ${rupiah(Number(o.price_per_unit))}/${o.qty_mode === "base" ? it.base_unit : it.package_type}` : ""}`
+      ? `${it.name} — ${fmtItemQty(qBase, it)}${o.price_per_unit != null ? ` × ${rupiah(Number(o.price_per_unit))}/${o.qty_mode === "base" ? humanBaseUnit(it.package_type, it.base_unit) : it.package_type}` : ""}`
       : "pesanan ini";
     const labelPelanggan = o.customer_id ? (custMap[o.customer_id]?.name ?? "pelanggan") : "tanpa pelanggan";
     const pilihan = await confirm({
@@ -2904,8 +2904,8 @@ function PesananTab({
   function fmtQty(o: OrderRequest) {
     const it = itemMap[o.item_id];
     if (!it) return `${o.qty}`;
-    if (o.qty_mode === "base") return `${o.qty} ${it.base_unit}`;
-    return `${o.qty} ${it.package_type}${it.package_type !== "pcs" ? ` (≈${Number(o.qty) * it.package_size} ${it.base_unit})` : ""}`;
+    if (o.qty_mode === "base") return `${o.qty} ${humanBaseUnit(it.package_type, it.base_unit)}`;
+    return `${o.qty} ${it.package_type}${it.package_type !== "pcs" ? ` (≈${Number(o.qty) * it.package_size} ${humanBaseUnit(it.package_type, it.base_unit)})` : ""}`;
   }
 
   if (items.length === 0) {
@@ -2959,7 +2959,7 @@ function PesananTab({
           <>
             <div className="flex gap-1 text-xs">
               <button type="button" onClick={() => setQtyMode("base")} className={`flex-1 rounded border px-2 py-1 ${qtyMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
-                Per {item.base_unit}
+                Per {humanBaseUnit(item.package_type, item.base_unit)}
               </button>
               {item.package_type !== "pcs" && (
                 <button type="button" onClick={() => setQtyMode("package")} className={`flex-1 rounded border px-2 py-1 ${qtyMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
@@ -2976,7 +2976,7 @@ function PesananTab({
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
                 <span className="text-[11px] text-muted-foreground">
-                  Jumlah ({qtyMode === "base" ? item.base_unit : qtyMode === "karton" ? "karton" : item.package_type})
+                  Jumlah ({qtyMode === "base" ? humanBaseUnit(item.package_type, item.base_unit) : qtyMode === "karton" ? "karton" : item.package_type})
                 </span>
                 {qtyMode === "base" && item.base_unit === "g" ? (
                   <SmartWeightInput
@@ -2994,7 +2994,7 @@ function PesananTab({
               </label>
               <label className="block">
                 <span className="text-[11px] text-muted-foreground">
-                  Harga / {qtyMode === "base" ? item.base_unit : qtyMode === "karton" ? "karton" : item.package_type} (opsional)
+                  Harga / {qtyMode === "base" ? humanBaseUnit(item.package_type, item.base_unit) : qtyMode === "karton" ? "karton" : item.package_type} (opsional)
                 </span>
                 <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={price} onChange={(e) => setPrice(e.target.value)} />
               </label>
@@ -3035,7 +3035,7 @@ function PesananTab({
                     </div>
                     <div className="mt-1 text-[11px]">
                       Jumlah: <b>{fmtQty(o)}</b>
-                      {o.price_per_unit != null && <> · {rupiah(Number(o.price_per_unit))}/{o.qty_mode === "base" ? it?.base_unit : it?.package_type}</>}
+                      {o.price_per_unit != null && <> · {rupiah(Number(o.price_per_unit))}/{o.qty_mode === "base" ? (it ? humanBaseUnit(it.package_type, it.base_unit) : "") : it?.package_type}</>}
                     </div>
                     {o.note && <div className="text-[11px] text-muted-foreground">📌 {o.note}</div>}
                   </div>
