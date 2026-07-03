@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { installApkStub, makeRelease } from "./_apk-availability-stub";
+import {
+  APK_STUB_PER_ACTION_WINDOW_MS,
+  APK_STUB_TERMINAL_WINDOW_MS,
+} from "./_helpers/apk-stub-timing";
 
 /**
  * E2E: alur pengecekan ulang ketersediaan APK pada tiga tombol pintas
@@ -83,19 +87,19 @@ test.describe("APK availability · refresh flow", () => {
       async () => {
         await chatRefresh.click();
       },
-      { expected: { chat: 1 }, windowMs: 500 },
+      { expected: { chat: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
     );
     await stub.assertNoAdditionalRequests(
       async () => {
         await storageRefresh.click();
       },
-      { expected: { storage: 1 }, windowMs: 500 },
+      { expected: { storage: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
     );
     await stub.assertNoAdditionalRequests(
       async () => {
         await copyRefresh.click();
       },
-      { expected: { chat: 1 }, windowMs: 500 },
+      { expected: { chat: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
     );
 
     // Tunggu handler idle lagi setelah ketiga tap refresh — semua
@@ -157,6 +161,8 @@ test.describe("APK availability · refresh flow", () => {
     // Terminal leak-guard event-based: konsisten dengan spec lain —
     // varian dihilangkan → cek chat + storage sekaligus. Tanpa polling;
     // subscribe ke request listener, bounded upper-bound `windowMs`.
-    await stub.assertNoAdditionalRequests({ windowMs: 750 });
+    await stub.assertNoAdditionalRequests({
+      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
+    });
   });
 });

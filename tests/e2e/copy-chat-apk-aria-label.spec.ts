@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { installApkStub, makeRelease } from "./_apk-availability-stub";
+import {
+  APK_STUB_PER_ACTION_WINDOW_MS,
+  APK_STUB_TERMINAL_WINDOW_MS,
+} from "./_helpers/apk-stub-timing";
 
 /**
  * E2E: verifikasi `aria-label` <CopyChatApkLinksButton variant="shortcut">
@@ -83,7 +87,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
           /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
         ).click();
       },
-      { variant: "storage", windowMs: 300 },
+      { variant: "storage", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
     );
 
     // Tunggu event "waiter tertahan" dari handler — bukti deterministik
@@ -122,7 +126,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
       async () => {
         await mainByAria(idleAvailableLabel).click();
       },
-      { variant: "storage", windowMs: 300 },
+      { variant: "storage", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
     );
 
     // Bukti deterministik: request fetchDetail sudah tiba di handler
@@ -157,6 +161,8 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     await stub.assertQuiescent("chat", { windowMs: 1000 });
     await stub.assertQuiescent("storage", { windowMs: 500 });
     // Terminal: guard event-based untuk kedua varian.
-    await stub.assertNoAdditionalRequests({ windowMs: 500 });
+    await stub.assertNoAdditionalRequests({
+      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
+    });
   });
 });
