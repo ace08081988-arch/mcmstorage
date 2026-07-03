@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getApkVariantDetail } from "@/lib/apk.functions";
@@ -31,6 +32,21 @@ export function DownloadChatApkShortcut() {
   // menampilkan spinner.
   const [stage, setStage] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+
+  // Pre-fetch ketersediaan APK Chat sehingga tombol bisa tampil idle
+  // "Belum tersedia" tanpa perlu memicu toast/dialog konfirmasi dulu.
+  const availability = useQuery({
+    queryKey: ["apk-availability", "chat"],
+    queryFn: async () => {
+      const detail = await fetchDetail({ data: { variant: "chat" } });
+      return !!detail?.latest?.url;
+    },
+    staleTime: 60_000,
+    retry: 1,
+  });
+  const isChecking = availability.isLoading;
+  const isAvailable = availability.data === true;
+  const isUnavailable = availability.isSuccess && availability.data === false;
 
   useEffect(() => {
     if (cooldown <= 0) return;
@@ -151,30 +167,47 @@ export function DownloadChatApkShortcut() {
     <AlertDialog open={open} onOpenChange={setOpen}>
       <button
         type="button"
-        disabled={busy}
+        disabled={busy || isChecking || isUnavailable}
         aria-label={
           busy
             ? `Unduhan APK MCM Chat sedang berjalan${stage ? `: ${stage}` : ""}${cooldown > 0 ? `, tunggu ${cooldown} detik` : ""}`
-            : "Unduh APK MCM Chat versi terbaru"
+            : isUnavailable
+              ? "APK MCM Chat belum tersedia"
+              : isChecking
+                ? "Memeriksa ketersediaan APK MCM Chat"
+                : "Unduh APK MCM Chat versi terbaru"
         }
         aria-busy={busy}
         aria-live="polite"
-        aria-disabled={busy}
-        onClick={() => setOpen(true)}
+        aria-disabled={busy || isChecking || isUnavailable}
+        onClick={() => {
+          if (!isAvailable) return;
+          setOpen(true);
+        }}
         className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
       >
         <span className="text-base leading-none">
-          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "💬"}
+          {busy || isChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "💬"}
         </span>
         <span className="mt-1 text-xs font-semibold leading-tight">
-          {busy ? stage ?? "Memproses…" : "Unduh APK Chat"}
+          {busy
+            ? stage ?? "Memproses…"
+            : isChecking
+              ? "Memeriksa…"
+              : isUnavailable
+                ? "Belum tersedia"
+                : "Unduh APK Chat"}
         </span>
         <span className="text-[10px] leading-tight text-muted-foreground">
           {busy
             ? cooldown > 0
               ? `Menunggu browser… ${cooldown}s`
               : "Sedang berjalan…"
-            : "Langsung unduh versi terbaru"}
+            : isChecking
+              ? "Mengecek rilis terbaru…"
+              : isUnavailable
+                ? "Belum ada rilis APK Chat"
+                : "Langsung unduh versi terbaru"}
         </span>
       </button>
       <AlertDialogContent>

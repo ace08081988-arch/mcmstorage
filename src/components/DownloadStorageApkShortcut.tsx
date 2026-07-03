@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getApkVariantDetail } from "@/lib/apk.functions";
@@ -15,8 +16,21 @@ export function DownloadStorageApkShortcut() {
   const fetchDetail = useServerFn(getApkVariantDetail);
   const [busy, setBusy] = useState(false);
 
+  const availability = useQuery({
+    queryKey: ["apk-availability", "storage"],
+    queryFn: async () => {
+      const detail = await fetchDetail({ data: { variant: "storage" } });
+      return !!detail?.latest?.url;
+    },
+    staleTime: 60_000,
+    retry: 1,
+  });
+  const isChecking = availability.isLoading;
+  const isAvailable = availability.data === true;
+  const isUnavailable = availability.isSuccess && availability.data === false;
+
   async function onClick() {
-    if (busy) return;
+    if (busy || !isAvailable) return;
     setBusy(true);
     const loadingId = toast.loading("Menyiapkan unduhan APK MCM Storage…");
     try {
@@ -58,18 +72,33 @@ export function DownloadStorageApkShortcut() {
     <button
       type="button"
       onClick={() => void onClick()}
-      disabled={busy}
-      aria-label="Unduh APK MCM Storage"
+      disabled={busy || isChecking || isUnavailable}
+      aria-disabled={busy || isChecking || isUnavailable}
+      aria-label={
+        isUnavailable
+          ? "APK MCM Storage belum tersedia"
+          : isChecking
+            ? "Memeriksa ketersediaan APK MCM Storage"
+            : "Unduh APK MCM Storage"
+      }
       className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
     >
       <span className="text-base leading-none">
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "⬇️"}
+        {busy || isChecking ? <Loader2 className="h-4 w-4 animate-spin" /> : "⬇️"}
       </span>
       <span className="mt-1 text-xs font-semibold leading-tight">
-        Unduh APK Storage
+        {isChecking
+          ? "Memeriksa…"
+          : isUnavailable
+            ? "Belum tersedia"
+            : "Unduh APK Storage"}
       </span>
       <span className="text-[10px] leading-tight text-muted-foreground">
-        Langsung unduh versi terbaru
+        {isChecking
+          ? "Mengecek rilis terbaru…"
+          : isUnavailable
+            ? "Belum ada rilis APK Storage"
+            : "Langsung unduh versi terbaru"}
       </span>
     </button>
   );
