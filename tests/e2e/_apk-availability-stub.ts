@@ -106,6 +106,47 @@ export type ApkStubIgnoreInfo = {
   totalRequested: number;
 };
 
+/**
+ * Opsi untuk {@link ApkStub.assertNoAdditionalRequests}.
+ *
+ * Whitelist / ignore dievaluasi per event request yang masuk selama
+ * aksi berjalan + `windowMs`. Kalau semua request masuk termasuk yang
+ * di-whitelist, helper resolve; kalau ada yang tidak di-whitelist,
+ * helper melempar dengan detail leak + event log.
+ */
+export type AssertNoAdditionalRequestsOpts = {
+  /**
+   * Batasi asersi ke satu varian. Default: kedua varian
+   * (`["chat", "storage"]`).
+   */
+  variant?: ApkVariant;
+  /**
+   * Trailing window setelah aksi (atau setelah panggilan standalone)
+   * di mana request baru dianggap "bocor". Default 500 ms — bounded
+   * upper-bound, bukan sinkronisasi.
+   */
+  windowMs?: number;
+  /**
+   * Jumlah request per varian yang DIHARAPKAN masuk selama window.
+   * Bertindak sebagai whitelist kuantitatif — pas untuk kasus
+   * "tap ini boleh memicu tepat 1 refetch chat, tidak lebih".
+   * Request ke-N ≤ `expected[variant]` otomatis diabaikan; sisanya
+   * dianggap leak. Default semua 0 (nol request diperbolehkan).
+   */
+  expected?: Partial<Record<ApkVariant, number>>;
+  /**
+   * Predikat kustom untuk mengecualikan request tertentu. Dievaluasi
+   * SESUDAH `expected` — bila `expected` sudah mengizinkan request
+   * ini, `ignore` tidak dipanggil. Return `true` untuk skip
+   * (bukan leak); `false` / undefined untuk perlakukan sebagai leak.
+   *
+   * Contoh — abaikan hanya refetch chat pertama:
+   *
+   *   ignore: (info) => info.variant === "chat" && info.nthSinceSnapshot === 1
+   */
+  ignore?: (info: ApkStubIgnoreInfo) => boolean;
+};
+
 export type ApkStub = {
   enqueue: (variant: ApkVariant, releases: ApkRelease[]) => void;
   /** Jumlah request yang selesai di-fulfill per varian. */
