@@ -1,68 +1,91 @@
-## Fitur Daftar (Chat Lists) ala WhatsApp
+# Perbaikan panggilan + kontrol audio
 
-Membangun sistem "Daftar" agar owner bisa memfilter tab Chat berdasarkan preset (Belum dibaca, Grup, Favorit) dan **daftar custom** buatan sendiri (mis. "Ditanggapi AI", "Handoff AI", "Maps") berisi kumpulan kontak/grup pilihan.
+Dua pekerjaan digabung:
 
-### 1. Database (Lovable Cloud)
+**A. Panggilan tidak bisa tersambung** — akar penyebab & perbaikannya.
+**B. Fitur baru** — panel kontrol audio di layar panggilan.
 
-Migration baru:
+---
 
-- `chat_lists` — daftar milik user
-  - `id uuid pk`, `user_id uuid`, `name text`, `color text` (hex), `icon text` (nama lucide), `sort_order int`, `created_at`, `updated_at`
-- `chat_list_members` — anggota daftar (conversation refs)
-  - `list_id uuid fk`, `conversation_id uuid fk`, `added_at`
-  - PK `(list_id, conversation_id)`
+## A. Kenapa panggilan sering gagal & yang akan diperbaiki
 
-RLS: user hanya bisa CRUD daftar & anggotanya sendiri (`user_id = auth.uid()`). GRANT `SELECT/INSERT/UPDATE/DELETE` ke `authenticated`, `ALL` ke `service_role`.
+### 1. Belum ada TURN server (penyebab utama di jaringan seluler)
+`src/lib/webrtc.ts` hanya memakai STUN publik Google. Di jaringan seluler Indonesia dan Wi-Fi kantor/rumah dengan NAT simetris, dua peer tidak bisa saling menjangkau tanpa TURN relay — inilah yang paling sering bikin panggilan macet di "Memanggil…".
 
-### 2. Data layer
+Perbaikan:
+- Server function baru `getIceServers()` yang membaca kredensial TURN dari secret (`TURN_URL`, `TURN_USERNAME`, `TURN_CREDENTIAL`) dan mengembalikan daftar `RTCIceServer` (STUN + TURN).
+- `createPeerSession` memanggil ini sekali di awal, bukan konstanta modul.
+- Kalau secret belum diisi, tetap jalan dengan STUN saja + tampilkan banner sekali "Panggilan mungkin gagal di jaringan tertentu — atur TURN".
+- Saya minta 3 secret via alat secrets setelah rencana ini disetujui. Anda tinggal tempel dari penyedia TURN pilihan (mis. Twilio Network Traversal, Metered.ca, Cloudflare Calls, atau coturn sendiri).
 
-`src/lib/chat-lists.ts`:
-- `useChatLists()` — query semua daftar user + count anggota
-- `useChatList(id)` — detail + daftar `conversation_id`
-- `useCreateChatList`, `useUpdateChatList`, `useDeleteChatList`
-- `useAddToList`, `useRemoveFromList`, `useReorderChatLists`
+### 2. Race signaling: offer terkirim sebelum callee gabung channel
+`startOffer()` langsung `channel.send(offer)` begitu caller `SUBSCRIBED`. Broadcast Supabase Realtime tidak antre — kalau callee belum subscribe, offer hilang, dan panggilan macet.
 
-### 3. Halaman Daftar `/daftar`
+Perbaikan:
+- Callee kirim signal `hello` saat subscribe berhasil (dari `CallHost.acceptIncoming`).
+- Caller menahan `startOffer` sampai menerima `hello`, dengan fallback timer 4 detik untuk tetap mengirim offer.
+- Caller me-resend offer maks 3× tiap 2 detik selama `pc.signalingState === "have-local-offer"`.
 
-Route baru `src/routes/_authenticated.daftar.tsx`:
-- Header "Daftar" + tombol pensil (edit urutan) + back
-- Tombol "+ Daftar baru" → dialog create (nama + pilih warna + icon + pilih conversations)
-- Section "Daftar Anda": preset (Belum dibaca, Favorit, Grup) yang selalu ada + daftar custom user
-- Tap daftar → buka editor (rename, ubah warna/icon, tambah/hapus anggota, hapus daftar)
-- Section "Preset yang tersedia" (info)
+### 3. Track audio remote tidak selalu terputar
+Sudah ada handler retry `.play()` on tap, tapi kalau `<audio>` remote di-mount dua kali (elemen dobel pada mode video), `ref` menimpa yang lain. Perbaikan: pakai satu `<audio ref>` remote + kelas `sr-only` yang selalu ada.
 
-Menu **Daftar** di dropdown chat sekarang menuju `/daftar` (bukan `/buku-alamat`).
+### 4. Tombol WhatsApp membuka chat, bukan panggilan
+Deep link `wa.me/<nomor>` selalu membuka jendela chat. Skema panggilan WA (`whatsapp://call?phone=…`) tidak resmi dan sering ditolak. Perbaikan:
+- Tombol di header chat/kontak menjadi dropdown "Buka WhatsApp": item **Chat** (default `wa.me`), item **Panggilan WA** yang mencoba `whatsapp://call?phone=…` lalu fallback ke `wa.me` jika gagal (toast: "Buka WhatsApp lalu tekan tombol panggilan").
+- Tambahkan tooltip menjelaskan keterbatasan platform WA — bukan bug kita.
 
-### 4. Integrasi ke tab Chat
+---
 
-Di `_authenticated.chat.index.tsx`:
-- Filter chip dinamis: preset default + daftar custom user (dengan dot warna & icon)
-- State `filter` diperluas: `"all" | "unread" | "group" | "favorite" | { listId: string }`
-- Klik chip custom → filter `active` berdasarkan `conversation_id ∈ list.members`
-- Long-press chat item → sudah ada mode select; tambah aksi "Tambah ke daftar…" di bulk toolbar dan di menu per-chat
+## B. Kontrol audio baru di layar panggilan
 
-### 5. UX detail
+Panel bawah `CallScreen` diperluas jadi 2 baris:
 
-- Preset tidak bisa dihapus, tapi bisa disembunyikan dari chip bar (setting per user, disimpan di localStorage untuk sederhana)
-- Warna & icon konsisten dengan tokens (tidak hardcode; pilihan warna dari palette semantik)
-- Empty state: ikon domain-spesifik, bukan Sparkles
+**Baris utama (sudah ada):** Mic · Kamera (mode video) · Akhiri.
 
-### Teknis (untuk referensi)
+**Baris kontrol audio (baru):**
+1. **Pilih output audio** — tombol icon berubah: `🔊 Speaker` / `👂 Earpiece` / `🎧 Headset` / `🎧 Bluetooth`. Ketuk membuka sheet daftar perangkat output aktif dari `navigator.mediaDevices.enumerateDevices()`; pilihan diterapkan via `remoteAudio.setSinkId(deviceId)`. Di iOS Safari tombol tetap tampil tapi disabled dengan tooltip "Ubah dari kontrol sistem".
+2. **Toggle Speaker cepat** — tombol pintas antara "Earpiece/headphone" ↔ "Speaker keras" (setara tombol speakerphone WhatsApp). Dipetakan ke sink default vs `speaker` device kalau tersedia.
+3. **Slider volume in-call** — mengubah `remoteAudio.volume` 0–1. State disimpan di `localStorage` supaya persist antar panggilan.
+4. **Indikator perangkat aktif** — di status bar atas panggilan: chip kecil "🎧 Bluetooth Soundcore Q30" (label perangkat dari `enumerateDevices`); update otomatis lewat event `devicechange`.
+
+Semua kontrol berjalan idempoten — kalau browser/WebView tidak mendukung `setSinkId`, tombol menjadi label-only + hint.
+
+### Penanganan Capacitor Android
+`setSinkId` bekerja di Chromium tapi tidak selalu mengubah routing OS (Bluetooth/earpiece diatur `AudioManager` Android). Untuk build APK Storage/Chat:
+- Tambah util `src/lib/native-audio-route.ts` yang mendeteksi Capacitor lalu meminta plugin `@capacitor-community/audio-toggle` (kalau terpasang) untuk `setMode('IN_CALL')` dan `setSpeakerOn(true|false)`.
+- Kalau plugin belum ada, feature detect diam-diam disable dan tombol jadi Web-only.
+- Instalasi plugin ditawarkan sebagai langkah opsional setelah rencana disetujui (butuh rebuild APK).
+
+---
+
+## Berkas yang berubah
+
+- `src/lib/webrtc.ts` — TURN via `getIceServers`, race fix (`hello` + resend offer).
+- `src/lib/calls.functions.ts` (baru) — server function `getIceServers`.
+- `src/lib/audio-output.ts` (baru) — enumerate output, apply sink, event `devicechange`, persist volume.
+- `src/lib/native-audio-route.ts` (baru) — jembatan Capacitor.
+- `src/components/chat/CallScreen.tsx` — panel kontrol audio baru + chip indikator + integrasi.
+- `src/components/chat/CallHost.tsx` — kirim `hello` saat callee accept.
+- `src/components/chat/WhatsAppMenu.tsx` (baru) — dropdown Chat/Panggilan.
+- Tempat pemakaian tombol WA di header chat/kontak diganti ke komponen baru.
+- Test: `tests/e2e/call-audio-controls.spec.ts` (harness publik `/lovable/visual/call-audio-controls`), `tests/integration/webrtc-ice-config.test.ts`.
+
+## Detail teknis singkat
 
 ```text
-src/routes/_authenticated.daftar.tsx       (halaman utama)
-src/components/chat/ChatListEditor.tsx     (dialog create/edit)
-src/components/chat/AddToListMenu.tsx      (aksi tambah ke daftar)
-src/lib/chat-lists.ts                      (hooks + RPC helpers)
-supabase migration: chat_lists + chat_list_members + RLS + GRANT
+Sinyal (setelah fix)
+--------------------
+callee accept → subscribe(call:<id>) → send "hello"
+caller wait "hello" atau 4s → startOffer
+caller resend offer tiap 2s (maks 3×) selama signalingState=have-local-offer
+
+ICE
+---
+STUN Google (2 endpoint) + TURN (username/credential dari secret)
+Fallback tanpa TURN → banner sekali per session
 ```
 
-Perubahan minimal di file existing: `_authenticated.chat.index.tsx` (chip bar & bulk action), dropdown "Daftar" diarahkan ke `/daftar`.
+## Yang perlu Anda siapkan setelah rencana disetujui
 
-### Yang TIDAK termasuk
-
-- Sharing daftar antar user
-- Sinkronisasi ke WhatsApp asli
-- Auto-tagging berbasis AI (bisa jadi fase berikut untuk daftar "Ditanggapi AI"/"Handoff AI" — sekarang manual assign dulu)
-
-Setuju lanjut implementasi?
+1. Kredensial TURN (URL, username, credential). Rekomendasi: Twilio Network Traversal (Anda sudah punya connector Twilio) atau Metered.ca free tier.
+2. Konfirmasi kalau boleh menambah plugin Capacitor `@capacitor-community/audio-toggle` — perlu rebuild APK Storage & Chat.
