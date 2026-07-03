@@ -87,7 +87,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
           /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
         ).click();
       },
-      { variant: "storage", windowMs: 300 },
+      { variant: "storage", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
     );
 
     // Tunggu event "waiter tertahan" dari handler — bukti deterministik
