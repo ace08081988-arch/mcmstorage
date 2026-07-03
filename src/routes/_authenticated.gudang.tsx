@@ -1208,7 +1208,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                           <div className="line-clamp-2 break-words text-sm font-semibold leading-snug [overflow-wrap:anywhere]">{i.name}</div>
                           <div className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
                             per {i.package_type}
-                            {i.package_type !== "pcs" && ` (${i.package_size} ${i.base_unit}/kemasan)`}
+                            {i.package_type !== "pcs" && ` (${i.package_size} ${humanBaseUnit(i.package_type as BeliPackageType, i.base_unit as BeliBaseUnit)}/kemasan)`}
                           </div>
                         </div>
                       </div>
@@ -1233,7 +1233,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                         <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{fmtItemQty(i.stock_base, i)}</div>
                       </div>
                       <div className="min-w-0 rounded bg-muted/50 p-2">
-                        <div className="truncate text-muted-foreground">HPP / {i.base_unit}</div>
+                        <div className="truncate text-muted-foreground">HPP / {humanBaseUnit(i.package_type as BeliPackageType, i.base_unit as BeliBaseUnit)}</div>
                         <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.avg_cost_per_base)}</div>
                       </div>
                       <div className="min-w-0 rounded bg-muted/50 p-2">
