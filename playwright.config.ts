@@ -136,6 +136,17 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
+      // E2E banner mismatch reaktif terhadap dropdown pasca impor:
+      // memverifikasi banner `diag-mismatch` / `diag-ok` MUNCUL & HILANG
+      // dengan benar saat user mengubah dropdown `mode` atau `priceMode`
+      // setelah payload impor — bukan hanya saat impor ulang. Halaman
+      // publik no-auth.
+      name: "diagnostik-paket-mismatch-dropdown-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /diagnostik-paket-mismatch-dropdown\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
       // E2E visibilitas menu admin. Harness publik no-auth memverifikasi
       // (a) `filterSidebarItemsForAdmin` menyembunyikan `/pengaturan-apk`
       // & `/email-queue` dari non-admin, (b) klasifikasi halaman APK
