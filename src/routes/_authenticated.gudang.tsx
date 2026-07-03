@@ -114,6 +114,7 @@ import { computeBeliWarnings } from "@/lib/beli-warnings";
 import { beliResetKey } from "@/lib/beli-reset-key";
 import { humanBaseUnit } from "@/lib/unit-label";
 import { SmartWeightInput } from "@/components/SmartWeightInput";
+import { KartonRumusPopover } from "@/components/KartonRumusPopover";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
@@ -1230,7 +1231,17 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                     <div className="mt-2 grid grid-cols-3 gap-2 text-[11px] leading-snug">
                       <div className="min-w-0 rounded bg-muted/50 p-2">
                         <div className="truncate text-muted-foreground">Stok</div>
-                        <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{fmtItemQty(i.stock_base, i)}</div>
+                        {i.package_type === "botol" ? (
+                          <KartonRumusPopover
+                            botol={i.base_unit === "pcs" ? i.stock_base : i.stock_base / (Number(i.package_size) || 1)}
+                            packageSize={i.package_size}
+                            testId="stok-label-trigger"
+                          >
+                            <span className="font-semibold tabular-nums [overflow-wrap:anywhere]">{fmtItemQty(i.stock_base, i)}</span>
+                          </KartonRumusPopover>
+                        ) : (
+                          <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{fmtItemQty(i.stock_base, i)}</div>
+                        )}
                       </div>
                       <div className="min-w-0 rounded bg-muted/50 p-2">
                         <div className="truncate text-muted-foreground">HPP / {humanBaseUnit(i.package_type, i.base_unit)}</div>
@@ -1243,7 +1254,13 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                     </div>
                     {i.package_type === "botol" && (
                       <div className="mt-1.5 text-[10px] text-muted-foreground">
-                        ℹ️ Konversi: 1 karton = {BOTOL_PER_KARTON} botol
+                        <KartonRumusPopover
+                          botol={i.base_unit === "pcs" ? i.stock_base : i.stock_base / (Number(i.package_size) || 1)}
+                          packageSize={i.package_size}
+                          testId="stok-konversi-trigger"
+                        >
+                          ℹ️ Konversi: 1 karton = {BOTOL_PER_KARTON} botol
+                        </KartonRumusPopover>
                       </div>
                     )}
                   </li>
@@ -2225,7 +2242,13 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
           </div>
           {item.package_type === "botol" && (
             <div className="text-[10px] text-muted-foreground">
-              ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
+              <KartonRumusPopover
+                botol={sellMode === "karton" ? (Number(qty) || 0) * BOTOL_PER_KARTON : Number(qty) || 0}
+                packageSize={item.package_size}
+                testId="jual-karton-hint-trigger"
+              >
+                ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
+              </KartonRumusPopover>
               {sellMode === "karton" && (Number(qty) || 0) > 0 && (
                 <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
                   {Number(qty).toLocaleString("id-ID")} karton = {(Number(qty) * BOTOL_PER_KARTON).toLocaleString("id-ID")} botol
@@ -2989,7 +3012,13 @@ function PesananTab({
             </div>
             {item.package_type === "botol" && (
               <div className="text-[10px] text-muted-foreground">
-                ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
+                <KartonRumusPopover
+                  botol={qtyMode === "karton" ? (Number(qty) || 0) * BOTOL_PER_KARTON : Number(qty) || 0}
+                  packageSize={item.package_size}
+                  testId="pesanan-karton-hint-trigger"
+                >
+                  ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
+                </KartonRumusPopover>
                 {qtyMode === "karton" && (Number(qty) || 0) > 0 && (
                   <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
                     {Number(qty).toLocaleString("id-ID")} karton = {(Number(qty) * BOTOL_PER_KARTON).toLocaleString("id-ID")} botol
