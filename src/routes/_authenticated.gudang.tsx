@@ -116,6 +116,7 @@ import { humanBaseUnit } from "@/lib/unit-label";
 import { SmartWeightInput } from "@/components/SmartWeightInput";
 import { KartonRumusPopover } from "@/components/KartonRumusPopover";
 import { KemasanRumusPopover } from "@/components/KemasanRumusPopover";
+import { KemasanKonversiBadge } from "@/components/KemasanKonversiBadge";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
@@ -2256,16 +2257,14 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
                   ? `ℹ️ 1 ${item.package_type} = ${item.package_size} ${humanBaseUnit(item.package_type, item.base_unit)}`
                   : `ℹ️ Rumus konversi`}
             </KemasanRumusPopover>
-            {sellMode === "karton" && item.package_type === "botol" && (Number(qty) || 0) > 0 && (
-              <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                {Number(qty).toLocaleString("id-ID")} karton = {(Number(qty) * BOTOL_PER_KARTON).toLocaleString("id-ID")} botol
-              </span>
-            )}
-            {sellMode === "package" && item.package_type !== "pcs" && item.package_type !== "botol" && Number(item.package_size) > 1 && (Number(qty) || 0) > 0 && (
-              <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                {Number(qty).toLocaleString("id-ID")} {item.package_type} = {(Number(qty) * Number(item.package_size)).toLocaleString("id-ID")} {humanBaseUnit(item.package_type, item.base_unit)}
-              </span>
-            )}
+            <KemasanKonversiBadge
+              packageType={item.package_type}
+              packageSize={item.package_size}
+              baseUnit={item.base_unit}
+              qty={Number(qty) || 0}
+              mode={sellMode}
+              testId="jual-kemasan-konversi-badge"
+            />
           </div>
 
           <div className="grid grid-cols-2 gap-2">
@@ -3036,16 +3035,14 @@ function PesananTab({
                     ? `ℹ️ 1 ${item.package_type} = ${item.package_size} ${humanBaseUnit(item.package_type, item.base_unit)}`
                     : `ℹ️ Rumus konversi`}
               </KemasanRumusPopover>
-              {qtyMode === "karton" && item.package_type === "botol" && (Number(qty) || 0) > 0 && (
-                <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                  {Number(qty).toLocaleString("id-ID")} karton = {(Number(qty) * BOTOL_PER_KARTON).toLocaleString("id-ID")} botol
-                </span>
-              )}
-              {qtyMode === "package" && item.package_type !== "pcs" && item.package_type !== "botol" && Number(item.package_size) > 1 && (Number(qty) || 0) > 0 && (
-                <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                  {Number(qty).toLocaleString("id-ID")} {item.package_type} = {(Number(qty) * Number(item.package_size)).toLocaleString("id-ID")} {humanBaseUnit(item.package_type, item.base_unit)}
-                </span>
-              )}
+              <KemasanKonversiBadge
+                packageType={item.package_type}
+                packageSize={item.package_size}
+                baseUnit={item.base_unit}
+                qty={Number(qty) || 0}
+                mode={qtyMode}
+                testId="pesanan-kemasan-konversi-badge"
+              />
             </div>
 
             <div className="grid grid-cols-2 gap-2">
