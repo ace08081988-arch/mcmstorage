@@ -776,6 +776,8 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     async assertQuiescent(variant, opts) {
       const windowMs = opts?.windowMs ?? 1000;
       const stableTicks = opts?.stableTicks ?? 5;
+      const expected = opts?.expected;
+      const ignore = opts?.ignore;
       const logTail = () =>
         `\n  Event log terakhir (var=${variant}):\n${formatEventLog(20)}`;
       // (1) Preflight: handler benar-benar kosong untuk varian ini.
@@ -809,28 +811,35 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
       //     Ini menghilangkan duplikasi listener/trailing-window logic —
       //     satu-satunya sumber kebenaran adalah runNoAdditionalGuard.
       await runNoAdditionalGuard(
-        { variant, windowMs, expected: undefined, ignore: undefined },
+        { variant, windowMs, expected, ignore },
         undefined,
         "assertQuiescent",
       );
       // (3) Reuse verifyCounterStable — pastikan counter tetap sama
-      //     selama stableTicks event-loop ticks berturut-turut.
+      //     selama stableTicks event-loop ticks berturut-turut. Opsi
+      //     expected/ignore diteruskan lagi dengan counter sinceSnapshot
+      //     TERPISAH — jadi allowance di fase window tidak menghabiskan
+      //     jatah untuk fase ticks (dan sebaliknya).
       await verifyCounterStable(
         variant,
         stableTicks,
-        snapReq,
-        snapServ,
+        requested[variant],
+        served[variant],
         "assertQuiescent",
+        expected || ignore ? { expected, ignore } : undefined,
       );
     },
     async assertCounterStable(variant, opts) {
       const ticks = opts?.ticks ?? 5;
+      const expected = opts?.expected;
+      const ignore = opts?.ignore;
       await verifyCounterStable(
         variant,
         ticks,
         requested[variant],
         served[variant],
         "assertCounterStable",
+        expected || ignore ? { expected, ignore } : undefined,
       );
     },
     async assertNoAdditionalRequests(...args) {
