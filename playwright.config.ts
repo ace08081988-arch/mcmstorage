@@ -147,6 +147,16 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
+      // E2E sinkronisasi state /diagnostik/paket: setelah impor payload
+      // benar, `packageType` (dropdown form), `displayPackageType`, dan
+      // `displayBaseUnit` HARUS sesuai value yang diharapkan untuk tiap
+      // varian (gram / botol / pcs / sachet, mode new & existing).
+      name: "diagnostik-paket-state-sync-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /diagnostik-paket-state-sync\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
       // E2E visibilitas menu admin. Harness publik no-auth memverifikasi
       // (a) `filterSidebarItemsForAdmin` menyembunyikan `/pengaturan-apk`
       // & `/email-queue` dari non-admin, (b) klasifikasi halaman APK
