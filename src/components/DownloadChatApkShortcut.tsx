@@ -167,23 +167,29 @@ export function DownloadChatApkShortcut() {
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
+      <div className="relative">
       <button
         type="button"
-        disabled={busy || isChecking || isUnavailable}
+        disabled={busy}
         aria-label={
           busy
             ? `Unduhan APK MCM Chat sedang berjalan${stage ? `: ${stage}` : ""}${cooldown > 0 ? `, tunggu ${cooldown} detik` : ""}`
             : isUnavailable
-              ? "APK MCM Chat belum tersedia"
+              ? "APK MCM Chat belum tersedia — ketuk untuk cek ulang"
               : isChecking
                 ? "Memeriksa ketersediaan APK MCM Chat"
                 : "Unduh APK MCM Chat versi terbaru"
         }
         aria-busy={busy}
         aria-live="polite"
-        aria-disabled={busy || isChecking || isUnavailable}
+        aria-disabled={busy}
         onClick={() => {
-          if (!isAvailable) return;
+          if (busy || isChecking) return;
+          if (!isAvailable) {
+            // Cek ulang ketersediaan rilis.
+            void availability.refetch();
+            return;
+          }
           setOpen(true);
         }}
         className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
@@ -208,10 +214,25 @@ export function DownloadChatApkShortcut() {
             : isChecking
               ? "Mengecek rilis terbaru…"
               : isUnavailable
-                ? "Belum ada rilis APK Chat"
+                ? "Ketuk untuk cek ulang"
                 : "Langsung unduh versi terbaru"}
         </span>
       </button>
+      {isUnavailable && !busy ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            void availability.refetch();
+          }}
+          aria-label="Cek ulang ketersediaan APK MCM Chat"
+          title="Cek ulang"
+          className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <RefreshCw className={"h-3.5 w-3.5 " + (isChecking ? "animate-spin" : "")} />
+        </button>
+      ) : null}
+      </div>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Unduh APK MCM Chat?</AlertDialogTitle>
