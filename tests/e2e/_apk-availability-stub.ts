@@ -207,6 +207,48 @@ export type ApkStub = {
     opts?: { ticks?: number },
   ) => Promise<void>;
   /**
+   * Utilitas asersi umum: memverifikasi TIDAK ada request tambahan
+   * yang masuk ke handler stub setelah aksi UI apa pun. Sepenuhnya
+   * event-based — tidak ada polling `expect.poll` atau `waitForTimeout`
+   * sebagai sinkronisasi; `windowMs` hanya bounded upper-bound untuk
+   * membuktikan absence.
+   *
+   * Dua bentuk pemakaian:
+   *
+   *   // (a) Sebagai pembungkus aksi — snapshot SEBELUM aksi, verifikasi
+   *   //     tidak ada request bocor SELAMA aksi berjalan + trailing window.
+   *   await stub.assertNoAdditionalRequests(
+   *     async () => { await refreshButton.click(); },
+   *     { variant: "chat", windowMs: 500 },
+   *   );
+   *
+   *   // (b) Standalone setelah aksi selesai — snapshot counter saat ini,
+   *   //     lalu verifikasi tidak ada request masuk dalam trailing window.
+   *   await refreshButton.click();
+   *   await stub.waitForServed("chat", 2);
+   *   await stub.assertNoAdditionalRequests({ variant: "chat" });
+   *
+   * Bila `variant` diabaikan, cek kedua varian (chat + storage) sekaligus:
+   * berguna sebagai guard akhir test untuk memastikan tidak ada refetch
+   * yang bocor di mana pun.
+   */
+  assertNoAdditionalRequests: (
+    ...args:
+      | [
+          action: () => Promise<void>,
+          opts?: {
+            variant?: ApkVariant;
+            windowMs?: number;
+          },
+        ]
+      | [
+          opts?: {
+            variant?: ApkVariant;
+            windowMs?: number;
+          },
+        ]
+  ) => Promise<void>;
+  /**
    * Menunggu handler benar-benar IDLE (deterministik, tanpa
    * `waitForTimeout`). Kondisi idle:
    *
