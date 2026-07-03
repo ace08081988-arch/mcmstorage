@@ -265,7 +265,7 @@ function ChatListPage() {
                   { label: "Pasang iklan", action: () => toast.info("Pasang iklan — segera hadir.") },
                   { label: "Grup baru", action: () => setGrupOpen(true) },
                   { label: "Komunitas", action: () => toast.info("Komunitas — segera hadir.") },
-                  { label: "Daftar", to: "/buku-alamat" },
+                  { label: "Daftar", to: "/daftar" },
                   { label: "Perangkat tertaut", to: "/sesi" },
                   { label: "Berbintang", action: () => toast.info("Berbintang — segera hadir.") },
                   { label: "Order", to: "/chat-audit" },
