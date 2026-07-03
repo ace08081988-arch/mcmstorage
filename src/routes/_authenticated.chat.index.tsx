@@ -27,6 +27,8 @@ import {
   DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger,
 } from "@/components/ui/dropdown-menu";
 import { toast } from "sonner";
+import { useChatLists, useAllChatListMembers } from "@/lib/chat-lists";
+import { ChatListIcon } from "@/lib/chat-list-icons";
 
 export const Route = createFileRoute("/_authenticated/chat/")({
   component: ChatListPage,
@@ -54,8 +56,10 @@ function ChatListPage() {
   const archive = useArchiveConversation();
   const mute = useMuteConversation();
   const [grupOpen, setGrupOpen] = useState(false);
-  // Filter chip aktif — meniru gaya WhatsApp (Semua/Belum dibaca/Grup/Favorit).
-  const [filter, setFilter] = useState<"all" | "unread" | "group" | "favorite">("all");
+  // Filter chip aktif — preset WA + daftar custom (prefix `list:<id>`).
+  const [filter, setFilter] = useState<string>("all");
+  const { data: chatLists } = useChatLists();
+  const { data: allListMembers } = useAllChatListMembers();
   // Mode seleksi multi-percakapan (tekan lama untuk aktif).
   const [selectedIds, setSelectedIds] = useState<Set<string>>(() => new Set());
   const [deleting, setDeleting] = useState(false);
@@ -91,6 +95,11 @@ function ChatListPage() {
 
   // Terapkan filter chip pada daftar aktif.
   const filteredActive = useMemo(() => {
+    if (filter.startsWith("list:")) {
+      const listId = filter.slice("list:".length);
+      const ids = new Set(allListMembers?.[listId] ?? []);
+      return active.filter((c) => ids.has(c.id));
+    }
     switch (filter) {
       case "unread":
         return active.filter((c) => (c.unread ?? 0) > 0);
@@ -101,7 +110,7 @@ function ChatListPage() {
       default:
         return active;
     }
-  }, [active, filter]);
+  }, [active, filter, allListMembers]);
   const unreadCount = useMemo(
     () => active.reduce((n, c) => n + ((c.unread ?? 0) > 0 ? 1 : 0), 0),
     [active],
