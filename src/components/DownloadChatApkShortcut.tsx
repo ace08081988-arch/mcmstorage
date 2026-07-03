@@ -14,7 +14,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 
 /**
@@ -60,17 +59,10 @@ export function DownloadChatApkShortcut() {
       const apk = detail?.latest;
       const url = apk?.url;
       if (!apk || !url) {
-        setStage("Belum tersedia");
-        toast("APK MCM Chat belum tersedia", {
-          id: loadingId,
-          description:
-            "Belum ada berkas APK Chat di backend. Unggah rilis APK terlebih dahulu, lalu coba lagi.",
-          action: {
-            label: "Buka rilis",
-            onClick: () => window.location.assign("/pengaturan-apk"),
-          },
-          duration: 6000,
-        });
+        // Kondisi kosong adalah status normal (belum ada rilis), bukan error.
+        // Jangan tampilkan toast/teks merah di atas; tombol cukup kembali idle.
+        setStage(null);
+        toast.dismiss(loadingId);
         return;
       }
       const version = apk.versionName || apk.name || "terbaru";
@@ -157,44 +149,34 @@ export function DownloadChatApkShortcut() {
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <button
-          type="button"
-          disabled={busy}
-          aria-label={
-            busy
-              ? `Unduhan APK MCM Chat sedang berjalan${stage ? `: ${stage}` : ""}${cooldown > 0 ? `, tunggu ${cooldown} detik` : ""}`
-              : "Unduh APK MCM Chat versi terbaru"
-          }
-          aria-busy={busy}
-          aria-live="polite"
-          aria-disabled={busy}
-          onKeyDown={(e) => {
-            // <button> menangani Enter/Space secara native, tapi kami
-            // tambahkan penangan eksplisit sebagai jaring pengaman jika
-            // ada wrapper yang men-intercept event bawaan.
-            if ((e.key === "Enter" || e.key === " ") && !busy) {
-              e.preventDefault();
-              (e.currentTarget as HTMLButtonElement).click();
-            }
-          }}
-          className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
-        >
-          <span className="text-base leading-none">
-            {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "💬"}
-          </span>
-          <span className="mt-1 text-xs font-semibold leading-tight">
-            {busy ? stage ?? "Memproses…" : "Unduh APK Chat"}
-          </span>
-          <span className="text-[10px] leading-tight text-muted-foreground">
-            {busy
-              ? cooldown > 0
-                ? `Menunggu browser… ${cooldown}s`
-                : "Sedang berjalan…"
-              : "Langsung unduh versi terbaru"}
-          </span>
-        </button>
-      </AlertDialogTrigger>
+      <button
+        type="button"
+        disabled={busy}
+        aria-label={
+          busy
+            ? `Unduhan APK MCM Chat sedang berjalan${stage ? `: ${stage}` : ""}${cooldown > 0 ? `, tunggu ${cooldown} detik` : ""}`
+            : "Unduh APK MCM Chat versi terbaru"
+        }
+        aria-busy={busy}
+        aria-live="polite"
+        aria-disabled={busy}
+        onClick={() => setOpen(true)}
+        className="group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:border-primary disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
+      >
+        <span className="text-base leading-none">
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : "💬"}
+        </span>
+        <span className="mt-1 text-xs font-semibold leading-tight">
+          {busy ? stage ?? "Memproses…" : "Unduh APK Chat"}
+        </span>
+        <span className="text-[10px] leading-tight text-muted-foreground">
+          {busy
+            ? cooldown > 0
+              ? `Menunggu browser… ${cooldown}s`
+              : "Sedang berjalan…"
+            : "Langsung unduh versi terbaru"}
+        </span>
+      </button>
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Unduh APK MCM Chat?</AlertDialogTitle>
