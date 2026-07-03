@@ -71,6 +71,16 @@ export function fmtQtyDual(
     const botol = Math.round(Number(baseQty) || 0);
     return `${botol.toLocaleString("id-ID")} botol${fmtKartonHint(botol, "gs", "botol")}`;
   }
+  // Produk berbasis gram di mana package_type juga satuan berat
+  // (gram/kg/gr/g) — kemasan itu redundan dengan base_unit. fmtBase sudah
+  // otomatis memilih g / kg / mg, jadi hindari label rancu seperti
+  // "1 gram (= 1 kg)".
+  if (baseUnit === "g") {
+    const pt = (packageType ?? "").trim().toLowerCase();
+    if (pt === "g" || pt === "gr" || pt === "gram" || pt === "kg") {
+      return fmtBase(baseQty, baseUnit);
+    }
+  }
   if (mode === "base" || !packageType || packageType === "pcs" || packageSize <= 0) {
     return fmtBase(baseQty, baseUnit);
   }
