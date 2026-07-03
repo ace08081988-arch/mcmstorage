@@ -124,6 +124,19 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E khusus tombol <DownloadStorageApkShortcut>: alur idle
+      // "Belum tersedia" → tap ikon refresh → aktif "Unduh APK Storage"
+      // tervalidasi terisolasi dari varian Chat & tombol copy. Harness
+      // publik /lovable/visual/apk-availability-shortcuts — no-auth,
+      // respons `getApkVariantDetail` di-stub via page.route (flag
+      // Storage saja yang di-flip; flag Chat tetap kosong untuk
+      // membuktikan independensi query per-varian).
+      name: "apk-availability-refresh-storage-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /apk-availability-refresh-storage\.spec\.ts/,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
       // E2E konsistensi label /diagnostik/paket: memverifikasi bahwa
       // "Isi / kemasan", "Harga per", dan "Ringkasan · yang tersedia"
       // SELALU konsisten dengan pilihan dropdown Jenis kemasan
