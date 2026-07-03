@@ -123,14 +123,18 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               if (vid && vid.srcObject !== stream) {
                 vid.srcObject = stream;
                 vid.muted = false;
+                vid.volume = volume;
                 void vid.play().catch(() => { /* akan retry saat user tap */ });
               }
               if (aud && aud.srcObject !== stream) {
                 aud.srcObject = stream;
                 aud.muted = false;
-                aud.volume = 1;
+                aud.volume = volume;
                 void aud.play().catch(() => { /* akan retry saat user tap */ });
               }
+              // Label perangkat baru terbuka penuh setelah izin media
+              // diberikan — segarkan daftar output audio.
+              void listOutputDevices().then(setOutputs);
             },
             onIceState: (s) => {
               if (s === "failed" || s === "disconnected") {
