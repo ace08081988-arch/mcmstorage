@@ -1,9 +1,5 @@
 import { test, expect } from "@playwright/test";
 import { installApkStub, makeRelease } from "./_apk-availability-stub";
-import {
-  APK_STUB_PER_ACTION_WINDOW_MS,
-  APK_STUB_TERMINAL_WINDOW_MS,
-} from "./_helpers/apk-stub-timing";
 
 /**
  * E2E: tombol refresh pada <DownloadStorageApkShortcut> hanya
@@ -53,12 +49,7 @@ test.describe("APK refresh · single refetch per tap", () => {
     stub.enqueue("storage", []);
     // Wrapper leak-guard: chat TIDAK boleh ikut refetch saat storage
     // ditap (query independen per-varian). Event-based; bounded window.
-    await stub.assertNoAdditionalRequests(
-      async () => {
-        await storageRefresh.click();
-      },
-      { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
-    );
+    await stub.trackedClick(storageRefresh, { variant: "chat" });
 
     // Tunggu event served ke-2 untuk storage (deterministik, bukan
     // expect.poll dengan interval wall-clock).
@@ -71,12 +62,7 @@ test.describe("APK refresh · single refetch per tap", () => {
 
     // === Tap #2: aktifkan dengan rilis tersedia — tetap 1 refetch ===
     stub.enqueue("storage", [makeRelease("storage")]);
-    await stub.assertNoAdditionalRequests(
-      async () => {
-        await storageRefresh.click();
-      },
-      { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
-    );
+    await stub.trackedClick(storageRefresh, { variant: "chat" });
 
     await stub.waitForServed("storage", 3);
     await expect(
@@ -110,9 +96,7 @@ test.describe("APK refresh · single refetch per tap", () => {
     await stub.assertCounterStable("storage", { ticks: 5 });
     await stub.assertCounterStable("chat", { ticks: 5 });
     // Terminal leak-guard event-based (kedua varian sekaligus).
-    await stub.assertNoAdditionalRequests({
-      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
-    });
+    await stub.terminalGuard();
 
     // Snapshot akhir untuk transparansi log CI.
     expect(stub.servedCount("storage")).toBe(3);
