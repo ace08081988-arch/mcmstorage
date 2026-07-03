@@ -68,6 +68,12 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const [camOn, setCamOn] = useState(kind === "video");
   const [remoteReady, setRemoteReady] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [volume, setVolume] = useState<number>(loadPersistedVolume());
+  const [outputs, setOutputs] = useState<OutputDevice[]>([]);
+  const [activeSinkId, setActiveSinkId] = useState<string>("default");
+  const [outputSheetOpen, setOutputSheetOpen] = useState(false);
+  const [turnConfigured, setTurnConfigured] = useState<boolean | null>(null);
+  const outputSupported = isOutputSelectionSupported();
 
   const sessionRef = useRef<PeerSession | null>(null);
   const acceptedAtRef = useRef<string | null>(null);
@@ -75,6 +81,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const doneRef = useRef(false);
+  const helloReceivedRef = useRef(false);
 
   const finalize = useCallback(
     async (status: "ended" | "declined" | "missed" | "cancelled" | "failed", reason?: string) => {
