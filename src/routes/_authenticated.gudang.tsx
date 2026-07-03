@@ -1241,6 +1241,11 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                         <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.stock_base * i.avg_cost_per_base)}</div>
                       </div>
                     </div>
+                    {i.package_type === "botol" && (
+                      <div className="mt-1.5 text-[10px] text-muted-foreground">
+                        ℹ️ Konversi: 1 karton = {BOTOL_PER_KARTON} botol
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
