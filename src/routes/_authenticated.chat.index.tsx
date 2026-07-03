@@ -388,6 +388,37 @@ function ChatListPage() {
               </button>
             );
           })}
+          {(chatLists ?? []).map((l) => {
+            const chipId = `list:${l.id}`;
+            const isActive = filter === chipId;
+            const count = (allListMembers?.[l.id] ?? []).length;
+            return (
+              <button
+                key={chipId}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                onClick={() => setFilter(chipId)}
+                className={
+                  "wa-chip whitespace-nowrap inline-flex items-center gap-1.5 " +
+                  (isActive ? "wa-chip-active font-medium" : "")
+                }
+                title={l.name}
+              >
+                <ChatListIcon name={l.icon} className="h-3.5 w-3.5" style={{ color: l.color }} />
+                {l.name}
+                {count ? <span className="ml-1 opacity-80">{count}</span> : null}
+              </button>
+            );
+          })}
+          <Link
+            to="/daftar"
+            className="wa-chip whitespace-nowrap inline-flex items-center gap-1"
+            aria-label="Kelola daftar"
+            title="Kelola daftar"
+          >
+            <span className="text-base leading-none">+</span> Daftar
+          </Link>
         </div>
       ) : null}
 
