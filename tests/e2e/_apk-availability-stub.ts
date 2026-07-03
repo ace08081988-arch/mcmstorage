@@ -252,6 +252,22 @@ export type ApkStub = {
        * kita menyatakan handler benar-benar stabil.
        */
       stableTicks?: number;
+      /**
+       * Whitelist kuantitatif — sama semantiknya seperti
+       * {@link AssertNoAdditionalRequestsOpts.expected}. Diteruskan
+       * ke `runNoAdditionalGuard` untuk fase `windowMs`, DAN dipakai
+       * ulang di fase `stableTicks` (dengan counter sinceSnapshot
+       * terpisah per fase — jadi mis. `expected: { chat: 1 }`
+       * membolehkan 1 refetch di window DAN 1 refetch tambahan
+       * selama ticks).
+       */
+      expected?: Partial<Record<ApkVariant, number>>;
+      /**
+       * Predikat kustom — sama semantiknya seperti
+       * {@link AssertNoAdditionalRequestsOpts.ignore}. Diterapkan
+       * di kedua fase (windowMs + stableTicks).
+       */
+      ignore?: (info: ApkStubIgnoreInfo) => boolean;
     },
   ) => Promise<void>;
   /**
@@ -267,7 +283,22 @@ export type ApkStub = {
    */
   assertCounterStable: (
     variant: ApkVariant,
-    opts?: { ticks?: number },
+    opts?: {
+      ticks?: number;
+      /**
+       * Whitelist kuantitatif — request ke-N (1-based, sejak
+       * snapshot awal helper ini) yang ≤ `expected[variant]`
+       * dianggap diizinkan dan snapshot counter dimajukan otomatis
+       * (tidak dianggap "counter bergerak").
+       */
+      expected?: Partial<Record<ApkVariant, number>>;
+      /**
+       * Predikat kustom — dievaluasi SESUDAH `expected`. Kalau
+       * mengembalikan `true`, request tersebut diizinkan dan
+       * snapshot dimajukan.
+       */
+      ignore?: (info: ApkStubIgnoreInfo) => boolean;
+    },
   ) => Promise<void>;
   /**
    * Utilitas asersi umum: memverifikasi TIDAK ada request tambahan
@@ -449,15 +480,44 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     snapReq: number,
     snapServ: number,
     caller: string,
+    allowOpts?: {
+      expected?: Partial<Record<ApkVariant, number>>;
+      ignore?: (info: ApkStubIgnoreInfo) => boolean;
+    },
   ): Promise<void> {
+    // Kalau ada whitelist, request yang diizinkan tidak dianggap
+    // "counter bergerak" — snapshot dimajukan otomatis. Tanpa opsi,
+    // perilaku strict lama tetap berlaku (semua pergerakan = leak).
+    const expected = allowOpts?.expected?.[variant] ?? 0;
+    const ignoreFn = allowOpts?.ignore;
+    let curReq = snapReq;
+    let curServ = snapServ;
+    let sinceSnapshot = 0;
     for (let i = 0; i < ticks; i += 1) {
       await new Promise<void>((r) => setTimeout(r, 0));
       await Promise.resolve();
-      if (requested[variant] !== snapReq || served[variant] !== snapServ) {
+      // Serap request tambahan yang termasuk whitelist.
+      while (requested[variant] > curReq) {
+        sinceSnapshot += 1;
+        const info: ApkStubIgnoreInfo = {
+          variant,
+          nthSinceSnapshot: sinceSnapshot,
+          totalRequested: curReq + 1,
+        };
+        const allowed =
+          sinceSnapshot <= expected ||
+          (ignoreFn ? ignoreFn(info) : false);
+        if (!allowed) break;
+        curReq += 1;
+      }
+      // served ≤ requested selalu; majukan snapshot served sampai
+      // titik yang sudah "diserap" oleh curReq.
+      if (served[variant] <= curReq) curServ = served[variant];
+      if (requested[variant] !== curReq || served[variant] !== curServ) {
         throw new Error(
           `[apk-stub] ${caller}(${variant}) GAGAL pada tick ` +
             `#${i + 1}/${ticks}: counter bergerak (requested ` +
-            `${snapReq}→${requested[variant]}, served ${snapServ}→` +
+            `${curReq}→${requested[variant]}, served ${curServ}→` +
             `${served[variant]}). Ada task tertunda yang memicu ` +
             `refetch setelah handler tampak idle.` +
             `\n  Event log terakhir (var=${variant}):\n${formatEventLog(20)}`,
@@ -716,6 +776,8 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     async assertQuiescent(variant, opts) {
       const windowMs = opts?.windowMs ?? 1000;
       const stableTicks = opts?.stableTicks ?? 5;
+      const expected = opts?.expected;
+      const ignore = opts?.ignore;
       const logTail = () =>
         `\n  Event log terakhir (var=${variant}):\n${formatEventLog(20)}`;
       // (1) Preflight: handler benar-benar kosong untuk varian ini.
@@ -743,34 +805,39 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
             logTail(),
         );
       }
-      const snapReq = requested[variant];
-      const snapServ = served[variant];
       // (2) Reuse guard "tidak ada request tambahan" di jendela windowMs.
       //     Ini menghilangkan duplikasi listener/trailing-window logic —
       //     satu-satunya sumber kebenaran adalah runNoAdditionalGuard.
       await runNoAdditionalGuard(
-        { variant, windowMs, expected: undefined, ignore: undefined },
+        { variant, windowMs, expected, ignore },
         undefined,
         "assertQuiescent",
       );
       // (3) Reuse verifyCounterStable — pastikan counter tetap sama
-      //     selama stableTicks event-loop ticks berturut-turut.
+      //     selama stableTicks event-loop ticks berturut-turut. Opsi
+      //     expected/ignore diteruskan lagi dengan counter sinceSnapshot
+      //     TERPISAH — jadi allowance di fase window tidak menghabiskan
+      //     jatah untuk fase ticks (dan sebaliknya).
       await verifyCounterStable(
         variant,
         stableTicks,
-        snapReq,
-        snapServ,
+        requested[variant],
+        served[variant],
         "assertQuiescent",
+        expected || ignore ? { expected, ignore } : undefined,
       );
     },
     async assertCounterStable(variant, opts) {
       const ticks = opts?.ticks ?? 5;
+      const expected = opts?.expected;
+      const ignore = opts?.ignore;
       await verifyCounterStable(
         variant,
         ticks,
         requested[variant],
         served[variant],
         "assertCounterStable",
+        expected || ignore ? { expected, ignore } : undefined,
       );
     },
     async assertNoAdditionalRequests(...args) {
