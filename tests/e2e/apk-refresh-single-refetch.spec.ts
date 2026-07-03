@@ -31,11 +31,15 @@ test.describe("APK refresh · single refetch per tap", () => {
     await page.goto(URL);
 
     const storageDl = page.getByTestId("apk-shortcut-download-storage");
-    await expect(storageDl.getByText("Belum tersedia")).toBeVisible();
-
-    // Baseline: fetch awal harus sudah selesai (1 request per varian).
+    // Baseline deterministik: tunggu event served (bukan polling
+    // wall-clock / assumption bahwa "Belum tersedia" visible = fetch
+    // sudah selesai). Setelah dua event served masuk, counter fetch
+    // awal pasti 1 per varian.
+    await stub.waitForServed("chat", 1);
+    await stub.waitForServed("storage", 1);
     expect(stub.servedCount("storage")).toBe(1);
     expect(stub.servedCount("chat")).toBe(1);
+    await expect(storageDl.getByText("Belum tersedia")).toBeVisible();
 
     const storageRefresh = storageDl.getByRole("button", {
       name: /Cek ulang ketersediaan APK MCM Storage/i,
@@ -45,10 +49,9 @@ test.describe("APK refresh · single refetch per tap", () => {
     stub.enqueue("storage", []);
     await storageRefresh.click();
 
-    // Tunggu antrian dilayani (servedCount naik → 2).
-    await expect
-      .poll(() => stub.servedCount("storage"), { timeout: 5000 })
-      .toBe(2);
+    // Tunggu event served ke-2 untuk storage (deterministik, bukan
+    // expect.poll dengan interval wall-clock).
+    await stub.waitForServed("storage", 2);
     // Chat TIDAK ikut refetch — query independen per-varian.
     expect(stub.servedCount("chat")).toBe(1);
 
@@ -59,6 +62,7 @@ test.describe("APK refresh · single refetch per tap", () => {
     stub.enqueue("storage", [makeRelease("storage")]);
     await storageRefresh.click();
 
+    await stub.waitForServed("storage", 3);
     await expect(
       storageDl.getByText("Unduh APK Storage", { exact: true }),
     ).toBeVisible();
@@ -73,15 +77,22 @@ test.describe("APK refresh · single refetch per tap", () => {
       }),
     ).toHaveCount(0);
 
-    // Kejar network idle + jeda tambahan supaya polling background /
-    // refetch on-focus / interval query sempat muncul kalau ada.
-    await page.waitForLoadState("networkidle");
-    await page.waitForTimeout(1500);
+    // Assert absence deterministik: coba tunggu request storage ke-4;
+    // jika terjadi, `waitForRequest` resolve → test gagal via `.then`.
+    // Timeout di helper hanya batas atas untuk membuktikan absence
+    // (bukan sleep yang dipakai untuk sinkronisasi test flow).
+    const extra = await stub
+      .waitForRequest("storage", 4, 1500)
+      .then(() => "extra-request-fired")
+      .catch(() => "no-extra-request");
+    expect(extra).toBe("no-extra-request");
 
-    // Snapshot counter TIDAK boleh berubah — tidak ada request storage
-    // tambahan yang lolos setelah state aktif.
+    // Counter tetap 3 — dan requestedCount = servedCount (tidak ada
+    // request yang menggantung di handler menunggu enqueue).
     expect(stub.servedCount("storage")).toBe(3);
+    expect(stub.requestedCount("storage")).toBe(3);
     expect(stub.servedCount("chat")).toBe(1);
+    expect(stub.requestedCount("chat")).toBe(1);
     // Tidak ada waiter yang menggantung → semua request yang diterima
     // handler sudah selesai (bukan sekadar "belum sampai").
     expect(stub.pending().waiters).toBe(0);
