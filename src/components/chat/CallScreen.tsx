@@ -225,6 +225,42 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return () => clearInterval(t);
   }, [phase]);
 
+  // Terapkan volume ke elemen remote setiap kali berubah + persist.
+  useEffect(() => {
+    const v = remoteVideoRef.current;
+    const a = remoteAudioRef.current;
+    if (v) v.volume = volume;
+    if (a) a.volume = volume;
+    persistVolume(volume);
+  }, [volume]);
+
+  // Refresh daftar output audio saat mount dan saat perangkat berubah
+  // (headset/Bluetooth disambung/dilepas).
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      const list = await listOutputDevices();
+      if (!cancelled) setOutputs(list);
+    };
+    void refresh();
+    const md = typeof navigator !== "undefined" ? navigator.mediaDevices : null;
+    if (md && "addEventListener" in md) {
+      md.addEventListener("devicechange", refresh);
+      return () => {
+        cancelled = true;
+        md.removeEventListener("devicechange", refresh);
+      };
+    }
+    return () => { cancelled = true; };
+  }, []);
+
+  // Terapkan sink pilihan ke elemen media aktif.
+  useEffect(() => {
+    const target = kind === "video" ? remoteVideoRef.current : remoteAudioRef.current;
+    if (!target) return;
+    void applyAudioSink(target, activeSinkId);
+  }, [activeSinkId, kind, remoteReady]);
+
   // Callee menandai accepted di DB sekali peer session siap.
   useEffect(() => {
     if (role !== "callee") return;
