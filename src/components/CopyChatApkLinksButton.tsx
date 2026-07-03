@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
-import { Copy, Loader2, Check } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { Copy, Loader2, Check, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { getApkVariantDetail } from "@/lib/apk.functions";
 
@@ -23,8 +24,30 @@ export function CopyChatApkLinksButton({
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
+  // Pre-fetch ketersediaan APK Chat agar tombol dapat tampil idle
+  // "Belum tersedia" tanpa memicu toast merah saat ditekan.
+  const availability = useQuery({
+    queryKey: ["apk-availability", "chat"],
+    queryFn: async () => {
+      const detail = await fetchDetail({ data: { variant: "chat" } });
+      return (detail?.releases ?? []).length > 0;
+    },
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
+    retry: 1,
+  });
+  const isChecking = availability.isLoading || availability.isFetching;
+  const isAvailable = availability.data === true;
+  const isUnavailable = availability.isSuccess && availability.data === false;
+
   async function onClick() {
-    if (busy) return;
+    if (busy || isChecking) return;
+    if (!isAvailable) {
+      // Cek ulang ketersediaan tanpa menampilkan toast merah.
+      void availability.refetch();
+      return;
+    }
     setBusy(true);
     const loadingId = toast.loading("Mengambil semua link APK Chat…");
     try {
@@ -89,38 +112,59 @@ export function CopyChatApkLinksButton({
       <button
         type="button"
         onClick={() => void onClick()}
-        disabled={busy}
-        aria-label="Salin semua link APK Chat"
+        disabled={busy || isChecking}
+        aria-label={
+          isUnavailable
+            ? "APK MCM Chat belum tersedia — ketuk untuk cek ulang"
+            : isChecking
+              ? "Memeriksa ketersediaan APK MCM Chat"
+              : "Salin semua link APK Chat"
+        }
         className={
           className ??
           "inline-flex items-center gap-1.5 rounded-md border bg-card px-3 py-1.5 text-xs font-medium transition-all duration-150 hover:bg-accent hover:shadow-sm active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
         }
       >
-        {busy ? (
+        {busy || isChecking ? (
           <Loader2 className="h-3.5 w-3.5 animate-spin" />
         ) : copied ? (
           <Check className="h-3.5 w-3.5 text-emerald-500" />
         ) : (
           <Copy className="h-3.5 w-3.5" />
         )}
-        <span>{copied ? "Tersalin" : "Salin semua link APK Chat"}</span>
+        <span>
+          {copied
+            ? "Tersalin"
+            : isChecking
+              ? "Memeriksa…"
+              : isUnavailable
+                ? "Belum tersedia"
+                : "Salin semua link APK Chat"}
+        </span>
       </button>
     );
   }
 
   return (
-    <button
+    <div className="relative">
+      <button
       type="button"
       onClick={() => void onClick()}
-      disabled={busy}
-      aria-label="Salin semua link APK Chat"
+      disabled={busy || isChecking}
+      aria-label={
+        isUnavailable
+          ? "APK MCM Chat belum tersedia — ketuk untuk cek ulang"
+          : isChecking
+            ? "Memeriksa ketersediaan APK MCM Chat"
+            : "Salin semua link APK Chat"
+      }
       className={
         className ??
         "group flex flex-col gap-0.5 rounded-md border bg-card px-3 py-2.5 text-left transition-all duration-150 hover:border-primary/40 hover:bg-accent hover:shadow-sm active:scale-[0.97] active:bg-accent/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60 disabled:active:scale-100"
       }
     >
       <span className="text-base leading-none">
-        {busy ? (
+        {busy || isChecking ? (
           <Loader2 className="h-4 w-4 animate-spin" />
         ) : copied ? (
           <Check className="h-4 w-4 text-emerald-500" />
@@ -129,11 +173,36 @@ export function CopyChatApkLinksButton({
         )}
       </span>
       <span className="mt-1 text-xs font-semibold leading-tight">
-        {copied ? "Tersalin" : "Salin link APK Chat"}
+        {copied
+          ? "Tersalin"
+          : isChecking
+            ? "Memeriksa…"
+            : isUnavailable
+              ? "Belum tersedia"
+              : "Salin link APK Chat"}
       </span>
       <span className="text-[10px] leading-tight text-muted-foreground">
-        Semua versi sekaligus
+        {isChecking
+          ? "Mengecek rilis terbaru…"
+          : isUnavailable
+            ? "Ketuk untuk cek ulang"
+            : "Semua versi sekaligus"}
       </span>
-    </button>
+      </button>
+      {isUnavailable && !busy ? (
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            void availability.refetch();
+          }}
+          aria-label="Cek ulang ketersediaan APK MCM Chat"
+          title="Cek ulang"
+          className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+        >
+          <RefreshCw className={"h-3.5 w-3.5 " + (isChecking ? "animate-spin" : "")} />
+        </button>
+      ) : null}
+    </div>
   );
 }
