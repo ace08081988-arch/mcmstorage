@@ -153,6 +153,26 @@ export type ApkStub = {
     variant: ApkVariant,
     opts?: { windowMs?: number },
   ) => Promise<void>;
+  /**
+   * Menunggu handler benar-benar IDLE (deterministik, tanpa
+   * `waitForTimeout`). Kondisi idle:
+   *
+   *   - Tidak ada request in-flight: `requestedCount === servedCount`
+   *     (setiap request yang tiba di handler sudah di-fulfill).
+   *   - Tidak ada waiter tertahan (`holding === 0`).
+   *   - Opsional: antrian respons juga kosong bila `drainQueue: true`
+   *     (default `false` — respons ter-enqueue yang belum "dipakai"
+   *     tetap dianggap idle karena UI tidak sedang menunggu apa-apa).
+   *
+   * Jika sudah idle saat dipanggil, resolve segera. Kalau belum,
+   * subscribe ke event `served` (dan `hold` untuk mendeteksi request
+   * baru yang masuk) dan re-check tiap fire. Timeout hanya batas atas
+   * pengaman (bukan sinkronisasi UI).
+   */
+  waitForIdle: (
+    variant?: ApkVariant,
+    opts?: { drainQueue?: boolean; timeoutMs?: number },
+  ) => Promise<void>;
 };
 
 function detectVariant(raw: string): ApkVariant {
@@ -371,6 +391,66 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
             `${served[variant]}).`,
         );
       }
+    },
+    waitForIdle(variant, opts) {
+      const drainQueue = opts?.drainQueue ?? false;
+      const timeoutMs = opts?.timeoutMs ?? 10_000;
+      const variants: ApkVariant[] = variant
+        ? [variant]
+        : (["chat", "storage"] as const).slice();
+
+      const isIdle = () =>
+        variants.every(
+          (v) =>
+            requested[v] === served[v] &&
+            holding[v] === 0 &&
+            (!drainQueue || queued[v].length === 0),
+        );
+
+      if (isIdle()) return Promise.resolve();
+
+      // Subscribe ke SEMUA event yang bisa mengubah kondisi idle:
+      //   - served: request in-flight selesai (bisa menutup gap
+      //     requested vs served).
+      //   - hold: request BARU masuk & tertahan (naikkan requested,
+      //     idle bisa jadi false — re-check).
+      //   - request listener juga: request baru tiba (naikkan
+      //     requested sebelum fulfill).
+      return new Promise<void>((resolve, reject) => {
+        let done = false;
+        const unsubs: Array<() => void> = [];
+        const timer = setTimeout(() => {
+          if (done) return;
+          done = true;
+          for (const u of unsubs) u();
+          reject(
+            new Error(
+              `[apk-stub] Timeout ${timeoutMs}ms menunggu handler idle ` +
+                `(${variants
+                  .map(
+                    (v) =>
+                      `${v}: req=${requested[v]}/served=${served[v]}, ` +
+                      `hold=${holding[v]}, queue=${queued[v].length}`,
+                  )
+                  .join(" | ")}).`,
+            ),
+          );
+        }, timeoutMs);
+
+        const check = () => {
+          if (done || !isIdle()) return;
+          done = true;
+          clearTimeout(timer);
+          for (const u of unsubs) u();
+          resolve();
+        };
+
+        for (const v of variants) {
+          unsubs.push(subscribeTo(servedListeners[v])(check));
+          unsubs.push(subscribeTo(requestListeners[v])(check));
+          unsubs.push(subscribeTo(holdListeners[v])(check));
+        }
+      });
     },
   };
 }
