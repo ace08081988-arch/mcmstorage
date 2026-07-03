@@ -805,8 +805,6 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
             logTail(),
         );
       }
-      const snapReq = requested[variant];
-      const snapServ = served[variant];
       // (2) Reuse guard "tidak ada request tambahan" di jendela windowMs.
       //     Ini menghilangkan duplikasi listener/trailing-window logic —
       //     satu-satunya sumber kebenaran adalah runNoAdditionalGuard.
