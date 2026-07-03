@@ -75,9 +75,28 @@ test.describe("APK availability · refresh flow", () => {
     stub.enqueue("storage", [makeRelease("storage")]);
     stub.enqueue("chat", [makeRelease("chat")]);
 
-    await chatRefresh.click();
-    await storageRefresh.click();
-    await copyRefresh.click();
+    // Wrap tiap tap refresh dengan assertNoAdditionalRequests supaya
+    // kebocoran per-aksi tertangkap konsisten (bukan hanya via terminal
+    // guard di akhir). `expected` juga bertindak sebagai regression
+    // check: kalau tap ini tidak lagi memicu refetch, test gagal cepat.
+    await stub.assertNoAdditionalRequests(
+      async () => {
+        await chatRefresh.click();
+      },
+      { expected: { chat: 1 }, windowMs: 500 },
+    );
+    await stub.assertNoAdditionalRequests(
+      async () => {
+        await storageRefresh.click();
+      },
+      { expected: { storage: 1 }, windowMs: 500 },
+    );
+    await stub.assertNoAdditionalRequests(
+      async () => {
+        await copyRefresh.click();
+      },
+      { expected: { chat: 1 }, windowMs: 500 },
+    );
 
     // Tunggu handler idle lagi setelah ketiga tap refresh — semua
     // refetch (chat & storage, dengan kemungkinan dedupe query key)
