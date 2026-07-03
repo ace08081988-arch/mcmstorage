@@ -590,6 +590,111 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
         }
       }
     },
+    async assertNoAdditionalRequests(...args) {
+      // Normalisasi argumen: bisa (action, opts) atau (opts) saja.
+      let action: (() => Promise<void>) | null = null;
+      let opts: { variant?: ApkVariant; windowMs?: number } | undefined;
+      if (typeof args[0] === "function") {
+        action = args[0] as () => Promise<void>;
+        opts = args[1] as typeof opts;
+      } else {
+        opts = args[0] as typeof opts;
+      }
+      const windowMs = opts?.windowMs ?? 500;
+      const variants: ApkVariant[] = opts?.variant
+        ? [opts.variant]
+        : (["chat", "storage"] as const).slice();
+
+      // Snapshot counter per varian SEBELUM aksi (atau saat dipanggil).
+      const snap: Record<ApkVariant, number> = { chat: 0, storage: 0 };
+      for (const v of variants) snap[v] = requested[v];
+
+      // Pasang listener event-based di kedua sisi:
+      //   - Selama aksi berjalan (kalau ada), request extra harus
+      //     LANGSUNG memicu error, tanpa menunggu jendela apa pun.
+      //   - Setelah aksi selesai, tunggu `windowMs` sebagai bounded
+      //     upper-bound untuk membuktikan absence. Kalau ada event
+      //     "request" masuk di window ini, resolve dengan status
+      //     gagal — juga tanpa polling.
+      const leaks: Array<{ variant: ApkVariant; at: number }> = [];
+      const unsubs: Array<() => void> = [];
+      for (const v of variants) {
+        unsubs.push(
+          subscribeTo(requestListeners[v])(() => {
+            leaks.push({ variant: v, at: Date.now() - t0 });
+          }),
+        );
+      }
+
+      const cleanup = () => {
+        for (const u of unsubs) u();
+      };
+
+      const failIfLeaked = (phase: string) => {
+        if (leaks.length === 0) return;
+        const summary = leaks
+          .map((l) => `${l.variant}@+${l.at}ms`)
+          .join(", ");
+        // Ambil daftar counter after untuk konteks.
+        const after = variants
+          .map(
+            (v) =>
+              `${v}: req ${snap[v]}→${requested[v]}, served=${served[v]}`,
+          )
+          .join(" | ");
+        throw new Error(
+          `[apk-stub] assertNoAdditionalRequests GAGAL (${phase}): ` +
+            `${leaks.length} request bocor [${summary}]. ${after}` +
+            `\n  Event log terakhir:\n${formatEventLog(20)}`,
+        );
+      };
+
+      try {
+        if (action) {
+          await action();
+          // Setelah aksi selesai, request yang sudah masuk pasti
+          // sudah tercatat lewat listener sinkron.
+          failIfLeaked("selama aksi");
+        }
+
+        // Trailing window: event-based, bukan polling. Kita subscribe
+        // ke request listener; kalau fire → langsung reject, kalau
+        // tidak → timeout habis dan kita menganggap benar-benar quiet.
+        await new Promise<void>((resolve, reject) => {
+          let done = false;
+          const timer = setTimeout(() => {
+            if (done) return;
+            done = true;
+            for (const u of trailUnsubs) u();
+            resolve();
+          }, windowMs);
+          const onRequest = () => {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            for (const u of trailUnsubs) u();
+            reject(new Error("__leak__"));
+          };
+          const trailUnsubs: Array<() => void> = [];
+          for (const v of variants) {
+            trailUnsubs.push(subscribeTo(requestListeners[v])(onRequest));
+          }
+        }).catch((err) => {
+          if (err instanceof Error && err.message === "__leak__") {
+            failIfLeaked(`trailing ${windowMs}ms`);
+          } else {
+            throw err;
+          }
+        });
+
+        // Cek terakhir setelah trailing window (mis. listener terpasang
+        // dua kali → snapshot leaks yang mungkin di-record antara
+        // resolve dan cek ini). Nyaris redundant tapi murah.
+        failIfLeaked(`trailing ${windowMs}ms`);
+      } finally {
+        cleanup();
+      }
+    },
     waitForIdle(variant, opts) {
       const drainQueue = opts?.drainQueue ?? false;
       const timeoutMs = opts?.timeoutMs ?? 10_000;
