@@ -128,5 +128,11 @@ test.describe("APK availability · refresh flow", () => {
         name: /Cek ulang ketersediaan APK MCM Chat/i,
       }),
     ).toHaveCount(0);
+
+    // === Post-active quiescent guard ===
+    // Setelah ketiga tombol aktif, TIDAK boleh ada request tambahan
+    // (polling background / refetch on-focus / interval query).
+    await stub.assertQuiescent("storage", { windowMs: 1000 });
+    await stub.assertQuiescent("chat", { windowMs: 1000 });
   });
 });
