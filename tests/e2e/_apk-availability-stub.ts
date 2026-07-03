@@ -252,6 +252,22 @@ export type ApkStub = {
        * kita menyatakan handler benar-benar stabil.
        */
       stableTicks?: number;
+      /**
+       * Whitelist kuantitatif — sama semantiknya seperti
+       * {@link AssertNoAdditionalRequestsOpts.expected}. Diteruskan
+       * ke `runNoAdditionalGuard` untuk fase `windowMs`, DAN dipakai
+       * ulang di fase `stableTicks` (dengan counter sinceSnapshot
+       * terpisah per fase — jadi mis. `expected: { chat: 1 }`
+       * membolehkan 1 refetch di window DAN 1 refetch tambahan
+       * selama ticks).
+       */
+      expected?: Partial<Record<ApkVariant, number>>;
+      /**
+       * Predikat kustom — sama semantiknya seperti
+       * {@link AssertNoAdditionalRequestsOpts.ignore}. Diterapkan
+       * di kedua fase (windowMs + stableTicks).
+       */
+      ignore?: (info: ApkStubIgnoreInfo) => boolean;
     },
   ) => Promise<void>;
   /**
@@ -267,7 +283,22 @@ export type ApkStub = {
    */
   assertCounterStable: (
     variant: ApkVariant,
-    opts?: { ticks?: number },
+    opts?: {
+      ticks?: number;
+      /**
+       * Whitelist kuantitatif — request ke-N (1-based, sejak
+       * snapshot awal helper ini) yang ≤ `expected[variant]`
+       * dianggap diizinkan dan snapshot counter dimajukan otomatis
+       * (tidak dianggap "counter bergerak").
+       */
+      expected?: Partial<Record<ApkVariant, number>>;
+      /**
+       * Predikat kustom — dievaluasi SESUDAH `expected`. Kalau
+       * mengembalikan `true`, request tersebut diizinkan dan
+       * snapshot dimajukan.
+       */
+      ignore?: (info: ApkStubIgnoreInfo) => boolean;
+    },
   ) => Promise<void>;
   /**
    * Utilitas asersi umum: memverifikasi TIDAK ada request tambahan
