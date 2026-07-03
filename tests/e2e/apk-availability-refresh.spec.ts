@@ -1,4 +1,5 @@
-import { test, expect, type Route } from "@playwright/test";
+import { test, expect } from "@playwright/test";
+import { installApkStub, makeRelease } from "./_apk-availability-stub";
 
 /**
  * E2E: alur pengecekan ulang ketersediaan APK pada tiga tombol pintas
@@ -7,76 +8,25 @@ import { test, expect, type Route } from "@playwright/test";
  *   1. Kondisi awal: server function `getApkVariantDetail` mengembalikan
  *      rilis kosong → tombol tampil idle "Belum tersedia" dengan ikon
  *      refresh terlihat, tanpa toast merah.
- *   2. Setelah rilis muncul di sisi server (flag test dibalik), mengetuk
- *      ikon refresh memicu refetch dan tombol otomatis berganti ke
- *      state aktif dengan label unduhan/salin yang jelas.
+ *   2. Setelah rilis muncul di sisi server (respons berikutnya di-enqueue
+ *      via `installApkStub` — deterministik, TANPA flag yang di-flip di
+ *      tengah test), mengetuk ikon refresh memicu refetch dan tombol
+ *      otomatis berganti ke state aktif dengan label unduhan/salin.
  */
 
 const URL = "/lovable/visual/apk-availability-shortcuts";
 
-type ApkRelease = {
-  name: string;
-  url: string;
-  sizeMB: number | null;
-  updatedAt: string | null;
-  versionName: string | null;
-  versionCode: number | null;
-  belowMinimum: boolean;
-};
-
-function makeRelease(variant: "chat" | "storage"): ApkRelease {
-  const label = variant === "chat" ? "MCM-Chat" : "MCM-Storage";
-  return {
-    name: `${label}-1.0.0.apk`,
-    url: `https://example.test/${label}-1.0.0.apk`,
-    sizeMB: 12,
-    updatedAt: "2026-07-03T00:00:00.000Z",
-    versionName: "1.0.0",
-    versionCode: 1,
-    belowMinimum: false,
-  };
-}
-
-function makeDetail(
-  variant: "chat" | "storage",
-  releases: ApkRelease[],
-): Record<string, unknown> {
-  return {
-    variant,
-    title: variant === "chat" ? "MCM Chat" : "MCM Storage",
-    subtitle: "Harness stub.",
-    latest: releases[0] ?? null,
-    releases,
-    changelog: null,
-    minSupported: null,
-  };
-}
-
 test.describe("APK availability · refresh flow", () => {
   test("belum tersedia → tap refresh → aktif", async ({ page }) => {
-    // Flag dikontrol dari luar handler supaya bisa diflip di tengah test.
-    let available = false;
+    // Deterministik: respons TIDAK bergantung urutan wall-clock antara
+    // "flip flag" dan handler membaca flag. Test meng-enqueue respons
+    // per-varian secara eksplisit; handler menunggu antrian sebelum
+    // menjawab, sehingga test lebih stabil di CI yang lambat.
+    const stub = await installApkStub(page);
 
-    await page.route("**/_serverFn/**", async (route: Route) => {
-      // Deteksi varian dari query string payload (GET) atau body (POST).
-      const req = route.request();
-      const url = req.url();
-      let raw = decodeURIComponent(url.split("?")[1] ?? "");
-      if (!raw && req.method() === "POST") {
-        raw = req.postData() ?? "";
-      }
-      const variant: "chat" | "storage" = raw.includes("storage")
-        ? "storage"
-        : "chat";
-
-      const releases = available ? [makeRelease(variant)] : [];
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(makeDetail(variant, releases)),
-      });
-    });
-
+    // Fetch awal (mount): kedua varian kembalikan rilis kosong.
+    stub.enqueue("chat", []);
+    stub.enqueue("storage", []);
     await page.goto(URL);
 
     // Wrapper testid untuk membatasi query per tombol (aria-label bisa
@@ -108,8 +58,13 @@ test.describe("APK availability · refresh flow", () => {
     await expect(storageRefresh).toBeVisible();
     await expect(copyRefresh).toBeVisible();
 
-    // === Balik flag → rilis kini tersedia; tap refresh memicu refetch ===
-    available = true;
+    // === Enqueue respons "tersedia" untuk tiap refetch yang akan
+    // dipicu oleh tap tombol refresh. Karena handler menunggu antrian,
+    // tidak ada race: request akan mendapat payload yang benar apa pun
+    // urutan penjadwalan Chromium.
+    stub.enqueue("chat", [makeRelease("chat")]);
+    stub.enqueue("storage", [makeRelease("storage")]);
+    stub.enqueue("chat", [makeRelease("chat")]);
 
     await chatRefresh.click();
     await storageRefresh.click();
