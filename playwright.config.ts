@@ -159,6 +159,16 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E contoh referensi hasil salin dari `_helpers/apk-spec.template.ts`.
+      // Skenario: mount `/lovable/visual/apk-availability-shortcuts` dengan
+      // rilis kosong → verifikasi TIDAK ada request `getApkVariantDetail`
+      // tambahan setelah fetch awal (assertQuiescent + terminalGuard).
+      name: "apk-mount-quiescent-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /apk-mount-quiescent\.spec\.ts/,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
       // E2E konsistensi label /diagnostik/paket: memverifikasi bahwa
       // "Isi / kemasan", "Harga per", dan "Ringkasan · yang tersedia"
       // SELALU konsisten dengan pilihan dropdown Jenis kemasan
