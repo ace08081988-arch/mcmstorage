@@ -99,6 +99,10 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     const storageDl = page.getByTestId("apk-shortcut-download-storage");
 
     // Fase awal: idle "Belum tersedia".
+    // Tunggu event served untuk kedua fetch awal SEBELUM assertion UI
+    // — mencegah race di mana "Belum tersedia" belum sempat render.
+    await stub.waitForServed("chat", 1);
+    await stub.waitForServed("storage", 1);
     await expect(storageDl.getByText("Belum tersedia")).toBeVisible();
 
     const storageRefresh = storageDl.getByRole("button", {
@@ -110,6 +114,12 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     // Jangan enqueue dulu — handler akan menahan waiter storage sampai
     // test siap merilis, sehingga state "Memeriksa…" bisa diobservasi.
     await storageRefresh.click();
+
+    // Sinkronisasi deterministik: tunggu event "waiter tertahan" dari
+    // handler. Setelah event ini firing, kita 100% yakin request
+    // refetch storage sudah sampai di handler dan sedang digantung —
+    // aman untuk mengukur state UI berikutnya tanpa polling wall-clock.
+    await stub.waitForHold("storage");
 
     // === State checking/busy tervalidasi ===
     // Label utama berubah menjadi "Memeriksa…" (bukan "Belum tersedia",
