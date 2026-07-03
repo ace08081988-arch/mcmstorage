@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { getApkVariantDetail } from "@/lib/apk.functions";
 import { recordChatApkDownload } from "@/lib/chat-apk-history";
@@ -42,9 +42,11 @@ export function DownloadChatApkShortcut() {
       return !!detail?.latest?.url;
     },
     staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: 1,
   });
-  const isChecking = availability.isLoading;
+  const isChecking = availability.isLoading || availability.isFetching;
   const isAvailable = availability.data === true;
   const isUnavailable = availability.isSuccess && availability.data === false;
 
