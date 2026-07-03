@@ -221,6 +221,7 @@ function DiagnostikPaket() {
             <Field label="mode">
               <select
                 className="input"
+                data-testid="diag-input-mode"
                 value={mode}
                 onChange={(e) => setMode(e.target.value as Mode)}
               >
@@ -264,6 +265,7 @@ function DiagnostikPaket() {
             <Field label="priceMode">
               <select
                 className="input"
+                data-testid="diag-input-price-mode"
                 value={priceMode}
                 onChange={(e) => setPriceMode(e.target.value as "package" | "base")}
               >
