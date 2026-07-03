@@ -137,6 +137,16 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E: tombol refresh Storage hanya memicu SATU refetch per tap
+      // (servedCount naik tepat 1) dan tidak ada request tambahan
+      // setelah state aktif — proteksi terhadap regresi double-fire,
+      // polling background, atau refetch on-focus yang tidak diinginkan.
+      name: "apk-refresh-single-refetch-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /apk-refresh-single-refetch\.spec\.ts/,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
       // E2E aria-label per state pada <CopyChatApkLinksButton>: idle
       // (belum tersedia), disabled (checking / busy), dan aktif
       // (tersalin). Harness publik /lovable/visual/apk-availability-shortcuts
