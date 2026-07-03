@@ -428,12 +428,20 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         ) : (
           <audio ref={remoteAudioRef} autoPlay playsInline />
         )}
-        {/* Elemen audio remote tambahan untuk mode video — beberapa
-            browser (Android WebView) tidak selalu memutar audio track
-            lewat <video>. Menyediakan sink audio terpisah menjamin
-            suara terdengar. */}
+        {/* Elemen audio remote untuk mode video — beberapa browser
+            (Android WebView) tidak selalu memutar audio track lewat
+            <video>. Sink audio terpisah menjamin suara terdengar dan
+            memungkinkan setSinkId dipakai konsisten. Menggunakan satu
+            ref yang sama supaya volume/sink dapat dikontrol serentak. */}
         {kind === "video" ? (
-          <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+          <audio
+            ref={(el) => {
+              remoteAudioRef.current = el;
+            }}
+            autoPlay
+            playsInline
+            className="hidden"
+          />
         ) : null}
         {!remoteReady && kind === "video" ? (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-neutral-900 to-black">
@@ -481,14 +489,103 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             <StatusIcon className={`h-3.5 w-3.5 ${statusIconClass}`} />
             <span>{status}</span>
           </button>
-          {phase === "connecting" || phase === "ringing" ? (
-            <Loader2 className="h-4 w-4 animate-spin text-white/70" />
-          ) : null}
+          <div className="flex items-center gap-2">
+            {activeDevice && phase === "in-call" ? (
+              <span
+                data-testid="call-active-device"
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[11px] text-white/80 backdrop-blur"
+                title={activeDevice.label}
+              >
+                <span aria-hidden>{iconForKind(activeKind)}</span>
+                <span className="max-w-[9rem] truncate">{activeDevice.label}</span>
+              </span>
+            ) : null}
+            {phase === "connecting" || phase === "ringing" ? (
+              <Loader2 className="h-4 w-4 animate-spin text-white/70" />
+            ) : null}
+          </div>
         </div>
+
+        {turnConfigured === false && phase !== "ended" ? (
+          <div
+            role="note"
+            data-testid="call-turn-warning"
+            className="absolute inset-x-4 top-14 flex items-start gap-2 rounded-md bg-amber-500/15 px-3 py-2 text-[11px] text-amber-100 backdrop-blur"
+          >
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>
+              TURN server belum diatur — panggilan bisa gagal di jaringan
+              seluler / Wi-Fi kantor. Atur TURN_URL, TURN_USERNAME, dan
+              TURN_CREDENTIAL pada Backend.
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {/* Kontrol */}
-      <div className="flex items-center justify-center gap-4 border-t border-white/10 bg-black/60 px-4 py-6">
+      <div className="flex flex-col gap-3 border-t border-white/10 bg-black/60 px-4 py-4">
+        {/* Baris kontrol audio: output picker · speakerphone · volume */}
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            data-testid="call-output-picker"
+            onClick={() => setOutputSheetOpen(true)}
+            disabled={!outputSupported && outputs.length === 0}
+            aria-label={
+              activeDevice
+                ? `Perangkat output aktif: ${activeDevice.label}. Ketuk untuk mengganti.`
+                : "Pilih perangkat output audio"
+            }
+            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs hover:bg-white/20 disabled:opacity-50"
+          >
+            <span aria-hidden>{iconForKind(activeKind)}</span>
+            <span className="max-w-[7rem] truncate">
+              {activeDevice ? labelForKind(activeKind) : "Output"}
+            </span>
+            <ChevronDown className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            data-testid="call-speakerphone-toggle"
+            onClick={() => void toggleSpeakerphone()}
+            aria-pressed={activeKind === "speaker"}
+            aria-label={
+              activeKind === "speaker"
+                ? "Matikan speaker keras"
+                : "Nyalakan speaker keras"
+            }
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs ${
+              activeKind === "speaker"
+                ? "bg-white text-black"
+                : "bg-white/10 hover:bg-white/20"
+            }`}
+          >
+            <span aria-hidden>🔊</span>
+            <span>Speaker</span>
+          </button>
+          <div className="flex flex-1 items-center gap-2 px-2">
+            {volume === 0 ? (
+              <VolumeX className="h-4 w-4 text-white/70" />
+            ) : volume < 0.5 ? (
+              <Volume1 className="h-4 w-4 text-white/70" />
+            ) : (
+              <Volume2 className="h-4 w-4 text-white/70" />
+            )}
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={Math.round(volume * 100)}
+              onChange={(e) => setVolume(Number(e.target.value) / 100)}
+              data-testid="call-volume-slider"
+              aria-label="Volume dalam panggilan"
+              className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/20 accent-white"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-center gap-4">
         <Button
           type="button"
           variant="ghost"
@@ -534,7 +631,52 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         >
           <PhoneOff className="h-6 w-6" />
         </Button>
+        </div>
       </div>
+
+      <Sheet open={outputSheetOpen} onOpenChange={setOutputSheetOpen}>
+        <SheetContent side="bottom" className="bg-black text-white">
+          <SheetHeader className="text-left">
+            <SheetTitle className="text-white">Pilih output audio</SheetTitle>
+            <SheetDescription className="text-white/60">
+              {outputSupported
+                ? "Ketuk perangkat untuk mengalihkan suara panggilan."
+                : "Peramban ini tidak mendukung pemilihan output — ubah dari kontrol sistem."}
+            </SheetDescription>
+          </SheetHeader>
+          <ul className="mt-4 space-y-1">
+            {outputs.length === 0 ? (
+              <li className="rounded-md px-3 py-2 text-sm text-white/60">
+                Tidak ada perangkat terdeteksi.
+              </li>
+            ) : (
+              outputs.map((d) => (
+                <li key={d.deviceId}>
+                  <button
+                    type="button"
+                    data-testid={`call-output-option-${d.kind}`}
+                    onClick={() => {
+                      setActiveSinkId(d.deviceId);
+                      setOutputSheetOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-white/10 ${
+                      d.deviceId === activeSinkId ? "bg-white/10" : ""
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span aria-hidden>{iconForKind(guessDeviceKind(d.label))}</span>
+                      <span className="truncate">{d.label}</span>
+                    </span>
+                    <span className="text-[11px] text-white/50">
+                      {labelForKind(d.kind)}
+                    </span>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
