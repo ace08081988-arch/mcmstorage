@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -19,6 +20,26 @@ import {
 } from "@/lib/calls";
 import { supabase } from "@/integrations/supabase/client";
 import { getCallStatusVisual, type CallVisualStatus } from "@/lib/call-status-visual";
+import {
+  applyAudioSink,
+  guessDeviceKind,
+  iconForKind,
+  isOutputSelectionSupported,
+  labelForKind,
+  listOutputDevices,
+  loadPersistedVolume,
+  persistVolume,
+  type OutputDevice,
+  type AudioOutputKind,
+} from "@/lib/audio-output";
+import { getNativeAudioRoute } from "@/lib/native-audio-route";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 
 /**
  * Full-screen UI panggilan. Bertanggung jawab atas: setup peer, negosiasi
