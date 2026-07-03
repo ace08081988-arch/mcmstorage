@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery } from "@tanstack/react-query";
-import { Loader2 } from "lucide-react";
+import { Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { getApkVariantDetail } from "@/lib/apk.functions";
 import { triggerApkDownload } from "@/lib/trigger-apk-download";
@@ -23,9 +23,11 @@ export function DownloadStorageApkShortcut() {
       return !!detail?.latest?.url;
     },
     staleTime: 60_000,
+    refetchOnWindowFocus: true,
+    refetchOnReconnect: true,
     retry: 1,
   });
-  const isChecking = availability.isLoading;
+  const isChecking = availability.isLoading || availability.isFetching;
   const isAvailable = availability.data === true;
   const isUnavailable = availability.isSuccess && availability.data === false;
 
@@ -69,14 +71,22 @@ export function DownloadStorageApkShortcut() {
   }
 
   return (
+    <div className="relative">
     <button
       type="button"
-      onClick={() => void onClick()}
-      disabled={busy || isChecking || isUnavailable}
-      aria-disabled={busy || isChecking || isUnavailable}
+      onClick={() => {
+        if (busy || isChecking) return;
+        if (!isAvailable) {
+          void availability.refetch();
+          return;
+        }
+        void onClick();
+      }}
+      disabled={busy}
+      aria-disabled={busy}
       aria-label={
         isUnavailable
-          ? "APK MCM Storage belum tersedia"
+          ? "APK MCM Storage belum tersedia — ketuk untuk cek ulang"
           : isChecking
             ? "Memeriksa ketersediaan APK MCM Storage"
             : "Unduh APK MCM Storage"
@@ -97,9 +107,24 @@ export function DownloadStorageApkShortcut() {
         {isChecking
           ? "Mengecek rilis terbaru…"
           : isUnavailable
-            ? "Belum ada rilis APK Storage"
+            ? "Ketuk untuk cek ulang"
             : "Langsung unduh versi terbaru"}
       </span>
     </button>
+    {isUnavailable && !busy ? (
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          void availability.refetch();
+        }}
+        aria-label="Cek ulang ketersediaan APK MCM Storage"
+        title="Cek ulang"
+        className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+      >
+        <RefreshCw className={"h-3.5 w-3.5 " + (isChecking ? "animate-spin" : "")} />
+      </button>
+    ) : null}
+    </div>
   );
 }
