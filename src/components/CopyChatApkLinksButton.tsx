@@ -156,11 +156,15 @@ export function CopyChatApkLinksButton({
       onClick={() => void onClick()}
       disabled={busy || isChecking}
       aria-label={
-        isUnavailable
-          ? "APK MCM Chat belum tersedia — ketuk untuk cek ulang"
-          : isChecking
-            ? "Memeriksa ketersediaan APK MCM Chat"
-            : "Salin semua link APK Chat"
+        copied
+          ? "Tersalin: semua link APK MCM Chat sudah disalin ke clipboard"
+          : busy
+            ? "Memproses: menyalin semua link APK MCM Chat, tombol dinonaktifkan sementara"
+            : isChecking
+              ? "Memeriksa ketersediaan APK MCM Chat, tombol dinonaktifkan sementara"
+              : isUnavailable
+                ? "APK MCM Chat belum tersedia — ketuk untuk cek ulang"
+                : "Salin semua link APK Chat"
       }
       className={
         className ??
