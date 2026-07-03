@@ -24,16 +24,9 @@ export function DownloadStorageApkShortcut() {
       const apk = detail?.latest;
       const url = apk?.url;
       if (!apk || !url) {
-        toast("APK MCM Storage belum tersedia", {
-          id: loadingId,
-          description:
-            "Belum ada berkas APK Storage di backend. Unggah rilis APK terlebih dahulu, lalu coba lagi.",
-          action: {
-            label: "Buka rilis",
-            onClick: () => window.location.assign("/pengaturan-apk"),
-          },
-          duration: 6000,
-        });
+        // Belum ada rilis = status kosong normal, bukan error unduhan.
+        // Jangan munculkan status/toast merah di atas.
+        toast.dismiss(loadingId);
         return;
       }
       const version =

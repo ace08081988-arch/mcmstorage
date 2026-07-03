@@ -31,16 +31,8 @@ export function CopyChatApkLinksButton({
       const detail = await fetchDetail({ data: { variant: "chat" } });
       const releases = detail?.releases ?? [];
       if (releases.length === 0) {
-        toast("APK MCM Chat belum tersedia", {
-          id: loadingId,
-          description:
-            "Belum ada link yang bisa disalin karena rilis APK Chat belum diunggah.",
-          action: {
-            label: "Buka rilis",
-            onClick: () => window.location.assign("/pengaturan-apk"),
-          },
-          duration: 6000,
-        });
+        // Tidak ada rilis untuk disalin = kondisi kosong normal.
+        toast.dismiss(loadingId);
         return;
       }
       const header = `MCM Chat APK — daftar unduhan (${releases.length} versi)`;
