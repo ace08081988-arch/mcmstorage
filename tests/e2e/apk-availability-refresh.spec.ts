@@ -116,9 +116,33 @@ test.describe("APK availability · refresh flow", () => {
     await copyRefresh.click();
 
     // Tombol otomatis aktif — label ganti ke aksi utama, ikon refresh hilang.
-    await expect(chatDl.getByText("Unduh APK Chat")).toBeVisible();
-    await expect(storageDl.getByText("Unduh APK Storage")).toBeVisible();
-    await expect(copyChat.getByText("Salin link APK Chat")).toBeVisible();
+    // Assert label PERSIS per varian (exact match) supaya salah label / label
+    // tertukar (mis. tombol Chat menampilkan "Storage") langsung gagal.
+    await expect(
+      chatDl.getByText("Unduh APK Chat", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      storageDl.getByText("Unduh APK Storage", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      copyChat.getByText("Salin link APK Chat", { exact: true }),
+    ).toBeVisible();
+
+    // Cross-variant guard: label varian lain tidak boleh muncul di dalam
+    // wrapper varian yang salah.
+    await expect(chatDl.getByText(/Storage/i)).toHaveCount(0);
+    await expect(storageDl.getByText(/Chat/i)).toHaveCount(0);
+    await expect(
+      copyChat.getByText("Unduh APK Chat", { exact: true }),
+    ).toHaveCount(0);
+    await expect(
+      copyChat.getByText("Unduh APK Storage", { exact: true }),
+    ).toHaveCount(0);
+
+    // State idle "Belum tersedia" sudah tidak ada di ketiganya.
+    await expect(chatDl.getByText("Belum tersedia")).toHaveCount(0);
+    await expect(storageDl.getByText("Belum tersedia")).toHaveCount(0);
+    await expect(copyChat.getByText("Belum tersedia")).toHaveCount(0);
 
     await expect(
       chatDl.getByRole("button", {
