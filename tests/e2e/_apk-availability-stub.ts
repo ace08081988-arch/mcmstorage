@@ -151,7 +151,34 @@ export type ApkStub = {
    */
   assertQuiescent: (
     variant: ApkVariant,
-    opts?: { windowMs?: number },
+    opts?: {
+      windowMs?: number;
+      /**
+       * Setelah jendela `windowMs` lewat tanpa request tambahan,
+       * verifikasi `requestedCount` & `servedCount` TETAP sama
+       * selama `stableTicks` event-loop ticks berturut-turut
+       * (default `5`). Setiap tick = `setTimeout(0)` + microtask
+       * flush — memberi kesempatan task tertunda / callback
+       * React Query untuk sempat memicu request baru sebelum
+       * kita menyatakan handler benar-benar stabil.
+       */
+      stableTicks?: number;
+    },
+  ) => Promise<void>;
+  /**
+   * Mode standalone "counter stabil": memverifikasi `requestedCount`
+   * & `servedCount` untuk `variant` TETAP sama selama `ticks`
+   * event-loop ticks berturut-turut. Berbeda dari `waitForIdle`
+   * (yang menunggu idle DATANG) — helper ini menguji idle BERTAHAN.
+   *
+   * Berguna sebagai pengaman tambahan di CI yang lambat: kalau ada
+   * task tertunda (mis. `queueMicrotask`, `Promise.resolve().then`,
+   * atau timer 0 ms) yang memicu refetch, ia akan sempat firing
+   * dalam `ticks` iterasi ini dan test gagal cepat.
+   */
+  assertCounterStable: (
+    variant: ApkVariant,
+    opts?: { ticks?: number },
   ) => Promise<void>;
   /**
    * Menunggu handler benar-benar IDLE (deterministik, tanpa
@@ -340,6 +367,7 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     },
     async assertQuiescent(variant, opts) {
       const windowMs = opts?.windowMs ?? 1000;
+      const stableTicks = opts?.stableTicks ?? 5;
       // (1) Handler benar-benar kosong untuk varian ini.
       if (queued[variant].length > 0) {
         throw new Error(
@@ -390,6 +418,49 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
             `${requested[variant]}, served ${snapServ}→` +
             `${served[variant]}).`,
         );
+      }
+      // (5) Ekstra: counter WAJIB tetap stabil selama `stableTicks`
+      // event-loop ticks berturut-turut. Melindungi dari task tertunda
+      // (microtask / setTimeout(0)) yang bisa memicu refetch tepat
+      // setelah jendela `windowMs` habis di CI yang lambat.
+      for (let i = 0; i < stableTicks; i += 1) {
+        // setTimeout(0) → beri task queue kesempatan; lalu
+        // Promise.resolve() → flush microtask yang mungkin
+        // ter-schedule dari task itu.
+        await new Promise<void>((r) => setTimeout(r, 0));
+        await Promise.resolve();
+        if (
+          requested[variant] !== snapReq ||
+          served[variant] !== snapServ
+        ) {
+          throw new Error(
+            `[apk-stub] assertQuiescent(${variant}) GAGAL pada tick ` +
+              `#${i + 1}/${stableTicks}: counter bergerak (requested ` +
+              `${snapReq}→${requested[variant]}, served ${snapServ}→` +
+              `${served[variant]}). Ada task tertunda yang memicu ` +
+              `refetch setelah handler tampak idle.`,
+          );
+        }
+      }
+    },
+    async assertCounterStable(variant, opts) {
+      const ticks = opts?.ticks ?? 5;
+      const snapReq = requested[variant];
+      const snapServ = served[variant];
+      for (let i = 0; i < ticks; i += 1) {
+        await new Promise<void>((r) => setTimeout(r, 0));
+        await Promise.resolve();
+        if (
+          requested[variant] !== snapReq ||
+          served[variant] !== snapServ
+        ) {
+          throw new Error(
+            `[apk-stub] assertCounterStable(${variant}) GAGAL pada ` +
+              `tick #${i + 1}/${ticks}: requested ${snapReq}→` +
+              `${requested[variant]}, served ${snapServ}→` +
+              `${served[variant]}.`,
+          );
+        }
       }
     },
     waitForIdle(variant, opts) {
