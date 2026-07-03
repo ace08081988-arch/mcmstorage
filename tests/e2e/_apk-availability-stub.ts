@@ -40,6 +40,20 @@ export type ApkRelease = {
 
 export type ApkVariant = "chat" | "storage";
 
+/** Satu event yang tercatat di log helper (relatif thd install time). */
+export type ApkStubEvent = {
+  /** Milidetik sejak `installApkStub` dipanggil. */
+  t: number;
+  variant: ApkVariant;
+  type: "request" | "served" | "hold" | "enqueue";
+  requested: number;
+  served: number;
+  queued: number;
+  holding: number;
+  /** Info opsional (mis. URL request atau ukuran payload). */
+  note?: string;
+};
+
 export function makeRelease(variant: ApkVariant): ApkRelease {
   const label = variant === "chat" ? "MCM-Chat" : "MCM-Storage";
   return {
@@ -95,6 +109,18 @@ export type ApkStub = {
    * setup dan initial fetch tergantung menunggu waiter selamanya.
    */
   assertPrimed: () => void;
+  /**
+   * Ambil salinan log event mentah — pemakai boleh memfilter,
+   * memformat, atau menaruh di attach Playwright.
+   */
+  getEventLog: () => ApkStubEvent[];
+  /**
+   * Format ringkas `tail` event terakhir sebagai string multi-baris
+   * — dipakai internal oleh `assertQuiescent` untuk melampirkan
+   * konteks di pesan error. Tersedia publik supaya spec boleh
+   * juga `console.log(stub.formatEventLog())` saat men-debug.
+   */
+  formatEventLog: (tail?: number) => string;
   /**
    * Menunggu handler menerima request ke-`n` untuk `variant` (event
    * "request tiba" — sebelum fulfill). Deterministik: berbasis event
@@ -213,6 +239,45 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
   const requested: Record<ApkVariant, number> = { chat: 0, storage: 0 };
   /** Berapa waiter yang saat ini tertahan (menunggu enqueue). */
   const holding: Record<ApkVariant, number> = { chat: 0, storage: 0 };
+  const t0 = Date.now();
+  const events: ApkStubEvent[] = [];
+  /** Batas maksimum event yang disimpan (mencegah log tak terbatas). */
+  const EVENT_LOG_CAP = 500;
+
+  function pushEvent(
+    variant: ApkVariant,
+    type: ApkStubEvent["type"],
+    note?: string,
+  ) {
+    events.push({
+      t: Date.now() - t0,
+      variant,
+      type,
+      requested: requested[variant],
+      served: served[variant],
+      queued: queued[variant].length,
+      holding: holding[variant],
+      note,
+    });
+    if (events.length > EVENT_LOG_CAP) events.shift();
+  }
+
+  function formatEventLog(tail = 15): string {
+    if (events.length === 0) return "  (log kosong — belum ada event)";
+    const slice = events.slice(-Math.max(1, tail));
+    return slice
+      .map((e) => {
+        const pad = (n: number, w = 2) => String(n).padStart(w, " ");
+        const noteStr = e.note ? ` · ${e.note}` : "";
+        return (
+          `  [+${pad(e.t, 5)}ms] ${e.variant.padEnd(7)} ${e.type.padEnd(7)}` +
+          ` req=${pad(e.requested)} served=${pad(e.served)}` +
+          ` queue=${pad(e.queued)} hold=${pad(e.holding)}${noteStr}`
+        );
+      })
+      .join("\n");
+  }
+
   /** Listener terdaftar per event: dipanggil setelah counter bertambah. */
   type Listener = () => void;
   const requestListeners: Record<ApkVariant, Listener[]> = { chat: [], storage: [] };
@@ -263,8 +328,10 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     if (waiter) {
       holding[variant] = Math.max(0, holding[variant] - 1);
       waiter(releases);
+      pushEvent(variant, "enqueue", `release waiter (n=${releases.length})`);
     } else {
       queued[variant].push(releases);
+      pushEvent(variant, "enqueue", `queue (n=${releases.length})`);
     }
   }
 
@@ -275,6 +342,7 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     if (ready) return Promise.resolve(ready);
     // Tidak ada antrian → handler akan MENAHAN waiter sampai enqueue.
     holding[variant] += 1;
+    pushEvent(variant, "hold");
     fire(holdListeners[variant]);
     return new Promise<ApkRelease[]>((resolve) => {
       waiters[variant].push(resolve);
@@ -290,9 +358,11 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     }
     const variant = detectVariant(raw);
     requested[variant] += 1;
+    pushEvent(variant, "request", url.split("?")[0].split("/").pop() ?? "");
     fire(requestListeners[variant]);
     const releases = await nextResponse(variant);
     served[variant] += 1;
+    pushEvent(variant, "served", `releases=${releases.length}`);
     fire(servedListeners[variant]);
     await route.fulfill({
       status: 200,
@@ -317,6 +387,12 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
         storage: queued.storage.length,
         waiters: waiters.chat.length + waiters.storage.length,
       };
+    },
+    getEventLog() {
+      return events.slice();
+    },
+    formatEventLog(tail = 15) {
+      return formatEventLog(tail);
     },
     primeInitial(chatReleases = [], storageReleases = []) {
       // Enqueue respons untuk fetch awal (mount) kedua varian.
