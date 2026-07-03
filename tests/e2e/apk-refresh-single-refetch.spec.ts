@@ -77,24 +77,19 @@ test.describe("APK refresh · single refetch per tap", () => {
       }),
     ).toHaveCount(0);
 
-    // Assert absence deterministik: coba tunggu request storage ke-4;
-    // jika terjadi, `waitForRequest` resolve → test gagal via `.then`.
-    // Timeout di helper hanya batas atas untuk membuktikan absence
-    // (bukan sleep yang dipakai untuk sinkronisasi test flow).
-    const extra = await stub
-      .waitForRequest("storage", 4, 1500)
-      .then(() => "extra-request-fired")
-      .catch(() => "no-extra-request");
-    expect(extra).toBe("no-extra-request");
+    // Assert quiescent: helper memastikan antrian handler kosong,
+    // snapshot counter, lalu memverifikasi TIDAK ada request tambahan
+    // dalam jendela bounded. Kalau ada polling background / refetch
+    // on-focus / interval query, helper akan gagal karena counter
+    // bergerak.
+    await stub.assertQuiescent("storage", { windowMs: 1500 });
+    await stub.assertQuiescent("chat", { windowMs: 500 });
 
-    // Counter tetap 3 — dan requestedCount = servedCount (tidak ada
-    // request yang menggantung di handler menunggu enqueue).
+    // Snapshot akhir untuk transparansi log CI.
     expect(stub.servedCount("storage")).toBe(3);
     expect(stub.requestedCount("storage")).toBe(3);
     expect(stub.servedCount("chat")).toBe(1);
     expect(stub.requestedCount("chat")).toBe(1);
-    // Tidak ada waiter yang menggantung → semua request yang diterima
-    // handler sudah selesai (bukan sekadar "belum sampai").
     expect(stub.pending().waiters).toBe(0);
   });
 });
