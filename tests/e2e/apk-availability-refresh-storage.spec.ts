@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { installApkStub, makeRelease } from "./_apk-availability-stub";
+import {
+  APK_STUB_PER_ACTION_WINDOW_MS,
+  APK_STUB_TERMINAL_WINDOW_MS,
+} from "./_helpers/apk-stub-timing";
 
 /**
  * E2E khusus tombol <DownloadStorageApkShortcut>: alur ketersediaan APK
@@ -63,7 +67,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
       async () => {
         await storageRefresh.click();
       },
-      { variant: "chat", windowMs: 500 },
+      { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
     );
 
     // Tombol aktif — label PERSIS "Unduh APK Storage" (exact match).
@@ -98,7 +102,9 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     await stub.assertQuiescent("storage", { windowMs: 1000 });
     await stub.assertQuiescent("chat", { windowMs: 500 });
     // Terminal: guard event-based untuk kedua varian.
-    await stub.assertNoAdditionalRequests({ windowMs: 500 });
+    await stub.assertNoAdditionalRequests({
+      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
+    });
   });
 
   test("storage: tap refresh → label 'Memeriksa…' & tombol refresh disabled sampai rilis tersedia", async ({
@@ -136,7 +142,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
       async () => {
         await storageRefresh.click();
       },
-      { variant: "chat", windowMs: 300 },
+      { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
     );
 
     // Sinkronisasi deterministik: tunggu event "waiter tertahan" dari
@@ -197,6 +203,8 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     await stub.assertQuiescent("storage", { windowMs: 1000 });
     await stub.assertQuiescent("chat", { windowMs: 500 });
     // Terminal: guard event-based untuk kedua varian.
-    await stub.assertNoAdditionalRequests({ windowMs: 500 });
+    await stub.assertNoAdditionalRequests({
+      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
+    });
   });
 });
