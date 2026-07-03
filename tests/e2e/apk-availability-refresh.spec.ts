@@ -79,28 +79,13 @@ test.describe("APK availability · refresh flow", () => {
     stub.enqueue("storage", [makeRelease("storage")]);
     stub.enqueue("chat", [makeRelease("chat")]);
 
-    // Wrap tiap tap refresh dengan assertNoAdditionalRequests supaya
-    // kebocoran per-aksi tertangkap konsisten (bukan hanya via terminal
-    // guard di akhir). `expected` juga bertindak sebagai regression
-    // check: kalau tap ini tidak lagi memicu refetch, test gagal cepat.
-    await stub.assertNoAdditionalRequests(
-      async () => {
-        await chatRefresh.click();
-      },
-      { expected: { chat: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
-    );
-    await stub.assertNoAdditionalRequests(
-      async () => {
-        await storageRefresh.click();
-      },
-      { expected: { storage: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
-    );
-    await stub.assertNoAdditionalRequests(
-      async () => {
-        await copyRefresh.click();
-      },
-      { expected: { chat: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
-    );
+    // Wrap tiap tap refresh dengan trackedClick — helper otomatis
+    // memasang assertNoAdditionalRequests + windowMs per-action default.
+    // `expected` bertindak sebagai regression check: kalau tap tidak
+    // lagi memicu refetch, test gagal cepat.
+    await stub.trackedClick(chatRefresh, { expected: { chat: 1 } });
+    await stub.trackedClick(storageRefresh, { expected: { storage: 1 } });
+    await stub.trackedClick(copyRefresh, { expected: { chat: 1 } });
 
     // Tunggu handler idle lagi setelah ketiga tap refresh — semua
     // refetch (chat & storage, dengan kemungkinan dedupe query key)
@@ -158,11 +143,8 @@ test.describe("APK availability · refresh flow", () => {
     await stub.assertQuiescent("storage", { windowMs: 1000 });
     await stub.assertQuiescent("chat", { windowMs: 1000 });
 
-    // Terminal leak-guard event-based: konsisten dengan spec lain —
-    // varian dihilangkan → cek chat + storage sekaligus. Tanpa polling;
-    // subscribe ke request listener, bounded upper-bound `windowMs`.
-    await stub.assertNoAdditionalRequests({
-      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
-    });
+    // Terminal leak-guard — helper otomatis pakai windowMs terminal
+    // default. Varian dihilangkan → cek chat + storage sekaligus.
+    await stub.terminalGuard();
   });
 });
