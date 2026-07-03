@@ -115,6 +115,7 @@ import { beliResetKey } from "@/lib/beli-reset-key";
 import { humanBaseUnit } from "@/lib/unit-label";
 import { SmartWeightInput } from "@/components/SmartWeightInput";
 import { KartonRumusPopover } from "@/components/KartonRumusPopover";
+import { KemasanRumusPopover } from "@/components/KemasanRumusPopover";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
   return pt === "gram" ? "g" : "pcs";
