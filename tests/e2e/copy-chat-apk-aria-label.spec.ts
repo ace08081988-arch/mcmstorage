@@ -136,5 +136,12 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     const clip = await page.evaluate(() => navigator.clipboard.readText());
     expect(clip).toContain("MCM Chat APK — daftar unduhan");
     expect(clip).toContain("https://example.test/MCM-Chat-1.0.0.apk");
+
+    // === Post-active quiescent guard ===
+    // Setelah state "tersalin", TIDAK boleh ada request tambahan ke
+    // handler untuk varian chat/storage (query cache-hit, tidak ada
+    // polling / refetch background yang lolos).
+    await stub.assertQuiescent("chat", { windowMs: 1000 });
+    await stub.assertQuiescent("storage", { windowMs: 500 });
   });
 });
