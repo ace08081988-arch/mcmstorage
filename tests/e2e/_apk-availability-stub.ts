@@ -545,7 +545,7 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
       const stableTicks = opts?.stableTicks ?? 5;
       const logTail = () =>
         `\n  Event log terakhir (var=${variant}):\n${formatEventLog(20)}`;
-      // (1) Handler benar-benar kosong untuk varian ini.
+      // (1) Preflight: handler benar-benar kosong untuk varian ini.
       if (queued[variant].length > 0) {
         throw new Error(
           `[apk-stub] assertQuiescent(${variant}): antrian belum kosong ` +
@@ -570,86 +570,39 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
             logTail(),
         );
       }
-      // (2) Snapshot counter.
       const snapReq = requested[variant];
       const snapServ = served[variant];
-      // (3) Coba tunggu request tambahan; kalau resolve → gagal.
-      const outcome = await waitFor(
-        () => requested[variant] > snapReq,
-        subscribeTo(requestListeners[variant]),
-        `[quiescent] request ${variant} tambahan (snapshot=${snapReq})`,
-        windowMs,
-      ).then(
-        () => "extra-request",
-        () => "quiet",
+      // (2) Reuse guard "tidak ada request tambahan" di jendela windowMs.
+      //     Ini menghilangkan duplikasi listener/trailing-window logic —
+      //     satu-satunya sumber kebenaran adalah runNoAdditionalGuard.
+      await runNoAdditionalGuard(
+        { variant, windowMs, expected: undefined, ignore: undefined },
+        undefined,
+        "assertQuiescent",
       );
-      if (outcome === "extra-request") {
-        throw new Error(
-          `[apk-stub] assertQuiescent(${variant}) GAGAL: ada request ` +
-            `tambahan dalam jendela ${windowMs}ms ` +
-            `(requested naik dari ${snapReq} → ${requested[variant]}).` +
-            logTail(),
-        );
-      }
-      // (4) Counter tetap stabil.
-      if (requested[variant] !== snapReq || served[variant] !== snapServ) {
-        throw new Error(
-          `[apk-stub] assertQuiescent(${variant}) GAGAL: counter ` +
-            `berubah setelah jendela (requested ${snapReq}→` +
-            `${requested[variant]}, served ${snapServ}→` +
-            `${served[variant]}).` +
-            logTail(),
-        );
-      }
-      // (5) Ekstra: counter WAJIB tetap stabil selama `stableTicks`
-      // event-loop ticks berturut-turut. Melindungi dari task tertunda
-      // (microtask / setTimeout(0)) yang bisa memicu refetch tepat
-      // setelah jendela `windowMs` habis di CI yang lambat.
-      for (let i = 0; i < stableTicks; i += 1) {
-        // setTimeout(0) → beri task queue kesempatan; lalu
-        // Promise.resolve() → flush microtask yang mungkin
-        // ter-schedule dari task itu.
-        await new Promise<void>((r) => setTimeout(r, 0));
-        await Promise.resolve();
-        if (
-          requested[variant] !== snapReq ||
-          served[variant] !== snapServ
-        ) {
-          throw new Error(
-            `[apk-stub] assertQuiescent(${variant}) GAGAL pada tick ` +
-              `#${i + 1}/${stableTicks}: counter bergerak (requested ` +
-              `${snapReq}→${requested[variant]}, served ${snapServ}→` +
-              `${served[variant]}). Ada task tertunda yang memicu ` +
-              `refetch setelah handler tampak idle.` +
-              logTail(),
-          );
-        }
-      }
+      // (3) Reuse verifyCounterStable — pastikan counter tetap sama
+      //     selama stableTicks event-loop ticks berturut-turut.
+      await verifyCounterStable(
+        variant,
+        stableTicks,
+        snapReq,
+        snapServ,
+        "assertQuiescent",
+      );
     },
     async assertCounterStable(variant, opts) {
       const ticks = opts?.ticks ?? 5;
-      const snapReq = requested[variant];
-      const snapServ = served[variant];
-      for (let i = 0; i < ticks; i += 1) {
-        await new Promise<void>((r) => setTimeout(r, 0));
-        await Promise.resolve();
-        if (
-          requested[variant] !== snapReq ||
-          served[variant] !== snapServ
-        ) {
-          throw new Error(
-            `[apk-stub] assertCounterStable(${variant}) GAGAL pada ` +
-              `tick #${i + 1}/${ticks}: requested ${snapReq}→` +
-              `${requested[variant]}, served ${snapServ}→` +
-              `${served[variant]}.\n  Event log terakhir (var=${variant}):\n` +
-              formatEventLog(20),
-          );
-        }
-      }
+      await verifyCounterStable(
+        variant,
+        ticks,
+        requested[variant],
+        served[variant],
+        "assertCounterStable",
+      );
     },
     async assertNoAdditionalRequests(...args) {
       // Normalisasi argumen: bisa (action, opts) atau (opts) saja.
-      let action: (() => Promise<void>) | null = null;
+      let action: (() => Promise<void>) | undefined;
       let opts: AssertNoAdditionalRequestsOpts | undefined;
       if (typeof args[0] === "function") {
         action = args[0] as () => Promise<void>;
@@ -657,165 +610,7 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
       } else {
         opts = args[0] as typeof opts;
       }
-      const windowMs = opts?.windowMs ?? 500;
-      const variants: ApkVariant[] = opts?.variant
-        ? [opts.variant]
-        : (["chat", "storage"] as const).slice();
-      const expectedByVariant: Record<ApkVariant, number> = {
-        chat: opts?.expected?.chat ?? 0,
-        storage: opts?.expected?.storage ?? 0,
-      };
-      const ignoreFn = opts?.ignore;
-
-      // Snapshot counter per varian SEBELUM aksi (atau saat dipanggil).
-      const snap: Record<ApkVariant, number> = { chat: 0, storage: 0 };
-      for (const v of variants) snap[v] = requested[v];
-      // Counter per-varian: nomor request ke-N sejak snapshot (untuk
-      // dilewatkan ke predikat `ignore` & dicocokkan ke `expected`).
-      const sinceSnapshot: Record<ApkVariant, number> = {
-        chat: 0,
-        storage: 0,
-      };
-
-      // Klasifikasi tiap event request masuk:
-      //   - allowed: sudah masuk kuota `expected[variant]`, ATAU
-      //     predikat `ignore` menerima → dicatat di `allowed` (tidak
-      //     memicu error tapi tetap ada di summary log).
-      //   - leak: sisanya → jelas kebocoran, memicu error.
-      type Entry = {
-        variant: ApkVariant;
-        at: number;
-        nth: number;
-        reason: "allowed:expected" | "allowed:ignore" | "leak";
-      };
-      const entries: Entry[] = [];
-      const classify = (variant: ApkVariant): Entry => {
-        sinceSnapshot[variant] += 1;
-        const nth = sinceSnapshot[variant];
-        const info: ApkStubIgnoreInfo = {
-          variant,
-          nthSinceSnapshot: nth,
-          totalRequested: requested[variant],
-        };
-        let reason: Entry["reason"];
-        if (nth <= expectedByVariant[variant]) {
-          reason = "allowed:expected";
-        } else if (ignoreFn && ignoreFn(info)) {
-          reason = "allowed:ignore";
-        } else {
-          reason = "leak";
-        }
-        const entry: Entry = { variant, at: Date.now() - t0, nth, reason };
-        entries.push(entry);
-        return entry;
-      };
-
-      const hasLeak = () => entries.some((e) => e.reason === "leak");
-
-      const unsubs: Array<() => void> = [];
-      for (const v of variants) {
-        unsubs.push(
-          subscribeTo(requestListeners[v])(() => {
-            classify(v);
-          }),
-        );
-      }
-
-      const cleanup = () => {
-        for (const u of unsubs) u();
-      };
-
-      const failIfLeaked = (phase: string) => {
-        const leaks = entries.filter((e) => e.reason === "leak");
-        if (leaks.length === 0) return;
-        const summary = leaks
-          .map((l) => `${l.variant}#${l.nth}@+${l.at}ms`)
-          .join(", ");
-        const allowedSummary = entries
-          .filter((e) => e.reason !== "leak")
-          .map((e) => `${e.variant}#${e.nth}(${e.reason.split(":")[1]})`)
-          .join(", ");
-        // Ambil daftar counter after untuk konteks.
-        const after = variants
-          .map(
-            (v) =>
-              `${v}: req ${snap[v]}→${requested[v]} (expected=` +
-              `${expectedByVariant[v]}), served=${served[v]}`,
-          )
-          .join(" | ");
-        throw new Error(
-          `[apk-stub] assertNoAdditionalRequests GAGAL (${phase}): ` +
-            `${leaks.length} request bocor [${summary}]` +
-            (allowedSummary
-              ? `; ${entries.length - leaks.length} diizinkan [${allowedSummary}]`
-              : "") +
-            `. ${after}` +
-            `\n  Event log terakhir:\n${formatEventLog(20)}`,
-        );
-      };
-
-      try {
-        if (action) {
-          await action();
-          // Setelah aksi selesai, request yang sudah masuk pasti
-          // sudah tercatat lewat listener sinkron.
-          failIfLeaked("selama aksi");
-        }
-
-        // Trailing window: event-based, bukan polling. Kita subscribe
-        // ke request listener yang sama; kalau ada event yang
-        // TIDAK dibolehkan (leak) → langsung reject; event yang
-        // ter-whitelist dibiarkan lewat & window terus berjalan
-        // sampai timeout habis.
-        await new Promise<void>((resolve, reject) => {
-          let done = false;
-          const trailUnsubs: Array<() => void> = [];
-          const timer = setTimeout(() => {
-            if (done) return;
-            done = true;
-            for (const u of trailUnsubs) u();
-            resolve();
-          }, windowMs);
-          const onRequest = () => {
-            if (done) return;
-            if (!hasLeak()) return; // request ter-whitelist → biarkan window jalan
-            done = true;
-            clearTimeout(timer);
-            for (const u of trailUnsubs) u();
-            reject(new Error("__leak__"));
-          };
-          for (const v of variants) {
-            trailUnsubs.push(subscribeTo(requestListeners[v])(onRequest));
-          }
-        }).catch((err) => {
-          if (err instanceof Error && err.message === "__leak__") {
-            failIfLeaked(`trailing ${windowMs}ms`);
-          } else {
-            throw err;
-          }
-        });
-
-        // Cek terakhir setelah trailing window habis — juga
-        // memvalidasi bahwa `expected` benar-benar TERPENUHI (tidak
-        // kurang). Kalau test bilang "boleh 1 refetch chat" tapi
-        // nol yang masuk, itu regresi diam-diam.
-        failIfLeaked(`trailing ${windowMs}ms`);
-        for (const v of variants) {
-          const got = sinceSnapshot[v];
-          const want = expectedByVariant[v];
-          if (want > 0 && got < want) {
-            throw new Error(
-              `[apk-stub] assertNoAdditionalRequests GAGAL: ` +
-                `expected[${v}]=${want} tetapi hanya ${got} request masuk ` +
-                `selama aksi + trailing ${windowMs}ms. Aksi mungkin ` +
-                `tidak memicu refetch seperti yang diharapkan.` +
-                `\n  Event log terakhir:\n${formatEventLog(20)}`,
-            );
-          }
-        }
-      } finally {
-        cleanup();
-      }
+      await runNoAdditionalGuard(opts, action, "assertNoAdditionalRequests");
     },
     waitForIdle(variant, opts) {
       const drainQueue = opts?.drainQueue ?? false;
