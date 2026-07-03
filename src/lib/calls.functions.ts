@@ -7,6 +7,7 @@
  * agar TURN dianggap aktif. Bila kosong, fallback ke STUN saja.
  */
 import { createServerFn } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
 
 export type IceServerConfig = {
   urls: string | string[];
@@ -24,8 +25,9 @@ const DEFAULT_STUN: IceServerConfig[] = [
   { urls: "stun:stun1.l.google.com:19302" },
 ];
 
-export const getIceServers = createServerFn({ method: "GET" }).handler(
-  async (): Promise<IceServersResult> => {
+export const getIceServers = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async (): Promise<IceServersResult> => {
     const url = process.env.TURN_URL?.trim();
     const username = process.env.TURN_USERNAME?.trim();
     const credential = process.env.TURN_CREDENTIAL?.trim();
@@ -43,5 +45,4 @@ export const getIceServers = createServerFn({ method: "GET" }).handler(
       };
     }
     return { iceServers: DEFAULT_STUN, turnConfigured: false };
-  },
-);
+  });
