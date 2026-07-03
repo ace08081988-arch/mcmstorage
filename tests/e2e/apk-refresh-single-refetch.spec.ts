@@ -1,5 +1,9 @@
 import { test, expect } from "@playwright/test";
 import { installApkStub, makeRelease } from "./_apk-availability-stub";
+import {
+  APK_STUB_PER_ACTION_WINDOW_MS,
+  APK_STUB_TERMINAL_WINDOW_MS,
+} from "./_helpers/apk-stub-timing";
 
 /**
  * E2E: tombol refresh pada <DownloadStorageApkShortcut> hanya
@@ -53,7 +57,7 @@ test.describe("APK refresh · single refetch per tap", () => {
       async () => {
         await storageRefresh.click();
       },
-      { variant: "chat", windowMs: 400 },
+      { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
     );
 
     // Tunggu event served ke-2 untuk storage (deterministik, bukan
