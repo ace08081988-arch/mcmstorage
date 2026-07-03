@@ -4,14 +4,36 @@
  * `.spec.ts` — Playwright config memakai `testMatch` per-spec, jadi
  * template tidak akan pernah dijalankan.
  *
- * Cara pakai:
+ * Cara copy-rename:
  *   1. Copy file ini ke `tests/e2e/<nama-flow>.spec.ts`.
- *   2. Tambahkan project baru di `playwright.config.ts` dengan
+ *   2. Ganti `APK <flow-name>` di `test.describe(...)` dengan nama flow.
+ *   3. Ganti `URL` dengan harness/route yang benar-benar diuji.
+ *   4. Sesuaikan `primeInitial()` / `enqueue()` / `trackedClick(...)`
+ *      dengan aksi flow yang sedang diuji.
+ *   5. Tambahkan project baru di `playwright.config.ts` dengan
  *      `testMatch: /<nama-flow>\.spec\.ts/`.
- *   3. Isi bagian `test.describe(...)` sesuai flow. Pola guard
- *      (`trackedClick`, `trackedAction`, `assertQuiescent`,
- *      `terminalGuard`) sudah dipasang di tempat yang benar — cukup
- *      dilengkapi, jangan dihapus.
+ *   6. Atau gunakan generator: `node scripts/scaffold-apk-e2e-spec.mjs --name <nama-flow>`.
+ *
+ * Parameter stub yang diperlukan (jangan dihapus):
+ *   - `installApkStub(page)` → wajib panggil pertama kali sebelum `page.goto()`.
+ *   - `stub.primeInitial()` + `stub.assertPrimed()` → wajib sebelum `page.goto()`.
+ *   - `stub.waitForServed(variant, count)` → sinkronisasi deterministik setelah mount.
+ *   - `stub.trackedClick(...)` / `stub.trackedAction(...)` → wajib untuk setiap aksi
+ *     yang memicu refetch; `expected` sekaligus jadi regression check.
+ *   - `stub.assertQuiescent(variant, { windowMs, stableTicks })` → cek handler benar-benar
+ *     idle setelah state aktif tercapai.
+ *   - `stub.terminalGuard()` → wajib di akhir spec untuk menangkap leak jangka panjang.
+ *
+ * terminalGuard vs installServerFnPassthroughGuard:
+ *   - Gunakan `stub.terminalGuard()` di AKHIR spec APK saja. Ini hanya memantau
+ *     `getApkVariantDetail` (chat/storage) dan memastikan tidak ada request
+ *     refetch/polling tambahan setelah semua aksi user selesai.
+ *   - Gunakan `installServerFnPassthroughGuard(page, { whitelist: [...] })` untuk flow
+ *     yang melibatkan copy/export chat links (misal `chat-pin-mcm-copy-export`).
+ *     Guard itu memantau SEMUA server function (bukan cuma APK) dan akan
+ *     menangkap kebocoran request copy/export yang tidak diharapkan.
+ *   - Keduanya bisa dipakai bersama di flow APK + copy/export: pasang passthrough
+ *     guard di setup, lalu tutup spec dengan `stub.terminalGuard()`.
  *
  * Prinsip yang WAJIB dipertahankan:
  *
