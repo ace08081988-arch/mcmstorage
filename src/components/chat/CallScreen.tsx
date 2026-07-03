@@ -332,6 +332,37 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return visual.label;
   }, [phase, seconds, errorMsg, visual.label]);
 
+  const activeDevice = useMemo<OutputDevice | null>(() => {
+    if (outputs.length === 0) return null;
+    return (
+      outputs.find((d) => d.deviceId === activeSinkId) ??
+      outputs.find((d) => d.deviceId === "default") ??
+      outputs[0]
+    );
+  }, [outputs, activeSinkId]);
+  const activeKind: AudioOutputKind = activeDevice?.kind ?? "unknown";
+
+  const toggleSpeakerphone = useCallback(async () => {
+    const speakerDev = outputs.find((d) => d.kind === "speaker");
+    const nonSpeakerDev =
+      outputs.find((d) => d.kind !== "speaker") ??
+      outputs.find((d) => d.deviceId === "default");
+    if (speakerDev && nonSpeakerDev) {
+      const next =
+        activeKind === "speaker" ? nonSpeakerDev.deviceId : speakerDev.deviceId;
+      setActiveSinkId(next);
+      return;
+    }
+    const bridge = await getNativeAudioRoute();
+    if (bridge.available) {
+      const nextOn = activeKind !== "speaker";
+      await bridge.setSpeakerOn(nextOn);
+      toast.info(nextOn ? "Speaker keras aktif" : "Speaker keras nonaktif");
+      return;
+    }
+    toast.info("Ubah output dari kontrol sistem perangkat");
+  }, [outputs, activeKind]);
+
   // Ringback tone (nada tut-tut) untuk caller selama menunggu jawaban.
   // Pola tipe Indonesia: ~1 detik nada 425 Hz + ~4 detik hening,
   // sedikit dipersingkat supaya feedback terasa cepat.
