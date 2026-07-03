@@ -4,6 +4,7 @@ import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getApkVariantDetail } from "@/lib/apk.functions";
 import { recordChatApkDownload } from "@/lib/chat-apk-history";
+import { triggerApkDownload } from "@/lib/trigger-apk-download";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -94,10 +95,13 @@ export function DownloadChatApkShortcut() {
         id: loadingId,
         description: `Ukuran: ${sizeLabel}`,
       });
-      window.location.href = url;
+      const res = await triggerApkDownload(url, apk.name);
       toast.success(`Mulai mengunduh APK MCM Chat v${version} • ${sizeLabel}`, {
         id: loadingId,
-        description: `Berkas: ${apk.name} — cek folder Unduhan pada perangkat Anda.`,
+        description:
+          res.via === "capacitor-app-launcher"
+            ? `Berkas: ${apk.name} — dibuka di browser sistem, cek folder Unduhan.`
+            : `Berkas: ${apk.name} — cek folder Unduhan pada perangkat Anda.`,
       });
       setStage("Unduhan dipicu");
     } catch (e) {
