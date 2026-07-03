@@ -51,6 +51,7 @@ export function DownloadChatApkShortcut() {
     // setelah metadata terbaca (mis. saat window.location.href), toast error
     // tetap bisa menyebut versi + ukuran berkas.
     let attemptLabel: string | null = null;
+    let downloadTriggered = false;
     try {
       const detail = await fetchDetail({ data: { variant: "chat" } });
       // Ambil snapshot APK terbaru sekali, lalu turunkan url + label dari
@@ -59,14 +60,16 @@ export function DownloadChatApkShortcut() {
       const apk = detail?.latest;
       const url = apk?.url;
       if (!apk || !url) {
-        toast.error("Belum ada APK MCM Chat yang tersedia.", {
+        setStage("Belum tersedia");
+        toast("APK MCM Chat belum tersedia", {
           id: loadingId,
           description:
-            "Server belum menyediakan berkas APK Chat terbaru. Coba lagi nanti atau hubungi admin.",
+            "Belum ada berkas APK Chat di backend. Unggah rilis APK terlebih dahulu, lalu coba lagi.",
           action: {
-            label: "Coba lagi",
-            onClick: () => void startDownload(),
+            label: "Buka rilis",
+            onClick: () => window.location.assign("/pengaturan-apk"),
           },
+          duration: 6000,
         });
         return;
       }
@@ -96,6 +99,7 @@ export function DownloadChatApkShortcut() {
         description: `Ukuran: ${sizeLabel}`,
       });
       const res = await triggerApkDownload(url, apk.name);
+      downloadTriggered = true;
       toast.success(`Mulai mengunduh APK MCM Chat v${version} • ${sizeLabel}`, {
         id: loadingId,
         description:
@@ -130,15 +134,24 @@ export function DownloadChatApkShortcut() {
       );
       setStage("Gagal");
     } finally {
-      // Jangan langsung buka kunci tombol: unduhan APK memicu download
-      // browser (bukan navigasi), sehingga tanpa jeda tombol langsung bisa
-      // ditekan ulang dan berpotensi menembak unduhan ganda. Kunci selama
-      // 5 detik memberi cukup waktu bagi browser untuk mulai mengunduh.
-      setCooldown(5);
-      setTimeout(() => {
+      if (downloadTriggered) {
+        // Jangan langsung buka kunci tombol: unduhan APK memicu download
+        // browser (bukan navigasi), sehingga tanpa jeda tombol langsung bisa
+        // ditekan ulang dan berpotensi menembak unduhan ganda. Kunci selama
+        // 5 detik memberi cukup waktu bagi browser untuk mulai mengunduh.
+        setCooldown(5);
+        setTimeout(() => {
+          setBusy(false);
+          setStage(null);
+        }, 5000);
+        return;
+      }
+
+      setCooldown(0);
+      window.setTimeout(() => {
         setBusy(false);
         setStage(null);
-      }, 5000);
+      }, 300);
     }
   }
 
