@@ -908,6 +908,35 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
       }
       await runNoAdditionalGuard(opts, action, "assertNoAdditionalRequests");
     },
+    async trackedAction(action, opts) {
+      // Default windowMs → konstanta per-action. Opsi lain diteruskan
+      // apa adanya; kalau caller sengaja override windowMs, hormati.
+      const merged: AssertNoAdditionalRequestsOpts = {
+        windowMs: APK_STUB_PER_ACTION_WINDOW_MS,
+        ...(opts ?? {}),
+      };
+      await runNoAdditionalGuard(merged, action, "trackedAction");
+    },
+    async trackedClick(locator, opts) {
+      const merged: AssertNoAdditionalRequestsOpts = {
+        windowMs: APK_STUB_PER_ACTION_WINDOW_MS,
+        ...(opts ?? {}),
+      };
+      await runNoAdditionalGuard(
+        merged,
+        async () => {
+          await locator.click();
+        },
+        "trackedClick",
+      );
+    },
+    async terminalGuard(opts) {
+      const merged: AssertNoAdditionalRequestsOpts = {
+        windowMs: APK_STUB_TERMINAL_WINDOW_MS,
+        ...(opts ?? {}),
+      };
+      await runNoAdditionalGuard(merged, undefined, "terminalGuard");
+    },
     waitForIdle(variant, opts) {
       const drainQueue = opts?.drainQueue ?? false;
       const timeoutMs = opts?.timeoutMs ?? 10_000;
