@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
+import { useQuery } from "@tanstack/react-query";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getApkVariantDetail } from "@/lib/apk.functions";
@@ -31,6 +32,21 @@ export function DownloadChatApkShortcut() {
   // menampilkan spinner.
   const [stage, setStage] = useState<string | null>(null);
   const [cooldown, setCooldown] = useState(0);
+
+  // Pre-fetch ketersediaan APK Chat sehingga tombol bisa tampil idle
+  // "Belum tersedia" tanpa perlu memicu toast/dialog konfirmasi dulu.
+  const availability = useQuery({
+    queryKey: ["apk-availability", "chat"],
+    queryFn: async () => {
+      const detail = await fetchDetail({ data: { variant: "chat" } });
+      return !!detail?.latest?.url;
+    },
+    staleTime: 60_000,
+    retry: 1,
+  });
+  const isChecking = availability.isLoading;
+  const isAvailable = availability.data === true;
+  const isUnavailable = availability.isSuccess && availability.data === false;
 
   useEffect(() => {
     if (cooldown <= 0) return;
