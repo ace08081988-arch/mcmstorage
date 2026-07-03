@@ -84,6 +84,69 @@ export function makeDetail(
 
 type PendingWaiter = (releases: ApkRelease[]) => void;
 
+/**
+ * Info yang dilewatkan ke predikat `ignore` di
+ * {@link ApkStub.assertNoAdditionalRequests}. Berisi konteks yang cukup
+ * untuk mengklasifikasikan request tanpa memaksa pemakai membaca event
+ * log — cukup pilih berdasarkan varian dan/atau urutan.
+ */
+export type ApkStubIgnoreInfo = {
+  /** Varian request yang baru masuk. */
+  variant: ApkVariant;
+  /**
+   * Nomor request untuk `variant` ini sejak snapshot (1-based).
+   * Berguna kalau test hanya ingin mengabaikan request ke-N pertama
+   * (mis. "refetch invalidate sekali diperbolehkan").
+   */
+  nthSinceSnapshot: number;
+  /**
+   * Total `requestedCount` untuk `variant` setelah request ini masuk.
+   * Setara `stub.requestedCount(variant)` di titik event tersebut.
+   */
+  totalRequested: number;
+};
+
+/**
+ * Opsi untuk {@link ApkStub.assertNoAdditionalRequests}.
+ *
+ * Whitelist / ignore dievaluasi per event request yang masuk selama
+ * aksi berjalan + `windowMs`. Kalau semua request masuk termasuk yang
+ * di-whitelist, helper resolve; kalau ada yang tidak di-whitelist,
+ * helper melempar dengan detail leak + event log.
+ */
+export type AssertNoAdditionalRequestsOpts = {
+  /**
+   * Batasi asersi ke satu varian. Default: kedua varian
+   * (`["chat", "storage"]`).
+   */
+  variant?: ApkVariant;
+  /**
+   * Trailing window setelah aksi (atau setelah panggilan standalone)
+   * di mana request baru dianggap "bocor". Default 500 ms — bounded
+   * upper-bound, bukan sinkronisasi.
+   */
+  windowMs?: number;
+  /**
+   * Jumlah request per varian yang DIHARAPKAN masuk selama window.
+   * Bertindak sebagai whitelist kuantitatif — pas untuk kasus
+   * "tap ini boleh memicu tepat 1 refetch chat, tidak lebih".
+   * Request ke-N ≤ `expected[variant]` otomatis diabaikan; sisanya
+   * dianggap leak. Default semua 0 (nol request diperbolehkan).
+   */
+  expected?: Partial<Record<ApkVariant, number>>;
+  /**
+   * Predikat kustom untuk mengecualikan request tertentu. Dievaluasi
+   * SESUDAH `expected` — bila `expected` sudah mengizinkan request
+   * ini, `ignore` tidak dipanggil. Return `true` untuk skip
+   * (bukan leak); `false` / undefined untuk perlakukan sebagai leak.
+   *
+   * Contoh — abaikan hanya refetch chat pertama:
+   *
+   *   ignore: (info) => info.variant === "chat" && info.nthSinceSnapshot === 1
+   */
+  ignore?: (info: ApkStubIgnoreInfo) => boolean;
+};
+
 export type ApkStub = {
   enqueue: (variant: ApkVariant, releases: ApkRelease[]) => void;
   /** Jumlah request yang selesai di-fulfill per varian. */
@@ -236,16 +299,10 @@ export type ApkStub = {
     ...args:
       | [
           action: () => Promise<void>,
-          opts?: {
-            variant?: ApkVariant;
-            windowMs?: number;
-          },
+          opts?: AssertNoAdditionalRequestsOpts,
         ]
       | [
-          opts?: {
-            variant?: ApkVariant;
-            windowMs?: number;
-          },
+          opts?: AssertNoAdditionalRequestsOpts,
         ]
   ) => Promise<void>;
   /**
@@ -593,7 +650,7 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     async assertNoAdditionalRequests(...args) {
       // Normalisasi argumen: bisa (action, opts) atau (opts) saja.
       let action: (() => Promise<void>) | null = null;
-      let opts: { variant?: ApkVariant; windowMs?: number } | undefined;
+      let opts: AssertNoAdditionalRequestsOpts | undefined;
       if (typeof args[0] === "function") {
         action = args[0] as () => Promise<void>;
         opts = args[1] as typeof opts;
@@ -604,24 +661,62 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
       const variants: ApkVariant[] = opts?.variant
         ? [opts.variant]
         : (["chat", "storage"] as const).slice();
+      const expectedByVariant: Record<ApkVariant, number> = {
+        chat: opts?.expected?.chat ?? 0,
+        storage: opts?.expected?.storage ?? 0,
+      };
+      const ignoreFn = opts?.ignore;
 
       // Snapshot counter per varian SEBELUM aksi (atau saat dipanggil).
       const snap: Record<ApkVariant, number> = { chat: 0, storage: 0 };
       for (const v of variants) snap[v] = requested[v];
+      // Counter per-varian: nomor request ke-N sejak snapshot (untuk
+      // dilewatkan ke predikat `ignore` & dicocokkan ke `expected`).
+      const sinceSnapshot: Record<ApkVariant, number> = {
+        chat: 0,
+        storage: 0,
+      };
 
-      // Pasang listener event-based di kedua sisi:
-      //   - Selama aksi berjalan (kalau ada), request extra harus
-      //     LANGSUNG memicu error, tanpa menunggu jendela apa pun.
-      //   - Setelah aksi selesai, tunggu `windowMs` sebagai bounded
-      //     upper-bound untuk membuktikan absence. Kalau ada event
-      //     "request" masuk di window ini, resolve dengan status
-      //     gagal — juga tanpa polling.
-      const leaks: Array<{ variant: ApkVariant; at: number }> = [];
+      // Klasifikasi tiap event request masuk:
+      //   - allowed: sudah masuk kuota `expected[variant]`, ATAU
+      //     predikat `ignore` menerima → dicatat di `allowed` (tidak
+      //     memicu error tapi tetap ada di summary log).
+      //   - leak: sisanya → jelas kebocoran, memicu error.
+      type Entry = {
+        variant: ApkVariant;
+        at: number;
+        nth: number;
+        reason: "allowed:expected" | "allowed:ignore" | "leak";
+      };
+      const entries: Entry[] = [];
+      const classify = (variant: ApkVariant): Entry => {
+        sinceSnapshot[variant] += 1;
+        const nth = sinceSnapshot[variant];
+        const info: ApkStubIgnoreInfo = {
+          variant,
+          nthSinceSnapshot: nth,
+          totalRequested: requested[variant],
+        };
+        let reason: Entry["reason"];
+        if (nth <= expectedByVariant[variant]) {
+          reason = "allowed:expected";
+        } else if (ignoreFn && ignoreFn(info)) {
+          reason = "allowed:ignore";
+        } else {
+          reason = "leak";
+        }
+        const entry: Entry = { variant, at: Date.now() - t0, nth, reason };
+        entries.push(entry);
+        return entry;
+      };
+
+      const hasLeak = () => entries.some((e) => e.reason === "leak");
+
       const unsubs: Array<() => void> = [];
       for (const v of variants) {
         unsubs.push(
           subscribeTo(requestListeners[v])(() => {
-            leaks.push({ variant: v, at: Date.now() - t0 });
+            classify(v);
           }),
         );
       }
@@ -631,20 +726,30 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
       };
 
       const failIfLeaked = (phase: string) => {
+        const leaks = entries.filter((e) => e.reason === "leak");
         if (leaks.length === 0) return;
         const summary = leaks
-          .map((l) => `${l.variant}@+${l.at}ms`)
+          .map((l) => `${l.variant}#${l.nth}@+${l.at}ms`)
+          .join(", ");
+        const allowedSummary = entries
+          .filter((e) => e.reason !== "leak")
+          .map((e) => `${e.variant}#${e.nth}(${e.reason.split(":")[1]})`)
           .join(", ");
         // Ambil daftar counter after untuk konteks.
         const after = variants
           .map(
             (v) =>
-              `${v}: req ${snap[v]}→${requested[v]}, served=${served[v]}`,
+              `${v}: req ${snap[v]}→${requested[v]} (expected=` +
+              `${expectedByVariant[v]}), served=${served[v]}`,
           )
           .join(" | ");
         throw new Error(
           `[apk-stub] assertNoAdditionalRequests GAGAL (${phase}): ` +
-            `${leaks.length} request bocor [${summary}]. ${after}` +
+            `${leaks.length} request bocor [${summary}]` +
+            (allowedSummary
+              ? `; ${entries.length - leaks.length} diizinkan [${allowedSummary}]`
+              : "") +
+            `. ${after}` +
             `\n  Event log terakhir:\n${formatEventLog(20)}`,
         );
       };
@@ -658,10 +763,13 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
         }
 
         // Trailing window: event-based, bukan polling. Kita subscribe
-        // ke request listener; kalau fire → langsung reject, kalau
-        // tidak → timeout habis dan kita menganggap benar-benar quiet.
+        // ke request listener yang sama; kalau ada event yang
+        // TIDAK dibolehkan (leak) → langsung reject; event yang
+        // ter-whitelist dibiarkan lewat & window terus berjalan
+        // sampai timeout habis.
         await new Promise<void>((resolve, reject) => {
           let done = false;
+          const trailUnsubs: Array<() => void> = [];
           const timer = setTimeout(() => {
             if (done) return;
             done = true;
@@ -670,12 +778,12 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
           }, windowMs);
           const onRequest = () => {
             if (done) return;
+            if (!hasLeak()) return; // request ter-whitelist → biarkan window jalan
             done = true;
             clearTimeout(timer);
             for (const u of trailUnsubs) u();
             reject(new Error("__leak__"));
           };
-          const trailUnsubs: Array<() => void> = [];
           for (const v of variants) {
             trailUnsubs.push(subscribeTo(requestListeners[v])(onRequest));
           }
@@ -687,10 +795,24 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
           }
         });
 
-        // Cek terakhir setelah trailing window (mis. listener terpasang
-        // dua kali → snapshot leaks yang mungkin di-record antara
-        // resolve dan cek ini). Nyaris redundant tapi murah.
+        // Cek terakhir setelah trailing window habis — juga
+        // memvalidasi bahwa `expected` benar-benar TERPENUHI (tidak
+        // kurang). Kalau test bilang "boleh 1 refetch chat" tapi
+        // nol yang masuk, itu regresi diam-diam.
         failIfLeaked(`trailing ${windowMs}ms`);
+        for (const v of variants) {
+          const got = sinceSnapshot[v];
+          const want = expectedByVariant[v];
+          if (want > 0 && got < want) {
+            throw new Error(
+              `[apk-stub] assertNoAdditionalRequests GAGAL: ` +
+                `expected[${v}]=${want} tetapi hanya ${got} request masuk ` +
+                `selama aksi + trailing ${windowMs}ms. Aksi mungkin ` +
+                `tidak memicu refetch seperti yang diharapkan.` +
+                `\n  Event log terakhir:\n${formatEventLog(20)}`,
+            );
+          }
+        }
       } finally {
         cleanup();
       }
