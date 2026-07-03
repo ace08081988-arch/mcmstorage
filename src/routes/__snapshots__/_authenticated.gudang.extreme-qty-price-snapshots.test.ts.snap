@@ -5,7 +5,7 @@ exports[`Gudang — snapshot nilai ekstrem qty/price > kombinasi ekstrem qty × 
 [INPUT] qty="2" · pricePkg="10000" · priceBase="" · mode=package
 [SUM] Ringkasan | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 2 botol
-[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Tambahan stok | 1.000 botol · = 10 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 20.000
@@ -15,7 +15,7 @@ exports[`Gudang — snapshot nilai ekstrem qty/price > kombinasi ekstrem qty × 
 [INPUT] qty="" · pricePkg="10000" · priceBase="" · mode=package · karton=ON
 [SUM] Ringkasan | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 0 botol (0 karton)
-[SUM] Tambahan stok | 0 botol (= 0 pcs)
+[SUM] Tambahan stok | 0 botol
 [SUM] Harga per botol | Rp 100
 [SUM] Harga per pcs | —
 [SUM] Total biaya | Rp 0
@@ -25,7 +25,7 @@ exports[`Gudang — snapshot nilai ekstrem qty/price > kombinasi ekstrem qty × 
 [INPUT] qty="-1" · pricePkg="10000" · priceBase="" · mode=package · karton=ON
 [SUM] Ringkasan | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | -100 botol (-1 karton)
-[SUM] Tambahan stok | -100 botol (= -50.000 pcs)
+[SUM] Tambahan stok | -50.000 botol
 [SUM] Harga per botol | Rp 100
 [SUM] Harga per pcs | Rp 0
 [SUM] Total biaya | -Rp 10.000
@@ -35,7 +35,7 @@ exports[`Gudang — snapshot nilai ekstrem qty/price > kombinasi ekstrem qty × 
 [INPUT] qty="0.5" · pricePkg="10000" · priceBase="" · mode=package · karton=ON
 [SUM] Ringkasan | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 50 botol (0,5 karton)
-[SUM] Tambahan stok | 50 botol (= 25.000 pcs)
+[SUM] Tambahan stok | 25.000 botol · = 250 karton
 [SUM] Harga per botol | Rp 100
 [SUM] Harga per pcs | Rp 0
 [SUM] Total biaya | Rp 5.000
@@ -45,7 +45,7 @@ exports[`Gudang — snapshot nilai ekstrem qty/price > kombinasi ekstrem qty × 
 [INPUT] qty="0.5" · pricePkg="-15000" · priceBase="" · mode=package · karton=ON
 [SUM] Ringkasan | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 50 botol (0,5 karton)
-[SUM] Tambahan stok | 50 botol (= 25.000 pcs)
+[SUM] Tambahan stok | 25.000 botol · = 250 karton
 [SUM] Harga per botol | -Rp 150
 [SUM] Harga per pcs | -Rp 0
 [SUM] Total biaya | -Rp 7.500
@@ -55,7 +55,7 @@ exports[`Gudang — snapshot nilai ekstrem qty/price > kombinasi ekstrem qty × 
 [INPUT] qty="2" · pricePkg="12000.99" · priceBase="" · mode=package
 [SUM] Ringkasan | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 2 botol
-[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Tambahan stok | 1.000 botol · = 10 karton
 [SUM] Harga per botol | Rp 12.001
 [SUM] Harga per pcs | Rp 24
 [SUM] Total biaya | Rp 24.002

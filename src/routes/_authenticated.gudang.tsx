@@ -112,6 +112,7 @@ export { BOTOL_PER_KARTON, fmtBase, fmtItemPrice, fmtItemQty, fmtQtyDual, rupiah
 import { computeBeliDerived } from "@/lib/beli-derived";
 import { computeBeliWarnings } from "@/lib/beli-warnings";
 import { beliResetKey } from "@/lib/beli-reset-key";
+import { humanBaseUnit } from "@/lib/unit-label";
 import { SmartWeightInput } from "@/components/SmartWeightInput";
 
 function defaultBase(pt: PackageType): "g" | "pcs" {
@@ -1718,6 +1719,10 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   const displayPkgSize: number = mode === "existing" && isWItem(selectedItem)
     ? Number(selectedItem.package_size) || 0
     : (packageType === "pcs" ? 1 : Number(packageSize) || 0);
+  // Satuan dasar yang layak ditampilkan ke user. Untuk botol yang dihitung
+  // per-pcs (mis. GS: 1 pcs = 1 botol) tampilkan 'botol' agar tidak
+  // membingungkan; selain itu sama dengan displayBaseUnit.
+  const displayHumanBase = humanBaseUnit(displayPackageType, displayBaseUnit);
   // `warnings` — memoized: dep array minimal (mode, itemId, packageType,
   // derived, priceMode, inputKarton). Refetch identitas selectedItem tidak
   // menembak memo karena selectedItem TIDAK ada di deps.
@@ -1913,7 +1918,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
             )}
           </div>
           <div className="text-[11px] text-muted-foreground">
-            Stok disimpan dalam <b>{displayBaseUnit}</b>. Saat dijual per {displayBaseUnit}, akan dikurangi otomatis.
+            Stok disimpan dalam <b>{displayHumanBase}</b>. Saat dijual per {displayHumanBase}, akan dikurangi otomatis.
           </div>
           <PhotoPicker value={newImagePath} onChange={setNewImagePath} uid={uid} />
         </div>
@@ -1946,7 +1951,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           </label>
         ) : (
           <label className="block">
-            <span className="text-[11px] text-muted-foreground">Harga beli / {displayBaseUnit} (Rp)</span>
+            <span className="text-[11px] text-muted-foreground">Harga beli / {displayHumanBase} (Rp)</span>
             <input type="number" step="0.01" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
           </label>
         )}
@@ -2010,12 +2015,18 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           {isWItem(selectedItem) ? (
             <span className="text-[10px] text-muted-foreground">
               {selectedItem.name} · {displayPackageType}
-              {displayPackageType !== "pcs" ? ` ${displayPkgSize} ${displayBaseUnit}` : ""}
+              {displayPackageType !== "pcs" &&
+                !(displayPackageType === "botol" && displayBaseUnit === "pcs" && displayPkgSize === 1)
+                ? ` ${displayPkgSize} ${displayBaseUnit}`
+                : ""}
             </span>
           ) : (
             <span className="text-[10px] text-muted-foreground">
               Barang baru · {displayPackageType}
-              {displayPackageType !== "pcs" ? ` ${displayPkgSize} ${displayBaseUnit}` : ""}
+              {displayPackageType !== "pcs" &&
+                !(displayPackageType === "botol" && displayBaseUnit === "pcs" && displayPkgSize === 1)
+                ? ` ${displayPkgSize} ${displayBaseUnit}`
+                : ""}
             </span>
           )}
         </div>
@@ -2036,7 +2047,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         </div>
         {displayPackageType !== "pcs" && baseAdded > 0 && (
           <div className="flex justify-between">
-            <span className="text-muted-foreground">Harga per {displayBaseUnit}</span>
+            <span className="text-muted-foreground">Harga per {displayHumanBase}</span>
             <b>{rupiah(totalCost / baseAdded)}</b>
           </div>
         )}

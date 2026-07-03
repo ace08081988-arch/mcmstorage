@@ -14,7 +14,7 @@ exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > vi
 [FORM] Karton toggle: OFF (= 100 botol) · flow=inline
 [SUM] Ringkasan | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 2 botol
-[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Tambahan stok | 1.000 botol · = 10 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 20.000"
@@ -34,7 +34,7 @@ exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > vi
 [FORM] Karton toggle: ON (= 100 botol) · flow=inline
 [SUM] Ringkasan | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 200 botol (2 karton)
-[SUM] Tambahan stok | 200 botol (= 100.000 pcs) · = 2 karton
+[SUM] Tambahan stok | 100.000 botol · = 1.000 karton
 [SUM] Harga per botol | Rp 100
 [SUM] Harga per pcs | Rp 0
 [SUM] Total biaya | Rp 20.000"
@@ -192,7 +192,7 @@ exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > vi
 [FORM] Karton toggle: OFF (= 100 botol) · flow=stacked
 [SUM] Ringkasan | Item BOTOL · botol 500 …
 [SUM] Jumlah kemasan | 2 botol
-[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Tambahan stok | 1.000 botol · = 10 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 20.000"
@@ -212,7 +212,7 @@ exports[`Gudang — viewport snapshot (desktop vs mobile) per Jenis kemasan > vi
 [FORM] Karton toggle: ON (= 100 botol) · flow=stacked
 [SUM] Ringkasan | Item BOTOL · botol 500 …
 [SUM] Jumlah kemasan | 200 botol (2 karton)
-[SUM] Tambahan stok | 200 botol (= 100.000 pcs) · = 2 karton
+[SUM] Tambahan stok | 100.000 botol · = 1.000 karton
 [SUM] Harga per botol | Rp 100
 [SUM] Harga per pcs | Rp 0
 [SUM] Total biaya | Rp 20.000"

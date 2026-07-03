@@ -67,7 +67,10 @@ describe("audit konsumen pipeline derived+warnings", () => {
     const consumers = pipelineConsumers();
     // Snapshot terkunci — bila berubah, tambahkan suite refetch-stability
     // untuk konsumen baru lalu update array ini.
-    expect(consumers).toEqual(["routes/_authenticated.gudang.tsx"]);
+    expect(consumers).toEqual([
+      "routes/_authenticated.gudang.tsx",
+      "routes/diagnostik.paket.tsx",
+    ]);
   });
 
   it("semua suite refetch-stability yang diwajibkan tersedia di src/", () => {
