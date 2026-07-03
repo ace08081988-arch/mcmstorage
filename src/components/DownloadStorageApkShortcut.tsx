@@ -3,6 +3,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { getApkVariantDetail } from "@/lib/apk.functions";
+import { triggerApkDownload } from "@/lib/trigger-apk-download";
 
 /**
  * Tombol pintas di menu Pengaturan untuk langsung mengunduh APK MCM
@@ -20,22 +21,32 @@ export function DownloadStorageApkShortcut() {
     const loadingId = toast.loading("Menyiapkan unduhan APK MCM Storage…");
     try {
       const detail = await fetchDetail({ data: { variant: "storage" } });
-      const url = detail?.latest?.url;
-      if (!url) {
+      const apk = detail?.latest;
+      const url = apk?.url;
+      if (!apk || !url) {
         toast.error("Belum ada APK MCM Storage yang tersedia.", { id: loadingId });
         return;
       }
       const version =
-        detail?.latest?.versionName || detail?.latest?.name || "terbaru";
-      window.location.href = url;
+        apk.versionName || apk.name || "terbaru";
+      const res = await triggerApkDownload(url, apk.name);
       toast.success(`Mulai mengunduh APK MCM Storage (${version})…`, {
         id: loadingId,
-        description: "Cek folder Unduhan pada perangkat Anda.",
+        description:
+          res.via === "capacitor-app-launcher"
+            ? "Dibuka di browser sistem — cek folder Unduhan pada perangkat."
+            : "Cek folder Unduhan pada perangkat Anda.",
       });
     } catch (e) {
-      toast.error((e as Error)?.message || "Gagal memulai unduhan APK.", {
-        id: loadingId,
-      });
+      const err = e as { message?: string; code?: string };
+      toast.error(
+        err?.message || "Gagal memulai unduhan APK.",
+        {
+          id: loadingId,
+          description: err?.code ? `Kode: ${err.code}` : undefined,
+          action: { label: "Coba lagi", onClick: () => void onClick() },
+        },
+      );
     } finally {
       setBusy(false);
     }
