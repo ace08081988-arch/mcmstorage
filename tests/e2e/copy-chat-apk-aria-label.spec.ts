@@ -74,9 +74,17 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // berjalan, isFetching = true → aria-label harus berubah ke
     // state "Memeriksa…".
     // (tidak enqueue chat → handler menahan waiter → state Memeriksa…)
-    await mainByAria(
-      /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
-    ).click();
+    // Wrapper leak-guard: aksi tap tombol Chat tidak boleh menyentuh
+    // varian storage sama sekali. Event-based; snapshot requested
+    // ["storage"] & fail cepat kalau ada request storage bocor.
+    await stub.assertNoAdditionalRequests(
+      async () => {
+        await mainByAria(
+          /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
+        ).click();
+      },
+      { variant: "storage", windowMs: 300 },
+    );
 
     // Tunggu event "waiter tertahan" dari handler — bukti deterministik
     // bahwa refetch chat sudah sampai di handler dan sedang digantung.
@@ -110,7 +118,12 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // digantung, busy=true → aria-label harus berubah ke state
     // "Memproses…" dan tombol disabled.
     // (tidak enqueue chat → onClick fetchDetail menggantung → busy=true)
-    await mainByAria(idleAvailableLabel).click();
+    await stub.assertNoAdditionalRequests(
+      async () => {
+        await mainByAria(idleAvailableLabel).click();
+      },
+      { variant: "storage", windowMs: 300 },
+    );
 
     // Bukti deterministik: request fetchDetail sudah tiba di handler
     // dan digantung. Aman untuk mengukur label "Memproses…".
@@ -143,5 +156,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // polling / refetch background yang lolos).
     await stub.assertQuiescent("chat", { windowMs: 1000 });
     await stub.assertQuiescent("storage", { windowMs: 500 });
+    // Terminal: guard event-based untuk kedua varian.
+    await stub.assertNoAdditionalRequests({ windowMs: 500 });
   });
 });
