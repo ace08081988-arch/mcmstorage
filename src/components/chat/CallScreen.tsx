@@ -146,6 +146,15 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               // caller masih di fase awal.
               setPhase((p) => (p === "dialing" ? "ringing" : p));
             },
+            onPeerHello: () => {
+              helloReceivedRef.current = true;
+              // Callee sudah subscribe channel — resend offer supaya
+              // pesan tidak hilang karena race di broadcast Realtime.
+              if (role === "caller" && sessionRef.current) {
+                void startOffer(sessionRef.current);
+              }
+            },
+            onTurnStatus: (ok) => setTurnConfigured(ok),
           },
         });
         if (cancelled) { void session.close(); return; }
@@ -153,6 +162,18 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         if (localVideoRef.current) localVideoRef.current.srcObject = session.localStream;
 
         if (role === "caller") {
+          // Tunggu "hello" dari callee maks 4 detik; setelah itu tetap
+          // kirim offer sebagai fallback.
+          await new Promise<void>((resolve) => {
+            const t = setTimeout(resolve, 4000);
+            const iv = setInterval(() => {
+              if (helloReceivedRef.current) {
+                clearInterval(iv);
+                clearTimeout(t);
+                resolve();
+              }
+            }, 100);
+          });
           await startOffer(session);
         }
       } catch (e) {
