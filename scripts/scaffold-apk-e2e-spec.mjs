@@ -1,0 +1,204 @@
+#!/usr/bin/env node
+/**
+ * Generator spec E2E APK dari template `tests/e2e/_helpers/apk-spec.template.ts`.
+ *
+ * Alur:
+ *   1. Baca nama flow dari argumen CLI (--name) atau prompt interaktif.
+ *   2. Validasi: kebab-case, tidak menabrak file .spec.ts yang sudah ada.
+ *   3. Copy template → `tests/e2e/<flow>.spec.ts` dengan header ganti
+ *      (judul describe, komentar rujukan).
+ *   4. Sisipkan project baru di `playwright.config.ts` (auto-insert)
+ *      TEPAT setelah project `apk-mount-quiescent-e2e` supaya semua
+ *      spec APK berdekatan. Bila blok gagal ditemukan atau project
+ *      sudah ada, skrip berhenti aman + instruksi manual.
+ *
+ * Pemakaian:
+ *   node scripts/scaffold-apk-e2e-spec.mjs --name apk-focus-refetch-guard
+ *   node scripts/scaffold-apk-e2e-spec.mjs            # prompt interaktif
+ *   node scripts/scaffold-apk-e2e-spec.mjs --dry-run  # preview, no write
+ */
+
+import { promises as fs } from "node:fs";
+import path from "node:path";
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
+
+const ROOT = process.cwd();
+const TEMPLATE = path.join(
+  ROOT,
+  "tests/e2e/_helpers/apk-spec.template.ts",
+);
+const SPEC_DIR = path.join(ROOT, "tests/e2e");
+const CONFIG = path.join(ROOT, "playwright.config.ts");
+
+// Kebab-case: huruf kecil, angka, dash. Wajib diawali huruf; disarankan
+// diawali prefix `apk-` supaya konvensi konsisten dengan spec lain.
+const NAME_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
+
+function parseArgs(argv) {
+  const out = { name: null, dryRun: false };
+  for (let i = 2; i < argv.length; i++) {
+    const a = argv[i];
+    if (a === "--dry-run") out.dryRun = true;
+    else if (a === "--name") out.name = argv[++i] ?? null;
+    else if (a.startsWith("--name=")) out.name = a.slice("--name=".length);
+    else if (!out.name && !a.startsWith("--")) out.name = a;
+  }
+  return out;
+}
+
+async function promptName() {
+  const rl = readline.createInterface({ input, output });
+  try {
+    const raw = await rl.question(
+      "Nama flow (kebab-case, mis. apk-focus-refetch-guard): ",
+    );
+    return raw.trim();
+  } finally {
+    rl.close();
+  }
+}
+
+function validateName(name) {
+  if (!name) return "Nama tidak boleh kosong.";
+  if (!NAME_RE.test(name))
+    return `Nama "${name}" bukan kebab-case valid (huruf kecil, angka, dash; diawali huruf).`;
+  if (!name.startsWith("apk-"))
+    return `Nama "${name}" tidak diawali "apk-" — konvensi spec APK butuh prefix ini.`;
+  return null;
+}
+
+function buildSpec(template, name) {
+  // Ganti header komentar dari "TEMPLATE — ..." menjadi rujukan spec.
+  const stampedHeader = `/**
+ * Spec E2E APK — flow "${name}".
+ *
+ * Dibuat dari \`tests/e2e/_helpers/apk-spec.template.ts\` via
+ * \`scripts/scaffold-apk-e2e-spec.mjs\`. Pola guard (\`trackedClick\`,
+ * \`trackedAction\`, \`assertQuiescent\`, \`terminalGuard\`) sudah
+ * terpasang — LENGKAPI, JANGAN HAPUS. Detail pola & anti-pattern:
+ * \`tests/e2e/_helpers/README.md\`.
+ */`;
+
+  // Buang blok komentar template asli (baris 1 s/d penutup pertama "*/")
+  // lalu prepend stampedHeader.
+  const closeIdx = template.indexOf("*/\n");
+  if (closeIdx < 0) {
+    throw new Error(
+      "Template tidak mengandung penutup komentar `*/` — file rusak?",
+    );
+  }
+  const body = template.slice(closeIdx + "*/\n".length);
+
+  // Ganti judul describe placeholder.
+  const withDescribe = body.replace(
+    /test\.describe\("APK <flow-name> — deterministic guard"/,
+    `test.describe("APK ${name} — deterministic guard"`,
+  );
+
+  return `${stampedHeader}\n\n${withDescribe}`;
+}
+
+function buildProjectBlock(name) {
+  // Nama project mengikuti konvensi `<flow>-e2e` (lihat project APK lain).
+  const projectName = `${name}-e2e`;
+  // Escape titik untuk regex `testMatch`.
+  const testMatch = `/${name.replace(/-/g, "-")}\\.spec\\.ts/`;
+  return `    {
+      // TODO(scaffold): jelaskan skenario spec "${name}" — apa yang
+      // diuji, harness mana yang dipakai, dan invariant guard-nya.
+      name: "${projectName}",
+      testDir: "./tests/e2e",
+      testMatch: ${testMatch},
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+`;
+}
+
+function insertProject(configText, name, projectBlock) {
+  const projectName = `${name}-e2e`;
+  if (configText.includes(`name: "${projectName}"`)) {
+    return { text: configText, inserted: false, reason: "already-registered" };
+  }
+
+  // Anchor: akhir blok project `apk-mount-quiescent-e2e`.
+  const anchor = `      name: "apk-mount-quiescent-e2e",`;
+  const anchorIdx = configText.indexOf(anchor);
+  if (anchorIdx < 0) {
+    return { text: configText, inserted: false, reason: "anchor-missing" };
+  }
+
+  // Cari `},\n` pertama SETELAH anchor — itu penutup project tersebut.
+  const closeIdx = configText.indexOf("    },\n", anchorIdx);
+  if (closeIdx < 0) {
+    return { text: configText, inserted: false, reason: "close-missing" };
+  }
+  const insertAt = closeIdx + "    },\n".length;
+  const next = configText.slice(0, insertAt) + projectBlock + configText.slice(insertAt);
+  return { text: next, inserted: true };
+}
+
+async function main() {
+  const args = parseArgs(process.argv);
+  let name = args.name;
+  if (!name) name = await promptName();
+
+  const invalid = validateName(name);
+  if (invalid) {
+    console.error(`✗ ${invalid}`);
+    process.exit(1);
+  }
+
+  const specPath = path.join(SPEC_DIR, `${name}.spec.ts`);
+  try {
+    await fs.access(specPath);
+    console.error(`✗ File spec sudah ada: ${path.relative(ROOT, specPath)}`);
+    process.exit(1);
+  } catch {
+    // OK — belum ada.
+  }
+
+  const template = await fs.readFile(TEMPLATE, "utf8");
+  const specContent = buildSpec(template, name);
+  const projectBlock = buildProjectBlock(name);
+  const configText = await fs.readFile(CONFIG, "utf8");
+  const { text: nextConfig, inserted, reason } = insertProject(
+    configText,
+    name,
+    projectBlock,
+  );
+
+  if (args.dryRun) {
+    console.log(`── DRY RUN ──`);
+    console.log(`spec  → ${path.relative(ROOT, specPath)} (${specContent.length} chars)`);
+    console.log(
+      `config → ${inserted ? "akan disisipkan project" : `LEWAT (${reason})`}`,
+    );
+    console.log(`\n--- Preview project block ---\n${projectBlock}`);
+    return;
+  }
+
+  await fs.writeFile(specPath, specContent, "utf8");
+  console.log(`✓ Spec dibuat: ${path.relative(ROOT, specPath)}`);
+
+  if (inserted) {
+    await fs.writeFile(CONFIG, nextConfig, "utf8");
+    console.log(`✓ Project "${name}-e2e" terdaftar di playwright.config.ts`);
+  } else if (reason === "already-registered") {
+    console.log(`• Project "${name}-e2e" sudah ada di playwright.config.ts — tidak diubah.`);
+  } else {
+    console.warn(
+      `! Gagal auto-insert project (${reason}). Tambahkan manual di playwright.config.ts:\n${projectBlock}`,
+    );
+  }
+
+  console.log(`\nLangkah berikutnya:`);
+  console.log(`  1. Isi TODO(scaffold) di playwright.config.ts dengan deskripsi skenario.`);
+  console.log(`  2. Lengkapi <skenario> di describe/test dan sesuaikan URL harness bila perlu.`);
+  console.log(`  3. Jalankan: bunx playwright test --project=${name}-e2e`);
+}
+
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});
