@@ -2242,7 +2242,13 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
           </div>
           {item.package_type === "botol" && (
             <div className="text-[10px] text-muted-foreground">
-              ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
+              <KartonRumusPopover
+                botol={sellMode === "karton" ? (Number(qty) || 0) * BOTOL_PER_KARTON : Number(qty) || 0}
+                packageSize={item.package_size}
+                testId="jual-karton-hint-trigger"
+              >
+                ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
+              </KartonRumusPopover>
               {sellMode === "karton" && (Number(qty) || 0) > 0 && (
                 <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
                   {Number(qty).toLocaleString("id-ID")} karton = {(Number(qty) * BOTOL_PER_KARTON).toLocaleString("id-ID")} botol
@@ -3006,7 +3012,13 @@ function PesananTab({
             </div>
             {item.package_type === "botol" && (
               <div className="text-[10px] text-muted-foreground">
-                ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
+                <KartonRumusPopover
+                  botol={qtyMode === "karton" ? (Number(qty) || 0) * BOTOL_PER_KARTON : Number(qty) || 0}
+                  packageSize={item.package_size}
+                  testId="pesanan-karton-hint-trigger"
+                >
+                  ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
+                </KartonRumusPopover>
                 {qtyMode === "karton" && (Number(qty) || 0) > 0 && (
                   <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
                     {Number(qty).toLocaleString("id-ID")} karton = {(Number(qty) * BOTOL_PER_KARTON).toLocaleString("id-ID")} botol
