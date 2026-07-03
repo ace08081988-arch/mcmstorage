@@ -55,7 +55,16 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     // tap. Karena handler menunggu antrian, request dijamin dibalas
     // dengan payload yang benar tanpa bergantung wall-clock.
     stub.enqueue("storage", [makeStorageRelease()]);
-    await storageRefresh.click();
+    // Wrapper leak-guard: tap Storage TIDAK boleh menyentuh varian
+    // chat sama sekali (query independen per-varian). Helper snapshot
+    // requested["chat"] sebelum click, fail cepat kalau ada request
+    // chat masuk selama aksi + trailing window (event-based).
+    await stub.assertNoAdditionalRequests(
+      async () => {
+        await storageRefresh.click();
+      },
+      { variant: "chat", windowMs: 500 },
+    );
 
     // Tombol aktif — label PERSIS "Unduh APK Storage" (exact match).
     await expect(
@@ -88,6 +97,8 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     // untuk kedua varian setelah state stabil.
     await stub.assertQuiescent("storage", { windowMs: 1000 });
     await stub.assertQuiescent("chat", { windowMs: 500 });
+    // Terminal: guard event-based untuk kedua varian.
+    await stub.assertNoAdditionalRequests({ windowMs: 500 });
   });
 
   test("storage: tap refresh → label 'Memeriksa…' & tombol refresh disabled sampai rilis tersedia", async ({
@@ -119,7 +130,14 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
 
     // Jangan enqueue dulu — handler akan menahan waiter storage sampai
     // test siap merilis, sehingga state "Memeriksa…" bisa diobservasi.
-    await storageRefresh.click();
+    // Wrapper leak-guard varian chat: tap Storage tidak boleh memicu
+    // request chat baru walaupun handler menahan waiter storage.
+    await stub.assertNoAdditionalRequests(
+      async () => {
+        await storageRefresh.click();
+      },
+      { variant: "chat", windowMs: 300 },
+    );
 
     // Sinkronisasi deterministik: tunggu event "waiter tertahan" dari
     // handler. Setelah event ini firing, kita 100% yakin request
@@ -178,5 +196,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     // interval query yang lolos.
     await stub.assertQuiescent("storage", { windowMs: 1000 });
     await stub.assertQuiescent("chat", { windowMs: 500 });
+    // Terminal: guard event-based untuk kedua varian.
+    await stub.assertNoAdditionalRequests({ windowMs: 500 });
   });
 });

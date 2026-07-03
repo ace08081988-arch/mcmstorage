@@ -134,5 +134,10 @@ test.describe("APK availability · refresh flow", () => {
     // (polling background / refetch on-focus / interval query).
     await stub.assertQuiescent("storage", { windowMs: 1000 });
     await stub.assertQuiescent("chat", { windowMs: 1000 });
+
+    // Terminal leak-guard event-based: konsisten dengan spec lain —
+    // varian dihilangkan → cek chat + storage sekaligus. Tanpa polling;
+    // subscribe ke request listener, bounded upper-bound `windowMs`.
+    await stub.assertNoAdditionalRequests({ windowMs: 750 });
   });
 });

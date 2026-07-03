@@ -47,7 +47,14 @@ test.describe("APK refresh · single refetch per tap", () => {
 
     // === Tap #1: harus memicu tepat SATU refetch storage ===
     stub.enqueue("storage", []);
-    await storageRefresh.click();
+    // Wrapper leak-guard: chat TIDAK boleh ikut refetch saat storage
+    // ditap (query independen per-varian). Event-based; bounded window.
+    await stub.assertNoAdditionalRequests(
+      async () => {
+        await storageRefresh.click();
+      },
+      { variant: "chat", windowMs: 400 },
+    );
 
     // Tunggu event served ke-2 untuk storage (deterministik, bukan
     // expect.poll dengan interval wall-clock).
@@ -60,7 +67,12 @@ test.describe("APK refresh · single refetch per tap", () => {
 
     // === Tap #2: aktifkan dengan rilis tersedia — tetap 1 refetch ===
     stub.enqueue("storage", [makeRelease("storage")]);
-    await storageRefresh.click();
+    await stub.assertNoAdditionalRequests(
+      async () => {
+        await storageRefresh.click();
+      },
+      { variant: "chat", windowMs: 400 },
+    );
 
     await stub.waitForServed("storage", 3);
     await expect(
@@ -93,6 +105,8 @@ test.describe("APK refresh · single refetch per tap", () => {
     // menunggu jendela wall-clock lain.
     await stub.assertCounterStable("storage", { ticks: 5 });
     await stub.assertCounterStable("chat", { ticks: 5 });
+    // Terminal leak-guard event-based (kedua varian sekaligus).
+    await stub.assertNoAdditionalRequests({ windowMs: 750 });
 
     // Snapshot akhir untuk transparansi log CI.
     expect(stub.servedCount("storage")).toBe(3);
