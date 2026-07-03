@@ -207,6 +207,48 @@ export type ApkStub = {
     opts?: { ticks?: number },
   ) => Promise<void>;
   /**
+   * Utilitas asersi umum: memverifikasi TIDAK ada request tambahan
+   * yang masuk ke handler stub setelah aksi UI apa pun. Sepenuhnya
+   * event-based — tidak ada polling `expect.poll` atau `waitForTimeout`
+   * sebagai sinkronisasi; `windowMs` hanya bounded upper-bound untuk
+   * membuktikan absence.
+   *
+   * Dua bentuk pemakaian:
+   *
+   *   // (a) Sebagai pembungkus aksi — snapshot SEBELUM aksi, verifikasi
+   *   //     tidak ada request bocor SELAMA aksi berjalan + trailing window.
+   *   await stub.assertNoAdditionalRequests(
+   *     async () => { await refreshButton.click(); },
+   *     { variant: "chat", windowMs: 500 },
+   *   );
+   *
+   *   // (b) Standalone setelah aksi selesai — snapshot counter saat ini,
+   *   //     lalu verifikasi tidak ada request masuk dalam trailing window.
+   *   await refreshButton.click();
+   *   await stub.waitForServed("chat", 2);
+   *   await stub.assertNoAdditionalRequests({ variant: "chat" });
+   *
+   * Bila `variant` diabaikan, cek kedua varian (chat + storage) sekaligus:
+   * berguna sebagai guard akhir test untuk memastikan tidak ada refetch
+   * yang bocor di mana pun.
+   */
+  assertNoAdditionalRequests: (
+    ...args:
+      | [
+          action: () => Promise<void>,
+          opts?: {
+            variant?: ApkVariant;
+            windowMs?: number;
+          },
+        ]
+      | [
+          opts?: {
+            variant?: ApkVariant;
+            windowMs?: number;
+          },
+        ]
+  ) => Promise<void>;
+  /**
    * Menunggu handler benar-benar IDLE (deterministik, tanpa
    * `waitForTimeout`). Kondisi idle:
    *
@@ -546,6 +588,111 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
               formatEventLog(20),
           );
         }
+      }
+    },
+    async assertNoAdditionalRequests(...args) {
+      // Normalisasi argumen: bisa (action, opts) atau (opts) saja.
+      let action: (() => Promise<void>) | null = null;
+      let opts: { variant?: ApkVariant; windowMs?: number } | undefined;
+      if (typeof args[0] === "function") {
+        action = args[0] as () => Promise<void>;
+        opts = args[1] as typeof opts;
+      } else {
+        opts = args[0] as typeof opts;
+      }
+      const windowMs = opts?.windowMs ?? 500;
+      const variants: ApkVariant[] = opts?.variant
+        ? [opts.variant]
+        : (["chat", "storage"] as const).slice();
+
+      // Snapshot counter per varian SEBELUM aksi (atau saat dipanggil).
+      const snap: Record<ApkVariant, number> = { chat: 0, storage: 0 };
+      for (const v of variants) snap[v] = requested[v];
+
+      // Pasang listener event-based di kedua sisi:
+      //   - Selama aksi berjalan (kalau ada), request extra harus
+      //     LANGSUNG memicu error, tanpa menunggu jendela apa pun.
+      //   - Setelah aksi selesai, tunggu `windowMs` sebagai bounded
+      //     upper-bound untuk membuktikan absence. Kalau ada event
+      //     "request" masuk di window ini, resolve dengan status
+      //     gagal — juga tanpa polling.
+      const leaks: Array<{ variant: ApkVariant; at: number }> = [];
+      const unsubs: Array<() => void> = [];
+      for (const v of variants) {
+        unsubs.push(
+          subscribeTo(requestListeners[v])(() => {
+            leaks.push({ variant: v, at: Date.now() - t0 });
+          }),
+        );
+      }
+
+      const cleanup = () => {
+        for (const u of unsubs) u();
+      };
+
+      const failIfLeaked = (phase: string) => {
+        if (leaks.length === 0) return;
+        const summary = leaks
+          .map((l) => `${l.variant}@+${l.at}ms`)
+          .join(", ");
+        // Ambil daftar counter after untuk konteks.
+        const after = variants
+          .map(
+            (v) =>
+              `${v}: req ${snap[v]}→${requested[v]}, served=${served[v]}`,
+          )
+          .join(" | ");
+        throw new Error(
+          `[apk-stub] assertNoAdditionalRequests GAGAL (${phase}): ` +
+            `${leaks.length} request bocor [${summary}]. ${after}` +
+            `\n  Event log terakhir:\n${formatEventLog(20)}`,
+        );
+      };
+
+      try {
+        if (action) {
+          await action();
+          // Setelah aksi selesai, request yang sudah masuk pasti
+          // sudah tercatat lewat listener sinkron.
+          failIfLeaked("selama aksi");
+        }
+
+        // Trailing window: event-based, bukan polling. Kita subscribe
+        // ke request listener; kalau fire → langsung reject, kalau
+        // tidak → timeout habis dan kita menganggap benar-benar quiet.
+        await new Promise<void>((resolve, reject) => {
+          let done = false;
+          const timer = setTimeout(() => {
+            if (done) return;
+            done = true;
+            for (const u of trailUnsubs) u();
+            resolve();
+          }, windowMs);
+          const onRequest = () => {
+            if (done) return;
+            done = true;
+            clearTimeout(timer);
+            for (const u of trailUnsubs) u();
+            reject(new Error("__leak__"));
+          };
+          const trailUnsubs: Array<() => void> = [];
+          for (const v of variants) {
+            trailUnsubs.push(subscribeTo(requestListeners[v])(onRequest));
+          }
+        }).catch((err) => {
+          if (err instanceof Error && err.message === "__leak__") {
+            failIfLeaked(`trailing ${windowMs}ms`);
+          } else {
+            throw err;
+          }
+        });
+
+        // Cek terakhir setelah trailing window (mis. listener terpasang
+        // dua kali → snapshot leaks yang mungkin di-record antara
+        // resolve dan cek ini). Nyaris redundant tapi murah.
+        failIfLeaked(`trailing ${windowMs}ms`);
+      } finally {
+        cleanup();
       }
     },
     waitForIdle(variant, opts) {
