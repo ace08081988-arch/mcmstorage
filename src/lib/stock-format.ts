@@ -57,7 +57,16 @@ export function fmtQtyDual(
   mode: "base" | "package",
   itemName?: string,
 ) {
-  // GS: tiap "pcs" sebenarnya 1 botol → tampilkan langsung sebagai botol.
+  // Botol yang dihitung per-pcs (GS-like: 1 pcs = 1 botol) — tampilkan
+  // langsung sebagai botol tanpa dual "(= X pcs)" yang membingungkan.
+  if (
+    (packageType ?? "").trim().toLowerCase() === "botol" &&
+    baseUnit === "pcs"
+  ) {
+    const botol = Math.round(Number(baseQty) || 0);
+    return `${botol.toLocaleString("id-ID")} botol${fmtKartonHint(botol, itemName, "botol")}`;
+  }
+  // Fallback nama produk 'GS' (data legacy yang belum ternormalisasi).
   if ((itemName ?? "").trim().toLowerCase() === "gs" && baseUnit === "pcs") {
     const botol = Math.round(Number(baseQty) || 0);
     return `${botol.toLocaleString("id-ID")} botol${fmtKartonHint(botol, "gs", "botol")}`;
@@ -89,6 +98,10 @@ export function fmtItemPrice(pricePerBase: number, item: StockItemLike | null | 
   if (!item) return `${rupiah(pricePerBase)}/pcs`;
   const pt = item.package_type ?? "";
   const ps = Number(item.package_size) || 0;
+  // Botol-per-pcs (GS-like): harga per botol = harga per base; dual redundan.
+  if ((pt ?? "").trim().toLowerCase() === "botol" && item.base_unit === "pcs") {
+    return `${rupiah(pricePerBase)}/botol`;
+  }
   if (pt && pt !== "pcs" && ps > 0) {
     const perPkg = pricePerBase * ps;
     return `${rupiah(perPkg)}/${pt} (= ${rupiah(pricePerBase)}/${item.base_unit})`;

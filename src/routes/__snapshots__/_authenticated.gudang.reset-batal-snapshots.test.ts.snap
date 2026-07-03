@@ -37,7 +37,7 @@ exports[`Gudang — snapshot tombol Reset / Batal > Hard reset (resetBeliForm) �
 "[FORM] mode=existing · pt=botol · size=500 · qty="3" · pricePkg="20000" · priceBase="" · priceMode=package · karton=ON
 [SUM] Ringkasan | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 300 botol (3 karton)
-[SUM] Tambahan stok | 300 botol (= 150.000 pcs) · = 3 karton
+[SUM] Tambahan stok | 150.000 botol · = 1.500 karton
 [SUM] Harga per botol | Rp 200
 [SUM] Harga per pcs | Rp 0
 [SUM] Total biaya | Rp 60.000
@@ -135,7 +135,7 @@ exports[`Gudang — snapshot tombol Reset / Batal > Soft reset (ganti item/mode/
 "[FORM] mode=existing · pt=botol · size=500 · qty="4" · pricePkg="20000" · priceBase="" · priceMode=package · karton=ON
 [SUM] Ringkasan | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 400 botol (4 karton)
-[SUM] Tambahan stok | 400 botol (= 200.000 pcs) · = 4 karton
+[SUM] Tambahan stok | 200.000 botol · = 2.000 karton
 [SUM] Harga per botol | Rp 200
 [SUM] Harga per pcs | Rp 0
 [SUM] Total biaya | Rp 80.000

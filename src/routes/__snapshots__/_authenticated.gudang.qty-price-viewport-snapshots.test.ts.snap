@@ -12,7 +12,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 2 botol
-[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Tambahan stok | 1.000 botol · = 10 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 20.000
@@ -28,7 +28,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=4 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 4 botol
-[SUM] Tambahan stok | 4 botol (= 2.000 pcs)
+[SUM] Tambahan stok | 2.000 botol · = 20 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 40.000
@@ -44,7 +44,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=4 · pricePkg=15000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 4 botol
-[SUM] Tambahan stok | 4 botol (= 2.000 pcs)
+[SUM] Tambahan stok | 2.000 botol · = 20 karton
 [SUM] Harga per botol | Rp 15.000
 [SUM] Harga per pcs | Rp 30
 [SUM] Total biaya | Rp 60.000
@@ -60,7 +60,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=1 · pricePkg=15000 · priceBase=- · mode=package · karton=ON
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 100 botol (1 karton)
-[SUM] Tambahan stok | 100 botol (= 50.000 pcs) · = 1 karton
+[SUM] Tambahan stok | 50.000 botol · = 500 karton
 [SUM] Harga per botol | Rp 150
 [SUM] Harga per pcs | Rp 0
 [SUM] Total biaya | Rp 15.000
@@ -76,7 +76,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=1 · pricePkg=18000 · priceBase=- · mode=package · karton=ON
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 100 botol (1 karton)
-[SUM] Tambahan stok | 100 botol (= 50.000 pcs) · = 1 karton
+[SUM] Tambahan stok | 50.000 botol · = 500 karton
 [SUM] Harga per botol | Rp 180
 [SUM] Harga per pcs | Rp 0
 [SUM] Total biaya | Rp 18.000
@@ -92,7 +92,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=6 · pricePkg=18000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 6 botol
-[SUM] Tambahan stok | 6 botol (= 3.000 pcs)
+[SUM] Tambahan stok | 3.000 botol · = 30 karton
 [SUM] Harga per botol | Rp 18.000
 [SUM] Harga per pcs | Rp 36
 [SUM] Total biaya | Rp 108.000"
@@ -110,7 +110,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 2 botol
-[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Tambahan stok | 1.000 botol · = 10 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 20.000
@@ -126,7 +126,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=4 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 4 botol
-[SUM] Tambahan stok | 4 botol (= 2.000 pcs)
+[SUM] Tambahan stok | 2.000 botol · = 20 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 40.000
@@ -142,7 +142,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=4 · pricePkg=15000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 4 botol
-[SUM] Tambahan stok | 4 botol (= 2.000 pcs)
+[SUM] Tambahan stok | 2.000 botol · = 20 karton
 [SUM] Harga per botol | Rp 15.000
 [SUM] Harga per pcs | Rp 30
 [SUM] Total biaya | Rp 60.000
@@ -158,7 +158,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=1 · pricePkg=15000 · priceBase=- · mode=package · karton=ON
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 100 botol (1 karton)
-[SUM] Tambahan stok | 100 botol (= 50.000 pcs) · = 1 karton
+[SUM] Tambahan stok | 50.000 botol · = 500 karton
 [SUM] Harga per botol | Rp 150
 [SUM] Harga per pcs | Rp 0
 [SUM] Total biaya | Rp 15.000
@@ -174,7 +174,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=1 · pricePkg=18000 · priceBase=- · mode=package · karton=ON
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 100 botol (1 karton)
-[SUM] Tambahan stok | 100 botol (= 50.000 pcs) · = 1 karton
+[SUM] Tambahan stok | 50.000 botol · = 500 karton
 [SUM] Harga per botol | Rp 180
 [SUM] Harga per pcs | Rp 0
 [SUM] Total biaya | Rp 18.000
@@ -190,7 +190,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > kombinasi: exis
 [INPUT] qty=6 · pricePkg=18000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 6 botol
-[SUM] Tambahan stok | 6 botol (= 3.000 pcs)
+[SUM] Tambahan stok | 3.000 botol · = 30 karton
 [SUM] Harga per botol | Rp 18.000
 [SUM] Harga per pcs | Rp 36
 [SUM] Total biaya | Rp 108.000"
@@ -700,7 +700,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > qty walk: 2 →
 [INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 2 botol
-[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Tambahan stok | 1.000 botol · = 10 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 20.000
@@ -716,7 +716,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > qty walk: 2 →
 [INPUT] qty=5 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 5 botol
-[SUM] Tambahan stok | 5 botol (= 2.500 pcs)
+[SUM] Tambahan stok | 2.500 botol · = 25 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 50.000
@@ -732,7 +732,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > qty walk: 2 →
 [INPUT] qty=10 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 10 botol
-[SUM] Tambahan stok | 10 botol (= 5.000 pcs)
+[SUM] Tambahan stok | 5.000 botol · = 50 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 100.000
@@ -748,7 +748,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > qty walk: 2 →
 [INPUT] qty=0 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 0 botol
-[SUM] Tambahan stok | 0 botol (= 0 pcs)
+[SUM] Tambahan stok | 0 botol
 [SUM] Harga per botol | Rp 10.000
 [SUM] Total biaya | Rp 0
 
@@ -763,7 +763,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > qty walk: 2 →
 [INPUT] qty=3 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 3 botol
-[SUM] Tambahan stok | 3 botol (= 1.500 pcs)
+[SUM] Tambahan stok | 1.500 botol · = 15 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 30.000"
@@ -1340,7 +1340,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > qty walk: 2 →
 [INPUT] qty=2 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 2 botol
-[SUM] Tambahan stok | 2 botol (= 1.000 pcs)
+[SUM] Tambahan stok | 1.000 botol · = 10 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 20.000
@@ -1356,7 +1356,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > qty walk: 2 →
 [INPUT] qty=5 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 5 botol
-[SUM] Tambahan stok | 5 botol (= 2.500 pcs)
+[SUM] Tambahan stok | 2.500 botol · = 25 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 50.000
@@ -1372,7 +1372,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > qty walk: 2 →
 [INPUT] qty=10 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 10 botol
-[SUM] Tambahan stok | 10 botol (= 5.000 pcs)
+[SUM] Tambahan stok | 5.000 botol · = 50 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 100.000
@@ -1388,7 +1388,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > qty walk: 2 →
 [INPUT] qty=0 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 0 botol
-[SUM] Tambahan stok | 0 botol (= 0 pcs)
+[SUM] Tambahan stok | 0 botol
 [SUM] Harga per botol | Rp 10.000
 [SUM] Total biaya | Rp 0
 
@@ -1403,7 +1403,7 @@ exports[`Gudang — snapshot qty × price mutation × viewport > qty walk: 2 →
 [INPUT] qty=3 · pricePkg=10000 · priceBase=- · mode=package
 [SUM] Ringkasan(raw) | Item BOTOL · botol 500 pcs
 [SUM] Jumlah kemasan | 3 botol
-[SUM] Tambahan stok | 3 botol (= 1.500 pcs)
+[SUM] Tambahan stok | 1.500 botol · = 15 karton
 [SUM] Harga per botol | Rp 10.000
 [SUM] Harga per pcs | Rp 20
 [SUM] Total biaya | Rp 30.000"
