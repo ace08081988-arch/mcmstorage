@@ -2002,14 +2002,23 @@ function NewProductDialog({ onClose, onCreated }: {
   const [packageSize, setPackageSize] = useState("1000");
   const [busy, setBusy] = useState(false);
 
-  const baseUnit: "g" | "pcs" = packageType === "pcs" || packageType === "botol" || packageType === "sachet"
-    ? (packageType === "pcs" ? "pcs" : "g")
-    : "g";
+  // SSOT: botol dihitung per-botol (base='pcs', size=1) — sama seperti
+  // konvensi GS di seluruh app. gram/sachet tetap base='g'.
+  const baseUnit: "g" | "pcs" =
+    packageType === "pcs" || packageType === "botol" ? "pcs" : "g";
+  // Label satuan untuk field "Isi/kemasan": ikut Jenis kemasan supaya
+  // sinkron (mis. botol → "botol", gram → "g", sachet → "g").
+  const sizeUnitLabel = packageType === "botol" ? "botol" : baseUnit;
+  // Field Isi/kemasan hanya relevan saat isi kemasan bisa berbeda-beda
+  // (curah gram / sachet). Untuk botol & pcs, 1 kemasan = 1 unit.
+  const showSizeField = packageType === "gram" || packageType === "sachet";
 
   async function save() {
     if (!name.trim()) { toast.error("Nama produk wajib diisi"); return; }
-    const size = packageType === "pcs" ? 1 : Number(String(packageSize).replace(",", "."));
-    if (packageType !== "pcs" && (!Number.isFinite(size) || size <= 0)) {
+    const size = showSizeField
+      ? Number(String(packageSize).replace(",", "."))
+      : 1;
+    if (showSizeField && (!Number.isFinite(size) || size <= 0)) {
       toast.error("Isi/kemasan harus > 0"); return;
     }
     setBusy(true);
@@ -2060,9 +2069,9 @@ function NewProductDialog({ onClose, onCreated }: {
                 <option value="pcs">pcs</option>
               </select>
             </div>
-            {packageType !== "pcs" && (
+            {showSizeField && (
               <div>
-                <Label className="text-xs">Isi/kemasan ({baseUnit})</Label>
+                <Label className="text-xs">Isi/kemasan ({sizeUnitLabel})</Label>
                 <Input inputMode="decimal" value={packageSize} onChange={(e) => setPackageSize(e.target.value)} />
               </div>
             )}
