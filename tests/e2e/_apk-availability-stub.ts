@@ -480,15 +480,44 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     snapReq: number,
     snapServ: number,
     caller: string,
+    allowOpts?: {
+      expected?: Partial<Record<ApkVariant, number>>;
+      ignore?: (info: ApkStubIgnoreInfo) => boolean;
+    },
   ): Promise<void> {
+    // Kalau ada whitelist, request yang diizinkan tidak dianggap
+    // "counter bergerak" — snapshot dimajukan otomatis. Tanpa opsi,
+    // perilaku strict lama tetap berlaku (semua pergerakan = leak).
+    const expected = allowOpts?.expected?.[variant] ?? 0;
+    const ignoreFn = allowOpts?.ignore;
+    let curReq = snapReq;
+    let curServ = snapServ;
+    let sinceSnapshot = 0;
     for (let i = 0; i < ticks; i += 1) {
       await new Promise<void>((r) => setTimeout(r, 0));
       await Promise.resolve();
-      if (requested[variant] !== snapReq || served[variant] !== snapServ) {
+      // Serap request tambahan yang termasuk whitelist.
+      while (requested[variant] > curReq) {
+        sinceSnapshot += 1;
+        const info: ApkStubIgnoreInfo = {
+          variant,
+          nthSinceSnapshot: sinceSnapshot,
+          totalRequested: curReq + 1,
+        };
+        const allowed =
+          sinceSnapshot <= expected ||
+          (ignoreFn ? ignoreFn(info) : false);
+        if (!allowed) break;
+        curReq += 1;
+      }
+      // served ≤ requested selalu; majukan snapshot served sampai
+      // titik yang sudah "diserap" oleh curReq.
+      if (served[variant] <= curReq) curServ = served[variant];
+      if (requested[variant] !== curReq || served[variant] !== curServ) {
         throw new Error(
           `[apk-stub] ${caller}(${variant}) GAGAL pada tick ` +
             `#${i + 1}/${ticks}: counter bergerak (requested ` +
-            `${snapReq}→${requested[variant]}, served ${snapServ}→` +
+            `${curReq}→${requested[variant]}, served ${curServ}→` +
             `${served[variant]}). Ada task tertunda yang memicu ` +
             `refetch setelah handler tampak idle.` +
             `\n  Event log terakhir (var=${variant}):\n${formatEventLog(20)}`,
