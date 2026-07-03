@@ -24,7 +24,16 @@ export function DownloadStorageApkShortcut() {
       const apk = detail?.latest;
       const url = apk?.url;
       if (!apk || !url) {
-        toast.error("Belum ada APK MCM Storage yang tersedia.", { id: loadingId });
+        toast("APK MCM Storage belum tersedia", {
+          id: loadingId,
+          description:
+            "Belum ada berkas APK Storage di backend. Unggah rilis APK terlebih dahulu, lalu coba lagi.",
+          action: {
+            label: "Buka rilis",
+            onClick: () => window.location.assign("/pengaturan-apk"),
+          },
+          duration: 6000,
+        });
         return;
       }
       const version =
