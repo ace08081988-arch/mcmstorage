@@ -132,6 +132,27 @@ export type ApkStub = {
    * (mis. "Memeriksa…") lalu `enqueue` untuk melepaskan.
    */
   waitForHold: (variant: ApkVariant, timeoutMs?: number) => Promise<void>;
+  /**
+   * Penegasan "quiescent": setelah state aktif tercapai, verifikasi
+   * bahwa TIDAK ada request tambahan untuk `variant` selama jendela
+   * `windowMs` (default 1000 ms). Alur:
+   *
+   *   1. Cek handler kosong — antrian & waiter untuk varian ini = 0
+   *      dan `requestedCount === servedCount` (tidak ada request yang
+   *      sedang diproses / tergantung).
+   *   2. Snapshot `requestedCount` & `servedCount`.
+   *   3. Coba `waitForRequest(varian, requested+1, windowMs)` — kalau
+   *      resolve berarti ADA request tambahan → lempar error.
+   *   4. Setelah timeout jendela lewat (tidak ada request masuk),
+   *      verifikasi counter TETAP sama dengan snapshot.
+   *
+   * Timeout `windowMs` di sini adalah bounded upper-bound untuk
+   * MEMBUKTIKAN absence (bukan sleep untuk sinkronisasi alur test).
+   */
+  assertQuiescent: (
+    variant: ApkVariant,
+    opts?: { windowMs?: number },
+  ) => Promise<void>;
 };
 
 function detectVariant(raw: string): ApkVariant {
@@ -296,6 +317,60 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
         `waiter tertahan ${variant} (holding=${holding[variant]})`,
         timeoutMs,
       );
+    },
+    async assertQuiescent(variant, opts) {
+      const windowMs = opts?.windowMs ?? 1000;
+      // (1) Handler benar-benar kosong untuk varian ini.
+      if (queued[variant].length > 0) {
+        throw new Error(
+          `[apk-stub] assertQuiescent(${variant}): antrian belum kosong ` +
+            `(${queued[variant].length} respons tersisa). Konsumsi dulu ` +
+            `atau enqueue lebih akurat sebelum memanggil helper ini.`,
+        );
+      }
+      if (waiters[variant].length > 0 || holding[variant] > 0) {
+        throw new Error(
+          `[apk-stub] assertQuiescent(${variant}): masih ada waiter ` +
+            `tertahan (${waiters[variant].length}) — request menunggu ` +
+            `enqueue. Lepas atau selesaikan dulu.`,
+        );
+      }
+      if (requested[variant] !== served[variant]) {
+        throw new Error(
+          `[apk-stub] assertQuiescent(${variant}): requested` +
+            `=${requested[variant]} ≠ served=${served[variant]} ` +
+            `(ada request yang belum di-fulfill).`,
+        );
+      }
+      // (2) Snapshot counter.
+      const snapReq = requested[variant];
+      const snapServ = served[variant];
+      // (3) Coba tunggu request tambahan; kalau resolve → gagal.
+      const outcome = await waitFor(
+        () => requested[variant] > snapReq,
+        subscribeTo(requestListeners[variant]),
+        `[quiescent] request ${variant} tambahan (snapshot=${snapReq})`,
+        windowMs,
+      ).then(
+        () => "extra-request",
+        () => "quiet",
+      );
+      if (outcome === "extra-request") {
+        throw new Error(
+          `[apk-stub] assertQuiescent(${variant}) GAGAL: ada request ` +
+            `tambahan dalam jendela ${windowMs}ms ` +
+            `(requested naik dari ${snapReq} → ${requested[variant]}).`,
+        );
+      }
+      // (4) Counter tetap stabil.
+      if (requested[variant] !== snapReq || served[variant] !== snapServ) {
+        throw new Error(
+          `[apk-stub] assertQuiescent(${variant}) GAGAL: counter ` +
+            `berubah setelah jendela (requested ${snapReq}→` +
+            `${requested[variant]}, served ${snapServ}→` +
+            `${served[variant]}).`,
+        );
+      }
     },
   };
 }
