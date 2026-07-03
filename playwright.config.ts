@@ -137,6 +137,18 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E aria-label per state pada <CopyChatApkLinksButton>: idle
+      // (belum tersedia), disabled (checking / busy), dan aktif
+      // (tersalin). Harness publik /lovable/visual/apk-availability-shortcuts
+      // dengan gate stub server-fn agar setiap fase state bisa
+      // diobservasi sebelum data masuk. Butuh izin clipboard untuk
+      // memvalidasi transisi busy → tersalin.
+      name: "copy-chat-apk-aria-label-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /copy-chat-apk-aria-label\.spec\.ts/,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
       // E2E konsistensi label /diagnostik/paket: memverifikasi bahwa
       // "Isi / kemasan", "Harga per", dan "Ringkasan · yang tersedia"
       // SELALU konsisten dengan pilihan dropdown Jenis kemasan
