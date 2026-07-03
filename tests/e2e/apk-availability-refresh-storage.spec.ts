@@ -1,4 +1,5 @@
 import { test, expect, type Route } from "@playwright/test";
+import { installApkStub, makeRelease } from "./_apk-availability-stub";
 
 /**
  * E2E khusus tombol <DownloadStorageApkShortcut>: alur ketersediaan APK
@@ -7,9 +8,10 @@ import { test, expect, type Route } from "@playwright/test";
  *   1. Server function `getApkVariantDetail` awalnya mengembalikan
  *      rilis kosong → tombol Storage tampil idle "Belum tersedia"
  *      dengan ikon refresh terlihat, tanpa toast merah.
- *   2. Setelah flag test dibalik (rilis Storage tersedia), mengetuk
- *      ikon refresh memicu refetch dan tombol berganti ke state aktif
- *      dengan label PERSIS "Unduh APK Storage".
+ *   2. Setelah respons "tersedia" di-enqueue via `installApkStub`
+ *      (deterministik — bukan flag yang di-flip di tengah test),
+ *      mengetuk ikon refresh memicu refetch dan tombol berganti ke
+ *      state aktif dengan label PERSIS "Unduh APK Storage".
  *
  * Harness publik: /lovable/visual/apk-availability-shortcuts (no-auth).
  */
@@ -27,15 +29,7 @@ type ApkRelease = {
 };
 
 function makeStorageRelease(): ApkRelease {
-  return {
-    name: "MCM-Storage-1.0.0.apk",
-    url: "https://example.test/MCM-Storage-1.0.0.apk",
-    sizeMB: 12,
-    updatedAt: "2026-07-03T00:00:00.000Z",
-    versionName: "1.0.0",
-    versionCode: 1,
-    belowMinimum: false,
-  };
+  return makeRelease("storage");
 }
 
 function makeDetail(
@@ -57,33 +51,14 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
   test("storage: belum tersedia → tap refresh → aktif 'Unduh APK Storage'", async ({
     page,
   }) => {
-    // Flag dikontrol dari luar handler supaya bisa diflip di tengah test.
-    let storageAvailable = false;
-
-    await page.route("**/_serverFn/**", async (route: Route) => {
-      const req = route.request();
-      const url = req.url();
-      let raw = decodeURIComponent(url.split("?")[1] ?? "");
-      if (!raw && req.method() === "POST") {
-        raw = req.postData() ?? "";
-      }
-      const variant: "chat" | "storage" = raw.includes("storage")
-        ? "storage"
-        : "chat";
-
-      // Varian Chat tetap kosong sepanjang test — kita hanya menguji
-      // Storage dan sekaligus memastikan alurnya independen (state Chat
-      // tidak ikut berubah saat tombol Storage di-refresh).
-      const releases =
-        variant === "storage" && storageAvailable ? [makeStorageRelease()] : [];
-
-      await route.fulfill({
-        status: 200,
-        contentType: "application/json",
-        body: JSON.stringify(makeDetail(variant, releases)),
-      });
-    });
-
+    // Deterministik: setiap respons di-enqueue eksplisit lewat helper
+    // shared. Handler menunggu antrian sebelum menjawab, sehingga
+    // tidak ada race antara "ubah flag" dan "kirim request".
+    const stub = await installApkStub(page);
+    // Fetch awal (mount): kedua varian kosong. Varian Chat sengaja
+    // dibiarkan kosong sepanjang test untuk assert independensi query.
+    stub.enqueue("chat", []);
+    stub.enqueue("storage", []);
     await page.goto(URL);
 
     const storageDl = page.getByTestId("apk-shortcut-download-storage");
@@ -101,8 +76,10 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     });
     await expect(storageRefresh).toBeVisible();
 
-    // === Balik flag Storage saja → tap refresh Storage ===
-    storageAvailable = true;
+    // === Enqueue respons "tersedia" untuk refetch berikutnya, LALU
+    // tap. Karena handler menunggu antrian, request dijamin dibalas
+    // dengan payload yang benar tanpa bergantung wall-clock.
+    stub.enqueue("storage", [makeStorageRelease()]);
     await storageRefresh.click();
 
     // Tombol aktif — label PERSIS "Unduh APK Storage" (exact match).
