@@ -321,6 +321,72 @@ export type Database = {
           },
         ]
       }
+      chat_list_members: {
+        Row: {
+          added_at: string
+          conversation_id: string
+          list_id: string
+        }
+        Insert: {
+          added_at?: string
+          conversation_id: string
+          list_id: string
+        }
+        Update: {
+          added_at?: string
+          conversation_id?: string
+          list_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "chat_list_members_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "chat_list_members_list_id_fkey"
+            columns: ["list_id"]
+            isOneToOne: false
+            referencedRelation: "chat_lists"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      chat_lists: {
+        Row: {
+          color: string
+          created_at: string
+          icon: string
+          id: string
+          name: string
+          sort_order: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name: string
+          sort_order?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          icon?: string
+          id?: string
+          name?: string
+          sort_order?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       chat_notes: {
         Row: {
           body: string

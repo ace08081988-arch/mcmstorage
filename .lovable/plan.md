@@ -1,65 +1,68 @@
-# Permintaan pertemanan (friend request) sebelum chat & call
+## Fitur Daftar (Chat Lists) ala WhatsApp
 
-Saat ini invite via PIN langsung menyimpan kontak dan DM bisa dibuka. Aturan baru: setelah invite, sisi lawan harus **menerima** permintaan dulu. Sebelum diterima → tidak bisa chat, voice, atau video call.
+Membangun sistem "Daftar" agar owner bisa memfilter tab Chat berdasarkan preset (Belum dibaca, Grup, Favorit) dan **daftar custom** buatan sendiri (mis. "Ditanggapi AI", "Handoff AI", "Maps") berisi kumpulan kontak/grup pilihan.
 
-## Model data
+### 1. Database (Lovable Cloud)
 
-Tabel baru `public.friend_requests`:
-- `from_user` (uuid, pengundang)
-- `to_user` (uuid, target PIN)
-- `status`: `pending` | `accepted` | `rejected` | `cancelled`
-- `responded_at` (nullable)
-- unik per pasangan arah `(from_user, to_user)` supaya tidak double-request
+Migration baru:
 
-RLS: kedua pihak boleh SELECT baris terkait dirinya; hanya `to_user` yang boleh UPDATE `status`; hanya `from_user` yang boleh cancel/hapus.
+- `chat_lists` — daftar milik user
+  - `id uuid pk`, `user_id uuid`, `name text`, `color text` (hex), `icon text` (nama lucide), `sort_order int`, `created_at`, `updated_at`
+- `chat_list_members` — anggota daftar (conversation refs)
+  - `list_id uuid fk`, `conversation_id uuid fk`, `added_at`
+  - PK `(list_id, conversation_id)`
 
-## RPC
+RLS: user hanya bisa CRUD daftar & anggotanya sendiri (`user_id = auth.uid()`). GRANT `SELECT/INSERT/UPDATE/DELETE` ke `authenticated`, `ALL` ke `service_role`.
 
-- `send_friend_request(_invite_code)` — pengganti perilaku "add + auto-connect" pada `add_contact_by_invite_code`. Membuat baris `pending`, atau kembalikan status baris eksisting (idempoten). Tidak lagi otomatis membuat address_book "accepted".
-- `respond_friend_request(_request_id, _accept boolean)` — hanya boleh untuk `to_user`. Kalau accept: set `accepted`, buat entri `address_book` dua arah, boleh buat conversation DM.
-- `cancel_friend_request(_request_id)` — hanya `from_user`, ubah ke `cancelled`.
-- `list_friend_requests(_direction)` — `incoming` / `outgoing` / `all`, hanya pending untuk badge.
+### 2. Data layer
 
-## Gate chat & call
+`src/lib/chat-lists.ts`:
+- `useChatLists()` — query semua daftar user + count anggota
+- `useChatList(id)` — detail + daftar `conversation_id`
+- `useCreateChatList`, `useUpdateChatList`, `useDeleteChatList`
+- `useAddToList`, `useRemoveFromList`, `useReorderChatLists`
 
-- `start_dm` / `useStartDm`: tolak dengan pesan "Belum berteman — kirim permintaan dulu" bila belum ada `accepted` di kedua arah.
-- Tombol Panggilan suara / video di header DM: disabled + tooltip yang sama saat belum accepted (guard di UI + guard di RPC signaling).
-- Halaman kontak: badge "Menunggu diterima" untuk outgoing pending; "Permintaan masuk" untuk incoming pending.
+### 3. Halaman Daftar `/daftar`
 
-## UI
+Route baru `src/routes/_authenticated.daftar.tsx`:
+- Header "Daftar" + tombol pensil (edit urutan) + back
+- Tombol "+ Daftar baru" → dialog create (nama + pilih warna + icon + pilih conversations)
+- Section "Daftar Anda": preset (Belum dibaca, Favorit, Grup) yang selalu ada + daftar custom user
+- Tap daftar → buka editor (rename, ubah warna/icon, tambah/hapus anggota, hapus daftar)
+- Section "Preset yang tersedia" (info)
 
-Rute baru `/kontak/permintaan`:
-- Tab **Masuk** — daftar `incoming` pending dengan tombol *Terima* / *Tolak*.
-- Tab **Terkirim** — daftar `outgoing` pending dengan tombol *Batalkan*.
-- Badge angka di sidebar item "Kontak" untuk incoming pending.
+Menu **Daftar** di dropdown chat sekarang menuju `/daftar` (bukan `/buku-alamat`).
 
-Dialog "Chat baru" & flow undang via PIN:
-- Setelah kirim invite: toast "Permintaan terkirim — menunggu diterima".
-- Kalau target sudah accepted sebelumnya → langsung buka DM (backward-compatible).
-- Kalau ada pending incoming dari target ini → shortcut "Terima permintaan" alih-alih tombol Undang.
+### 4. Integrasi ke tab Chat
 
-## Migrasi data eksisting
+Di `_authenticated.chat.index.tsx`:
+- Filter chip dinamis: preset default + daftar custom user (dengan dot warna & icon)
+- State `filter` diperluas: `"all" | "unread" | "group" | "favorite" | { listId: string }`
+- Klik chip custom → filter `active` berdasarkan `conversation_id ∈ list.members`
+- Long-press chat item → sudah ada mode select; tambah aksi "Tambah ke daftar…" di bulk toolbar dan di menu per-chat
 
-Semua pasangan `address_book` yang saat ini sudah linked → seed baris `friend_requests` dengan `status='accepted'` supaya user lama tidak kehilangan akses chat setelah rilis.
+### 5. UX detail
 
-## File yang tersentuh (ringkas)
+- Preset tidak bisa dihapus, tapi bisa disembunyikan dari chip bar (setting per user, disimpan di localStorage untuk sederhana)
+- Warna & icon konsisten dengan tokens (tidak hardcode; pilihan warna dari palette semantik)
+- Empty state: ikon domain-spesifik, bukan Sparkles
+
+### Teknis (untuk referensi)
 
 ```text
-supabase migration: friend_requests + RPC + seed accepted
-src/lib/chat.ts                              # start_dm gate + tipe
-src/lib/friends.functions.ts (baru)          # server fn send/respond/list/cancel
-src/components/chat/NewDmDialog.tsx          # copy & aksi
-src/components/chat/CallButtons.tsx          # disable saat belum accepted
-src/routes/_authenticated.kontak.permintaan.tsx (baru)
-src/routes/_authenticated.chat.$conversationId.tsx  # guard header call buttons
-src/components/AppSidebar.tsx                # badge pending
-tests/e2e/friend-request-gate.spec.ts (baru) # invite → belum bisa chat → accept → bisa chat
+src/routes/_authenticated.daftar.tsx       (halaman utama)
+src/components/chat/ChatListEditor.tsx     (dialog create/edit)
+src/components/chat/AddToListMenu.tsx      (aksi tambah ke daftar)
+src/lib/chat-lists.ts                      (hooks + RPC helpers)
+supabase migration: chat_lists + chat_list_members + RLS + GRANT
 ```
 
-## Verifikasi
+Perubahan minimal di file existing: `_authenticated.chat.index.tsx` (chip bar & bulk action), dropdown "Daftar" diarahkan ke `/daftar`.
 
-- Migrasi seed jalan → user existing tetap bisa chat tanpa aksi apa pun.
-- E2E: dua akun test A & B — A invite B, B belum terima → A tidak bisa buka DM (RPC 403). B terima → A langsung dapat DM aktif, tombol call enabled.
-- Integration test RLS `friend_requests`: user lain tidak bisa SELECT/UPDATE baris orang lain.
+### Yang TIDAK termasuk
 
-Setuju dengan arah ini? Kalau ada bagian yang ingin diubah (mis. rejected boleh re-request setelah X jam, atau invite via PIN otomatis auto-accept dari sisi pengundang saja), sampaikan sekarang sebelum saya mulai migrasi.
+- Sharing daftar antar user
+- Sinkronisasi ke WhatsApp asli
+- Auto-tagging berbasis AI (bisa jadi fase berikut untuk daftar "Ditanggapi AI"/"Handoff AI" — sekarang manual assign dulu)
+
+Setuju lanjut implementasi?

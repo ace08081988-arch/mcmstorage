@@ -56,6 +56,7 @@ import { Route as AuthenticatedEmailQueueRouteImport } from './routes/_authentic
 import { Route as AuthenticatedEcerRouteImport } from './routes/_authenticated.ecer'
 import { Route as AuthenticatedDiagnosticsRouteImport } from './routes/_authenticated.diagnostics'
 import { Route as AuthenticatedDeviceVerifyRouteImport } from './routes/_authenticated.device-verify'
+import { Route as AuthenticatedDaftarRouteImport } from './routes/_authenticated.daftar'
 import { Route as AuthenticatedChatAuditRouteImport } from './routes/_authenticated.chat-audit'
 import { Route as AuthenticatedChatRouteImport } from './routes/_authenticated.chat'
 import { Route as AuthenticatedCatatanRouteImport } from './routes/_authenticated.catatan'
@@ -345,6 +346,11 @@ const AuthenticatedDeviceVerifyRoute =
     path: '/device-verify',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDaftarRoute = AuthenticatedDaftarRouteImport.update({
+  id: '/daftar',
+  path: '/daftar',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedChatAuditRoute = AuthenticatedChatAuditRouteImport.update({
   id: '/chat-audit',
   path: '/chat-audit',
@@ -572,6 +578,7 @@ export interface FileRoutesByFullPath {
   '/catatan': typeof AuthenticatedCatatanRoute
   '/chat': typeof AuthenticatedChatRouteWithChildren
   '/chat-audit': typeof AuthenticatedChatAuditRoute
+  '/daftar': typeof AuthenticatedDaftarRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
@@ -655,6 +662,7 @@ export interface FileRoutesByTo {
   '/buku-alamat': typeof AuthenticatedBukuAlamatRoute
   '/catatan': typeof AuthenticatedCatatanRoute
   '/chat-audit': typeof AuthenticatedChatAuditRoute
+  '/daftar': typeof AuthenticatedDaftarRoute
   '/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/ecer': typeof AuthenticatedEcerRoute
@@ -742,6 +750,7 @@ export interface FileRoutesById {
   '/_authenticated/catatan': typeof AuthenticatedCatatanRoute
   '/_authenticated/chat': typeof AuthenticatedChatRouteWithChildren
   '/_authenticated/chat-audit': typeof AuthenticatedChatAuditRoute
+  '/_authenticated/daftar': typeof AuthenticatedDaftarRoute
   '/_authenticated/device-verify': typeof AuthenticatedDeviceVerifyRoute
   '/_authenticated/diagnostics': typeof AuthenticatedDiagnosticsRoute
   '/_authenticated/ecer': typeof AuthenticatedEcerRoute
@@ -830,6 +839,7 @@ export interface FileRouteTypes {
     | '/catatan'
     | '/chat'
     | '/chat-audit'
+    | '/daftar'
     | '/device-verify'
     | '/diagnostics'
     | '/ecer'
@@ -913,6 +923,7 @@ export interface FileRouteTypes {
     | '/buku-alamat'
     | '/catatan'
     | '/chat-audit'
+    | '/daftar'
     | '/device-verify'
     | '/diagnostics'
     | '/ecer'
@@ -999,6 +1010,7 @@ export interface FileRouteTypes {
     | '/_authenticated/catatan'
     | '/_authenticated/chat'
     | '/_authenticated/chat-audit'
+    | '/_authenticated/daftar'
     | '/_authenticated/device-verify'
     | '/_authenticated/diagnostics'
     | '/_authenticated/ecer'
@@ -1436,6 +1448,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDeviceVerifyRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/daftar': {
+      id: '/_authenticated/daftar'
+      path: '/daftar'
+      fullPath: '/daftar'
+      preLoaderRoute: typeof AuthenticatedDaftarRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/chat-audit': {
       id: '/_authenticated/chat-audit'
       path: '/chat-audit'
@@ -1757,6 +1776,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedCatatanRoute: typeof AuthenticatedCatatanRoute
   AuthenticatedChatRoute: typeof AuthenticatedChatRouteWithChildren
   AuthenticatedChatAuditRoute: typeof AuthenticatedChatAuditRoute
+  AuthenticatedDaftarRoute: typeof AuthenticatedDaftarRoute
   AuthenticatedDeviceVerifyRoute: typeof AuthenticatedDeviceVerifyRoute
   AuthenticatedDiagnosticsRoute: typeof AuthenticatedDiagnosticsRoute
   AuthenticatedEcerRoute: typeof AuthenticatedEcerRoute
@@ -1805,6 +1825,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedCatatanRoute: AuthenticatedCatatanRoute,
   AuthenticatedChatRoute: AuthenticatedChatRouteWithChildren,
   AuthenticatedChatAuditRoute: AuthenticatedChatAuditRoute,
+  AuthenticatedDaftarRoute: AuthenticatedDaftarRoute,
   AuthenticatedDeviceVerifyRoute: AuthenticatedDeviceVerifyRoute,
   AuthenticatedDiagnosticsRoute: AuthenticatedDiagnosticsRoute,
   AuthenticatedEcerRoute: AuthenticatedEcerRoute,
@@ -1906,13 +1927,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
