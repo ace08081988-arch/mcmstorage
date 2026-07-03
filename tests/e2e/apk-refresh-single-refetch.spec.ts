@@ -78,12 +78,21 @@ test.describe("APK refresh · single refetch per tap", () => {
     ).toHaveCount(0);
 
     // Assert quiescent: helper memastikan antrian handler kosong,
-    // snapshot counter, lalu memverifikasi TIDAK ada request tambahan
-    // dalam jendela bounded. Kalau ada polling background / refetch
-    // on-focus / interval query, helper akan gagal karena counter
-    // bergerak.
-    await stub.assertQuiescent("storage", { windowMs: 1500 });
-    await stub.assertQuiescent("chat", { windowMs: 500 });
+    // snapshot counter, memverifikasi TIDAK ada request tambahan
+    // dalam jendela bounded, LALU counter tetap stabil selama
+    // beberapa event-loop ticks (default 5). Kalau ada polling
+    // background / refetch on-focus / interval query, helper akan
+    // gagal karena counter bergerak.
+    await stub.assertQuiescent("storage", {
+      windowMs: 1500,
+      stableTicks: 8,
+    });
+    await stub.assertQuiescent("chat", { windowMs: 500, stableTicks: 8 });
+    // Sekali lagi, standalone — memvalidasi bahwa setelah semua
+    // assertion di atas, counter TETAP stabil (idle bertahan) tanpa
+    // menunggu jendela wall-clock lain.
+    await stub.assertCounterStable("storage", { ticks: 5 });
+    await stub.assertCounterStable("chat", { ticks: 5 });
 
     // Snapshot akhir untuk transparansi log CI.
     expect(stub.servedCount("storage")).toBe(3);
