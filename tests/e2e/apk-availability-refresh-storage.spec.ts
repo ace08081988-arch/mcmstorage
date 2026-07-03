@@ -63,12 +63,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     // chat sama sekali (query independen per-varian). Helper snapshot
     // requested["chat"] sebelum click, fail cepat kalau ada request
     // chat masuk selama aksi + trailing window (event-based).
-    await stub.assertNoAdditionalRequests(
-      async () => {
-        await storageRefresh.click();
-      },
-      { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
-    );
+    await stub.trackedClick(storageRefresh, { variant: "chat" });
 
     // Tombol aktif — label PERSIS "Unduh APK Storage" (exact match).
     await expect(
@@ -102,9 +97,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     await stub.assertQuiescent("storage", { windowMs: 1000 });
     await stub.assertQuiescent("chat", { windowMs: 500 });
     // Terminal: guard event-based untuk kedua varian.
-    await stub.assertNoAdditionalRequests({
-      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
-    });
+    await stub.terminalGuard();
   });
 
   test("storage: tap refresh → label 'Memeriksa…' & tombol refresh disabled sampai rilis tersedia", async ({
@@ -138,12 +131,7 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     // test siap merilis, sehingga state "Memeriksa…" bisa diobservasi.
     // Wrapper leak-guard varian chat: tap Storage tidak boleh memicu
     // request chat baru walaupun handler menahan waiter storage.
-    await stub.assertNoAdditionalRequests(
-      async () => {
-        await storageRefresh.click();
-      },
-      { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
-    );
+    await stub.trackedClick(storageRefresh, { variant: "chat" });
 
     // Sinkronisasi deterministik: tunggu event "waiter tertahan" dari
     // handler. Setelah event ini firing, kita 100% yakin request
@@ -203,8 +191,6 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
     await stub.assertQuiescent("storage", { windowMs: 1000 });
     await stub.assertQuiescent("chat", { windowMs: 500 });
     // Terminal: guard event-based untuk kedua varian.
-    await stub.assertNoAdditionalRequests({
-      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
-    });
+    await stub.terminalGuard();
   });
 });
