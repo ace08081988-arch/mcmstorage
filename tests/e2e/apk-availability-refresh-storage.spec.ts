@@ -131,4 +131,119 @@ test.describe("APK availability · storage shortcut refresh flow", () => {
       }),
     ).toBeVisible();
   });
+
+  test("storage: tap refresh → label 'Memeriksa…' & tombol refresh disabled sampai rilis tersedia", async ({
+    page,
+  }) => {
+    // Kontrol respons per-fase: fase 1 (initial load) fulfill langsung
+    // dengan releases kosong. Fase 2 (setelah tap refresh) tahan
+    // respons sampai test siap merilisnya, supaya assertion state
+    // checking/busy sempat terobservasi sebelum data masuk.
+    let phase: "initial" | "holding" = "initial";
+    let releaseNext: (() => void) | null = null;
+    const heldGate = new Promise<void>((resolve) => {
+      releaseNext = resolve;
+    });
+
+    await page.route("**/_serverFn/**", async (route: Route) => {
+      const req = route.request();
+      const url = req.url();
+      let raw = decodeURIComponent(url.split("?")[1] ?? "");
+      if (!raw && req.method() === "POST") {
+        raw = req.postData() ?? "";
+      }
+      const variant: "chat" | "storage" = raw.includes("storage")
+        ? "storage"
+        : "chat";
+
+      // Chat tetap kosong sepanjang test — fokus pada varian storage.
+      if (variant !== "storage") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(makeDetail("chat", [])),
+        });
+        return;
+      }
+
+      if (phase === "initial") {
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify(makeDetail("storage", [])),
+        });
+        return;
+      }
+      // phase === "holding": tunda respons sampai test membuka gate,
+      // baru fulfill dengan rilis tersedia.
+      await heldGate;
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify(makeDetail("storage", [makeStorageRelease()])),
+      });
+    });
+
+    await page.goto(URL);
+
+    const storageDl = page.getByTestId("apk-shortcut-download-storage");
+
+    // Fase awal: idle "Belum tersedia".
+    await expect(storageDl.getByText("Belum tersedia")).toBeVisible();
+
+    const storageRefresh = storageDl.getByRole("button", {
+      name: /Cek ulang ketersediaan APK MCM Storage/i,
+    });
+    await expect(storageRefresh).toBeVisible();
+    await expect(storageRefresh).toBeEnabled();
+
+    // Balik ke fase holding SEBELUM tap — respons refetch akan ditahan.
+    phase = "holding";
+    await storageRefresh.click();
+
+    // === State checking/busy tervalidasi ===
+    // Label utama berubah menjadi "Memeriksa…" (bukan "Belum tersedia",
+    // bukan "Unduh APK Storage").
+    await expect(
+      storageDl.getByText("Memeriksa…", { exact: true }),
+    ).toBeVisible();
+    await expect(
+      storageDl.getByText("Mengecek rilis terbaru…", { exact: true }),
+    ).toBeVisible();
+    await expect(storageDl.getByText("Belum tersedia")).toHaveCount(0);
+    await expect(
+      storageDl.getByText("Unduh APK Storage", { exact: true }),
+    ).toHaveCount(0);
+
+    // Tombol refresh TETAP terlihat & DISABLED (disabled={isChecking})
+    // — user tidak bisa memicu refetch ganda selama pengecekan berjalan.
+    await expect(storageRefresh).toBeVisible();
+    await expect(storageRefresh).toBeDisabled();
+
+    // Tombol utama saat pengecekan wajib memakai aria-label khusus,
+    // bukan label unduh — mencegah state "aktif palsu".
+    await expect(
+      storageDl.getByRole("button", {
+        name: /Memeriksa ketersediaan APK MCM Storage/i,
+      }),
+    ).toBeVisible();
+    await expect(
+      storageDl.getByRole("button", { name: /^Unduh APK MCM Storage$/i }),
+    ).toHaveCount(0);
+
+    // === Rilis dirilis → tombol menjadi aktif ===
+    releaseNext?.();
+
+    await expect(
+      storageDl.getByText("Unduh APK Storage", { exact: true }),
+    ).toBeVisible();
+    // Setelah aktif, ikon refresh sudah tidak dirender lagi (hanya
+    // muncul saat isUnavailable), jadi tombol utama tidak lagi disabled.
+    await expect(
+      storageDl.getByRole("button", {
+        name: /Cek ulang ketersediaan APK MCM Storage/i,
+      }),
+    ).toHaveCount(0);
+    await expect(storageDl.getByText("Memeriksa…")).toHaveCount(0);
+  });
 });
