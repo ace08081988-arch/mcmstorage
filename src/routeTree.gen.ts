@@ -72,6 +72,7 @@ import { Route as LovableVisualMinSupportedFormRouteImport } from './routes/lova
 import { Route as LovableVisualMessageHiddenRlsRouteImport } from './routes/lovable.visual.message-hidden-rls'
 import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/lovable.visual.message-hidden-persist'
 import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovable.visual.komponen-review'
+import { Route as LovableVisualKemasanBadgeRouteImport } from './routes/lovable.visual.kemasan-badge'
 import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovable.visual.karton-konversi'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
 import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from './routes/lovable.visual.attachment-duration-consistency'
@@ -430,6 +431,12 @@ const LovableVisualKomponenReviewRoute =
     path: '/lovable/visual/komponen-review',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualKemasanBadgeRoute =
+  LovableVisualKemasanBadgeRouteImport.update({
+    id: '/lovable/visual/kemasan-badge',
+    path: '/lovable/visual/kemasan-badge',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualKartonKonversiRoute =
   LovableVisualKartonKonversiRouteImport.update({
     id: '/lovable/visual/karton-konversi',
@@ -617,6 +624,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
+  '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
@@ -700,6 +708,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
+  '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
@@ -786,6 +795,7 @@ export interface FileRoutesById {
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
+  '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
   '/lovable/visual/message-hidden-persist': typeof LovableVisualMessageHiddenPersistRoute
   '/lovable/visual/message-hidden-rls': typeof LovableVisualMessageHiddenRlsRoute
@@ -872,6 +882,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/karton-konversi'
+    | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
     | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
@@ -955,6 +966,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/karton-konversi'
+    | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
     | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
@@ -1040,6 +1052,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/karton-konversi'
+    | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
     | '/lovable/visual/message-hidden-persist'
     | '/lovable/visual/message-hidden-rls'
@@ -1078,6 +1091,7 @@ export interface RootRouteChildren {
   LovableVisualAttachmentDurationConsistencyRoute: typeof LovableVisualAttachmentDurationConsistencyRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
   LovableVisualKartonKonversiRoute: typeof LovableVisualKartonKonversiRoute
+  LovableVisualKemasanBadgeRoute: typeof LovableVisualKemasanBadgeRoute
   LovableVisualKomponenReviewRoute: typeof LovableVisualKomponenReviewRoute
   LovableVisualMessageHiddenPersistRoute: typeof LovableVisualMessageHiddenPersistRoute
   LovableVisualMessageHiddenRlsRoute: typeof LovableVisualMessageHiddenRlsRoute
@@ -1534,6 +1548,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualKomponenReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/kemasan-badge': {
+      id: '/lovable/visual/kemasan-badge'
+      path: '/lovable/visual/kemasan-badge'
+      fullPath: '/lovable/visual/kemasan-badge'
+      preLoaderRoute: typeof LovableVisualKemasanBadgeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/karton-konversi': {
       id: '/lovable/visual/karton-konversi'
       path: '/lovable/visual/karton-konversi'
@@ -1868,6 +1889,7 @@ const rootRouteChildren: RootRouteChildren = {
     LovableVisualAttachmentDurationConsistencyRoute,
   LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
   LovableVisualKartonKonversiRoute: LovableVisualKartonKonversiRoute,
+  LovableVisualKemasanBadgeRoute: LovableVisualKemasanBadgeRoute,
   LovableVisualKomponenReviewRoute: LovableVisualKomponenReviewRoute,
   LovableVisualMessageHiddenPersistRoute:
     LovableVisualMessageHiddenPersistRoute,
