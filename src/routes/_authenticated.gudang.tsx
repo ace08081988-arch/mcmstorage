@@ -1241,6 +1241,11 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
                         <div className="font-semibold tabular-nums [overflow-wrap:anywhere]">{rupiah(i.stock_base * i.avg_cost_per_base)}</div>
                       </div>
                     </div>
+                    {i.package_type === "botol" && (
+                      <div className="mt-1.5 text-[10px] text-muted-foreground">
+                        ℹ️ Konversi: 1 karton = {BOTOL_PER_KARTON} botol
+                      </div>
+                    )}
                   </li>
                 ))}
               </ul>
@@ -2218,6 +2223,16 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
               </button>
             )}
           </div>
+          {item.package_type === "botol" && (
+            <div className="text-[10px] text-muted-foreground">
+              ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
+              {sellMode === "karton" && (Number(qty) || 0) > 0 && (
+                <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                  {Number(qty).toLocaleString("id-ID")} karton = {(Number(qty) * BOTOL_PER_KARTON).toLocaleString("id-ID")} botol
+                </span>
+              )}
+            </div>
+          )}
 
           <div className="grid grid-cols-2 gap-2">
             <label className="block">
@@ -2972,6 +2987,16 @@ function PesananTab({
                 </button>
               )}
             </div>
+            {item.package_type === "botol" && (
+              <div className="text-[10px] text-muted-foreground">
+                ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
+                {qtyMode === "karton" && (Number(qty) || 0) > 0 && (
+                  <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                    {Number(qty).toLocaleString("id-ID")} karton = {(Number(qty) * BOTOL_PER_KARTON).toLocaleString("id-ID")} botol
+                  </span>
+                )}
+              </div>
+            )}
 
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
