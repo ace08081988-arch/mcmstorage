@@ -157,6 +157,17 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
+      // E2E konversi karton di kolom Stok gudang: harness publik
+      // `/lovable/visual/karton-konversi` merender `fmtItemQty` — sama
+      // dengan yang dipakai kartu Stok di /gudang. Test menegakkan bahwa
+      // 100 botol otomatis tampil sebagai "1 karton", plus batas 99/250/500
+      // dan negatif-case gram (tidak boleh muncul hint karton).
+      name: "karton-konversi-stok-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /karton-konversi-stok\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
       // E2E visibilitas menu admin. Harness publik no-auth memverifikasi
       // (a) `filterSidebarItemsForAdmin` menyembunyikan `/pengaturan-apk`
       // & `/email-queue` dari non-admin, (b) klasifikasi halaman APK
