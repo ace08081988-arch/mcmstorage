@@ -15,6 +15,7 @@
 
 import { supabase } from "@/integrations/supabase/client";
 import type { RealtimeChannel } from "@supabase/supabase-js";
+import { getIceServers, type IceServerConfig } from "@/lib/calls.functions";
 
 export type CallKind = "audio" | "video";
 
@@ -24,15 +25,46 @@ export type CallSignal =
   | { t: "ice"; candidate: RTCIceCandidateInit; from: string }
   | { t: "bye"; from: string; reason?: string }
   | { t: "ringing"; from: string; callId: string }
+  | { t: "hello"; from: string; callId: string }
   | { t: "ring"; from: string; callId: string; kind: CallKind; conversationId: string; callerName?: string };
 
-// STUN publik Google — cukup untuk 90% kasus di jaringan seluler /
-// Wi-Fi rumah. TURN belum dikonfigurasi; jika NAT simetris, panggilan
-// bisa gagal — UI akan menampilkan status "Gagal terhubung".
-const ICE_SERVERS: RTCIceServer[] = [
+// Fallback STUN publik saat server function belum bisa dihubungi (mis.
+// dev offline). Nilai "sesungguhnya" datang dari `getIceServers()` di
+// bawah yang juga menyertakan TURN bila secret tersedia.
+const FALLBACK_ICE: RTCIceServer[] = [
   { urls: "stun:stun.l.google.com:19302" },
   { urls: "stun:stun1.l.google.com:19302" },
 ];
+
+let cachedIce:
+  | { servers: IceServerConfig[]; turnConfigured: boolean; at: number }
+  | null = null;
+
+/**
+ * Ambil daftar ICE server (STUN + TURN) dari server function, dengan
+ * cache 5 menit supaya panggilan berikutnya tidak menunggu round-trip
+ * jaringan. Fallback ke STUN publik saat request gagal.
+ */
+export async function loadIceServers(): Promise<{
+  servers: IceServerConfig[];
+  turnConfigured: boolean;
+}> {
+  const now = Date.now();
+  if (cachedIce && now - cachedIce.at < 5 * 60_000) {
+    return { servers: cachedIce.servers, turnConfigured: cachedIce.turnConfigured };
+  }
+  try {
+    const res = await getIceServers();
+    cachedIce = {
+      servers: res.iceServers,
+      turnConfigured: res.turnConfigured,
+      at: now,
+    };
+    return { servers: res.iceServers, turnConfigured: res.turnConfigured };
+  } catch {
+    return { servers: FALLBACK_ICE, turnConfigured: false };
+  }
+}
 
 export function callChannelName(callId: string): string {
   return `call:${callId}`;
@@ -49,6 +81,10 @@ export type PeerHandlers = {
   /** Callee sudah menerima ring & menampilkan dialog — caller boleh
    *  beralih dari "Memanggil…" ke "Berdering…". */
   onRingingAck?: () => void;
+  /** Callee sudah subscribe channel `call:<id>` — caller boleh mengirim offer. */
+  onPeerHello?: () => void;
+  /** Diberitahu apakah TURN aktif; UI boleh menampilkan banner "atur TURN". */
+  onTurnStatus?: (turnConfigured: boolean) => void;
 };
 
 export type PeerSession = {
@@ -99,7 +135,9 @@ export async function createPeerSession(opts: {
 }): Promise<PeerSession> {
   const { callId, meId, kind, handlers } = opts;
   const localStream = await getLocalMedia(kind);
-  const pc = new RTCPeerConnection({ iceServers: ICE_SERVERS });
+  const ice = await loadIceServers();
+  handlers.onTurnStatus?.(ice.turnConfigured);
+  const pc = new RTCPeerConnection({ iceServers: ice.servers });
   const remote = new MediaStream();
 
   localStream.getTracks().forEach((t) => pc.addTrack(t, localStream));
@@ -150,6 +188,8 @@ export async function createPeerSession(opts: {
         handlers.onError?.(new Error(sig.reason ?? "Panggilan diakhiri"));
       } else if (sig.t === "ringing") {
         handlers.onRingingAck?.();
+      } else if (sig.t === "hello") {
+        handlers.onPeerHello?.();
       }
     } catch (e) {
       handlers.onError?.(e as Error);
@@ -159,8 +199,15 @@ export async function createPeerSession(opts: {
   await new Promise<void>((resolve, reject) => {
     const timer = setTimeout(() => reject(new Error("Signaling timeout")), 8000);
     channel.subscribe((status) => {
-      if (status === "SUBSCRIBED") { clearTimeout(timer); resolve(); }
-      else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
+      if (status === "SUBSCRIBED") {
+        clearTimeout(timer);
+        // Umumkan kehadiran diri di channel supaya sisi lain bisa
+        // memicu resend offer / update state tanpa bergantung DB polling.
+        try {
+          send({ t: "hello", from: meId, callId });
+        } catch { /* ignore */ }
+        resolve();
+      } else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT") {
         clearTimeout(timer); reject(new Error("Signaling gagal"));
       }
     });
@@ -193,18 +240,56 @@ export async function createPeerSession(opts: {
   };
 }
 
-/** Pemanggil: buat SDP offer & kirim. */
+/**
+ * Pemanggil: buat SDP offer & kirim, lalu resend ulang selama callee
+ * belum menjawab (maks 3× tiap 2 detik). Idempoten — panggilan berulang
+ * setelah SDP sudah di-set aman karena kita cek `signalingState`.
+ */
 export async function startOffer(session: PeerSession): Promise<void> {
-  const offer = await session.pc.createOffer({
+  const { pc, channel, meId } = session;
+  if (pc.signalingState !== "stable" && pc.localDescription) {
+    // Sudah ada offer lokal — cukup resend payload terakhir sekali lagi.
+    void channel.send({
+      type: "broadcast",
+      event: "signal",
+      payload: {
+        t: "offer",
+        from: meId,
+        sdp: pc.localDescription as RTCSessionDescriptionInit,
+      } satisfies CallSignal,
+    });
+    return;
+  }
+  const offer = await pc.createOffer({
     offerToReceiveAudio: true,
     offerToReceiveVideo: true,
   });
-  await session.pc.setLocalDescription(offer);
-  session.channel.send({
-    type: "broadcast",
-    event: "signal",
-    payload: { t: "offer", from: session.meId, sdp: offer } satisfies CallSignal,
-  });
+  await pc.setLocalDescription(offer);
+  const payload: CallSignal = { t: "offer", from: meId, sdp: offer };
+  const sendOffer = () => {
+    try {
+      void channel.send({ type: "broadcast", event: "signal", payload });
+    } catch {
+      /* ignore */
+    }
+  };
+  sendOffer();
+  // Resend beberapa kali untuk menutup race saat callee baru subscribe
+  // setelah menerima panggilan; berhenti begitu remote description sudah
+  // masuk (answer diterima) atau maksimum percobaan tercapai.
+  let tries = 0;
+  const interval = setInterval(() => {
+    tries += 1;
+    if (
+      pc.signalingState !== "have-local-offer" ||
+      pc.currentRemoteDescription ||
+      tries >= 3
+    ) {
+      clearInterval(interval);
+      return;
+    }
+    sendOffer();
+  }, 2000);
 }
 
 /** Kirim ring ke inbox pribadi callee agar UI global memunculkan dialog. */
