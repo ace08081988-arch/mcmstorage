@@ -23,8 +23,11 @@ test.describe("APK refresh · single refetch per tap", () => {
     page,
   }) => {
     const stub = await installApkStub(page);
-    stub.enqueue("chat", []);
-    stub.enqueue("storage", []);
+    // Penegasan setup halaman sebelum navigasi: kedua fetch awal
+    // wajib punya respons ter-enqueue. assertPrimed() gagal cepat
+    // kalau lupa, mencegah handler menggantung waiter tak berujung.
+    stub.primeInitial();
+    stub.assertPrimed();
     await page.goto(URL);
 
     const storageDl = page.getByTestId("apk-shortcut-download-storage");
