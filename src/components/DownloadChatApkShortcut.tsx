@@ -225,9 +225,10 @@ export function DownloadChatApkShortcut() {
             e.stopPropagation();
             void availability.refetch();
           }}
+          disabled={isChecking}
           aria-label="Cek ulang ketersediaan APK MCM Chat"
           title="Cek ulang"
-          className="absolute right-1.5 top-1.5 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+          className="absolute right-0 top-0 grid min-h-11 min-w-11 place-items-center rounded-full text-muted-foreground hover:bg-accent hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-60"
         >
           <RefreshCw className={"h-3.5 w-3.5 " + (isChecking ? "animate-spin" : "")} />
         </button>
