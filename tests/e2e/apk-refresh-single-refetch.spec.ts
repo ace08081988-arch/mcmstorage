@@ -75,7 +75,7 @@ test.describe("APK refresh · single refetch per tap", () => {
       async () => {
         await storageRefresh.click();
       },
-      { variant: "chat", windowMs: 400 },
+      { variant: "chat", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
     );
 
     await stub.waitForServed("storage", 3);
@@ -110,7 +110,9 @@ test.describe("APK refresh · single refetch per tap", () => {
     await stub.assertCounterStable("storage", { ticks: 5 });
     await stub.assertCounterStable("chat", { ticks: 5 });
     // Terminal leak-guard event-based (kedua varian sekaligus).
-    await stub.assertNoAdditionalRequests({ windowMs: 750 });
+    await stub.assertNoAdditionalRequests({
+      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
+    });
 
     // Snapshot akhir untuk transparansi log CI.
     expect(stub.servedCount("storage")).toBe(3);
