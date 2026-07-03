@@ -1,6 +1,11 @@
 import { test, expect } from "@playwright/test";
 import { existsSync, readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import {
+  APK_STUB_PER_ACTION_WINDOW_MS,
+  APK_STUB_TERMINAL_WINDOW_MS,
+} from "./_helpers/apk-stub-timing";
+import { installServerFnPassthroughGuard } from "./_helpers/serverfn-passthrough-guard";
 
 /**
  * E2E — Menyalin (Copy) transkrip pesan chat setelah `page.reload()`
@@ -67,6 +72,9 @@ test.describe("copy/export transkrip — runtime PIN MCM", () => {
 
     await page.goto("/chat");
     await page.waitForLoadState("networkidle");
+    // Pasang guard SETELAH transkrip awal ter-fetch — kita hanya peduli
+    // pada request bocor selama aksi Copy (lokal), bukan hidrasi awal.
+    const guard = await installServerFnPassthroughGuard(page);
     const first = page.locator('a[href^="/chat/"]').first();
     test.skip((await first.count()) === 0, "Tidak ada DM untuk uji — skip.");
     await first.click();
@@ -93,10 +101,18 @@ test.describe("copy/export transkrip — runtime PIN MCM", () => {
     test.skip((await bubble.count()) === 0, "Belum ada pesan untuk disalin — skip.");
     await bubble.click({ delay: 550 }); // long-press → memicu selection
 
-    // Klik tombol Salin di toolbar seleksi.
+    // Klik tombol Salin di toolbar seleksi — Copy adalah aksi LOKAL:
+    // membaca body pesan yang sudah ter-hidrasi + tulis clipboard. Tidak
+    // boleh ada request server-fn tambahan selama & sesudah aksi (window
+    // per-action). Guard passthrough akan meng-fail spec kalau bocor.
     const copyBtn = page.getByRole("button", { name: "Salin" });
     await expect(copyBtn).toBeVisible({ timeout: 3000 });
-    await copyBtn.click();
+    await guard.assertNoAdditionalRequests(
+      async () => {
+        await copyBtn.click();
+      },
+      { windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+    );
 
     // Baca clipboard hasilnya.
     const clip = await page.evaluate(async () => {
@@ -117,5 +133,12 @@ test.describe("copy/export transkrip — runtime PIN MCM", () => {
     const bodyAfter = await page.locator("main, body").first().innerText();
     expect(bodyAfter).not.toMatch(PHONE_LIKE);
     if (/PIN\s+/i.test(bodyAfter)) expect(bodyAfter).toMatch(PIN_FMT);
+
+    // Terminal guard — pastikan tidak ada refetch tertunda yang baru
+    // datang beberapa ratus ms setelah aksi Copy selesai.
+    await guard.assertNoAdditionalRequests({
+      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
+    });
+    await guard.dispose();
   });
 });
