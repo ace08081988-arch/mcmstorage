@@ -3021,22 +3021,32 @@ function PesananTab({
                 </button>
               )}
             </div>
-            {item.package_type === "botol" && (
-              <div className="text-[10px] text-muted-foreground">
-                <KartonRumusPopover
-                  botol={qtyMode === "karton" ? (Number(qty) || 0) * BOTOL_PER_KARTON : Number(qty) || 0}
-                  packageSize={item.package_size}
-                  testId="pesanan-karton-hint-trigger"
-                >
-                  ℹ️ 1 karton = {BOTOL_PER_KARTON} botol
-                </KartonRumusPopover>
-                {qtyMode === "karton" && (Number(qty) || 0) > 0 && (
-                  <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
-                    {Number(qty).toLocaleString("id-ID")} karton = {(Number(qty) * BOTOL_PER_KARTON).toLocaleString("id-ID")} botol
-                  </span>
-                )}
-              </div>
-            )}
+            <div className="text-[10px] text-muted-foreground">
+              <KemasanRumusPopover
+                packageType={item.package_type}
+                packageSize={item.package_size}
+                baseUnit={item.base_unit}
+                qty={Number(qty) || 0}
+                mode={qtyMode}
+                testId="pesanan-kemasan-hint-trigger"
+              >
+                {item.package_type === "botol"
+                  ? `ℹ️ 1 karton = ${BOTOL_PER_KARTON} botol`
+                  : item.package_type !== "pcs" && Number(item.package_size) > 1
+                    ? `ℹ️ 1 ${item.package_type} = ${item.package_size} ${humanBaseUnit(item.package_type, item.base_unit)}`
+                    : `ℹ️ Rumus konversi`}
+              </KemasanRumusPopover>
+              {qtyMode === "karton" && item.package_type === "botol" && (Number(qty) || 0) > 0 && (
+                <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                  {Number(qty).toLocaleString("id-ID")} karton = {(Number(qty) * BOTOL_PER_KARTON).toLocaleString("id-ID")} botol
+                </span>
+              )}
+              {qtyMode === "package" && item.package_type !== "pcs" && item.package_type !== "botol" && Number(item.package_size) > 1 && (Number(qty) || 0) > 0 && (
+                <span className="ml-1 rounded bg-muted px-1.5 py-0.5 font-medium text-foreground">
+                  {Number(qty).toLocaleString("id-ID")} {item.package_type} = {(Number(qty) * Number(item.package_size)).toLocaleString("id-ID")} {humanBaseUnit(item.package_type, item.base_unit)}
+                </span>
+              )}
+            </div>
 
             <div className="grid grid-cols-2 gap-2">
               <label className="block">
