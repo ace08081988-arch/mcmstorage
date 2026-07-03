@@ -444,26 +444,31 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     async assertQuiescent(variant, opts) {
       const windowMs = opts?.windowMs ?? 1000;
       const stableTicks = opts?.stableTicks ?? 5;
+      const logTail = () =>
+        `\n  Event log terakhir (var=${variant}):\n${formatEventLog(20)}`;
       // (1) Handler benar-benar kosong untuk varian ini.
       if (queued[variant].length > 0) {
         throw new Error(
           `[apk-stub] assertQuiescent(${variant}): antrian belum kosong ` +
             `(${queued[variant].length} respons tersisa). Konsumsi dulu ` +
-            `atau enqueue lebih akurat sebelum memanggil helper ini.`,
+            `atau enqueue lebih akurat sebelum memanggil helper ini.` +
+            logTail(),
         );
       }
       if (waiters[variant].length > 0 || holding[variant] > 0) {
         throw new Error(
           `[apk-stub] assertQuiescent(${variant}): masih ada waiter ` +
             `tertahan (${waiters[variant].length}) — request menunggu ` +
-            `enqueue. Lepas atau selesaikan dulu.`,
+            `enqueue. Lepas atau selesaikan dulu.` +
+            logTail(),
         );
       }
       if (requested[variant] !== served[variant]) {
         throw new Error(
           `[apk-stub] assertQuiescent(${variant}): requested` +
             `=${requested[variant]} ≠ served=${served[variant]} ` +
-            `(ada request yang belum di-fulfill).`,
+            `(ada request yang belum di-fulfill).` +
+            logTail(),
         );
       }
       // (2) Snapshot counter.
@@ -483,7 +488,8 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
         throw new Error(
           `[apk-stub] assertQuiescent(${variant}) GAGAL: ada request ` +
             `tambahan dalam jendela ${windowMs}ms ` +
-            `(requested naik dari ${snapReq} → ${requested[variant]}).`,
+            `(requested naik dari ${snapReq} → ${requested[variant]}).` +
+            logTail(),
         );
       }
       // (4) Counter tetap stabil.
@@ -492,7 +498,8 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
           `[apk-stub] assertQuiescent(${variant}) GAGAL: counter ` +
             `berubah setelah jendela (requested ${snapReq}→` +
             `${requested[variant]}, served ${snapServ}→` +
-            `${served[variant]}).`,
+            `${served[variant]}).` +
+            logTail(),
         );
       }
       // (5) Ekstra: counter WAJIB tetap stabil selama `stableTicks`
@@ -514,7 +521,8 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
               `#${i + 1}/${stableTicks}: counter bergerak (requested ` +
               `${snapReq}→${requested[variant]}, served ${snapServ}→` +
               `${served[variant]}). Ada task tertunda yang memicu ` +
-              `refetch setelah handler tampak idle.`,
+              `refetch setelah handler tampak idle.` +
+              logTail(),
           );
         }
       }
@@ -534,7 +542,8 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
             `[apk-stub] assertCounterStable(${variant}) GAGAL pada ` +
               `tick #${i + 1}/${ticks}: requested ${snapReq}→` +
               `${requested[variant]}, served ${snapServ}→` +
-              `${served[variant]}.`,
+              `${served[variant]}.\n  Event log terakhir (var=${variant}):\n` +
+              formatEventLog(20),
           );
         }
       }
