@@ -168,6 +168,19 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
+      // E2E hint & badge breakdown konversi kemasan di /gudang.
+      // Harness publik `/lovable/visual/kemasan-badge` merender
+      // <KemasanRumusPopover> + <KemasanKonversiBadge> + fmtItemQty
+      // dengan payload yang sama. Test menegakkan (a) teks hint
+      // "1 karton = 100 botol" muncul di popover, (b) badge karton
+      // menampilkan `N karton = N×100 botol`, dan (c) angka botol pada
+      // badge konsisten dengan `fmtItemQty(N×100 botol)` di kolom Stok.
+      name: "kemasan-badge-hint-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /kemasan-badge-hint\.spec\.ts/,
+      use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
+    },
+    {
       // E2E visibilitas menu admin. Harness publik no-auth memverifikasi
       // (a) `filterSidebarItemsForAdmin` menyembunyikan `/pengaturan-apk`
       // & `/email-queue` dari non-admin, (b) klasifikasi halaman APK
