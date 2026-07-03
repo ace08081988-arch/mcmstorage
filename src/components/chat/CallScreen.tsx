@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -19,6 +20,26 @@ import {
 } from "@/lib/calls";
 import { supabase } from "@/integrations/supabase/client";
 import { getCallStatusVisual, type CallVisualStatus } from "@/lib/call-status-visual";
+import {
+  applyAudioSink,
+  guessDeviceKind,
+  iconForKind,
+  isOutputSelectionSupported,
+  labelForKind,
+  listOutputDevices,
+  loadPersistedVolume,
+  persistVolume,
+  type OutputDevice,
+  type AudioOutputKind,
+} from "@/lib/audio-output";
+import { getNativeAudioRoute } from "@/lib/native-audio-route";
+import {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetDescription,
+} from "@/components/ui/sheet";
 
 /**
  * Full-screen UI panggilan. Bertanggung jawab atas: setup peer, negosiasi
@@ -47,6 +68,12 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const [camOn, setCamOn] = useState(kind === "video");
   const [remoteReady, setRemoteReady] = useState(false);
   const [seconds, setSeconds] = useState(0);
+  const [volume, setVolume] = useState<number>(loadPersistedVolume());
+  const [outputs, setOutputs] = useState<OutputDevice[]>([]);
+  const [activeSinkId, setActiveSinkId] = useState<string>("default");
+  const [outputSheetOpen, setOutputSheetOpen] = useState(false);
+  const [turnConfigured, setTurnConfigured] = useState<boolean | null>(null);
+  const outputSupported = isOutputSelectionSupported();
 
   const sessionRef = useRef<PeerSession | null>(null);
   const acceptedAtRef = useRef<string | null>(null);
@@ -54,6 +81,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
   const doneRef = useRef(false);
+  const helloReceivedRef = useRef(false);
 
   const finalize = useCallback(
     async (status: "ended" | "declined" | "missed" | "cancelled" | "failed", reason?: string) => {
@@ -95,14 +123,18 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               if (vid && vid.srcObject !== stream) {
                 vid.srcObject = stream;
                 vid.muted = false;
+                vid.volume = volume;
                 void vid.play().catch(() => { /* akan retry saat user tap */ });
               }
               if (aud && aud.srcObject !== stream) {
                 aud.srcObject = stream;
                 aud.muted = false;
-                aud.volume = 1;
+                aud.volume = volume;
                 void aud.play().catch(() => { /* akan retry saat user tap */ });
               }
+              // Label perangkat baru terbuka penuh setelah izin media
+              // diberikan — segarkan daftar output audio.
+              void listOutputDevices().then(setOutputs);
             },
             onIceState: (s) => {
               if (s === "failed" || s === "disconnected") {
@@ -118,6 +150,15 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               // caller masih di fase awal.
               setPhase((p) => (p === "dialing" ? "ringing" : p));
             },
+            onPeerHello: () => {
+              helloReceivedRef.current = true;
+              // Callee sudah subscribe channel — resend offer supaya
+              // pesan tidak hilang karena race di broadcast Realtime.
+              if (role === "caller" && sessionRef.current) {
+                void startOffer(sessionRef.current);
+              }
+            },
+            onTurnStatus: (ok) => setTurnConfigured(ok),
           },
         });
         if (cancelled) { void session.close(); return; }
@@ -125,6 +166,18 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         if (localVideoRef.current) localVideoRef.current.srcObject = session.localStream;
 
         if (role === "caller") {
+          // Tunggu "hello" dari callee maks 4 detik; setelah itu tetap
+          // kirim offer sebagai fallback.
+          await new Promise<void>((resolve) => {
+            const t = setTimeout(resolve, 4000);
+            const iv = setInterval(() => {
+              if (helloReceivedRef.current) {
+                clearInterval(iv);
+                clearTimeout(t);
+                resolve();
+              }
+            }, 100);
+          });
           await startOffer(session);
         }
       } catch (e) {
@@ -175,6 +228,42 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [phase]);
+
+  // Terapkan volume ke elemen remote setiap kali berubah + persist.
+  useEffect(() => {
+    const v = remoteVideoRef.current;
+    const a = remoteAudioRef.current;
+    if (v) v.volume = volume;
+    if (a) a.volume = volume;
+    persistVolume(volume);
+  }, [volume]);
+
+  // Refresh daftar output audio saat mount dan saat perangkat berubah
+  // (headset/Bluetooth disambung/dilepas).
+  useEffect(() => {
+    let cancelled = false;
+    const refresh = async () => {
+      const list = await listOutputDevices();
+      if (!cancelled) setOutputs(list);
+    };
+    void refresh();
+    const md = typeof navigator !== "undefined" ? navigator.mediaDevices : null;
+    if (md && "addEventListener" in md) {
+      md.addEventListener("devicechange", refresh);
+      return () => {
+        cancelled = true;
+        md.removeEventListener("devicechange", refresh);
+      };
+    }
+    return () => { cancelled = true; };
+  }, []);
+
+  // Terapkan sink pilihan ke elemen media aktif.
+  useEffect(() => {
+    const target = kind === "video" ? remoteVideoRef.current : remoteAudioRef.current;
+    if (!target) return;
+    void applyAudioSink(target, activeSinkId);
+  }, [activeSinkId, kind, remoteReady]);
 
   // Callee menandai accepted di DB sekali peer session siap.
   useEffect(() => {
@@ -247,6 +336,37 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return visual.label;
   }, [phase, seconds, errorMsg, visual.label]);
 
+  const activeDevice = useMemo<OutputDevice | null>(() => {
+    if (outputs.length === 0) return null;
+    return (
+      outputs.find((d) => d.deviceId === activeSinkId) ??
+      outputs.find((d) => d.deviceId === "default") ??
+      outputs[0]
+    );
+  }, [outputs, activeSinkId]);
+  const activeKind: AudioOutputKind = activeDevice?.kind ?? "unknown";
+
+  const toggleSpeakerphone = useCallback(async () => {
+    const speakerDev = outputs.find((d) => d.kind === "speaker");
+    const nonSpeakerDev =
+      outputs.find((d) => d.kind !== "speaker") ??
+      outputs.find((d) => d.deviceId === "default");
+    if (speakerDev && nonSpeakerDev) {
+      const next =
+        activeKind === "speaker" ? nonSpeakerDev.deviceId : speakerDev.deviceId;
+      setActiveSinkId(next);
+      return;
+    }
+    const bridge = await getNativeAudioRoute();
+    if (bridge.available) {
+      const nextOn = activeKind !== "speaker";
+      await bridge.setSpeakerOn(nextOn);
+      toast.info(nextOn ? "Speaker keras aktif" : "Speaker keras nonaktif");
+      return;
+    }
+    toast.info("Ubah output dari kontrol sistem perangkat");
+  }, [outputs, activeKind]);
+
   // Ringback tone (nada tut-tut) untuk caller selama menunggu jawaban.
   // Pola tipe Indonesia: ~1 detik nada 425 Hz + ~4 detik hening,
   // sedikit dipersingkat supaya feedback terasa cepat.
@@ -312,12 +432,20 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         ) : (
           <audio ref={remoteAudioRef} autoPlay playsInline />
         )}
-        {/* Elemen audio remote tambahan untuk mode video — beberapa
-            browser (Android WebView) tidak selalu memutar audio track
-            lewat <video>. Menyediakan sink audio terpisah menjamin
-            suara terdengar. */}
+        {/* Elemen audio remote untuk mode video — beberapa browser
+            (Android WebView) tidak selalu memutar audio track lewat
+            <video>. Sink audio terpisah menjamin suara terdengar dan
+            memungkinkan setSinkId dipakai konsisten. Menggunakan satu
+            ref yang sama supaya volume/sink dapat dikontrol serentak. */}
         {kind === "video" ? (
-          <audio ref={remoteAudioRef} autoPlay playsInline className="hidden" />
+          <audio
+            ref={(el) => {
+              remoteAudioRef.current = el;
+            }}
+            autoPlay
+            playsInline
+            className="hidden"
+          />
         ) : null}
         {!remoteReady && kind === "video" ? (
           <div className="absolute inset-0 grid place-items-center bg-gradient-to-b from-neutral-900 to-black">
@@ -365,14 +493,103 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             <StatusIcon className={`h-3.5 w-3.5 ${statusIconClass}`} />
             <span>{status}</span>
           </button>
-          {phase === "connecting" || phase === "ringing" ? (
-            <Loader2 className="h-4 w-4 animate-spin text-white/70" />
-          ) : null}
+          <div className="flex items-center gap-2">
+            {activeDevice && phase === "in-call" ? (
+              <span
+                data-testid="call-active-device"
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[11px] text-white/80 backdrop-blur"
+                title={activeDevice.label}
+              >
+                <span aria-hidden>{iconForKind(activeKind)}</span>
+                <span className="max-w-[9rem] truncate">{activeDevice.label}</span>
+              </span>
+            ) : null}
+            {phase === "connecting" || phase === "ringing" ? (
+              <Loader2 className="h-4 w-4 animate-spin text-white/70" />
+            ) : null}
+          </div>
         </div>
+
+        {turnConfigured === false && phase !== "ended" ? (
+          <div
+            role="note"
+            data-testid="call-turn-warning"
+            className="absolute inset-x-4 top-14 flex items-start gap-2 rounded-md bg-amber-500/15 px-3 py-2 text-[11px] text-amber-100 backdrop-blur"
+          >
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+            <span>
+              TURN server belum diatur — panggilan bisa gagal di jaringan
+              seluler / Wi-Fi kantor. Atur TURN_URL, TURN_USERNAME, dan
+              TURN_CREDENTIAL pada Backend.
+            </span>
+          </div>
+        ) : null}
       </div>
 
       {/* Kontrol */}
-      <div className="flex items-center justify-center gap-4 border-t border-white/10 bg-black/60 px-4 py-6">
+      <div className="flex flex-col gap-3 border-t border-white/10 bg-black/60 px-4 py-4">
+        {/* Baris kontrol audio: output picker · speakerphone · volume */}
+        <div className="flex items-center justify-between gap-2">
+          <button
+            type="button"
+            data-testid="call-output-picker"
+            onClick={() => setOutputSheetOpen(true)}
+            disabled={!outputSupported && outputs.length === 0}
+            aria-label={
+              activeDevice
+                ? `Perangkat output aktif: ${activeDevice.label}. Ketuk untuk mengganti.`
+                : "Pilih perangkat output audio"
+            }
+            className="flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs hover:bg-white/20 disabled:opacity-50"
+          >
+            <span aria-hidden>{iconForKind(activeKind)}</span>
+            <span className="max-w-[7rem] truncate">
+              {activeDevice ? labelForKind(activeKind) : "Output"}
+            </span>
+            <ChevronDown className="h-3 w-3" />
+          </button>
+          <button
+            type="button"
+            data-testid="call-speakerphone-toggle"
+            onClick={() => void toggleSpeakerphone()}
+            aria-pressed={activeKind === "speaker"}
+            aria-label={
+              activeKind === "speaker"
+                ? "Matikan speaker keras"
+                : "Nyalakan speaker keras"
+            }
+            className={`flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs ${
+              activeKind === "speaker"
+                ? "bg-white text-black"
+                : "bg-white/10 hover:bg-white/20"
+            }`}
+          >
+            <span aria-hidden>🔊</span>
+            <span>Speaker</span>
+          </button>
+          <div className="flex flex-1 items-center gap-2 px-2">
+            {volume === 0 ? (
+              <VolumeX className="h-4 w-4 text-white/70" />
+            ) : volume < 0.5 ? (
+              <Volume1 className="h-4 w-4 text-white/70" />
+            ) : (
+              <Volume2 className="h-4 w-4 text-white/70" />
+            )}
+            <input
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={Math.round(volume * 100)}
+              onChange={(e) => setVolume(Number(e.target.value) / 100)}
+              data-testid="call-volume-slider"
+              aria-label="Volume dalam panggilan"
+              className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/20 accent-white"
+            />
+          </div>
+        </div>
+
+        <div className="flex items-center justify-center gap-4">
         <Button
           type="button"
           variant="ghost"
@@ -418,7 +635,52 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         >
           <PhoneOff className="h-6 w-6" />
         </Button>
+        </div>
       </div>
+
+      <Sheet open={outputSheetOpen} onOpenChange={setOutputSheetOpen}>
+        <SheetContent side="bottom" className="bg-black text-white">
+          <SheetHeader className="text-left">
+            <SheetTitle className="text-white">Pilih output audio</SheetTitle>
+            <SheetDescription className="text-white/60">
+              {outputSupported
+                ? "Ketuk perangkat untuk mengalihkan suara panggilan."
+                : "Peramban ini tidak mendukung pemilihan output — ubah dari kontrol sistem."}
+            </SheetDescription>
+          </SheetHeader>
+          <ul className="mt-4 space-y-1">
+            {outputs.length === 0 ? (
+              <li className="rounded-md px-3 py-2 text-sm text-white/60">
+                Tidak ada perangkat terdeteksi.
+              </li>
+            ) : (
+              outputs.map((d) => (
+                <li key={d.deviceId}>
+                  <button
+                    type="button"
+                    data-testid={`call-output-option-${d.kind}`}
+                    onClick={() => {
+                      setActiveSinkId(d.deviceId);
+                      setOutputSheetOpen(false);
+                    }}
+                    className={`flex w-full items-center justify-between rounded-md px-3 py-2 text-left text-sm hover:bg-white/10 ${
+                      d.deviceId === activeSinkId ? "bg-white/10" : ""
+                    }`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span aria-hidden>{iconForKind(guessDeviceKind(d.label))}</span>
+                      <span className="truncate">{d.label}</span>
+                    </span>
+                    <span className="text-[11px] text-white/50">
+                      {labelForKind(d.kind)}
+                    </span>
+                  </button>
+                </li>
+              ))
+            )}
+          </ul>
+        </SheetContent>
+      </Sheet>
     </div>
   );
 }
