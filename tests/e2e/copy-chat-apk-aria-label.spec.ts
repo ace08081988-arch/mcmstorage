@@ -1,9 +1,5 @@
 import { test, expect } from "@playwright/test";
 import { installApkStub, makeRelease } from "./_apk-availability-stub";
-import {
-  APK_STUB_PER_ACTION_WINDOW_MS,
-  APK_STUB_TERMINAL_WINDOW_MS,
-} from "./_helpers/apk-stub-timing";
 
 /**
  * E2E: verifikasi `aria-label` <CopyChatApkLinksButton variant="shortcut">
@@ -81,13 +77,13 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // Wrapper leak-guard: aksi tap tombol Chat tidak boleh menyentuh
     // varian storage sama sekali. Event-based; snapshot requested
     // ["storage"] & fail cepat kalau ada request storage bocor.
-    await stub.assertNoAdditionalRequests(
+    await stub.trackedAction(
       async () => {
         await mainByAria(
           /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
         ).click();
       },
-      { variant: "storage", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+      { variant: "storage" },
     );
 
     // Tunggu event "waiter tertahan" dari handler — bukti deterministik
@@ -122,11 +118,11 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // digantung, busy=true → aria-label harus berubah ke state
     // "Memproses…" dan tombol disabled.
     // (tidak enqueue chat → onClick fetchDetail menggantung → busy=true)
-    await stub.assertNoAdditionalRequests(
+    await stub.trackedAction(
       async () => {
         await mainByAria(idleAvailableLabel).click();
       },
-      { variant: "storage", windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+      { variant: "storage" },
     );
 
     // Bukti deterministik: request fetchDetail sudah tiba di handler
@@ -161,8 +157,6 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     await stub.assertQuiescent("chat", { windowMs: 1000 });
     await stub.assertQuiescent("storage", { windowMs: 500 });
     // Terminal: guard event-based untuk kedua varian.
-    await stub.assertNoAdditionalRequests({
-      windowMs: APK_STUB_TERMINAL_WINDOW_MS,
-    });
+    await stub.terminalGuard();
   });
 });

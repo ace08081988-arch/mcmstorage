@@ -1,4 +1,8 @@
-import type { Page, Route } from "@playwright/test";
+import type { Locator, Page, Route } from "@playwright/test";
+import {
+  APK_STUB_PER_ACTION_WINDOW_MS,
+  APK_STUB_TERMINAL_WINDOW_MS,
+} from "./_helpers/apk-stub-timing";
 
 /**
  * Helper deterministik untuk men-stub `getApkVariantDetail` di harness
@@ -335,6 +339,58 @@ export type ApkStub = {
       | [
           opts?: AssertNoAdditionalRequestsOpts,
         ]
+  ) => Promise<void>;
+  /**
+   * Wrapper tingkat tinggi untuk aksi UI yang MEMICU
+   * `getApkVariantDetail`. Menghilangkan boilerplate berulang:
+   *
+   *   // Sebelum
+   *   await stub.assertNoAdditionalRequests(
+   *     async () => { await refreshButton.click(); },
+   *     { expected: { chat: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+   *   );
+   *
+   *   // Sesudah
+   *   await stub.trackedAction(
+   *     () => refreshButton.click(),
+   *     { expected: { chat: 1 } },
+   *   );
+   *
+   * `windowMs` otomatis default ke {@link APK_STUB_PER_ACTION_WINDOW_MS}
+   * — spec tidak lagi perlu mengimpor konstanta untuk setiap tap.
+   * Semua opsi lain (`expected`, `ignore`, `variant`) diteruskan apa
+   * adanya ke {@link ApkStub.assertNoAdditionalRequests}.
+   */
+  trackedAction: (
+    action: () => Promise<void>,
+    opts?: AssertNoAdditionalRequestsOpts,
+  ) => Promise<void>;
+  /**
+   * Varian `trackedAction` yang menerima Playwright Locator langsung —
+   * kombinasi paling umum di spec APK:
+   *
+   *   await stub.trackedClick(chatRefresh, { expected: { chat: 1 } });
+   *
+   * Klik dilakukan tanpa opsi tambahan; kalau butuh `delay`/`force`,
+   * pakai `trackedAction(() => locator.click({...}), opts)`.
+   */
+  trackedClick: (
+    locator: Locator,
+    opts?: AssertNoAdditionalRequestsOpts,
+  ) => Promise<void>;
+  /**
+   * Terminal leak-guard untuk akhir spec — sama dengan memanggil
+   * `assertNoAdditionalRequests({ windowMs: ... })` tanpa aksi, dengan
+   * default `windowMs = {@link APK_STUB_TERMINAL_WINDOW_MS}`.
+   * Menghilangkan kebutuhan mengimpor konstanta timing di setiap spec.
+   *
+   *   await stub.terminalGuard();               // kedua varian
+   *   await stub.terminalGuard({ variant: "chat" });
+   */
+  terminalGuard: (
+    opts?: Omit<AssertNoAdditionalRequestsOpts, "windowMs"> & {
+      windowMs?: number;
+    },
   ) => Promise<void>;
   /**
    * Menunggu handler benar-benar IDLE (deterministik, tanpa
@@ -851,6 +907,35 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
         opts = args[0] as typeof opts;
       }
       await runNoAdditionalGuard(opts, action, "assertNoAdditionalRequests");
+    },
+    async trackedAction(action, opts) {
+      // Default windowMs → konstanta per-action. Opsi lain diteruskan
+      // apa adanya; kalau caller sengaja override windowMs, hormati.
+      const merged: AssertNoAdditionalRequestsOpts = {
+        windowMs: APK_STUB_PER_ACTION_WINDOW_MS,
+        ...(opts ?? {}),
+      };
+      await runNoAdditionalGuard(merged, action, "trackedAction");
+    },
+    async trackedClick(locator, opts) {
+      const merged: AssertNoAdditionalRequestsOpts = {
+        windowMs: APK_STUB_PER_ACTION_WINDOW_MS,
+        ...(opts ?? {}),
+      };
+      await runNoAdditionalGuard(
+        merged,
+        async () => {
+          await locator.click();
+        },
+        "trackedClick",
+      );
+    },
+    async terminalGuard(opts) {
+      const merged: AssertNoAdditionalRequestsOpts = {
+        windowMs: APK_STUB_TERMINAL_WINDOW_MS,
+        ...(opts ?? {}),
+      };
+      await runNoAdditionalGuard(merged, undefined, "terminalGuard");
     },
     waitForIdle(variant, opts) {
       const drainQueue = opts?.drainQueue ?? false;
