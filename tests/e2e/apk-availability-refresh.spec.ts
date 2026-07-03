@@ -32,6 +32,11 @@ test.describe("APK availability · refresh flow", () => {
     stub.assertPrimed();
     await page.goto(URL);
 
+    // Sinkronisasi deterministik: tunggu event served untuk kedua
+    // fetch awal (chat + storage) sebelum mengukur state idle.
+    await stub.waitForServed("chat", 1);
+    await stub.waitForServed("storage", 1);
+
     // Wrapper testid untuk membatasi query per tombol (aria-label bisa
     // mirip antar varian, mis. tombol refresh Storage vs Chat).
     const chatDl = page.getByTestId("apk-shortcut-download-chat");
@@ -72,6 +77,12 @@ test.describe("APK availability · refresh flow", () => {
     await chatRefresh.click();
     await storageRefresh.click();
     await copyRefresh.click();
+
+    // Tunggu event served untuk ketiga refetch (chat×2 karena copyChat
+    // & main chat berbagi query key → mungkin dedupe jadi 1; storage×1).
+    // Cukup pastikan servedCount naik: chat >= 2, storage >= 2.
+    await stub.waitForServed("storage", 2);
+    await stub.waitForServed("chat", 2);
 
     // Tombol otomatis aktif — label ganti ke aksi utama, ikon refresh hilang.
     // Assert label PERSIS per varian (exact match) supaya salah label / label
