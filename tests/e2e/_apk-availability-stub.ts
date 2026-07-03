@@ -341,6 +341,58 @@ export type ApkStub = {
         ]
   ) => Promise<void>;
   /**
+   * Wrapper tingkat tinggi untuk aksi UI yang MEMICU
+   * `getApkVariantDetail`. Menghilangkan boilerplate berulang:
+   *
+   *   // Sebelum
+   *   await stub.assertNoAdditionalRequests(
+   *     async () => { await refreshButton.click(); },
+   *     { expected: { chat: 1 }, windowMs: APK_STUB_PER_ACTION_WINDOW_MS },
+   *   );
+   *
+   *   // Sesudah
+   *   await stub.trackedAction(
+   *     () => refreshButton.click(),
+   *     { expected: { chat: 1 } },
+   *   );
+   *
+   * `windowMs` otomatis default ke {@link APK_STUB_PER_ACTION_WINDOW_MS}
+   * — spec tidak lagi perlu mengimpor konstanta untuk setiap tap.
+   * Semua opsi lain (`expected`, `ignore`, `variant`) diteruskan apa
+   * adanya ke {@link ApkStub.assertNoAdditionalRequests}.
+   */
+  trackedAction: (
+    action: () => Promise<void>,
+    opts?: AssertNoAdditionalRequestsOpts,
+  ) => Promise<void>;
+  /**
+   * Varian `trackedAction` yang menerima Playwright Locator langsung —
+   * kombinasi paling umum di spec APK:
+   *
+   *   await stub.trackedClick(chatRefresh, { expected: { chat: 1 } });
+   *
+   * Klik dilakukan tanpa opsi tambahan; kalau butuh `delay`/`force`,
+   * pakai `trackedAction(() => locator.click({...}), opts)`.
+   */
+  trackedClick: (
+    locator: Locator,
+    opts?: AssertNoAdditionalRequestsOpts,
+  ) => Promise<void>;
+  /**
+   * Terminal leak-guard untuk akhir spec — sama dengan memanggil
+   * `assertNoAdditionalRequests({ windowMs: ... })` tanpa aksi, dengan
+   * default `windowMs = {@link APK_STUB_TERMINAL_WINDOW_MS}`.
+   * Menghilangkan kebutuhan mengimpor konstanta timing di setiap spec.
+   *
+   *   await stub.terminalGuard();               // kedua varian
+   *   await stub.terminalGuard({ variant: "chat" });
+   */
+  terminalGuard: (
+    opts?: Omit<AssertNoAdditionalRequestsOpts, "windowMs"> & {
+      windowMs?: number;
+    },
+  ) => Promise<void>;
+  /**
    * Menunggu handler benar-benar IDLE (deterministik, tanpa
    * `waitForTimeout`). Kondisi idle:
    *
