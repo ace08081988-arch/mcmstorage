@@ -436,6 +436,179 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
 
   let primed = false;
 
+  /**
+   * Shared helper: verifikasi `requestedCount` & `servedCount` untuk
+   * `variant` TETAP sama dengan snapshot selama `ticks` event-loop
+   * ticks berturut-turut. Dipakai oleh `assertQuiescent` (fase akhir)
+   * dan `assertCounterStable` (mode standalone) supaya keduanya
+   * berbagi implementasi + format error yang sama.
+   */
+  async function verifyCounterStable(
+    variant: ApkVariant,
+    ticks: number,
+    snapReq: number,
+    snapServ: number,
+    caller: string,
+  ): Promise<void> {
+    for (let i = 0; i < ticks; i += 1) {
+      await new Promise<void>((r) => setTimeout(r, 0));
+      await Promise.resolve();
+      if (requested[variant] !== snapReq || served[variant] !== snapServ) {
+        throw new Error(
+          `[apk-stub] ${caller}(${variant}) GAGAL pada tick ` +
+            `#${i + 1}/${ticks}: counter bergerak (requested ` +
+            `${snapReq}→${requested[variant]}, served ${snapServ}→` +
+            `${served[variant]}). Ada task tertunda yang memicu ` +
+            `refetch setelah handler tampak idle.` +
+            `\n  Event log terakhir (var=${variant}):\n${formatEventLog(20)}`,
+        );
+      }
+    }
+  }
+
+  /**
+   * Shared helper: verifikasi tidak ada request tambahan yang masuk
+   * ke handler stub — dengan dukungan whitelist `expected` (kuantitatif)
+   * dan predikat `ignore`. Dipakai oleh `assertNoAdditionalRequests`
+   * (langsung, dengan atau tanpa action wrapper) dan `assertQuiescent`
+   * (dengan `variant` tunggal, tanpa whitelist).
+   *
+   * `caller` dipakai untuk memperjelas error message di CI — jadi kalau
+   * `assertQuiescent` yang memanggil, prefix errornya tetap
+   * `[apk-stub] assertQuiescent`, bukan generic.
+   */
+  async function runNoAdditionalGuard(
+    opts: AssertNoAdditionalRequestsOpts | undefined,
+    action: (() => Promise<void>) | undefined,
+    caller: string,
+  ): Promise<void> {
+    const windowMs = opts?.windowMs ?? 500;
+    const variants: ApkVariant[] = opts?.variant
+      ? [opts.variant]
+      : (["chat", "storage"] as const).slice();
+    const expectedByVariant: Record<ApkVariant, number> = {
+      chat: opts?.expected?.chat ?? 0,
+      storage: opts?.expected?.storage ?? 0,
+    };
+    const ignoreFn = opts?.ignore;
+
+    // Snapshot counter per varian SEBELUM aksi.
+    const snap: Record<ApkVariant, number> = { chat: 0, storage: 0 };
+    for (const v of variants) snap[v] = requested[v];
+    const sinceSnapshot: Record<ApkVariant, number> = { chat: 0, storage: 0 };
+
+    type Entry = {
+      variant: ApkVariant;
+      at: number;
+      nth: number;
+      reason: "allowed:expected" | "allowed:ignore" | "leak";
+    };
+    const entries: Entry[] = [];
+    const classify = (variant: ApkVariant): Entry => {
+      sinceSnapshot[variant] += 1;
+      const nth = sinceSnapshot[variant];
+      const info: ApkStubIgnoreInfo = {
+        variant,
+        nthSinceSnapshot: nth,
+        totalRequested: requested[variant],
+      };
+      let reason: Entry["reason"];
+      if (nth <= expectedByVariant[variant]) reason = "allowed:expected";
+      else if (ignoreFn && ignoreFn(info)) reason = "allowed:ignore";
+      else reason = "leak";
+      const entry: Entry = { variant, at: Date.now() - t0, nth, reason };
+      entries.push(entry);
+      return entry;
+    };
+    const hasLeak = () => entries.some((e) => e.reason === "leak");
+
+    const unsubs: Array<() => void> = [];
+    for (const v of variants) {
+      unsubs.push(subscribeTo(requestListeners[v])(() => classify(v)));
+    }
+    const cleanup = () => {
+      for (const u of unsubs) u();
+    };
+
+    const failIfLeaked = (phase: string) => {
+      const leaks = entries.filter((e) => e.reason === "leak");
+      if (leaks.length === 0) return;
+      const summary = leaks
+        .map((l) => `${l.variant}#${l.nth}@+${l.at}ms`)
+        .join(", ");
+      const allowedSummary = entries
+        .filter((e) => e.reason !== "leak")
+        .map((e) => `${e.variant}#${e.nth}(${e.reason.split(":")[1]})`)
+        .join(", ");
+      const after = variants
+        .map(
+          (v) =>
+            `${v}: req ${snap[v]}→${requested[v]} (expected=` +
+            `${expectedByVariant[v]}), served=${served[v]}`,
+        )
+        .join(" | ");
+      throw new Error(
+        `[apk-stub] ${caller} GAGAL (${phase}): ` +
+          `${leaks.length} request bocor [${summary}]` +
+          (allowedSummary
+            ? `; ${entries.length - leaks.length} diizinkan [${allowedSummary}]`
+            : "") +
+          `. ${after}` +
+          `\n  Event log terakhir:\n${formatEventLog(20)}`,
+      );
+    };
+
+    try {
+      if (action) {
+        await action();
+        failIfLeaked("selama aksi");
+      }
+      await new Promise<void>((resolve, reject) => {
+        let done = false;
+        const trailUnsubs: Array<() => void> = [];
+        const timer = setTimeout(() => {
+          if (done) return;
+          done = true;
+          for (const u of trailUnsubs) u();
+          resolve();
+        }, windowMs);
+        const onRequest = () => {
+          if (done) return;
+          if (!hasLeak()) return;
+          done = true;
+          clearTimeout(timer);
+          for (const u of trailUnsubs) u();
+          reject(new Error("__leak__"));
+        };
+        for (const v of variants) {
+          trailUnsubs.push(subscribeTo(requestListeners[v])(onRequest));
+        }
+      }).catch((err) => {
+        if (err instanceof Error && err.message === "__leak__") {
+          failIfLeaked(`trailing ${windowMs}ms`);
+        } else {
+          throw err;
+        }
+      });
+      failIfLeaked(`trailing ${windowMs}ms`);
+      for (const v of variants) {
+        const got = sinceSnapshot[v];
+        const want = expectedByVariant[v];
+        if (want > 0 && got < want) {
+          throw new Error(
+            `[apk-stub] ${caller} GAGAL: expected[${v}]=${want} tetapi ` +
+              `hanya ${got} request masuk selama aksi + trailing ` +
+              `${windowMs}ms. Aksi mungkin tidak memicu refetch seperti ` +
+              `yang diharapkan.` +
+              `\n  Event log terakhir:\n${formatEventLog(20)}`,
+          );
+        }
+      }
+    } finally {
+      cleanup();
+    }
+  }
+
   function nextResponse(variant: ApkVariant): Promise<ApkRelease[]> {
     const ready = queued[variant].shift();
     if (ready) return Promise.resolve(ready);
