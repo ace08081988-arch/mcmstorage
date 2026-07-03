@@ -84,6 +84,28 @@ export function makeDetail(
 
 type PendingWaiter = (releases: ApkRelease[]) => void;
 
+/**
+ * Info yang dilewatkan ke predikat `ignore` di
+ * {@link ApkStub.assertNoAdditionalRequests}. Berisi konteks yang cukup
+ * untuk mengklasifikasikan request tanpa memaksa pemakai membaca event
+ * log — cukup pilih berdasarkan varian dan/atau urutan.
+ */
+export type ApkStubIgnoreInfo = {
+  /** Varian request yang baru masuk. */
+  variant: ApkVariant;
+  /**
+   * Nomor request untuk `variant` ini sejak snapshot (1-based).
+   * Berguna kalau test hanya ingin mengabaikan request ke-N pertama
+   * (mis. "refetch invalidate sekali diperbolehkan").
+   */
+  nthSinceSnapshot: number;
+  /**
+   * Total `requestedCount` untuk `variant` setelah request ini masuk.
+   * Setara `stub.requestedCount(variant)` di titik event tersebut.
+   */
+  totalRequested: number;
+};
+
 export type ApkStub = {
   enqueue: (variant: ApkVariant, releases: ApkRelease[]) => void;
   /** Jumlah request yang selesai di-fulfill per varian. */
@@ -236,16 +258,10 @@ export type ApkStub = {
     ...args:
       | [
           action: () => Promise<void>,
-          opts?: {
-            variant?: ApkVariant;
-            windowMs?: number;
-          },
+          opts?: AssertNoAdditionalRequestsOpts,
         ]
       | [
-          opts?: {
-            variant?: ApkVariant;
-            windowMs?: number;
-          },
+          opts?: AssertNoAdditionalRequestsOpts,
         ]
   ) => Promise<void>;
   /**
