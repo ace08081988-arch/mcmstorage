@@ -78,6 +78,7 @@ import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovabl
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
 import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from './routes/lovable.visual.attachment-duration-consistency'
 import { Route as LovableVisualAppearanceImportRouteImport } from './routes/lovable.visual.appearance-import'
+import { Route as LovableVisualApkAvailabilityShortcutsRouteImport } from './routes/lovable.visual.apk-availability-shortcuts'
 import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
@@ -467,6 +468,12 @@ const LovableVisualAppearanceImportRoute =
     path: '/lovable/visual/appearance-import',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualApkAvailabilityShortcutsRoute =
+  LovableVisualApkAvailabilityShortcutsRouteImport.update({
+    id: '/lovable/visual/apk-availability-shortcuts',
+    path: '/lovable/visual/apk-availability-shortcuts',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualAdminVisibilityRoute =
   LovableVisualAdminVisibilityRouteImport.update({
     id: '/lovable/visual/admin-visibility',
@@ -627,6 +634,7 @@ export interface FileRoutesByFullPath {
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
+  '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
@@ -712,6 +720,7 @@ export interface FileRoutesByTo {
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
+  '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
@@ -800,6 +809,7 @@ export interface FileRoutesById {
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
+  '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
@@ -888,6 +898,7 @@ export interface FileRouteTypes {
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
+    | '/lovable/visual/apk-availability-shortcuts'
     | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
@@ -973,6 +984,7 @@ export interface FileRouteTypes {
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
+    | '/lovable/visual/apk-availability-shortcuts'
     | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
@@ -1060,6 +1072,7 @@ export interface FileRouteTypes {
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
     | '/lovable/visual/admin-visibility'
+    | '/lovable/visual/apk-availability-shortcuts'
     | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/chat-deleted'
@@ -1099,6 +1112,7 @@ export interface RootRouteChildren {
   ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
   LovableVisualAdminVisibilityRoute: typeof LovableVisualAdminVisibilityRoute
+  LovableVisualApkAvailabilityShortcutsRoute: typeof LovableVisualApkAvailabilityShortcutsRoute
   LovableVisualAppearanceImportRoute: typeof LovableVisualAppearanceImportRoute
   LovableVisualAttachmentDurationConsistencyRoute: typeof LovableVisualAttachmentDurationConsistencyRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
@@ -1602,6 +1616,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualAppearanceImportRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/apk-availability-shortcuts': {
+      id: '/lovable/visual/apk-availability-shortcuts'
+      path: '/lovable/visual/apk-availability-shortcuts'
+      fullPath: '/lovable/visual/apk-availability-shortcuts'
+      preLoaderRoute: typeof LovableVisualApkAvailabilityShortcutsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/admin-visibility': {
       id: '/lovable/visual/admin-visibility'
       path: '/lovable/visual/admin-visibility'
@@ -1905,6 +1926,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
   LovableVisualAdminVisibilityRoute: LovableVisualAdminVisibilityRoute,
+  LovableVisualApkAvailabilityShortcutsRoute:
+    LovableVisualApkAvailabilityShortcutsRoute,
   LovableVisualAppearanceImportRoute: LovableVisualAppearanceImportRoute,
   LovableVisualAttachmentDurationConsistencyRoute:
     LovableVisualAttachmentDurationConsistencyRoute,

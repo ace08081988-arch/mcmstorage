@@ -114,6 +114,16 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E alur ketersediaan APK pada tombol pintas Pengaturan.
+      // Harness publik /lovable/visual/apk-availability-shortcuts —
+      // no-auth, respons `getApkVariantDetail` di-stub via page.route.
+      // Menguji: idle "Belum tersedia" → tap ikon refresh → aktif.
+      name: "apk-availability-refresh-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /apk-availability-refresh\.spec\.ts/,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
       // E2E konsistensi label /diagnostik/paket: memverifikasi bahwa
       // "Isi / kemasan", "Harga per", dan "Ringkasan · yang tersedia"
       // SELALU konsisten dengan pilihan dropdown Jenis kemasan
