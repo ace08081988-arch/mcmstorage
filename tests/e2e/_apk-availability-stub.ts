@@ -74,6 +74,8 @@ export type ApkStub = {
   enqueue: (variant: ApkVariant, releases: ApkRelease[]) => void;
   /** Jumlah request yang selesai di-fulfill per varian. */
   servedCount: (variant: ApkVariant) => number;
+  /** Jumlah request yang sudah TIBA di handler (belum tentu di-fulfill). */
+  requestedCount: (variant: ApkVariant) => number;
   /** Jumlah antrian tersisa & waiter yang belum dilayani. */
   pending: () => { chat: number; storage: number; waiters: number };
   /**
@@ -93,6 +95,43 @@ export type ApkStub = {
    * setup dan initial fetch tergantung menunggu waiter selamanya.
    */
   assertPrimed: () => void;
+  /**
+   * Menunggu handler menerima request ke-`n` untuk `variant` (event
+   * "request tiba" — sebelum fulfill). Deterministik: berbasis event
+   * counter internal, bukan `page.waitForTimeout` / `expect.poll`.
+   * Cocok untuk assertion state "checking/busy" — pastikan request
+   * benar-benar sampai di handler sebelum mengukur UI, tanpa
+   * bergantung wall-clock CI.
+   *
+   * @param variant "chat" atau "storage"
+   * @param n       nomor request ke-N (1-based). Default 1.
+   * @param timeoutMs default 10_000 ms (bukan sleep; hanya batas atas
+   *                  agar test tidak hang selamanya kalau logika salah).
+   */
+  waitForRequest: (
+    variant: ApkVariant,
+    n?: number,
+    timeoutMs?: number,
+  ) => Promise<void>;
+  /**
+   * Menunggu handler SELESAI fulfill request ke-`n` untuk `variant`
+   * (event "served" — setelah `route.fulfill`). Deterministik,
+   * berbasis event counter — dipakai untuk assertion "tepat N refetch
+   * per tap" tanpa `expect.poll` yang bergantung timing.
+   */
+  waitForServed: (
+    variant: ApkVariant,
+    n: number,
+    timeoutMs?: number,
+  ) => Promise<void>;
+  /**
+   * Menunggu handler menahan waiter untuk `variant` (request tiba
+   * TAPI antrian kosong → handler menunggu enqueue). Dipakai untuk
+   * pola "hold → release": test yakin request sudah sampai di
+   * handler dan sedang digantung SEBELUM mengukur state UI
+   * (mis. "Memeriksa…") lalu `enqueue` untuk melepaskan.
+   */
+  waitForHold: (variant: ApkVariant, timeoutMs?: number) => Promise<void>;
 };
 
 function detectVariant(raw: string): ApkVariant {
@@ -103,11 +142,62 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
   const queued: Record<ApkVariant, ApkRelease[][]> = { chat: [], storage: [] };
   const waiters: Record<ApkVariant, PendingWaiter[]> = { chat: [], storage: [] };
   const served: Record<ApkVariant, number> = { chat: 0, storage: 0 };
+  const requested: Record<ApkVariant, number> = { chat: 0, storage: 0 };
+  /** Berapa waiter yang saat ini tertahan (menunggu enqueue). */
+  const holding: Record<ApkVariant, number> = { chat: 0, storage: 0 };
+  /** Listener terdaftar per event: dipanggil setelah counter bertambah. */
+  type Listener = () => void;
+  const requestListeners: Record<ApkVariant, Listener[]> = { chat: [], storage: [] };
+  const servedListeners: Record<ApkVariant, Listener[]> = { chat: [], storage: [] };
+  const holdListeners: Record<ApkVariant, Listener[]> = { chat: [], storage: [] };
+
+  function fire(list: Listener[]) {
+    // Copy dulu — listener boleh melepas dirinya sendiri dari array.
+    for (const fn of list.slice()) fn();
+  }
+
+  function waitFor(
+    check: () => boolean,
+    subscribe: (fn: Listener) => () => void,
+    label: string,
+    timeoutMs: number,
+  ): Promise<void> {
+    if (check()) return Promise.resolve();
+    return new Promise<void>((resolve, reject) => {
+      let done = false;
+      const timer = setTimeout(() => {
+        if (done) return;
+        done = true;
+        unsubscribe();
+        reject(new Error(`[apk-stub] Timeout ${timeoutMs}ms menunggu ${label}`));
+      }, timeoutMs);
+      const unsubscribe = subscribe(() => {
+        if (done || !check()) return;
+        done = true;
+        clearTimeout(timer);
+        unsubscribe();
+        resolve();
+      });
+    });
+  }
+
+  function subscribeTo(list: Listener[]) {
+    return (fn: Listener) => {
+      list.push(fn);
+      return () => {
+        const idx = list.indexOf(fn);
+        if (idx >= 0) list.splice(idx, 1);
+      };
+    };
+  }
   let primed = false;
 
   function nextResponse(variant: ApkVariant): Promise<ApkRelease[]> {
     const ready = queued[variant].shift();
     if (ready) return Promise.resolve(ready);
+    // Tidak ada antrian → handler akan MENAHAN waiter sampai enqueue.
+    holding[variant] += 1;
+    fire(holdListeners[variant]);
     return new Promise<ApkRelease[]>((resolve) => {
       waiters[variant].push(resolve);
     });
@@ -121,8 +211,11 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
       raw = req.postData() ?? "";
     }
     const variant = detectVariant(raw);
+    requested[variant] += 1;
+    fire(requestListeners[variant]);
     const releases = await nextResponse(variant);
     served[variant] += 1;
+    fire(servedListeners[variant]);
     await route.fulfill({
       status: 200,
       contentType: "application/json",
@@ -133,11 +226,19 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
   return {
     enqueue(variant, releases) {
       const waiter = waiters[variant].shift();
-      if (waiter) waiter(releases);
-      else queued[variant].push(releases);
+      if (waiter) {
+        // Melepas waiter yang tertahan — kurangi counter holding.
+        holding[variant] = Math.max(0, holding[variant] - 1);
+        waiter(releases);
+      } else {
+        queued[variant].push(releases);
+      }
     },
     servedCount(variant) {
       return served[variant];
+    },
+    requestedCount(variant) {
+      return requested[variant];
     },
     pending() {
       return {
@@ -148,13 +249,8 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     },
     primeInitial(chatReleases = [], storageReleases = []) {
       // Enqueue respons untuk fetch awal (mount) kedua varian.
-      const enqueueOne = (variant: ApkVariant, releases: ApkRelease[]) => {
-        const waiter = waiters[variant].shift();
-        if (waiter) waiter(releases);
-        else queued[variant].push(releases);
-      };
-      enqueueOne("chat", chatReleases);
-      enqueueOne("storage", storageReleases);
+      this.enqueue("chat", chatReleases);
+      this.enqueue("storage", storageReleases);
       primed = true;
     },
     assertPrimed() {
@@ -173,6 +269,30 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
             "sebelum navigasi.",
         );
       }
+    },
+    waitForRequest(variant, n = 1, timeoutMs = 10_000) {
+      return waitFor(
+        () => requested[variant] >= n,
+        subscribeTo(requestListeners[variant]),
+        `request ${variant} #${n} (sekarang=${requested[variant]})`,
+        timeoutMs,
+      );
+    },
+    waitForServed(variant, n, timeoutMs = 10_000) {
+      return waitFor(
+        () => served[variant] >= n,
+        subscribeTo(servedListeners[variant]),
+        `served ${variant} #${n} (sekarang=${served[variant]})`,
+        timeoutMs,
+      );
+    },
+    waitForHold(variant, timeoutMs = 10_000) {
+      return waitFor(
+        () => holding[variant] >= 1,
+        subscribeTo(holdListeners[variant]),
+        `waiter tertahan ${variant} (holding=${holding[variant]})`,
+        timeoutMs,
+      );
     },
   };
 }
