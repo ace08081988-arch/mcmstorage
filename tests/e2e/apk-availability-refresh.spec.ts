@@ -25,8 +25,11 @@ test.describe("APK availability · refresh flow", () => {
     const stub = await installApkStub(page);
 
     // Fetch awal (mount): kedua varian kembalikan rilis kosong.
-    stub.enqueue("chat", []);
-    stub.enqueue("storage", []);
+    // `primeInitial()` + `assertPrimed()` menegaskan setup halaman
+    // SUDAH lengkap sebelum navigasi — kalau lupa, test gagal cepat
+    // (bukan hang menunggu waiter yang tidak pernah di-enqueue).
+    stub.primeInitial();
+    stub.assertPrimed();
     await page.goto(URL);
 
     // Wrapper testid untuk membatasi query per tombol (aria-label bisa
