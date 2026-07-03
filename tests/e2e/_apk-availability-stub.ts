@@ -190,6 +190,16 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
       };
     };
   }
+  function enqueueOne(variant: ApkVariant, releases: ApkRelease[]) {
+    const waiter = waiters[variant].shift();
+    if (waiter) {
+      holding[variant] = Math.max(0, holding[variant] - 1);
+      waiter(releases);
+    } else {
+      queued[variant].push(releases);
+    }
+  }
+
   let primed = false;
 
   function nextResponse(variant: ApkVariant): Promise<ApkRelease[]> {
@@ -225,14 +235,7 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
 
   return {
     enqueue(variant, releases) {
-      const waiter = waiters[variant].shift();
-      if (waiter) {
-        // Melepas waiter yang tertahan — kurangi counter holding.
-        holding[variant] = Math.max(0, holding[variant] - 1);
-        waiter(releases);
-      } else {
-        queued[variant].push(releases);
-      }
+      enqueueOne(variant, releases);
     },
     servedCount(variant) {
       return served[variant];
@@ -249,8 +252,8 @@ export async function installApkStub(page: Page): Promise<ApkStub> {
     },
     primeInitial(chatReleases = [], storageReleases = []) {
       // Enqueue respons untuk fetch awal (mount) kedua varian.
-      this.enqueue("chat", chatReleases);
-      this.enqueue("storage", storageReleases);
+      enqueueOne("chat", chatReleases);
+      enqueueOne("storage", storageReleases);
       primed = true;
     },
     assertPrimed() {
