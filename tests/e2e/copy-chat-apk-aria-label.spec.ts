@@ -50,6 +50,11 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
       wrapper.getByRole("button", { name });
 
     // ============ (1) Idle · belum tersedia ============
+    // Sinkronisasi awal: tunggu event served untuk kedua fetch mount
+    // (chat + storage) — assertion UI berikutnya tidak bergantung
+    // interval polling / timing render.
+    await stub.waitForServed("chat", 1);
+    await stub.waitForServed("storage", 1);
     await expect(
       mainByAria(
         /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
@@ -73,6 +78,10 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
       /^APK MCM Chat belum tersedia — ketuk untuk cek ulang$/,
     ).click();
 
+    // Tunggu event "waiter tertahan" dari handler — bukti deterministik
+    // bahwa refetch chat sudah sampai di handler dan sedang digantung.
+    await stub.waitForHold("chat");
+
     const checkingLabel =
       /^Memeriksa ketersediaan APK MCM Chat, tombol dinonaktifkan sementara$/;
     await expect(mainByAria(checkingLabel)).toBeVisible();
@@ -90,6 +99,7 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // ============ (3) Idle · tersedia ============
     // Rilis waiter chat dengan rilis tersedia.
     stub.enqueue("chat", [makeRelease("chat")]);
+    await stub.waitForServed("chat", 2);
     const idleAvailableLabel = /^Salin semua link APK Chat$/;
     await expect(mainByAria(idleAvailableLabel)).toBeVisible();
     await expect(mainByAria(idleAvailableLabel)).toBeEnabled();
@@ -101,6 +111,10 @@ test.describe("CopyChatApkLinksButton · aria-label per state", () => {
     // "Memproses…" dan tombol disabled.
     // (tidak enqueue chat → onClick fetchDetail menggantung → busy=true)
     await mainByAria(idleAvailableLabel).click();
+
+    // Bukti deterministik: request fetchDetail sudah tiba di handler
+    // dan digantung. Aman untuk mengukur label "Memproses…".
+    await stub.waitForHold("chat");
 
     const busyLabel =
       /^Memproses: menyalin semua link APK MCM Chat, tombol dinonaktifkan sementara$/;
