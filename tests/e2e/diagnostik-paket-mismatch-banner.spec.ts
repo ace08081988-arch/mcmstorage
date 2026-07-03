@@ -92,12 +92,15 @@ test.describe("/diagnostik/paket · banner mismatch", () => {
     await expectAllClasses(mismatch, MISMATCH_CLASS_TOKENS);
 
     // Teks pesan menyebut baseUnit yang dideteksi (pcs) VS effBaseUnit (g).
-    // Format hasil: "displayBaseUnit (pcs) ≠ effBaseUnit (g)".
+    // Dua bullet: pertama perbandingan display vs eff, kedua peringatan
+    // mode=new bahwa displayBaseUnit tidak cocok dengan defaultBaseUnit
+    // untuk packageType yang tampil.
     const bullets = mismatch.locator("li");
-    await expect(bullets).toHaveCount(1);
-    await expect(bullets.first()).toHaveText(
+    await expect(bullets).toHaveCount(2);
+    await expect(bullets).toHaveText([
       "displayBaseUnit (pcs) ≠ effBaseUnit (g)",
-    );
+      "mode=new: displayBaseUnit (pcs) tidak sesuai defaultBaseUnit(gram)=g",
+    ]);
 
     // Display & label mengikuti override (bukti label benar-benar stale).
     await expect(page.getByTestId("diag-display-base-unit")).toHaveText("pcs");
@@ -126,10 +129,15 @@ test.describe("/diagnostik/paket · banner mismatch", () => {
     await expect(mismatch).toBeVisible();
     await expect(mismatch.locator("h2")).toHaveText("⚠ Mismatch terdeteksi");
     await expectAllClasses(mismatch, MISMATCH_CLASS_TOKENS);
-    // Format pesan: "displayPackageType (botol) ≠ effPackageType (gram)".
-    await expect(mismatch.locator("li").first()).toHaveText(
+    // Bullet 1: perbandingan packageType; bullet 2: peringatan mode=new
+    // bahwa displayBaseUnit ("g", diturunkan dari packageType asli "gram")
+    // tidak cocok dengan defaultBaseUnit untuk displayPackageType ("botol"→"pcs").
+    const bullets = mismatch.locator("li");
+    await expect(bullets).toHaveCount(2);
+    await expect(bullets).toHaveText([
       "displayPackageType (botol) ≠ effPackageType (gram)",
-    );
+      "mode=new: displayBaseUnit (g) tidak sesuai defaultBaseUnit(botol)=pcs",
+    ]);
     await expect(page.getByTestId("diag-display-package-type")).toHaveText(
       "botol",
     );
