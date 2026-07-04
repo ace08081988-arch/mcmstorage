@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { editorFeedback } from "@/lib/editor-feedback";
 
-type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string };
+type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string; opacity: number };
 type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
 type Layer =
   | ({ kind: "text"; text: string; size: number; bold: boolean } & LayerBase)
