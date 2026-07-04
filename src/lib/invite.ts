@@ -41,6 +41,22 @@ export function formatInviteCode(code: string | null | undefined): string {
   return `${n.slice(0, 4)}-${n.slice(4)}`;
 }
 
+export type InviteCodeValidation =
+  | { ok: true; code: string }
+  | { ok: false; code: ""; reason: string };
+
+/** Validasi format PIN MCM sebelum request dikirim. */
+export function validateInviteCode(raw: string): InviteCodeValidation {
+  const clean = normalizeInviteCode(raw);
+  if (!clean) {
+    return { ok: false, code: "", reason: "PIN MCM tidak boleh kosong." };
+  }
+  if (!isLikelyInviteCode(clean)) {
+    return { ok: false, code: "", reason: "PIN MCM harus 6–16 karakter huruf atau angka." };
+  }
+  return { ok: true, code: clean };
+}
+
 export function buildInviteUrl(code: string): string {
   const origin =
     typeof window !== "undefined" && window.location?.origin
