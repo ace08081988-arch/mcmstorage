@@ -11,12 +11,20 @@ import { supabase } from "@/integrations/supabase/client";
 export function useAdminStatus() {
   const [userId, setUserId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
+  // `signedOut` hanya true ketika event `SIGNED_OUT` / `USER_DELETED` benar-
+  // benar terjadi. Session=null sementara (TOKEN_REFRESHED / INITIAL_SESSION
+  // / reconnect WebView Android) TIDAK menyalakan flag ini, sehingga
+  // konsumen (mis. /tugas-baru) bisa membedakan "logout sungguhan" dari
+  // "session sedang di-hydrate".
+  const [signedOut, setSignedOut] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
     void supabase.auth.getUser().then(({ data }) => {
       if (cancelled) return;
-      setUserId(data.user?.id ?? null);
+      const uid = data.user?.id ?? null;
+      setUserId(uid);
+      if (uid) setSignedOut(false);
       setReady(true);
     });
     // Jangan reset userId hanya karena event auth mengirim session sementara
@@ -29,8 +37,10 @@ export function useAdminStatus() {
       const nextId = session?.user?.id ?? null;
       if (event === "SIGNED_OUT") {
         setUserId(null);
+        setSignedOut(true);
       } else if (nextId) {
         setUserId((prev) => (prev === nextId ? prev : nextId));
+        setSignedOut(false);
       }
       setReady(true);
     });
@@ -57,7 +67,13 @@ export function useAdminStatus() {
   return {
     isAdmin: ready && !!userId && query.data === true,
     isCheckingAdmin:
-      !ready || (!!userId && (query.isLoading || (query.isFetching && query.data === undefined))),
+      !ready
+      || (!!userId && (query.isLoading || (query.isFetching && query.data === undefined)))
+      // Session null yang TIDAK diakibatkan SIGNED_OUT nyata → perlakukan
+      // sebagai "masih memeriksa" supaya konsumen tidak swap ke layar
+      // akses-ditolak selama window transient (reconnect, refresh token).
+      || (ready && !userId && !signedOut),
+    isSignedOut: signedOut,
     refetchAdminStatus: query.refetch,
   };
 }
