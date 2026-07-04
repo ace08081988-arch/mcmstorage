@@ -176,6 +176,25 @@ node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode terminal
 node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode full
 ```
 
+### Menjalankan E2E per mode
+
+Pilih perintah sesuai mode spec yang ingin diuji. Mode `form-only` tidak punya script khusus karena spec tersebut tidak memakai stub APK; jalankan lewat nama project Playwright.
+
+| Mode | Ciri spec | Jalankan semua spec mode ini | Jalankan satu spec contoh |
+|---|---|---|---|
+| `terminal` | Hanya memanggil `installApkStub`, tanpa `installServerFnPassthroughGuard` | `bun run test:e2e:apk:terminal` | `npx playwright test --project=apk-mount-quiescent-e2e` |
+| `full` | Memasang `installApkStub` + `installServerFnPassthroughGuard` | `bun run test:e2e:apk:full` | `npx playwright test --project=copy-chat-apk-aria-label-e2e` |
+| `form-only` | Tidak memakai `installApkStub` sama sekali | `npx playwright test --project=apk-min-validate-form-e2e` | `npx playwright test --project=apk-min-validate-form-e2e` |
+
+**Tips praktis:**
+
+- Untuk melihat daftar project dan modenya, buka `playwright.config.ts` atau jalankan `npx playwright test --list`.
+- Untuk debug satu spec dengan browser terlihat, tambahkan flag `--headed` atau `--debug`:
+  ```bash
+  npx playwright test --project=apk-mount-quiescent-e2e --headed
+  ```
+- Mode `full` sering lebih lambat karena memasang guard pada semua server function; jalankan hanya saat mengubah flow copy/export/link.
+
 ### Troubleshooting validasi (`bun run e2e:apk:validate`)
 
 Validator gagal umumnya karena project block di `playwright.config.ts` tidak cocak dengan isi spec. Berikut penyebab paling sering dan cara memperbaikinya.
