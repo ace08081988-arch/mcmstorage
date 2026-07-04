@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Sparkles, RotateCw, Eraser, Plus, Star, Trash2, ArrowLeft, Bookmark } from "lucide-react";
+import { Loader2, Sparkles, RotateCw, Eraser, Plus, Star, Trash2, ArrowLeft, Bookmark, Pencil } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -17,7 +21,7 @@ import { StickerView } from "@/components/chat/StickerView";
 import { sendMessage } from "@/lib/chat.functions";
 import { generateAiSticker } from "@/lib/sticker-ai.functions";
 import {
-  useStickerLibrary, saveSticker, removeSaved, toggleFav, pushRecent, type SavedSticker,
+  useStickerLibrary, saveSticker, removeSaved, updateSaved, toggleFav, pushRecent, type SavedSticker,
 } from "@/lib/sticker-library";
 
 const ARROW_DIRS: StickerArrowDir[] = [
@@ -51,6 +55,13 @@ export function StickerPickerDialog({
     mode.kind === "edit" || initial ? "editor" : "library",
   );
   const [saveOnSend, setSaveOnSend] = useState(true);
+  // Jika berisi id, artinya kita sedang MENGEDIT stiker koleksi lokal (bukan
+  // stiker yang sudah terkirim di percakapan). Commit akan memanggil
+  // updateSaved dan tidak mengirim pesan baru.
+  const [editingSavedId, setEditingSavedId] = useState<string | null>(null);
+  // Konfirmasi hapus (Android tidak punya "hover", jadi ikon Trash selalu
+  // terlihat — konfirmasi mencegah tekan tak sengaja).
+  const [confirmDelete, setConfirmDelete] = useState<SavedSticker | null>(null);
   const lib = useStickerLibrary();
 
   useEffect(() => {
@@ -59,6 +70,8 @@ export function StickerPickerDialog({
     setTab(initial?.kind ?? "arrow");
     setView(mode.kind === "edit" || initial ? "editor" : "library");
     setSaveOnSend(true);
+    setEditingSavedId(null);
+    setConfirmDelete(null);
   }, [open, initial]);
 
   function switchTab(nextKind: string) {
@@ -87,6 +100,10 @@ export function StickerPickerDialog({
       const body = encodeCard(card);
       if (mode.kind === "edit") {
         await mode.onCommit(body);
+      } else if (editingSavedId) {
+        // Mode edit koleksi lokal: perbarui item, jangan kirim pesan baru.
+        updateSaved(editingSavedId, { card });
+        toast.success("Stiker diperbarui");
       } else {
         await sendMessage({ data: { conversationId, body } });
         pushRecent(card);
@@ -121,11 +138,17 @@ export function StickerPickerDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {view === "editor" && mode.kind !== "edit" ? (
-              <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setView("library")}>
+              <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setView("library"); setEditingSavedId(null); }}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             ) : null}
-            {mode.kind === "edit" ? "Edit stiker" : view === "library" ? "Stiker" : "Buat stiker"}
+            {mode.kind === "edit"
+              ? "Edit stiker"
+              : view === "library"
+                ? "Stiker"
+                : editingSavedId
+                  ? "Edit stiker tersimpan"
+                  : "Buat stiker"}
           </DialogTitle>
         </DialogHeader>
 
@@ -137,7 +160,16 @@ export function StickerPickerDialog({
             busy={busy}
             onSend={sendFromLibrary}
             onToggleFav={(id) => toggleFav(id)}
-            onRemove={(id) => removeSaved(id)}
+            onRemove={(id) => {
+              const target = lib.saved.find((s) => s.id === id) ?? lib.recents.find((s) => s.id === id);
+              if (target) setConfirmDelete(target);
+            }}
+            onEdit={(s) => {
+              setEditingSavedId(s.id);
+              setCard(s.card);
+              setTab(s.card.kind);
+              setView("editor");
+            }}
             onNew={() => { setCard(defaultArrow()); setTab("arrow"); setView("editor"); }}
           />
         ) : (
@@ -173,7 +205,7 @@ export function StickerPickerDialog({
           </div>
         </div>
 
-        {mode.kind !== "edit" ? (
+        {mode.kind !== "edit" && !editingSavedId ? (
           <label className="flex items-center justify-between rounded-md border px-2 py-1.5 text-xs">
             <span className="flex items-center gap-1.5"><Bookmark className="h-3.5 w-3.5" /> Simpan ke koleksi setelah kirim</span>
             <Switch checked={saveOnSend} onCheckedChange={setSaveOnSend} />
@@ -183,12 +215,34 @@ export function StickerPickerDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>Batal</Button>
           <Button onClick={commit} disabled={busy}>
             {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
-            {mode.kind === "edit" ? "Simpan perubahan" : "Kirim"}
+            {mode.kind === "edit" || editingSavedId ? "Simpan perubahan" : "Kirim"}
           </Button>
         </DialogFooter>
         </>
         )}
       </DialogContent>
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus stiker?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Stiker ini akan hilang dari koleksi di perangkat ini. Pesan yang sudah terkirim tidak terpengaruh.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (confirmDelete) removeSaved(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
