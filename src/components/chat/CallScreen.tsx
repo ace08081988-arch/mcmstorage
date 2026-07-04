@@ -646,8 +646,8 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               muted
               className={
                 swapped
-                  ? "absolute inset-0 h-full w-full object-cover"
-                  : "h-full w-full rounded-lg border border-white/20 object-cover shadow-lg"
+                  ? `absolute inset-0 h-full w-full ${videoFitClass} bg-black`
+                  : `h-full w-full rounded-lg border border-white/20 ${videoFitClass} shadow-lg bg-black`
               }
             />
             {!swapped ? (
