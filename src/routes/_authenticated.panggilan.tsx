@@ -1,10 +1,13 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Phone, PhoneMissed, Video as VideoIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ChatBottomNav } from "@/components/chat/ChatBottomNav";
-import { listMyCalls, formatCallDuration, type CallRow } from "@/lib/calls";
+import { listMyCalls, formatCallDuration, createCallRow, type CallRow } from "@/lib/calls";
+import { dispatchStartCall } from "@/components/chat/CallHost";
+import { ringUser } from "@/lib/webrtc";
+import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useMyUserId } from "@/lib/chat";
 import { formatInviteCode } from "@/lib/invite";
@@ -32,6 +35,7 @@ function timeLabel(iso: string): string {
 
 function PanggilanPage() {
   const { data: myId } = useMyUserId();
+  const navigate = useNavigate();
   const calls = useQuery({
     queryKey: ["chat-calls", myId ?? "_"],
     queryFn: () => listMyCalls(100),
@@ -146,6 +150,34 @@ function PanggilanPage() {
                 row={c}
                 myId={myId ?? null}
                 nameMap={profiles.data ?? {}}
+                onOpenChat={(conversationId) =>
+                  void navigate({ to: "/chat/$conversationId", params: { conversationId } })
+                }
+                onStartCall={async (r) => {
+                  if (!myId) return;
+                  const peerId = r.caller_id === myId ? r.callee_id : r.caller_id;
+                  if (!peerId) return;
+                  const peerName = (profiles.data ?? {})[peerId] || "Kontak";
+                  try {
+                    const row = await createCallRow({
+                      conversationId: r.conversation_id,
+                      callerId: myId,
+                      calleeId: peerId,
+                      kind: r.kind,
+                    });
+                    dispatchStartCall({ callId: row.id, kind: r.kind, peerName });
+                    void ringUser({
+                      calleeId: peerId,
+                      callId: row.id,
+                      callerId: myId,
+                      kind: r.kind,
+                      conversationId: r.conversation_id,
+                      callerName: peerName,
+                    }).catch(() => { /* ring gagal — UI tetap jalan */ });
+                  } catch (e) {
+                    toast.error((e as { message?: string })?.message ?? "Gagal memulai panggilan");
+                  }
+                }}
               />
             ))}
           </ul>
@@ -158,11 +190,13 @@ function PanggilanPage() {
 }
 
 function CallRowItem({
-  row, myId, nameMap,
+  row, myId, nameMap, onOpenChat, onStartCall,
 }: {
   row: CallRow;
   myId: string | null;
   nameMap: Record<string, string>;
+  onOpenChat: (conversationId: string) => void;
+  onStartCall: (row: CallRow) => void | Promise<void>;
 }) {
   const outgoing = row.caller_id === myId;
   const peerId = outgoing ? row.callee_id : row.caller_id;
@@ -174,25 +208,39 @@ function CallRowItem({
     row.status === "ended" ? formatCallDuration(row.duration_sec) : undefined;
 
   return (
-    <li className="flex items-center gap-3 px-4 py-3">
-      <div className="grid h-11 w-11 place-items-center rounded-full bg-muted text-sm font-semibold uppercase">
-        {peerName.charAt(0)}
-      </div>
-      <div className="min-w-0 flex-1">
-        <div className={`truncate text-sm font-medium ${missed ? "text-red-600" : ""}`}>{peerName}</div>
-        <CallStatusButton
-          status={row.status as CallVisualStatus}
-          outgoing={outgoing}
-          overrideLabel={overrideLabel}
-          trailing={
-            <>
-              <span>·</span>
-              <span>{timeLabel(row.started_at)}</span>
-            </>
-          }
-        />
-      </div>
-      <Icon className={`h-5 w-5 ${row.kind === "video" ? "text-primary" : "text-muted-foreground"}`} />
+    <li className="flex items-center gap-1 px-2 py-1">
+      <button
+        type="button"
+        onClick={() => onOpenChat(row.conversation_id)}
+        className="flex flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/60 active:bg-muted"
+        aria-label={`Buka chat dengan ${peerName}`}
+      >
+        <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold uppercase">
+          {peerName.charAt(0)}
+        </div>
+        <div className="min-w-0 flex-1">
+          <div className={`truncate text-sm font-medium ${missed ? "text-red-600" : ""}`}>{peerName}</div>
+          <CallStatusButton
+            status={row.status as CallVisualStatus}
+            outgoing={outgoing}
+            overrideLabel={overrideLabel}
+            trailing={
+              <>
+                <span>·</span>
+                <span>{timeLabel(row.started_at)}</span>
+              </>
+            }
+          />
+        </div>
+      </button>
+      <button
+        type="button"
+        onClick={() => void onStartCall(row)}
+        className="grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-muted/60 active:bg-muted"
+        aria-label={row.kind === "video" ? `Panggilan video ke ${peerName}` : `Panggilan suara ke ${peerName}`}
+      >
+        <Icon className={`h-5 w-5 ${row.kind === "video" ? "text-primary" : "text-muted-foreground"}`} />
+      </button>
     </li>
   );
 }
