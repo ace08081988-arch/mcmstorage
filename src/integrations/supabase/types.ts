@@ -2369,6 +2369,9 @@ export type Database = {
           photo_path: string | null
           photo_paths: string[]
           sent_at: string | null
+          sent_channel: string | null
+          sent_summary: string | null
+          sent_to: string | null
           status: string
           title: string
           updated_at: string
@@ -2383,6 +2386,9 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           sent_at?: string | null
+          sent_channel?: string | null
+          sent_summary?: string | null
+          sent_to?: string | null
           status?: string
           title: string
           updated_at?: string
@@ -2397,6 +2403,9 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           sent_at?: string | null
+          sent_channel?: string | null
+          sent_summary?: string | null
+          sent_to?: string | null
           status?: string
           title?: string
           updated_at?: string
