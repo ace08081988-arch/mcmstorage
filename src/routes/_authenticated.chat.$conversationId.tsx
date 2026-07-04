@@ -152,6 +152,7 @@ function ChatRoomPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [muteOpen, setMuteOpen] = useState(false);
+  const [startingCall, setStartingCall] = useState(false);
   const { prefs: convPrefs, mutedNow } = useConvPrefs(myId ?? undefined, conversationId);
 
   // Toast saat pin/mute/arsip berubah dari tab/perangkat lain.
@@ -772,9 +773,11 @@ function ChatRoomPage() {
               variant="ghost"
               size="icon"
               aria-label="Panggilan suara"
-              disabled={!online}
+              aria-busy={startingCall}
+              disabled={!online || startingCall}
               onClick={async () => {
                 if (!dmPeer?.peerUserId || !myId) return;
+                setStartingCall(true);
                 try {
                   const row = await createCallRow({
                     conversationId,
@@ -793,18 +796,26 @@ function ChatRoomPage() {
                   }).catch(() => { /* ring gagal — UI tetap jalan */ });
                 } catch (e) {
                   toast.error((e as { message?: string })?.message ?? "Gagal memulai panggilan");
+                } finally {
+                  setStartingCall(false);
                 }
               }}
             >
-              <Phone className="h-5 w-5" />
+              {startingCall ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <Phone className="h-5 w-5" />
+              )}
             </Button>
             <Button
               variant="ghost"
               size="icon"
               aria-label="Panggilan video"
-              disabled={!online}
+              aria-busy={startingCall}
+              disabled={!online || startingCall}
               onClick={async () => {
                 if (!dmPeer?.peerUserId || !myId) return;
+                setStartingCall(true);
                 try {
                   const row = await createCallRow({
                     conversationId,
@@ -823,10 +834,16 @@ function ChatRoomPage() {
                   }).catch(() => { /* ring gagal — UI tetap jalan */ });
                 } catch (e) {
                   toast.error((e as { message?: string })?.message ?? "Gagal memulai panggilan");
+                } finally {
+                  setStartingCall(false);
                 }
               }}
             >
-              <VideoIcon className="h-5 w-5" />
+              {startingCall ? (
+                <Loader2 className="h-5 w-5 animate-spin" />
+              ) : (
+                <VideoIcon className="h-5 w-5" />
+              )}
             </Button>
           </>
         ) : null}
