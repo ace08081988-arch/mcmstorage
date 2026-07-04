@@ -491,6 +491,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
 
   return (
     <div
+      ref={rootRef}
       className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
       onPointerDown={resumePlayback}
     >
