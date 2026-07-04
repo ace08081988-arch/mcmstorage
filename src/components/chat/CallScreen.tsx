@@ -406,6 +406,77 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return () => clearInterval(t);
   }, [phase]);
 
+  // Terapkan preset kualitas video ke track lokal + parameter encoder
+  // sender. "auto" melepas batasan dan menyerahkan adaptasi ke browser.
+  useEffect(() => {
+    if (kind !== "video") return;
+    const session = sessionRef.current;
+    if (!session) return;
+    const preset: Record<
+      Exclude<VideoQuality, "auto">,
+      { width: number; height: number; frameRate: number; maxBitrate: number; scale: number }
+    > = {
+      low: { width: 320, height: 240, frameRate: 15, maxBitrate: 150_000, scale: 4 },
+      medium: { width: 640, height: 480, frameRate: 24, maxBitrate: 500_000, scale: 2 },
+      high: { width: 1280, height: 720, frameRate: 30, maxBitrate: 1_500_000, scale: 1 },
+    };
+    let cancelled = false;
+    (async () => {
+      try {
+        const videoTrack = session.localStream.getVideoTracks()[0];
+        if (videoTrack) {
+          try {
+            if (videoQuality === "auto") {
+              await videoTrack.applyConstraints({
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                frameRate: { ideal: 30 },
+              });
+            } else {
+              const p = preset[videoQuality];
+              await videoTrack.applyConstraints({
+                width: { ideal: p.width, max: p.width },
+                height: { ideal: p.height, max: p.height },
+                frameRate: { ideal: p.frameRate, max: p.frameRate },
+              });
+            }
+          } catch (err) {
+            console.warn("[call] applyConstraints gagal", err);
+          }
+        }
+        const sender = session.pc.getSenders().find((s) => s.track?.kind === "video");
+        if (sender) {
+          const params = sender.getParameters();
+          if (!params.encodings || params.encodings.length === 0) {
+            params.encodings = [{}];
+          }
+          if (videoQuality === "auto") {
+            for (const enc of params.encodings) {
+              delete (enc as { maxBitrate?: number }).maxBitrate;
+              delete (enc as { scaleResolutionDownBy?: number }).scaleResolutionDownBy;
+              delete (enc as { maxFramerate?: number }).maxFramerate;
+            }
+          } else {
+            const p = preset[videoQuality];
+            for (const enc of params.encodings) {
+              enc.maxBitrate = p.maxBitrate;
+              (enc as { maxFramerate?: number }).maxFramerate = p.frameRate;
+              (enc as { scaleResolutionDownBy?: number }).scaleResolutionDownBy = p.scale;
+            }
+          }
+          try {
+            await sender.setParameters(params);
+          } catch (err) {
+            console.warn("[call] setParameters gagal", err);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) console.warn("[call] apply video quality gagal", err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [videoQuality, kind, phase, remoteReady]);
+
   // Terapkan volume ke elemen remote setiap kali berubah + persist.
   useEffect(() => {
     const v = remoteVideoRef.current;
