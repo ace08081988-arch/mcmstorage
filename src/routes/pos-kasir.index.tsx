@@ -649,6 +649,13 @@ function PosKasirPage() {
               >
                 ⬇ Ekspor CSV ({riwayatFiltered.length})
               </button>
+              <button
+                onClick={exportPDF}
+                disabled={riwayatFiltered.length === 0}
+                className="text-xs px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-rose-700 text-white font-medium"
+              >
+                📄 Ekspor PDF ({riwayatFiltered.length})
+              </button>
               {riwayat.length > 0 && (
                 <button
                   onClick={() => setRiwayat([])}
