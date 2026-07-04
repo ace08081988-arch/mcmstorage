@@ -290,7 +290,6 @@ function ChatRoomPage() {
         ((data ?? []) as Array<{
           id: string;
           display_name: string | null;
-          email: string | null;
           phone: string | null;
           invite_code: string | null;
           last_seen_at?: string | null;
@@ -357,7 +356,7 @@ function ChatRoomPage() {
     return {
       peerUserId: other,
       peerPhone: p?.phone ?? null,
-      peerEmail: p?.email ?? null,
+      peerEmail: null,
       fallbackName:
         p?.display_name
         || (p?.invite_code ? `PIN ${formatInviteCode(p.invite_code)}` : null)
