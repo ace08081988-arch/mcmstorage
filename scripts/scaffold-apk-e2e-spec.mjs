@@ -214,7 +214,27 @@ async function main() {
   }
 
   const template = await fs.readFile(TEMPLATE, "utf8");
+  const templateInvalid = validateSpecContent(template, { label: "template" });
+  if (templateInvalid) {
+    console.error(`✗ ${templateInvalid}`);
+    console.error(
+      `  Perbaiki \`tests/e2e/_helpers/apk-spec.template.ts\` dulu sebelum scaffold.`,
+    );
+    process.exit(1);
+  }
+
   const specContent = buildSpec(template, name);
+  const specInvalid = validateSpecContent(specContent, {
+    label: `spec hasil scaffolding (${name}.spec.ts)`,
+  });
+  if (specInvalid) {
+    console.error(`✗ ${specInvalid}`);
+    console.error(
+      `  Ini seharusnya tidak terjadi — buildSpec() menghapus pola guard. Laporkan bug generator.`,
+    );
+    process.exit(1);
+  }
+
   const projectBlock = buildProjectBlock(name);
   const configText = await fs.readFile(CONFIG, "utf8");
   const { text: nextConfig, inserted, reason } = insertProject(
