@@ -136,7 +136,7 @@ function showScrollGuardHint(x: number, y: number, reason: "scroll" | "drift") {
     el.style.transition = "opacity 0ms, transform 0ms";
   }
 }
-import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound } from "lucide-react";
+import { Home, Package, Wallet, Lock, Tags, ClipboardList, Scale, PackagePlus, User, ClipboardCheck, MessageCircle, Activity, Sparkles, Mail, Wifi, WifiOff, RefreshCw, BellRing, NotebookPen, MessageSquarePlus, ContactRound, MonitorSmartphone, ShieldAlert, KeyRound, Calculator } from "lucide-react";
 import { useIsFetching } from "@tanstack/react-query";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -290,6 +290,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
     items: [
       { title: "Gudang & Supplier", url: "/gudang", icon: Package },
       { title: "Penyiapan Ecer", url: "/ecer", icon: Scale },
+      { title: "POS Kasir Curah", url: "/pos-kasir", icon: Calculator },
       { title: "Penyiapan Request", url: "/request", icon: PackagePlus },
       { title: "Penyiapan Produk", url: "/tugas", icon: ClipboardList },
       { title: "Buat Tugas Manual", url: "/tugas-baru", icon: ClipboardCheck },
