@@ -424,6 +424,31 @@ function TugasBaruForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Debounced duplicate-token check. Menjalankan RPC setelah token stabil ~450ms
+  // sehingga tidak menembak DB pada setiap keystroke; hasil terakhir yang menang
+  // dijaga lewat sequence number untuk menghindari race.
+  useEffect(() => {
+    if (created) return;
+    const t = token.trim();
+    if (!/^[A-Za-z0-9_-]{8,48}$/.test(t)) {
+      setTokenCheck({ status: t.length === 0 ? "idle" : "invalid", token: t });
+      return;
+    }
+    const seq = ++tokenCheckSeq.current;
+    setTokenCheck({ status: "checking", token: t });
+    const handle = window.setTimeout(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.rpc as any)("prep_share_token_exists", { _token: t });
+      if (tokenCheckSeq.current !== seq) return;
+      if (error) {
+        setTokenCheck({ status: "error", token: t, error: error.message });
+        return;
+      }
+      setTokenCheck({ status: data ? "duplicate" : "unique", token: t });
+    }, 450);
+    return () => window.clearTimeout(handle);
+  }, [token, created]);
+
   function updateRow(key: string, patch: Partial<Row>) {
     setRows((s) => s.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   }
