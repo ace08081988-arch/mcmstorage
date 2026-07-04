@@ -76,6 +76,45 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const [turnConfigured, setTurnConfigured] = useState<boolean | null>(null);
   const outputSupported = isOutputSelectionSupported();
 
+  // PiP (preview kecil) — user dapat swap besar/kecil, ubah ukuran, dan geser posisi.
+  const [swapped, setSwapped] = useState(false);
+  const [pipSize, setPipSize] = useState<"sm" | "md" | "lg">("md");
+  const [pipCorner, setPipCorner] = useState<"tl" | "tr" | "bl" | "br">("br");
+  const pipSizeClass =
+    pipSize === "sm" ? "h-24 w-20" : pipSize === "lg" ? "h-48 w-36" : "h-32 w-24";
+  const pipCornerClass =
+    pipCorner === "tl" ? "top-16 left-4"
+    : pipCorner === "tr" ? "top-16 right-4"
+    : pipCorner === "bl" ? "bottom-28 left-4"
+    : "bottom-28 right-4";
+  const cyclePipSize = useCallback(() => {
+    setPipSize((s) => (s === "sm" ? "md" : s === "md" ? "lg" : "sm"));
+  }, []);
+  const pipDragRef = useRef<{ id: number; startX: number; startY: number; moved: boolean } | null>(null);
+  const onPipPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    pipDragRef.current = { id: e.pointerId, startX: e.clientX, startY: e.clientY, moved: false };
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+  }, []);
+  const onPipPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const d = pipDragRef.current;
+    if (!d || d.id !== e.pointerId) return;
+    if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) > 8) d.moved = true;
+  }, []);
+  const onPipPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const d = pipDragRef.current;
+    pipDragRef.current = null;
+    try { (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    if (!d) return;
+    if (!d.moved) return; // tap tanpa drag: biar tombol yang handle
+    const rect = (e.currentTarget as HTMLDivElement).parentElement?.getBoundingClientRect();
+    if (!rect) return;
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const isLeft = cx < rect.width / 2;
+    const isTop = cy < rect.height / 2;
+    setPipCorner(isTop ? (isLeft ? "tl" : "tr") : (isLeft ? "bl" : "br"));
+  }, []);
+
   const sessionRef = useRef<PeerSession | null>(null);
   const acceptedAtRef = useRef<string | null>(null);
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
