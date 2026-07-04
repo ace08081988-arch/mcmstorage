@@ -652,8 +652,8 @@ function PosKasirPage() {
 
 
             {/* Mobile quick buttons */}
-            <div className="md:hidden space-y-2">
-              <div className="grid grid-cols-5 gap-2">
+            <div className={`md:hidden ${modeRingkas ? "space-y-1.5" : "space-y-2"}`}>
+              <div className={`grid grid-cols-5 ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
                 {QUICK_WEIGHTS.map((v) => {
                   const wouldExceed = berat + v > selected.stokKg;
                   return (
@@ -661,40 +661,41 @@ function PosKasirPage() {
                       key={v}
                       onClick={() => addBerat(v)}
                       disabled={wouldExceed}
-                      className={`py-2.5 rounded-lg border text-xs font-semibold transition-colors ${
+                      className={`rounded-lg border text-xs font-semibold transition-colors ${
                         wouldExceed
                           ? "bg-slate-800/50 border-slate-800 text-slate-600 cursor-not-allowed"
                           : "bg-slate-800 hover:bg-slate-700 border-slate-700 active:bg-emerald-600/30"
-                      }`}
+                      } ${modeRingkas ? "py-2" : "py-2.5"}`}
                     >
                       +{v}
                     </button>
                   );
                 })}
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className={`grid grid-cols-3 ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
                 <button
                   onClick={() => addBerat(-0.25)}
                   disabled={berat <= 0}
-                  className="py-2.5 rounded-lg border border-slate-700 bg-slate-800 text-xs font-semibold disabled:opacity-50 active:bg-slate-700"
+                  className={`rounded-lg border border-slate-700 bg-slate-800 text-xs font-semibold disabled:opacity-50 active:bg-slate-700 ${modeRingkas ? "py-2" : "py-2.5"}`}
                 >
                   -0.25
                 </button>
                 <button
                   onClick={() => setBeratStr("0")}
-                  className="py-2.5 rounded-lg border border-slate-700 bg-slate-800 text-xs font-semibold text-slate-400 active:bg-slate-700"
+                  className={`rounded-lg border border-slate-700 bg-slate-800 text-xs font-semibold text-slate-400 active:bg-slate-700 ${modeRingkas ? "py-2" : "py-2.5"}`}
                 >
                   Reset
                 </button>
                 <button
                   onClick={bayar}
                   disabled={!stokCukup}
-                  className="py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-xs font-bold text-white shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform"
+                  className={`rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-xs font-bold text-white shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform ${modeRingkas ? "py-2" : "py-2.5"}`}
                 >
                   Bayar
                 </button>
               </div>
             </div>
+
 
             {/* Desktop scale */}
             <div className="hidden md:block bg-gradient-to-b from-slate-950 to-black rounded-2xl p-6 border-2 border-slate-700 shadow-2xl">
