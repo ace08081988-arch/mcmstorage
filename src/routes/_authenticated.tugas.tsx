@@ -1724,12 +1724,30 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
     return () => { supabase.removeChannel(ch); };
   }, [task.id]);
 
-  async function setStatus(status: "done" | "active") {
+  const [completeOpen, setCompleteOpen] = useState(false);
+
+  async function markDone(note: string) {
     setBusy(true);
-    const { error } = await supabase.from("prep_tasks").update({ status }).eq("id", task.id);
+    const { error } = await supabase
+      .from("prep_tasks")
+      .update({ status: "done", completed_at: new Date().toISOString(), completion_note: note.trim() || null })
+      .eq("id", task.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Status diperbarui");
+    toast.success("Tugas ditandai selesai");
+    setCompleteOpen(false);
+    onClose();
+  }
+
+  async function reopenTask() {
+    setBusy(true);
+    const { error } = await supabase
+      .from("prep_tasks")
+      .update({ status: "active", completed_at: null, completion_note: null })
+      .eq("id", task.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Tugas diaktifkan lagi");
   }
 
   const url = publicTaskUrl(task.share_token);
@@ -1738,9 +1756,30 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
     <Modal title={task.title} onClose={onClose} wide>
       <div className="mb-3 flex flex-wrap gap-2">
         <button onClick={() => setSharePinOpen(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white"><MessageCircle className="h-4 w-4" /> Bagikan link + PIN</button>
-        <button disabled={busy} onClick={() => setStatus(task.status === "done" ? "active" : "done")} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs">{task.status === "done" ? "Aktifkan lagi" : "Tandai selesai"}</button>
+        {task.status === "done" ? (
+          <button disabled={busy} onClick={reopenTask} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs">Aktifkan lagi</button>
+        ) : (
+          <button disabled={busy} onClick={() => setCompleteOpen(true)} className="inline-flex h-9 items-center gap-1 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"><CheckCircle2 className="h-4 w-4" /> Tandai selesai</button>
+        )}
         <a href={url} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs"><ExternalLink className="h-4 w-4" /> Pratinjau link pegawai</a>
       </div>
+      {task.status === "done" && task.completed_at && (
+        <div className="mb-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
+            <CheckCircle2 className="h-4 w-4" /> Selesai pada {new Date(task.completed_at).toLocaleString("id-ID")}
+          </div>
+          {task.completion_note && (
+            <div className="mt-1 whitespace-pre-wrap text-foreground">{task.completion_note}</div>
+          )}
+        </div>
+      )}
+      {completeOpen && (
+        <CompleteTaskDialog
+          busy={busy}
+          onClose={() => setCompleteOpen(false)}
+          onConfirm={markDone}
+        />
+      )}
       {sharePinOpen && (
         <SharePinDialog title={task.title} url={url} taskId={task.id} shareToken={task.share_token} onClose={() => setSharePinOpen(false)} />
       )}
