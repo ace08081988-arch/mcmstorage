@@ -295,19 +295,47 @@ async function main() {
 
   const projectBlock = buildProjectBlock(name);
   const configText = await fs.readFile(CONFIG, "utf8");
-  const { text: nextConfig, inserted, reason } = insertProject(
+  const { text: nextConfig, inserted, reason, insertAt } = insertProject(
     configText,
     name,
     projectBlock,
   );
 
   if (args.dryRun) {
-    console.log(`── DRY RUN ──`);
-    console.log(`spec  → ${path.relative(ROOT, specPath)} (${specContent.length} chars)`);
-    console.log(
-      `config → ${inserted ? "akan disisipkan project" : `LEWAT (${reason})`}`,
-    );
-    console.log(`\n--- Preview project block ---\n${projectBlock}`);
+    const specLines = specContent.split("\n").length;
+    const projectLines = projectBlock.replace(/\n$/, "").split("\n").length;
+    console.log(`── DRY RUN — tidak ada file yang diubah ──\n`);
+
+    console.log(`▸ Spec baru`);
+    console.log(`  path  : ${path.relative(ROOT, specPath)}`);
+    console.log(`  size  : ${specLines} baris, ${specContent.length} chars`);
+    console.log(`  guards:`);
+    console.log(renderGuardSummary(specContent));
+    console.log(`  preview:`);
+    console.log(renderSpecPreview(specContent));
+    console.log();
+
+    console.log(`▸ playwright.config.ts`);
+    if (inserted) {
+      const insertLine = offsetToLine(configText, insertAt);
+      console.log(
+        `  aksi  : akan menambah project "${name}-e2e" (+${projectLines} baris) di baris ${insertLine}`,
+      );
+      console.log(renderConfigDiff(configText, insertAt, projectBlock));
+    } else if (reason === "already-registered") {
+      console.log(`  aksi  : LEWAT — project "${name}-e2e" sudah terdaftar.`);
+    } else {
+      console.log(`  aksi  : LEWAT — auto-insert gagal (${reason}).`);
+      console.log(`  fallback: tambahkan blok berikut manual —`);
+      console.log(
+        projectBlock
+          .replace(/\n$/, "")
+          .split("\n")
+          .map((l) => `       + ${l}`)
+          .join("\n"),
+      );
+    }
+    console.log(`\nJalankan tanpa --dry-run untuk menulis perubahan di atas.`);
     return;
   }
 
