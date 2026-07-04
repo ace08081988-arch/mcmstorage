@@ -28,6 +28,7 @@ import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
 import { Route as DiagnostikPaketRouteImport } from './routes/diagnostik.paket'
 import { Route as ApiVersionRouteImport } from './routes/api/version'
 import { Route as AuthenticatedUndangRouteImport } from './routes/_authenticated.undang'
+import { Route as AuthenticatedTugasDaftarRouteImport } from './routes/_authenticated.tugas-daftar'
 import { Route as AuthenticatedTugasBaruRouteImport } from './routes/_authenticated.tugas-baru'
 import { Route as AuthenticatedTugasRouteImport } from './routes/_authenticated.tugas'
 import { Route as AuthenticatedStatusNotifikasiRouteImport } from './routes/_authenticated.status-notifikasi'
@@ -197,6 +198,12 @@ const AuthenticatedUndangRoute = AuthenticatedUndangRouteImport.update({
   path: '/undang',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedTugasDaftarRoute =
+  AuthenticatedTugasDaftarRouteImport.update({
+    id: '/tugas-daftar',
+    path: '/tugas-daftar',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedTugasBaruRoute = AuthenticatedTugasBaruRouteImport.update({
   id: '/tugas-baru',
   path: '/tugas-baru',
@@ -664,6 +671,7 @@ export interface FileRoutesByFullPath {
   '/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/tugas-daftar': typeof AuthenticatedTugasDaftarRoute
   '/undang': typeof AuthenticatedUndangRoute
   '/api/version': typeof ApiVersionRoute
   '/diagnostik/paket': typeof DiagnostikPaketRoute
@@ -755,6 +763,7 @@ export interface FileRoutesByTo {
   '/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
   '/tugas': typeof AuthenticatedTugasRoute
   '/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/tugas-daftar': typeof AuthenticatedTugasDaftarRoute
   '/undang': typeof AuthenticatedUndangRoute
   '/api/version': typeof ApiVersionRoute
   '/diagnostik/paket': typeof DiagnostikPaketRoute
@@ -851,6 +860,7 @@ export interface FileRoutesById {
   '/_authenticated/status-notifikasi': typeof AuthenticatedStatusNotifikasiRoute
   '/_authenticated/tugas': typeof AuthenticatedTugasRoute
   '/_authenticated/tugas-baru': typeof AuthenticatedTugasBaruRoute
+  '/_authenticated/tugas-daftar': typeof AuthenticatedTugasDaftarRoute
   '/_authenticated/undang': typeof AuthenticatedUndangRoute
   '/api/version': typeof ApiVersionRoute
   '/diagnostik/paket': typeof DiagnostikPaketRoute
@@ -948,6 +958,7 @@ export interface FileRouteTypes {
     | '/status-notifikasi'
     | '/tugas'
     | '/tugas-baru'
+    | '/tugas-daftar'
     | '/undang'
     | '/api/version'
     | '/diagnostik/paket'
@@ -1039,6 +1050,7 @@ export interface FileRouteTypes {
     | '/status-notifikasi'
     | '/tugas'
     | '/tugas-baru'
+    | '/tugas-daftar'
     | '/undang'
     | '/api/version'
     | '/diagnostik/paket'
@@ -1134,6 +1146,7 @@ export interface FileRouteTypes {
     | '/_authenticated/status-notifikasi'
     | '/_authenticated/tugas'
     | '/_authenticated/tugas-baru'
+    | '/_authenticated/tugas-daftar'
     | '/_authenticated/undang'
     | '/api/version'
     | '/diagnostik/paket'
@@ -1354,6 +1367,13 @@ declare module '@tanstack/react-router' {
       path: '/undang'
       fullPath: '/undang'
       preLoaderRoute: typeof AuthenticatedUndangRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/tugas-daftar': {
+      id: '/_authenticated/tugas-daftar'
+      path: '/tugas-daftar'
+      fullPath: '/tugas-daftar'
+      preLoaderRoute: typeof AuthenticatedTugasDaftarRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/tugas-baru': {
@@ -1968,6 +1988,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedStatusNotifikasiRoute: typeof AuthenticatedStatusNotifikasiRoute
   AuthenticatedTugasRoute: typeof AuthenticatedTugasRoute
   AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
+  AuthenticatedTugasDaftarRoute: typeof AuthenticatedTugasDaftarRoute
   AuthenticatedUndangRoute: typeof AuthenticatedUndangRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminPortalErrorLogRoute: typeof AuthenticatedAdminPortalErrorLogRoute
@@ -2023,6 +2044,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedStatusNotifikasiRoute: AuthenticatedStatusNotifikasiRoute,
   AuthenticatedTugasRoute: AuthenticatedTugasRoute,
   AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
+  AuthenticatedTugasDaftarRoute: AuthenticatedTugasDaftarRoute,
   AuthenticatedUndangRoute: AuthenticatedUndangRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminPortalErrorLogRoute: AuthenticatedAdminPortalErrorLogRoute,
