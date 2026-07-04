@@ -255,10 +255,10 @@ export function ManageGroupDialog({
                         </div>
                         <div className="min-w-0 flex-1">
                           <div className="truncate font-medium">
-                            {c.display_name || c.phone || "Pengguna"}
+                            {c.display_name || c.invite_code || "Pengguna"}
                           </div>
                           <div className="truncate text-[11px] text-muted-foreground">
-                            {c.phone ? `${c.phone} · ` : ""}{c.label ?? c.kind}
+                            {c.invite_code ? `${c.invite_code} · ` : ""}{c.label ?? c.kind}
                           </div>
                         </div>
                         <Check className="h-4 w-4 text-primary opacity-0 transition-opacity group-hover:opacity-100" />

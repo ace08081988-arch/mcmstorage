@@ -3356,7 +3356,6 @@ export type Database = {
           invite_code: string
           kind: string
           label: string
-          phone: string
           user_id: string
         }[]
       }
