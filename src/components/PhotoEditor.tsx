@@ -1328,13 +1328,20 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </div>
         )}
 
+        {/* Screen-reader-only active tool status */}
+        <div
+          aria-live="polite"
+          aria-atomic="true"
+          className="sr-only"
+        >
+          {TOOL_LABELS[tool]} aktif. {TOOL_HINTS[tool]}
+        </div>
+
         {/* Active tool hint */}
         <div
           role="status"
           aria-live="polite"
           aria-atomic="true"
-          aria-label="Petunjuk tool aktif"
-          key={tool}
           className="mb-2 flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[11px]"
         >
           <span className="relative flex h-2 w-2 shrink-0">
