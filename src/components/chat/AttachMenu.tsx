@@ -1079,23 +1079,31 @@ export function AttachMenu({ conversationId, disabled, onSent }: Props) {
 function ContactDialog({ conversationId, open, onOpenChange, onSent }: { conversationId: string; open: boolean; onOpenChange: (v: boolean) => void; onSent: () => void; }) {
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [pin, setPin] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  type StaffRow = { id: string; name: string; wa_phone: string | null; pin_chat_mcm: string | null };
   const staff = useQuery({
     queryKey: ["chat-attach", "staff"],
     enabled: open,
     queryFn: async () => {
-      const { data, error } = await supabase.from("staff_contacts").select("id,name,wa_phone").order("name");
+      const { data, error } = await (supabase as any).from("staff_contacts").select("id,name,wa_phone,pin_chat_mcm").order("name");
       if (error) throw error;
-      return data ?? [];
+      return (data ?? []) as StaffRow[];
     },
   });
   async function submit() {
     if (!name.trim() || !phone.trim()) { toast.error("Nama & nomor wajib diisi"); return; }
     setBusy(true);
     try {
-      await sendMessage({ data: { conversationId, body: encodeCard({ type: "contact", name: name.trim(), phone: phone.trim(), note: note.trim() || undefined }) } });
-      setName(""); setPhone(""); setNote("");
+      await sendMessage({ data: { conversationId, body: encodeCard({
+        type: "contact",
+        name: name.trim(),
+        phone: phone.trim(),
+        pin: pin.trim().toUpperCase() || undefined,
+        note: note.trim() || undefined,
+      }) } });
+      setName(""); setPhone(""); setPin(""); setNote("");
       onSent();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Gagal mengirim kontak");
@@ -1108,12 +1116,15 @@ function ContactDialog({ conversationId, open, onOpenChange, onSent }: { convers
         {staff.data && staff.data.length > 0 ? (
           <div className="space-y-1">
             <Label className="text-[11px] uppercase text-muted-foreground">Dari daftar pegawai</Label>
-            <div className="max-h-32 space-y-1 overflow-y-auto rounded border p-1">
+            <div className="max-h-40 space-y-1 overflow-y-auto rounded border p-1">
               {staff.data.map((s) => (
-                <button key={s.id} type="button" className="flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs hover:bg-accent"
-                  onClick={() => { setName(s.name); setPhone(s.wa_phone); }}>
-                  <span className="truncate">{s.name}</span>
-                  <span className="text-muted-foreground">{s.wa_phone ? `+${String(s.wa_phone).replace(/^\+?/, "")}` : "—"}</span>
+                <button key={s.id} type="button" className="flex w-full flex-col gap-0.5 rounded px-2 py-1.5 text-left text-xs hover:bg-accent"
+                  onClick={() => { setName(s.name); setPhone(s.wa_phone ?? ""); setPin(s.pin_chat_mcm ?? ""); }}>
+                  <span className="truncate font-medium">{s.name}</span>
+                  <span className="flex flex-wrap gap-x-2 text-[11px] text-muted-foreground">
+                    {s.wa_phone ? <span>WA: +{String(s.wa_phone).replace(/^\+?/, "")}</span> : null}
+                    {s.pin_chat_mcm ? <span className="font-mono text-primary">PIN MCM: {s.pin_chat_mcm}</span> : null}
+                  </span>
                 </button>
               ))}
             </div>
@@ -1121,6 +1132,15 @@ function ContactDialog({ conversationId, open, onOpenChange, onSent }: { convers
         ) : null}
         <div className="space-y-2">
           <div><Label>Nama</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
+          <div>
+            <Label>PIN chat MCM</Label>
+            <Input
+              value={pin} onChange={(e) => setPin(e.target.value)}
+              placeholder="cth: ABCD-1234" autoCapitalize="characters" maxLength={10}
+              className="font-mono tracking-widest"
+            />
+            <p className="mt-1 text-[10px] text-muted-foreground">Kode PIN untuk berteman/dm di chat MCM (opsional).</p>
+          </div>
           <div>
             <Label>Nomor HP / WhatsApp</Label>
             <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="cth: 62812xxxxxxx" inputMode="tel" />
