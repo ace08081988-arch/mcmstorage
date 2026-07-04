@@ -1019,7 +1019,7 @@ function PosKasirPage() {
                         </div>
                       )}
                       <div
-                        className="rounded-xl bg-slate-900/60 border border-slate-700 p-3 relative transition-transform touch-pan-y"
+                        className={`rounded-xl bg-slate-900/60 border border-slate-700 relative transition-transform touch-pan-y ${modeRingkas ? "p-2" : "p-3"}`}
                         style={{ transform: `translateX(${dx}px)` }}
                         onTouchStart={(e) => {
                           if (!isTerakhir) return;
@@ -1042,6 +1042,7 @@ function PosKasirPage() {
                           }
                         }}
                       >
+
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="text-xl shrink-0">{t.produkEmoji}</span>
