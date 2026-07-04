@@ -27,7 +27,9 @@ const QUICK_WEIGHTS = [0.1, 0.25, 0.5, 1, 2];
 const AMBANG_STORAGE_KEY = "mcm-pos-kasir-ambang-stok";
 const AMBANG_DEFAULT = 5;
 const MODE_RINGKAS_KEY = "mcm-pos-kasir-mode-ringkas";
+const URUTAN_KEY = "mcm-pos-kasir-urutan";
 
+type UrutanTransaksi = "terbaru" | "terlama";
 
 type StokLevel = "habis" | "kritis" | "menipis" | "aman";
 
