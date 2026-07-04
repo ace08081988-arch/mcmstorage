@@ -173,7 +173,7 @@ function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
   }, [scheduleExternal]);
   return [mode, update];
 }
-type Draft = { title: string; note: string; pin: string; rows: Row[]; phone: string };
+type Draft = { title: string; note: string; pin: string; rows: Row[]; phone: string; token?: string; scheduledAt?: string };
 function loadDraft(): Draft | null {
   if (typeof window === "undefined") return null;
   try {
@@ -212,6 +212,8 @@ function TugasBaruPage() {
   const [pin, setPin] = useState(() => initialRef.current?.pin ?? genPin());
   const [rows, setRows] = useState<Row[]>(() => initialRef.current?.rows ?? [newRow()]);
   const [phone, setPhone] = useState(() => initialRef.current?.phone ?? "");
+  const [token, setToken] = useState<string>(() => initialRef.current?.token ?? genShareToken());
+  const [scheduledAt, setScheduledAt] = useState<string>(() => initialRef.current?.scheduledAt ?? "");
   const [restored] = useState(() => !!initialRef.current);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ token: string; pin: string; title: string; url: string } | null>(null);
@@ -235,10 +237,10 @@ function TugasBaruPage() {
   const [tooltipMode, setTooltipMode] = useTooltipMode();
   const [, forceTick] = useState(0);
   const lastSavedRef = useRef<string>("");
-  const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone });
+  const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone, token, scheduledAt });
   useEffect(() => {
-    latestDraftRef.current = { title, note, pin, rows, phone };
-  }, [title, note, pin, rows, phone]);
+    latestDraftRef.current = { title, note, pin, rows, phone, token, scheduledAt };
+  }, [title, note, pin, rows, phone, token, scheduledAt]);
 
   const flushDraft = useCallback((reason: "auto" | "navigation" | "manual" = "auto") => {
     const cur = JSON.stringify(latestDraftRef.current);
@@ -302,7 +304,7 @@ function TugasBaruPage() {
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("popstate", onPopState);
     };
-  }, [title, note, pin, rows, phone, created, flushDraft]);
+  }, [title, note, pin, rows, phone, token, scheduledAt, created, flushDraft]);
 
   // Flush draft when this route unmounts (any SPA navigation away,
   // including programmatic <Link> clicks and router.history.back()).
@@ -406,6 +408,16 @@ function TugasBaruPage() {
     const t = title.trim();
     if (!t) return toast.error("Judul tugas wajib diisi");
     if (!/^\d{4,8}$/.test(pin)) return toast.error("PIN harus 4–8 digit angka");
+    const tokenTrim = token.trim();
+    if (!/^[A-Za-z0-9_-]{8,48}$/.test(tokenTrim)) {
+      return toast.error("Token harus 8–48 karakter (huruf, angka, - atau _)");
+    }
+    let scheduledIso: string | null = null;
+    if (scheduledAt.trim()) {
+      const d = new Date(scheduledAt);
+      if (Number.isNaN(d.getTime())) return toast.error("Jadwal tidak valid");
+      scheduledIso = d.toISOString();
+    }
     const items = rows
       .map((r) => ({
         name: r.name.trim(),
@@ -426,7 +438,6 @@ function TugasBaruPage() {
     }
 
     setBusy(true);
-    const token = genShareToken();
     const payload = items.map((r) => ({
       name: r.name,
       category: null,
@@ -441,14 +452,15 @@ function TugasBaruPage() {
       _title: t,
       _note: note.trim() || null,
       _pin: pin,
-      _share_token: token,
+      _share_token: tokenTrim,
       _items: payload,
+      _scheduled_at: scheduledIso,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    const url = publicTaskUrl(token);
+    const url = publicTaskUrl(tokenTrim);
     clearDraft();
-    setCreated({ token, pin, title: t, url });
+    setCreated({ token: tokenTrim, pin, title: t, url });
     toast.success("Tugas berhasil dibuat");
   }
 
@@ -467,6 +479,8 @@ function TugasBaruPage() {
     setPin(genPin());
     setRows([newRow()]);
     setPhone("");
+    setToken(genShareToken());
+    setScheduledAt("");
     setVerify({});
     verifySeq.current = {};
     clearDraft();
@@ -479,6 +493,8 @@ function TugasBaruPage() {
     setPin(genPin());
     setRows([newRow()]);
     setPhone("");
+    setToken(genShareToken());
+    setScheduledAt("");
     setVerify({});
     verifySeq.current = {};
     clearDraft();
@@ -600,6 +616,51 @@ function TugasBaruPage() {
               <button type="button" onClick={() => setPin(genPin())} className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
                 <RefreshCw className="h-3.5 w-3.5" /> Acak
               </button>
+            </div>
+          </Field>
+
+          <Field label="Token tautan pegawai (8–48 karakter)">
+            <div className="flex items-center gap-2">
+              <input
+                value={token}
+                onChange={(e) => setToken(e.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 48))}
+                placeholder="mis. abc123XYZ"
+                className="flex-1 rounded-md border bg-background px-2 py-1.5 font-mono text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setToken(genShareToken())}
+                className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                title="Buat token acak baru"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Acak
+              </button>
+            </div>
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              Token dipakai di URL pegawai. Isi sendiri untuk memudahkan dikenali, atau tekan Acak untuk mengganti.
+            </div>
+          </Field>
+
+          <Field label="Jadwal penyiapan (opsional)">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="rounded-md border bg-background px-2 py-1.5 text-sm"
+              />
+              {scheduledAt && (
+                <button
+                  type="button"
+                  onClick={() => setScheduledAt("")}
+                  className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              Waktu yang direncanakan pegawai mulai menyiapkan. Kosongkan bila tidak ada jadwal tetap.
             </div>
           </Field>
 

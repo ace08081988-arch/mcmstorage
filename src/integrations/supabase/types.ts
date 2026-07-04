@@ -1678,6 +1678,7 @@ export type Database = {
           note: string | null
           owner_user_id: string
           pin_hash: string
+          scheduled_at: string | null
           share_token: string
           status: string
           title: string
@@ -1691,6 +1692,7 @@ export type Database = {
           note?: string | null
           owner_user_id: string
           pin_hash: string
+          scheduled_at?: string | null
           share_token: string
           status?: string
           title?: string
@@ -1704,6 +1706,7 @@ export type Database = {
           note?: string | null
           owner_user_id?: string
           pin_hash?: string
+          scheduled_at?: string | null
           share_token?: string
           status?: string
           title?: string
@@ -3207,6 +3210,7 @@ export type Database = {
           _items: Json
           _note: string
           _pin: string
+          _scheduled_at?: string
           _share_token: string
           _title: string
         }
