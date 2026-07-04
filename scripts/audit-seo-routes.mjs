@@ -73,15 +73,118 @@ function hasNoindex(src) {
 /** Baca daftar path yang ada di sitemap. */
 function readSitemapPaths() {
   const src = readFileSync(SITEMAP_FILE, "utf8");
-  // Tangkap setiap path: "..." di dalam objek entries.
+  return extractSitemapPaths(src);
+}
+
+/**
+ * Ekstrak path sitemap dari sumber file — hanya dari literal array
+ * `entries` (SitemapEntry[]), sehingga komentar/dokumentasi/regex lain
+ * tidak dianggap sebagai entri sitemap.
+ */
+export function extractSitemapPaths(src) {
   const paths = new Set();
-  for (const m of src.matchAll(/path:\s*["'`]([^"'`]+)["'`]/g)) {
-    paths.add(m[1]);
+  const m = src.match(/entries\s*:\s*SitemapEntry\[\]\s*=\s*\[([\s\S]*?)\];/);
+  if (!m) return paths;
+  for (const p of m[1].matchAll(/path:\s*["'`]([^"'`]+)["'`]/g)) {
+    paths.add(p[1]);
   }
   return paths;
 }
 
+/**
+ * Klasifikasikan satu rute berdasarkan sinyal-sinyal yang sudah diekstrak.
+ * Dipisah dari I/O supaya bisa di-self-test tanpa menyentuh disk.
+ * Mengembalikan { status, error? } — error hanya diisi bila benar-benar salah.
+ */
+export function classifyRoute({
+  routeId,
+  url,
+  inSitemap,
+  noindex,
+  allowlisted,
+}) {
+  const isDynamic = /\$/.test(url);
+  const isAuthGated = /\/_authenticated(\/|$)/.test(routeId);
+  if (isDynamic) return { status: "DYNAMIC (skip)" };
+  if (routeId === "/_authenticated") return { status: "layout (skip)" };
+  // CONFLICT diperiksa lebih dulu supaya rute auth-gated yang keliru
+  // masuk sitemap tetap ketahuan (mis. /reset-password bila di-sitemap-kan
+  // padahal ber-noindex).
+  if (inSitemap && noindex) {
+    return {
+      status: "CONFLICT",
+      error: `${url} — masuk sitemap TAPI bertanda noindex`,
+    };
+  }
+  if (isAuthGated) return { status: "auth-gated" };
+  if (inSitemap) return { status: "sitemap" };
+  if (noindex) return { status: "noindex" };
+  if (allowlisted) return { status: "allowlist" };
+  return {
+    status: "MISSING",
+    error: `${url} — tidak ada di sitemap & tidak noindex`,
+  };
+}
+
+/**
+ * Self-test: memastikan logika audit sendiri masih benar. Berjalan setiap
+ * kali script dipanggil supaya regresi di classifier langsung menggagalkan
+ * build — bukan menunggu scanner SEO menemukannya di produksi.
+ */
+function runSelfTests() {
+  const cases = [
+    {
+      name: "/reset-password noindex + TIDAK di sitemap → noindex (ok)",
+      input: { routeId: "/reset-password", url: "/reset-password", inSitemap: false, noindex: true, allowlisted: false },
+      expect: "noindex",
+    },
+    {
+      name: "/reset-password di sitemap + noindex → CONFLICT",
+      input: { routeId: "/reset-password", url: "/reset-password", inSitemap: true, noindex: true, allowlisted: false },
+      expect: "CONFLICT",
+      expectError: true,
+    },
+    {
+      name: "/refund di sitemap tanpa noindex → sitemap (ok)",
+      input: { routeId: "/refund", url: "/refund", inSitemap: true, noindex: false, allowlisted: false },
+      expect: "sitemap",
+    },
+    {
+      name: "rute publik tanpa sitemap & tanpa noindex → MISSING",
+      input: { routeId: "/foo", url: "/foo", inSitemap: false, noindex: false, allowlisted: false },
+      expect: "MISSING",
+      expectError: true,
+    },
+    {
+      name: "rute auth-gated tanpa sitemap → auth-gated (ok)",
+      input: { routeId: "/_authenticated/audit", url: "/audit", inSitemap: false, noindex: false, allowlisted: false },
+      expect: "auth-gated",
+    },
+    {
+      name: "rute dinamis dilewati",
+      input: { routeId: "/t/$token", url: "/t/$token", inSitemap: false, noindex: false, allowlisted: false },
+      expect: "DYNAMIC (skip)",
+    },
+  ];
+  const failed = [];
+  for (const c of cases) {
+    const got = classifyRoute(c.input);
+    const hasErr = Boolean(got.error);
+    if (got.status !== c.expect || hasErr !== Boolean(c.expectError)) {
+      failed.push(
+        `  ✗ ${c.name}: expected status=${c.expect} error=${Boolean(c.expectError)}, got status=${got.status} error=${hasErr}`,
+      );
+    }
+  }
+  if (failed.length) {
+    console.error("\n❌ SEO audit self-test gagal (classifier rusak):");
+    for (const f of failed) console.error(f);
+    process.exit(2);
+  }
+}
+
 function main() {
+  runSelfTests();
   const sitemapPaths = readSitemapPaths();
   const files = listRouteFiles(ROUTES_DIR);
   const rows = [];
@@ -92,39 +195,17 @@ function main() {
     const id = extractRoutePath(src);
     if (!id) continue;
     const url = routeIdToUrl(id);
-
-    // Lewati rute dinamis ($param/$splat) — tidak harus per-URL di sitemap;
-    // entri dinamis (jika ada) di-generate dari loader.
-    const isDynamic = /\$/.test(url);
-    // Rute di bawah layout _authenticated bersifat auth-gated: tidak boleh
-    // terindeks dan tidak masuk sitemap publik.
-    const isAuthGated = /\/_authenticated(\/|$)/.test(id);
     const inSitemap = sitemapPaths.has(url);
     const noindex = hasNoindex(src);
     const allowlisted = ALLOWLIST_NO_SITEMAP.has(url);
-
-    let status;
-    if (isDynamic) status = "DYNAMIC (skip)";
-    // Lewati file layout pathless tanpa segmen URL sendiri (mis. _authenticated.tsx).
-    else if (id === "/_authenticated") status = "layout (skip)";
-    // URL auth-gated yang juga ada di sitemap (mis. "/" yang ber-dual-render)
-    // tidak dianggap konflik — versi publiknya yang masuk sitemap.
-    else if (isAuthGated) status = "auth-gated";
-    else if (inSitemap && noindex) {
-      status = "CONFLICT";
-      errors.push(
-        `  ${url}  — masuk sitemap TAPI bertanda noindex (${relative(ROOT, file)})`,
-      );
-    } else if (inSitemap) status = "sitemap";
-    else if (noindex) status = "noindex";
-    else if (allowlisted) status = "allowlist";
-    else {
-      status = "MISSING";
-      errors.push(
-        `  ${url}  — tidak ada di sitemap & tidak noindex (${relative(ROOT, file)})`,
-      );
-    }
-
+    const { status, error } = classifyRoute({
+      routeId: id,
+      url,
+      inSitemap,
+      noindex,
+      allowlisted,
+    });
+    if (error) errors.push(`  ${error} (${relative(ROOT, file)})`);
     rows.push({ url, status, file: relative(ROOT, file) });
   }
 
@@ -152,4 +233,8 @@ function main() {
   console.log("\n✅ SEO audit lulus.");
 }
 
-main();
+// Hanya jalankan audit saat script di-invoke langsung (bukan saat di-import
+// oleh test/self-check yang me-reuse classifier).
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}
