@@ -265,7 +265,7 @@ function TugasBaruPage() {
 function TugasBaruSkeleton() {
   return (
     <div
-      className="mx-auto max-w-2xl px-3 py-4"
+      className="mx-auto max-w-2xl px-3 py-4 animate-fade-in"
       role="status"
       aria-live="polite"
       aria-busy="true"
