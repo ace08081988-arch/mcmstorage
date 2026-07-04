@@ -346,6 +346,8 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     setPipSize("md");
     setPipCorner("br");
     setSwapped(false);
+    setPipHidden(false);
+    setPipMinimized(false);
     setVideoFitFront("cover");
     setVideoFitBack("cover");
     setVideoPosFront("center");
@@ -361,7 +363,8 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     }
     toast.success("Setelan tampilan panggilan direset ke default");
   }, [
-    setFacingMode, setPipSize, setPipCorner,
+    setFacingMode, setPipSize, setPipCorner, setSwapped,
+    setPipHidden, setPipMinimized,
     setVideoFitFront, setVideoFitBack,
     setVideoPosFront, setVideoPosBack,
     setVideoPosCustomFront, setVideoPosCustomBack,
