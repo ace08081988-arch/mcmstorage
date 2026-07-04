@@ -9,7 +9,7 @@
 // Tujuan: mencegah finding "Sitemap needs attention" berulang setelah
 // menambah/mengubah rute.
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -122,6 +122,77 @@ export function extractRobotsDisallows(src) {
  */
 export function robotsMatches(url, rules) {
   return rules.some((r) => url === r || url.startsWith(r));
+}
+
+/**
+ * Auto-fix robots.txt berdasarkan daftar konflik yang terdeteksi audit.
+ *
+ * - `add`: URL noindex yang belum di-Disallow → tambahkan `Disallow: <url>`
+ *   pada blok `User-agent: *` (buat blok bila belum ada).
+ * - `remove`: URL yang masuk sitemap tapi keblokir Disallow → hapus baris
+ *   Disallow yang persis cocok. Aturan prefix yang menutup URL lain tidak
+ *   disentuh otomatis (butuh keputusan manusia — kami cetak saran saja).
+ *
+ * Fungsi ini murni: menerima teks robots.txt + patch, mengembalikan teks
+ * baru + daftar perubahan yang benar-benar diterapkan / dilewati. Dipisah
+ * dari I/O supaya bisa di-self-test.
+ */
+export function applyRobotsFix(src, { add = [], remove = [] } = {}) {
+  const addSet = new Set(add);
+  const removeSet = new Set(remove);
+  const applied = { added: [], removed: [], skipped: [] };
+
+  const lines = src.split(/\r?\n/);
+  // Tandai baris yang akan dibuang: Disallow eksak untuk URL di removeSet
+  // di dalam blok `User-agent: *`.
+  let inStar = false;
+  const kept = [];
+  for (const rawLine of lines) {
+    const stripped = rawLine.replace(/#.*$/, "").trim();
+    const ua = stripped.match(/^User-agent:\s*(.+)$/i);
+    if (ua) {
+      inStar = ua[1].trim() === "*";
+      kept.push(rawLine);
+      continue;
+    }
+    if (inStar) {
+      const d = stripped.match(/^Disallow:\s*(.*)$/i);
+      if (d && removeSet.has(d[1].trim())) {
+        applied.removed.push(d[1].trim());
+        continue; // drop baris ini
+      }
+    }
+    kept.push(rawLine);
+  }
+
+  // Konflik yang tak bisa dihapus otomatis (prefix, bukan exact) → skip.
+  for (const url of removeSet) {
+    if (!applied.removed.includes(url)) applied.skipped.push({ op: "remove", url, reason: "no exact Disallow line (prefix rule)" });
+  }
+
+  // Sisipkan Disallow baru di blok `User-agent: *`. Bila blok belum ada,
+  // append blok baru di akhir file.
+  let out = kept.join("\n");
+  const toAdd = [...addSet];
+  if (toAdd.length) {
+    const starIdx = out.search(/^User-agent:\s*\*\s*$/im);
+    if (starIdx >= 0) {
+      // Cari posisi akhir blok `*` (baris kosong atau `User-agent:` berikutnya).
+      const after = out.slice(starIdx);
+      const blockEndRel = after.search(/\n\s*\n|\nUser-agent:/i);
+      const blockEnd = blockEndRel >= 0 ? starIdx + blockEndRel : out.length;
+      const insertion = toAdd.map((u) => `Disallow: ${u}`).join("\n");
+      out = `${out.slice(0, blockEnd).replace(/\s+$/, "")}\n${insertion}${out.slice(blockEnd)}`;
+      applied.added.push(...toAdd);
+    } else {
+      const block = ["", "User-agent: *", "Allow: /", ...toAdd.map((u) => `Disallow: ${u}`), ""].join("\n");
+      out = `${out.replace(/\s+$/, "")}\n${block}`;
+      applied.added.push(...toAdd);
+    }
+  }
+
+  if (!out.endsWith("\n")) out += "\n";
+  return { text: out, applied };
 }
 
 /**
