@@ -1660,4 +1660,94 @@ BEGIN
   RAISE NOTICE 'PASS 16: get_chat_member_profiles hides email; phone is gated by caller address_book; anon cannot execute';
 END $$;
 
+-- ---------------------------------------------------------------------
+-- 17) get_chat_member_profiles — runtime: phone HANYA keluar bila peer
+--     sudah ada di address_book pemanggil. Kita impersonate role
+--     authenticated dengan auth.uid()=A, membangun conversation A+B,
+--     lalu panggil RPC sebelum & sesudah insert address_book. Semua
+--     perubahan dibungkus transaksi ROLLBACK di akhir file.
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE
+  v_a uuid := nullif(current_setting('test.user_a', true),'')::uuid;
+  v_b uuid := nullif(current_setting('test.user_b', true),'')::uuid;
+  v_conv uuid;
+  v_new_conv boolean := false;
+  v_new_member_a boolean := false;
+  v_new_member_b boolean := false;
+  v_b_phone text := '+62999' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 10);
+  v_row public.get_chat_member_profiles;
+  v_count int;
+BEGIN
+  IF v_a IS NULL OR v_b IS NULL OR NOT current_setting('test.can_switch')::boolean THEN
+    RAISE NOTICE 'SKIP 17: cross-user runtime prerequisites missing';
+    RETURN;
+  END IF;
+
+  -- Set phone deterministik untuk B (rollback mengembalikan nilai asli).
+  UPDATE public.profiles SET phone = v_b_phone WHERE id = v_b;
+
+  -- Pastikan A dan B satu conversation.
+  SELECT a.conversation_id INTO v_conv
+    FROM public.conversation_members a
+    JOIN public.conversation_members b ON b.conversation_id = a.conversation_id
+   WHERE a.user_id = v_a AND b.user_id = v_b
+   LIMIT 1;
+  IF v_conv IS NULL THEN
+    INSERT INTO public.conversations(kind, owner_user_id, created_by)
+      VALUES ('dm', v_a, v_a) RETURNING id INTO v_conv;
+    v_new_conv := true;
+    INSERT INTO public.conversation_members(conversation_id, user_id)
+      VALUES (v_conv, v_a) ON CONFLICT DO NOTHING;
+    INSERT INTO public.conversation_members(conversation_id, user_id)
+      VALUES (v_conv, v_b) ON CONFLICT DO NOTHING;
+    v_new_member_a := true;
+    v_new_member_b := true;
+  END IF;
+
+  -- Bersihkan address_book milik A untuk peer B (baseline).
+  DELETE FROM public.address_book WHERE user_id = v_a AND linked_user_id = v_b;
+
+  -- Case A: caller A, TIDAK ada address_book row → phone HARUS null.
+  PERFORM pg_temp.as_user(v_a);
+  SELECT * INTO v_row FROM public.get_chat_member_profiles(ARRAY[v_b]) LIMIT 1;
+  PERFORM pg_temp.as_postgres();
+  IF v_row.id IS NULL THEN
+    RAISE EXCEPTION 'FAIL 17a: RPC returned no row for peer B (conversation membership check gagal)';
+  END IF;
+  IF v_row.phone IS NOT NULL THEN
+    RAISE EXCEPTION 'FAIL 17b: phone BOCOR tanpa address_book (got: %)', v_row.phone;
+  END IF;
+
+  -- Case B: A menyimpan B di address_book → phone HARUS keluar.
+  INSERT INTO public.address_book(user_id, name, linked_user_id, source)
+    VALUES (v_a, 'peer-B-test', v_b, 'manual');
+  PERFORM pg_temp.as_user(v_a);
+  SELECT * INTO v_row FROM public.get_chat_member_profiles(ARRAY[v_b]) LIMIT 1;
+  PERFORM pg_temp.as_postgres();
+  IF v_row.phone IS DISTINCT FROM v_b_phone THEN
+    RAISE EXCEPTION 'FAIL 17c: setelah address_book ada, phone harus % — got %', v_b_phone, v_row.phone;
+  END IF;
+
+  -- Case C: caller acak (bukan anggota conversation) → 0 baris.
+  PERFORM pg_temp.as_user(gen_random_uuid());
+  SELECT count(*) INTO v_count FROM public.get_chat_member_profiles(ARRAY[v_b]);
+  PERFORM pg_temp.as_postgres();
+  IF v_count <> 0 THEN
+    RAISE EXCEPTION 'FAIL 17d: caller non-anggota mendapat % baris, seharusnya 0', v_count;
+  END IF;
+
+  -- Case D: caller melihat profilnya sendiri → phone milik sendiri terlihat.
+  UPDATE public.profiles SET phone = '+62111' || substr(replace(gen_random_uuid()::text,'-',''),1,10)
+   WHERE id = v_a;
+  PERFORM pg_temp.as_user(v_a);
+  SELECT * INTO v_row FROM public.get_chat_member_profiles(ARRAY[v_a]) LIMIT 1;
+  PERFORM pg_temp.as_postgres();
+  IF v_row.phone IS NULL THEN
+    RAISE EXCEPTION 'FAIL 17e: profil sendiri harus tetap melihat phone-nya sendiri';
+  END IF;
+
+  RAISE NOTICE 'PASS 17: phone RPC gated by caller address_book (empty→null, present→visible, non-member→0 rows, self→own phone)';
+END $$;
+
 ROLLBACK;
