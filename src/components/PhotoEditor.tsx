@@ -1330,7 +1330,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
             <span className="relative inline-flex h-full w-2 rounded-full bg-primary" />
           </span>
-          <span className="font-medium text-primary">{TOOL_LABELS[tool]} aktif</span>
+          <span className="font-medium text-primary">
+            {TOOL_SHORTCUTS[tool] ? `${TOOL_LABELS[tool]} (${TOOL_SHORTCUTS[tool]})` : TOOL_LABELS[tool]} aktif
+          </span>
           <span className="text-muted-foreground">— {TOOL_HINTS[tool]}</span>
         </div>
 
