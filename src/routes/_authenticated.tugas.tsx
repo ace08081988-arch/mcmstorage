@@ -1873,6 +1873,41 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
   );
 }
 
+function CompleteTaskDialog({ busy, onClose, onConfirm }: { busy: boolean; onClose: () => void; onConfirm: (note: string) => void | Promise<void> }) {
+  const [note, setNote] = useState("");
+  return (
+    <Modal title="Tandai tugas selesai" onClose={onClose}>
+      <div className="space-y-3 text-sm">
+        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/5 p-2 text-[11px] text-emerald-700 dark:text-emerald-400">
+          Waktu selesai akan otomatis dicatat: <b>{new Date().toLocaleString("id-ID")}</b>.
+        </div>
+        <div>
+          <label className="text-[11px] font-medium text-muted-foreground">Keterangan (opsional)</label>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="Contoh: Semua siap, dikemas rapi, siap dikirim besok pagi."
+            className="mt-1 w-full rounded-md border bg-background p-2 text-sm"
+          />
+          <div className="mt-1 text-right text-[10px] text-muted-foreground">{note.length}/500</div>
+        </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <button onClick={onClose} disabled={busy} className="inline-flex h-9 items-center rounded-md border px-3 text-xs">Batal</button>
+          <button
+            onClick={() => void onConfirm(note)}
+            disabled={busy}
+            className="inline-flex h-9 items-center gap-1 rounded-md bg-emerald-600 px-3 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            <CheckCircle2 className="h-4 w-4" /> Simpan & tandai selesai
+          </button>
+        </div>
+      </div>
+    </Modal>
+  );
+}
+
 // ---------- Variant manager ----------
 function VariantsHub({ warehouse, catVariants, onPickCategory, onClose }: { warehouse: WItem[]; catVariants: CatVariant[]; onPickCategory: (cat: string) => void; onClose: () => void }) {
   const [q, setQ] = useState("");
