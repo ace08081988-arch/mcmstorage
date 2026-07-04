@@ -194,6 +194,16 @@ function PosKasirPage() {
     return riwayat.filter((t) => t.waktu >= dari && t.waktu <= sampai);
   }, [riwayat, dariTgl, sampaiTgl]);
 
+  const riwayatCariMobile = useMemo(() => {
+    const q = cariTransaksi.trim().toLowerCase();
+    if (!q) return riwayatFiltered;
+    return riwayatFiltered.filter(
+      (t) =>
+        t.produkNama.toLowerCase().includes(q) ||
+        waktuFmt.format(t.waktu).toLowerCase().includes(q),
+    );
+  }, [riwayatFiltered, cariTransaksi]);
+
   const exportCSV = () => {
     if (riwayatFiltered.length === 0) {
       setToast("Tidak ada transaksi pada rentang tanggal terpilih");
