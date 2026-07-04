@@ -441,18 +441,26 @@ function TugasBaruForm() {
     delete verifySeq.current[key];
   }
 
-  async function submit() {
+  type ValidatedTask = {
+    t: string;
+    tokenTrim: string;
+    scheduledIso: string | null;
+    items: Array<{ name: string; qty: number; unit: string | null; warehouse_item_id: string | null; ecer_title_id: string | null }>;
+  };
+  const [preview, setPreview] = useState<ValidatedTask | null>(null);
+
+  function validate(): ValidatedTask | null {
     const t = title.trim();
-    if (!t) return toast.error("Judul tugas wajib diisi");
-    if (!/^\d{4,8}$/.test(pin)) return toast.error("PIN harus 4–8 digit angka");
+    if (!t) { toast.error("Judul tugas wajib diisi"); return null; }
+    if (!/^\d{4,8}$/.test(pin)) { toast.error("PIN harus 4–8 digit angka"); return null; }
     const tokenTrim = token.trim();
     if (!/^[A-Za-z0-9_-]{8,48}$/.test(tokenTrim)) {
-      return toast.error("Token harus 8–48 karakter (huruf, angka, - atau _)");
+      toast.error("Token harus 8–48 karakter (huruf, angka, - atau _)"); return null;
     }
     let scheduledIso: string | null = null;
     if (scheduledAt.trim()) {
       const d = new Date(scheduledAt);
-      if (Number.isNaN(d.getTime())) return toast.error("Jadwal tidak valid");
+      if (Number.isNaN(d.getTime())) { toast.error("Jadwal tidak valid"); return null; }
       scheduledIso = d.toISOString();
     }
     const items = rows
@@ -464,15 +472,22 @@ function TugasBaruForm() {
         ecer_title_id: r.title_id || null,
       }))
       .filter((r) => r.name.length > 0);
-    if (items.length === 0) return toast.error("Tambahkan minimal 1 barang");
-    if (items.some((r) => !Number.isFinite(r.qty) || r.qty <= 0)) return toast.error("Jumlah setiap barang harus > 0");
+    if (items.length === 0) { toast.error("Tambahkan minimal 1 barang"); return null; }
+    if (items.some((r) => !Number.isFinite(r.qty) || r.qty <= 0)) { toast.error("Jumlah setiap barang harus > 0"); return null; }
     const missingWid = items.filter((r) => !r.warehouse_item_id).length;
     if (missingWid > 0) {
       const ok = window.confirm(
         `${missingWid} barang belum dipilih dari daftar produk. Tugas tetap bisa dibuat, tetapi foto pegawai tidak akan otomatis muncul di kartu Beranda (1g/ST/SPR/GS) dan tombol Kirim via MCM hanya aktif untuk barang yang cocok.\n\nLanjutkan tanpa cocokkan?`,
       );
-      if (!ok) return;
+      if (!ok) return null;
     }
+    return { t, tokenTrim, scheduledIso, items };
+  }
+
+  async function submit(v?: ValidatedTask) {
+    const validated = v ?? validate();
+    if (!validated) return;
+    const { t, tokenTrim, scheduledIso, items } = validated;
 
     setBusy(true);
     const payload = items.map((r) => ({
@@ -506,6 +521,7 @@ function TugasBaruForm() {
     const url = publicTaskUrl(tokenTrim);
     clearDraft();
     setCreated({ token: tokenTrim, pin, title: t, url });
+    setPreview(null);
     toast.success("Tugas berhasil dibuat");
   }
 
