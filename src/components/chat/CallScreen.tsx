@@ -169,6 +169,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     [facingMode, setVideoPosFront, setVideoPosBack],
   );
   const cycleVideoPos = useCallback(() => {
+    // Cycle ke preset — buang posisi custom (hasil drag) supaya preset
+    // kembali berlaku dan tidak "diabaikan" oleh nilai custom.
+    setVideoPosCustom(null);
     setVideoPos((p) =>
       p === "center" ? "top"
       : p === "top" ? "right"
@@ -177,12 +180,52 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
       : "center",
     );
   }, [setVideoPos]);
-  const videoPosCss =
+  // Posisi custom hasil drag (persen 0-100, per sumbu). Disimpan terpisah
+  // per kamera; bila `null`, preset di atas yang dipakai. Drag pada video
+  // besar mengisi nilai ini; tombol Reset mengosongkannya.
+  type VideoPosXY = { x: number; y: number };
+  const parseVideoPosXY = useCallback((raw: string | null): VideoPosXY | null => {
+    if (!raw) return null;
+    try {
+      const v = JSON.parse(raw) as unknown;
+      if (v && typeof v === "object") {
+        const x = (v as { x?: unknown }).x;
+        const y = (v as { y?: unknown }).y;
+        if (typeof x === "number" && typeof y === "number" &&
+            Number.isFinite(x) && Number.isFinite(y)) {
+          return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
+        }
+      }
+    } catch { /* ignore */ }
+    return null;
+  }, []);
+  const [videoPosCustomFront, setVideoPosCustomFront] = usePersistedState<VideoPosXY | null>(
+    "mcm.call.videoPosXY.user",
+    parseVideoPosXY,
+    null,
+  );
+  const [videoPosCustomBack, setVideoPosCustomBack] = usePersistedState<VideoPosXY | null>(
+    "mcm.call.videoPosXY.environment",
+    parseVideoPosXY,
+    null,
+  );
+  const videoPosCustom = facingMode === "user" ? videoPosCustomFront : videoPosCustomBack;
+  const setVideoPosCustom = useCallback(
+    (v: (VideoPosXY | null) | ((prev: VideoPosXY | null) => VideoPosXY | null)) => {
+      if (facingMode === "user") setVideoPosCustomFront(v);
+      else setVideoPosCustomBack(v);
+    },
+    [facingMode, setVideoPosCustomFront, setVideoPosCustomBack],
+  );
+  const presetPosCss =
     videoPos === "center" ? "50% 50%"
     : videoPos === "top" ? "50% 0%"
     : videoPos === "bottom" ? "50% 100%"
     : videoPos === "left" ? "0% 50%"
     : "100% 50%";
+  const videoPosCss = videoPosCustom
+    ? `${videoPosCustom.x.toFixed(1)}% ${videoPosCustom.y.toFixed(1)}%`
+    : presetPosCss;
   // Style inline yang dipakai SEMUA elemen <video> (remote + preview lokal
   // di mode PiP maupun swap). Menaruhnya di prop `style` menjamin nilainya
   // ikut di-apply pada setiap render — termasuk saat swap layout memindah
@@ -191,8 +234,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     objectFit: videoFit,
     objectPosition: videoFit === "cover" ? videoPosCss : "50% 50%",
   };
-  const videoPosLabel =
-    videoPos === "center" ? "Tengah"
+  const videoPosLabel = videoPosCustom
+    ? `${Math.round(videoPosCustom.x)}·${Math.round(videoPosCustom.y)}`
+    : videoPos === "center" ? "Tengah"
     : videoPos === "top" ? "Atas"
     : videoPos === "bottom" ? "Bawah"
     : videoPos === "left" ? "Kiri"
