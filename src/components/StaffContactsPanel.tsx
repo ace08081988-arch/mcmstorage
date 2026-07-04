@@ -43,14 +43,20 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
     if (!uid) return;
     const nm = name.trim();
     const ph = normalizePhone(phone);
+    const pin = pinChatMcm.trim().toUpperCase();
     if (!nm) return toast.error("Nama wajib diisi.");
     if (ph.length < 8) return toast.error("Nomor WA tidak valid.");
     setBusy(true);
-    const { error } = await table().insert({ user_id: uid, name: nm, wa_phone: ph });
+    const { error } = await table().insert({
+      user_id: uid,
+      name: nm,
+      wa_phone: ph,
+      pin_chat_mcm: pin || null,
+    });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Kontak pegawai ditambahkan.");
-    setName(""); setPhone(""); setOpen(false);
+    setName(""); setPhone(""); setPinChatMcm(""); setOpen(false);
     void load();
   }
 
