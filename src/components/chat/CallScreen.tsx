@@ -1608,6 +1608,44 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 <span>Reset semua</span>
               </button>
             ) : null}
+            {kind === "video" ? (
+              <button
+                type="button"
+                onClick={exportViewSettings}
+                aria-label="Ekspor setelan panggilan ke file JSON"
+                title="Ekspor setelan (Crop/Fit, posisi, kualitas, PiP, kamera) ke JSON"
+                data-testid="call-export-settings"
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Ekspor</span>
+              </button>
+            ) : null}
+            {kind === "video" ? (
+              <button
+                type="button"
+                onClick={triggerImportViewSettings}
+                aria-label="Impor setelan panggilan dari file JSON"
+                title="Impor setelan dari JSON (Crop/Fit, posisi, kualitas, PiP, kamera)"
+                data-testid="call-import-settings"
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                <span>Impor</span>
+              </button>
+            ) : null}
+            {kind === "video" ? (
+              <input
+                ref={importFileInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={onImportFileChosen}
+                className="hidden"
+                data-testid="call-import-settings-input"
+                aria-hidden="true"
+                tabIndex={-1}
+              />
+            ) : null}
           </div>
         </div>
 
