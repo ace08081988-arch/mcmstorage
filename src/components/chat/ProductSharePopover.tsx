@@ -282,13 +282,17 @@ export function ProductSharePopover({
                     disabled={sendingId !== null}
                     className="flex w-full items-center gap-2 p-2 text-left hover:bg-accent disabled:opacity-60"
                   >
-                    <ProductThumb path={row.photoPath} />
+                    <ProductThumb path={row.photoPath} bucket={row.bucket} />
                     <div className="min-w-0 flex-1">
                       <div className="truncate text-sm font-medium">
                         {row.productName}
                       </div>
                       <div className="mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-[11px] text-muted-foreground">
-                        <span>{fmtBase(row.qty, row.baseUnit)}</span>
+                        {row.qty !== null && row.baseUnit ? (
+                          <span>{fmtBase(row.qty, row.baseUnit)}</span>
+                        ) : (
+                          <span className="rounded bg-muted px-1 py-0.5 text-[10px]">sendiri</span>
+                        )}
                         {row.variant ? <span>· {row.variant}</span> : null}
                         {row.locationUrl ? (
                           <span className="inline-flex items-center gap-0.5">
