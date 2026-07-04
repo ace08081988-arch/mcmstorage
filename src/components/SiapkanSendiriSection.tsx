@@ -3,6 +3,9 @@ import { toast } from "sonner";
 import { Camera, Image as ImageIcon, MapPin, Trash2, Send, ExternalLink, Loader2, CheckCircle2, ChevronLeft, ChevronRight, X, ZoomIn, ZoomOut, RotateCcw, Crosshair } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { shareToChat } from "@/lib/share-chat";
+import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { MessageCircle } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 
@@ -70,6 +73,8 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [busy, setBusy] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const [gpsBusy, setGpsBusy] = useState(false);
+  const [chatPickTarget, setChatPickTarget] = useState<Row | null>(null);
+  const [chatSendingId, setChatSendingId] = useState<string | null>(null);
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -278,6 +283,58 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
     if (error) return toast.error(error.message);
     toast.success("Dikembalikan ke Siap Dikirim.");
     await load();
+  }
+
+  async function onSendChat(r: Row, conversationId: string, convTitle: string) {
+    setChatSendingId(r.id);
+    const tid = toast.loading(`Mengirim ke ${convTitle}…`);
+    try {
+      const lines = [r.title];
+      if (r.note) lines.push(r.note);
+      const caption = lines.join("\n");
+
+      const allPaths = Array.from(new Set([
+        ...(r.photo_path ? [r.photo_path] : []),
+        ...((r.photo_paths ?? []) as string[]),
+      ]));
+      const shots: { id: string; file: File }[] = [];
+      for (let i = 0; i < allPaths.length; i++) {
+        const p = allPaths[i];
+        const url = thumbs[p];
+        if (!url) continue;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) continue;
+          const blob = await res.blob();
+          const name = p.split("/").pop() || `foto-${i + 1}.jpg`;
+          shots.push({ id: `${r.id}:${i}`, file: new File([blob], name, { type: blob.type || "image/jpeg" }) });
+        } catch { /* skip */ }
+      }
+
+      const result = await shareToChat({
+        conversationId,
+        caption,
+        locationUrl: r.location_url,
+        shots,
+        markIds: [r.id],
+      });
+      toast.dismiss(tid);
+      if (result.status === "shared") {
+        toast.success(`Terkirim ke ${convTitle} (${result.messageCount} pesan).`);
+        const { error } = await table()
+          .update({ status: "sent", sent_at: new Date().toISOString() })
+          .eq("id", r.id);
+        if (error) toast.error(`Status gagal diperbarui: ${error.message}`);
+        else await load();
+      } else {
+        toast.error(`Gagal mengirim: ${result.error}`);
+      }
+    } catch (e) {
+      toast.dismiss(tid);
+      toast.error((e as Error)?.message || "Gagal mengirim ke MCM Chat.");
+    } finally {
+      setChatSendingId(null);
+    }
   }
 
   const ready = rows.filter((r) => r.status === "ready");
@@ -626,6 +683,15 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                       <Send className="h-3.5 w-3.5" /> Kirim WA
                     </button>
                     <button
+                      onClick={() => setChatPickTarget(r)}
+                      disabled={chatSendingId === r.id}
+                      className="inline-flex h-8 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 text-[11px] font-semibold text-primary disabled:opacity-60"
+                      aria-label="Kirim ke MCM Chat"
+                    >
+                      {chatSendingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
+                      Kirim MCM
+                    </button>
+                    <button
                       onClick={() => onRemove(r)}
                       className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] text-destructive"
                     >
@@ -686,6 +752,17 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           </ul>
         )}
       </section>
+
+      <PickChatConversationDialog
+        open={!!chatPickTarget}
+        onOpenChange={(v) => { if (!v) setChatPickTarget(null); }}
+        title="Kirim ke MCM Chat"
+        onPick={(conversationId, displayTitle) => {
+          const target = chatPickTarget;
+          setChatPickTarget(null);
+          if (target) void onSendChat(target, conversationId, displayTitle);
+        }}
+      />
     </div>
   );
 }
