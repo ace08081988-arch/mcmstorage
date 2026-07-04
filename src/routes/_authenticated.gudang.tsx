@@ -2234,7 +2234,8 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
         const showPackageBtn =
           pkgLabel !== "" &&
           pkgLabel !== "pcs" &&
-          pkgLabel.toLowerCase() !== humU.toLowerCase() &&
+          !isSameUnitLabel(pkgLabel, humU) &&
+          !isSameUnitLabel(pkgLabel, item.base_unit) &&
           Number(item.package_size) > 1;
         // Sinkronkan sellMode kalau tombolnya hilang.
         if (!showPackageBtn && sellMode === "package") {
