@@ -1337,6 +1337,28 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             />
             <span className="w-6 text-right tabular-nums">{thickness}</span>
           </label>
+          <label
+            className="flex items-center gap-1"
+            title="Transparansi lapisan (10%–100%)"
+          >
+            <span>Opacity</span>
+            <input
+              type="range"
+              min={10}
+              max={100}
+              value={Math.round(opacity * 100)}
+              title="Transparansi lapisan (10%–100%)"
+              aria-label="Transparansi lapisan dari 10 sampai 100 persen"
+              onPointerDown={() => { if (selected) liveBeginIfNeeded(); }}
+              onChange={(e) => {
+                const v = Number(e.target.value) / 100; setOpacity(v);
+                if (selected) livePatchSelected({ opacity: v } as Partial<Layer>);
+              }}
+              onPointerUp={commitLivePatch}
+              onBlur={commitLivePatch}
+            />
+            <span className="w-8 text-right tabular-nums">{Math.round(opacity * 100)}%</span>
+          </label>
         </div>
 
         {tool === "arrow" && (
