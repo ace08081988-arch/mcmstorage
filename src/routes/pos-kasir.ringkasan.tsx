@@ -108,9 +108,18 @@ function PosKasirRingkasanPage() {
         </div>
 
         <section className="bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
-          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
-            Transaksi Hari Ini ({hariIni.length})
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              Transaksi Hari Ini ({hariIni.length})
+            </h2>
+            <button
+              onClick={exportCSV}
+              disabled={hariIni.length === 0}
+              className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-emerald-700 text-white font-medium"
+            >
+              ⬇ Ekspor CSV ({hariIni.length})
+            </button>
+          </div>
           {hariIni.length === 0 ? (
             <div className="text-center py-8 text-sm text-slate-500">
               Belum ada transaksi hari ini. Lakukan penjualan di halaman POS Kasir.
