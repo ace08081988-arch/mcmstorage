@@ -810,6 +810,23 @@ function PosKasirPage() {
                   </div>
                 )}
               </div>
+              {selected.warehouseItemId && (
+                <div className={modeRingkas ? "mt-2" : "mt-3"}>
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Harga jual / {unit} (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    step="1"
+                    min="0"
+                    value={hargaStr}
+                    onChange={(e) => setHargaStr(e.target.value)}
+                    placeholder="0"
+                    className={`w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30 rounded-lg font-mono focus:outline-none focus:ring-2 ${modeRingkas ? "mt-1 px-2.5 py-2 text-sm" : "mt-2 px-3 py-2.5 text-base"}`}
+                  />
+                </div>
+              )}
             </div>
 
 
