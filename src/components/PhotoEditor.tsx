@@ -905,7 +905,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           className="inline-flex h-9 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 text-sm font-semibold text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
         >
           <Download className="h-4 w-4" />
-          <span className="hidden xs:inline">Ke galeri</span>
+          <span className="hidden sm:inline">Ke galeri</span>
         </button>
       </div>
 
