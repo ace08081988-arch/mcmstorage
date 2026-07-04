@@ -316,22 +316,23 @@ export function ProductSharePopover({
 }
 
 const thumbCache = new Map<string, { url: string; exp: number }>();
-function ProductThumb({ path }: { path: string | null }) {
+function ProductThumb({ path, bucket }: { path: string | null; bucket: "ready-packages" | "self-prep-photos" }) {
   const [url, setUrl] = useState<string | null>(null);
   useEffect(() => {
     if (!path) return;
-    const c = thumbCache.get(path);
+    const key = `${bucket}:${path}`;
+    const c = thumbCache.get(key);
     if (c && c.exp > Date.now()) {
       setUrl(c.url);
       return;
     }
     let alive = true;
     supabase.storage
-      .from("ready-packages")
+      .from(bucket)
       .createSignedUrl(path, 3600)
       .then(({ data }) => {
         if (!alive || !data?.signedUrl) return;
-        thumbCache.set(path, {
+        thumbCache.set(key, {
           url: data.signedUrl,
           exp: Date.now() + 50 * 60 * 1000,
         });
@@ -340,7 +341,7 @@ function ProductThumb({ path }: { path: string | null }) {
     return () => {
       alive = false;
     };
-  }, [path]);
+  }, [path, bucket]);
   if (!path) {
     return (
       <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded border border-dashed text-[9px] text-muted-foreground">
