@@ -420,17 +420,55 @@ function PosKasirPage() {
           <section className="lg:col-span-2 space-y-4 md:space-y-6">
             {/* Desktop product grid */}
             <div className="hidden md:block bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
-              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">Pilih Produk</h2>
+              <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+                <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Pilih Produk</h2>
+                <label className="flex items-center gap-2 text-xs text-slate-400">
+                  Ambang notifikasi
+                  <input
+                    type="number"
+                    min={0.5}
+                    step={0.5}
+                    value={ambangStok}
+                    onChange={(e) => {
+                      const n = parseFloat(e.target.value.replace(",", "."));
+                      if (Number.isFinite(n) && n > 0) setAmbangStok(n);
+                    }}
+                    className="w-20 rounded-md bg-slate-900 border border-slate-700 px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                  />
+                  kg
+                </label>
+              </div>
+              {(produkKritis.length > 0 || produkMenipis.length > 0 || produkHabis.length > 0) && (
+                <div className="mb-3 flex flex-col gap-1 text-xs">
+                  {produkKritis.length > 0 && (
+                    <div className="text-rose-300">
+                      🚨 Kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                    </div>
+                  )}
+                  {produkMenipis.length > 0 && (
+                    <div className="text-amber-300">
+                      ⚠ Menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                    </div>
+                  )}
+                  {produkHabis.length > 0 && (
+                    <div className="text-slate-400">
+                      ⛔ Habis: {produkHabis.map((p) => `${p.emoji} ${p.nama}`).join(", ")}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {produk.map((p) => {
                   const active = p.id === selectedId;
-                  const habis = p.stokKg <= 0;
+                  const level = levelStok(p.stokKg, ambangStok);
+                  const meta = LEVEL_META[level];
+                  const habis = level === "habis";
                   return (
                     <button
                       key={p.id}
                       onClick={() => setSelectedId(p.id)}
                       disabled={habis}
-                      className={`text-left p-4 rounded-xl border transition-all ${
+                      className={`relative text-left p-4 rounded-xl border transition-all ${meta.ring} ${
                         active
                           ? "bg-emerald-500/20 border-emerald-400 shadow-lg shadow-emerald-500/20"
                           : "bg-slate-900/60 border-slate-700 hover:border-slate-500"
@@ -439,9 +477,17 @@ function PosKasirPage() {
                       <div className="text-3xl mb-2">{p.emoji}</div>
                       <div className="font-semibold text-sm">{p.nama}</div>
                       <div className="text-xs text-slate-400 mt-1">{rupiah(p.hargaPerKg)}/kg</div>
-                      <div className={`text-xs mt-2 ${p.stokKg < 5 ? "text-amber-400" : "text-slate-300"}`}>
+                      <div className={`text-xs mt-2 ${meta.text}`}>
                         Stok: {p.stokKg.toLocaleString("id-ID")} kg
                       </div>
+                      {level !== "aman" && (
+                        <span
+                          aria-label={`Stok ${meta.label}`}
+                          className={`absolute top-2 right-2 text-[10px] font-medium leading-none px-2 py-1 rounded-full border ${meta.badge}`}
+                        >
+                          {meta.emoji} {meta.label}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
