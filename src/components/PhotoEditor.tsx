@@ -1275,6 +1275,21 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </div>
         )}
 
+        {/* Active tool hint */}
+        <div
+          role="status"
+          aria-live="polite"
+          key={tool}
+          className="mb-2 flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[11px]"
+        >
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
+            <span className="relative inline-flex h-full w-2 rounded-full bg-primary" />
+          </span>
+          <span className="font-medium text-primary">{TOOL_LABELS[tool]} aktif</span>
+          <span className="text-muted-foreground">— {TOOL_HINTS[tool]}</span>
+        </div>
+
         {/* Tools bar */}
         <div className="flex flex-wrap items-center gap-1">
           <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" />
