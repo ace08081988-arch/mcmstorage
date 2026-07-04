@@ -199,7 +199,7 @@ function PosKasirPage() {
     setPosKasirRiwayat(riwayat);
   }, [riwayat]);
 
-  const selected = produk.find((p) => p.id === selectedId)!;
+  const selected = produk.find((p) => p.id === selectedId) ?? produk[0];
   const berat = useMemo(() => {
     const n = parseFloat(beratStr.replace(",", "."));
     return Number.isFinite(n) && n >= 0 ? n : 0;
