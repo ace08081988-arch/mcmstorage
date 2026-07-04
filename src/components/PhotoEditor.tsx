@@ -676,18 +676,18 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     if (e.touches.length !== 1) return;
     const t = e.touches[0];
     touchDrivingRef.current = true;
-    e.preventDefault();
+    // Note: React 18 touch listeners are passive; preventDefault() would
+    // no-op with a console warning. CSS `touch-action: none` on the canvas
+    // already blocks browser gestures, so no preventDefault is needed.
     handleDown(pointFromClient(t.clientX, t.clientY));
   }
   function onTouchMove(e: React.TouchEvent<HTMLCanvasElement>) {
     if (!touchDrivingRef.current) return;
     const t = e.touches[0]; if (!t) return;
-    e.preventDefault();
     handleMove(pointFromClient(t.clientX, t.clientY));
   }
   function onTouchEnd(e: React.TouchEvent<HTMLCanvasElement>) {
     if (!touchDrivingRef.current) return;
-    e.preventDefault();
     handleUp();
     // release after the microtask so pointer events fired by browser as
     // a compat shim are ignored (they would double-commit otherwise).
