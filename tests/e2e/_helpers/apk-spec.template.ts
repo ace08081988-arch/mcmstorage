@@ -76,16 +76,33 @@
  *   - `trackedClick` / `trackedAction` TANPA `windowMs` literal — helper pakai
  *     `APK_STUB_PER_ACTION_WINDOW_MS` otomatis.
  *
- * terminalGuard vs installServerFnPassthroughGuard:
- *   - Gunakan `stub.terminalGuard()` di AKHIR spec APK saja. Ini hanya memantau
- *     `getApkVariantDetail` (chat/storage) dan memastikan tidak ada request
- *     refetch/polling tambahan setelah semua aksi user selesai.
- *   - Gunakan `installServerFnPassthroughGuard(page, { whitelist: [...] })` untuk flow
- *     yang melibatkan copy/export chat links (misal `chat-pin-mcm-copy-export`).
- *     Guard itu memantau SEMUA server function (bukan cuma APK) dan akan
- *     menangkap kebocoran request copy/export yang tidak diharapkan.
- *   - Keduanya bisa dipakai bersama di flow APK + copy/export: pasang passthrough
- *     guard di setup, lalu tutup spec dengan `stub.terminalGuard()`.
+ * terminalGuard vs installServerFnPassthroughGuard — ringkasan:
+ *
+ *   ┌────────────────────────┬─────────────────────────────┬─────────────────────────────────┐
+ *   │ Aspek                  │ stub.terminalGuard()        │ installServerFnPassthroughGuard │
+ *   ├────────────────────────┼─────────────────────────────┼─────────────────────────────────┤
+ *   │ Cakupan request        │ HANYA getApkVariantDetail   │ SEMUA server function           │
+ *   │                        │ (chat + storage)            │ (`**/_serverFn/**`)             │
+ *   │ Waktu pasang           │ Otomatis via installApkStub │ Manual di setup spec            │
+ *   │ Waktu assert           │ Sekali di akhir spec        │ Per-aksi & / atau di akhir      │
+ *   │ Sumber generator       │ Selalu ada (default mode)   │ Aktif di `--mode full`          │
+ *   │ Wajib untuk flow APK   │ YA — di setiap spec APK     │ Opsional                        │
+ *   │   murni                │                             │                                 │
+ *   │ Wajib untuk flow yang  │ Tetap dipakai (tidak        │ YA — deteksi leak copy/export/  │
+ *   │   sentuh server fn lain│ menggantikan passthrough)   │ toggle di luar APK              │
+ *   │ Window default         │ APK_STUB_TERMINAL_WINDOW_MS │ 500ms (override via `windowMs`) │
+ *   │ Efek bila dilewat      │ Polling / refetch-on-focus  │ Kebocoran round-trip server fn  │
+ *   │                        │ lolos tak terdeteksi        │ non-APK lolos tak terdeteksi    │
+ *   │ Dispose                │ Tidak perlu                 │ `passthrough.dispose()` di akhir│
+ *   └────────────────────────┴─────────────────────────────┴─────────────────────────────────┘
+ *
+ *   Aturan pemakaian:
+ *   - Flow APK murni (hanya `getApkVariantDetail`)  → cukup `stub.terminalGuard()`.
+ *   - Flow APK + copy/export/toggle server fn lain  → PASANG KEDUANYA:
+ *       passthrough guard di setup, `terminalGuard()` sebelum
+ *       `passthrough.assertNoAdditionalRequests({...})` + `dispose()` di akhir.
+ *   - `terminalGuard()` TIDAK PERNAH digantikan passthrough — keduanya
+ *     komplementer (cakupan berbeda).
  *
  * Checklist anti-pattern — jangan lakukan di spec APK:
  *
