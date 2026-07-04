@@ -867,7 +867,7 @@ function PosKasirPage() {
                 </button>
                 <button
                   onClick={bayar}
-                  disabled={!stokCukup}
+                  disabled={!bayarSiap}
                   className={`rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-xs font-bold text-white shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform ${modeRingkas ? "py-2" : "py-2.5"}`}
                 >
                   Bayar
@@ -1021,7 +1021,7 @@ function PosKasirPage() {
 
               <button
                 onClick={bayar}
-                disabled={!stokCukup}
+                disabled={!bayarSiap}
                 className="mt-5 w-full py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed font-bold text-lg shadow-lg shadow-emerald-500/30 transition-all"
               >
                 💳 Bayar
