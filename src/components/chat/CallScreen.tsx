@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
   Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, Minimize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal, SwitchCamera, Move, RotateCcw, RefreshCw, Eye, EyeOff,
+  Download, Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -371,6 +372,150 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     setVideoQuality,
     LEGACY_VIDEO_FIT_KEY, LEGACY_VIDEO_POS_KEY,
   ]);
+
+  // Impor/ekspor setelan dalam file JSON supaya preferensi bisa dipindahkan
+  // antar perangkat (mis. HP kantor → HP pribadi). Skema versi 1 mencakup
+  // seluruh state yang di-persist: Crop/Fit + posisi (preset & custom drag)
+  // per kamera, kualitas video, PiP (ukuran/pojok/swap/hidden/minimize),
+  // dan facingMode. Field yang tidak dikenal / tipe salah diabaikan supaya
+  // file dari versi lain tetap aman diimpor.
+  const SETTINGS_SCHEMA_VERSION = 1;
+  const importFileInputRef = useRef<HTMLInputElement | null>(null);
+  const exportViewSettings = useCallback(() => {
+    const payload = {
+      schema: "mcm.call.viewSettings",
+      version: SETTINGS_SCHEMA_VERSION,
+      exportedAt: new Date().toISOString(),
+      settings: {
+        facingMode,
+        pipSize,
+        pipCorner,
+        pipSwapped: swapped,
+        pipHidden,
+        pipMinimized,
+        videoFitFront,
+        videoFitBack,
+        videoPosFront,
+        videoPosBack,
+        videoPosCustomFront,
+        videoPosCustomBack,
+        videoQuality,
+      },
+    };
+    try {
+      const blob = new Blob([JSON.stringify(payload, null, 2)], {
+        type: "application/json",
+      });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      const stamp = new Date().toISOString().replace(/[:.]/g, "-");
+      a.href = url;
+      a.download = `mcm-call-settings-${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success("Setelan panggilan diekspor ke JSON");
+    } catch {
+      toast.error("Gagal mengekspor setelan panggilan");
+    }
+  }, [
+    facingMode, pipSize, pipCorner, swapped, pipHidden, pipMinimized,
+    videoFitFront, videoFitBack, videoPosFront, videoPosBack,
+    videoPosCustomFront, videoPosCustomBack, videoQuality,
+  ]);
+
+  const applyImportedSettings = useCallback((raw: unknown) => {
+    if (!raw || typeof raw !== "object") return 0;
+    const root = raw as { settings?: unknown; schema?: unknown };
+    // Terima file berskema (settings di dalam) atau plain object (langsung).
+    const src =
+      root.schema === "mcm.call.viewSettings" && root.settings &&
+      typeof root.settings === "object"
+        ? (root.settings as Record<string, unknown>)
+        : (raw as Record<string, unknown>);
+    let applied = 0;
+    const isOneOf = <T extends string>(v: unknown, opts: readonly T[]): v is T =>
+      typeof v === "string" && (opts as readonly string[]).includes(v);
+    if (isOneOf(src.facingMode, ["user", "environment"] as const)) {
+      setFacingMode(src.facingMode); applied++;
+    }
+    if (isOneOf(src.pipSize, ["sm", "md", "lg"] as const)) {
+      setPipSize(src.pipSize); applied++;
+    }
+    if (isOneOf(src.pipCorner, ["tl", "tr", "bl", "br"] as const)) {
+      setPipCorner(src.pipCorner); applied++;
+    }
+    if (typeof src.pipSwapped === "boolean") { setSwapped(src.pipSwapped); applied++; }
+    if (typeof src.pipHidden === "boolean") { setPipHidden(src.pipHidden); applied++; }
+    if (typeof src.pipMinimized === "boolean") { setPipMinimized(src.pipMinimized); applied++; }
+    if (isOneOf(src.videoFitFront, ["cover", "contain"] as const)) {
+      setVideoFitFront(src.videoFitFront); applied++;
+    }
+    if (isOneOf(src.videoFitBack, ["cover", "contain"] as const)) {
+      setVideoFitBack(src.videoFitBack); applied++;
+    }
+    const posOpts = ["center", "top", "bottom", "left", "right"] as const;
+    if (isOneOf(src.videoPosFront, posOpts)) { setVideoPosFront(src.videoPosFront); applied++; }
+    if (isOneOf(src.videoPosBack, posOpts)) { setVideoPosBack(src.videoPosBack); applied++; }
+    const validXY = (v: unknown): { ok: true; value: VideoPosXY | null } | { ok: false } => {
+      if (v === null) return { ok: true, value: null };
+      if (v && typeof v === "object") {
+        const x = (v as { x?: unknown }).x;
+        const y = (v as { y?: unknown }).y;
+        if (typeof x === "number" && typeof y === "number" &&
+            Number.isFinite(x) && Number.isFinite(y)) {
+          return {
+            ok: true,
+            value: { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) },
+          };
+        }
+      }
+      return { ok: false };
+    };
+    if ("videoPosCustomFront" in src) {
+      const r = validXY(src.videoPosCustomFront);
+      if (r.ok) { setVideoPosCustomFront(r.value); applied++; }
+    }
+    if ("videoPosCustomBack" in src) {
+      const r = validXY(src.videoPosCustomBack);
+      if (r.ok) { setVideoPosCustomBack(r.value); applied++; }
+    }
+    if (isOneOf(src.videoQuality, ["auto", "low", "medium", "high"] as const)) {
+      setVideoQuality(src.videoQuality); applied++;
+    }
+    return applied;
+  }, [
+    setFacingMode, setPipSize, setPipCorner, setSwapped, setPipHidden, setPipMinimized,
+    setVideoFitFront, setVideoFitBack, setVideoPosFront, setVideoPosBack,
+    setVideoPosCustomFront, setVideoPosCustomBack, setVideoQuality,
+  ]);
+
+  const onImportFileChosen = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
+      const file = e.target.files?.[0];
+      // Reset input dulu supaya memilih file yang sama dua kali tetap memicu.
+      e.target.value = "";
+      if (!file) return;
+      try {
+        const text = await file.text();
+        const parsed = JSON.parse(text) as unknown;
+        const count = applyImportedSettings(parsed);
+        if (count > 0) {
+          toast.success(`Setelan panggilan diimpor (${count} field)`);
+        } else {
+          toast.error("File tidak berisi setelan yang dikenali");
+        }
+      } catch {
+        toast.error("File JSON tidak valid");
+      }
+    },
+    [applyImportedSettings],
+  );
+
+  const triggerImportViewSettings = useCallback(() => {
+    importFileInputRef.current?.click();
+  }, []);
 
   // Toast singkat saat setelan panggilan dipulihkan dari localStorage.
   // Saat mount: toast langsung muncul sebagai konfirmasi state dipulihkan.
@@ -1462,6 +1607,44 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 <RefreshCw className="h-3.5 w-3.5" />
                 <span>Reset semua</span>
               </button>
+            ) : null}
+            {kind === "video" ? (
+              <button
+                type="button"
+                onClick={exportViewSettings}
+                aria-label="Ekspor setelan panggilan ke file JSON"
+                title="Ekspor setelan (Crop/Fit, posisi, kualitas, PiP, kamera) ke JSON"
+                data-testid="call-export-settings"
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                <Download className="h-3.5 w-3.5" />
+                <span>Ekspor</span>
+              </button>
+            ) : null}
+            {kind === "video" ? (
+              <button
+                type="button"
+                onClick={triggerImportViewSettings}
+                aria-label="Impor setelan panggilan dari file JSON"
+                title="Impor setelan dari JSON (Crop/Fit, posisi, kualitas, PiP, kamera)"
+                data-testid="call-import-settings"
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                <Upload className="h-3.5 w-3.5" />
+                <span>Impor</span>
+              </button>
+            ) : null}
+            {kind === "video" ? (
+              <input
+                ref={importFileInputRef}
+                type="file"
+                accept="application/json,.json"
+                onChange={onImportFileChosen}
+                className="hidden"
+                data-testid="call-import-settings-input"
+                aria-hidden="true"
+                tabIndex={-1}
+              />
             ) : null}
           </div>
         </div>
