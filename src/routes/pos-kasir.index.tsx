@@ -1045,7 +1045,7 @@ function PosKasirPage() {
 
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className="text-xl shrink-0">{t.produkEmoji}</span>
+                          <span className={`shrink-0 ${modeRingkas ? "text-lg" : "text-xl"}`}>{t.produkEmoji}</span>
                           <div className="min-w-0">
                             <div className="text-sm font-medium truncate">{t.produkNama}</div>
                             <div className="text-[11px] text-slate-500 font-mono">{waktuFmt.format(t.waktu)}</div>
@@ -1058,21 +1058,21 @@ function PosKasirPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="mt-2 pt-2 border-t border-slate-800 flex justify-between text-[11px] text-slate-500">
+                      <div className={`border-t border-slate-800 flex justify-between text-[11px] text-slate-500 ${modeRingkas ? "mt-1.5 pt-1.5" : "mt-2 pt-2"}`}>
                         <span>@ {rupiah(t.hargaPerKg)}/kg</span>
                         <span>
                           Sisa:{" "}
                           <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} kg</span>
                         </span>
                       </div>
-                      <div className="mt-2 flex gap-2">
+                      <div className={`flex ${modeRingkas ? "mt-1.5 gap-1.5" : "mt-2 gap-2"}`}>
                         <button
                           type="button"
                           onClick={() => kirimWa(t)}
                           disabled={!waReady}
                           title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
                           aria-disabled={!waReady}
-                          className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                          className={`flex-1 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors ${modeRingkas ? "py-1" : "py-1.5"}`}
                         >
                           💬 Kirim WA
                         </button>
@@ -1080,7 +1080,7 @@ function PosKasirPage() {
                           <button
                             type="button"
                             onClick={() => batalkanTransaksi(t)}
-                            className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors"
+                            className={`rounded-lg text-[11px] font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors ${modeRingkas ? "px-2 py-1" : "px-3 py-1.5"}`}
                             title="Batalkan transaksi terakhir & kembalikan stok"
                           >
                             ↶ Batalkan
@@ -1088,11 +1088,12 @@ function PosKasirPage() {
                         )}
                       </div>
                       {isTerakhir && (
-                        <div className="mt-1 text-[10px] text-slate-500 text-center">
+                        <div className={`text-[10px] text-slate-500 text-center ${modeRingkas ? "mt-0.5" : "mt-1"}`}>
                           {revealed ? "Lepas untuk membatalkan →" : "Geser ← untuk membatalkan"}
                         </div>
                       )}
                       </div>
+
                     </div>
                     );
                   })
