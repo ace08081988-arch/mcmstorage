@@ -1036,6 +1036,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 : `absolute inset-0 h-full w-full ${videoFitClass} bg-black`
             }
             style={videoStyle}
+            {...(swapped ? {} : cropDragHandlersBig)}
           />
         ) : (
           <audio ref={remoteAudioRef} autoPlay playsInline />
