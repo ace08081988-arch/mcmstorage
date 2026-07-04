@@ -1,4 +1,5 @@
 const STORAGE_KEY = "mcm-pos-kasir-riwayat";
+const CHANGE_EVENT = "mcm:pos-kasir:changed";
 
 export type PosKasirProduk = {
   id: string;
@@ -45,7 +46,26 @@ export function setPosKasirRiwayat(riwayat: PosKasirTransaksi[]) {
   if (typeof window === "undefined") return;
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(riwayat));
+    window.dispatchEvent(new CustomEvent(CHANGE_EVENT));
   } catch {
     // Abaikan error quota atau kebijakan security.
   }
+}
+
+/**
+ * Berlangganan perubahan riwayat POS Kasir (sama tab via CustomEvent,
+ * lintas tab via event `storage`). Kembalikan fungsi unsubscribe.
+ */
+export function subscribePosKasirRiwayat(cb: () => void): () => void {
+  if (typeof window === "undefined") return () => {};
+  const onChange = () => cb();
+  const onStorage = (e: StorageEvent) => {
+    if (e.key === STORAGE_KEY || e.key === null) cb();
+  };
+  window.addEventListener(CHANGE_EVENT, onChange);
+  window.addEventListener("storage", onStorage);
+  return () => {
+    window.removeEventListener(CHANGE_EVENT, onChange);
+    window.removeEventListener("storage", onStorage);
+  };
 }

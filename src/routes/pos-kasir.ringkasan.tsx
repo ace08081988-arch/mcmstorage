@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { getPosKasirRiwayat } from "@/lib/pos-kasir";
+import { useEffect, useMemo, useState } from "react";
+import { getPosKasirRiwayat, subscribePosKasirRiwayat } from "@/lib/pos-kasir";
 import {
   ResponsiveContainer,
   ComposedChart,
@@ -51,7 +51,24 @@ function daysAgoKey(n: number) {
 }
 
 function PosKasirRingkasanPage() {
-  const riwayat = useMemo(() => getPosKasirRiwayat(), []);
+  const [riwayat, setRiwayat] = useState(() => getPosKasirRiwayat());
+
+  useEffect(() => {
+    // Sinkron ulang saat tab difokuskan kembali (mis. balik dari kasir di mobile)
+    const refresh = () => setRiwayat(getPosKasirRiwayat());
+    const unsub = subscribePosKasirRiwayat(refresh);
+    const onVisibility = () => {
+      if (document.visibilityState === "visible") refresh();
+    };
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      unsub();
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+
   const hariIni = useMemo(() => riwayat.filter((t) => isToday(t.waktu)), [riwayat]);
 
   const omzetHariIni = hariIni.reduce((s, t) => s + t.total, 0);
