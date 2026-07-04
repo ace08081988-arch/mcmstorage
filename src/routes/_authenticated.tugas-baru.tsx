@@ -408,6 +408,16 @@ function TugasBaruPage() {
     const t = title.trim();
     if (!t) return toast.error("Judul tugas wajib diisi");
     if (!/^\d{4,8}$/.test(pin)) return toast.error("PIN harus 4–8 digit angka");
+    const tokenTrim = token.trim();
+    if (!/^[A-Za-z0-9_-]{8,48}$/.test(tokenTrim)) {
+      return toast.error("Token harus 8–48 karakter (huruf, angka, - atau _)");
+    }
+    let scheduledIso: string | null = null;
+    if (scheduledAt.trim()) {
+      const d = new Date(scheduledAt);
+      if (Number.isNaN(d.getTime())) return toast.error("Jadwal tidak valid");
+      scheduledIso = d.toISOString();
+    }
     const items = rows
       .map((r) => ({
         name: r.name.trim(),
@@ -428,7 +438,6 @@ function TugasBaruPage() {
     }
 
     setBusy(true);
-    const token = genShareToken();
     const payload = items.map((r) => ({
       name: r.name,
       category: null,
@@ -443,14 +452,15 @@ function TugasBaruPage() {
       _title: t,
       _note: note.trim() || null,
       _pin: pin,
-      _share_token: token,
+      _share_token: tokenTrim,
       _items: payload,
+      _scheduled_at: scheduledIso,
     });
     setBusy(false);
     if (error) return toast.error(error.message);
-    const url = publicTaskUrl(token);
+    const url = publicTaskUrl(tokenTrim);
     clearDraft();
-    setCreated({ token, pin, title: t, url });
+    setCreated({ token: tokenTrim, pin, title: t, url });
     toast.success("Tugas berhasil dibuat");
   }
 
@@ -469,6 +479,8 @@ function TugasBaruPage() {
     setPin(genPin());
     setRows([newRow()]);
     setPhone("");
+    setToken(genShareToken());
+    setScheduledAt("");
     setVerify({});
     verifySeq.current = {};
     clearDraft();
@@ -481,6 +493,8 @@ function TugasBaruPage() {
     setPin(genPin());
     setRows([newRow()]);
     setPhone("");
+    setToken(genShareToken());
+    setScheduledAt("");
     setVerify({});
     verifySeq.current = {};
     clearDraft();
