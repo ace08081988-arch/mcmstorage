@@ -169,8 +169,11 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
-      // TODO(scaffold): jelaskan skenario spec "apk-example-terminal-only" — apa yang
-      // diuji, harness mana yang dipakai, dan invariant guard-nya.
+      // Contoh pembanding: memakai HANYA `stub.terminalGuard()` (tanpa
+      // `installServerFnPassthroughGuard`) untuk flow APK murni —
+      // mount kedua varian + refetch `chat` via `trackedClick`.
+      // Invariant: setelah state aktif tercapai, tidak ada request
+      // `getApkVariantDetail` tambahan pada kedua varian.
       name: "apk-example-terminal-only-e2e",
       testDir: "./tests/e2e",
       testMatch: /apk-example-terminal-only\.spec\.ts/,
