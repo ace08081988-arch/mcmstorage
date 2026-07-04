@@ -1081,6 +1081,63 @@ function TugasBaruForm() {
   );
 }
 
+function TokenDuplicateBadge({
+  check,
+  onRandom,
+}: {
+  check: {
+    status: "idle" | "checking" | "unique" | "duplicate" | "invalid" | "error";
+    token?: string;
+    error?: string;
+  };
+  onRandom: () => void;
+}) {
+  if (check.status === "idle") return null;
+  if (check.status === "invalid") return null;
+  if (check.status === "checking") {
+    return (
+      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+        <svg className="h-2.5 w-2.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+          <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+        Memeriksa apakah token sudah dipakai…
+      </div>
+    );
+  }
+  if (check.status === "unique") {
+    return (
+      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-200">
+        <Check className="h-3 w-3" /> Token belum dipakai — aman
+      </div>
+    );
+  }
+  if (check.status === "duplicate") {
+    return (
+      <div className="mt-1 flex items-start justify-between gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
+        <span className="flex items-start gap-1">
+          <ShieldAlert className="mt-px h-3 w-3 shrink-0" />
+          <span>
+            <b>Token sudah dipakai</b> oleh tugas lain. Ubah tokennya atau tekan Acak agar tugas baru bisa dibuat.
+          </span>
+        </span>
+        <button
+          type="button"
+          onClick={onRandom}
+          className="shrink-0 rounded border border-destructive/40 px-2 py-0.5 text-[10px] font-medium hover:bg-destructive/10"
+        >
+          Acak token
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-700 dark:text-amber-200">
+      <Info className="h-3 w-3" /> Gagal memeriksa token{check.error ? `: ${check.error}` : ""}. Coba lagi.
+    </div>
+  );
+}
+
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="block space-y-1">
