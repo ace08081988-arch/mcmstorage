@@ -983,7 +983,7 @@ function PosKasirPage() {
               </div>
 
               {/* Mobile: card list */}
-              <div className="grid gap-2 md:hidden">
+              <div className={`grid md:hidden ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
                   <input
@@ -992,9 +992,10 @@ function PosKasirPage() {
                     value={cariTransaksi}
                     onChange={(e) => setCariTransaksi(e.target.value)}
                     placeholder="Cari nama produk atau waktu…"
-                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-400"
+                    className={`w-full pl-9 pr-3 rounded-lg bg-slate-900/60 border border-slate-700 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-400 ${modeRingkas ? "py-1.5" : "py-2"}`}
                   />
                 </div>
+
                 {riwayatCariMobile.length === 0 ? (
                   <div className="text-center py-6 text-xs text-slate-500">
                     Tidak ada transaksi yang cocok dengan pencarian.
