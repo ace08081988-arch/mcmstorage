@@ -122,11 +122,14 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
             <div key={c.id} className="flex items-center gap-2 rounded-md border bg-background p-2">
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{c.name}</div>
-                <div className="text-[11px] text-muted-foreground">+{c.wa_phone}</div>
+                <div className="text-[11px] text-muted-foreground">WA: +{c.wa_phone}</div>
+                {c.pin_chat_mcm ? (
+                  <div className="text-[11px] font-mono text-primary">PIN MCM: {c.pin_chat_mcm}</div>
+                ) : null}
               </div>
               <a
                 href={buildWhatsAppUrl("", c.wa_phone)} target="_blank" rel="noreferrer"
-                title="Kirim via MCM"
+                title="Kirim via WA"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]"
               ><MessageCircle className="h-4 w-4" /></a>
               <button
