@@ -513,9 +513,14 @@ function EditDialog({
       toast.error("Nama wajib diisi.");
       return;
     }
-    if (isNew && !isLikelyInviteCode(normalizeInviteCode(pin))) {
-      toast.error("PIN undangan wajib diisi (8 karakter) atau pindai QR.");
-      return;
+    let validatedPin = "";
+    if (isNew) {
+      const v = validateInviteCode(pin);
+      if (!v.ok) {
+        toast.error(v.reason);
+        return;
+      }
+      validatedPin = v.code;
     }
     if (duplicate) {
       toast.error("Kontak duplikat", { description: duplicate.reason });
@@ -527,9 +532,9 @@ function EditDialog({
       let alreadyExisted = false;
       let pendingRequest = false;
       let alreadyFriends = false;
-      if (isNew && pin.trim()) {
+      if (isNew && validatedPin) {
         const { addContactByInviteCode } = await import("@/lib/invite");
-        const res = await addContactByInviteCode(normalizeInviteCode(pin));
+        const res = await addContactByInviteCode(validatedPin);
         linkedName = res.displayName;
         alreadyExisted = res.alreadyExisted;
         pendingRequest = res.pending;
