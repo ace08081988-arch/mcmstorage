@@ -470,7 +470,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="absolute inset-0 h-full w-full object-cover"
+            className={
+              swapped
+                ? `absolute ${pipCornerClass} ${pipSizeClass} rounded-lg border border-white/20 object-cover shadow-lg z-10`
+                : "absolute inset-0 h-full w-full object-cover"
+            }
           />
         ) : (
           <audio ref={remoteAudioRef} autoPlay playsInline />
@@ -513,15 +517,64 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           </div>
         ) : null}
 
-        {/* Preview lokal kecil di pojok */}
+        {/* Preview lokal — dapat di-swap besar/kecil, diubah ukurannya, dan digeser */}
         {kind === "video" ? (
-          <video
-            ref={localVideoRef}
-            autoPlay
-            playsInline
-            muted
-            className="absolute bottom-4 right-4 h-32 w-24 rounded-lg border border-white/20 object-cover shadow-lg"
-          />
+          <div
+            className={
+              swapped
+                ? "absolute inset-0 z-0"
+                : `absolute ${pipCornerClass} ${pipSizeClass} z-10 touch-none`
+            }
+            onPointerDown={swapped ? undefined : onPipPointerDown}
+            onPointerMove={swapped ? undefined : onPipPointerMove}
+            onPointerUp={swapped ? undefined : onPipPointerUp}
+          >
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className={
+                swapped
+                  ? "absolute inset-0 h-full w-full object-cover"
+                  : "h-full w-full rounded-lg border border-white/20 object-cover shadow-lg"
+              }
+            />
+            {!swapped ? (
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 rounded-b-lg bg-black/50 px-1.5 py-1 backdrop-blur">
+                <button
+                  type="button"
+                  aria-label="Tukar video besar/kecil"
+                  title="Tukar besar/kecil"
+                  onClick={() => setSwapped((s) => !s)}
+                  className="rounded p-1 text-white/90 hover:bg-white/10"
+                >
+                  <ArrowLeftRight className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Ubah ukuran preview"
+                  title={`Ukuran: ${pipSize.toUpperCase()}`}
+                  onClick={cyclePipSize}
+                  className="flex items-center gap-1 rounded p-1 text-[10px] font-semibold text-white/90 hover:bg-white/10"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  <span>{pipSize.toUpperCase()}</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {swapped && kind === "video" ? (
+          <button
+            type="button"
+            aria-label="Kembalikan tampilan video"
+            title="Tukar besar/kecil"
+            onClick={() => setSwapped(false)}
+            className="absolute bottom-28 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1.5 text-xs text-white backdrop-blur hover:bg-black/70"
+          >
+            <ArrowLeftRight className="mr-1 inline h-3.5 w-3.5" /> Tukar
+          </button>
         ) : null}
 
         {/* Status bar atas */}
