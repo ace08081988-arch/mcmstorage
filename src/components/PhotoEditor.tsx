@@ -1279,6 +1279,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         <div
           role="status"
           aria-live="polite"
+          aria-atomic="true"
+          aria-label="Petunjuk tool aktif"
           key={tool}
           className="mb-2 flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[11px]"
         >
@@ -1291,7 +1293,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         </div>
 
         {/* Tools bar */}
-        <div className="flex flex-wrap items-center gap-1">
+        <div
+          role="toolbar"
+          aria-label="Toolbar editor foto"
+          className="flex flex-wrap items-center gap-1"
+        >
           <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" />
           <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" />
           <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" hint="Ketuk kanvas atau tombol Tambah teks untuk menulis" />
