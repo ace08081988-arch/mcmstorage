@@ -8,6 +8,7 @@ import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck
 import { ShieldAlert } from "lucide-react";
 import { useAdminStatus } from "@/hooks/use-is-admin";
 import { TaskQrCode } from "@/components/TaskQrCode";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlertDialog,
@@ -219,11 +220,14 @@ function TugasBaruPage() {
   if (isAdmin) wasAdminRef.current = true;
   if (wasAdminRef.current) return <TugasBaruForm />;
   if (isCheckingAdmin) {
-    return (
-      <div className="mx-auto max-w-2xl px-3 py-8 text-center text-sm text-muted-foreground">
-        Memeriksa izin akses…
-      </div>
-    );
+    // Skeleton dengan tinggi & ritme yang MENYAMAI layout form asli
+    // (judul, catatan, PIN, satu baris item, tombol) sehingga saat
+    // status admin terkonfirmasi dan form asli muncul, tidak terjadi
+    // layout shift atau kedipan. Juga aman ditampilkan berulang saat
+    // event auth transient membuat `isCheckingAdmin` toggle sebentar —
+    // karena bentuknya identik dengan form, mata user tidak menangkap
+    // "hilang lalu kembali".
+    return <TugasBaruSkeleton />;
   }
   if (!isAdmin) {
     return (
@@ -249,6 +253,74 @@ function TugasBaruPage() {
     );
   }
   return <TugasBaruForm />;
+}
+
+/**
+ * Skeleton yang meniru layout form Buat Tugas Pegawai. Dipakai saat status
+ * admin sedang diverifikasi (mis. cold start, refresh token, reconnect
+ * WebView) supaya tidak ada teks "Memeriksa…" yang tiba-tiba muncul lalu
+ * hilang. Semua blok memakai tinggi tetap sehingga transisi ke form asli
+ * tidak menggeser layout.
+ */
+function TugasBaruSkeleton() {
+  return (
+    <div
+      className="mx-auto max-w-2xl px-3 py-4"
+      role="status"
+      aria-live="polite"
+      aria-busy="true"
+      aria-label="Memuat form Buat Tugas Pegawai"
+    >
+      {/* Header: tombol kembali + judul */}
+      <div className="mb-4 flex items-center gap-2">
+        <Skeleton className="h-9 w-9 rounded-md" />
+        <Skeleton className="h-6 w-56" />
+      </div>
+
+      <div className="space-y-4 rounded-2xl border bg-card p-4">
+        {/* Judul tugas */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-24" />
+          <Skeleton className="h-10 w-full" />
+        </div>
+        {/* Catatan */}
+        <div className="space-y-2">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-20 w-full" />
+        </div>
+        {/* PIN + token */}
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-16" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+          <div className="space-y-2">
+            <Skeleton className="h-4 w-24" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        </div>
+        {/* Daftar item (satu baris + placeholder tombol tambah) */}
+        <div className="space-y-2 pt-2">
+          <Skeleton className="h-4 w-28" />
+          <div className="space-y-2 rounded-xl border p-3">
+            <Skeleton className="h-10 w-full" />
+            <div className="grid grid-cols-3 gap-2">
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </div>
+          <Skeleton className="h-9 w-32" />
+        </div>
+        {/* Tombol submit */}
+        <div className="flex justify-end pt-2">
+          <Skeleton className="h-10 w-36" />
+        </div>
+      </div>
+
+      <span className="sr-only">Memeriksa izin akses…</span>
+    </div>
+  );
 }
 
 function TugasBaruForm() {
