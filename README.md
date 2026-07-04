@@ -29,6 +29,29 @@ Setiap spec E2E yang menguji tile APK memasang stub `getApkVariantDetail`. Ada d
 | Copy / salin link APK Chat yang memanggil server function selain `getApkVariantDetail` | `full` | Perlu `installServerFnPassthroughGuard` agar round-trip copy/export tidak bocor |
 | Form validasi `minSupported` | *form-only* | Bukan flow APK, tidak memakai `installApkStub`, tidak memakai `terminalGuard` |
 
+### Ringkasan keputusan mode dan cakupan request
+
+Gunakan pohon keputusan ini saat menulis spec baru:
+
+```text
+Apakah spec menguji tile APK / getApkVariantDetail?
+├── TIDAK  → form-only (tidak memakai installApkStub)
+└── YA     → Apakah flow user juga memicu server function LAIN
+             (copy/export/toggle/link/chat/...)?
+             ├── YA  → full (installApkStub + installServerFnPassthroughGuard)
+             └── TIDAK → terminal (installApkStub saja)
+```
+
+Dampak mode terhadap request yang diverifikasi:
+
+| Mode | Request yang dijaga | Guard akhir | Dampak bila salah pilih |
+|---|---|---|---|
+| `terminal` | Hanya `getApkVariantDetail` (varian `chat` + `storage`) | `stub.terminalGuard()` | Kebocoran server function non-APK (copy/export/dll) lolos tanpa terdeteksi. |
+| `full` | Semua server function (`**/_serverFn/**`) + `getApkVariantDetail` | `stub.terminalGuard()` + `passthrough.assertNoAdditionalRequests` | Lebih berat (passthrough guard memantau semua RPC), tapi menangkap leak di seluruh server function. |
+| `form-only` | Tidak ada stub APK; fokus assertion UI / validasi form | (tidak memakai apk-stub / terminalGuard) | Memasang `installApkStub` di spec form hanya memperlambat dan membuat tag `Guards` tidak valid. |
+
+**Aturan penting:** `terminalGuard()` TIDAK pernah digantikan passthrough guard. Di mode `full`, kedua guard wajib ada — terminal guard untuk leak APK jangka panjang, passthrough guard untuk leak server function di luar APK. Mode default adalah `terminal`; naikkan ke `full` hanya ketika flow benar-benar menyentuh server function lain.
+
 ### Tabel pemetaan skenario APK aktual
 
 <!-- APK_TABLE:START (generated — jangan edit manual) -->
