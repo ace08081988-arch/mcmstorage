@@ -664,24 +664,19 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return () => { cancelled = true; };
   }, [videoQuality, kind, phase, remoteReady, cameraSwapNonce]);
 
-  // Terapkan ulang aspect ratio Crop/Fit ke elemen <video> lokal setiap
-  // kali track lokal berubah (mis. setelah tukar kamera front/back).
-  // Kelas Tailwind sudah reaktif via className, tapi beberapa Chromium di
-  // Android kadang mempertahankan sisa layout saat srcObject diganti —
-  // menyentuh `style.objectFit` eksplisit memastikan setelan langsung berlaku.
+  // Force-apply objectFit/objectPosition via ref juga — belt & suspenders
+  // untuk beberapa Chromium (Android WebView / Capacitor) yang kadang
+  // mempertahankan layout lama saat `srcObject` diganti atau swap layout
+  // memindah elemen ke node baru sebelum React sempat mem-flush prop `style`.
   useEffect(() => {
     if (kind !== "video") return;
-    const v = localVideoRef.current;
-    if (v) {
-      v.style.objectFit = videoFit;
-      v.style.objectPosition = videoFit === "cover" ? videoPosCss : "50% 50%";
+    const pos = videoFit === "cover" ? videoPosCss : "50% 50%";
+    for (const el of [localVideoRef.current, remoteVideoRef.current]) {
+      if (!el) continue;
+      el.style.objectFit = videoFit;
+      el.style.objectPosition = pos;
     }
-    const rv = remoteVideoRef.current;
-    if (rv) {
-      rv.style.objectFit = videoFit;
-      rv.style.objectPosition = videoFit === "cover" ? videoPosCss : "50% 50%";
-    }
-  }, [videoFit, videoPosCss, kind, cameraSwapNonce, remoteReady]);
+  }, [videoFit, videoPosCss, kind, cameraSwapNonce, remoteReady, swapped]);
 
   // Tukar kamera depan/belakang tanpa menutup panggilan: buka stream baru
   // dengan facingMode target, ganti track pada sender via `replaceTrack`,
