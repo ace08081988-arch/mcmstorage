@@ -915,8 +915,8 @@ function PosKasirPage() {
           ) : (
             <>
               {/* WA share form */}
-              <div className="mb-4 rounded-xl border border-slate-700 bg-slate-900/40 p-3">
-                <div className="flex items-center justify-between gap-2 mb-2">
+              <div className={`rounded-xl border border-slate-700 bg-slate-900/40 ${modeRingkas ? "mb-2 p-2" : "mb-4 p-3"}`}>
+                <div className={`flex items-center justify-between gap-2 ${modeRingkas ? "mb-1" : "mb-2"}`}>
                   <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
                     💬 Kirim Struk via WA
                   </span>
@@ -928,6 +928,7 @@ function PosKasirPage() {
                     <span className="text-[11px] text-amber-400">Lengkapi nomor & lokasi</span>
                   )}
                 </div>
+
                 <div className="grid gap-2 md:grid-cols-2">
                   <div>
                     <label className="text-[10px] uppercase tracking-wider text-slate-500">
