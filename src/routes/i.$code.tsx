@@ -9,6 +9,7 @@ import {
   formatInviteCode,
   normalizeInviteCode,
   resolveInviteCode,
+  validateInviteCode,
   type InviteProfile,
 } from "@/lib/invite";
 
@@ -64,14 +65,21 @@ function InviteLandingPage() {
 
   async function add() {
     if (state.kind !== "ready") return;
+    const v = validateInviteCode(rawCode);
+    if (!v.ok) {
+      toast.error(v.reason);
+      return;
+    }
     setAdding(true);
     try {
-      const r = await addContactByInviteCode(code);
+      const r = await addContactByInviteCode(v.code);
       if (r.alreadyFriends) {
         toast.success(`Sudah berteman dengan ${r.displayName ?? "kontak"}.`);
         router.navigate({ to: "/chat" });
       } else if (r.incomingReverseId) {
-        toast.info(`${r.displayName ?? "Kontak"} sudah lebih dulu mengundang kamu. Buka “Permintaan pertemanan” untuk menerima.`);
+        toast.info(
+          `${r.displayName ?? "Kontak"} sudah lebih dulu mengundang kamu. Buka “Permintaan pertemanan” untuk menerima.`,
+        );
         router.navigate({ to: "/kontak/permintaan" as never });
       } else if (r.pending) {
         toast.success(
@@ -133,21 +141,13 @@ function InviteLandingPage() {
               </div>
 
               {state.kind === "ready" ? (
-                <Button
-                  type="button"
-                  onClick={add}
-                  disabled={adding}
-                  className="mt-4 gap-2"
-                >
+                <Button type="button" onClick={add} disabled={adding} className="mt-4 gap-2">
                   <UserPlus className="h-4 w-4" />
                   {adding ? "Mengirim…" : "Kirim permintaan pertemanan"}
                 </Button>
               ) : (
                 <Button asChild className="mt-4 gap-2">
-                  <Link
-                    to="/auth"
-                    search={{ next: `/i/${code}` } as never}
-                  >
+                  <Link to="/auth" search={{ next: `/i/${code}` } as never}>
                     <LogIn className="h-4 w-4" />
                     Masuk untuk menambah
                   </Link>
@@ -158,7 +158,9 @@ function InviteLandingPage() {
         </div>
 
         <div className="mt-6 text-center text-xs text-muted-foreground">
-          <Link to="/" className="text-primary underline">Beranda</Link>
+          <Link to="/" className="text-primary underline">
+            Beranda
+          </Link>
         </div>
       </div>
     </main>

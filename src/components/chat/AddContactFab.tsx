@@ -19,6 +19,7 @@ import {
   isLikelyInviteCode,
   normalizeInviteCode,
   resolveInviteCode,
+  validateInviteCode,
   type InviteProfile,
 } from "@/lib/invite";
 
@@ -89,10 +90,14 @@ export function AddContactFab() {
   );
 
   async function onSubmit() {
-    if (!canSubmit) return;
+    const v = validateInviteCode(input);
+    if (!v.ok) {
+      toast.error(v.reason);
+      return;
+    }
     setSubmitting(true);
     try {
-      const r = await addContactByInviteCode(cleaned);
+      const r = await addContactByInviteCode(v.code);
       if (r.alreadyFriends) {
         toast.success("Sudah berteman — kontak siap dipakai.");
       } else if (r.pending) {
@@ -182,7 +187,6 @@ export function AddContactFab() {
               ) : preview ? (
                 <div className="flex items-center gap-3">
                   {preview.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={preview.avatar_url}
                       alt=""
