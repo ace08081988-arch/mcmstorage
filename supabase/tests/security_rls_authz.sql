@@ -1593,4 +1593,71 @@ BEGIN
   RAISE NOTICE 'PASS 15: signup_attempts admin-only SELECT + no write policies + rate-limit fn is service_role-only';
 END $$;
 
+-- ---------------------------------------------------------------------
+-- 16) get_chat_member_profiles — TIDAK boleh mengembalikan kolom `email`
+--     dan `phone` HANYA boleh keluar untuk peer yang sudah ada di
+--     address_book pemanggil (linked_user_id = p.id) atau untuk profil
+--     pemanggil sendiri. Anon TIDAK boleh EXECUTE.
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE
+  v_exists boolean;
+  v_result_cols text;
+  v_body text;
+  v_anon_exec boolean;
+  v_auth_exec boolean;
+BEGIN
+  SELECT EXISTS (
+    SELECT 1 FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+     WHERE n.nspname='public' AND p.proname='get_chat_member_profiles'
+  ) INTO v_exists;
+  IF NOT v_exists THEN
+    RAISE EXCEPTION 'FAIL 16a: get_chat_member_profiles is missing';
+  END IF;
+
+  -- Kumpulkan nama-nama OUT parameter (kolom hasil RETURNS TABLE(...)).
+  SELECT string_agg(coalesce(pn, ''), ',') INTO v_result_cols
+    FROM pg_proc p
+    JOIN pg_namespace n ON n.oid=p.pronamespace,
+         LATERAL unnest(coalesce(p.proargnames, ARRAY[]::text[]),
+                        coalesce(p.proargmodes, ARRAY[]::"char"[])) AS x(pn, pm)
+   WHERE n.nspname='public' AND p.proname='get_chat_member_profiles'
+     AND (pm IS NULL OR pm IN ('o','t','b'));
+
+  IF v_result_cols ~* '(^|,)\s*email\s*(,|$)' THEN
+    RAISE EXCEPTION 'FAIL 16b: get_chat_member_profiles must not expose email column (got: %)', v_result_cols;
+  END IF;
+  IF v_result_cols !~* '(^|,)\s*phone\s*(,|$)' THEN
+    RAISE EXCEPTION 'FAIL 16c: get_chat_member_profiles expected to still return phone (got: %)', v_result_cols;
+  END IF;
+
+  -- Body harus mengunci `phone` dengan pengecekan address_book milik pemanggil.
+  SELECT p.prosrc INTO v_body
+    FROM pg_proc p JOIN pg_namespace n ON n.oid=p.pronamespace
+   WHERE n.nspname='public' AND p.proname='get_chat_member_profiles';
+  IF v_body !~* 'address_book' THEN
+    RAISE EXCEPTION 'FAIL 16d: get_chat_member_profiles body must gate phone via address_book (missing address_book reference)';
+  END IF;
+  IF v_body !~* 'linked_user_id' THEN
+    RAISE EXCEPTION 'FAIL 16e: get_chat_member_profiles body must gate phone via address_book.linked_user_id';
+  END IF;
+  IF v_body ~* '\bp\.email\b' THEN
+    RAISE EXCEPTION 'FAIL 16f: get_chat_member_profiles body must not select p.email';
+  END IF;
+
+  -- EXECUTE priv: anon TIDAK boleh, authenticated boleh.
+  SELECT
+    has_function_privilege('anon', 'public.get_chat_member_profiles(uuid[])', 'EXECUTE'),
+    has_function_privilege('authenticated', 'public.get_chat_member_profiles(uuid[])', 'EXECUTE')
+  INTO v_anon_exec, v_auth_exec;
+  IF v_anon_exec THEN
+    RAISE EXCEPTION 'FAIL 16g: anon must NOT execute get_chat_member_profiles';
+  END IF;
+  IF NOT v_auth_exec THEN
+    RAISE EXCEPTION 'FAIL 16h: authenticated must be able to execute get_chat_member_profiles';
+  END IF;
+
+  RAISE NOTICE 'PASS 16: get_chat_member_profiles hides email; phone is gated by caller address_book; anon cannot execute';
+END $$;
+
 ROLLBACK;
