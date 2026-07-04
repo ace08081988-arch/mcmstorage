@@ -81,8 +81,20 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // Ukuran + pojok di-persist agar konsisten antar panggilan / antar layar.
   const PIP_SIZE_KEY = "mcm.call.pipSize";
   const PIP_CORNER_KEY = "mcm.call.pipCorner";
-  const VIDEO_FIT_KEY = "mcm.call.videoFit";
+  // Kunci lama (single value) — dibaca sebagai fallback untuk migrasi ke
+  // per-facing (front/back) key. Tidak lagi ditulis.
+  const LEGACY_VIDEO_FIT_KEY = "mcm.call.videoFit";
+  const LEGACY_VIDEO_POS_KEY = "mcm.call.videoPos";
+  const FACING_MODE_KEY = "mcm.call.facingMode";
   const [swapped, setSwapped] = useState(false);
+  // Kamera depan/belakang — dipersist supaya panggilan berikutnya membuka
+  // kamera yang sama. Dideklarasikan lebih awal karena setelan Crop/Fit +
+  // Posisi crop disimpan terpisah per kamera dan mengacu pada nilai ini.
+  const [facingMode, setFacingMode] = usePersistedState<"user" | "environment">(
+    FACING_MODE_KEY,
+    parseEnum(["user", "environment"] as const),
+    "user",
+  );
   const [pipSize, setPipSize] = usePersistedState<"sm" | "md" | "lg">(
     PIP_SIZE_KEY,
     parseEnum(["sm", "md", "lg"] as const),
@@ -93,12 +105,36 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     parseEnum(["tl", "tr", "bl", "br"] as const),
     "br",
   );
-  // Aspect ratio: "cover" (crop, isi penuh) atau "contain" (fit, tanpa terpotong).
-  // Sinkron antar mount CallScreen & antar tab lewat `usePersistedState`.
-  const [videoFit, setVideoFit] = usePersistedState<"cover" | "contain">(
-    VIDEO_FIT_KEY,
+  // Aspect ratio Crop/Fit + posisi crop — DISIMPAN TERPISAH per kamera
+  // (front vs back) supaya menukar kamera tidak menimpa preferensi kamera
+  // lain. Fallback pertama kali membaca kunci lama sebagai migrasi.
+  const legacyFit =
+    typeof window !== "undefined"
+      ? (window.localStorage.getItem(LEGACY_VIDEO_FIT_KEY) as "cover" | "contain" | null)
+      : null;
+  const legacyPos =
+    typeof window !== "undefined"
+      ? (window.localStorage.getItem(LEGACY_VIDEO_POS_KEY) as VideoPos | null)
+      : null;
+  // eslint-disable-next-line @typescript-eslint/no-use-before-define
+  const legacyFitInit = legacyFit === "contain" || legacyFit === "cover" ? legacyFit : "cover";
+  const [videoFitFront, setVideoFitFront] = usePersistedState<"cover" | "contain">(
+    "mcm.call.videoFit.user",
     parseEnum(["cover", "contain"] as const),
-    "cover",
+    legacyFitInit,
+  );
+  const [videoFitBack, setVideoFitBack] = usePersistedState<"cover" | "contain">(
+    "mcm.call.videoFit.environment",
+    parseEnum(["cover", "contain"] as const),
+    legacyFitInit,
+  );
+  const videoFit = facingMode === "user" ? videoFitFront : videoFitBack;
+  const setVideoFit = useCallback(
+    (v: "cover" | "contain" | ((prev: "cover" | "contain") => "cover" | "contain")) => {
+      if (facingMode === "user") setVideoFitFront(v);
+      else setVideoFitBack(v);
+    },
+    [facingMode, setVideoFitFront, setVideoFitBack],
   );
   const toggleVideoFit = useCallback(() => {
     setVideoFit((f) => (f === "cover" ? "contain" : "cover"));
@@ -106,12 +142,31 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const videoFitClass = videoFit === "cover" ? "object-cover" : "object-contain";
   // Pan/posisi crop — hanya berlaku saat mode "cover" (Crop). Mengontrol
   // CSS `object-position` supaya bagian penting frame tidak terpotong.
+  // Disimpan terpisah per kamera juga (front biasanya butuh center/atas,
+  // back sering butuh posisi berbeda karena orientasi/perspektif).
   type VideoPos = "center" | "top" | "bottom" | "left" | "right";
-  const VIDEO_POS_KEY = "mcm.call.videoPos";
-  const [videoPos, setVideoPos] = usePersistedState<VideoPos>(
-    VIDEO_POS_KEY,
+  const legacyPosInit: VideoPos =
+    legacyPos === "center" || legacyPos === "top" || legacyPos === "bottom" ||
+    legacyPos === "left" || legacyPos === "right"
+      ? legacyPos
+      : "center";
+  const [videoPosFront, setVideoPosFront] = usePersistedState<VideoPos>(
+    "mcm.call.videoPos.user",
     parseEnum(["center", "top", "bottom", "left", "right"] as const),
-    "center",
+    legacyPosInit,
+  );
+  const [videoPosBack, setVideoPosBack] = usePersistedState<VideoPos>(
+    "mcm.call.videoPos.environment",
+    parseEnum(["center", "top", "bottom", "left", "right"] as const),
+    legacyPosInit,
+  );
+  const videoPos = facingMode === "user" ? videoPosFront : videoPosBack;
+  const setVideoPos = useCallback(
+    (v: VideoPos | ((prev: VideoPos) => VideoPos)) => {
+      if (facingMode === "user") setVideoPosFront(v);
+      else setVideoPosBack(v);
+    },
+    [facingMode, setVideoPosFront, setVideoPosBack],
   );
   const cycleVideoPos = useCallback(() => {
     setVideoPos((p) =>
@@ -158,14 +213,6 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     : videoQuality === "low" ? "320p · hemat data, stabil di sinyal lemah"
     : videoQuality === "medium" ? "480p · seimbang"
     : "720p · kualitas tinggi (butuh koneksi baik)";
-  // Kamera depan/belakang — dipersist supaya panggilan berikutnya membuka
-  // kamera yang sama. Nilai default "user" (kamera depan) untuk video call.
-  const FACING_MODE_KEY = "mcm.call.facingMode";
-  const [facingMode, setFacingMode] = usePersistedState<"user" | "environment">(
-    FACING_MODE_KEY,
-    parseEnum(["user", "environment"] as const),
-    "user",
-  );
   const [flipping, setFlipping] = useState(false);
   // Bertambah tiap kali kamera dibalik — dipakai untuk memaksa Crop/Fit &
   // kualitas video di-apply ulang begitu track lokal baru terpasang.
