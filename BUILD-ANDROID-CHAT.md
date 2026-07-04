@@ -34,6 +34,29 @@ bunx cap open android
 APK hasilnya di `android/app/build/outputs/apk/`. Rename ke
 `mcm-chat.apk` sebelum diunggah ke halaman `/download`.
 
+## Izin panggilan (wajib ditambahkan manual)
+
+Setelah `bunx cap add android` / `bunx cap sync`, buka
+`android/app/src/main/AndroidManifest.xml` dan tambahkan:
+
+```xml
+<uses-permission android:name="android.permission.RECORD_AUDIO" />
+<uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />
+<uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+<uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+```
+
+- **RECORD_AUDIO** — supaya `getUserMedia({ audio: true })` di WebView
+  bisa mengakses mikrofon untuk panggilan audio/video.
+- **SYSTEM_ALERT_WINDOW** — supaya notifikasi panggilan masuk bisa
+  tampil "melayang di atas aplikasi lain". Ini special permission —
+  user perlu meng-approve via Setelan → Aplikasi → MCM Chat →
+  "Tampilkan di atas aplikasi lain". Deklarasi manifest saja tidak
+  cukup.
+
+Lihat `BUILD-ANDROID.md` bagian "Izin tambahan untuk panggilan" untuk
+detail lengkap.
+
 ## Kembali ke APK penuh
 
 ```bash
