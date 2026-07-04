@@ -808,6 +808,7 @@ function Index() {
 
           <ReadyEcerSection />
           <ReadyRequestSection />
+          <ReadySelfPrepSection />
         </main>
         {uid && <AppLockSetup uid={uid} open={setupOpen} onOpenChange={setSetupOpen} />}
       </div>
