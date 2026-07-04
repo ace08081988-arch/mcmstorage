@@ -68,6 +68,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [canvasReady, setCanvasReady] = useState(false);
   // True while exportImage is composing the final JPEG.
   const [exporting, setExporting] = useState(false);
+  // Panel panduan singkat tiap tool. Disembunyikan by default agar toolbar
+  // tetap padat; pengguna baru bisa tap ikon "?" untuk membacanya.
+  const [helpOpen, setHelpOpen] = useState(false);
   // Set to true when the user presses "Batal" while exportImage is running so
   // we can skip onSave once the async toBlob resolves.
   const exportCancelledRef = useRef(false);
