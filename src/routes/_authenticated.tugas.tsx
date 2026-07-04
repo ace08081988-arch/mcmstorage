@@ -312,12 +312,71 @@ function TugasPage() {
         ⚖️ <b>Anda</b> yang menentukan <b>berat / jumlah</b> yang harus disiapkan per item (boleh desimal, mis. <b>0.90</b> gram untuk eceran kristal). Pegawai cukup mengirim <b>foto + lokasi</b>. Stok gudang induk otomatis berkurang sesuai angka yang Anda isi (mis. 100 − 0.90 = 99.10).
       </div>
 
+      {(() => {
+        const counts = { all: tasks.length, waiting: 0, progress: 0, done: 0 };
+        for (const t of tasks) {
+          const p = progress[t.id] ?? { items: 0, submitted: 0 };
+          const s = deriveTaskStatus(t.status, p);
+          if (s === "Selesai") counts.done++;
+          else if (s === "Dikerjakan") counts.progress++;
+          else counts.waiting++;
+        }
+        const chip = (key: typeof statusFilter, label: string, n: number) => (
+          <button
+            key={key}
+            onClick={() => setStatusFilter(key)}
+            className={`inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[11px] font-semibold transition ${statusFilter === key ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground hover:bg-accent"}`}
+          >
+            {label} <span className="opacity-70">({n})</span>
+          </button>
+        );
+        return (
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {chip("all", "Semua", counts.all)}
+            {chip("waiting", "Menunggu", counts.waiting)}
+            {chip("progress", "Dikerjakan", counts.progress)}
+            {chip("done", "Selesai", counts.done)}
+          </div>
+        );
+      })()}
+
       <div className="space-y-2">
-        {tasks.map((t) => (
+        {tasks
+          .filter((t) => {
+            if (statusFilter === "all") return true;
+            const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0 });
+            return (
+              (statusFilter === "waiting" && s === "Menunggu") ||
+              (statusFilter === "progress" && s === "Dikerjakan") ||
+              (statusFilter === "done" && s === "Selesai")
+            );
+          })
+          .map((t) => {
+          const p = progress[t.id] ?? { items: 0, submitted: 0 };
+          const s = deriveTaskStatus(t.status, p);
+          const pct = p.items > 0 ? Math.min(100, Math.round((p.submitted / p.items) * 100)) : 0;
+          const badgeCls =
+            s === "Selesai" ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 dark:text-emerald-400"
+            : s === "Dikerjakan" ? "bg-amber-500/15 text-amber-700 border-amber-500/40 dark:text-amber-400"
+            : "bg-muted text-muted-foreground border-border";
+          return (
           <div key={t.id} className="flex items-center gap-2 rounded-xl border bg-card p-3 shadow-sm">
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold">{t.title}</div>
-              <div className="text-[11px] text-muted-foreground">Dibuat {new Date(t.created_at).toLocaleString("id-ID")} · Status {t.status}</div>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex h-5 shrink-0 items-center rounded-full border px-2 text-[10px] font-semibold ${badgeCls}`}>{s}</span>
+                <div className="truncate text-sm font-semibold">{t.title}</div>
+              </div>
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                Dibuat {new Date(t.created_at).toLocaleString("id-ID")} · {p.submitted}/{p.items} item
+              </div>
+              {p.items > 0 && (
+                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full transition-all ${s === "Selesai" ? "bg-emerald-500" : s === "Dikerjakan" ? "bg-amber-500" : "bg-muted-foreground/40"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              )}
             </div>
             <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs">Buka</button>
             <button
@@ -336,8 +395,20 @@ function TugasPage() {
             </button>
             <button onClick={() => removeTask(t.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive" title="Hapus tugas"><Trash2 className="h-4 w-4" /></button>
           </div>
-        ))}
+          );
+        })}
         {tasks.length === 0 && <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Belum ada tugas. Klik "Buat tugas".</div>}
+        {tasks.length > 0 && tasks.filter((t) => {
+          if (statusFilter === "all") return true;
+          const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0 });
+          return (
+            (statusFilter === "waiting" && s === "Menunggu") ||
+            (statusFilter === "progress" && s === "Dikerjakan") ||
+            (statusFilter === "done" && s === "Selesai")
+          );
+        }).length === 0 && (
+          <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Tidak ada tugas pada filter ini.</div>
+        )}
       </div>
 
       {openCreate && (
