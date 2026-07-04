@@ -978,6 +978,44 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             <span>{status}</span>
           </button>
           <div className="flex items-center gap-2">
+            {phase === "in-call" && netStats.tier !== "unknown" ? (
+              <span
+                data-testid="call-net-quality"
+                data-tier={netStats.tier}
+                title={
+                  `Jaringan: ${
+                    netStats.tier === "good" ? "Baik"
+                    : netStats.tier === "fair" ? "Sedang"
+                    : "Buruk"
+                  }` +
+                  (netStats.rttMs !== null ? ` · ping ${netStats.rttMs} ms` : "") +
+                  (netStats.lossPct !== null ? ` · loss ${netStats.lossPct.toFixed(1)}%` : "")
+                }
+                aria-label={
+                  `Kualitas jaringan ${
+                    netStats.tier === "good" ? "baik"
+                    : netStats.tier === "fair" ? "sedang"
+                    : "buruk"
+                  }` +
+                  (netStats.rttMs !== null ? `, ping ${netStats.rttMs} milidetik` : "") +
+                  (netStats.lossPct !== null ? `, packet loss ${netStats.lossPct.toFixed(1)} persen` : "")
+                }
+                className={
+                  "flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[11px] backdrop-blur " +
+                  (netStats.tier === "good"
+                    ? "text-emerald-300"
+                    : netStats.tier === "fair"
+                      ? "text-amber-300"
+                      : "text-red-300")
+                }
+              >
+                <Signal className="h-3.5 w-3.5" />
+                <span className="tabular-nums">
+                  {netStats.rttMs !== null ? `${netStats.rttMs}ms` : "–"}
+                  {netStats.lossPct !== null ? ` · ${netStats.lossPct.toFixed(1)}%` : ""}
+                </span>
+              </span>
+            ) : null}
             {activeDevice && phase === "in-call" ? (
               <span
                 data-testid="call-active-device"
