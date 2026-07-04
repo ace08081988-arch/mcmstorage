@@ -285,14 +285,14 @@ function PosKasirPage() {
   }, [riwayatSorted, cariTransaksi]);
 
   const exportCSV = () => {
-    if (riwayatFiltered.length === 0) {
+    if (riwayatSorted.length === 0) {
       setToast("Tidak ada transaksi pada rentang tanggal terpilih");
       setTimeout(() => setToast(null), 2500);
       return;
     }
     const header = ["Waktu", "Produk", "Berat (kg)", "Harga per kg (IDR)", "Total (IDR)", "Sisa Stok (kg)"];
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const rows = riwayatFiltered.map((t) =>
+    const rows = riwayatSorted.map((t) =>
       [
         new Date(t.waktu).toLocaleString("id-ID"),
         t.produkNama,
@@ -315,12 +315,12 @@ function PosKasirPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    setToast(`✅ Diekspor ${riwayatFiltered.length} transaksi ke CSV`);
+    setToast(`✅ Diekspor ${riwayatSorted.length} transaksi ke CSV`);
     setTimeout(() => setToast(null), 2500);
   };
 
   const exportPDF = () => {
-    if (riwayatFiltered.length === 0) {
+    if (riwayatSorted.length === 0) {
       setToast("Tidak ada transaksi pada rentang tanggal terpilih");
       setTimeout(() => setToast(null), 2500);
       return;
@@ -328,8 +328,8 @@ function PosKasirPage() {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const now = new Date();
     const stamp = now.toISOString().slice(0, 10);
-    const totalOmzetF = riwayatFiltered.reduce((s, t) => s + t.total, 0);
-    const totalKgF = riwayatFiltered.reduce((s, t) => s + t.beratKg, 0);
+    const totalOmzetF = riwayatSorted.reduce((s, t) => s + t.total, 0);
+    const totalKgF = riwayatSorted.reduce((s, t) => s + t.beratKg, 0);
     const rangeLabel =
       dariTgl || sampaiTgl
         ? `Periode: ${dariTgl || "awal"} s/d ${sampaiTgl || "sekarang"}`
@@ -343,7 +343,7 @@ function PosKasirPage() {
     doc.text(rangeLabel, 40, 58);
     doc.text(`Dibuat: ${now.toLocaleString("id-ID")}`, 40, 72);
     doc.text(
-      `Total transaksi: ${riwayatFiltered.length}  ·  Total berat: ${totalKgF.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg  ·  Omzet: ${rupiah(totalOmzetF)}`,
+      `Total transaksi: ${riwayatSorted.length}  ·  Total berat: ${totalKgF.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg  ·  Omzet: ${rupiah(totalOmzetF)}`,
       40,
       86,
     );
@@ -351,7 +351,7 @@ function PosKasirPage() {
     autoTable(doc, {
       startY: 100,
       head: [["Waktu", "Produk", "Berat (kg)", "Harga/kg", "Total", "Sisa Stok"]],
-      body: riwayatFiltered.map((t) => [
+      body: riwayatSorted.map((t) => [
         new Date(t.waktu).toLocaleString("id-ID"),
         `${t.produkEmoji} ${t.produkNama}`,
         t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 }),
@@ -386,7 +386,7 @@ function PosKasirPage() {
     });
 
     doc.save(`riwayat-pos-kasir-${stamp}.pdf`);
-    setToast(`✅ Diekspor ${riwayatFiltered.length} transaksi ke PDF`);
+    setToast(`✅ Diekspor ${riwayatSorted.length} transaksi ke PDF`);
     setTimeout(() => setToast(null), 2500);
   };
 
