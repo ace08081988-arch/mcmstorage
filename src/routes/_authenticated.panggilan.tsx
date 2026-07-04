@@ -116,8 +116,17 @@ function PanggilanPage() {
   const rows = calls.data ?? [];
   return (
     <main className="mx-auto flex min-h-[100dvh] max-w-2xl flex-col wa-surface">
-      <header className="wa-header sticky top-0 z-10 flex items-center gap-2 border-b px-3 py-3">
-        <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full" aria-label="Kembali">
+      <header
+        className="wa-header sticky top-0 z-10 flex items-center gap-2 border-b px-3 py-3"
+        style={{ paddingTop: "max(env(safe-area-inset-top), 0.75rem)" }}
+      >
+        <Button
+          asChild
+          variant="ghost"
+          size="icon"
+          className="h-11 w-11 rounded-full touch-manipulation"
+          aria-label="Kembali"
+        >
           <Link to="/chat"><ArrowLeft className="h-5 w-5" /></Link>
         </Button>
         <h1 className="text-lg font-semibold">Panggilan</h1>
@@ -143,7 +152,7 @@ function PanggilanPage() {
             </div>
           </div>
         ) : (
-          <ul className="divide-y">
+          <ul className="divide-y pb-2">
             {rows.map((c) => (
               <CallRowItem
                 key={c.id}
@@ -216,7 +225,7 @@ function CallRowItem({
         to="/chat/$conversationId"
         params={{ conversationId: row.conversation_id }}
         preload="intent"
-        className="flex flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/60 active:bg-muted"
+        className="flex min-h-[56px] flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors touch-manipulation hover:bg-muted/60 active:bg-muted"
         aria-label={`Buka chat dengan ${peerName}`}
       >
         <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold uppercase">
@@ -242,7 +251,7 @@ function CallRowItem({
         disabled={isCalling}
         aria-busy={isCalling}
         onClick={() => void onStartCall(row)}
-        className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors ${
+        className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors touch-manipulation ${
           isCalling
             ? "cursor-not-allowed opacity-60"
             : "hover:bg-muted/60 active:bg-muted"
