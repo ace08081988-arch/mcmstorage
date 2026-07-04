@@ -1253,13 +1253,23 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
         {/* Tools bar */}
         <div className="flex flex-wrap items-center gap-1">
-          <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" />
-          <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" />
-          <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" />
-          <ToolBtn active={tool === "emoji"} onClick={() => setTool("emoji")} icon={<Smile className="h-4 w-4" />} label="Stiker" />
-          <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="h-4 w-4" />} label="Panah" />
-          <ToolBtn active={tool === "rect"} onClick={() => setTool("rect")} icon={<Square className="h-4 w-4" />} label="Kotak" />
-          <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" />
+          <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" />
+          <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" />
+          <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" hint="Ketuk kanvas atau tombol Tambah teks untuk menulis" />
+          <ToolBtn active={tool === "emoji"} onClick={() => setTool("emoji")} icon={<Smile className="h-4 w-4" />} label="Stiker" hint="Pilih emoji lalu ketuk untuk menempelkan di tengah" />
+          <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="h-4 w-4" />} label="Panah" hint="Pilih arah panah, otomatis tempel di tengah kanvas" />
+          <ToolBtn active={tool === "rect"} onClick={() => setTool("rect")} icon={<Square className="h-4 w-4" />} label="Kotak" hint="Seret untuk ukuran bebas, atau ketuk untuk kotak default" />
+          <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" hint="Seret dari pusat ke tepi, atau ketuk untuk ukuran default" />
+          <button
+            type="button"
+            onClick={() => setHelpOpen((v) => !v)}
+            title="Panduan singkat tiap tool"
+            aria-label="Panduan singkat tiap tool"
+            aria-expanded={helpOpen}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background transition hover:bg-muted ${helpOpen ? "border-primary bg-primary/10 text-primary" : ""}`}
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
           {selected && (
             <div className="ml-auto flex items-center gap-1">
               <button onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><MoveDown className="h-4 w-4" /></button>
@@ -1269,6 +1279,29 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             </div>
           )}
         </div>
+        {helpOpen && (
+          <div className="mt-2 rounded-md border border-primary/30 bg-primary/5 p-2 text-[11px] leading-snug">
+            <div className="mb-1 flex items-center justify-between">
+              <span className="font-semibold text-primary">Panduan singkat</span>
+              <button
+                type="button"
+                onClick={() => setHelpOpen(false)}
+                className="text-muted-foreground underline underline-offset-2 hover:text-foreground"
+              >
+                tutup
+              </button>
+            </div>
+            <ul className="grid grid-cols-1 gap-x-3 gap-y-1 sm:grid-cols-2">
+              <li><b>Pilih:</b> ketuk objek untuk memilih, seret untuk memindahkan.</li>
+              <li><b>Coret:</b> seret jari di kanvas — ketuk saja menghasilkan titik.</li>
+              <li><b>Teks:</b> ketuk kanvas / tombol “Tambah teks di tengah”, tulis, lalu OK.</li>
+              <li><b>Stiker:</b> pilih emoji di panel — otomatis menempel di tengah.</li>
+              <li><b>Panah:</b> pilih arah 8 mata angin — otomatis tempel; ubah arah lagi untuk yang terpilih.</li>
+              <li><b>Kotak / Lingkaran:</b> seret di kanvas untuk ukuran bebas, atau ketuk sekali untuk ukuran standar.</li>
+            </ul>
+            <div className="mt-1 text-muted-foreground">Semua objek bisa dipilih ulang → geser, duplikat, atau hapus lewat ikon di kanan.</div>
+          </div>
+        )}
       </div>
 
       <Dialog open={textPrompt.open} onOpenChange={(o) => !o && setTextPrompt((s) => ({ ...s, open: false }))}>
