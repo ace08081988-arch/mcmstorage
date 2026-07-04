@@ -138,6 +138,21 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     : videoQuality === "low" ? "320p · hemat data, stabil di sinyal lemah"
     : videoQuality === "medium" ? "480p · seimbang"
     : "720p · kualitas tinggi (butuh koneksi baik)";
+  // Kamera depan/belakang — dipersist supaya panggilan berikutnya membuka
+  // kamera yang sama. Nilai default "user" (kamera depan) untuk video call.
+  const FACING_MODE_KEY = "mcm.call.facingMode";
+  const [facingMode, setFacingMode] = useState<"user" | "environment">(() => {
+    if (typeof window === "undefined") return "user";
+    const v = window.localStorage.getItem(FACING_MODE_KEY);
+    return v === "environment" ? "environment" : "user";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(FACING_MODE_KEY, facingMode); } catch { /* ignore */ }
+  }, [facingMode]);
+  const [flipping, setFlipping] = useState(false);
+  // Bertambah tiap kali kamera dibalik — dipakai untuk memaksa Crop/Fit &
+  // kualitas video di-apply ulang begitu track lokal baru terpasang.
+  const [cameraSwapNonce, setCameraSwapNonce] = useState(0);
   const pipSizeClass =
     pipSize === "sm" ? "h-24 w-20" : pipSize === "lg" ? "h-48 w-36" : "h-32 w-24";
   const pipCornerClass =
