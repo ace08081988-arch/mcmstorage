@@ -773,6 +773,7 @@ function TugasBaruForm() {
             <div className="mt-1 text-[11px] text-muted-foreground">
               Token dipakai di URL pegawai. Isi sendiri untuk memudahkan dikenali, atau tekan Acak untuk mengganti. Tombol Salin URL bisa dipakai kapan saja setelah token terisi.
             </div>
+            <TokenDuplicateBadge check={tokenCheck} onRandom={() => setToken(genShareToken())} />
           </Field>
 
           <Field label="Jadwal penyiapan (opsional)">
