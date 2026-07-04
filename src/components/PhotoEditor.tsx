@@ -188,6 +188,30 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   useEffect(() => { stateRef.current = state; }, [state]);
   useEffect(() => { viewRef.current = view; }, [view]);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+  // Keyboard shortcuts: single letter tanpa modifier, hanya bila fokus tidak
+  // berada di input/textarea/select/contenteditable (mis. saat mengetik teks).
+  useEffect(() => {
+    const isTyping = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) return false;
+      return (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      );
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+      if (isTyping(e.target)) return;
+      const next = KEY_TO_TOOL[e.key.toLowerCase()];
+      if (!next) return;
+      e.preventDefault();
+      setTool(next);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [setTool]);
+
   const [textPrompt, setTextPrompt] = useState<{ open: boolean; x: number; y: number; value: string }>(
     { open: false, x: 0, y: 0, value: "" },
   );
