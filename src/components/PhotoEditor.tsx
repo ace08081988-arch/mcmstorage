@@ -800,7 +800,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   return (
     <div
       className="fixed inset-0 z-[100] flex flex-col bg-background text-foreground"
-      onPointerDownCapture={(e) => e.stopPropagation()}
+      // Stop the editor's pointerdown from reaching parent overlays (Sheet /
+      // Dialog dismissal, drag-to-close sheets in the shell). MUST be the
+      // bubble phase — capture-phase stopPropagation prevents pointerdown
+      // from ever reaching the canvas, so tap-once tools (coret/kotak/
+      // lingkaran/stiker/panah) can't init `drawingRef` and `handleUp`
+      // no-ops, which broke undo/redo for single-tap actions.
+      onPointerDown={(e) => e.stopPropagation()}
       aria-busy={activeOverlay !== null && activeOverlay !== "error"}
     >
       <div className="flex items-center justify-between gap-2 border-b bg-card px-3 py-2 shadow-sm">
