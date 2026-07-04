@@ -697,13 +697,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       return;
     }
     if (tool === "rect") {
-      drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, opacity, thickness, fill: false };
+      drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, opacity, thickness, fill: shapeFill };
       lastPointRef.current = p; // used to detect tap-vs-drag on release
       scheduleRedraw();
       return;
     }
     if (tool === "circle") {
-      drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, opacity, thickness, fill: false };
+      drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, opacity, thickness, fill: shapeFill };
       lastPointRef.current = p;
       scheduleRedraw();
       return;
