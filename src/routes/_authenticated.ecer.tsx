@@ -572,6 +572,7 @@ function DetailHero({
   onCreateProduct?: () => void;
   onScrollToWorker: () => void;
 }) {
+  const isAdmin = useIsAdmin();
   const unit = displayUnit(item.name, title.unit_label);
   const totalActual = preps.reduce((s, p) => s + (Number(p.actual_grams) || 0), 0);
   const targetTotal = (Number(title.target_grams) || 0) * preps.length;
