@@ -72,6 +72,11 @@ function PosKasirPage() {
     const raw = localStorage.getItem(MODE_RINGKAS_KEY);
     return raw === "true" ? true : raw === "false" ? false : false;
   });
+  const [urutan, setUrutan] = useState<UrutanTransaksi>(() => {
+    if (typeof window === "undefined") return "terbaru";
+    const raw = localStorage.getItem(URUTAN_KEY);
+    return raw === "terlama" ? "terlama" : "terbaru";
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -82,6 +87,11 @@ function PosKasirPage() {
     if (typeof window === "undefined") return;
     localStorage.setItem(MODE_RINGKAS_KEY, String(modeRingkas));
   }, [modeRingkas]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(URUTAN_KEY, urutan);
+  }, [urutan]);
 
 
   const waNomorNorm = useMemo(() => normalizeWaNumber(waNomor, "ID"), [waNomor]);
