@@ -76,6 +76,51 @@ const KEY_TO_TOOL: Record<string, Tool> = Object.fromEntries(
     .map(([t, k]) => [k!.toLowerCase(), t as Tool])
 );
 
+// Tools that show a detailed guide modal on first use or after a long absence.
+const GUIDED_TOOLS: Tool[] = ["text", "emoji", "draw"];
+// Consider a tool "new / returning" if it hasn't been used in this many days.
+const GUIDE_RETURN_DAYS = 7;
+const GUIDE_STORAGE_KEY = "photo-editor-tool-guide";
+
+type GuideSeenMap = Partial<Record<Tool, number>>;
+
+const TOOL_GUIDES: Record<Tool, { title: string; steps: string[]; tip: string } | null> = {
+  select: null,
+  draw: {
+    title: "Panduan Coret",
+    steps: [
+      "Pilih tool Coret (C) di toolbar.",
+      "Seret jari / mouse di kanvas untuk menggambar garis bebas.",
+      "Ketuk sekali bila hanya ingin membuat titik coretan.",
+      "Gunakan slider Ukuran di bawah untuk mengatur ketebalan coretan.",
+    ],
+    tip: "Coretan langsung tersimpan sebagai lapisan; gunakan Undo bila ingin membatalkan.",
+  },
+  text: {
+    title: "Panduan Teks",
+    steps: [
+      "Pilih tool Teks (T) di toolbar.",
+      "Ketuk kanvas di posisi yang diinginkan, atau tekan tombol Tambah teks di tengah.",
+      "Ketik teks di jendela yang muncul, lalu tekan OK.",
+      "Setelah teks muncul, ketuk untuk memilih lalu seret untuk memindahkan.",
+    ],
+    tip: "Slider Ukuran mengubah font; tombol B membuat teks menjadi tebal.",
+  },
+  emoji: {
+    title: "Panduan Stiker",
+    steps: [
+      "Pilih tool Stiker (S) di toolbar.",
+      "Pilih emoji di deretan emoji di bawah toolbar.",
+      "Emoji akan menempel di tengah kanvas secara otomatis.",
+      "Ketuk emoji untuk memilih, seret untuk memindahkan, atau gunakan tombol Ukuran untuk memperbesar.",
+    ],
+    tip: "Stiker tetap bisa dipindah dan dihapus seperti objek lain.",
+  },
+  arrow: null,
+  rect: null,
+  circle: null,
+};
+
 
 
 
@@ -111,6 +156,38 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   // Panel panduan singkat tiap tool. Disembunyikan by default agar toolbar
   // tetap padat; pengguna baru bisa tap ikon "?" untuk membacanya.
   const [helpOpen, setHelpOpen] = useState(false);
+  // Modal panduan detail untuk tool Teks/Stiker/Coret saat pertama kali dipilih
+  // atau setelah tidak dipakai dalam beberapa hari.
+  const [guideTool, setGuideTool] = useState<Tool | null>(null);
+
+  function readGuideSeenMap(): GuideSeenMap {
+    if (typeof localStorage === "undefined") return {};
+    try {
+      const raw = localStorage.getItem(GUIDE_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as GuideSeenMap) : {};
+    } catch {
+      return {};
+    }
+  }
+  function writeGuideSeenMap(map: GuideSeenMap) {
+    if (typeof localStorage === "undefined") return;
+    try { localStorage.setItem(GUIDE_STORAGE_KEY, JSON.stringify(map)); } catch { /* noop */ }
+  }
+  function shouldShowGuide(t: Tool): boolean {
+    if (!GUIDED_TOOLS.includes(t)) return false;
+    const lastSeen = readGuideSeenMap()[t];
+    if (!lastSeen) return true;
+    return Date.now() - lastSeen > GUIDE_RETURN_DAYS * 24 * 60 * 60 * 1000;
+  }
+  function markGuideSeen(t: Tool) {
+    const map = readGuideSeenMap();
+    map[t] = Date.now();
+    writeGuideSeenMap(map);
+  }
+  function closeGuide(t: Tool) {
+    markGuideSeen(t);
+    setGuideTool(null);
+  }
   // Set to true when the user presses "Batal" while exportImage is running so
   // we can skip onSave once the async toBlob resolves.
   const exportCancelledRef = useRef(false);
@@ -195,6 +272,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     if (prevToolRef.current !== tool) {
       editorFeedback.toolSwitch();
       prevToolRef.current = tool;
+      if (shouldShowGuide(tool)) {
+        setGuideTool(tool);
+      }
     }
   }, [tool]);
   // Keyboard shortcuts: single letter tanpa modifier, hanya bila fokus tidak
@@ -1413,6 +1493,39 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </div>
         )}
       </div>
+
+      {/* Detailed first-use / returning guide modal for Teks/Stiker/Coret */}
+      {guideTool && TOOL_GUIDES[guideTool] && (
+        <Dialog
+          open
+          onOpenChange={(o) => {
+            if (!o) closeGuide(guideTool);
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{TOOL_GUIDES[guideTool]!.title}</DialogTitle>
+              <DialogDescription>
+                Panduan muncul saat pertama kali memilih tool ini atau setelah tidak dipakai {GUIDE_RETURN_DAYS} hari.
+              </DialogDescription>
+            </DialogHeader>
+            <ol className="my-2 list-decimal space-y-1.5 pl-5 text-sm text-foreground">
+              {TOOL_GUIDES[guideTool]!.steps.map((step, i) => (
+                <li key={i}>{step}</li>
+              ))}
+            </ol>
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-2 text-xs text-primary">
+              <span className="font-semibold">Tip:</span>{" "}
+              {TOOL_GUIDES[guideTool]!.tip}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => closeGuide(guideTool)}>
+                <Check className="mr-1 h-4 w-4" /> Mengerti
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
 
       <Dialog open={textPrompt.open} onOpenChange={(o) => !o && setTextPrompt((s) => ({ ...s, open: false }))}>
         <DialogContent className="sm:max-w-sm">
