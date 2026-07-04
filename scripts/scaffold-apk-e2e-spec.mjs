@@ -462,7 +462,27 @@ async function main() {
   console.log(`  3. Jalankan: bunx playwright test --project=${name}-e2e`);
 }
 
-main().catch((err) => {
-  console.error(err);
-  process.exit(1);
-});
+// Ekspor fungsi builder supaya bisa dipakai ulang oleh
+// `scripts/regen-apk-scaffolds.mjs` (batch regenerator).
+export {
+  buildSpec,
+  buildProjectBlock,
+  validateName,
+  validateMode,
+  validateSpecContent,
+  GUARD_CHECKS,
+  TEMPLATE,
+  SPEC_DIR,
+  CONFIG,
+};
+
+// Hanya jalankan main() bila file ini dieksekusi langsung (bukan di-import).
+const isDirectRun =
+  import.meta.url === `file://${process.argv[1]}` ||
+  import.meta.url.endsWith(path.basename(process.argv[1] ?? ""));
+if (isDirectRun) {
+  main().catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
+}
