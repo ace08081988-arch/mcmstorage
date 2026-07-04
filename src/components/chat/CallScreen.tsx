@@ -490,7 +490,72 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
       }
     })();
     return () => { cancelled = true; };
-  }, [videoQuality, kind, phase, remoteReady]);
+  }, [videoQuality, kind, phase, remoteReady, cameraSwapNonce]);
+
+  // Terapkan ulang aspect ratio Crop/Fit ke elemen <video> lokal setiap
+  // kali track lokal berubah (mis. setelah tukar kamera front/back).
+  // Kelas Tailwind sudah reaktif via className, tapi beberapa Chromium di
+  // Android kadang mempertahankan sisa layout saat srcObject diganti —
+  // menyentuh `style.objectFit` eksplisit memastikan setelan langsung berlaku.
+  useEffect(() => {
+    if (kind !== "video") return;
+    const v = localVideoRef.current;
+    if (v) v.style.objectFit = videoFit;
+    const rv = remoteVideoRef.current;
+    if (rv) rv.style.objectFit = videoFit;
+  }, [videoFit, kind, cameraSwapNonce, remoteReady]);
+
+  // Tukar kamera depan/belakang tanpa menutup panggilan: buka stream baru
+  // dengan facingMode target, ganti track pada sender via `replaceTrack`,
+  // lalu perbarui MediaStream lokal & elemen preview. Setelah selesai,
+  // effect kualitas + Crop/Fit di atas akan otomatis re-apply karena
+  // `cameraSwapNonce` di-increment.
+  const flipCamera = useCallback(async () => {
+    if (kind !== "video") return;
+    const session = sessionRef.current;
+    if (!session) return;
+    if (flipping) return;
+    setFlipping(true);
+    const next: "user" | "environment" = facingMode === "user" ? "environment" : "user";
+    let newStream: MediaStream | null = null;
+    try {
+      newStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: next } },
+      });
+      const newTrack = newStream.getVideoTracks()[0];
+      if (!newTrack) throw new Error("Track kamera tidak tersedia");
+      newTrack.enabled = camOn;
+      const sender = session.pc.getSenders().find((s) => s.track?.kind === "video");
+      if (sender) {
+        await sender.replaceTrack(newTrack);
+      }
+      // Ganti track pada MediaStream lokal supaya preview mengikuti.
+      const oldTrack = session.localStream.getVideoTracks()[0];
+      if (oldTrack) {
+        try { session.localStream.removeTrack(oldTrack); } catch { /* ignore */ }
+        try { oldTrack.stop(); } catch { /* ignore */ }
+      }
+      session.localStream.addTrack(newTrack);
+      // Re-bind srcObject supaya <video> memuat frame baru + memicu paint;
+      // pakai stream yang sama agar identitasnya stabil untuk React.
+      const v = localVideoRef.current;
+      if (v) {
+        v.srcObject = session.localStream;
+        void v.play().catch(() => { /* akan retry saat user tap */ });
+      }
+      setFacingMode(next);
+      setCameraSwapNonce((n) => n + 1);
+    } catch (err) {
+      console.warn("[call] flip camera gagal", err);
+      toast.error("Gagal menukar kamera", {
+        description: "Perangkat ini mungkin hanya memiliki satu kamera.",
+      });
+      try { newStream?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    } finally {
+      setFlipping(false);
+    }
+  }, [kind, facingMode, camOn, flipping]);
 
   // Terapkan volume ke elemen remote setiap kali berubah + persist.
   useEffect(() => {
