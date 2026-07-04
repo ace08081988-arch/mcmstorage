@@ -5,7 +5,7 @@ import {
   Type, Eraser, Undo2, Redo2, RotateCw, Square, Circle, Pencil, Trash2,
   X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon, ZoomIn, ZoomOut, Maximize2, Minimize2,
   Loader2, AlertTriangle, RefreshCw, ClipboardCopy, ClipboardCheck,
-  Download,
+  Download, HelpCircle,
 } from "lucide-react";
 import {
   Dialog,
