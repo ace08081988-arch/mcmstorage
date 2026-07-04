@@ -2003,7 +2003,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         </label>
       )}
 
-      {displayPackageType !== "pcs" && (
+      {displayPackageType !== "pcs" && !packageDuplicatesBase && (
         <div className="flex gap-1 text-xs">
           <button type="button" onClick={() => setPriceMode("package")} className={`flex-1 rounded border px-2 py-1 ${priceMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
             Harga per {displayPackageType}
