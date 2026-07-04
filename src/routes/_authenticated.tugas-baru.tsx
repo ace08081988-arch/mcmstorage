@@ -264,6 +264,17 @@ function TugasBaruForm() {
   const [verify, setVerify] = useState<Record<string, VerifyState>>({});
   const verifySeq = useRef<Record<string, number>>({});
 
+  // Cek apakah token tautan pegawai sudah dipakai oleh tugas lain sebelum submit.
+  // Menggunakan RPC SECURITY DEFINER `prep_share_token_exists` (admin-only) agar
+  // lolos RLS prep_tasks yang hanya mengizinkan owner membaca datanya sendiri.
+  type TokenCheck = {
+    status: "idle" | "checking" | "unique" | "duplicate" | "invalid" | "error";
+    token?: string;
+    error?: string;
+  };
+  const [tokenCheck, setTokenCheck] = useState<TokenCheck>({ status: "idle" });
+  const tokenCheckSeq = useRef(0);
+
   // Debounced autosave so rapid edits (mengetik, memilih banyak item)
   // tidak menulis ke localStorage di setiap keystroke. Tetap simpan
   // segera saat tab disembunyikan / sebelum unload agar tidak hilang.
