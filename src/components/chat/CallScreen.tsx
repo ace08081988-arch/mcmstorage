@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
-  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal, SwitchCamera,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal, SwitchCamera, Move,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -111,6 +111,41 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     setVideoFit((f) => (f === "cover" ? "contain" : "cover"));
   }, []);
   const videoFitClass = videoFit === "cover" ? "object-cover" : "object-contain";
+  // Pan/posisi crop — hanya berlaku saat mode "cover" (Crop). Mengontrol
+  // CSS `object-position` supaya bagian penting frame tidak terpotong.
+  type VideoPos = "center" | "top" | "bottom" | "left" | "right";
+  const VIDEO_POS_KEY = "mcm.call.videoPos";
+  const [videoPos, setVideoPos] = useState<VideoPos>(() => {
+    if (typeof window === "undefined") return "center";
+    const v = window.localStorage.getItem(VIDEO_POS_KEY);
+    return v === "top" || v === "bottom" || v === "left" || v === "right" || v === "center"
+      ? v
+      : "center";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(VIDEO_POS_KEY, videoPos); } catch { /* ignore */ }
+  }, [videoPos]);
+  const cycleVideoPos = useCallback(() => {
+    setVideoPos((p) =>
+      p === "center" ? "top"
+      : p === "top" ? "right"
+      : p === "right" ? "bottom"
+      : p === "bottom" ? "left"
+      : "center",
+    );
+  }, []);
+  const videoPosCss =
+    videoPos === "center" ? "50% 50%"
+    : videoPos === "top" ? "50% 0%"
+    : videoPos === "bottom" ? "50% 100%"
+    : videoPos === "left" ? "0% 50%"
+    : "100% 50%";
+  const videoPosLabel =
+    videoPos === "center" ? "Tengah"
+    : videoPos === "top" ? "Atas"
+    : videoPos === "bottom" ? "Bawah"
+    : videoPos === "left" ? "Kiri"
+    : "Kanan";
   // Kualitas video keluar — auto (biarkan browser adaptif) atau paksa preset
   // resolusi/bitrate untuk stabilitas di jaringan lemah.
   const VIDEO_QUALITY_KEY = "mcm.call.videoQuality";
@@ -600,10 +635,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   useEffect(() => {
     if (kind !== "video") return;
     const v = localVideoRef.current;
-    if (v) v.style.objectFit = videoFit;
+    if (v) {
+      v.style.objectFit = videoFit;
+      v.style.objectPosition = videoFit === "cover" ? videoPosCss : "50% 50%";
+    }
     const rv = remoteVideoRef.current;
-    if (rv) rv.style.objectFit = videoFit;
-  }, [videoFit, kind, cameraSwapNonce, remoteReady]);
+    if (rv) {
+      rv.style.objectFit = videoFit;
+      rv.style.objectPosition = videoFit === "cover" ? videoPosCss : "50% 50%";
+    }
+  }, [videoFit, videoPosCss, kind, cameraSwapNonce, remoteReady]);
 
   // Tukar kamera depan/belakang tanpa menutup panggilan: buka stream baru
   // dengan facingMode target, ganti track pada sender via `replaceTrack`,
@@ -1045,6 +1086,20 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                   <Scan className="h-3.5 w-3.5" />
                 )}
                 <span>{videoFit === "cover" ? "Crop" : "Fit"}</span>
+              </button>
+            ) : null}
+            {kind === "video" && videoFit === "cover" ? (
+              <button
+                type="button"
+                onClick={cycleVideoPos}
+                aria-label={`Posisi crop: ${videoPosLabel}. Ketuk untuk pindah bagian yang ditampilkan.`}
+                title={`Pusat frame: ${videoPosLabel} — ketuk untuk ubah`}
+                data-testid="call-pos-toggle"
+                data-pos={videoPos}
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                <Move className="h-3.5 w-3.5" />
+                <span>{videoPosLabel}</span>
               </button>
             ) : null}
             {kind === "video" ? (
