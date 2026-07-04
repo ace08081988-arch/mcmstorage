@@ -207,6 +207,17 @@ function clearDraft() {
 
 function TugasBaruPage() {
   const { isAdmin, isCheckingAdmin } = useAdminStatus();
+  // Sticky admin gate: sekali user terkonfirmasi admin pada mount ini, tetap
+  // render form meskipun `isAdmin` sesaat berubah karena event auth
+  // (INITIAL_SESSION / TOKEN_REFRESHED / reconnect WebView Android yang
+  // sempat mengirim session=null). Tanpa ini, form akan unmount →
+  // remount dan input yang sedang diketik user (mis. jumlah barang)
+  // kembali ke nilai draft/awal ("mendadak jadi 0"). Sign-out sungguhan
+  // akan ditangani layout `_authenticated` yang mengalihkan ke /auth,
+  // sehingga sticky di sini aman.
+  const wasAdminRef = useRef(false);
+  if (isAdmin) wasAdminRef.current = true;
+  if (wasAdminRef.current) return <TugasBaruForm />;
   if (isCheckingAdmin) {
     return (
       <div className="mx-auto max-w-2xl px-3 py-8 text-center text-sm text-muted-foreground">
