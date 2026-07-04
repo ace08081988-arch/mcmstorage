@@ -939,6 +939,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 ? `absolute ${pipCornerClass} ${pipSizeClass} rounded-lg border border-white/20 ${videoFitClass} shadow-lg z-10 bg-black`
                 : `absolute inset-0 h-full w-full ${videoFitClass} bg-black`
             }
+            style={videoStyle}
           />
         ) : (
           <audio ref={remoteAudioRef} autoPlay playsInline />
