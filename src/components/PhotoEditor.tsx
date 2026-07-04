@@ -1384,9 +1384,18 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   );
 }
 
-function ToolBtn({ active, onClick, icon, label }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string }) {
+function ToolBtn({ active, onClick, icon, label, hint }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; hint?: string }) {
+  // `title` memberi tooltip native saat hover (desktop) dan long-press (Android/iOS).
+  // `aria-label` menambahkan konteks untuk pembaca layar ("Teks — ketuk kanvas
+  // untuk menempelkan tulisan"), tidak sekadar "Teks".
+  const aria = hint ? `${label} — ${hint}` : label;
   return (
-    <button onClick={onClick} className={`inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted ${active ? "border-primary bg-primary/10" : ""}`}>
+    <button
+      onClick={onClick}
+      title={hint ? `${label}: ${hint}` : label}
+      aria-label={aria}
+      className={`inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted ${active ? "border-primary bg-primary/10" : ""}`}
+    >
       {icon}<span>{label}</span>
     </button>
   );
