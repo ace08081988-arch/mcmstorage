@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,6 +8,9 @@ import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { useOrgName } from "@/lib/org-name";
+import { TurnstileWidget, TURNSTILE_SITE_KEY } from "@/components/TurnstileWidget";
+import { secureSignUp } from "@/lib/auth.functions";
+import { useServerFn } from "@tanstack/react-start";
 
 function AuthBrand() {
   const { full, logo } = useOrgName();
@@ -96,6 +99,18 @@ function AuthPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
+  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
+  const [turnstileError, setTurnstileError] = useState<string | null>(null);
+  const [rateLimitedUntil, setRateLimitedUntil] = useState<number>(0);
+  const secureSignUpFn = useServerFn(secureSignUp);
+
+  const onTurnstileToken = useCallback((t: string | null) => {
+    setTurnstileToken(t);
+    if (t) setTurnstileError(null);
+  }, []);
+  const onTurnstileError = useCallback((code: string) => {
+    setTurnstileError(code);
+  }, []);
 
   // Persist perubahan intent/mode/email — sync juga antar tab lewat StorageEvent.
   useEffect(() => {
@@ -158,38 +173,102 @@ function AuthPage() {
         toast.error("Konfirmasi kata sandi tidak cocok");
         return;
       }
-      setLoading(true);
-      const { error } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo: window.location.origin,
-          data: { chat_only: intent === "chat" },
-        },
-      });
-      setLoading(false);
-      if (error) {
-        const msg = /already registered|already exists|user.*exists/i.test(error.message)
-          ? "Email sudah terdaftar. Silakan Masuk."
-          : /pwned|breach|compromised/i.test(error.message)
-            ? "Kata sandi ini pernah bocor. Pakai kata sandi lain."
-            : friendlyError(error);
-        toast.error(msg, {
-          action: {
-            label: "Bantuan",
-            onClick: () =>
-              navigate({
-                to: "/error",
-                search: { kind: "auth", title: "Pendaftaran gagal", message: error.message, from: "/auth" },
-              }),
-          },
-        });
+      if (!TURNSTILE_SITE_KEY) {
+        toast.error(
+          "Verifikasi manusia (CAPTCHA) belum dikonfigurasi. Hubungi admin.",
+        );
         return;
       }
-      toast.success(
-        "Pendaftaran berhasil. Cek email Anda untuk verifikasi sebelum masuk.",
-        { duration: 8000 },
-      );
+      if (!turnstileToken) {
+        toast.error(
+          "Selesaikan verifikasi CAPTCHA di bawah sebelum menekan Daftar.",
+        );
+        return;
+      }
+      if (rateLimitedUntil > Date.now()) {
+        const mins = Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000));
+        toast.error(`Masih dalam periode limit. Coba lagi ~${mins} menit.`);
+        return;
+      }
+      setLoading(true);
+      let result;
+      try {
+        result = await secureSignUpFn({
+          data: {
+            email,
+            password,
+            turnstileToken,
+            chatOnly: intent === "chat",
+          },
+        });
+      } catch (err) {
+        setLoading(false);
+        toast.error(
+          "Gagal menghubungi server. Periksa koneksi lalu coba lagi. " +
+            (err instanceof Error ? `(${err.message})` : ""),
+        );
+        return;
+      }
+      setLoading(false);
+      // Reset token — Turnstile token hanya boleh dipakai sekali.
+      setTurnstileToken(null);
+      try { window.turnstile?.reset(); } catch { /* ignore */ }
+
+      if (!result.ok) {
+        switch (result.code) {
+          case "captcha_missing":
+          case "captcha_failed":
+            toast.error(result.message, {
+              description:
+                "Selesaikan kotak verifikasi Turnstile lagi, lalu tekan Daftar.",
+              duration: 8000,
+            });
+            break;
+          case "rate_limited": {
+            const until = Date.now() + (result.retryAfterSeconds ?? 0) * 1000;
+            setRateLimitedUntil(until);
+            toast.error(result.message, {
+              description:
+                "Batas ini melindungi dari spam. Coba dari jaringan lain bila mendesak.",
+              duration: 10000,
+            });
+            break;
+          }
+          case "email_exists":
+            toast.error(result.message, {
+              action: { label: "Masuk", onClick: () => setMode("login") },
+            });
+            break;
+          case "weak_password":
+            toast.error(result.message);
+            break;
+          case "server_misconfigured":
+            toast.error(result.message);
+            break;
+          case "invalid_input":
+            toast.error("Data tidak valid. Periksa email dan kata sandi.");
+            break;
+          default:
+            toast.error(result.message, {
+              action: {
+                label: "Bantuan",
+                onClick: () =>
+                  navigate({
+                    to: "/error",
+                    search: {
+                      kind: "auth",
+                      title: "Pendaftaran gagal",
+                      message: result.message,
+                      from: "/auth",
+                    },
+                  }),
+              },
+            });
+        }
+        return;
+      }
+
+      toast.success("Pendaftaran berhasil. Silakan masuk.", { duration: 6000 });
       setMode("login");
       setPassword("");
       setConfirmPassword("");
@@ -437,12 +516,48 @@ function AuthPage() {
               className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           )}
+          {mode === "signup" && (
+            <div className="space-y-1">
+              {TURNSTILE_SITE_KEY ? (
+                <TurnstileWidget
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onToken={onTurnstileToken}
+                  onError={onTurnstileError}
+                />
+              ) : (
+                <p className="rounded-md border border-dashed bg-muted/40 p-2 text-center text-[11px] text-muted-foreground">
+                  Verifikasi CAPTCHA belum dikonfigurasi. Pendaftaran dinonaktifkan sementara.
+                </p>
+              )}
+              {turnstileError && (
+                <p className="text-center text-[11px] text-destructive">
+                  Verifikasi CAPTCHA bermasalah ({turnstileError}). Muat ulang halaman lalu coba lagi.
+                </p>
+              )}
+              {rateLimitedUntil > Date.now() && (
+                <p className="text-center text-[11px] text-destructive">
+                  Terlalu banyak percobaan. Coba lagi ~
+                  {Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000))} menit.
+                </p>
+              )}
+            </div>
+          )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={
+              loading ||
+              (mode === "signup" &&
+                (!TURNSTILE_SITE_KEY || !turnstileToken || rateLimitedUntil > Date.now()))
+            }
             className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
-            {loading ? "Memproses…" : mode === "signup" ? "Daftar" : "Masuk"}
+            {loading
+              ? "Memproses…"
+              : mode === "signup"
+              ? turnstileToken || !TURNSTILE_SITE_KEY
+                ? "Daftar"
+                : "Selesaikan verifikasi CAPTCHA…"
+              : "Masuk"}
           </button>
           {mode === "login" && (
             <button
