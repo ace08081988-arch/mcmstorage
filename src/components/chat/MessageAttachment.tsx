@@ -107,14 +107,15 @@ export function CardBlock({ card, mine }: { card: Card; mine: boolean }) {
     return (
       <div className={`rounded-lg border px-2 py-2 text-xs ${mine ? "border-primary-foreground/30 bg-primary-foreground/10" : "border-border bg-background/70"}`}>
         <div className="font-semibold">👤 {card.name}</div>
-        <div className="opacity-80">{card.phone}</div>
+        <div className="opacity-80">WA: {card.phone}</div>
+        {card.pin ? <div className="font-mono text-primary">PIN chat MCM: {card.pin}</div> : null}
         {card.note ? <div className="opacity-70">{card.note}</div> : null}
         <div className="mt-1 flex gap-2">
           <a href={`tel:${card.phone}`} className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 hover:bg-accent">
             <Phone className="h-3 w-3" /> Telepon
           </a>
           <a href={`https://wa.me/${waPhone}`} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 rounded-md border px-2 py-0.5 hover:bg-accent">
-            <MessageCircle className="h-3 w-3" /> Chat
+            <MessageCircle className="h-3 w-3" /> WA
           </a>
         </div>
       </div>

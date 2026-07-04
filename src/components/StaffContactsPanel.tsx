@@ -10,6 +10,7 @@ type Contact = {
   user_id: string;
   name: string;
   wa_phone: string;
+  pin_chat_mcm: string | null;
   created_at: string;
 };
 
@@ -27,6 +28,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [pinChatMcm, setPinChatMcm] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -41,14 +43,20 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
     if (!uid) return;
     const nm = name.trim();
     const ph = normalizePhone(phone);
+    const pin = pinChatMcm.trim().toUpperCase();
     if (!nm) return toast.error("Nama wajib diisi.");
     if (ph.length < 8) return toast.error("Nomor WA tidak valid.");
     setBusy(true);
-    const { error } = await table().insert({ user_id: uid, name: nm, wa_phone: ph });
+    const { error } = await table().insert({
+      user_id: uid,
+      name: nm,
+      wa_phone: ph,
+      pin_chat_mcm: pin || null,
+    });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success("Kontak pegawai ditambahkan.");
-    setName(""); setPhone(""); setOpen(false);
+    setName(""); setPhone(""); setPinChatMcm(""); setOpen(false);
     void load();
   }
 
@@ -83,7 +91,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
       </div>
 
       {open && (
-        <div className="mt-3 grid grid-cols-1 gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-[1fr_1fr_auto]">
+        <div className="mt-3 grid grid-cols-1 gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-[1fr_1fr_auto] sm:grid-rows-2">
           <input
             value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama pegawai"
             className="h-9 rounded-md border bg-background px-2 text-sm"
@@ -94,8 +102,13 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
           />
           <button
             onClick={onAdd} disabled={busy}
-            className="h-9 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+            className="h-9 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50 sm:row-span-2"
           >Simpan</button>
+          <input
+            value={pinChatMcm} onChange={(e) => setPinChatMcm(e.target.value)} placeholder="PIN chat MCM (opsional)"
+            inputMode="text" autoCapitalize="characters" maxLength={10}
+            className="col-span-1 sm:col-span-2 h-9 rounded-md border bg-background px-2 text-sm font-mono tracking-widest"
+          />
         </div>
       )}
 
@@ -109,11 +122,14 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
             <div key={c.id} className="flex items-center gap-2 rounded-md border bg-background p-2">
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{c.name}</div>
-                <div className="text-[11px] text-muted-foreground">+{c.wa_phone}</div>
+                <div className="text-[11px] text-muted-foreground">WA: +{c.wa_phone}</div>
+                {c.pin_chat_mcm ? (
+                  <div className="text-[11px] font-mono text-primary">PIN MCM: {c.pin_chat_mcm}</div>
+                ) : null}
               </div>
               <a
                 href={buildWhatsAppUrl("", c.wa_phone)} target="_blank" rel="noreferrer"
-                title="Kirim via MCM"
+                title="Kirim via WA"
                 className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]"
               ><MessageCircle className="h-4 w-4" /></a>
               <button
