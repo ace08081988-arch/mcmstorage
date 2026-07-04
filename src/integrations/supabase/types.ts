@@ -1402,6 +1402,81 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_error_alerts: {
+        Row: {
+          acknowledged_at: string | null
+          acknowledged_by: string | null
+          code: string | null
+          count: number
+          created_at: string
+          id: string
+          kind: string
+          severity: string
+          token_hash: string | null
+          window_seconds: number
+        }
+        Insert: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          code?: string | null
+          count: number
+          created_at?: string
+          id?: string
+          kind: string
+          severity?: string
+          token_hash?: string | null
+          window_seconds: number
+        }
+        Update: {
+          acknowledged_at?: string | null
+          acknowledged_by?: string | null
+          code?: string | null
+          count?: number
+          created_at?: string
+          id?: string
+          kind?: string
+          severity?: string
+          token_hash?: string | null
+          window_seconds?: number
+        }
+        Relationships: []
+      }
+      portal_error_events: {
+        Row: {
+          code: string | null
+          created_at: string
+          id: string
+          ip_hash: string | null
+          kind: string
+          route: string | null
+          status: string | null
+          token_hash: string | null
+          ua: string | null
+        }
+        Insert: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          kind: string
+          route?: string | null
+          status?: string | null
+          token_hash?: string | null
+          ua?: string | null
+        }
+        Update: {
+          code?: string | null
+          created_at?: string
+          id?: string
+          ip_hash?: string | null
+          kind?: string
+          route?: string | null
+          status?: string | null
+          token_hash?: string | null
+          ua?: string | null
+        }
+        Relationships: []
+      }
       prep_pin_alerts: {
         Row: {
           acknowledged_at: string | null

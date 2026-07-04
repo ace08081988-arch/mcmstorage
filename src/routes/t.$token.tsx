@@ -11,6 +11,7 @@ import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
 import { getWorkerPortalConfig, fetchAndApplyWorkerPortalConfig, applyPreviewOverrideFromHash } from "@/lib/worker-portal-config";
 import { StatusBadge } from "@/components/StatusBadge";
+import { reportPortalError } from "@/lib/portal-error-report";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
@@ -204,16 +205,8 @@ function PublicPrepPage() {
     message: string;
     detail?: string;
     code?: string;
-    raw?: string;
+    ref?: string;
   }>(null);
-  function safeJson(v: unknown): string {
-    try {
-      const s = JSON.stringify(v, null, 2);
-      return s.length > 800 ? s.slice(0, 800) + "…" : s;
-    } catch {
-      return String(v);
-    }
-  }
   const [staleItemIds, setStaleItemIds] = useState<Record<string, true>>({});
   const itemsRef = useRef<PrepItemRow[]>([]);
   useEffect(() => { itemsRef.current = items; }, [items]);
@@ -467,7 +460,11 @@ function PublicPrepPage() {
     setLoading(false);
     if (error) {
       const msg = "Tidak bisa menghubungi server. Periksa koneksi internet lalu coba lagi.";
-      setLastError({ kind: "network", message: msg, code: (error as any).code, raw: safeJson({ code: (error as any).code }) });
+      const errCode = (error as { code?: string } | null)?.code ?? null;
+      setLastError({ kind: "network", message: msg, code: errCode ?? undefined });
+      void reportPortalError({ kind: "network", code: errCode, token }).then((ref) => {
+        if (ref) setLastError((prev) => (prev ? { ...prev, ref } : prev));
+      });
       toast.error(msg);
       return false;
     }
@@ -481,7 +478,7 @@ function PublicPrepPage() {
         const mins = Math.floor(secs / 60);
         const remain = mins >= 1 ? `${mins} menit ${secs % 60} detik` : `${secs} detik`;
         const msg = `Akses terkunci oleh server. Coba lagi dalam ${remain}.`;
-        setLastError({ kind: "rate_limited", message: msg, code: "rate_limited", detail: `retry_after: ${secs} detik`, raw: safeJson(res) });
+        setLastError({ kind: "rate_limited", message: msg, code: "rate_limited", detail: `retry_after: ${secs} detik` });
         toast.error(msg);
       } else {
         if (res?.error === "bad_pin") {
@@ -492,14 +489,14 @@ function PublicPrepPage() {
             setLockedUntil(until);
             writeAttemptState({ attempts: next, lockedUntil: until });
             const msg = `PIN salah. Anda sudah ${MAX_ATTEMPTS} kali keliru — input dikunci ${LOCK_SECONDS} detik.`;
-            setLastError({ kind: "bad_pin", message: msg, code: "bad_pin", raw: safeJson(res) });
+            setLastError({ kind: "bad_pin", message: msg, code: "bad_pin" });
             toast.error(msg);
           } else {
             setAttempts(next);
             writeAttemptState({ attempts: next, lockedUntil: null });
             const left = MAX_ATTEMPTS - next;
             const msg = `PIN salah. Sisa percobaan: ${left} dari ${MAX_ATTEMPTS}.`;
-            setLastError({ kind: "bad_pin", message: msg, code: "bad_pin", raw: safeJson(res) });
+            setLastError({ kind: "bad_pin", message: msg, code: "bad_pin" });
             toast.error(msg);
           }
           setPin("");
@@ -509,27 +506,28 @@ function PublicPrepPage() {
             ? `Kedaluwarsa pada ${expAt.toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}.`
             : undefined;
           const msg = "Link tugas sudah kedaluwarsa. Minta pemilik mengirim link / PIN baru.";
-          setLastError({ kind: "expired", message: msg, detail, code: "expired", raw: safeJson(res) });
+          setLastError({ kind: "expired", message: msg, detail, code: "expired" });
           toast.error(msg);
         } else if (res?.error === "closed") {
           const msg = res.status === "cancelled"
             ? "Tugas ini sudah dibatalkan pemilik."
             : "Tugas ini sudah ditutup pemilik (sudah selesai).";
-          setLastError({ kind: "closed", message: msg, code: "closed", detail: res.status ? `Status: ${res.status}` : undefined, raw: safeJson(res) });
+          setLastError({ kind: "closed", message: msg, code: "closed", detail: res.status ? `Status: ${res.status}` : undefined });
           toast.error(msg);
         } else if (res?.error === "not_found") {
           const msg = "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik.";
-          setLastError({ kind: "not_found", message: msg, code: "not_found", raw: safeJson(res) });
+          setLastError({ kind: "not_found", message: msg, code: "not_found" });
           toast.error(msg);
         } else {
           const code = res?.error || "unknown";
-          const msg = `Tugas tidak bisa dibuka (kode: ${code}). Tunjukkan pesan di bawah ke pemilik.`;
+          const msg = "Tugas tidak bisa dibuka karena gangguan sesaat. Coba beberapa saat lagi, atau tunjukkan kode referensi di bawah ke pemilik.";
           setLastError({
             kind: "not_found",
             message: msg,
-            detail: `Kode error server: ${code}. Status tugas: ${res?.status ?? "-"}.`,
             code,
-            raw: safeJson(res),
+          });
+          void reportPortalError({ kind: "unknown", code, status: res?.status ?? null, token }).then((ref) => {
+            if (ref) setLastError((prev) => (prev ? { ...prev, ref } : prev));
           });
           toast.error(msg);
         }
@@ -539,13 +537,14 @@ function PublicPrepPage() {
     // PIN valid (ok=true) tapi payload task hilang → tampilkan detail diagnostik
     const normalizedTask = normalizePrepTask(res.task);
     if (!normalizedTask) {
-      const msg = "PIN benar, tetapi data tugas tidak terkirim dari server.";
+      const msg = "PIN benar, tetapi data tugas belum bisa dimuat. Coba lagi, atau tunjukkan kode referensi di bawah ke pemilik.";
       setLastError({
         kind: "no_task",
         message: msg,
-        detail: "Server merespon ok=true namun field `task` kosong / rusak. Minta pemilik membuka kembali tugas lalu kirim ulang link.",
         code: "missing_task",
-        raw: safeJson(res),
+      });
+      void reportPortalError({ kind: "missing_task", code: "missing_task", status: res?.status ?? null, token }).then((ref) => {
+        if (ref) setLastError((prev) => (prev ? { ...prev, ref } : prev));
       });
       toast.error(msg);
       return false;
@@ -898,35 +897,24 @@ function PublicPrepPage() {
                     {lastError.detail && (
                       <div className="mt-0.5 break-words opacity-80">{lastError.detail}</div>
                     )}
-                    {(lastError.code || lastError.raw) && (
-                      <details className="mt-1.5" open>
-                        <summary className="cursor-pointer select-none text-[10px] uppercase tracking-wider opacity-70">
-                          Detail respons RPC (prep_get_task)
-                        </summary>
-                        <div className="mt-1 font-mono text-[10px] opacity-80">kind: {lastError.kind}</div>
-                        {lastError.code && (
-                          <div className="mt-1 font-mono text-[10px] opacity-80">code: {lastError.code}</div>
-                        )}
-                        {lastError.raw && (
-                          <pre className="mt-1 max-h-56 overflow-auto whitespace-pre-wrap break-all rounded bg-background/60 p-1.5 font-mono text-[10px] opacity-80">{lastError.raw}</pre>
-                        )}
+                    {lastError.ref && (
+                      <div className="mt-1.5 font-mono text-[10px] opacity-70">
+                        Kode referensi: <span className="font-semibold">{lastError.ref}</span>
                         <button
                           type="button"
-                          className="mt-1 rounded border px-2 py-0.5 text-[10px] hover:bg-background/80"
+                          className="ml-2 rounded border px-2 py-0.5 text-[10px] hover:bg-background/80"
                           onClick={async () => {
-                            const text = [
-                              `Pesan: ${lastError.message}`,
-                              lastError.detail ? `Detail: ${lastError.detail}` : "",
-                              lastError.code ? `Kode: ${lastError.code}` : "",
-                              lastError.raw ? `Payload:\n${lastError.raw}` : "",
-                            ].filter(Boolean).join("\n");
-                            try { await navigator.clipboard.writeText(text); toast.success("Detail error disalin"); }
-                            catch { toast.error("Gagal menyalin"); }
+                            try {
+                              await navigator.clipboard.writeText(lastError.ref ?? "");
+                              toast.success("Kode referensi disalin");
+                            } catch {
+                              toast.error("Gagal menyalin");
+                            }
                           }}
                         >
-                          Salin detail error
+                          Salin
                         </button>
-                      </details>
+                      </div>
                     )}
                   </div>
                 </div>
