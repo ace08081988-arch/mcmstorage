@@ -1547,21 +1547,22 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 <span>{videoPosLabel}</span>
               </button>
             ) : null}
-            {kind === "video" && videoFit === "cover" ? (
+            {kind === "video" ? (
               <button
                 type="button"
                 onClick={() => {
                   setVideoPosCustom(null);
                   setVideoPos("center");
-                  toast.success("object-position kembali ke default (tengah)");
+                  setVideoFit("cover");
+                  toast.success("Crop/Fit dan object-position kembali ke default");
                 }}
-                aria-label="Reset posisi crop ke tengah"
-                title="Reset posisi crop ke tengah"
+                aria-label="Reset Crop/Fit dan posisi crop ke default"
+                title="Reset Crop/Fit dan posisi crop ke default"
                 data-testid="call-pos-reset"
                 className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                <span>Reset</span>
+                <span>Reset Crop/Fit</span>
               </button>
             ) : null}
             {kind === "video" ? (
