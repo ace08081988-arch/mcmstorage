@@ -1055,6 +1055,26 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           </Button>
         ) : null}
 
+        {kind === "video" ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-14 w-14 rounded-full bg-white/10"
+            onClick={() => void flipCamera()}
+            disabled={flipping || !camOn}
+            aria-label={facingMode === "user" ? "Tukar ke kamera belakang" : "Tukar ke kamera depan"}
+            data-testid="call-flip-camera"
+            data-facing={facingMode}
+          >
+            {flipping ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <SwitchCamera className="h-6 w-6" />
+            )}
+          </Button>
+        ) : null}
+
         <Button
           type="button"
           size="icon"
