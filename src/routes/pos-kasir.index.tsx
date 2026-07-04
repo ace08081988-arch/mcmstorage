@@ -1030,6 +1030,35 @@ function PosKasirPage() {
 
               {/* Mobile: card list */}
               <div className={`grid md:hidden ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`text-slate-500 ${modeRingkas ? "text-[11px]" : "text-xs"}`}>Urutan</span>
+                  <div className="flex rounded-lg border border-slate-700 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setUrutan("terbaru")}
+                      className={`text-xs font-medium transition-colors ${
+                        urutan === "terbaru"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                      } ${modeRingkas ? "px-2 py-1" : "px-2.5 py-1.5"}`}
+                      aria-pressed={urutan === "terbaru"}
+                    >
+                      Terbaru
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUrutan("terlama")}
+                      className={`text-xs font-medium transition-colors ${
+                        urutan === "terlama"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                      } ${modeRingkas ? "px-2 py-1" : "px-2.5 py-1.5"}`}
+                      aria-pressed={urutan === "terlama"}
+                    >
+                      Terlama
+                    </button>
+                  </div>
+                </div>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
                   <input
