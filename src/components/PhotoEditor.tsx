@@ -1388,6 +1388,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               <li><b>Panah:</b> pilih arah 8 mata angin — otomatis tempel; ubah arah lagi untuk yang terpilih.</li>
               <li><b>Kotak / Lingkaran:</b> seret di kanvas untuk ukuran bebas, atau ketuk sekali untuk ukuran standar.</li>
             </ul>
+            <div className="mt-1 text-muted-foreground">
+              Pintasan keyboard: {Object.entries(TOOL_SHORTCUTS).map(([t, k]) => k && `${k} ${TOOL_LABELS[t as Tool]}`).filter(Boolean).join(", ")}.
+            </div>
             <div className="mt-1 text-muted-foreground">Semua objek bisa dipilih ulang → geser, duplikat, atau hapus lewat ikon di kanan.</div>
           </div>
         )}
