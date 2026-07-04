@@ -205,16 +205,8 @@ function PublicPrepPage() {
     message: string;
     detail?: string;
     code?: string;
-    raw?: string;
+    ref?: string;
   }>(null);
-  function safeJson(v: unknown): string {
-    try {
-      const s = JSON.stringify(v, null, 2);
-      return s.length > 800 ? s.slice(0, 800) + "…" : s;
-    } catch {
-      return String(v);
-    }
-  }
   const [staleItemIds, setStaleItemIds] = useState<Record<string, true>>({});
   const itemsRef = useRef<PrepItemRow[]>([]);
   useEffect(() => { itemsRef.current = items; }, [items]);
