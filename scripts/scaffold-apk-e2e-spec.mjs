@@ -16,6 +16,14 @@
  *   node scripts/scaffold-apk-e2e-spec.mjs --name apk-focus-refetch-guard
  *   node scripts/scaffold-apk-e2e-spec.mjs            # prompt interaktif
  *   node scripts/scaffold-apk-e2e-spec.mjs --dry-run  # preview, no write
+ *
+ * Pilih mode guard:
+ *   --mode terminal        (default) hanya `stub.terminalGuard()` — cukup
+ *                          untuk flow APK murni (`getApkVariantDetail` saja).
+ *   --mode full            terminalGuard + `installServerFnPassthroughGuard`
+ *                          — wajib bila flow menyentuh server function di
+ *                          luar APK (copy chat link, export, dll).
+ *   Alias: `--full` = `--mode full`, `--terminal` = `--mode terminal`.
  */
 
 import { promises as fs } from "node:fs";
