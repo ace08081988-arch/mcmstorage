@@ -115,6 +115,19 @@ function TugasPage() {
     return () => { void supabase.removeChannel(ch); };
   }, [uid]);
 
+  // Realtime: refresh progres saat pegawai mengirim/menghapus submission
+  // atau ketika daftar item tugas berubah.
+  useEffect(() => {
+    if (!uid) return;
+    const ch = supabase
+      .channel("prep_progress-tugas")
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => { void load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items" }, () => { void load(); })
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [uid]);
+
   async function loadPinAlerts() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const { data } = await (supabase.from as any)("prep_pin_alerts")
