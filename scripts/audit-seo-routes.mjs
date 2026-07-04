@@ -9,7 +9,7 @@
 // Tujuan: mencegah finding "Sitemap needs attention" berulang setelah
 // menambah/mengubah rute.
 
-import { readFileSync, readdirSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, statSync, writeFileSync } from "node:fs";
 import { join, relative } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -122,6 +122,77 @@ export function extractRobotsDisallows(src) {
  */
 export function robotsMatches(url, rules) {
   return rules.some((r) => url === r || url.startsWith(r));
+}
+
+/**
+ * Auto-fix robots.txt berdasarkan daftar konflik yang terdeteksi audit.
+ *
+ * - `add`: URL noindex yang belum di-Disallow → tambahkan `Disallow: <url>`
+ *   pada blok `User-agent: *` (buat blok bila belum ada).
+ * - `remove`: URL yang masuk sitemap tapi keblokir Disallow → hapus baris
+ *   Disallow yang persis cocok. Aturan prefix yang menutup URL lain tidak
+ *   disentuh otomatis (butuh keputusan manusia — kami cetak saran saja).
+ *
+ * Fungsi ini murni: menerima teks robots.txt + patch, mengembalikan teks
+ * baru + daftar perubahan yang benar-benar diterapkan / dilewati. Dipisah
+ * dari I/O supaya bisa di-self-test.
+ */
+export function applyRobotsFix(src, { add = [], remove = [] } = {}) {
+  const addSet = new Set(add);
+  const removeSet = new Set(remove);
+  const applied = { added: [], removed: [], skipped: [] };
+
+  const lines = src.split(/\r?\n/);
+  // Tandai baris yang akan dibuang: Disallow eksak untuk URL di removeSet
+  // di dalam blok `User-agent: *`.
+  let inStar = false;
+  const kept = [];
+  for (const rawLine of lines) {
+    const stripped = rawLine.replace(/#.*$/, "").trim();
+    const ua = stripped.match(/^User-agent:\s*(.+)$/i);
+    if (ua) {
+      inStar = ua[1].trim() === "*";
+      kept.push(rawLine);
+      continue;
+    }
+    if (inStar) {
+      const d = stripped.match(/^Disallow:\s*(.*)$/i);
+      if (d && removeSet.has(d[1].trim())) {
+        applied.removed.push(d[1].trim());
+        continue; // drop baris ini
+      }
+    }
+    kept.push(rawLine);
+  }
+
+  // Konflik yang tak bisa dihapus otomatis (prefix, bukan exact) → skip.
+  for (const url of removeSet) {
+    if (!applied.removed.includes(url)) applied.skipped.push({ op: "remove", url, reason: "no exact Disallow line (prefix rule)" });
+  }
+
+  // Sisipkan Disallow baru di blok `User-agent: *`. Bila blok belum ada,
+  // append blok baru di akhir file.
+  let out = kept.join("\n");
+  const toAdd = [...addSet];
+  if (toAdd.length) {
+    const starIdx = out.search(/^User-agent:\s*\*\s*$/im);
+    if (starIdx >= 0) {
+      // Cari posisi akhir blok `*` (baris kosong atau `User-agent:` berikutnya).
+      const after = out.slice(starIdx);
+      const blockEndRel = after.search(/\n\s*\n|\nUser-agent:/i);
+      const blockEnd = blockEndRel >= 0 ? starIdx + blockEndRel : out.length;
+      const insertion = toAdd.map((u) => `Disallow: ${u}`).join("\n");
+      out = `${out.slice(0, blockEnd).replace(/\s+$/, "")}\n${insertion}${out.slice(blockEnd)}`;
+      applied.added.push(...toAdd);
+    } else {
+      const block = ["", "User-agent: *", "Allow: /", ...toAdd.map((u) => `Disallow: ${u}`), ""].join("\n");
+      out = `${out.replace(/\s+$/, "")}\n${block}`;
+      applied.added.push(...toAdd);
+    }
+  }
+
+  if (!out.endsWith("\n")) out += "\n";
+  return { text: out, applied };
 }
 
 /**
@@ -283,15 +354,65 @@ function runSelfTests() {
     for (const f of failed) console.error(f);
     process.exit(2);
   }
+  runAutofixSelfTests();
+}
+
+function runAutofixSelfTests() {
+  const failed = [];
+  // add: sisipkan Disallow ke blok wildcard yang sudah ada.
+  {
+    const src = "User-agent: *\nAllow: /\nDisallow: /admin\n\nSitemap: /sitemap.xml\n";
+    const { text, applied } = applyRobotsFix(src, { add: ["/forgot-password"] });
+    if (!text.includes("Disallow: /forgot-password") || !applied.added.includes("/forgot-password")) {
+      failed.push("  ✗ add existing block: tidak menambahkan Disallow ke blok *");
+    }
+  }
+  // add: buat blok baru bila belum ada wildcard.
+  {
+    const src = "User-agent: Googlebot\nAllow: /\n";
+    const { text, applied } = applyRobotsFix(src, { add: ["/private"] });
+    if (!/User-agent:\s*\*/i.test(text) || !applied.added.includes("/private")) {
+      failed.push("  ✗ add no block: tidak membuat blok User-agent: *");
+    }
+  }
+  // remove: hapus baris Disallow yang persis cocok.
+  {
+    const src = "User-agent: *\nDisallow: /refund\nDisallow: /admin\n";
+    const { text, applied } = applyRobotsFix(src, { remove: ["/refund"] });
+    if (/Disallow:\s*\/refund\b/.test(text) || !applied.removed.includes("/refund")) {
+      failed.push("  ✗ remove exact: baris Disallow: /refund tidak dihapus");
+    }
+  }
+  // remove: aturan prefix tidak dihapus otomatis → skip dengan alasan.
+  {
+    const src = "User-agent: *\nDisallow: /admin\n";
+    const { applied } = applyRobotsFix(src, { remove: ["/admin/panel"] });
+    if (!applied.skipped.some((s) => s.url === "/admin/panel")) {
+      failed.push("  ✗ remove prefix: konflik prefix seharusnya dilewati (skipped)");
+    }
+  }
+  if (failed.length) {
+    console.error("\n❌ Autofix self-test gagal:");
+    for (const f of failed) console.error(f);
+    process.exit(2);
+  }
 }
 
 function main() {
   runSelfTests();
+  const argv = process.argv.slice(2);
+  const doFix = argv.includes("--fix");
+  const suggestOnly = argv.includes("--suggest") || (!doFix && argv.includes("--auto-fix"));
+  // Default: audit murni. `--fix` = tulis perubahan ke disk. `--suggest`
+  // (atau `--auto-fix` tanpa --fix) = cetak patch tanpa menulis.
   const sitemapPaths = readSitemapPaths();
-  const robotsRules = extractRobotsDisallows(readFileSync(ROBOTS_FILE, "utf8"));
+  const robotsSrc = readFileSync(ROBOTS_FILE, "utf8");
+  const robotsRules = extractRobotsDisallows(robotsSrc);
   const files = listRouteFiles(ROUTES_DIR);
   const rows = [];
   const errors = [];
+  const fixAdd = new Set();
+  const fixRemove = new Set();
 
   for (const file of files) {
     const src = readFileSync(file, "utf8");
@@ -311,6 +432,8 @@ function main() {
       robotsDisallowed,
     });
     if (error) errors.push(`  ${error} (${relative(ROOT, file)})`);
+    if (status === "MISSING-ROBOTS") fixAdd.add(url);
+    if (status === "CONFLICT-ROBOTS") fixRemove.add(url);
     rows.push({ url, status, file: relative(ROOT, file) });
   }
 
@@ -327,11 +450,47 @@ function main() {
     `  total=${rows.length}  sitemap=${rows.filter((r) => r.status === "sitemap").length}  noindex=${rows.filter((r) => r.status === "noindex").length}  dynamic=${rows.filter((r) => r.status === "DYNAMIC (skip)").length}  allowlist=${rows.filter((r) => r.status === "allowlist").length}`,
   );
 
+  // Auto-fix / suggest robots.txt bila terdeteksi konflik yang menyangkut
+  // robots.txt (MISSING-ROBOTS / CONFLICT-ROBOTS).
+  if (fixAdd.size || fixRemove.size) {
+    const { text, applied } = applyRobotsFix(robotsSrc, {
+      add: [...fixAdd],
+      remove: [...fixRemove],
+    });
+    console.log("\n🛠  robots.txt auto-fix");
+    if (applied.added.length) console.log(`   + Disallow: ${applied.added.join(", ")}`);
+    if (applied.removed.length) console.log(`   - Disallow: ${applied.removed.join(", ")}`);
+    for (const s of applied.skipped) {
+      console.log(`   ⚠︎ skip ${s.op} ${s.url} — ${s.reason} (perbaiki manual)`);
+    }
+    if (doFix) {
+      if (text !== robotsSrc) {
+        writeFileSync(ROBOTS_FILE, text);
+        console.log(`   ✅ ditulis ke ${relative(ROOT, ROBOTS_FILE)}`);
+        // Anggap error yang otomatis-terselesaikan sebagai fixed.
+        for (const url of applied.added) {
+          const idx = errors.findIndex((e) => e.includes(`${url} — noindex tetapi tidak Disallow`));
+          if (idx >= 0) errors.splice(idx, 1);
+        }
+        for (const url of applied.removed) {
+          const idx = errors.findIndex((e) => e.includes(`${url} — masuk sitemap TAPI Disallow`));
+          if (idx >= 0) errors.splice(idx, 1);
+        }
+      } else {
+        console.log("   (tidak ada perubahan yang bisa diterapkan otomatis)");
+      }
+    } else if (suggestOnly) {
+      console.log("   (mode --suggest — jalankan lagi dengan --fix untuk menulis perubahan)");
+    } else {
+      console.log("   Jalankan dengan `--fix` untuk menerapkan otomatis, atau `--suggest` untuk lihat patch.");
+    }
+  }
+
   if (errors.length) {
     console.error("\n❌ SEO audit gagal:");
     for (const e of errors) console.error(e);
     console.error(
-      "\nPerbaiki dengan menambah rute ke sitemap (src/routes/sitemap[.]xml.ts) atau menambah meta robots noindex,nofollow di head() rute.",
+      "\nPerbaiki dengan menambah rute ke sitemap (src/routes/sitemap[.]xml.ts), menambah meta robots noindex,nofollow di head() rute, atau jalankan `node scripts/audit-seo-routes.mjs --fix` untuk perbaiki robots.txt otomatis.",
     );
     process.exit(1);
   }
