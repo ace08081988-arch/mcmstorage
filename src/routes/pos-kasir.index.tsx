@@ -840,8 +840,9 @@ function PosKasirPage() {
         </div>
 
         {/* Riwayat Transaksi */}
-        <section className="mt-4 md:mt-6 bg-slate-800/50 backdrop-blur rounded-2xl p-4 md:p-5 border border-slate-700">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <section className={`md:mt-6 bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700 ${modeRingkas ? "mt-2 p-3 md:p-5" : "mt-4 p-4 md:p-5"}`}>
+          <div className={`flex flex-wrap items-center justify-between gap-3 ${modeRingkas ? "mb-2" : "mb-4"}`}>
+
             <div>
               <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
                 📋 Riwayat Transaksi
