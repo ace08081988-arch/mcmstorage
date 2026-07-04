@@ -87,6 +87,27 @@ await passthrough.assertNoAdditionalRequests();
 | `tidak memakai apk-stub / terminalGuard` | form-only | Penanda eksplisit bahwa spec ini bukan flow `getApkVariantDetail` dan tidak memasang stub APK. | `// Guards : spec form murni — tidak memakai apk-stub / terminalGuard` |
 | `(mode: terminal)` | terminal | Penanda bahwa spec hanya memakai `installApkStub` tanpa `installServerFnPassthroughGuard`. | `// Guards : ... (mode: terminal)` |
 | `(mode: full)` | full | Penanda bahwa spec memasang `installServerFnPassthroughGuard` selain `installApkStub`. | `// Guards : ... (mode: full)` |
+### Catatan tentang mode dan konsekuensi jika guard tidak terpenuhi
+
+Mode yang tertera di kolom `Guards` bukan sekadar label; dia merefleksikan setup stub yang benar-benar dipasang di spec. Jika isi spec tidak sesuai tag-nya, validator (`bun run e2e:apk:validate`) akan langsung gagal di CI.
+
+**Mode `terminal`** berarti spec hanya memasang `installApkStub`. Semua request yang muncul di test — baik fetch awal, refetch, maupun kebocoran polling — ditangani dan dihitung oleh stub APK. Konsekuensi jika guard wajib tidak terpenuhi:
+
+- Tanpa `primeInitial + assertPrimed` sebelum `page.goto()`: waiter fetch awal tidak punya respons, test hang atau gagal dengan timeout tanpa jejak yang jelas.
+- Tanpa `waitForServed`: assertion UI bisa jalan sebelum React render state kosong, menghasilkan flake yang sulit didebug.
+- Tanpa `trackedClick` / `trackedAction` untuk aksi refetch: tap yang tidak memicu request tidak terdeteksi; regresi "tombol refresh mati" lolos.
+- Tanpa `assertQuiescent`: polling background, refetch-on-focus, atau interval kecil bisa lolos dan membuat test green padahal aplikasi masih ngomong ke server.
+- Tanpa `terminalGuard()` di akhir: leak jangka panjang pada `getApkVariantDetail` (satu atau kedua varian) tidak tertangkap.
+
+**Mode `full`** berarti spec memasang `installApkStub` DAN `installServerFnPassthroughGuard`. Mode ini wajib kalau aksi user juga memicu server function di luar `getApkVariantDetail`, misalnya copy/export link chat. Konsekuensi jika guard wajib tidak terpenuhi:
+
+- Tanpa `installServerFnPassthroughGuard` atau tanpa `passthrough.assertNoAdditionalRequests`: round-trip server function non-APK (copy, export, toggle) bisa bocor tanpa terdeteksi.
+- Tanpa `passthrough.dispose()` di akhir (atau setelah assert): guard tetap menangkap request di spec berikutnya dan menyebabkan kegagalan yang sebenarnya bukan regresi target.
+- Mode `full` TIDAK menghapus kewajiban `terminalGuard()`. Kedua guard harus ada: terminal guard untuk leak APK, passthrough guard untuk leak server function lain.
+
+**Mode `form-only`** berarti spec tidak memakai `installApkStub` sama sekali. Jika kolom `Guards` tidak menyebut eksplisit "tidak memakai apk-stub / terminalGuard", validator akan menolak karena bisa terjadi spec form yang secara tidak sengaja diberi tag mode stub.
+
+Singkatnya: tag mode harus jujur terhadap kode, dan setiap checklist item memiliki satu kegagalan spesifik yang akan lolos kalau item itu dihapus. Itulah sebabnya validator memeriksa checklist secara ketat di CI.
 
 ### Perintah yang sering dipakai
 
