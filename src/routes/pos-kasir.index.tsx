@@ -380,23 +380,37 @@ function PosKasirPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-3 md:p-8">
+    <div className={`min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 md:p-8 ${modeRingkas ? "p-2" : "p-3"}`}>
       <div className="mx-auto max-w-6xl">
         {/* Mobile header */}
-        <header className="md:hidden mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <header className={`md:hidden grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 ${modeRingkas ? "mb-2" : "mb-4"}`}>
           <div className="min-w-0">
             <h1 className="truncate text-xl font-bold tracking-tight">🧾 POS Kasir</h1>
             <p className="truncate text-xs text-slate-400 mt-0.5">
               {riwayat.length} transaksi · {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => setModeRingkas((v) => !v)}
+            title={modeRingkas ? "Mode normal" : "Mode ringkas"}
+            aria-pressed={modeRingkas}
+            className={`shrink-0 rounded-lg border text-xs font-medium transition-colors ${
+              modeRingkas
+                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+            } ${modeRingkas ? "px-2 py-1" : "px-3 py-1.5"}`}
+          >
+            {modeRingkas ? "📱 Ringkas" : "📱 Normal"}
+          </button>
           <Link
             to="/pos-kasir/ringkasan"
-            className="shrink-0 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 hover:bg-slate-700 transition-colors"
+            className={`shrink-0 rounded-lg bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 hover:bg-slate-700 transition-colors ${modeRingkas ? "px-2 py-1" : "px-3 py-1.5"}`}
           >
             📊 Ringkasan
           </Link>
         </header>
+
 
         {/* Desktop header */}
         <header className="hidden md:flex mb-6 items-center justify-between">
