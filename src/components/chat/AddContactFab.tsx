@@ -187,7 +187,6 @@ export function AddContactFab() {
               ) : preview ? (
                 <div className="flex items-center gap-3">
                   {preview.avatar_url ? (
-                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={preview.avatar_url}
                       alt=""
