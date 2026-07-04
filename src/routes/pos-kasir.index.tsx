@@ -7,6 +7,7 @@ import {
   type PosKasirProduk,
   type PosKasirTransaksi,
 } from "@/lib/pos-kasir";
+import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
 
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
@@ -29,6 +30,66 @@ function PosKasirPage() {
   const [riwayat, setRiwayat] = useState<PosKasirTransaksi[]>(() => getPosKasirRiwayat());
   const [dariTgl, setDariTgl] = useState<string>("");
   const [sampaiTgl, setSampaiTgl] = useState<string>("");
+  const [waNomor, setWaNomor] = useState<string>("");
+  const [waLokasi, setWaLokasi] = useState<string>("");
+
+  const waNomorNorm = useMemo(() => normalizeWaNumber(waNomor, "ID"), [waNomor]);
+  const waNomorDisplay = useMemo(
+    () => (waNomorNorm ? formatWaDisplay(waNomorNorm, "ID") : ""),
+    [waNomorNorm],
+  );
+  const waLokasiTrim = waLokasi.trim();
+  const waLokasiValid = useMemo(() => {
+    if (!waLokasiTrim) return false;
+    if (waLokasiTrim.length > 500) return false;
+    try {
+      const u = new URL(waLokasiTrim);
+      return u.protocol === "http:" || u.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, [waLokasiTrim]);
+  const waNomorError = waNomor.trim() === ""
+    ? "Nomor WA wajib diisi"
+    : !waNomorNorm
+      ? "Nomor tidak valid (harus 8–15 digit, contoh: 0812… / 62812…)"
+      : "";
+  const waLokasiError = waLokasiTrim === ""
+    ? "Lokasi (URL) wajib diisi"
+    : !waLokasiValid
+      ? "Lokasi harus berupa URL http(s):// yang sah (mis. link Google Maps)"
+      : "";
+  const waReady = !!waNomorNorm && waLokasiValid;
+  const waDisabledReason = !waNomorNorm
+    ? waNomorError
+    : !waLokasiValid
+      ? waLokasiError
+      : "";
+
+  const buildWaUrl = (t: PosKasirTransaksi): string | null => {
+    if (!waNomorNorm || !waLokasiValid) return null;
+    const lines = [
+      "🧾 *Struk POS Kasir*",
+      `${t.produkEmoji} ${t.produkNama}`,
+      `Berat: ${t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`,
+      `Harga: ${rupiah(t.hargaPerKg)}/kg`,
+      `Total: *${rupiah(t.total)}*`,
+      `Waktu: ${new Date(t.waktu).toLocaleString("id-ID")}`,
+      "",
+      `📍 Lokasi: ${waLokasiTrim}`,
+    ];
+    return `https://wa.me/${waNomorNorm}?text=${encodeURIComponent(lines.join("\n"))}`;
+  };
+
+  const kirimWa = (t: PosKasirTransaksi) => {
+    const url = buildWaUrl(t);
+    if (!url) {
+      setToast(waDisabledReason || "Lengkapi nomor & lokasi WA");
+      setTimeout(() => setToast(null), 2500);
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   useEffect(() => {
     setPosKasirRiwayat(riwayat);
@@ -534,6 +595,74 @@ function PosKasirPage() {
             </div>
           ) : (
             <>
+              {/* WA share form */}
+              <div className="mb-4 rounded-xl border border-slate-700 bg-slate-900/40 p-3">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+                    💬 Kirim Struk via WA
+                  </span>
+                  {waReady ? (
+                    <span className="text-[11px] text-emerald-400 font-mono truncate">
+                      → {waNomorDisplay}
+                    </span>
+                  ) : (
+                    <span className="text-[11px] text-amber-400">Lengkapi nomor & lokasi</span>
+                  )}
+                </div>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider text-slate-500">
+                      Nomor WA tujuan
+                    </label>
+                    <input
+                      type="tel"
+                      inputMode="tel"
+                      autoComplete="off"
+                      value={waNomor}
+                      onChange={(e) => setWaNomor(e.target.value)}
+                      placeholder="0812… atau 62812…"
+                      aria-invalid={!!waNomor && !waNomorNorm}
+                      className={`mt-1 w-full text-sm px-3 py-2 rounded-lg bg-slate-900/60 border text-slate-100 font-mono focus:outline-none focus:ring-2 ${
+                        waNomor && !waNomorNorm
+                          ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
+                          : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
+                      }`}
+                    />
+                    {waNomorError && waNomor.trim() !== "" && (
+                      <p className="mt-1 text-[11px] text-red-300">{waNomorError}</p>
+                    )}
+                    {!waNomorError && waNomorDisplay && (
+                      <p className="mt-1 text-[11px] text-slate-400 font-mono">
+                        Terformat: {waNomorDisplay}
+                      </p>
+                    )}
+                  </div>
+                  <div>
+                    <label className="text-[10px] uppercase tracking-wider text-slate-500">
+                      Lokasi (URL Maps / http-https)
+                    </label>
+                    <input
+                      type="url"
+                      inputMode="url"
+                      autoComplete="off"
+                      value={waLokasi}
+                      onChange={(e) => setWaLokasi(e.target.value)}
+                      placeholder="https://maps.google.com/…"
+                      maxLength={500}
+                      aria-invalid={!!waLokasiTrim && !waLokasiValid}
+                      className={`mt-1 w-full text-sm px-3 py-2 rounded-lg bg-slate-900/60 border text-slate-100 focus:outline-none focus:ring-2 ${
+                        waLokasiTrim && !waLokasiValid
+                          ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
+                          : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
+                      }`}
+                    />
+                    {waLokasiError && waLokasiTrim !== "" && (
+                      <p className="mt-1 text-[11px] text-red-300">{waLokasiError}</p>
+                    )}
+                  </div>
+                </div>
+              </div>
+
               {/* Mobile: card list */}
               <div className="grid gap-2 md:hidden">
                 {riwayatFiltered.map((t) => (
@@ -560,6 +689,16 @@ function PosKasirPage() {
                         <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} kg</span>
                       </span>
                     </div>
+                    <button
+                      type="button"
+                      onClick={() => kirimWa(t)}
+                      disabled={!waReady}
+                      title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
+                      aria-disabled={!waReady}
+                      className="mt-2 w-full py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                    >
+                      💬 Kirim WA
+                    </button>
                   </div>
                 ))}
               </div>
@@ -575,6 +714,7 @@ function PosKasirPage() {
                       <th className="py-2 pr-3 font-medium text-right">Harga/kg</th>
                       <th className="py-2 pr-3 font-medium text-right">Total</th>
                       <th className="py-2 font-medium text-right">Sisa Stok</th>
+                      <th className="py-2 font-medium text-right">WA</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
@@ -594,6 +734,18 @@ function PosKasirPage() {
                         </td>
                         <td className="py-2 text-right font-mono text-slate-300">
                           {t.sisaStokKg.toLocaleString("id-ID")} kg
+                        </td>
+                        <td className="py-2 text-right">
+                          <button
+                            type="button"
+                            onClick={() => kirimWa(t)}
+                            disabled={!waReady}
+                            title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
+                            aria-disabled={!waReady}
+                            className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                          >
+                            💬 Kirim
+                          </button>
                         </td>
                       </tr>
                     ))}
