@@ -52,6 +52,8 @@ function PosKasirPage() {
   const [dariTgl, setDariTgl] = useState<string>("");
   const [sampaiTgl, setSampaiTgl] = useState<string>("");
   const [cariTransaksi, setCariTransaksi] = useState<string>("");
+  const [swipeDx, setSwipeDx] = useState<number>(0);
+  const swipeStartX = useRef<number | null>(null);
   const [waNomor, setWaNomor] = useState<string>("");
   const [waLokasi, setWaLokasi] = useState<string>("");
   const [ambangStok, setAmbangStok] = useState<number>(() => {
