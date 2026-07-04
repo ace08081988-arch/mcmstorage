@@ -112,7 +112,7 @@ export { BOTOL_PER_KARTON, fmtBase, fmtItemPrice, fmtItemQty, fmtQtyDual, rupiah
 import { computeBeliDerived } from "@/lib/beli-derived";
 import { computeBeliWarnings } from "@/lib/beli-warnings";
 import { beliResetKey } from "@/lib/beli-reset-key";
-import { humanBaseUnit } from "@/lib/unit-label";
+import { humanBaseUnit, isSameUnitLabel } from "@/lib/unit-label";
 import { SmartWeightInput } from "@/components/SmartWeightInput";
 import { KartonRumusPopover } from "@/components/KartonRumusPopover";
 import { KemasanRumusPopover } from "@/components/KemasanRumusPopover";
@@ -2234,7 +2234,8 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
         const showPackageBtn =
           pkgLabel !== "" &&
           pkgLabel !== "pcs" &&
-          pkgLabel.toLowerCase() !== humU.toLowerCase() &&
+          !isSameUnitLabel(pkgLabel, humU) &&
+          !isSameUnitLabel(pkgLabel, item.base_unit) &&
           Number(item.package_size) > 1;
         // Sinkronkan sellMode kalau tombolnya hilang.
         if (!showPackageBtn && sellMode === "package") {

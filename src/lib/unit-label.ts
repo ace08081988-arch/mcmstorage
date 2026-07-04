@@ -25,3 +25,38 @@ export function humanBaseUnit(
   if (pt === "botol" && bu === "pcs") return "botol";
   return baseUnit ?? "";
 }
+
+/**
+ * Grup sinonim satuan yang secara semantik identik. Dipakai untuk mendeteksi
+ * kasus seperti `package_type="gram"` + `base_unit="g"` (1 gram = 1 g), di mana
+ * tombol/label "per package" hanya menduplikasi satuan dasar.
+ */
+const UNIT_SYNONYMS: readonly (readonly string[])[] = [
+  ["g", "gr", "gram", "grams"],
+  ["kg", "kilo", "kilogram", "kilograms"],
+  ["pcs", "pc", "piece", "pieces", "buah", "biji"],
+  ["botol", "bottle"],
+  ["karton", "carton", "dus"],
+  ["sachet", "sachets"],
+  ["ons", "hg"],
+];
+
+function canonUnit(s: string | null | undefined): string {
+  const v = (s ?? "").trim().toLowerCase();
+  if (!v) return "";
+  for (const group of UNIT_SYNONYMS) {
+    if (group.includes(v)) return group[0]!;
+  }
+  return v;
+}
+
+/** True jika kedua label satuan menunjuk ke satuan yang secara semantik sama. */
+export function isSameUnitLabel(
+  a: string | null | undefined,
+  b: string | null | undefined,
+): boolean {
+  const ca = canonUnit(a);
+  const cb = canonUnit(b);
+  if (!ca || !cb) return false;
+  return ca === cb;
+}
