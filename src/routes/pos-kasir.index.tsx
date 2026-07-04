@@ -777,16 +777,16 @@ function PosKasirPage() {
                   >
                     {displayBerat}
                   </span>
-                  <span className={`font-mono text-emerald-500 ${modeRingkas ? "text-lg" : "text-xl"}`}>kg</span>
+                  <span className={`font-mono text-emerald-500 ${modeRingkas ? "text-lg" : "text-xl"}`}>{unit}</span>
                 </div>
                 <div className={`border-t border-emerald-900/40 flex justify-between font-mono text-emerald-500/70 ${modeRingkas ? "mt-1 pt-1 text-[11px]" : "mt-2 pt-2 text-xs"}`}>
-                  <span>@ {rupiah(selected.hargaPerKg)}/KG</span>
+                  <span>@ {rupiah(hargaEfektif)}/{unit.toUpperCase()}</span>
                   <span>TOTAL {rupiah(total)}</span>
                 </div>
               </div>
 
               <div className={modeRingkas ? "mt-3" : "mt-4"}>
-                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Input Berat (kg)</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Input Jumlah ({unit})</label>
                 <input
                   type="number"
                   step="0.001"
@@ -805,7 +805,7 @@ function PosKasirPage() {
                   <div className={`flex items-start gap-2 rounded-lg bg-red-500/15 border border-red-500/40 text-xs text-red-200 ${modeRingkas ? "mt-1 p-1.5" : "mt-2 p-2"}`}>
                     <span className="shrink-0 text-red-400">⚠</span>
                     <div>
-                      Melebihi stok {selected.stokKg.toLocaleString("id-ID")} kg.
+                      Melebihi stok {selected.stokKg.toLocaleString("id-ID")} {unit}.
                     </div>
                   </div>
                 )}
@@ -877,17 +877,17 @@ function PosKasirPage() {
                   >
                     {displayBerat}
                   </span>
-                  <span className="text-2xl font-mono text-emerald-500">kg</span>
+                  <span className="text-2xl font-mono text-emerald-500">{unit}</span>
                 </div>
                 <div className="mt-3 pt-3 border-t border-emerald-900/40 flex justify-between text-xs font-mono text-emerald-500/70">
                   <span>PRODUK: {selected.nama.toUpperCase()}</span>
-                  <span>@ {rupiah(selected.hargaPerKg)}/KG</span>
+                  <span>@ {rupiah(hargaEfektif)}/{unit.toUpperCase()}</span>
                 </div>
               </div>
 
               <div className="mt-5">
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Input Berat (kg)
+                  Input Jumlah ({unit})
                 </label>
                 <input
                   type="number"
@@ -909,7 +909,7 @@ function PosKasirPage() {
                     <div>
                       <p className="font-semibold">Berat melebihi stok</p>
                       <p className="text-xs text-red-300/80 mt-0.5">
-                        Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} kg.
+                        Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} {unit}.
                       </p>
                       <p className="text-xs text-red-300/80 mt-0.5">
                         Kurangi berat agar tidak melebihi stok yang ada.
@@ -932,7 +932,7 @@ function PosKasirPage() {
                             : "bg-slate-800 hover:bg-slate-700 border-slate-700"
                         }`}
                       >
-                        +{v} kg
+                        +{v} {unit}
                       </button>
                     );
                   })}
@@ -957,17 +957,17 @@ function PosKasirPage() {
                   <span className="font-medium">{selected.emoji} {selected.nama}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Harga/kg</span>
-                  <span className="font-mono">{rupiah(selected.hargaPerKg)}</span>
+                  <span className="text-slate-400">Harga/{unit}</span>
+                  <span className="font-mono">{rupiah(hargaEfektif)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Berat</span>
-                  <span className="font-mono">{berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg</span>
+                  <span className="font-mono">{berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unit}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Stok saat ini</span>
                   <span className={`font-mono ${!stokCukup && berat > 0 ? "text-red-400" : ""}`}>
-                    {selected.stokKg.toLocaleString("id-ID")} kg
+                    {selected.stokKg.toLocaleString("id-ID")} {unit}
                   </span>
                 </div>
                 <div className="border-t border-slate-700 pt-3 flex justify-between items-baseline">
@@ -980,8 +980,7 @@ function PosKasirPage() {
                 <div className="mt-3 p-3 rounded-lg bg-red-500/15 border border-red-500/40 text-sm text-red-200">
                   <p className="font-semibold">⚠ Stok tidak mencukupi</p>
                   <p className="text-xs text-red-300/80 mt-0.5">
-                    Tersedia {selected.stokKg.toLocaleString("id-ID")} kg, butuh{" "}
-                    {berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg. Kurangi berat untuk melanjutkan pembayaran.
+                    Tersedia {selected.stokKg.toLocaleString("id-ID")} {unit}, butuh {berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unit}. Kurangi berat untuk melanjutkan pembayaran.
                   </p>
                 </div>
               )}
