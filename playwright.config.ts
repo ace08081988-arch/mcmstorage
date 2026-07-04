@@ -105,42 +105,59 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
-      // E2E form validasi minSupported (Pengaturan APK). Harness publik
-      // di /lovable/visual/min-supported-form — no-auth. Menguji pesan
-      // inline per-field, banner form-level, dan teks toast sukses/error.
+      // Skenario : Form validasi `minSupported` di Pengaturan APK.
+      // Harness  : /lovable/visual/min-supported-form (publik, no-auth).
+      // Tujuan   : Membuktikan pesan inline per-field, banner form-level,
+      //            dan teks toast sukses/error muncul sesuai state input.
+      // Guards   : (spec form murni — bukan flow getApkVariantDetail,
+      //            tidak memakai apk-stub / terminalGuard).
       name: "apk-min-validate-form-e2e",
       testDir: "./tests/e2e",
       testMatch: /apk-min-validate-form\.spec\.ts/,
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
-      // E2E alur ketersediaan APK pada tombol pintas Pengaturan.
-      // Harness publik /lovable/visual/apk-availability-shortcuts —
-      // no-auth, respons `getApkVariantDetail` di-stub via page.route.
-      // Menguji: idle "Belum tersedia" → tap ikon refresh → aktif.
+      // Skenario : Tombol pintas Pengaturan — alur idle "Belum tersedia"
+      //            → tap ikon refresh varian Chat → state aktif
+      //            "Unduh APK Chat".
+      // Harness  : /lovable/visual/apk-availability-shortcuts (no-auth),
+      //            `getApkVariantDetail` di-stub via installApkStub.
+      // Tujuan   : Membuktikan tap refresh Chat memicu tepat satu refetch
+      //            dan cross-variant Storage tidak terpengaruh.
+      // Guards   : ✓ primeInitial + assertPrimed  ✓ waitForServed
+      //            ✓ trackedClick(expected.chat=1)  ✓ assertQuiescent
+      //            ✓ terminalGuard()  (mode: terminal)
       name: "apk-availability-refresh-e2e",
       testDir: "./tests/e2e",
       testMatch: /apk-availability-refresh\.spec\.ts/,
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
-      // E2E khusus tombol <DownloadStorageApkShortcut>: alur idle
-      // "Belum tersedia" → tap ikon refresh → aktif "Unduh APK Storage"
-      // tervalidasi terisolasi dari varian Chat & tombol copy. Harness
-      // publik /lovable/visual/apk-availability-shortcuts — no-auth,
-      // respons `getApkVariantDetail` di-stub via page.route (flag
-      // Storage saja yang di-flip; flag Chat tetap kosong untuk
-      // membuktikan independensi query per-varian).
+      // Skenario : Tombol <DownloadStorageApkShortcut> — idle "Belum
+      //            tersedia" → tap ikon refresh Storage → aktif
+      //            "Unduh APK Storage". Hanya flag Storage di-flip;
+      //            flag Chat sengaja dibiarkan kosong.
+      // Harness  : /lovable/visual/apk-availability-shortcuts (no-auth),
+      //            `getApkVariantDetail` di-stub via installApkStub.
+      // Tujuan   : Membuktikan independensi query per-varian — refetch
+      //            Storage TIDAK menyeret varian Chat / tombol copy.
+      // Guards   : ✓ primeInitial + assertPrimed  ✓ waitForServed
+      //            ✓ trackedClick(expected.storage=1)  ✓ assertQuiescent
+      //            ✓ terminalGuard()  (mode: terminal)
       name: "apk-availability-refresh-storage-e2e",
       testDir: "./tests/e2e",
       testMatch: /apk-availability-refresh-storage\.spec\.ts/,
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
-      // E2E: tombol refresh Storage hanya memicu SATU refetch per tap
-      // (servedCount naik tepat 1) dan tidak ada request tambahan
-      // setelah state aktif — proteksi terhadap regresi double-fire,
-      // polling background, atau refetch on-focus yang tidak diinginkan.
+      // Skenario : Tap refresh Storage sekali → observasi servedCount &
+      //            request count untuk kedua varian.
+      // Harness  : /lovable/visual/apk-availability-shortcuts (no-auth).
+      // Tujuan   : Regression guard — SATU tap = SATU refetch (bukan 2),
+      //            tidak ada polling background / refetch-on-focus.
+      // Guards   : ✓ primeInitial + assertPrimed  ✓ waitForServed
+      //            ✓ trackedClick(expected.storage=1)  ✓ assertQuiescent
+      //            ✓ terminalGuard()  (mode: terminal)
       name: "apk-refresh-single-refetch-e2e",
       testDir: "./tests/e2e",
       testMatch: /apk-refresh-single-refetch\.spec\.ts/,
@@ -159,21 +176,36 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
-      // E2E contoh referensi hasil salin dari `_helpers/apk-spec.template.ts`.
-      // Skenario: mount `/lovable/visual/apk-availability-shortcuts` dengan
-      // rilis kosong → verifikasi TIDAK ada request `getApkVariantDetail`
-      // tambahan setelah fetch awal (assertQuiescent + terminalGuard).
+      // Skenario : Mount murni — buka
+      //            /lovable/visual/apk-availability-shortcuts dengan
+      //            kedua varian merespons kosong; tidak ada aksi user.
+      // Harness  : /lovable/visual/apk-availability-shortcuts (no-auth),
+      //            `getApkVariantDetail` di-stub via installApkStub.
+      // Tujuan   : Buktikan tidak ada request tambahan setelah fetch
+      //            awal — no polling, no refetch-on-focus, no interval.
+      // Referensi: contoh hasil salin dari
+      //            `tests/e2e/_helpers/apk-spec.template.ts`.
+      // Guards   : ✓ primeInitial + assertPrimed  ✓ waitForServed
+      //            (tidak ada trackedClick — mount-only)
+      //            ✓ assertQuiescent  ✓ terminalGuard()  (mode: terminal)
       name: "apk-mount-quiescent-e2e",
       testDir: "./tests/e2e",
       testMatch: /apk-mount-quiescent\.spec\.ts/,
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
-      // Contoh pembanding: memakai HANYA `stub.terminalGuard()` (tanpa
-      // `installServerFnPassthroughGuard`) untuk flow APK murni —
-      // mount kedua varian + refetch `chat` via `trackedClick`.
-      // Invariant: setelah state aktif tercapai, tidak ada request
-      // `getApkVariantDetail` tambahan pada kedua varian.
+      // Skenario : Mount kedua varian kosong → refetch Chat via
+      //            trackedClick → state aktif "Unduh APK Chat".
+      // Harness  : /lovable/visual/apk-availability-shortcuts (no-auth).
+      // Tujuan   : Contoh pembanding — buktikan `terminalGuard()` saja
+      //            (tanpa `installServerFnPassthroughGuard`) SUDAH CUKUP
+      //            untuk flow APK murni yang tidak menyentuh server
+      //            function di luar `getApkVariantDetail`.
+      // Referensi: bandingkan dengan spec `--mode full` untuk melihat
+      //            selisih setup passthrough guard.
+      // Guards   : ✓ primeInitial + assertPrimed  ✓ waitForServed
+      //            ✓ trackedClick(expected.chat=1)  ✓ assertQuiescent
+      //            ✓ terminalGuard()  (mode: terminal)
       name: "apk-example-terminal-only-e2e",
       testDir: "./tests/e2e",
       testMatch: /apk-example-terminal-only\.spec\.ts/,
