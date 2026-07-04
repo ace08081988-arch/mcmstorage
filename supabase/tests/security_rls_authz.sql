@@ -1518,4 +1518,79 @@ BEGIN
   PERFORM pg_temp.as_postgres();
 END $$;
 
+-- ---------------------------------------------------------------------
+-- 15) signup_attempts — hanya admin yang bisa membaca; tidak ada policy
+--     INSERT/UPDATE/DELETE (ditulis lewat SECURITY DEFINER function).
+--     Fungsi check_and_record_signup_attempt HANYA boleh dieksekusi oleh
+--     service_role — anon/authenticated tidak.
+-- ---------------------------------------------------------------------
+DO $$
+DECLARE
+  v_rls boolean;
+  v_select_cnt int;
+  v_write_cnt int;
+  v_select_roles text;
+  v_select_qual text;
+  v_anon_exec boolean;
+  v_auth_exec boolean;
+  v_svc_exec boolean;
+BEGIN
+  SELECT relrowsecurity INTO v_rls
+    FROM pg_class c JOIN pg_namespace n ON n.oid=c.relnamespace
+   WHERE n.nspname='public' AND c.relname='signup_attempts';
+  IF NOT v_rls THEN
+    RAISE EXCEPTION 'FAIL 15a: RLS not enabled on signup_attempts';
+  END IF;
+
+  SELECT count(*) INTO v_select_cnt
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='signup_attempts' AND cmd='SELECT';
+  IF v_select_cnt <> 1 THEN
+    RAISE EXCEPTION 'FAIL 15b: expected exactly 1 SELECT policy on signup_attempts, got %', v_select_cnt;
+  END IF;
+
+  SELECT count(*) INTO v_write_cnt
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='signup_attempts'
+     AND cmd IN ('INSERT','UPDATE','DELETE','ALL');
+  IF v_write_cnt <> 0 THEN
+    RAISE EXCEPTION 'FAIL 15c: signup_attempts must have no write/ALL policy, found %', v_write_cnt;
+  END IF;
+
+  SELECT array_to_string(roles, ','), qual INTO v_select_roles, v_select_qual
+    FROM pg_policies
+   WHERE schemaname='public' AND tablename='signup_attempts' AND cmd='SELECT';
+  IF v_select_roles NOT LIKE '%authenticated%' THEN
+    RAISE EXCEPTION 'FAIL 15d: SELECT policy not scoped to authenticated (roles=%)', v_select_roles;
+  END IF;
+  IF v_select_qual !~* 'has_role\s*\(.*admin' THEN
+    RAISE EXCEPTION 'FAIL 15e: SELECT policy on signup_attempts must call has_role(..., admin), got: %', v_select_qual;
+  END IF;
+
+  -- EXECUTE priv check on the rate-limit function.
+  SELECT
+    has_function_privilege('anon',
+      'public.check_and_record_signup_attempt(text, text, integer, interval, text)',
+      'EXECUTE'),
+    has_function_privilege('authenticated',
+      'public.check_and_record_signup_attempt(text, text, integer, interval, text)',
+      'EXECUTE'),
+    has_function_privilege('service_role',
+      'public.check_and_record_signup_attempt(text, text, integer, interval, text)',
+      'EXECUTE')
+  INTO v_anon_exec, v_auth_exec, v_svc_exec;
+
+  IF v_anon_exec THEN
+    RAISE EXCEPTION 'FAIL 15f: anon must NOT execute check_and_record_signup_attempt';
+  END IF;
+  IF v_auth_exec THEN
+    RAISE EXCEPTION 'FAIL 15g: authenticated must NOT execute check_and_record_signup_attempt';
+  END IF;
+  IF NOT v_svc_exec THEN
+    RAISE EXCEPTION 'FAIL 15h: service_role must be able to execute check_and_record_signup_attempt';
+  END IF;
+
+  RAISE NOTICE 'PASS 15: signup_attempts admin-only SELECT + no write policies + rate-limit fn is service_role-only';
+END $$;
+
 ROLLBACK;
