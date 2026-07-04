@@ -1129,7 +1129,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         ) : null}
 
         {/* Preview lokal — dapat di-swap besar/kecil, diubah ukurannya, dan digeser */}
-        {kind === "video" ? (
+        {kind === "video" && !pipHidden && !(pipMinimized && !swapped) ? (
           <div
             className={
               swapped
@@ -1168,6 +1168,26 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 </button>
                 <button
                   type="button"
+                  aria-label="Perkecil PiP"
+                  title="Perkecil PiP"
+                  onClick={() => setPipMinimized(true)}
+                  data-testid="call-pip-minimize"
+                  className="rounded p-1 text-white/90 hover:bg-white/10"
+                >
+                  <Minimize2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Sembunyikan PiP"
+                  title="Sembunyikan PiP"
+                  onClick={() => setPipHidden(true)}
+                  data-testid="call-pip-hide"
+                  className="rounded p-1 text-white/90 hover:bg-white/10"
+                >
+                  <EyeOff className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
                   aria-label="Ubah ukuran preview"
                   title={`Ukuran: ${pipSize.toUpperCase()}`}
                   onClick={cyclePipSize}
@@ -1179,6 +1199,36 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               </div>
             ) : null}
           </div>
+        ) : null}
+        {/* Chip mini untuk expand kembali PiP yang di-minimize. Hanya
+            muncul saat PiP ter-minimize DAN tidak dalam mode swap (swap
+            memakai posisi PiP untuk remote). */}
+        {kind === "video" && !pipHidden && pipMinimized && !swapped ? (
+          <button
+            type="button"
+            aria-label="Perbesar kembali PiP"
+            title="Perbesar PiP"
+            onClick={() => setPipMinimized(false)}
+            data-testid="call-pip-expand"
+            className={`absolute ${pipCornerClass} z-10 flex h-9 items-center gap-1 rounded-full bg-black/60 px-2.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/80`}
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+            <span>PiP</span>
+          </button>
+        ) : null}
+        {/* Tombol tampilkan kembali PiP saat disembunyikan. */}
+        {kind === "video" && pipHidden ? (
+          <button
+            type="button"
+            aria-label="Tampilkan PiP"
+            title="Tampilkan PiP"
+            onClick={() => setPipHidden(false)}
+            data-testid="call-pip-show"
+            className={`absolute ${pipCornerClass} z-10 flex h-9 items-center gap-1 rounded-full bg-black/60 px-2.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/80`}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            <span>PiP</span>
+          </button>
         ) : null}
         {swapped && kind === "video" ? (
           <button
