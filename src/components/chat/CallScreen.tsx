@@ -213,14 +213,6 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     : videoQuality === "low" ? "320p · hemat data, stabil di sinyal lemah"
     : videoQuality === "medium" ? "480p · seimbang"
     : "720p · kualitas tinggi (butuh koneksi baik)";
-  // Kamera depan/belakang — dipersist supaya panggilan berikutnya membuka
-  // kamera yang sama. Nilai default "user" (kamera depan) untuk video call.
-  const FACING_MODE_KEY = "mcm.call.facingMode";
-  const [facingMode, setFacingMode] = usePersistedState<"user" | "environment">(
-    FACING_MODE_KEY,
-    parseEnum(["user", "environment"] as const),
-    "user",
-  );
   const [flipping, setFlipping] = useState(false);
   // Bertambah tiap kali kamera dibalik — dipakai untuk memaksa Crop/Fit &
   // kualitas video di-apply ulang begitu track lokal baru terpasang.
