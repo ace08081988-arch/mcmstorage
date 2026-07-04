@@ -691,18 +691,18 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       return;
     }
     if (tool === "draw") {
-      drawingRef.current = { id: uid(), kind: "stroke", x: 0, y: 0, rotation: 0, scale: 1, color, thickness, points: [p] };
+      drawingRef.current = { id: uid(), kind: "stroke", x: 0, y: 0, rotation: 0, scale: 1, color, opacity, thickness, points: [p] };
       scheduleRedraw();
       return;
     }
     if (tool === "rect") {
-      drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, opacity, thickness, fill: false };
       lastPointRef.current = p; // used to detect tap-vs-drag on release
       scheduleRedraw();
       return;
     }
     if (tool === "circle") {
-      drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, opacity, thickness, fill: false };
       lastPointRef.current = p;
       scheduleRedraw();
       return;
@@ -712,13 +712,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       return;
     }
     if (tool === "emoji") {
-      const l: Layer = { id: uid(), kind: "emoji", x: p.x, y: p.y, rotation: 0, scale: 1, color, emoji, size: textSize + 8 };
+      const l: Layer = { id: uid(), kind: "emoji", x: p.x, y: p.y, rotation: 0, scale: 1, color, opacity, emoji, size: textSize + 8 };
       pushHistory({ ...state, layers: [...state.layers, l] });
       setSelectedId(l.id);
       return;
     }
     if (tool === "arrow") {
-      const l: Layer = { id: uid(), kind: "arrow", x: p.x, y: p.y, rotation: 0, scale: 1, color, dir: arrowDir, size: 80, thickness };
+      const l: Layer = { id: uid(), kind: "arrow", x: p.x, y: p.y, rotation: 0, scale: 1, color, opacity, dir: arrowDir, size: 80, thickness };
       pushHistory({ ...state, layers: [...state.layers, l] });
       setSelectedId(l.id);
       return;
