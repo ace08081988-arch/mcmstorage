@@ -1088,6 +1088,20 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 <span>{videoFit === "cover" ? "Crop" : "Fit"}</span>
               </button>
             ) : null}
+            {kind === "video" && videoFit === "cover" ? (
+              <button
+                type="button"
+                onClick={cycleVideoPos}
+                aria-label={`Posisi crop: ${videoPosLabel}. Ketuk untuk pindah bagian yang ditampilkan.`}
+                title={`Pusat frame: ${videoPosLabel} — ketuk untuk ubah`}
+                data-testid="call-pos-toggle"
+                data-pos={videoPos}
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                <Move className="h-3.5 w-3.5" />
+                <span>{videoPosLabel}</span>
+              </button>
+            ) : null}
             {kind === "video" ? (
               <button
                 type="button"
