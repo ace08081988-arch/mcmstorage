@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
-  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal, SwitchCamera, Move, RotateCcw, RefreshCw,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, Minimize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal, SwitchCamera, Move, RotateCcw, RefreshCw, Eye, EyeOff,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -81,12 +81,27 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // Ukuran + pojok di-persist agar konsisten antar panggilan / antar layar.
   const PIP_SIZE_KEY = "mcm.call.pipSize";
   const PIP_CORNER_KEY = "mcm.call.pipCorner";
+  // Status swap (video lokal jadi besar), sembunyi (PiP dimatikan), dan
+  // minimize (PiP menciut jadi chip kecil) — semua di-persist supaya
+  // pindah tab / keluar-masuk CallScreen tidak me-reset preferensi user.
+  const PIP_SWAPPED_KEY = "mcm.call.pipSwapped";
+  const PIP_HIDDEN_KEY = "mcm.call.pipHidden";
+  const PIP_MINIMIZED_KEY = "mcm.call.pipMinimized";
   // Kunci lama (single value) — dibaca sebagai fallback untuk migrasi ke
   // per-facing (front/back) key. Tidak lagi ditulis.
   const LEGACY_VIDEO_FIT_KEY = "mcm.call.videoFit";
   const LEGACY_VIDEO_POS_KEY = "mcm.call.videoPos";
   const FACING_MODE_KEY = "mcm.call.facingMode";
-  const [swapped, setSwapped] = useState(false);
+  // Parser boolean untuk usePersistedState (menerima "true"/"false" hasil
+  // JSON.stringify). Nilai lain → null → fallback ke default.
+  const parseBool = useCallback(
+    (raw: string | null): boolean | null =>
+      raw === "true" ? true : raw === "false" ? false : null,
+    [],
+  );
+  const [swapped, setSwapped] = usePersistedState<boolean>(PIP_SWAPPED_KEY, parseBool, false);
+  const [pipHidden, setPipHidden] = usePersistedState<boolean>(PIP_HIDDEN_KEY, parseBool, false);
+  const [pipMinimized, setPipMinimized] = usePersistedState<boolean>(PIP_MINIMIZED_KEY, parseBool, false);
   // Kamera depan/belakang — dipersist supaya panggilan berikutnya membuka
   // kamera yang sama. Dideklarasikan lebih awal karena setelan Crop/Fit +
   // Posisi crop disimpan terpisah per kamera dan mengacu pada nilai ini.
@@ -331,6 +346,8 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     setPipSize("md");
     setPipCorner("br");
     setSwapped(false);
+    setPipHidden(false);
+    setPipMinimized(false);
     setVideoFitFront("cover");
     setVideoFitBack("cover");
     setVideoPosFront("center");
@@ -346,7 +363,8 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     }
     toast.success("Setelan tampilan panggilan direset ke default");
   }, [
-    setFacingMode, setPipSize, setPipCorner,
+    setFacingMode, setPipSize, setPipCorner, setSwapped,
+    setPipHidden, setPipMinimized,
     setVideoFitFront, setVideoFitBack,
     setVideoPosFront, setVideoPosBack,
     setVideoPosCustomFront, setVideoPosCustomBack,
@@ -1111,7 +1129,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
         ) : null}
 
         {/* Preview lokal — dapat di-swap besar/kecil, diubah ukurannya, dan digeser */}
-        {kind === "video" ? (
+        {kind === "video" && !pipHidden && !(pipMinimized && !swapped) ? (
           <div
             className={
               swapped
@@ -1150,6 +1168,26 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 </button>
                 <button
                   type="button"
+                  aria-label="Perkecil PiP"
+                  title="Perkecil PiP"
+                  onClick={() => setPipMinimized(true)}
+                  data-testid="call-pip-minimize"
+                  className="rounded p-1 text-white/90 hover:bg-white/10"
+                >
+                  <Minimize2 className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Sembunyikan PiP"
+                  title="Sembunyikan PiP"
+                  onClick={() => setPipHidden(true)}
+                  data-testid="call-pip-hide"
+                  className="rounded p-1 text-white/90 hover:bg-white/10"
+                >
+                  <EyeOff className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
                   aria-label="Ubah ukuran preview"
                   title={`Ukuran: ${pipSize.toUpperCase()}`}
                   onClick={cyclePipSize}
@@ -1161,6 +1199,36 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               </div>
             ) : null}
           </div>
+        ) : null}
+        {/* Chip mini untuk expand kembali PiP yang di-minimize. Hanya
+            muncul saat PiP ter-minimize DAN tidak dalam mode swap (swap
+            memakai posisi PiP untuk remote). */}
+        {kind === "video" && !pipHidden && pipMinimized && !swapped ? (
+          <button
+            type="button"
+            aria-label="Perbesar kembali PiP"
+            title="Perbesar PiP"
+            onClick={() => setPipMinimized(false)}
+            data-testid="call-pip-expand"
+            className={`absolute ${pipCornerClass} z-10 flex h-9 items-center gap-1 rounded-full bg-black/60 px-2.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/80`}
+          >
+            <Maximize2 className="h-3.5 w-3.5" />
+            <span>PiP</span>
+          </button>
+        ) : null}
+        {/* Tombol tampilkan kembali PiP saat disembunyikan. */}
+        {kind === "video" && pipHidden ? (
+          <button
+            type="button"
+            aria-label="Tampilkan PiP"
+            title="Tampilkan PiP"
+            onClick={() => setPipHidden(false)}
+            data-testid="call-pip-show"
+            className={`absolute ${pipCornerClass} z-10 flex h-9 items-center gap-1 rounded-full bg-black/60 px-2.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/80`}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            <span>PiP</span>
+          </button>
         ) : null}
         {swapped && kind === "video" ? (
           <button
