@@ -20,7 +20,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { editorFeedback } from "@/lib/editor-feedback";
 
-type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string };
+type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string; opacity: number };
 type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
 type Layer =
   | ({ kind: "text"; text: string; size: number; bold: boolean } & LayerBase)
@@ -246,6 +246,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [tool, setTool] = useState<Tool>("select");
   const [color, setColor] = useState("#ef4444");
   const [thickness, setThickness] = useState(6);
+  const [opacity, setOpacity] = useState(1);
+  const [shapeFill, setShapeFill] = useState(false);
   const [textSize, setTextSize] = useState(32);
   const [arrowDir, setArrowDir] = useState<ArrowDir>("right");
   const [emoji, setEmoji] = useState("⭐");
@@ -690,18 +692,18 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       return;
     }
     if (tool === "draw") {
-      drawingRef.current = { id: uid(), kind: "stroke", x: 0, y: 0, rotation: 0, scale: 1, color, thickness, points: [p] };
+      drawingRef.current = { id: uid(), kind: "stroke", x: 0, y: 0, rotation: 0, scale: 1, color, opacity, thickness, points: [p] };
       scheduleRedraw();
       return;
     }
     if (tool === "rect") {
-      drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, opacity, thickness, fill: shapeFill };
       lastPointRef.current = p; // used to detect tap-vs-drag on release
       scheduleRedraw();
       return;
     }
     if (tool === "circle") {
-      drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, opacity, thickness, fill: shapeFill };
       lastPointRef.current = p;
       scheduleRedraw();
       return;
@@ -711,13 +713,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       return;
     }
     if (tool === "emoji") {
-      const l: Layer = { id: uid(), kind: "emoji", x: p.x, y: p.y, rotation: 0, scale: 1, color, emoji, size: textSize + 8 };
+      const l: Layer = { id: uid(), kind: "emoji", x: p.x, y: p.y, rotation: 0, scale: 1, color, opacity, emoji, size: textSize + 8 };
       pushHistory({ ...state, layers: [...state.layers, l] });
       setSelectedId(l.id);
       return;
     }
     if (tool === "arrow") {
-      const l: Layer = { id: uid(), kind: "arrow", x: p.x, y: p.y, rotation: 0, scale: 1, color, dir: arrowDir, size: 80, thickness };
+      const l: Layer = { id: uid(), kind: "arrow", x: p.x, y: p.y, rotation: 0, scale: 1, color, opacity, dir: arrowDir, size: 80, thickness };
       pushHistory({ ...state, layers: [...state.layers, l] });
       setSelectedId(l.id);
       return;
@@ -1020,7 +1022,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     if (text) {
       const l: Layer = {
         id: uid(), kind: "text", x: textPrompt.x, y: textPrompt.y,
-        rotation: 0, scale: 1, color, text, size: textSize, bold: true,
+        rotation: 0, scale: 1, color, opacity, text, size: textSize, bold: true,
       };
       pushHistory({ ...state, layers: [...state.layers, l] });
       setSelectedId(l.id);
@@ -1299,17 +1301,33 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       <div className="border-t bg-card px-2 py-2 text-xs shadow-sm">
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="text-muted-foreground">Warna:</span>
           {COLORS.map((c) => (
-            <button key={c} onClick={() => {
+            <button
+              key={c}
+              type="button"
+              onClick={() => {
                 setColor(c);
                 if (selected) { liveBeginIfNeeded(); livePatchSelected({ color: c } as Partial<Layer>); commitLivePatch(); }
               }}
+              title={`Pilih warna ${c}`}
+              aria-label={`Pilih warna ${c}`}
               style={{ background: c }}
-              className={`h-6 w-6 rounded-full border-2 ${color === c ? "border-primary" : "border-transparent"}`} />
+              className={`h-6 w-6 rounded-full border-2 transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${color === c ? "border-primary" : "border-transparent"}`}
+            />
           ))}
-          <label className="ml-auto flex items-center gap-1">Ukuran
+          <label
+            className="ml-auto flex items-center gap-1"
+            title="Ketebalan garis untuk coret, panah, kotak, dan lingkaran"
+          >
+            <span>Ketebalan</span>
             <input
-              type="range" min={2} max={30} value={thickness}
+              type="range"
+              min={2}
+              max={30}
+              value={thickness}
+              title="Ketebalan garis (2–30 px)"
+              aria-label="Ketebalan garis dari 2 sampai 30 piksel"
               onPointerDown={() => { if (selected && "thickness" in (selected as object)) liveBeginIfNeeded(); }}
               onChange={(e) => {
                 const v = Number(e.target.value); setThickness(v);
@@ -1320,15 +1338,69 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             />
             <span className="w-6 text-right tabular-nums">{thickness}</span>
           </label>
+          <label
+            className="flex items-center gap-1"
+            title="Transparansi lapisan (10%–100%)"
+          >
+            <span>Opacity</span>
+            <input
+              type="range"
+              min={10}
+              max={100}
+              value={Math.round(opacity * 100)}
+              title="Transparansi lapisan (10%–100%)"
+              aria-label="Transparansi lapisan dari 10 sampai 100 persen"
+              onPointerDown={() => { if (selected) liveBeginIfNeeded(); }}
+              onChange={(e) => {
+                const v = Number(e.target.value) / 100; setOpacity(v);
+                if (selected) livePatchSelected({ opacity: v } as Partial<Layer>);
+              }}
+              onPointerUp={commitLivePatch}
+              onBlur={commitLivePatch}
+            />
+            <span className="w-8 text-right tabular-nums">{Math.round(opacity * 100)}%</span>
+          </label>
         </div>
 
+        {(tool === "rect" || tool === "circle") && (
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Mode:</span>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !shapeFill;
+                setShapeFill(next);
+                if (selected && (selected.kind === "rect" || selected.kind === "circle")) {
+                  liveBeginIfNeeded();
+                  livePatchSelected({ fill: next } as Partial<Layer>);
+                  commitLivePatch();
+                }
+              }}
+              title={shapeFill ? "Mode isi: bentuk akan diisi penuh" : "Mode garis: hanya tepi bentuk yang terlihat"}
+              aria-label={shapeFill ? "Mode isi aktif, ketuk untuk beralih ke mode garis" : "Mode garis aktif, ketuk untuk beralih ke mode isi"}
+              className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${shapeFill ? "border-primary bg-primary/10 text-primary" : "border-input bg-background"}`}
+            >
+              {shapeFill ? "Isi" : "Garis"}
+            </button>
+            <span className="text-muted-foreground">
+              {shapeFill ? "Bentuk diisi penuh" : "Hanya tepi bentuk"}
+            </span>
+          </div>
+        )}
+
         {tool === "arrow" && (
-          <div className="mb-2 flex flex-wrap gap-1">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Arah:</span>
             {([
-              ["up", ArrowUp], ["down", ArrowDown], ["left", ArrowLeft], ["right", ArrowRight],
-              ["upleft", ArrowUpLeft], ["upright", ArrowUpRight], ["downleft", ArrowDownLeft], ["downright", ArrowDownRight],
-            ] as const).map(([d, Ico]) => (
-              <button key={d} type="button" onClick={() => {
+              ["up", ArrowUp, "Atas"], ["down", ArrowDown, "Bawah"], ["left", ArrowLeft, "Kiri"], ["right", ArrowRight, "Kanan"],
+              ["upleft", ArrowUpLeft, "Kiri atas"], ["upright", ArrowUpRight, "Kanan atas"], ["downleft", ArrowDownLeft, "Kiri bawah"], ["downright", ArrowDownRight, "Kanan bawah"],
+            ] as const).map(([d, Ico, label]) => (
+              <button
+                key={d}
+                type="button"
+                title={`Arah panah ${label}`}
+                aria-label={`Pilih arah panah ${label}`}
+                onClick={() => {
                   setArrowDir(d);
                   if (selected?.kind === "arrow") {
                     // Sedang ada panah terpilih → cukup ubah arahnya.
@@ -1342,50 +1414,60 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                     const cy = v.h ? v.h / 2 : 100;
                     const l: Layer = {
                       id: uid(), kind: "arrow", x: cx, y: cy,
-                      rotation: 0, scale: 1, color, dir: d, size: 80, thickness,
+                      rotation: 0, scale: 1, color, opacity, dir: d, size: 80, thickness,
                     };
                     pushHistory({ ...state, layers: [...state.layers, l] });
                     setSelectedId(l.id);
                   }
                 }}
-                className={`inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted ${arrowDir === d ? "border-primary bg-primary/10" : ""}`}>
+                className={`inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${arrowDir === d ? "border-primary bg-primary/10" : ""}`}>
                 <Ico className="h-4 w-4" />
               </button>
             ))}
           </div>
         )}
         {tool === "emoji" && (
-          <div className="mb-2 flex flex-wrap gap-1">
-            {EMOJIS.map((em) => (
-              <button key={em} onClick={() => {
-                  setEmoji(em);
-                  if (selected?.kind === "emoji") {
-                    liveBeginIfNeeded();
-                    livePatchSelected({ emoji: em } as Partial<Layer>);
-                    commitLivePatch();
-                  } else {
-                    // Konsisten dengan tombol Panah: langsung tempelkan
-                    // stiker di tengah kanvas — user tidak perlu menebak
-                    // bahwa harus tap kanvas dulu.
-                    const v = viewRef.current;
-                    const cx = v.w ? v.w / 2 : 100;
-                    const cy = v.h ? v.h / 2 : 100;
-                    const l: Layer = {
-                      id: uid(), kind: "emoji", x: cx, y: cy,
-                      rotation: 0, scale: 1, color, emoji: em, size: textSize + 8,
-                    };
-                    pushHistory({ ...state, layers: [...state.layers, l] });
-                    setSelectedId(l.id);
-                  }
-                }}
-                className={`h-9 w-9 rounded border bg-background text-lg transition hover:bg-muted ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
-            ))}
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Stiker:</span>
+            <div className="flex flex-wrap gap-1">
+              {EMOJIS.map((em) => (
+                <button
+                  key={em}
+                  type="button"
+                  title={`Stiker ${em}`}
+                  aria-label={`Pilih stiker ${em}`}
+                  onClick={() => {
+                    setEmoji(em);
+                    if (selected?.kind === "emoji") {
+                      liveBeginIfNeeded();
+                      livePatchSelected({ emoji: em } as Partial<Layer>);
+                      commitLivePatch();
+                    } else {
+                      // Konsisten dengan tombol Panah: langsung tempelkan
+                      // stiker di tengah kanvas — user tidak perlu menebak
+                      // bahwa harus tap kanvas dulu.
+                      const v = viewRef.current;
+                      const cx = v.w ? v.w / 2 : 100;
+                      const cy = v.h ? v.h / 2 : 100;
+                      const l: Layer = {
+                        id: uid(), kind: "emoji", x: cx, y: cy,
+                        rotation: 0, scale: 1, color, opacity, emoji: em, size: textSize + 8,
+                      };
+                      pushHistory({ ...state, layers: [...state.layers, l] });
+                      setSelectedId(l.id);
+                    }
+                  }}
+                  className={`h-9 w-9 rounded border bg-background text-lg transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
+              ))}
+            </div>
           </div>
         )}
         {tool === "text" && (
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <button
               type="button"
+              title="Tambahkan teks baru di tengah kanvas"
+              aria-label="Tambahkan teks baru di tengah kanvas"
               onClick={() => {
                 const v = viewRef.current;
                 const cx = v.w ? v.w / 2 : 100;
@@ -1396,9 +1478,18 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             >
               <Type className="h-3.5 w-3.5" /> Tambah teks di tengah
             </button>
-            <label className="flex items-center gap-1">Font
+            <label
+              className="flex items-center gap-1"
+              title="Ukuran font teks (14–96 px)"
+            >
+              <span>Ukuran font</span>
               <input
-                type="range" min={14} max={96} value={textSize}
+                type="range"
+                min={14}
+                max={96}
+                value={textSize}
+                title="Ukuran font teks (14–96 px)"
+                aria-label="Ukuran font teks dari 14 sampai 96 piksel"
                 onPointerDown={() => { if (selected?.kind === "text") liveBeginIfNeeded(); }}
                 onChange={(e) => {
                   const v = Number(e.target.value); setTextSize(v);
@@ -1707,6 +1798,7 @@ function insideLayer(l: Layer, p: { x: number; y: number }): boolean {
 
 function drawLayer(ctx: CanvasRenderingContext2D, l: Layer, selected: boolean) {
   ctx.save();
+  ctx.globalAlpha = l.opacity ?? 1;
   ctx.strokeStyle = l.color; ctx.fillStyle = l.color;
   ctx.lineCap = "round"; ctx.lineJoin = "round";
   if (l.kind === "stroke") {
