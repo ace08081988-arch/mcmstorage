@@ -152,6 +152,7 @@ function ChatRoomPage() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [mediaOpen, setMediaOpen] = useState(false);
   const [muteOpen, setMuteOpen] = useState(false);
+  const [startingCall, setStartingCall] = useState(false);
   const { prefs: convPrefs, mutedNow } = useConvPrefs(myId ?? undefined, conversationId);
 
   // Toast saat pin/mute/arsip berubah dari tab/perangkat lain.
