@@ -24,6 +24,25 @@ const waktuFmt = new Intl.DateTimeFormat("id-ID", {
 
 const QUICK_WEIGHTS = [0.1, 0.25, 0.5, 1, 2];
 
+const AMBANG_STORAGE_KEY = "mcm-pos-kasir-ambang-stok";
+const AMBANG_DEFAULT = 5;
+
+type StokLevel = "habis" | "kritis" | "menipis" | "aman";
+
+function levelStok(stokKg: number, ambang: number): StokLevel {
+  if (stokKg <= 0) return "habis";
+  if (stokKg <= ambang / 2) return "kritis";
+  if (stokKg <= ambang) return "menipis";
+  return "aman";
+}
+
+const LEVEL_META: Record<StokLevel, { label: string; badge: string; text: string; ring: string; emoji: string }> = {
+  habis:   { label: "Habis",   badge: "bg-slate-700 text-slate-200 border-slate-600", text: "text-slate-400", ring: "ring-1 ring-slate-600",       emoji: "⛔" },
+  kritis:  { label: "Kritis",  badge: "bg-rose-500/20 text-rose-300 border-rose-500/40", text: "text-rose-300", ring: "ring-2 ring-rose-500/60 animate-pulse", emoji: "🚨" },
+  menipis: { label: "Menipis", badge: "bg-amber-500/20 text-amber-300 border-amber-500/40", text: "text-amber-300", ring: "ring-1 ring-amber-500/40", emoji: "⚠" },
+  aman:    { label: "Aman",    badge: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30", text: "text-slate-300", ring: "", emoji: "" },
+};
+
 function PosKasirPage() {
   const [produk, setProduk] = useState<PosKasirProduk[]>(PRODUK_AWAL);
   const [selectedId, setSelectedId] = useState<string>(PRODUK_AWAL[0].id);
@@ -34,6 +53,17 @@ function PosKasirPage() {
   const [sampaiTgl, setSampaiTgl] = useState<string>("");
   const [waNomor, setWaNomor] = useState<string>("");
   const [waLokasi, setWaLokasi] = useState<string>("");
+  const [ambangStok, setAmbangStok] = useState<number>(() => {
+    if (typeof window === "undefined") return AMBANG_DEFAULT;
+    const raw = localStorage.getItem(AMBANG_STORAGE_KEY);
+    const n = raw ? parseFloat(raw) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : AMBANG_DEFAULT;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(AMBANG_STORAGE_KEY, String(ambangStok));
+  }, [ambangStok]);
 
   const waNomorNorm = useMemo(() => normalizeWaNumber(waNomor, "ID"), [waNomor]);
   const waNomorDisplay = useMemo(
@@ -107,7 +137,18 @@ function PosKasirPage() {
   const stokCukup = berat > 0 && berat <= selected.stokKg;
 
   const totalStok = useMemo(() => produk.reduce((s, p) => s + p.stokKg, 0), [produk]);
-  const produkMenipis = useMemo(() => produk.filter((p) => p.stokKg < 5 && p.stokKg > 0), [produk]);
+  const produkKritis = useMemo(
+    () => produk.filter((p) => levelStok(p.stokKg, ambangStok) === "kritis"),
+    [produk, ambangStok],
+  );
+  const produkMenipis = useMemo(
+    () => produk.filter((p) => levelStok(p.stokKg, ambangStok) === "menipis"),
+    [produk, ambangStok],
+  );
+  const produkHabis = useMemo(
+    () => produk.filter((p) => levelStok(p.stokKg, ambangStok) === "habis"),
+    [produk, ambangStok],
+  );
 
   const bayar = () => {
     if (!stokCukup) {
@@ -116,6 +157,8 @@ function PosKasirPage() {
       return;
     }
     const sisaStokKg = +(selected.stokKg - berat).toFixed(3);
+    const levelSebelum = levelStok(selected.stokKg, ambangStok);
+    const levelSesudah = levelStok(sisaStokKg, ambangStok);
     setProduk((prev) => prev.map((p) => (p.id === selected.id ? { ...p, stokKg: sisaStokKg } : p)));
     setRiwayat((prev) => [
       {
@@ -131,9 +174,14 @@ function PosKasirPage() {
       },
       ...prev,
     ]);
-    setToast(`✅ Transaksi berhasil · ${berat} kg ${selected.nama} · ${rupiah(total)}`);
+    let pesan = `✅ Transaksi berhasil · ${berat} kg ${selected.nama} · ${rupiah(total)}`;
+    if (levelSesudah !== levelSebelum && levelSesudah !== "aman") {
+      const meta = LEVEL_META[levelSesudah];
+      pesan += ` · ${meta.emoji} Stok ${selected.nama} kini ${meta.label.toLowerCase()} (${sisaStokKg.toLocaleString("id-ID")} kg)`;
+    }
+    setToast(pesan);
     setBeratStr("0");
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 4500);
   };
 
   const totalOmzet = riwayat.reduce((s, t) => s + t.total, 0);
