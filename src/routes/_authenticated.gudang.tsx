@@ -366,6 +366,18 @@ function GudangPage() {
             onChanged={reloadAll}
             onLocalPayment={(p) => setCustPayments((prev) => [p, ...prev])}
             onLocalRemovePayment={(id) => setCustPayments((prev) => prev.filter((x) => x.id !== id))}
+            onLocalUpdatePayment={(p) =>
+              setCustPayments((prev) => prev.map((x) => (x.id === p.id ? p : x)))
+            }
+            onLocalUpdateSale={(s) =>
+              setSales((prev) => prev.map((x) => (x.id === s.id ? s : x)))
+            }
+            onLocalRemoveSale={(id) =>
+              setSales((prev) => prev.filter((x) => x.id !== id))
+            }
+            onLocalUpdateCustomer={(c) =>
+              setCustomers((prev) => prev.map((x) => (x.id === c.id ? c : x)))
+            }
           />
         )}
         {tab === "riwayat" && (
