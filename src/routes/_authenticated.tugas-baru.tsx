@@ -231,7 +231,7 @@ function TugasBaruPage() {
   }
   if (!isAdmin) {
     return (
-      <div className="mx-auto max-w-2xl px-3 py-6">
+      <div className="mx-auto max-w-2xl px-3 py-6 animate-fade-in">
         <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm">
           <div className="mb-2 flex items-center gap-2 font-semibold text-destructive">
             <ShieldAlert className="h-5 w-5" /> Akses ditolak
@@ -265,7 +265,7 @@ function TugasBaruPage() {
 function TugasBaruSkeleton() {
   return (
     <div
-      className="mx-auto max-w-2xl px-3 py-4"
+      className="mx-auto max-w-2xl px-3 py-4 animate-fade-in"
       role="status"
       aria-live="polite"
       aria-busy="true"
@@ -712,7 +712,7 @@ function TugasBaruForm() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4">
+    <div className="mx-auto max-w-2xl space-y-4 p-4 animate-fade-in">
       <div className="flex items-center justify-between gap-2">
         <div>
           <h1 className="text-lg font-semibold">Buat Tugas Pegawai</h1>
