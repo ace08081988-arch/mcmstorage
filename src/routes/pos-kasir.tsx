@@ -47,6 +47,8 @@ function PosKasirPage() {
   const [beratStr, setBeratStr] = useState<string>("0");
   const [toast, setToast] = useState<string | null>(null);
   const [riwayat, setRiwayat] = useState<Transaksi[]>([]);
+  const [dariTgl, setDariTgl] = useState<string>("");
+  const [sampaiTgl, setSampaiTgl] = useState<string>("");
 
   const selected = produk.find((p) => p.id === selectedId)!;
   const berat = useMemo(() => {
@@ -88,6 +90,43 @@ function PosKasirPage() {
 
   const totalOmzet = riwayat.reduce((s, t) => s + t.total, 0);
   const totalKg = riwayat.reduce((s, t) => s + t.beratKg, 0);
+
+  const riwayatFiltered = useMemo(() => {
+    const dari = dariTgl ? new Date(dariTgl + "T00:00:00").getTime() : -Infinity;
+    const sampai = sampaiTgl ? new Date(sampaiTgl + "T23:59:59.999").getTime() : Infinity;
+    return riwayat.filter((t) => t.waktu >= dari && t.waktu <= sampai);
+  }, [riwayat, dariTgl, sampaiTgl]);
+
+  const exportCSV = () => {
+    if (riwayatFiltered.length === 0) {
+      setToast("Tidak ada transaksi pada rentang tanggal terpilih");
+      setTimeout(() => setToast(null), 2500);
+      return;
+    }
+    const header = ["Waktu", "Produk", "Berat (kg)", "Harga per kg (IDR)", "Total (IDR)", "Sisa Stok (kg)"];
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const rows = riwayatFiltered.map((t) => [
+      new Date(t.waktu).toLocaleString("id-ID"),
+      t.produkNama,
+      t.beratKg.toString().replace(".", ","),
+      t.hargaPerKg.toString(),
+      t.total.toString(),
+      t.sisaStokKg.toString().replace(".", ","),
+    ].map((c) => escape(String(c))).join(";"));
+    const csv = "\uFEFF" + [header.map(escape).join(";"), ...rows].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `riwayat-pos-kasir-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setToast(`✅ Diekspor ${riwayatFiltered.length} transaksi ke CSV`);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   // Format 7-segment display: 5 digit integer + 3 decimal
   const displayBerat = berat.toFixed(3).padStart(9, " ");
