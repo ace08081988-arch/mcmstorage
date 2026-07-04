@@ -431,6 +431,76 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return () => clearInterval(t);
   }, [phase]);
 
+  // Polling statistik jaringan tiap 2 detik selama panggilan aktif.
+  // Menghitung RTT dari candidate-pair terpilih & packet loss inbound
+  // (audio+video) dari selisih antar sampel, lalu derivasi tier kualitas.
+  useEffect(() => {
+    if (phase !== "in-call") return;
+    const session = sessionRef.current;
+    if (!session) return;
+    let cancelled = false;
+    let prev: { lost: number; recv: number } | null = null;
+    const tick = async () => {
+      try {
+        const report = await session.pc.getStats();
+        let rttMs: number | null = null;
+        let lost = 0;
+        let recv = 0;
+        report.forEach((s: unknown) => {
+          const r = s as {
+            type?: string;
+            nominated?: boolean;
+            selected?: boolean;
+            state?: string;
+            currentRoundTripTime?: number;
+            packetsLost?: number;
+            packetsReceived?: number;
+            kind?: string;
+          };
+          if (
+            r.type === "candidate-pair" &&
+            (r.nominated || r.selected) &&
+            r.state === "succeeded" &&
+            typeof r.currentRoundTripTime === "number"
+          ) {
+            rttMs = Math.round(r.currentRoundTripTime * 1000);
+          }
+          if (
+            r.type === "inbound-rtp" &&
+            (r.kind === "audio" || r.kind === "video") &&
+            typeof r.packetsLost === "number" &&
+            typeof r.packetsReceived === "number"
+          ) {
+            lost += r.packetsLost;
+            recv += r.packetsReceived;
+          }
+        });
+        let lossPct: number | null = null;
+        if (prev) {
+          const dLost = Math.max(0, lost - prev.lost);
+          const dRecv = Math.max(0, recv - prev.recv);
+          const total = dLost + dRecv;
+          lossPct = total > 0 ? (dLost / total) * 100 : 0;
+        }
+        prev = { lost, recv };
+        let tier: NetTier = "unknown";
+        if (rttMs !== null || lossPct !== null) {
+          const rttBad = rttMs !== null && rttMs > 400;
+          const rttMid = rttMs !== null && rttMs > 200;
+          const lossBad = lossPct !== null && lossPct > 5;
+          const lossMid = lossPct !== null && lossPct > 2;
+          tier = rttBad || lossBad ? "poor" : rttMid || lossMid ? "fair" : "good";
+        }
+        if (!cancelled) setNetStats({ rttMs, lossPct, tier });
+      } catch {
+        /* getStats bisa gagal di beberapa browser — abaikan */
+      }
+    };
+    void tick();
+    const iv = setInterval(tick, 2000);
+    return () => { cancelled = true; clearInterval(iv); };
+  }, [phase]);
+
   // Terapkan preset kualitas video ke track lokal + parameter encoder
   // sender. "auto" melepas batasan dan menyerahkan adaptasi ke browser.
   useEffect(() => {
