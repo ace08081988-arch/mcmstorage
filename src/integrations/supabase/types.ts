@@ -1671,6 +1671,8 @@ export type Database = {
       }
       prep_tasks: {
         Row: {
+          completed_at: string | null
+          completion_note: string | null
           created_at: string
           employee_id: string | null
           expires_at: string
@@ -1685,6 +1687,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          completed_at?: string | null
+          completion_note?: string | null
           created_at?: string
           employee_id?: string | null
           expires_at?: string
@@ -1699,6 +1703,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          completed_at?: string | null
+          completion_note?: string | null
           created_at?: string
           employee_id?: string | null
           expires_at?: string

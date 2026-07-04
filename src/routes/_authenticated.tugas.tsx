@@ -28,7 +28,7 @@ type WItem = {
 };
 type Variant = { id: string; warehouse_item_id: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
 type CatVariant = { id: string; category: string; label: string; weight_per_unit: number; unit_label: string | null; position: number };
-type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string };
+type Task = { id: string; title: string; note: string | null; share_token: string; status: string; expires_at: string; created_at: string; completed_at?: string | null; completion_note?: string | null };
 type TaskItem = { id: string; task_id: string; name_snapshot: string; category_snapshot: string | null; qty_requested: number; qty_prepared: number; unit_label: string | null; ref_photo_path: string | null; warehouse_item_id: string | null };
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
 type PinAlert = { id: string; task_id: string; share_token: string; failure_count: number; window_start: string; window_end: string; created_at: string };
@@ -1724,12 +1724,30 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
     return () => { supabase.removeChannel(ch); };
   }, [task.id]);
 
-  async function setStatus(status: "done" | "active") {
+  const [completeOpen, setCompleteOpen] = useState(false);
+
+  async function markDone(note: string) {
     setBusy(true);
-    const { error } = await supabase.from("prep_tasks").update({ status }).eq("id", task.id);
+    const { error } = await supabase
+      .from("prep_tasks")
+      .update({ status: "done", completed_at: new Date().toISOString(), completion_note: note.trim() || null })
+      .eq("id", task.id);
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Status diperbarui");
+    toast.success("Tugas ditandai selesai");
+    setCompleteOpen(false);
+    onClose();
+  }
+
+  async function reopenTask() {
+    setBusy(true);
+    const { error } = await supabase
+      .from("prep_tasks")
+      .update({ status: "active", completed_at: null, completion_note: null })
+      .eq("id", task.id);
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success("Tugas diaktifkan lagi");
   }
 
   const url = publicTaskUrl(task.share_token);
@@ -1738,9 +1756,30 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
     <Modal title={task.title} onClose={onClose} wide>
       <div className="mb-3 flex flex-wrap gap-2">
         <button onClick={() => setSharePinOpen(true)} className="inline-flex h-9 items-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white"><MessageCircle className="h-4 w-4" /> Bagikan link + PIN</button>
-        <button disabled={busy} onClick={() => setStatus(task.status === "done" ? "active" : "done")} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs">{task.status === "done" ? "Aktifkan lagi" : "Tandai selesai"}</button>
+        {task.status === "done" ? (
+          <button disabled={busy} onClick={reopenTask} className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs">Aktifkan lagi</button>
+        ) : (
+          <button disabled={busy} onClick={() => setCompleteOpen(true)} className="inline-flex h-9 items-center gap-1 rounded-md border border-emerald-500/50 bg-emerald-500/10 px-3 text-xs font-semibold text-emerald-700 hover:bg-emerald-500/20 dark:text-emerald-400"><CheckCircle2 className="h-4 w-4" /> Tandai selesai</button>
+        )}
         <a href={url} target="_blank" rel="noreferrer" className="inline-flex h-9 items-center gap-1 rounded-md border px-3 text-xs"><ExternalLink className="h-4 w-4" /> Pratinjau link pegawai</a>
       </div>
+      {task.status === "done" && task.completed_at && (
+        <div className="mb-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-xs">
+          <div className="flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
+            <CheckCircle2 className="h-4 w-4" /> Selesai pada {new Date(task.completed_at).toLocaleString("id-ID")}
+          </div>
+          {task.completion_note && (
+            <div className="mt-1 whitespace-pre-wrap text-foreground">{task.completion_note}</div>
+          )}
+        </div>
+      )}
+      {completeOpen && (
+        <CompleteTaskDialog
+          busy={busy}
+          onClose={() => setCompleteOpen(false)}
+          onConfirm={(n) => { void markDone(n); }}
+        />
+      )}
       {sharePinOpen && (
         <SharePinDialog title={task.title} url={url} taskId={task.id} shareToken={task.share_token} onClose={() => setSharePinOpen(false)} />
       )}
@@ -1831,6 +1870,41 @@ function Modal({ title, onClose, children, wide }: { title: string; onClose: () 
         {children}
       </div>
     </div>
+  );
+}
+
+function CompleteTaskDialog({ busy, onClose, onConfirm }: { busy: boolean; onClose: () => void; onConfirm: (note: string) => void | Promise<void> }) {
+  const [note, setNote] = useState("");
+  return (
+    <Modal title="Tandai tugas selesai" onClose={onClose}>
+      <div className="space-y-3 text-sm">
+        <div className="rounded-md border border-emerald-500/40 bg-emerald-500/5 p-2 text-[11px] text-emerald-700 dark:text-emerald-400">
+          Waktu selesai akan otomatis dicatat: <b>{new Date().toLocaleString("id-ID")}</b>.
+        </div>
+        <div>
+          <label className="text-[11px] font-medium text-muted-foreground">Keterangan (opsional)</label>
+          <textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            rows={3}
+            maxLength={500}
+            placeholder="Contoh: Semua siap, dikemas rapi, siap dikirim besok pagi."
+            className="mt-1 w-full rounded-md border bg-background p-2 text-sm"
+          />
+          <div className="mt-1 text-right text-[10px] text-muted-foreground">{note.length}/500</div>
+        </div>
+        <div className="flex justify-end gap-2 pt-1">
+          <button onClick={onClose} disabled={busy} className="inline-flex h-9 items-center rounded-md border px-3 text-xs">Batal</button>
+          <button
+            onClick={() => void onConfirm(note)}
+            disabled={busy}
+            className="inline-flex h-9 items-center gap-1 rounded-md bg-emerald-600 px-3 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
+          >
+            <CheckCircle2 className="h-4 w-4" /> Simpan & tandai selesai
+          </button>
+        </div>
+      </div>
+    </Modal>
   );
 }
 
