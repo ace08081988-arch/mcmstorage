@@ -599,31 +599,31 @@ function PosKasirPage() {
             </div>
 
             {/* Mobile scale */}
-            <div className="md:hidden bg-gradient-to-b from-slate-950 to-black rounded-2xl p-4 border-2 border-slate-700 shadow-2xl">
-              <div className="flex items-center justify-between mb-3">
+            <div className={`md:hidden bg-gradient-to-b from-slate-950 to-black rounded-2xl border-2 border-slate-700 shadow-2xl ${modeRingkas ? "p-3" : "p-4"}`}>
+              <div className={`flex items-center justify-between ${modeRingkas ? "mb-2" : "mb-3"}`}>
                 <span className="text-xs font-mono uppercase tracking-widest text-emerald-400">⚖ Timbangan</span>
                 <span className="text-xs text-slate-400 truncate">
                   {selected.emoji} {selected.nama}
                 </span>
               </div>
-              <div className="bg-black rounded-xl p-4 border border-emerald-900/50 relative overflow-hidden">
+              <div className={`bg-black rounded-xl border border-emerald-900/50 relative overflow-hidden ${modeRingkas ? "p-3" : "p-4"}`}>
                 <div className="absolute inset-0 bg-emerald-500/5" />
                 <div className="relative flex items-baseline justify-end gap-2">
                   <span
-                    className="font-mono text-5xl font-bold text-emerald-400 tabular-nums"
+                    className={`font-mono font-bold text-emerald-400 tabular-nums ${modeRingkas ? "text-4xl" : "text-5xl"}`}
                     style={{ textShadow: "0 0 20px rgba(52,211,153,0.6)", fontFamily: "'Courier New', monospace" }}
                   >
                     {displayBerat}
                   </span>
-                  <span className="text-xl font-mono text-emerald-500">kg</span>
+                  <span className={`font-mono text-emerald-500 ${modeRingkas ? "text-lg" : "text-xl"}`}>kg</span>
                 </div>
-                <div className="mt-2 pt-2 border-t border-emerald-900/40 flex justify-between text-xs font-mono text-emerald-500/70">
+                <div className={`border-t border-emerald-900/40 flex justify-between font-mono text-emerald-500/70 ${modeRingkas ? "mt-1 pt-1 text-[11px]" : "mt-2 pt-2 text-xs"}`}>
                   <span>@ {rupiah(selected.hargaPerKg)}/KG</span>
                   <span>TOTAL {rupiah(total)}</span>
                 </div>
               </div>
 
-              <div className="mt-4">
+              <div className={modeRingkas ? "mt-3" : "mt-4"}>
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Input Berat (kg)</label>
                 <input
                   type="number"
@@ -632,15 +632,15 @@ function PosKasirPage() {
                   max={selected.stokKg}
                   value={beratStr}
                   onChange={(e) => setBeratStr(e.target.value)}
-                  className={`mt-2 w-full bg-slate-900 border rounded-lg px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 transition-colors ${
+                  className={`w-full bg-slate-900 border rounded-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
                     berat > selected.stokKg
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
                       : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
-                  }`}
+                  } ${modeRingkas ? "mt-1 px-2.5 py-2 text-sm" : "mt-2 px-3 py-2.5 text-base"}`}
                   placeholder="0.000"
                 />
                 {berat > selected.stokKg && (
-                  <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-500/15 border border-red-500/40 p-2 text-xs text-red-200">
+                  <div className={`flex items-start gap-2 rounded-lg bg-red-500/15 border border-red-500/40 text-xs text-red-200 ${modeRingkas ? "mt-1 p-1.5" : "mt-2 p-2"}`}>
                     <span className="shrink-0 text-red-400">⚠</span>
                     <div>
                       Melebihi stok {selected.stokKg.toLocaleString("id-ID")} kg.
@@ -649,6 +649,7 @@ function PosKasirPage() {
                 )}
               </div>
             </div>
+
 
             {/* Mobile quick buttons */}
             <div className="md:hidden space-y-2">
