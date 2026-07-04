@@ -44,6 +44,9 @@ type Row = {
   status: "ready" | "sent";
   wa_target: string | null;
   sent_at: string | null;
+  sent_channel?: "wa" | "chat" | null;
+  sent_to?: string | null;
+  sent_summary?: string | null;
   created_at: string;
 };
 
