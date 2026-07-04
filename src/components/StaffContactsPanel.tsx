@@ -10,6 +10,7 @@ type Contact = {
   user_id: string;
   name: string;
   wa_phone: string;
+  pin_chat_mcm: string | null;
   created_at: string;
 };
 
