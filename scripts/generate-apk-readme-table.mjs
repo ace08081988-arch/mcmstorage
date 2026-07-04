@@ -82,7 +82,12 @@ function escapeCell(text) {
 }
 
 function scenarioAnchor(specFile) {
-  return `apk-scenario-${specFile.replace(/\.spec\.ts$/, "")}`;
+  // Anchor mengikuti konvensi lama: `apk-scenario-<slug>` di mana `slug`
+  // adalah basename spec tanpa akhiran `.spec.ts` dan tanpa prefix
+  // `apk-` (karena "apk-scenario-" sudah menandai domain APK).
+  const base = specFile.replace(/\.spec\.ts$/, "").replace(/^apk-/, "");
+  return `apk-scenario-${base}`;
+}
 }
 
 function modeLabel(mode) {
@@ -96,12 +101,11 @@ async function collectRows() {
   const entries = await fs.readdir(SPEC_DIR);
   // Ikuti konvensi validator: semua spec `apk-*.spec.ts`; ditambah
   // `copy-chat-apk-*.spec.ts` yang memiliki project block APK.
+  // Ikuti persis scope validator (`scripts/validate-apk-scaffolds.mjs`):
+  // hanya `apk-*.spec.ts`. Spec lain di luar scope validator tidak
+  // dimasukkan ke tabel ini agar sumber kebenaran tetap tunggal.
   const specs = entries
-    .filter(
-      (f) =>
-        (f.startsWith("apk-") || f.startsWith("copy-chat-apk-")) &&
-        f.endsWith(".spec.ts"),
-    )
+    .filter((f) => f.startsWith("apk-") && f.endsWith(".spec.ts"))
     .sort();
   const configText = await fs.readFile(CONFIG, "utf8");
   const rows = [];
