@@ -511,11 +511,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     }
     if (tool === "rect") {
       drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      lastPointRef.current = p; // used to detect tap-vs-drag on release
       scheduleRedraw();
       return;
     }
     if (tool === "circle") {
       drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      lastPointRef.current = p;
       scheduleRedraw();
       return;
     }
@@ -594,17 +596,39 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         const x = Math.min(final.x, final.x + final.w);
         const y = Math.min(final.y, final.y + final.h);
         final = { ...final, x, y, w: Math.abs(final.w), h: Math.abs(final.h) };
-        // skip zero-size shapes
-        if (final.w < 2 && final.h < 2) { drawingRef.current = null; scheduleRedraw(); return; }
+        // Tap-to-place fallback: user tapped without dragging → drop a
+        // sensible default-sized rectangle at the tap so the tool doesn't
+        // feel broken. 96px matches typical annotation size.
+        if (final.w < 4 && final.h < 4) {
+          const size = 96;
+          final = { ...final, x: final.x - size / 2, y: final.y - size / 2, w: size, h: size };
+        }
       } else if (final.kind === "circle") {
-        if (final.r < 2) { drawingRef.current = null; scheduleRedraw(); return; }
+        if (final.r < 4) final = { ...final, r: 48 };
       } else if (final.kind === "stroke") {
-        if (final.points.length < 2) { drawingRef.current = null; scheduleRedraw(); return; }
+        // Single-tap fallback: render a small dot so the pen tool always
+        // leaves a mark, then the user knows it worked.
+        if (final.points.length < 2) {
+          const p = final.points[0];
+          final = { ...final, points: [p, { x: p.x + 0.5, y: p.y + 0.5 }] };
+        }
       }
       pushHistory({ ...state, layers: [...state.layers, final] });
       setSelectedId(final.id);
       drawingRef.current = null;
+      lastPointRef.current = null;
     }
+  }
+
+  // Android/webview fires pointercancel when the OS intercepts the gesture
+  // (scroll, palm rejection, multi-finger, keyboard opening). Without this,
+  // dragLiveRef / drawingRef stay set forever and the editor feels frozen.
+  function onPointerCancel() {
+    dragLiveRef.current = null;
+    drawingRef.current = null;
+    commitBaselineRef.current = null;
+    lastPointRef.current = null;
+    scheduleRedraw();
   }
 
   function patchSelected(patch: Partial<Layer>) {
@@ -747,6 +771,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
+              onPointerCancel={onPointerCancel}
               className="absolute inset-0 touch-none"
               style={{ width: `${view.w}px`, height: `${view.h}px` }}
             />
@@ -996,14 +1021,43 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             {EMOJIS.map((em) => (
               <button key={em} onClick={() => {
                   setEmoji(em);
-                  if (selected?.kind === "emoji") { liveBeginIfNeeded(); livePatchSelected({ emoji: em } as Partial<Layer>); commitLivePatch(); }
+                  if (selected?.kind === "emoji") {
+                    liveBeginIfNeeded();
+                    livePatchSelected({ emoji: em } as Partial<Layer>);
+                    commitLivePatch();
+                  } else {
+                    // Konsisten dengan tombol Panah: langsung tempelkan
+                    // stiker di tengah kanvas — user tidak perlu menebak
+                    // bahwa harus tap kanvas dulu.
+                    const v = viewRef.current;
+                    const cx = v.w ? v.w / 2 : 100;
+                    const cy = v.h ? v.h / 2 : 100;
+                    const l: Layer = {
+                      id: uid(), kind: "emoji", x: cx, y: cy,
+                      rotation: 0, scale: 1, color, emoji: em, size: textSize + 8,
+                    };
+                    pushHistory({ ...state, layers: [...state.layers, l] });
+                    setSelectedId(l.id);
+                  }
                 }}
                 className={`h-9 w-9 rounded border bg-background text-lg transition hover:bg-muted ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
             ))}
           </div>
         )}
         {tool === "text" && (
-          <div className="mb-2 flex items-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const v = viewRef.current;
+                const cx = v.w ? v.w / 2 : 100;
+                const cy = v.h ? v.h / 2 : 100;
+                setTextPrompt({ open: true, x: cx, y: cy, value: "" });
+              }}
+              className="inline-flex h-8 items-center gap-1 rounded-md border border-primary bg-primary/10 px-2 text-[11px] font-medium transition hover:bg-primary/20"
+            >
+              <Type className="h-3.5 w-3.5" /> Tambah teks di tengah
+            </button>
             <label className="flex items-center gap-1">Font
               <input
                 type="range" min={14} max={96} value={textSize}
