@@ -33,6 +33,7 @@ import {
   type AudioOutputKind,
 } from "@/lib/audio-output";
 import { getNativeAudioRoute } from "@/lib/native-audio-route";
+import { describeCallError } from "@/lib/call-errors";
 import {
   Sheet,
   SheetContent,
@@ -142,7 +143,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               }
             },
             onError: (err) => {
-              setErrorMsg(err.message);
+              const info = describeCallError(err, kind === "video" ? "video" : "audio");
+              setErrorMsg(`${info.title}. ${info.hint}`);
+              toast.error(info.title, { description: info.hint });
             },
             onRingingAck: () => {
               // Callee sudah menampilkan dialog masuk — beralih dari
@@ -181,9 +184,10 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           await startOffer(session);
         }
       } catch (e) {
-        const msg = (e as { message?: string })?.message ?? "Gagal memulai panggilan";
-        toast.error(msg);
-        void finalize("failed", msg);
+        const info = describeCallError(e, kind === "video" ? "video" : "audio");
+        setErrorMsg(`${info.title}. ${info.hint}`);
+        toast.error(info.title, { description: info.hint, duration: 8000 });
+        void finalize("failed", info.title);
       }
     })();
     return () => {
