@@ -1747,6 +1747,11 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // per-pcs (mis. GS: 1 pcs = 1 botol) tampilkan 'botol' agar tidak
   // membingungkan; selain itu sama dengan displayBaseUnit.
   const displayHumanBase = humanBaseUnit(displayPackageType, displayBaseUnit);
+  // True jika label jenis kemasan secara semantik SAMA dengan satuan dasar
+  // (mis. package_type="gram" dgn base_unit="g"). Kalau iya, semua tombol/
+  // hint "per package" hanya menduplikasi label satuan dasar — sembunyikan.
+  const packageDuplicatesBase = isSameUnitLabel(displayPackageType, displayBaseUnit)
+    || isSameUnitLabel(displayPackageType, displayHumanBase);
   // `warnings` — memoized: dep array minimal (mode, itemId, packageType,
   // derived, priceMode, inputKarton). Refetch identitas selectedItem tidak
   // menembak memo karena selectedItem TIDAK ada di deps.
@@ -1776,6 +1781,9 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (!isWItem(selectedItem)) return;
     if (selectedItem.package_type !== "botol" && inputKarton) setInputKarton(false);
     if (selectedItem.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
+    // Kalau jenis kemasan cuma sinonim dari satuan dasar (mis. gram vs g),
+    // paksa priceMode "base" agar tidak ada label duplikat di ringkasan/input.
+    if (packageDuplicatesBase && priceMode !== "base") setPriceMode("base");
   }, [mode, itemId, inputKarton, priceMode]);
 
   // Kunci/reset state saat pengguna cepat mengganti item atau mode agar
@@ -1998,7 +2006,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         </label>
       )}
 
-      {displayPackageType !== "pcs" && (
+      {displayPackageType !== "pcs" && !packageDuplicatesBase && (
         <div className="flex gap-1 text-xs">
           <button type="button" onClick={() => setPriceMode("package")} className={`flex-1 rounded border px-2 py-1 ${priceMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
             Harga per {displayPackageType}
@@ -2069,7 +2077,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <span className="text-muted-foreground">Harga per {displayPackageType}</span>
           <b>{rupiah(price)}</b>
         </div>
-        {displayPackageType !== "pcs" && baseAdded > 0 && (
+        {displayPackageType !== "pcs" && baseAdded > 0 && !packageDuplicatesBase && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">Harga per {displayHumanBase}</span>
             <b>{rupiah(totalCost / baseAdded)}</b>
