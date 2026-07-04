@@ -106,10 +106,14 @@ function UndangPage() {
   }, [cleanInput, looksValid]);
 
   async function handleAdd() {
-    if (!looksValid) return;
+    const v = validateInviteCode(input);
+    if (!v.ok) {
+      toast.error(v.reason);
+      return;
+    }
     setAdding(true);
     try {
-      const r = await addContactByInviteCode(cleanInput);
+      const r = await addContactByInviteCode(v.code);
       setInput("");
       setPreview(null);
       if (r.alreadyFriends) {
