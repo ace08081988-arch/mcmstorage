@@ -324,25 +324,62 @@ function PosKasirPage() {
                 {riwayat.length} transaksi · {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg · omzet {rupiah(totalOmzet)}
               </p>
             </div>
-            {riwayat.length > 0 && (
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="flex flex-col text-[10px] uppercase tracking-wider text-slate-500">
+                Dari
+                <input
+                  type="date"
+                  value={dariTgl}
+                  onChange={(e) => setDariTgl(e.target.value)}
+                  className="mt-1 text-xs px-2 py-1.5 rounded-lg bg-slate-900/60 border border-slate-700 text-slate-200"
+                />
+              </label>
+              <label className="flex flex-col text-[10px] uppercase tracking-wider text-slate-500">
+                Sampai
+                <input
+                  type="date"
+                  value={sampaiTgl}
+                  onChange={(e) => setSampaiTgl(e.target.value)}
+                  className="mt-1 text-xs px-2 py-1.5 rounded-lg bg-slate-900/60 border border-slate-700 text-slate-200"
+                />
+              </label>
+              {(dariTgl || sampaiTgl) && (
+                <button
+                  onClick={() => { setDariTgl(""); setSampaiTgl(""); }}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-700 text-slate-400"
+                >
+                  Reset
+                </button>
+              )}
               <button
-                onClick={() => setRiwayat([])}
-                className="text-xs px-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-700 text-slate-400"
+                onClick={exportCSV}
+                disabled={riwayatFiltered.length === 0}
+                className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-emerald-700 text-white font-medium"
               >
-                Bersihkan
+                ⬇ Ekspor CSV ({riwayatFiltered.length})
               </button>
-            )}
+              {riwayat.length > 0 && (
+                <button
+                  onClick={() => setRiwayat([])}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-700 text-slate-400"
+                >
+                  Bersihkan
+                </button>
+              )}
+            </div>
           </div>
 
-          {riwayat.length === 0 ? (
+          {riwayatFiltered.length === 0 ? (
             <div className="text-center py-8 text-sm text-slate-500">
-              Belum ada transaksi. Lakukan pembayaran untuk melihat riwayat di sini.
+              {riwayat.length === 0
+                ? "Belum ada transaksi. Lakukan pembayaran untuk melihat riwayat di sini."
+                : "Tidak ada transaksi pada rentang tanggal terpilih."}
             </div>
           ) : (
             <>
               {/* Mobile: card list */}
               <div className="grid gap-2 md:hidden">
-                {riwayat.map((t) => (
+                {riwayatFiltered.map((t) => (
                   <div key={t.id} className="rounded-xl bg-slate-900/60 border border-slate-700 p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
