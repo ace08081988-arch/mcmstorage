@@ -37,6 +37,9 @@ import { getNativeAudioRoute } from "@/lib/native-audio-route";
 import { describeCallError } from "@/lib/call-errors";
 import { usePersistedState, parseEnum } from "@/lib/use-persisted-state";
 import {
+  computeVideoStyle, videoFitClassFor, presetPosToCss,
+} from "@/lib/call-video-style";
+import {
   Sheet,
   SheetContent,
   SheetHeader,
@@ -155,7 +158,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const toggleVideoFit = useCallback(() => {
     setVideoFit((f) => (f === "cover" ? "contain" : "cover"));
   }, [setVideoFit]);
-  const videoFitClass = videoFit === "cover" ? "object-cover" : "object-contain";
+  const videoFitClass = videoFitClassFor(videoFit);
   // Pan/posisi crop — hanya berlaku saat mode "cover" (Crop). Mengontrol
   // CSS `object-position` supaya bagian penting frame tidak terpotong.
   // Disimpan terpisah per kamera juga (front biasanya butuh center/atas,
@@ -233,23 +236,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     },
     [facingMode, setVideoPosCustomFront, setVideoPosCustomBack],
   );
-  const presetPosCss =
-    videoPos === "center" ? "50% 50%"
-    : videoPos === "top" ? "50% 0%"
-    : videoPos === "bottom" ? "50% 100%"
-    : videoPos === "left" ? "0% 50%"
-    : "100% 50%";
-  const videoPosCss = videoPosCustom
-    ? `${videoPosCustom.x.toFixed(1)}% ${videoPosCustom.y.toFixed(1)}%`
-    : presetPosCss;
-  // Style inline yang dipakai SEMUA elemen <video> (remote + preview lokal
-  // di mode PiP maupun swap). Menaruhnya di prop `style` menjamin nilainya
-  // ikut di-apply pada setiap render — termasuk saat swap layout memindah
-  // elemen ke DOM node baru dan saat kamera front/back ditukar.
-  const videoStyle: React.CSSProperties = {
-    objectFit: videoFit,
-    objectPosition: videoFit === "cover" ? videoPosCss : "50% 50%",
-  };
+  const presetPosCss = presetPosToCss(videoPos);
+  // Style inline yang dipakai SEMUA elemen <video> (remote + preview lokal,
+  // baik dalam mode PiP maupun swap). Dihitung lewat helper murni supaya
+  // SATU sumber kebenaran menentukan objectFit/objectPosition untuk semua
+  // elemen — mustahil satu <video> menerima style yang berbeda.
+  const videoStyle: React.CSSProperties = computeVideoStyle(
+    videoFit,
+    videoPos,
+    videoPosCustom,
+  );
   // Drag untuk menggeser posisi crop secara kontinu (bukan cuma preset).
   // Berlaku pada elemen <video> "besar" saat mode Crop aktif. Menggeser
   // pointer ke kanan menggeser frame ke kanan (image mengikuti jari) —
@@ -1033,13 +1029,13 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // memindah elemen ke node baru sebelum React sempat mem-flush prop `style`.
   useEffect(() => {
     if (kind !== "video") return;
-    const pos = videoFit === "cover" ? videoPosCss : "50% 50%";
+    const pos = String(videoStyle.objectPosition ?? "50% 50%");
     for (const el of [localVideoRef.current, remoteVideoRef.current]) {
       if (!el) continue;
       el.style.objectFit = videoFit;
       el.style.objectPosition = pos;
     }
-  }, [videoFit, videoPosCss, kind, cameraSwapNonce, remoteReady, swapped]);
+  }, [videoFit, videoStyle.objectPosition, kind, cameraSwapNonce, remoteReady, swapped]);
 
   // Tukar kamera depan/belakang tanpa menutup panggilan: buka stream baru
   // dengan facingMode target, ganti track pada sender via `replaceTrack`,
