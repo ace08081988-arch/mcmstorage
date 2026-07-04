@@ -153,6 +153,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // Bertambah tiap kali kamera dibalik — dipakai untuk memaksa Crop/Fit &
   // kualitas video di-apply ulang begitu track lokal baru terpasang.
   const [cameraSwapNonce, setCameraSwapNonce] = useState(0);
+  // Indikator kualitas jaringan dari `RTCPeerConnection.getStats()`.
+  // - rttMs: round-trip time dari candidate-pair aktif
+  // - lossPct: rasio paket hilang inbound (audio+video) selama window terakhir
+  // - tier: derivasi kualitas (good/fair/poor/unknown)
+  type NetTier = "unknown" | "good" | "fair" | "poor";
+  const [netStats, setNetStats] = useState<{
+    rttMs: number | null;
+    lossPct: number | null;
+    tier: NetTier;
+  }>({ rttMs: null, lossPct: null, tier: "unknown" });
   const pipSizeClass =
     pipSize === "sm" ? "h-24 w-20" : pipSize === "lg" ? "h-48 w-36" : "h-32 w-24";
   const pipCornerClass =
