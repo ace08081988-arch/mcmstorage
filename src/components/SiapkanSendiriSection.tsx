@@ -273,8 +273,15 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
     const result = await shareToWhatsApp({ text, files });
     notifyShareResult(result);
     if (result.status === "shared" || result.status === "fallback") {
+      const summary = text.length > 140 ? `${text.slice(0, 140)}…` : text;
       const { error } = await table()
-        .update({ status: "sent", sent_at: new Date().toISOString() })
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          sent_channel: "wa",
+          sent_to: "WhatsApp",
+          sent_summary: summary,
+        })
         .eq("id", r.id);
       if (error) toast.error(`Status gagal diperbarui: ${error.message}`);
       else await load();
@@ -324,8 +331,15 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
       toast.dismiss(tid);
       if (result.status === "shared") {
         toast.success(`Terkirim ke ${convTitle} (${result.messageCount} pesan).`);
+        const summary = caption.length > 140 ? `${caption.slice(0, 140)}…` : caption;
         const { error } = await table()
-          .update({ status: "sent", sent_at: new Date().toISOString() })
+          .update({
+            status: "sent",
+            sent_at: new Date().toISOString(),
+            sent_channel: "chat",
+            sent_to: convTitle,
+            sent_summary: summary,
+          })
           .eq("id", r.id);
         if (error) toast.error(`Status gagal diperbarui: ${error.message}`);
         else await load();
