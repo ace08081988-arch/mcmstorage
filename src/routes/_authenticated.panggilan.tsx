@@ -195,11 +195,12 @@ function PanggilanPage() {
 }
 
 function CallRowItem({
-  row, myId, nameMap, onOpenChat, onStartCall,
+  row, myId, nameMap, isCalling, onOpenChat, onStartCall,
 }: {
   row: CallRow;
   myId: string | null;
   nameMap: Record<string, string>;
+  isCalling: boolean;
   onOpenChat: (conversationId: string) => void;
   onStartCall: (row: CallRow) => void | Promise<void>;
 }) {
@@ -240,11 +241,27 @@ function CallRowItem({
       </button>
       <button
         type="button"
+        disabled={isCalling}
+        aria-busy={isCalling}
         onClick={() => void onStartCall(row)}
-        className="grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors hover:bg-muted/60 active:bg-muted"
-        aria-label={row.kind === "video" ? `Panggilan video ke ${peerName}` : `Panggilan suara ke ${peerName}`}
+        className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors ${
+          isCalling
+            ? "cursor-not-allowed opacity-60"
+            : "hover:bg-muted/60 active:bg-muted"
+        }`}
+        aria-label={
+          isCalling
+            ? `Memulai panggilan ${row.kind === "video" ? "video" : "suara"} ke ${peerName}`
+            : row.kind === "video"
+              ? `Panggilan video ke ${peerName}`
+              : `Panggilan suara ke ${peerName}`
+        }
       >
-        <Icon className={`h-5 w-5 ${row.kind === "video" ? "text-primary" : "text-muted-foreground"}`} />
+        {isCalling ? (
+          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+        ) : (
+          <Icon className={`h-5 w-5 ${row.kind === "video" ? "text-primary" : "text-muted-foreground"}`} />
+        )}
       </button>
     </li>
   );
