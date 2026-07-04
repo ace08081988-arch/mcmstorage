@@ -523,6 +523,23 @@ function PosKasirPage() {
     setBeratStr(String(next));
   };
 
+  // Edge case: user login tapi belum ada barang di gudang.
+  if (gudangSynced && produk.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-6 flex items-center justify-center">
+        <div className="max-w-md text-center space-y-4 bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
+          <div className="text-4xl">📦</div>
+          <h1 className="text-xl font-bold">Belum ada produk di gudang</h1>
+          <p className="text-sm text-slate-400">
+            POS Kasir menampilkan produk dari halaman <Link className="underline text-emerald-300" to="/gudang">Gudang</Link>.
+            Tambahkan minimal satu barang untuk mulai menjual.
+          </p>
+          {gudangError && <p className="text-xs text-red-300">{gudangError}</p>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 md:p-8 ${modeRingkas ? "p-2" : "p-3"}`}>
       <div className="mx-auto max-w-6xl">
