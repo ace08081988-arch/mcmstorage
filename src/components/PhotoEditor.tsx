@@ -39,6 +39,27 @@ const COLORS = ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#a855f7", "#ec4899"
 
 type Tool = "select" | "draw" | "text" | "emoji" | "arrow" | "rect" | "circle";
 
+const TOOL_LABELS: Record<Tool, string> = {
+  select: "Pilih",
+  draw: "Coret",
+  text: "Teks",
+  emoji: "Stiker",
+  arrow: "Panah",
+  rect: "Kotak",
+  circle: "Lingkaran",
+};
+
+const TOOL_HINTS: Record<Tool, string> = {
+  select: "Ketuk objek untuk memilih, seret untuk memindahkan",
+  draw: "Seret jari di kanvas untuk menggambar bebas",
+  text: "Ketuk kanvas atau tombol Tambah teks untuk menulis",
+  emoji: "Pilih emoji lalu ketuk untuk menempelkan di tengah",
+  arrow: "Pilih arah panah, otomatis tempel di tengah kanvas",
+  rect: "Seret untuk ukuran bebas, atau ketuk untuk kotak default",
+  circle: "Seret dari pusat ke tepi, atau ketuk untuk ukuran default",
+};
+
+
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
 export type PhotoEditorProps = {
@@ -1253,6 +1274,21 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             </label>
           </div>
         )}
+
+        {/* Active tool hint */}
+        <div
+          role="status"
+          aria-live="polite"
+          key={tool}
+          className="mb-2 flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[11px]"
+        >
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
+            <span className="relative inline-flex h-full w-2 rounded-full bg-primary" />
+          </span>
+          <span className="font-medium text-primary">{TOOL_LABELS[tool]} aktif</span>
+          <span className="text-muted-foreground">— {TOOL_HINTS[tool]}</span>
+        </div>
 
         {/* Tools bar */}
         <div className="flex flex-wrap items-center gap-1">
