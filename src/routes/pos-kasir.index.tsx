@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import {
   getPosKasirRiwayat,
@@ -18,6 +18,8 @@ const waktuFmt = new Intl.DateTimeFormat("id-ID", {
   day: "2-digit",
   month: "short",
 });
+
+const QUICK_WEIGHTS = [0.1, 0.25, 0.5, 1, 2];
 
 function PosKasirPage() {
   const [produk, setProduk] = useState<PosKasirProduk[]>(PRODUK_AWAL);
@@ -41,6 +43,9 @@ function PosKasirPage() {
   const total = berat * selected.hargaPerKg;
   const stokCukup = berat > 0 && berat <= selected.stokKg;
 
+  const totalStok = useMemo(() => produk.reduce((s, p) => s + p.stokKg, 0), [produk]);
+  const produkMenipis = useMemo(() => produk.filter((p) => p.stokKg < 5 && p.stokKg > 0), [produk]);
+
   const bayar = () => {
     if (!stokCukup) {
       setToast(berat <= 0 ? "Masukkan berat terlebih dahulu" : "Stok tidak mencukupi");
@@ -48,9 +53,7 @@ function PosKasirPage() {
       return;
     }
     const sisaStokKg = +(selected.stokKg - berat).toFixed(3);
-    setProduk((prev) =>
-      prev.map((p) => (p.id === selected.id ? { ...p, stokKg: sisaStokKg } : p)),
-    );
+    setProduk((prev) => prev.map((p) => (p.id === selected.id ? { ...p, stokKg: sisaStokKg } : p)));
     setRiwayat((prev) => [
       {
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
@@ -114,23 +117,90 @@ function PosKasirPage() {
     setTimeout(() => setToast(null), 2500);
   };
 
-  // Format 7-segment display: 5 digit integer + 3 decimal
   const displayBerat = berat.toFixed(3).padStart(9, " ");
 
+  const addBerat = (delta: number) => {
+    const next = Math.max(0, +(berat + delta).toFixed(3));
+    setBeratStr(String(next));
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-4 md:p-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-3 md:p-8">
       <div className="mx-auto max-w-6xl">
-        <header className="mb-6 flex items-center justify-between">
+        {/* Mobile header */}
+        <header className="md:hidden mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-bold tracking-tight">🧾 POS Kasir</h1>
+            <p className="truncate text-xs text-slate-400 mt-0.5">
+              {riwayat.length} transaksi · {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+            </p>
+          </div>
+          <Link
+            to="/pos-kasir/ringkasan"
+            className="shrink-0 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 hover:bg-slate-700 transition-colors"
+          >
+            📊 Ringkasan
+          </Link>
+        </header>
+
+        {/* Desktop header */}
+        <header className="hidden md:flex mb-6 items-center justify-between">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">🧾 POS Kasir · Produk Curah</h1>
             <p className="text-sm text-slate-400 mt-1">Simulasi timbangan digital & penjualan per kilogram</p>
           </div>
+          <Link
+            to="/pos-kasir/ringkasan"
+            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors"
+          >
+            📊 Ringkasan
+          </Link>
         </header>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left: Produk */}
-          <section className="lg:col-span-2 space-y-6">
-            <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
+        {/* Mobile stock summary */}
+        <section className="md:hidden mb-4 bg-slate-800/50 backdrop-blur rounded-xl p-3 border border-slate-700">
+          <div className="flex items-center justify-between mb-2">
+            <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Stok Tersisa</span>
+            <span className="text-xs text-slate-400">{totalStok.toLocaleString("id-ID")} kg total</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            {produk.map((p) => {
+              const active = p.id === selectedId;
+              const habis = p.stokKg <= 0;
+              return (
+                <button
+                  key={p.id}
+                  onClick={() => setSelectedId(p.id)}
+                  disabled={habis}
+                  className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs transition-colors ${
+                    active
+                      ? "bg-emerald-500/20 border-emerald-400"
+                      : "bg-slate-900/60 border-slate-700 hover:border-slate-500"
+                  } ${habis ? "opacity-40 cursor-not-allowed" : ""}`}
+                >
+                  <span className="text-lg">{p.emoji}</span>
+                  <div className="text-left min-w-0">
+                    <div className="font-medium truncate max-w-[80px]">{p.nama}</div>
+                    <div className={`font-mono ${p.stokKg < 5 ? "text-amber-400" : "text-slate-400"}`}>
+                      {p.stokKg.toLocaleString("id-ID")} kg
+                    </div>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+          {produkMenipis.length > 0 && (
+            <div className="mt-2 text-[11px] text-amber-400">
+              ⚠ Stok menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama}`).join(", ")}
+            </div>
+          )}
+        </section>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+          {/* Main */}
+          <section className="lg:col-span-2 space-y-4 md:space-y-6">
+            {/* Desktop product grid */}
+            <div className="hidden md:block bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
               <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">Pilih Produk</h2>
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {produk.map((p) => {
@@ -159,8 +229,105 @@ function PosKasirPage() {
               </div>
             </div>
 
-            {/* Scale Display */}
-            <div className="bg-gradient-to-b from-slate-950 to-black rounded-2xl p-6 border-2 border-slate-700 shadow-2xl">
+            {/* Mobile scale */}
+            <div className="md:hidden bg-gradient-to-b from-slate-950 to-black rounded-2xl p-4 border-2 border-slate-700 shadow-2xl">
+              <div className="flex items-center justify-between mb-3">
+                <span className="text-xs font-mono uppercase tracking-widest text-emerald-400">⚖ Timbangan</span>
+                <span className="text-xs text-slate-400 truncate">
+                  {selected.emoji} {selected.nama}
+                </span>
+              </div>
+              <div className="bg-black rounded-xl p-4 border border-emerald-900/50 relative overflow-hidden">
+                <div className="absolute inset-0 bg-emerald-500/5" />
+                <div className="relative flex items-baseline justify-end gap-2">
+                  <span
+                    className="font-mono text-5xl font-bold text-emerald-400 tabular-nums"
+                    style={{ textShadow: "0 0 20px rgba(52,211,153,0.6)", fontFamily: "'Courier New', monospace" }}
+                  >
+                    {displayBerat}
+                  </span>
+                  <span className="text-xl font-mono text-emerald-500">kg</span>
+                </div>
+                <div className="mt-2 pt-2 border-t border-emerald-900/40 flex justify-between text-xs font-mono text-emerald-500/70">
+                  <span>@ {rupiah(selected.hargaPerKg)}/KG</span>
+                  <span>TOTAL {rupiah(total)}</span>
+                </div>
+              </div>
+
+              <div className="mt-4">
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Input Berat (kg)</label>
+                <input
+                  type="number"
+                  step="0.001"
+                  min="0"
+                  max={selected.stokKg}
+                  value={beratStr}
+                  onChange={(e) => setBeratStr(e.target.value)}
+                  className={`mt-2 w-full bg-slate-900 border rounded-lg px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 transition-colors ${
+                    berat > selected.stokKg
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
+                      : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
+                  }`}
+                  placeholder="0.000"
+                />
+                {berat > selected.stokKg && (
+                  <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-500/15 border border-red-500/40 p-2 text-xs text-red-200">
+                    <span className="shrink-0 text-red-400">⚠</span>
+                    <div>
+                      Melebihi stok {selected.stokKg.toLocaleString("id-ID")} kg.
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Mobile quick buttons */}
+            <div className="md:hidden space-y-2">
+              <div className="grid grid-cols-5 gap-2">
+                {QUICK_WEIGHTS.map((v) => {
+                  const wouldExceed = berat + v > selected.stokKg;
+                  return (
+                    <button
+                      key={v}
+                      onClick={() => addBerat(v)}
+                      disabled={wouldExceed}
+                      className={`py-2.5 rounded-lg border text-xs font-semibold transition-colors ${
+                        wouldExceed
+                          ? "bg-slate-800/50 border-slate-800 text-slate-600 cursor-not-allowed"
+                          : "bg-slate-800 hover:bg-slate-700 border-slate-700 active:bg-emerald-600/30"
+                      }`}
+                    >
+                      +{v}
+                    </button>
+                  );
+                })}
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <button
+                  onClick={() => addBerat(-0.25)}
+                  disabled={berat <= 0}
+                  className="py-2.5 rounded-lg border border-slate-700 bg-slate-800 text-xs font-semibold disabled:opacity-50 active:bg-slate-700"
+                >
+                  -0.25
+                </button>
+                <button
+                  onClick={() => setBeratStr("0")}
+                  className="py-2.5 rounded-lg border border-slate-700 bg-slate-800 text-xs font-semibold text-slate-400 active:bg-slate-700"
+                >
+                  Reset
+                </button>
+                <button
+                  onClick={bayar}
+                  disabled={!stokCukup}
+                  className="py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-xs font-bold text-white shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform"
+                >
+                  Bayar
+                </button>
+              </div>
+            </div>
+
+            {/* Desktop scale */}
+            <div className="hidden md:block bg-gradient-to-b from-slate-950 to-black rounded-2xl p-6 border-2 border-slate-700 shadow-2xl">
               <div className="flex items-center justify-between mb-4">
                 <span className="text-xs font-mono uppercase tracking-widest text-emerald-400">⚖ Timbangan Digital</span>
                 <span className="flex gap-1.5">
@@ -224,7 +391,7 @@ function PosKasirPage() {
                     return (
                       <button
                         key={v}
-                        onClick={() => setBeratStr(String((berat + v).toFixed(3)))}
+                        onClick={() => addBerat(v)}
                         disabled={wouldExceed}
                         className={`py-2 rounded-lg border text-sm font-medium transition-colors ${
                           wouldExceed
@@ -247,8 +414,8 @@ function PosKasirPage() {
             </div>
           </section>
 
-          {/* Right: Ringkasan & Bayar */}
-          <aside className="space-y-4">
+          {/* Desktop summary */}
+          <aside className="hidden md:block space-y-4">
             <div className="bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700 sticky top-4">
               <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">Ringkasan</h2>
               <div className="space-y-3 text-sm">
@@ -301,7 +468,7 @@ function PosKasirPage() {
         </div>
 
         {/* Riwayat Transaksi */}
-        <section className="mt-6 bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
+        <section className="mt-4 md:mt-6 bg-slate-800/50 backdrop-blur rounded-2xl p-4 md:p-5 border border-slate-700">
           <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
             <div>
               <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
@@ -371,20 +538,16 @@ function PosKasirPage() {
               <div className="grid gap-2 md:hidden">
                 {riwayatFiltered.map((t) => (
                   <div key={t.id} className="rounded-xl bg-slate-900/60 border border-slate-700 p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xl">{t.produkEmoji}</span>
-                        <div>
-                          <div className="text-sm font-medium">{t.produkNama}</div>
-                          <div className="text-[11px] text-slate-500 font-mono">
-                            {waktuFmt.format(t.waktu)}
-                          </div>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="flex min-w-0 items-center gap-2">
+                        <span className="text-xl shrink-0">{t.produkEmoji}</span>
+                        <div className="min-w-0">
+                          <div className="text-sm font-medium truncate">{t.produkNama}</div>
+                          <div className="text-[11px] text-slate-500 font-mono">{waktuFmt.format(t.waktu)}</div>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <div className="text-emerald-400 font-mono font-semibold text-sm">
-                          {rupiah(t.total)}
-                        </div>
+                      <div className="text-right shrink-0">
+                        <div className="text-emerald-400 font-mono font-semibold text-sm">{rupiah(t.total)}</div>
                         <div className="text-[11px] text-slate-400 font-mono">
                           {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
                         </div>
@@ -393,10 +556,8 @@ function PosKasirPage() {
                     <div className="mt-2 pt-2 border-t border-slate-800 flex justify-between text-[11px] text-slate-500">
                       <span>@ {rupiah(t.hargaPerKg)}/kg</span>
                       <span>
-                        Sisa stok:{" "}
-                        <span className="text-slate-300 font-mono">
-                          {t.sisaStokKg.toLocaleString("id-ID")} kg
-                        </span>
+                        Sisa:{" "}
+                        <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} kg</span>
                       </span>
                     </div>
                   </div>
@@ -419,9 +580,7 @@ function PosKasirPage() {
                   <tbody className="divide-y divide-slate-800">
                     {riwayatFiltered.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-900/40">
-                        <td className="py-2 pr-3 font-mono text-xs text-slate-400">
-                          {waktuFmt.format(t.waktu)}
-                        </td>
+                        <td className="py-2 pr-3 font-mono text-xs text-slate-400">{waktuFmt.format(t.waktu)}</td>
                         <td className="py-2 pr-3">
                           <span className="mr-1.5">{t.produkEmoji}</span>
                           {t.produkNama}
@@ -429,9 +588,7 @@ function PosKasirPage() {
                         <td className="py-2 pr-3 text-right font-mono">
                           {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
                         </td>
-                        <td className="py-2 pr-3 text-right font-mono text-slate-400">
-                          {rupiah(t.hargaPerKg)}
-                        </td>
+                        <td className="py-2 pr-3 text-right font-mono text-slate-400">{rupiah(t.hargaPerKg)}</td>
                         <td className="py-2 pr-3 text-right font-mono font-semibold text-emerald-400">
                           {rupiah(t.total)}
                         </td>
