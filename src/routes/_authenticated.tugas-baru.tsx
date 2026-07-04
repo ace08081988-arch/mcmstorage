@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl } from "@/lib/prep";
 import { copyText, shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck, ArrowLeft, Info, Check } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
+import { useAdminStatus } from "@/hooks/use-is-admin";
 import { TaskQrCode } from "@/components/TaskQrCode";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
