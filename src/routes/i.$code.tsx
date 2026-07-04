@@ -65,9 +65,14 @@ function InviteLandingPage() {
 
   async function add() {
     if (state.kind !== "ready") return;
+    const v = validateInviteCode(rawCode);
+    if (!v.ok) {
+      toast.error(v.reason);
+      return;
+    }
     setAdding(true);
     try {
-      const r = await addContactByInviteCode(code);
+      const r = await addContactByInviteCode(v.code);
       if (r.alreadyFriends) {
         toast.success(`Sudah berteman dengan ${r.displayName ?? "kontak"}.`);
         router.navigate({ to: "/chat" });
