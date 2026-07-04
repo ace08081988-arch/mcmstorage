@@ -8,6 +8,7 @@ import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck
 import { ShieldAlert } from "lucide-react";
 import { useAdminStatus } from "@/hooks/use-is-admin";
 import { TaskQrCode } from "@/components/TaskQrCode";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   AlertDialog,
@@ -219,11 +220,14 @@ function TugasBaruPage() {
   if (isAdmin) wasAdminRef.current = true;
   if (wasAdminRef.current) return <TugasBaruForm />;
   if (isCheckingAdmin) {
-    return (
-      <div className="mx-auto max-w-2xl px-3 py-8 text-center text-sm text-muted-foreground">
-        Memeriksa izin akses…
-      </div>
-    );
+    // Skeleton dengan tinggi & ritme yang MENYAMAI layout form asli
+    // (judul, catatan, PIN, satu baris item, tombol) sehingga saat
+    // status admin terkonfirmasi dan form asli muncul, tidak terjadi
+    // layout shift atau kedipan. Juga aman ditampilkan berulang saat
+    // event auth transient membuat `isCheckingAdmin` toggle sebentar —
+    // karena bentuknya identik dengan form, mata user tidak menangkap
+    // "hilang lalu kembali".
+    return <TugasBaruSkeleton />;
   }
   if (!isAdmin) {
     return (
