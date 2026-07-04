@@ -81,12 +81,27 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // Ukuran + pojok di-persist agar konsisten antar panggilan / antar layar.
   const PIP_SIZE_KEY = "mcm.call.pipSize";
   const PIP_CORNER_KEY = "mcm.call.pipCorner";
+  // Status swap (video lokal jadi besar), sembunyi (PiP dimatikan), dan
+  // minimize (PiP menciut jadi chip kecil) — semua di-persist supaya
+  // pindah tab / keluar-masuk CallScreen tidak me-reset preferensi user.
+  const PIP_SWAPPED_KEY = "mcm.call.pipSwapped";
+  const PIP_HIDDEN_KEY = "mcm.call.pipHidden";
+  const PIP_MINIMIZED_KEY = "mcm.call.pipMinimized";
   // Kunci lama (single value) — dibaca sebagai fallback untuk migrasi ke
   // per-facing (front/back) key. Tidak lagi ditulis.
   const LEGACY_VIDEO_FIT_KEY = "mcm.call.videoFit";
   const LEGACY_VIDEO_POS_KEY = "mcm.call.videoPos";
   const FACING_MODE_KEY = "mcm.call.facingMode";
-  const [swapped, setSwapped] = useState(false);
+  // Parser boolean untuk usePersistedState (menerima "true"/"false" hasil
+  // JSON.stringify). Nilai lain → null → fallback ke default.
+  const parseBool = useCallback(
+    (raw: string | null): boolean | null =>
+      raw === "true" ? true : raw === "false" ? false : null,
+    [],
+  );
+  const [swapped, setSwapped] = usePersistedState<boolean>(PIP_SWAPPED_KEY, parseBool, false);
+  const [pipHidden, setPipHidden] = usePersistedState<boolean>(PIP_HIDDEN_KEY, parseBool, false);
+  const [pipMinimized, setPipMinimized] = usePersistedState<boolean>(PIP_MINIMIZED_KEY, parseBool, false);
   // Kamera depan/belakang — dipersist supaya panggilan berikutnya membuka
   // kamera yang sama. Dideklarasikan lebih awal karena setelan Crop/Fit +
   // Posisi crop disimpan terpisah per kamera dan mengacu pada nilai ini.
