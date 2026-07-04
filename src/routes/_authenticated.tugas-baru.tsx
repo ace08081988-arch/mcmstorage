@@ -866,11 +866,14 @@ function TugasBaruForm() {
             </button>
             <button
               type="button"
-              onClick={submit}
+              onClick={() => {
+                const v = validate();
+                if (v) setPreview(v);
+              }}
               disabled={busy}
               className="inline-flex items-center gap-1 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:opacity-90 disabled:opacity-50"
             >
-              {busy ? "Membuat…" : "Buat tugas"}
+              {busy ? "Membuat…" : "Pratinjau & buat"}
             </button>
           </div>
         </div>
