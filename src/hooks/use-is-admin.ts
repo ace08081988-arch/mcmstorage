@@ -35,7 +35,7 @@ export function useAdminStatus() {
     // unmount, sehingga input yang sedang diketik user hilang.
     const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
       const nextId = session?.user?.id ?? null;
-      if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+      if (event === "SIGNED_OUT") {
         setUserId(null);
         setSignedOut(true);
       } else if (nextId) {
