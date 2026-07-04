@@ -352,6 +352,20 @@ function TugasBaruForm() {
   const [restored] = useState(() => !!initialRef.current);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ token: string; pin: string; title: string; url: string } | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    // Saat form asli muncul (biasanya setelah skeleton), pindahkan fokus ke
+    // heading halaman agar pembaca layar langsung menyadari konten telah siap
+    // dan fokus tidak terdampar di body/document.
+    const h = headingRef.current;
+    if (h && typeof h.focus === "function") {
+      try {
+        h.focus({ preventScroll: true });
+      } catch {
+        h.focus();
+      }
+    }
+  }, []);
   const [titles, setTitles] = useState<TitleOpt[]>([]);
   type VerifyState = {
     status: "idle" | "checking" | "ok" | "missing" | "error";
