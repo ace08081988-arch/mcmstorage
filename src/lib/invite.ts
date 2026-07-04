@@ -122,7 +122,6 @@ export async function sendFriendRequest(code: string): Promise<SendFriendRequest
   );
   if (error) {
     // Log detail mentah supaya bisa didiagnosis kalau toast generic muncul.
-    // eslint-disable-next-line no-console
     console.error("[sendFriendRequest] RPC error", { code, error });
     const msg = String(error.message || "");
     if (/invite_code_not_found/i.test(msg)) {
