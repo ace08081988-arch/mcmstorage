@@ -458,25 +458,28 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     const posOpts = ["center", "top", "bottom", "left", "right"] as const;
     if (isOneOf(src.videoPosFront, posOpts)) { setVideoPosFront(src.videoPosFront); applied++; }
     if (isOneOf(src.videoPosBack, posOpts)) { setVideoPosBack(src.videoPosBack); applied++; }
-    const validXY = (v: unknown): VideoPosXY | null => {
-      if (v === null) return null;
+    const validXY = (v: unknown): { ok: true; value: VideoPosXY | null } | { ok: false } => {
+      if (v === null) return { ok: true, value: null };
       if (v && typeof v === "object") {
         const x = (v as { x?: unknown }).x;
         const y = (v as { y?: unknown }).y;
         if (typeof x === "number" && typeof y === "number" &&
             Number.isFinite(x) && Number.isFinite(y)) {
-          return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
+          return {
+            ok: true,
+            value: { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) },
+          };
         }
       }
-      return undefined as unknown as null;
+      return { ok: false };
     };
     if ("videoPosCustomFront" in src) {
-      const xy = validXY(src.videoPosCustomFront);
-      if (xy !== (undefined as unknown as null)) { setVideoPosCustomFront(xy); applied++; }
+      const r = validXY(src.videoPosCustomFront);
+      if (r.ok) { setVideoPosCustomFront(r.value); applied++; }
     }
     if ("videoPosCustomBack" in src) {
-      const xy = validXY(src.videoPosCustomBack);
-      if (xy !== (undefined as unknown as null)) { setVideoPosCustomBack(xy); applied++; }
+      const r = validXY(src.videoPosCustomBack);
+      if (r.ok) { setVideoPosCustomBack(r.value); applied++; }
     }
     if (isOneOf(src.videoQuality, ["auto", "low", "medium", "high"] as const)) {
       setVideoQuality(src.videoQuality); applied++;
