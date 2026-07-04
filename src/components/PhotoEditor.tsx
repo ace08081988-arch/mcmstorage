@@ -159,6 +159,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   // Modal panduan detail untuk tool Teks/Stiker/Coret saat pertama kali dipilih
   // atau setelah tidak dipakai dalam beberapa hari.
   const [guideTool, setGuideTool] = useState<Tool | null>(null);
+  // Strip hint aktif bisa ditutup pengguna; akan muncul kembali saat tool berubah.
+  const [hintClosedForTool, setHintClosedForTool] = useState<Tool | null>(null);
 
   function readGuideSeenMap(): GuideSeenMap {
     if (typeof localStorage === "undefined") return {};
@@ -272,6 +274,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     if (prevToolRef.current !== tool) {
       editorFeedback.toolSwitch();
       prevToolRef.current = tool;
+      // Strip hint muncul lagi untuk tool yang baru dipilih.
+      setHintClosedForTool((closed) => (closed === tool ? closed : null));
       if (shouldShowGuide(tool)) {
         setGuideTool(tool);
       }
@@ -1418,21 +1422,32 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         </div>
 
         {/* Active tool hint */}
-        <div
-          role="status"
-          aria-live="polite"
-          aria-atomic="true"
-          className="mb-2 flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[11px]"
-        >
-          <span className="relative flex h-2 w-2 shrink-0">
-            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
-            <span className="relative inline-flex h-full w-2 rounded-full bg-primary" />
-          </span>
-          <span className="font-medium text-primary">
-            {TOOL_SHORTCUTS[tool] ? `${TOOL_LABELS[tool]} (${TOOL_SHORTCUTS[tool]})` : TOOL_LABELS[tool]} aktif
-          </span>
-          <span className="text-muted-foreground">— {TOOL_HINTS[tool]}</span>
-        </div>
+        {hintClosedForTool !== tool && (
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="mb-2 flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[11px] pr-1"
+          >
+            <span className="relative flex h-2 w-2 shrink-0">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
+              <span className="relative inline-flex h-full w-2 rounded-full bg-primary" />
+            </span>
+            <span className="font-medium text-primary">
+              {TOOL_SHORTCUTS[tool] ? `${TOOL_LABELS[tool]} (${TOOL_SHORTCUTS[tool]})` : TOOL_LABELS[tool]} aktif
+            </span>
+            <span className="text-muted-foreground">— {TOOL_HINTS[tool]}</span>
+            <button
+              type="button"
+              onClick={() => setHintClosedForTool(tool)}
+              title="Tutup petunjuk sampai tool berubah"
+              aria-label="Tutup petunjuk sampai tool berubah"
+              className="ml-auto inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-muted-foreground transition hover:bg-primary/10 hover:text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          </div>
+        )}
 
         {/* Tools bar */}
         <div
