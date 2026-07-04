@@ -1317,10 +1317,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </button>
           {selected && (
             <div className="ml-auto flex items-center gap-1">
-              <button onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><MoveDown className="h-4 w-4" /></button>
-              <button onClick={() => moveOrder(1)} title="Naikkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><MoveUp className="h-4 w-4" /></button>
-              <button onClick={duplicate} title="Duplikat" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><CopyIcon className="h-4 w-4" /></button>
-              <button onClick={removeSelected} title="Hapus" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background text-destructive transition hover:bg-muted"><Trash2 className="h-4 w-4" /></button>
+              <button type="button" onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><MoveDown className="h-4 w-4" /></button>
+              <button type="button" onClick={() => moveOrder(1)} title="Naikkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><MoveUp className="h-4 w-4" /></button>
+              <button type="button" onClick={duplicate} title="Duplikat" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><CopyIcon className="h-4 w-4" /></button>
+              <button type="button" onClick={removeSelected} title="Hapus" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background text-destructive transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><Trash2 className="h-4 w-4" /></button>
             </div>
           )}
         </div>
