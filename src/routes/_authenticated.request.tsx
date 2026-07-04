@@ -813,7 +813,51 @@ function PrepEditorDialog({
     setRows(init);
     setInitialRows(init);
     setPhoto(null); setLocUrl(""); setGps(null); setNote(""); setWaPhone("");
+    setPickedLinkedUserId(null); setPickedName(""); setRecipientName("");
+    setShowSuggest(false);
   }, [open, titleItems]);
+
+  // Muat buku alamat saat dialog dibuka — dipakai untuk autocomplete
+  // tujuan (baik nomor WA maupun user MCM lewat linked_user_id).
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setContactsLoading(true);
+    fetchAddressBook()
+      .then((rows) => { if (!cancelled) setContacts(rows); })
+      .catch(() => { /* diam-diam — autocomplete opsional */ })
+      .finally(() => { if (!cancelled) setContactsLoading(false); });
+    return () => { cancelled = true; };
+  }, [open]);
+
+  // Filter kontak berdasarkan input (nama / phone / phone_norm).
+  const suggestList = useMemo(() => {
+    const q = waPhone.trim().toLowerCase();
+    const nq = normalizePhone(waPhone) ?? "";
+    const base = contacts.slice().sort((a, b) => {
+      // Kontak dengan linked_user_id (bisa Chat MCM) di atas.
+      const la = a.linked_user_id ? 0 : 1;
+      const lb = b.linked_user_id ? 0 : 1;
+      if (la !== lb) return la - lb;
+      return a.name.localeCompare(b.name);
+    });
+    if (!q) return base.slice(0, 8);
+    return base
+      .filter((r) =>
+        r.name.toLowerCase().includes(q) ||
+        (r.phone ?? "").toLowerCase().includes(q) ||
+        (r.phone_norm ?? "").includes(nq),
+      )
+      .slice(0, 8);
+  }, [contacts, waPhone]);
+
+  function pickContact(row: AddressBookRow) {
+    if (row.phone) setWaPhone(row.phone);
+    setPickedLinkedUserId(row.linked_user_id);
+    setPickedName(row.name);
+    setRecipientName(row.name);
+    setShowSuggest(false);
+  }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; e.target.value = "";
