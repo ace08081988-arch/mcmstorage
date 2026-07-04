@@ -233,4 +233,8 @@ function main() {
   console.log("\n✅ SEO audit lulus.");
 }
 
-main();
+// Hanya jalankan audit saat script di-invoke langsung (bukan saat di-import
+// oleh test/self-check yang me-reuse classifier).
+if (import.meta.url === `file://${process.argv[1]}`) {
+  main();
+}
