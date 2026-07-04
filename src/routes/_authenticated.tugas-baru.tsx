@@ -494,7 +494,15 @@ function TugasBaruForm() {
       _scheduled_at: scheduledIso,
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      const msg = String(error.message || "");
+      if (msg.includes("forbidden")) {
+        return toast.error("Akses ditolak", {
+          description: "Anda tidak memiliki peran admin untuk membuat tugas pegawai.",
+        });
+      }
+      return toast.error(error.message);
+    }
     const url = publicTaskUrl(tokenTrim);
     clearDraft();
     setCreated({ token: tokenTrim, pin, title: t, url });
