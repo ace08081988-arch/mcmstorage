@@ -1747,6 +1747,11 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
   // per-pcs (mis. GS: 1 pcs = 1 botol) tampilkan 'botol' agar tidak
   // membingungkan; selain itu sama dengan displayBaseUnit.
   const displayHumanBase = humanBaseUnit(displayPackageType, displayBaseUnit);
+  // True jika label jenis kemasan secara semantik SAMA dengan satuan dasar
+  // (mis. package_type="gram" dgn base_unit="g"). Kalau iya, semua tombol/
+  // hint "per package" hanya menduplikasi label satuan dasar — sembunyikan.
+  const packageDuplicatesBase = isSameUnitLabel(displayPackageType, displayBaseUnit)
+    || isSameUnitLabel(displayPackageType, displayHumanBase);
   // `warnings` — memoized: dep array minimal (mode, itemId, packageType,
   // derived, priceMode, inputKarton). Refetch identitas selectedItem tidak
   // menembak memo karena selectedItem TIDAK ada di deps.
