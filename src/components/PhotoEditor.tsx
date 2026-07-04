@@ -1362,6 +1362,32 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </label>
         </div>
 
+        {(tool === "rect" || tool === "circle") && (
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Mode:</span>
+            <button
+              type="button"
+              onClick={() => {
+                const next = !shapeFill;
+                setShapeFill(next);
+                if (selected && (selected.kind === "rect" || selected.kind === "circle")) {
+                  liveBeginIfNeeded();
+                  livePatchSelected({ fill: next } as Partial<Layer>);
+                  commitLivePatch();
+                }
+              }}
+              title={shapeFill ? "Mode isi: bentuk akan diisi penuh" : "Mode garis: hanya tepi bentuk yang terlihat"}
+              aria-label={shapeFill ? "Mode isi aktif, ketuk untuk beralih ke mode garis" : "Mode garis aktif, ketuk untuk beralih ke mode isi"}
+              className={`inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${shapeFill ? "border-primary bg-primary/10 text-primary" : "border-input bg-background"}`}
+            >
+              {shapeFill ? "Isi" : "Garis"}
+            </button>
+            <span className="text-muted-foreground">
+              {shapeFill ? "Bentuk diisi penuh" : "Hanya tepi bentuk"}
+            </span>
+          </div>
+        )}
+
         {tool === "arrow" && (
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <span className="text-muted-foreground">Arah:</span>
