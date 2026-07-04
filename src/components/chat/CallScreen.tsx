@@ -236,6 +236,21 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     },
     [facingMode, setVideoPosCustomFront, setVideoPosCustomBack],
   );
+  // Reset Crop/Fit + posisi crop untuk kedua kamera (front & back) sekaligus.
+  // Shortcut keyboard 'R' memanggil fungsi ini saat mode Crop aktif.
+  const resetCropFit = useCallback(() => {
+    setVideoPosCustomFront(null);
+    setVideoPosCustomBack(null);
+    setVideoPosFront("center");
+    setVideoPosBack("center");
+    setVideoFitFront("cover");
+    setVideoFitBack("cover");
+    toast.success("Crop/Fit dan posisi kembali ke default (front & back)");
+  }, [
+    setVideoPosCustomFront, setVideoPosCustomBack,
+    setVideoPosFront, setVideoPosBack,
+    setVideoFitFront, setVideoFitBack,
+  ]);
   const presetPosCss = presetPosToCss(videoPos);
   // Style inline yang dipakai SEMUA elemen <video> (remote + preview lokal,
   // baik dalam mode PiP maupun swap). Dihitung lewat helper murni supaya
