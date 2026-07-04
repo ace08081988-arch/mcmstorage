@@ -153,6 +153,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // Bertambah tiap kali kamera dibalik — dipakai untuk memaksa Crop/Fit &
   // kualitas video di-apply ulang begitu track lokal baru terpasang.
   const [cameraSwapNonce, setCameraSwapNonce] = useState(0);
+  // Indikator kualitas jaringan dari `RTCPeerConnection.getStats()`.
+  // - rttMs: round-trip time dari candidate-pair aktif
+  // - lossPct: rasio paket hilang inbound (audio+video) selama window terakhir
+  // - tier: derivasi kualitas (good/fair/poor/unknown)
+  type NetTier = "unknown" | "good" | "fair" | "poor";
+  const [netStats, setNetStats] = useState<{
+    rttMs: number | null;
+    lossPct: number | null;
+    tier: NetTier;
+  }>({ rttMs: null, lossPct: null, tier: "unknown" });
   const pipSizeClass =
     pipSize === "sm" ? "h-24 w-20" : pipSize === "lg" ? "h-48 w-36" : "h-32 w-24";
   const pipCornerClass =
@@ -419,6 +429,96 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     if (phase !== "in-call") return;
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(t);
+  }, [phase]);
+
+  // Toast rekomendasi turunkan kualitas saat jaringan buruk berkepanjangan.
+  // Hanya muncul sekali sampai jaringan pulih agar tidak spam.
+  const poorNoticedRef = useRef(false);
+  useEffect(() => {
+    if (phase !== "in-call") return;
+    if (netStats.tier === "poor" && videoQuality !== "low" && !poorNoticedRef.current) {
+      poorNoticedRef.current = true;
+      toast.warning("Jaringan lemah", {
+        description: "Coba turunkan kualitas video ke Rendah agar panggilan lebih stabil.",
+        action: {
+          label: "Turunkan",
+          onClick: () => setVideoQuality("low"),
+        },
+      });
+    }
+    if (netStats.tier === "good") {
+      poorNoticedRef.current = false;
+    }
+  }, [netStats.tier, phase, videoQuality]);
+
+  // Polling statistik jaringan tiap 2 detik selama panggilan aktif.
+  // Menghitung RTT dari candidate-pair terpilih & packet loss inbound
+  // (audio+video) dari selisih antar sampel, lalu derivasi tier kualitas.
+  useEffect(() => {
+    if (phase !== "in-call") return;
+    const session = sessionRef.current;
+    if (!session) return;
+    let cancelled = false;
+    let prev: { lost: number; recv: number } | null = null;
+    const tick = async () => {
+      try {
+        const report = await session.pc.getStats();
+        let rttMs: number | null = null;
+        let lost = 0;
+        let recv = 0;
+        report.forEach((s: unknown) => {
+          const r = s as {
+            type?: string;
+            nominated?: boolean;
+            selected?: boolean;
+            state?: string;
+            currentRoundTripTime?: number;
+            packetsLost?: number;
+            packetsReceived?: number;
+            kind?: string;
+          };
+          if (
+            r.type === "candidate-pair" &&
+            (r.nominated || r.selected) &&
+            r.state === "succeeded" &&
+            typeof r.currentRoundTripTime === "number"
+          ) {
+            rttMs = Math.round(r.currentRoundTripTime * 1000);
+          }
+          if (
+            r.type === "inbound-rtp" &&
+            (r.kind === "audio" || r.kind === "video") &&
+            typeof r.packetsLost === "number" &&
+            typeof r.packetsReceived === "number"
+          ) {
+            lost += r.packetsLost;
+            recv += r.packetsReceived;
+          }
+        });
+        let lossPct: number | null = null;
+        if (prev) {
+          const dLost = Math.max(0, lost - prev.lost);
+          const dRecv = Math.max(0, recv - prev.recv);
+          const total = dLost + dRecv;
+          lossPct = total > 0 ? (dLost / total) * 100 : 0;
+        }
+        prev = { lost, recv };
+        let tier: NetTier = "unknown";
+        if (rttMs !== null || lossPct !== null) {
+          const rttBad = rttMs !== null && rttMs > 400;
+          const rttMid = rttMs !== null && rttMs > 200;
+          const lossBad = lossPct !== null && lossPct > 5;
+          const lossMid = lossPct !== null && lossPct > 2;
+          tier = rttBad || lossBad ? "poor" : rttMid || lossMid ? "fair" : "good";
+        }
+        if (!cancelled) setNetStats({ rttMs, lossPct, tier });
+      } catch {
+        /* getStats bisa gagal di beberapa browser — abaikan */
+      }
+    };
+    void tick();
+    const iv = setInterval(tick, 2000);
+    return () => { cancelled = true; clearInterval(iv); };
   }, [phase]);
 
   // Terapkan preset kualitas video ke track lokal + parameter encoder
@@ -878,6 +978,44 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             <span>{status}</span>
           </button>
           <div className="flex items-center gap-2">
+            {phase === "in-call" && netStats.tier !== "unknown" ? (
+              <span
+                data-testid="call-net-quality"
+                data-tier={netStats.tier}
+                title={
+                  `Jaringan: ${
+                    netStats.tier === "good" ? "Baik"
+                    : netStats.tier === "fair" ? "Sedang"
+                    : "Buruk"
+                  }` +
+                  (netStats.rttMs !== null ? ` · ping ${netStats.rttMs} ms` : "") +
+                  (netStats.lossPct !== null ? ` · loss ${netStats.lossPct.toFixed(1)}%` : "")
+                }
+                aria-label={
+                  `Kualitas jaringan ${
+                    netStats.tier === "good" ? "baik"
+                    : netStats.tier === "fair" ? "sedang"
+                    : "buruk"
+                  }` +
+                  (netStats.rttMs !== null ? `, ping ${netStats.rttMs} milidetik` : "") +
+                  (netStats.lossPct !== null ? `, packet loss ${netStats.lossPct.toFixed(1)} persen` : "")
+                }
+                className={
+                  "flex items-center gap-1 rounded-full bg-black/40 px-2 py-1 text-[11px] backdrop-blur " +
+                  (netStats.tier === "good"
+                    ? "text-emerald-300"
+                    : netStats.tier === "fair"
+                      ? "text-amber-300"
+                      : "text-red-300")
+                }
+              >
+                <Signal className="h-3.5 w-3.5" />
+                <span className="tabular-nums">
+                  {netStats.rttMs !== null ? `${netStats.rttMs}ms` : "–"}
+                  {netStats.lossPct !== null ? ` · ${netStats.lossPct.toFixed(1)}%` : ""}
+                </span>
+              </span>
+            ) : null}
             {activeDevice && phase === "in-call" ? (
               <span
                 data-testid="call-active-device"
