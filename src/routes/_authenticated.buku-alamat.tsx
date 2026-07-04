@@ -50,10 +50,7 @@ import {
   promoteToSupplier,
   type AddressBookRow,
 } from "@/lib/address-book";
-import {
-  pickDeviceContacts,
-  deviceContactsSupported,
-} from "@/lib/device-contacts";
+import { pickDeviceContacts, deviceContactsSupported } from "@/lib/device-contacts";
 
 export const Route = createFileRoute("/_authenticated/buku-alamat")({
   head: () => ({
@@ -191,9 +188,7 @@ function BukuAlamatPage() {
     try {
       if (kind === "customer") await promoteToCustomer(row);
       else await promoteToSupplier(row);
-      toast.success(
-        `${row.name} ditambahkan ke ${kind === "customer" ? "pelanggan" : "pemasok"}.`,
-      );
+      toast.success(`${row.name} ditambahkan ke ${kind === "customer" ? "pelanggan" : "pemasok"}.`);
     } catch (e) {
       toast.error(friendlyError(e));
     }
@@ -260,8 +255,8 @@ function BukuAlamatPage() {
         </div>
         {support === "unsupported" && (
           <p className="rounded-md border border-amber-300/50 bg-amber-50 px-3 py-2 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
-            Akses kontak HP hanya tersedia di aplikasi Android MCM Storage, atau di Chrome
-            Android (Contact Picker). Tambah manual tetap bisa di semua perangkat.
+            Akses kontak HP hanya tersedia di aplikasi Android MCM Storage, atau di Chrome Android
+            (Contact Picker). Tambah manual tetap bisa di semua perangkat.
           </p>
         )}
 
@@ -297,8 +292,8 @@ function BukuAlamatPage() {
                 </div>
                 <p className="font-medium text-foreground">Belum ada kontak</p>
                 <p className="mx-auto max-w-xs text-xs">
-                  Mulai dengan <span className="font-medium">Impor dari HP</span> atau tambah
-                  satu per satu lewat <span className="font-medium">Tambah manual</span>.
+                  Mulai dengan <span className="font-medium">Impor dari HP</span> atau tambah satu
+                  per satu lewat <span className="font-medium">Tambah manual</span>.
                 </p>
               </div>
             ) : (
@@ -315,22 +310,14 @@ function BukuAlamatPage() {
                             </span>
                           )}
                           <span className="inline-block rounded bg-muted px-1.5 py-0.5 text-[10px] uppercase tracking-wide text-muted-foreground">
-                            {r.source === "device"
-                              ? "HP"
-                              : r.source === "app"
-                                ? "App"
-                                : "Manual"}
+                            {r.source === "device" ? "HP" : r.source === "app" ? "App" : "Manual"}
                           </span>
                         </div>
                         {r.phone && (
-                          <div className="truncate text-xs text-muted-foreground">
-                            📱 {r.phone}
-                          </div>
+                          <div className="truncate text-xs text-muted-foreground">📱 {r.phone}</div>
                         )}
                         {r.email && (
-                          <div className="truncate text-xs text-muted-foreground">
-                            ✉️ {r.email}
-                          </div>
+                          <div className="truncate text-xs text-muted-foreground">✉️ {r.email}</div>
                         )}
                         {r.note && (
                           <div className="mt-1 truncate text-[11px] text-muted-foreground">
@@ -376,11 +363,7 @@ function BukuAlamatPage() {
                         >
                           <Truck className="mr-1 h-3.5 w-3.5" /> Pemasok
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setEditing(r)}
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => setEditing(r)}>
                           Edit
                         </Button>
                         <Button
@@ -503,7 +486,8 @@ function EditDialog({
     }
     if (n) {
       const nameMatch = others.find((r) => normName(r.name) === n);
-      if (nameMatch) return { row: nameMatch, reason: `Nama "${nameMatch.name}" sudah ada di buku alamat` };
+      if (nameMatch)
+        return { row: nameMatch, reason: `Nama "${nameMatch.name}" sudah ada di buku alamat` };
     }
     return null;
   }, [isNew, rows, row?.id, name, phone, email]);
@@ -556,7 +540,9 @@ function EditDialog({
               : `Tertaut ke akun: ${linkedName}`
           : undefined;
         toast.success(
-          alreadyExisted && !pendingRequest ? "Kontak sudah ada, diperbarui" : "Kontak berhasil ditambahkan",
+          alreadyExisted && !pendingRequest
+            ? "Kontak sudah ada, diperbarui"
+            : "Kontak berhasil ditambahkan",
           description ? { description } : undefined,
         );
       } else {
@@ -632,11 +618,14 @@ function EditDialog({
                   </p>
                 ) : pinPreview ? (
                   <p className="text-emerald-600">
-                    Tertaut ke: <span className="font-medium">{pinPreview.display_name || "Pengguna MCM"}</span>
+                    Tertaut ke:{" "}
+                    <span className="font-medium">{pinPreview.display_name || "Pengguna MCM"}</span>
                     {" · "}PIN {formatInviteCode(pinPreview.invite_code)}
                   </p>
                 ) : (
-                  <p className="text-amber-600">PIN tidak ditemukan. Periksa lagi kode dari teman.</p>
+                  <p className="text-amber-600">
+                    PIN tidak ditemukan. Periksa lagi kode dari teman.
+                  </p>
                 )}
               </div>
             </>

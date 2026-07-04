@@ -116,7 +116,10 @@ export async function sendFriendRequest(code: string): Promise<SendFriendRequest
   if (!v.ok) throw new Error(v.reason);
   const clean = v.code;
   // `as never` — RPC baru; types.ts akan di-regenerasi setelah migration.
-  const { data, error } = await supabase.rpc("send_friend_request" as never, { _code: clean } as never);
+  const { data, error } = await supabase.rpc(
+    "send_friend_request" as never,
+    { _code: clean } as never,
+  );
   if (error) {
     // Log detail mentah supaya bisa didiagnosis kalau toast generic muncul.
     // eslint-disable-next-line no-console
@@ -132,12 +135,7 @@ export async function sendFriendRequest(code: string): Promise<SendFriendRequest
     // objek Postgrest polos (yang membuat `e instanceof Error` false dan
     // toast fallback ke "Gagal menambah kontak." tanpa detail).
     const errObj = error as { details?: string; hint?: string; code?: string };
-    const detail = [
-      msg,
-      errObj.details,
-      errObj.hint,
-      errObj.code ? `(kode ${errObj.code})` : "",
-    ]
+    const detail = [msg, errObj.details, errObj.hint, errObj.code ? `(kode ${errObj.code})` : ""]
       .filter(Boolean)
       .join(" · ");
     throw new Error(detail || "Gagal mengirim permintaan pertemanan.");
@@ -208,37 +206,57 @@ export async function listFriendRequests(
   direction: "incoming" | "outgoing" | "all" = "all",
   onlyPending = true,
 ): Promise<FriendRequestRow[]> {
-  const { data, error } = await supabase.rpc("list_friend_requests" as never, {
-    _direction: direction,
-    _only_pending: onlyPending,
-  } as never);
+  const { data, error } = await supabase.rpc(
+    "list_friend_requests" as never,
+    {
+      _direction: direction,
+      _only_pending: onlyPending,
+    } as never,
+  );
   if (error) throw error;
   return (data ?? []) as FriendRequestRow[];
 }
 
-export async function respondFriendRequest(requestId: string, accept: boolean): Promise<FriendRequestStatus> {
-  const { data, error } = await supabase.rpc("respond_friend_request" as never, {
-    _request_id: requestId,
-    _accept: accept,
-  } as never);
+export async function respondFriendRequest(
+  requestId: string,
+  accept: boolean,
+): Promise<FriendRequestStatus> {
+  const { data, error } = await supabase.rpc(
+    "respond_friend_request" as never,
+    {
+      _request_id: requestId,
+      _accept: accept,
+    } as never,
+  );
   if (error) {
-    if (/forbidden/i.test(error.message)) throw new Error("Hanya penerima permintaan yang bisa merespon.");
+    if (/forbidden/i.test(error.message))
+      throw new Error("Hanya penerima permintaan yang bisa merespon.");
     if (/not_found/i.test(error.message)) throw new Error("Permintaan sudah tidak berlaku.");
     throw error;
   }
-  const row = (Array.isArray(data) ? data[0] : data) as { status: FriendRequestStatus } | null | undefined;
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { status: FriendRequestStatus }
+    | null
+    | undefined;
   return row?.status ?? (accept ? "accepted" : "rejected");
 }
 
 export async function cancelFriendRequest(requestId: string): Promise<FriendRequestStatus> {
-  const { data, error } = await supabase.rpc("cancel_friend_request" as never, {
-    _request_id: requestId,
-  } as never);
+  const { data, error } = await supabase.rpc(
+    "cancel_friend_request" as never,
+    {
+      _request_id: requestId,
+    } as never,
+  );
   if (error) {
-    if (/forbidden/i.test(error.message)) throw new Error("Hanya pengirim yang bisa membatalkan permintaan.");
+    if (/forbidden/i.test(error.message))
+      throw new Error("Hanya pengirim yang bisa membatalkan permintaan.");
     if (/not_found/i.test(error.message)) throw new Error("Permintaan sudah tidak ada.");
     throw error;
   }
-  const row = (Array.isArray(data) ? data[0] : data) as { status: FriendRequestStatus } | null | undefined;
+  const row = (Array.isArray(data) ? data[0] : data) as
+    | { status: FriendRequestStatus }
+    | null
+    | undefined;
   return row?.status ?? "cancelled";
 }

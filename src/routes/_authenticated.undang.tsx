@@ -54,8 +54,7 @@ function UndangPage() {
 
   async function share() {
     const text =
-      `Tambahkan saya di MCM Chat. PIN: ${formatInviteCode(myCode)}\n` +
-      `Atau buka: ${myUrl}`;
+      `Tambahkan saya di MCM Chat. PIN: ${formatInviteCode(myCode)}\n` + `Atau buka: ${myUrl}`;
     try {
       if (typeof navigator !== "undefined" && navigator.share) {
         await navigator.share({ title: "Undangan MCM Chat", text, url: myUrl });
@@ -120,7 +119,9 @@ function UndangPage() {
         toast.success(`Sudah berteman dengan ${r.displayName ?? "kontak"}.`);
         router.navigate({ to: "/chat" });
       } else if (r.incomingReverseId) {
-        toast.info(`${r.displayName ?? "Kontak"} sudah mengirim permintaan lebih dulu — buka daftar Permintaan untuk menerima.`);
+        toast.info(
+          `${r.displayName ?? "Kontak"} sudah mengirim permintaan lebih dulu — buka daftar Permintaan untuk menerima.`,
+        );
         router.navigate({ to: "/kontak/permintaan" as never });
       } else {
         toast.success(
@@ -160,9 +161,7 @@ function UndangPage() {
       {/* Kartu PIN saya */}
       <section className="px-4 pt-4">
         <div className="rounded-2xl border bg-card p-4 shadow-sm">
-          <div className="text-xs uppercase tracking-wide text-muted-foreground">
-            PIN saya
-          </div>
+          <div className="text-xs uppercase tracking-wide text-muted-foreground">PIN saya</div>
           <div className="mt-1 flex items-center gap-3">
             <div className="flex-1 select-all font-mono text-3xl font-semibold tabular-nums tracking-widest text-foreground">
               {myCode ? formatInviteCode(myCode) : "········"}
@@ -179,8 +178,8 @@ function UndangPage() {
             </Button>
           </div>
           <p className="mt-2 text-xs text-muted-foreground">
-            Berikan PIN ini ke teman. Saat mereka memasukkan PIN, kamu langsung
-            muncul di daftar kontak mereka.
+            Berikan PIN ini ke teman. Saat mereka memasukkan PIN, kamu langsung muncul di daftar
+            kontak mereka.
           </p>
 
           <div className="mt-4 flex flex-wrap gap-2">
@@ -208,15 +207,12 @@ function UndangPage() {
             <QrCode className="h-4 w-4 text-primary" /> Kode batang / QR
           </div>
           <p className="mt-1 text-xs text-muted-foreground">
-            Tampilkan ke teman untuk dipindai — mereka akan langsung diarahkan menambah kamu sebagai kontak.
+            Tampilkan ke teman untuk dipindai — mereka akan langsung diarahkan menambah kamu sebagai
+            kontak.
           </p>
           <div className="mt-3 flex items-center justify-center">
             <div className="rounded-2xl bg-white p-3 shadow-sm ring-1 ring-border">
-              <canvas
-                ref={canvasRef}
-                aria-label="Kode QR undangan"
-                className="h-64 w-64"
-              />
+              <canvas ref={canvasRef} aria-label="Kode QR undangan" className="h-64 w-64" />
             </div>
           </div>
           <div className="mt-2 break-all text-center text-[11px] text-muted-foreground">
@@ -303,7 +299,9 @@ function UndangPage() {
           {/* Status preview */}
           <div className="mt-3 min-h-[3rem] text-sm">
             {!looksValid && input.length > 0 && (
-              <span className="text-amber-500">PIN belum lengkap. Butuh 6–16 karakter huruf/angka.</span>
+              <span className="text-amber-500">
+                PIN belum lengkap. Butuh 6–16 karakter huruf/angka.
+              </span>
             )}
             {looksValid && checking && (
               <span className="inline-flex items-center gap-2 text-muted-foreground">
@@ -319,9 +317,7 @@ function UndangPage() {
                   {(preview.display_name || "?").trim()[0]?.toUpperCase() || "?"}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <div className="truncate font-medium">
-                    {preview.display_name || "Tanpa nama"}
-                  </div>
+                  <div className="truncate font-medium">{preview.display_name || "Tanpa nama"}</div>
                   <div className="truncate text-xs text-muted-foreground">
                     PIN {formatInviteCode(preview.invite_code)}
                     {preview.chat_only ? " · Akun Chat" : ""}
@@ -333,7 +329,11 @@ function UndangPage() {
         </div>
 
         <div className="mt-3 text-center text-xs text-muted-foreground">
-          Punya link undangan? <Link to="/" className="text-primary underline">Buka lewat browser</Link> — link `/i/PIN` akan otomatis menambahkanmu.
+          Punya link undangan?{" "}
+          <Link to="/" className="text-primary underline">
+            Buka lewat browser
+          </Link>{" "}
+          — link `/i/PIN` akan otomatis menambahkanmu.
         </div>
       </section>
     </main>
