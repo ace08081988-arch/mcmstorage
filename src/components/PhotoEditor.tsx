@@ -247,6 +247,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   const [color, setColor] = useState("#ef4444");
   const [thickness, setThickness] = useState(6);
   const [opacity, setOpacity] = useState(1);
+  const [shapeFill, setShapeFill] = useState(false);
   const [textSize, setTextSize] = useState(32);
   const [arrowDir, setArrowDir] = useState<ArrowDir>("right");
   const [emoji, setEmoji] = useState("⭐");
