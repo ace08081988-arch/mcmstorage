@@ -1550,7 +1550,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             {kind === "video" && videoFit === "cover" ? (
               <button
                 type="button"
-                onClick={() => { setVideoPosCustom(null); setVideoPos("center"); }}
+                onClick={() => {
+                  setVideoPosCustom(null);
+                  setVideoPos("center");
+                  toast.success("object-position kembali ke default (tengah)");
+                }}
                 aria-label="Reset posisi crop ke tengah"
                 title="Reset posisi crop ke tengah"
                 data-testid="call-pos-reset"
