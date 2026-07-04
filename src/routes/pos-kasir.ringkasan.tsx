@@ -27,6 +27,8 @@ function PosKasirRingkasanPage() {
   const riwayat = useMemo(() => getPosKasirRiwayat(), []);
   const hariIni = useMemo(() => riwayat.filter((t) => isToday(t.waktu)), [riwayat]);
 
+  const omzetHariIni = hariIni.reduce((s, t) => s + t.total, 0);
+  const beratHariIni = hariIni.reduce((s, t) => s + t.beratKg, 0);
   const jumlahHariIni = hariIni.length;
 
   const [toast, setToast] = useState<string | null>(null);
