@@ -39,6 +39,27 @@ const COLORS = ["#ef4444", "#f59e0b", "#10b981", "#3b82f6", "#a855f7", "#ec4899"
 
 type Tool = "select" | "draw" | "text" | "emoji" | "arrow" | "rect" | "circle";
 
+const TOOL_LABELS: Record<Tool, string> = {
+  select: "Pilih",
+  draw: "Coret",
+  text: "Teks",
+  emoji: "Stiker",
+  arrow: "Panah",
+  rect: "Kotak",
+  circle: "Lingkaran",
+};
+
+const TOOL_HINTS: Record<Tool, string> = {
+  select: "Ketuk objek untuk memilih, seret untuk memindahkan",
+  draw: "Seret jari di kanvas untuk menggambar bebas",
+  text: "Ketuk kanvas atau tombol Tambah teks untuk menulis",
+  emoji: "Pilih emoji lalu ketuk untuk menempelkan di tengah",
+  arrow: "Pilih arah panah, otomatis tempel di tengah kanvas",
+  rect: "Seret untuk ukuran bebas, atau ketuk untuk kotak default",
+  circle: "Seret dari pusat ke tepi, atau ketuk untuk ukuran default",
+};
+
+
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
 export type PhotoEditorProps = {
