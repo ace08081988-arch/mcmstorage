@@ -519,9 +519,10 @@ function PosKasirPage() {
         </section>
 
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className={`grid grid-cols-1 lg:grid-cols-3 md:gap-6 ${modeRingkas ? "gap-2" : "gap-4"}`}>
           {/* Main */}
-          <section className="lg:col-span-2 space-y-4 md:space-y-6">
+          <section className={`lg:col-span-2 ${modeRingkas ? "space-y-2 md:space-y-6" : "space-y-4 md:space-y-6"}`}>
+
             {/* Desktop product grid */}
             <div className="hidden md:block bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
               <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
