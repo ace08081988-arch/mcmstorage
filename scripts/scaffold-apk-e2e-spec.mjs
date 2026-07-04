@@ -68,6 +68,61 @@ function validateName(name) {
   return null;
 }
 
+// Guard checks: pastikan spec hasil scaffolding tetap memakai pola
+// deterministik. Setiap item = { id, test, msg }. `test(content)` return
+// true bila pola ditemukan; kalau tidak, `msg` dilaporkan sebagai error.
+//
+// Pola yang WAJIB ada:
+//   - primeInitial + assertPrimed  → priming stub sebelum navigasi.
+//   - waitForServed                 → bukti handler sungguh dipanggil.
+//   - trackedClick / trackedAction  → aksi yang memicu refetch di-wrap
+//                                     (mereka yang menjalankan
+//                                     `assertNoAdditionalRequests` per-aksi).
+//   - assertQuiescent               → cek idle setelah aksi selesai.
+//   - terminalGuard ATAU installServerFnPassthroughGuard → guard akhir spec.
+const GUARD_CHECKS = [
+  {
+    id: "primeInitial",
+    test: (s) => /\bstub\.primeInitial\s*\(/.test(s),
+    msg: "spec tidak memanggil `stub.primeInitial(...)` — priming stub wajib sebelum `page.goto()`.",
+  },
+  {
+    id: "assertPrimed",
+    test: (s) => /\bstub\.assertPrimed\s*\(/.test(s),
+    msg: "spec tidak memanggil `stub.assertPrimed()` — tanpa ini refetch pertama bisa lolos tanpa terdeteksi.",
+  },
+  {
+    id: "waitForServed",
+    test: (s) => /\bstub\.waitForServed\s*\(/.test(s),
+    msg: "spec tidak memanggil `stub.waitForServed(...)` — dibutuhkan untuk memastikan handler dipanggil sebelum guard idle.",
+  },
+  {
+    id: "trackedAction",
+    test: (s) =>
+      /\bstub\.trackedClick\s*\(/.test(s) || /\bstub\.trackedAction\s*\(/.test(s),
+    msg: "spec tidak memakai `stub.trackedClick(...)` / `stub.trackedAction(...)` — aksi refetch wajib di-wrap agar `assertNoAdditionalRequests` berjalan per-aksi.",
+  },
+  {
+    id: "assertQuiescent",
+    test: (s) => /\bstub\.assertQuiescent\s*\(/.test(s),
+    msg: "spec tidak memanggil `stub.assertQuiescent(...)` — cek idle akhir per-varian wajib ada.",
+  },
+  {
+    id: "terminalOrPassthrough",
+    test: (s) =>
+      /\bstub\.terminalGuard\s*\(/.test(s) ||
+      /\binstallServerFnPassthroughGuard\s*\(/.test(s),
+    msg: "spec tidak menutup dengan `stub.terminalGuard()` atau `installServerFnPassthroughGuard(...)` — salah satu guard akhir wajib ada.",
+  },
+];
+
+function validateSpecContent(content, { label } = { label: "spec" }) {
+  const missing = GUARD_CHECKS.filter((c) => !c.test(content));
+  if (missing.length === 0) return null;
+  const lines = missing.map((c) => `  - [${c.id}] ${c.msg}`).join("\n");
+  return `Guard hilang di ${label}:\n${lines}`;
+}
+
 function buildSpec(template, name) {
   // Ganti header komentar dari "TEMPLATE — ..." menjadi rujukan spec.
   const stampedHeader = `/**
