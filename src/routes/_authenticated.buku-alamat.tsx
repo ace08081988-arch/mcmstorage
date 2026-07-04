@@ -32,6 +32,7 @@ import {
   isLikelyInviteCode,
   normalizeInviteCode,
   resolveInviteCode,
+  validateInviteCode,
   type InviteProfile,
 } from "@/lib/invite";
 import { friendlyError } from "@/lib/friendly-error";
