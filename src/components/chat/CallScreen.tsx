@@ -107,30 +107,75 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const cyclePipSize = useCallback(() => {
     setPipSize((s) => (s === "sm" ? "md" : s === "md" ? "lg" : "sm"));
   }, []);
-  const pipDragRef = useRef<{ id: number; startX: number; startY: number; moved: boolean } | null>(null);
+  // Drag state — offset visual selama drag (transform), lalu snap ke pojok
+  // terdekat + clamp di dalam bounds container saat pointer dilepas.
+  const [pipOffset, setPipOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const pipDragRef = useRef<{
+    id: number;
+    startX: number;
+    startY: number;
+    moved: boolean;
+    boxRect: DOMRect;
+    parentRect: DOMRect;
+  } | null>(null);
   const onPipPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
-    pipDragRef.current = { id: e.pointerId, startX: e.clientX, startY: e.clientY, moved: false };
-    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+    const box = e.currentTarget as HTMLDivElement;
+    const parent = box.parentElement;
+    if (!parent) return;
+    pipDragRef.current = {
+      id: e.pointerId,
+      startX: e.clientX,
+      startY: e.clientY,
+      moved: false,
+      boxRect: box.getBoundingClientRect(),
+      parentRect: parent.getBoundingClientRect(),
+    };
+    box.setPointerCapture(e.pointerId);
   }, []);
   const onPipPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const d = pipDragRef.current;
     if (!d || d.id !== e.pointerId) return;
-    if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) > 8) d.moved = true;
+    const dx = e.clientX - d.startX;
+    const dy = e.clientY - d.startY;
+    if (!d.moved && Math.hypot(dx, dy) > 8) d.moved = true;
+    if (!d.moved) return;
+    // Clamp supaya preview tidak keluar dari container.
+    const minX = d.parentRect.left - d.boxRect.left;
+    const maxX = d.parentRect.right - d.boxRect.right;
+    const minY = d.parentRect.top - d.boxRect.top;
+    const maxY = d.parentRect.bottom - d.boxRect.bottom;
+    setPipOffset({
+      x: Math.min(Math.max(dx, minX), maxX),
+      y: Math.min(Math.max(dy, minY), maxY),
+    });
   }, []);
   const onPipPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
     const d = pipDragRef.current;
     pipDragRef.current = null;
-    try { (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId); } catch { /* ignore */ }
-    if (!d) return;
-    if (!d.moved) return; // tap tanpa drag: biar tombol yang handle
-    const rect = (e.currentTarget as HTMLDivElement).parentElement?.getBoundingClientRect();
-    if (!rect) return;
-    const cx = e.clientX - rect.left;
-    const cy = e.clientY - rect.top;
-    const isLeft = cx < rect.width / 2;
-    const isTop = cy < rect.height / 2;
+    try {
+      (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId);
+    } catch { /* ignore */ }
+    if (!d) {
+      setPipOffset({ x: 0, y: 0 });
+      return;
+    }
+    if (!d.moved) {
+      setPipOffset({ x: 0, y: 0 });
+      return;
+    }
+    // Pilih pojok terdekat berdasarkan pusat preview setelah drag.
+    const finalCx = d.boxRect.left + d.boxRect.width / 2 + (e.clientX - d.startX);
+    const finalCy = d.boxRect.top + d.boxRect.height / 2 + (e.clientY - d.startY);
+    const parentCx = d.parentRect.left + d.parentRect.width / 2;
+    const parentCy = d.parentRect.top + d.parentRect.height / 2;
+    const isLeft = finalCx < parentCx;
+    const isTop = finalCy < parentCy;
     setPipCorner(isTop ? (isLeft ? "tl" : "tr") : (isLeft ? "bl" : "br"));
+    setPipOffset({ x: 0, y: 0 });
   }, []);
+  const pipStyle = pipOffset.x !== 0 || pipOffset.y !== 0
+    ? { transform: `translate(${pipOffset.x}px, ${pipOffset.y}px)` }
+    : undefined;
 
   const sessionRef = useRef<PeerSession | null>(null);
   const acceptedAtRef = useRef<string | null>(null);
@@ -574,9 +619,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 ? "absolute inset-0 z-0"
                 : `absolute ${pipCornerClass} ${pipSizeClass} z-10 touch-none`
             }
+            style={swapped ? undefined : pipStyle}
             onPointerDown={swapped ? undefined : onPipPointerDown}
             onPointerMove={swapped ? undefined : onPipPointerMove}
             onPointerUp={swapped ? undefined : onPipPointerUp}
+            onPointerCancel={swapped ? undefined : onPipPointerUp}
           >
             <video
               ref={localVideoRef}
