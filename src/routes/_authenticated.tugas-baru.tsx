@@ -547,6 +547,25 @@ function TugasBaruForm() {
     clearDraft();
   }
 
+  async function copyTaskUrl() {
+    const t = token.trim();
+    if (!/^[A-Za-z0-9_-]{8,48}$/.test(t)) {
+      toast.error("Token belum valid", { description: "Isi token 8–48 karakter (huruf, angka, - atau _) terlebih dahulu." });
+      return;
+    }
+    try {
+      const url = publicTaskUrl(t);
+      const res = await copyText(url);
+      if (res.ok) {
+        toast.success("URL tugas disalin", { description: url });
+      } else {
+        toast.error("Gagal menyalin URL", { description: "Izinkan akses clipboard lalu coba lagi." });
+      }
+    } catch (e) {
+      toast.error("Token tidak bisa dibuat URL");
+    }
+  }
+
   function clearForm() {
     if (!window.confirm("Bersihkan formulir? Draft yang tersimpan akan dihapus.")) return;
     setTitle("");
