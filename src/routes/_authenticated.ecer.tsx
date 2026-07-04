@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, useRouter, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
@@ -659,7 +659,7 @@ function DetailHero({
         <div className="hidden text-[11px] uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
           Simpan halaman ini sebagai referensi penyiapan.
         </div>
-        <div className="grid grid-cols-4 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-1.5">
+        <div className="grid grid-cols-5 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-1.5">
           {onCreateTitle && (
             <button
               type="button"
@@ -691,6 +691,14 @@ function DetailHero({
             <Users className="h-5 w-5" aria-hidden />
             <span className="text-[11px] font-semibold leading-none tracking-tight">Pegawai</span>
           </button>
+          <Link
+            to="/tugas-baru"
+            title="Buat perintah penyiapan untuk pegawai (token & PIN tugas)"
+            className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl bg-primary/10 p-2 text-primary transition-all active:scale-95 hover:bg-primary/15 sm:hidden"
+          >
+            <Users className="h-5 w-5" aria-hidden />
+            <span className="text-[11px] font-semibold leading-none tracking-tight">+ Pegawai</span>
+          </Link>
           <button
             type="button"
             onClick={onAdd}
@@ -714,6 +722,11 @@ function DetailHero({
           )}
           <Button size="sm" variant="outline" onClick={onScrollToWorker} title="Lihat kiriman pegawai untuk judul ini" className="hidden sm:inline-flex">
             <Users className="h-4 w-4" /> Pegawai
+          </Button>
+          <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex" title="Buat perintah penyiapan untuk pegawai (token & PIN tugas)">
+            <Link to="/tugas-baru">
+              <Plus className="h-4 w-4" /> Penyiapan pegawai
+            </Link>
           </Button>
           <Button size="sm" onClick={onAdd} className="hidden bg-emerald-600 hover:bg-emerald-700 sm:inline-flex">
             <Plus className="h-4 w-4" /> Penyiapan
