@@ -2277,11 +2277,23 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
               mode={sellMode}
               testId="jual-kemasan-hint-trigger"
             >
-              {item.package_type === "botol"
-                ? `ℹ️ 1 karton = ${BOTOL_PER_KARTON} botol`
-                : showPackageBtn
-                  ? `ℹ️ 1 ${pkgLabel} = ${item.package_size} ${humU}`
-                  : `ℹ️ Satuan dasar: ${humU}`}
+              {(() => {
+                if (item.package_type === "botol") {
+                  return `ℹ️ 1 karton = ${BOTOL_PER_KARTON} botol`;
+                }
+                // Base unit gram → selalu tampilkan aturan ons yang konsisten.
+                if (item.base_unit === "g" && isSameUnitLabel(pkgLabel, "ons")) {
+                  return `ℹ️ 1 ons = 100 gram`;
+                }
+                if (showPackageBtn) {
+                  return `ℹ️ 1 ${pkgLabel} = ${item.package_size} ${humU}`;
+                }
+                // Kasus g/gram (label kemasan hanya sinonim satuan dasar).
+                if (item.base_unit === "g") {
+                  return `ℹ️ 1 kg = 1000 gram · 1 ons = 100 gram`;
+                }
+                return `ℹ️ Satuan dasar: ${humU}`;
+              })()}
             </KemasanRumusPopover>
             <KemasanKonversiBadge
               packageType={item.package_type}
