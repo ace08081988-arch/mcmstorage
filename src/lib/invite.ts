@@ -112,8 +112,9 @@ type SendFriendRequestRow = {
  *  - Pernah rejected/cancelled: dibuka lagi jadi pending.
  */
 export async function sendFriendRequest(code: string): Promise<SendFriendRequestResult> {
-  const clean = normalizeInviteCode(code);
-  if (!clean) throw new Error("Kode undangan kosong.");
+  const v = validateInviteCode(code);
+  if (!v.ok) throw new Error(v.reason);
+  const clean = v.code;
   // `as never` — RPC baru; types.ts akan di-regenerasi setelah migration.
   const { data, error } = await supabase.rpc("send_friend_request" as never, { _code: clean } as never);
   if (error) {
