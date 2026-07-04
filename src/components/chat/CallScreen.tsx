@@ -595,6 +595,22 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     PIP_MINIMIZED_KEY, FACING_MODE_KEY, VIDEO_QUALITY_KEY,
   ]);
 
+  // Shortcut keyboard: tombol 'R' reset Crop/Fit + posisi saat mode Crop aktif.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (kind !== "video" || videoFit !== "cover") return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "r" && e.key !== "R") return;
+      // Hindari trigger saat user mengetik di input/textarea (jika ada).
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      e.preventDefault();
+      resetCropFit();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [kind, videoFit, resetCropFit]);
+
   const [flipping, setFlipping] = useState(false);
   // Bertambah tiap kali kamera dibalik — dipakai untuk memaksa Crop/Fit &
   // kualitas video di-apply ulang begitu track lokal baru terpasang.
