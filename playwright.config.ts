@@ -169,6 +169,14 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // TODO(scaffold): jelaskan skenario spec "apk-example-terminal-only" — apa yang
+      // diuji, harness mana yang dipakai, dan invariant guard-nya.
+      name: "apk-example-terminal-only-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /apk-example-terminal-only\.spec\.ts/,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
       // E2E konsistensi label /diagnostik/paket: memverifikasi bahwa
       // "Isi / kemasan", "Harga per", dan "Ringkasan · yang tersedia"
       // SELALU konsisten dengan pilihan dropdown Jenis kemasan
