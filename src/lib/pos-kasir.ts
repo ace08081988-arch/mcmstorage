@@ -7,6 +7,11 @@ export type PosKasirProduk = {
   emoji: string;
   hargaPerKg: number;
   stokKg: number;
+  /** Label unit dasar produk (mis. "kg", "g", "pcs"). */
+  unitLabel: string;
+  /** ID di warehouse_items — bila terisi, transaksi ditulis ke tabel sales
+   *  dan trigger apply_sale otomatis mengurangi stok gudang. */
+  warehouseItemId?: string | null;
 };
 
 export type PosKasirTransaksi = {
@@ -19,6 +24,11 @@ export type PosKasirTransaksi = {
   total: number;
   sisaStokKg: number;
   waktu: number;
+  /** Unit label saat transaksi (mengikuti produk). Default "kg" utk transaksi lama. */
+  unitLabel?: string;
+  /** ID sale di database bila transaksi memakai produk gudang; tanpa nilai = demo lokal. */
+  saleId?: string | null;
+  warehouseItemId?: string | null;
 };
 
 export const PRODUK_AWAL: PosKasirProduk[] = [
