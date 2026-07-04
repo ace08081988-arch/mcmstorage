@@ -49,7 +49,7 @@ Setiap project block `apk-*` di `playwright.config.ts` wajib memuat kolom `Guard
 
 ```bash
 # Jalankan semua spec APK sekaligus
-bun run e2e:apk
+bun run test:e2e:apk
 
 # Regenerasi scaffold (dry-run)
 bun run e2e:apk:regen
@@ -60,7 +60,7 @@ bun run e2e:apk:regen:apply
 # Validasi header & checklist Guards
 bun run e2e:apk:validate
 
-# Scaffoldsatuan spec baru
+# Scaffold satu spec baru
 node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode terminal
 node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode full
 ```
