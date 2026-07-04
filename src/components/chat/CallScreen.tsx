@@ -236,6 +236,21 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     },
     [facingMode, setVideoPosCustomFront, setVideoPosCustomBack],
   );
+  // Reset Crop/Fit + posisi crop untuk kedua kamera (front & back) sekaligus.
+  // Shortcut keyboard 'R' memanggil fungsi ini saat mode Crop aktif.
+  const resetCropFit = useCallback(() => {
+    setVideoPosCustomFront(null);
+    setVideoPosCustomBack(null);
+    setVideoPosFront("center");
+    setVideoPosBack("center");
+    setVideoFitFront("cover");
+    setVideoFitBack("cover");
+    toast.success("Crop/Fit dan posisi kembali ke default (front & back)");
+  }, [
+    setVideoPosCustomFront, setVideoPosCustomBack,
+    setVideoPosFront, setVideoPosBack,
+    setVideoFitFront, setVideoFitBack,
+  ]);
   const presetPosCss = presetPosToCss(videoPos);
   // Style inline yang dipakai SEMUA elemen <video> (remote + preview lokal,
   // baik dalam mode PiP maupun swap). Dihitung lewat helper murni supaya
@@ -579,6 +594,22 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     PIP_SIZE_KEY, PIP_CORNER_KEY, PIP_SWAPPED_KEY, PIP_HIDDEN_KEY,
     PIP_MINIMIZED_KEY, FACING_MODE_KEY, VIDEO_QUALITY_KEY,
   ]);
+
+  // Shortcut keyboard: tombol 'R' reset Crop/Fit + posisi saat mode Crop aktif.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    if (kind !== "video" || videoFit !== "cover") return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== "r" && e.key !== "R") return;
+      // Hindari trigger saat user mengetik di input/textarea (jika ada).
+      const target = e.target as HTMLElement | null;
+      if (target && (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)) return;
+      e.preventDefault();
+      resetCropFit();
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [kind, videoFit, resetCropFit]);
 
   const [flipping, setFlipping] = useState(false);
   // Bertambah tiap kali kamera dibalik — dipakai untuk memaksa Crop/Fit &
@@ -1550,17 +1581,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             {kind === "video" ? (
               <button
                 type="button"
-                onClick={() => {
-                  // Reset Crop/Fit + posisi untuk kedua kamera, tidak hanya
-                  // kamera aktif, supaya swap kamera tetap terjaga default.
-                  setVideoPosCustomFront(null);
-                  setVideoPosCustomBack(null);
-                  setVideoPosFront("center");
-                  setVideoPosBack("center");
-                  setVideoFitFront("cover");
-                  setVideoFitBack("cover");
-                  toast.success("Crop/Fit dan posisi kembali ke default (front & back)");
-                }}
+                onClick={resetCropFit}
                 aria-label="Reset Crop/Fit dan posisi crop ke default untuk kamera depan dan belakang"
                 title="Reset Crop/Fit dan posisi crop ke default untuk kamera depan dan belakang"
                 data-testid="call-pos-reset"
