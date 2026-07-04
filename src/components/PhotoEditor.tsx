@@ -76,6 +76,51 @@ const KEY_TO_TOOL: Record<string, Tool> = Object.fromEntries(
     .map(([t, k]) => [k!.toLowerCase(), t as Tool])
 );
 
+// Tools that show a detailed guide modal on first use or after a long absence.
+const GUIDED_TOOLS: Tool[] = ["text", "emoji", "draw"];
+// Consider a tool "new / returning" if it hasn't been used in this many days.
+const GUIDE_RETURN_DAYS = 7;
+const GUIDE_STORAGE_KEY = "photo-editor-tool-guide";
+
+type GuideSeenMap = Partial<Record<Tool, number>>;
+
+const TOOL_GUIDES: Record<Tool, { title: string; steps: string[]; tip: string } | null> = {
+  select: null,
+  draw: {
+    title: "Panduan Coret",
+    steps: [
+      "Pilih tool Coret (C) di toolbar.",
+      "Seret jari / mouse di kanvas untuk menggambar garis bebas.",
+      "Ketuk sekali bila hanya ingin membuat titik coretan.",
+      "Gunakan slider Ukuran di bawah untuk mengatur ketebalan coretan.",
+    ],
+    tip: "Coretan langsung tersimpan sebagai lapisan; gunakan Undo bila ingin membatalkan.",
+  },
+  text: {
+    title: "Panduan Teks",
+    steps: [
+      "Pilih tool Teks (T) di toolbar.",
+      "Ketuk kanvas di posisi yang diinginkan, atau tekan tombol Tambah teks di tengah.",
+      "Ketik teks di jendela yang muncul, lalu tekan OK.",
+      "Setelah teks muncul, ketuk untuk memilih lalu seret untuk memindahkan.",
+    ],
+    tip: "Slider Ukuran mengubah font; tombol B membuat teks menjadi tebal.",
+  },
+  emoji: {
+    title: "Panduan Stiker",
+    steps: [
+      "Pilih tool Stiker (S) di toolbar.",
+      "Pilih emoji di deretan emoji di bawah toolbar.",
+      "Emoji akan menempel di tengah kanvas secara otomatis.",
+      "Ketuk emoji untuk memilih, seret untuk memindahkan, atau gunakan tombol Ukuran untuk memperbesar.",
+    ],
+    tip: "Stiker tetap bisa dipindah dan dihapus seperti objek lain.",
+  },
+  arrow: null,
+  rect: null,
+  circle: null,
+};
+
 
 
 
