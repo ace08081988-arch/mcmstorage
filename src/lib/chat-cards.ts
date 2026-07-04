@@ -14,6 +14,7 @@ export type ContactCard = {
   type: "contact";
   name: string;
   phone: string;
+  pin?: string;
   note?: string;
 };
 export type ProductCard = {
