@@ -3140,7 +3140,6 @@ export type Database = {
         Args: { _user_ids: string[] }
         Returns: {
           display_name: string
-          email: string
           id: string
           invite_code: string
           last_seen_at: string

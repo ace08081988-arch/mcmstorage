@@ -203,7 +203,7 @@ export function useConversations() {
           for (const uid of m) if (uid !== myId) otherIds.add(uid);
         }
       }
-      let profileMap = new Map<string, { display_name: string | null; phone: string | null; email: string | null }>();
+      let profileMap = new Map<string, { display_name: string | null; phone: string | null }>();
       if (otherIds.size > 0) {
         try {
           const { data: profs, error: pErr } = await supabase.rpc("get_chat_member_profiles", {
@@ -211,8 +211,8 @@ export function useConversations() {
           });
           if (pErr) throw pErr;
           profileMap = new Map(
-            ((profs ?? []) as Array<{ id: string; display_name: string | null; phone: string | null; email: string | null }>).map(
-              (p) => [p.id, { display_name: p.display_name, phone: p.phone, email: p.email }],
+            ((profs ?? []) as Array<{ id: string; display_name: string | null; phone: string | null }>).map(
+              (p) => [p.id, { display_name: p.display_name, phone: p.phone }],
             ),
           );
         } catch (err) {
@@ -224,20 +224,15 @@ export function useConversations() {
       // Contact aliases from address_book (nama kontak lokal) — prefer over profile display_name.
       const aliasByUser = new Map<string, string>();
       const aliasByPhone = new Map<string, string>();
-      const aliasByEmail = new Map<string, string>();
       if (otherIds.size > 0) {
         try {
           const idsArr = Array.from(otherIds);
           const phones = idsArr
             .map((u) => profileMap.get(u)?.phone)
             .filter((p): p is string => !!p);
-          const emails = idsArr
-            .map((u) => profileMap.get(u)?.email?.toLowerCase().trim())
-            .filter((e): e is string => !!e);
           const orParts: string[] = [];
           orParts.push(`linked_user_id.in.(${idsArr.join(",")})`);
           if (phones.length) orParts.push(`phone_norm.in.(${phones.map((p) => p.replace(/[^\d+]/g, "")).join(",")})`);
-          if (emails.length) orParts.push(`email_norm.in.(${emails.join(",")})`);
           const { data: aliases } = await supabase
             .from("address_book")
             .select("name, linked_user_id, phone_norm, email_norm")
@@ -246,7 +241,6 @@ export function useConversations() {
             if (!a.name) continue;
             if (a.linked_user_id) aliasByUser.set(a.linked_user_id, a.name);
             if (a.phone_norm) aliasByPhone.set(a.phone_norm, a.name);
-            if (a.email_norm) aliasByEmail.set(a.email_norm, a.name);
           }
         } catch (err) {
           console.warn("[chat] address_book alias lookup failed:", err);
@@ -305,9 +299,8 @@ export function useConversations() {
           const alias =
             (other && aliasByUser.get(other)) ||
             (p?.phone && aliasByPhone.get(p.phone.replace(/[^\d+]/g, ""))) ||
-            (p?.email && aliasByEmail.get(p.email.toLowerCase().trim())) ||
             null;
-          display = alias || p?.display_name || p?.phone || p?.email || "Kontak";
+          display = alias || p?.display_name || p?.phone || "Kontak";
         } else if (!display) {
           display = c.kind === "order" ? "Diskusi pesanan" : "Grup";
         }
