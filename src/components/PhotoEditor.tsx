@@ -493,7 +493,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
 
   function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
     const p = pointAt(e);
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    // Beberapa Android WebView / event yang tidak sepenuhnya trusted bisa
+    // melempar InvalidStateError di sini. Jangan biarkan itu membatalkan
+    // pemilihan tool — capture pointer adalah optimasi, bukan syarat.
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch { /* noop */ }
     if (tool === "select") {
       const hit = hitTest(p);
       setSelectedId(hit?.id ?? null);
