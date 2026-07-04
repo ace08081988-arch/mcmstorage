@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl } from "@/lib/prep";
 import { copyText, shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck, ArrowLeft, Info, Check } from "lucide-react";
+import { ShieldAlert } from "lucide-react";
+import { useAdminStatus } from "@/hooks/use-is-admin";
 import { TaskQrCode } from "@/components/TaskQrCode";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
@@ -204,6 +206,41 @@ function clearDraft() {
 }
 
 function TugasBaruPage() {
+  const { isAdmin, isCheckingAdmin } = useAdminStatus();
+  if (isCheckingAdmin) {
+    return (
+      <div className="mx-auto max-w-2xl px-3 py-8 text-center text-sm text-muted-foreground">
+        Memeriksa izin akses…
+      </div>
+    );
+  }
+  if (!isAdmin) {
+    return (
+      <div className="mx-auto max-w-2xl px-3 py-6">
+        <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm">
+          <div className="mb-2 flex items-center gap-2 font-semibold text-destructive">
+            <ShieldAlert className="h-5 w-5" /> Akses ditolak
+          </div>
+          <p className="text-foreground">
+            Halaman <b>Buat Tugas Pegawai</b> hanya dapat diakses oleh pengguna dengan peran <b>admin</b>.
+            Silakan hubungi pemilik toko untuk mendapatkan peran yang tepat.
+          </p>
+          <div className="mt-3">
+            <Link
+              to="/tugas"
+              className="inline-flex h-9 items-center gap-1 rounded-md border bg-background px-3 text-xs font-semibold"
+            >
+              <ArrowLeft className="h-4 w-4" /> Kembali ke Penyiapan
+            </Link>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  return <TugasBaruForm />;
+}
+
+function TugasBaruForm() {
   // Restore draft on first render so a remount (e.g. router invalidation
   // triggered by realtime/sidebar refetch) doesn't wipe what was typed.
   const initialRef = useRef<Draft | null>(loadDraft());
@@ -457,7 +494,15 @@ function TugasBaruPage() {
       _scheduled_at: scheduledIso,
     });
     setBusy(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      const msg = String(error.message || "");
+      if (msg.includes("forbidden")) {
+        return toast.error("Akses ditolak", {
+          description: "Anda tidak memiliki peran admin untuk membuat tugas pegawai.",
+        });
+      }
+      return toast.error(error.message);
+    }
     const url = publicTaskUrl(tokenTrim);
     clearDraft();
     setCreated({ token: tokenTrim, pin, title: t, url });
