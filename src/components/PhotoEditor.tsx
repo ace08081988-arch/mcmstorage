@@ -59,6 +59,24 @@ const TOOL_HINTS: Record<Tool, string> = {
   circle: "Seret dari pusat ke tepi, atau ketuk untuk ukuran default",
 };
 
+const TOOL_SHORTCUTS: Record<Tool, string | null> = {
+  select: "P",
+  draw: "C",
+  text: "T",
+  emoji: "S",
+  arrow: "A",
+  rect: "K",
+  circle: "L",
+};
+
+const KEY_TO_TOOL: Record<string, Tool> = Object.fromEntries(
+  Object.entries(TOOL_SHORTCUTS)
+    .filter(([, k]) => k !== null)
+    .map(([t, k]) => [k!.toLowerCase(), t as Tool])
+);
+
+
+
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
