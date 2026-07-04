@@ -1311,7 +1311,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             title="Panduan singkat tiap tool"
             aria-label="Panduan singkat tiap tool"
             aria-expanded={helpOpen}
-            className={`inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background transition hover:bg-muted ${helpOpen ? "border-primary bg-primary/10 text-primary" : ""}`}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${helpOpen ? "border-primary bg-primary/10 text-primary" : ""}`}
           >
             <HelpCircle className="h-4 w-4" />
           </button>
