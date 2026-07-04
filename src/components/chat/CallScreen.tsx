@@ -619,9 +619,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 ? "absolute inset-0 z-0"
                 : `absolute ${pipCornerClass} ${pipSizeClass} z-10 touch-none`
             }
+            style={swapped ? undefined : pipStyle}
             onPointerDown={swapped ? undefined : onPipPointerDown}
             onPointerMove={swapped ? undefined : onPipPointerMove}
             onPointerUp={swapped ? undefined : onPipPointerUp}
+            onPointerCancel={swapped ? undefined : onPipPointerUp}
           >
             <video
               ref={localVideoRef}
