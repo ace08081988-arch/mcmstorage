@@ -70,6 +70,7 @@ export const secureSignUp = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<SecureSignUpResult> => {
     const req = getRequest();
     const ip = clientIpFromRequest(req);
+    const userAgent = (req.headers.get("user-agent") ?? "").slice(0, 512) || null;
 
     const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
     if (!turnstileSecret) {
@@ -108,7 +109,7 @@ export const secureSignUp = createServerFn({ method: "POST" })
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rate = await supabaseAdmin.rpc(
       "check_and_record_signup_attempt" as never,
-      { p_ip: ip, p_email: data.email } as never,
+      { p_ip: ip, p_email: data.email, p_user_agent: userAgent } as never,
     );
     // Bentuk balikannya: setof (allowed, attempts_in_window, retry_after_seconds).
     const row = Array.isArray(rate.data) ? (rate.data[0] as

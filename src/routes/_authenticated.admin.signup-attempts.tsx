@@ -20,6 +20,7 @@ type Attempt = {
   email: string | null;
   succeeded: boolean;
   created_at: string;
+  user_agent: string | null;
 };
 
 type StatusFilter = "all" | "success" | "failed";
@@ -59,7 +60,7 @@ function SignupAttemptsPage() {
     setErr(null);
     let query = supabase
       .from("signup_attempts")
-      .select("id,ip,email,succeeded,created_at")
+      .select("id,ip,email,succeeded,created_at,user_agent")
       .order("created_at", { ascending: false })
       .limit(limit);
     const iso1 = toIsoStart(from);
@@ -85,7 +86,11 @@ function SignupAttemptsPage() {
     if (!rows) return [];
     const needle = q.trim().toLowerCase();
     if (!needle) return rows;
-    return rows.filter((r) => (r.email ?? "").toLowerCase().includes(needle) || r.ip.toLowerCase().includes(needle));
+    return rows.filter((r) =>
+      (r.email ?? "").toLowerCase().includes(needle) ||
+      r.ip.toLowerCase().includes(needle) ||
+      (r.user_agent ?? "").toLowerCase().includes(needle),
+    );
   }, [rows, q]);
 
   const stats = useMemo(() => {
@@ -167,7 +172,7 @@ function SignupAttemptsPage() {
         <div className="col-span-2 sm:col-span-5">
           <div className="relative">
             <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
-            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari email atau IP…" className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-sm" />
+            <input value={q} onChange={(e) => setQ(e.target.value)} placeholder="Cari email, IP, atau user agent…" className="w-full rounded-md border bg-background pl-7 pr-2 py-1.5 text-sm" />
           </div>
         </div>
       </div>
@@ -197,6 +202,7 @@ function SignupAttemptsPage() {
                 <th className="px-3 py-2 text-left">Email</th>
                 <th className="px-3 py-2 text-left">IP</th>
                 <th className="px-3 py-2 text-left">Status</th>
+                <th className="px-3 py-2 text-left">User agent</th>
               </tr>
             </thead>
             <tbody>
@@ -214,6 +220,13 @@ function SignupAttemptsPage() {
                       <span className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-medium text-destructive">
                         <XCircle className="h-3 w-3" /> Gagal
                       </span>
+                    )}
+                  </td>
+                  <td className="px-3 py-1.5 text-[11px] text-muted-foreground max-w-[280px]">
+                    {r.user_agent ? (
+                      <span className="line-clamp-2 break-words" title={r.user_agent}>{r.user_agent}</span>
+                    ) : (
+                      <span className="italic">—</span>
                     )}
                   </td>
                 </tr>
