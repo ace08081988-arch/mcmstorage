@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
-  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal, SwitchCamera, Move,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal, SwitchCamera, Move, RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -1134,6 +1134,19 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               >
                 <Move className="h-3.5 w-3.5" />
                 <span>{videoPosLabel}</span>
+              </button>
+            ) : null}
+            {kind === "video" && videoFit === "cover" ? (
+              <button
+                type="button"
+                onClick={() => setVideoPos("center")}
+                aria-label="Reset posisi crop ke tengah"
+                title="Reset posisi crop ke tengah"
+                data-testid="call-pos-reset"
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset</span>
               </button>
             ) : null}
             {kind === "video" ? (
