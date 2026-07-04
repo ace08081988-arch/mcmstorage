@@ -77,9 +77,26 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const outputSupported = isOutputSelectionSupported();
 
   // PiP (preview kecil) — user dapat swap besar/kecil, ubah ukuran, dan geser posisi.
+  // Ukuran + pojok di-persist agar konsisten antar panggilan / antar layar.
+  const PIP_SIZE_KEY = "mcm.call.pipSize";
+  const PIP_CORNER_KEY = "mcm.call.pipCorner";
   const [swapped, setSwapped] = useState(false);
-  const [pipSize, setPipSize] = useState<"sm" | "md" | "lg">("md");
-  const [pipCorner, setPipCorner] = useState<"tl" | "tr" | "bl" | "br">("br");
+  const [pipSize, setPipSize] = useState<"sm" | "md" | "lg">(() => {
+    if (typeof window === "undefined") return "md";
+    const v = window.localStorage.getItem(PIP_SIZE_KEY);
+    return v === "sm" || v === "md" || v === "lg" ? v : "md";
+  });
+  const [pipCorner, setPipCorner] = useState<"tl" | "tr" | "bl" | "br">(() => {
+    if (typeof window === "undefined") return "br";
+    const v = window.localStorage.getItem(PIP_CORNER_KEY);
+    return v === "tl" || v === "tr" || v === "bl" || v === "br" ? v : "br";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(PIP_SIZE_KEY, pipSize); } catch { /* ignore */ }
+  }, [pipSize]);
+  useEffect(() => {
+    try { window.localStorage.setItem(PIP_CORNER_KEY, pipCorner); } catch { /* ignore */ }
+  }, [pipCorner]);
   const pipSizeClass =
     pipSize === "sm" ? "h-24 w-20" : pipSize === "lg" ? "h-48 w-36" : "h-32 w-24";
   const pipCornerClass =
