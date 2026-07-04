@@ -7,6 +7,11 @@ export type PosKasirProduk = {
   emoji: string;
   hargaPerKg: number;
   stokKg: number;
+  /** Label unit dasar produk (mis. "kg", "g", "pcs"). */
+  unitLabel: string;
+  /** ID di warehouse_items — bila terisi, transaksi ditulis ke tabel sales
+   *  dan trigger apply_sale otomatis mengurangi stok gudang. */
+  warehouseItemId?: string | null;
 };
 
 export type PosKasirTransaksi = {
@@ -19,15 +24,20 @@ export type PosKasirTransaksi = {
   total: number;
   sisaStokKg: number;
   waktu: number;
+  /** Unit label saat transaksi (mengikuti produk). Default "kg" utk transaksi lama. */
+  unitLabel?: string;
+  /** ID sale di database bila transaksi memakai produk gudang; tanpa nilai = demo lokal. */
+  saleId?: string | null;
+  warehouseItemId?: string | null;
 };
 
 export const PRODUK_AWAL: PosKasirProduk[] = [
-  { id: "beras", nama: "Beras Premium", emoji: "🍚", hargaPerKg: 15000, stokKg: 50 },
-  { id: "gula", nama: "Gula Pasir", emoji: "🍬", hargaPerKg: 14000, stokKg: 30 },
-  { id: "tepung", nama: "Tepung Terigu", emoji: "🌾", hargaPerKg: 12000, stokKg: 25 },
-  { id: "kacang", nama: "Kacang Hijau", emoji: "🫘", hargaPerKg: 22000, stokKg: 15 },
-  { id: "garam", nama: "Garam Halus", emoji: "🧂", hargaPerKg: 8000, stokKg: 40 },
-  { id: "kopi", nama: "Kopi Bubuk", emoji: "☕", hargaPerKg: 65000, stokKg: 10 },
+  { id: "beras", nama: "Beras Premium", emoji: "🍚", hargaPerKg: 15000, stokKg: 50, unitLabel: "kg" },
+  { id: "gula", nama: "Gula Pasir", emoji: "🍬", hargaPerKg: 14000, stokKg: 30, unitLabel: "kg" },
+  { id: "tepung", nama: "Tepung Terigu", emoji: "🌾", hargaPerKg: 12000, stokKg: 25, unitLabel: "kg" },
+  { id: "kacang", nama: "Kacang Hijau", emoji: "🫘", hargaPerKg: 22000, stokKg: 15, unitLabel: "kg" },
+  { id: "garam", nama: "Garam Halus", emoji: "🧂", hargaPerKg: 8000, stokKg: 40, unitLabel: "kg" },
+  { id: "kopi", nama: "Kopi Bubuk", emoji: "☕", hargaPerKg: 65000, stokKg: 10, unitLabel: "kg" },
 ];
 
 export function getPosKasirRiwayat(): PosKasirTransaksi[] {

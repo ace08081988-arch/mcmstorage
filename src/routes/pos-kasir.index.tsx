@@ -7,6 +7,8 @@ import {
   type PosKasirProduk,
   type PosKasirTransaksi,
 } from "@/lib/pos-kasir";
+import { loadGudangProduk, recordSale, refundSale } from "@/lib/pos-kasir-gudang";
+import { supabase } from "@/integrations/supabase/client";
 import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
 import { jsPDF } from "jspdf";
 import autoTable from "jspdf-autotable";
@@ -22,7 +24,16 @@ const waktuFmt = new Intl.DateTimeFormat("id-ID", {
   month: "short",
 });
 
-const QUICK_WEIGHTS = [0.1, 0.25, 0.5, 1, 2];
+const QUICK_WEIGHTS_KG = [0.1, 0.25, 0.5, 1, 2];
+const QUICK_WEIGHTS_GRAM = [10, 25, 50, 100, 250];
+const QUICK_WEIGHTS_PCS = [1, 2, 5, 10, 25];
+
+function quickAddsFor(unitLabel: string): number[] {
+  const u = unitLabel.toLowerCase();
+  if (u === "g" || u === "gr" || u === "gram") return QUICK_WEIGHTS_GRAM;
+  if (u === "pcs" || u === "botol" || u === "karton" || u === "pack" || u === "unit") return QUICK_WEIGHTS_PCS;
+  return QUICK_WEIGHTS_KG;
+}
 
 const AMBANG_STORAGE_KEY = "mcm-pos-kasir-ambang-stok";
 const AMBANG_DEFAULT = 5;
@@ -51,6 +62,10 @@ function PosKasirPage() {
   const [produk, setProduk] = useState<PosKasirProduk[]>(PRODUK_AWAL);
   const [selectedId, setSelectedId] = useState<string>(PRODUK_AWAL[0].id);
   const [beratStr, setBeratStr] = useState<string>("0");
+  const [hargaStr, setHargaStr] = useState<string>("0");
+  const [gudangSynced, setGudangSynced] = useState<boolean>(false);
+  const [gudangError, setGudangError] = useState<string | null>(null);
+  const [bayarBusy, setBayarBusy] = useState<boolean>(false);
   const [toast, setToast] = useState<string | null>(null);
   const [riwayat, setRiwayat] = useState<PosKasirTransaksi[]>(() => getPosKasirRiwayat());
   const [dariTgl, setDariTgl] = useState<string>("");
@@ -184,14 +199,64 @@ function PosKasirPage() {
     setPosKasirRiwayat(riwayat);
   }, [riwayat]);
 
-  const selected = produk.find((p) => p.id === selectedId)!;
+  const selected = produk.find((p) => p.id === selectedId) ?? produk[0];
   const berat = useMemo(() => {
     const n = parseFloat(beratStr.replace(",", "."));
     return Number.isFinite(n) && n >= 0 ? n : 0;
   }, [beratStr]);
-
-  const total = berat * selected.hargaPerKg;
+  const hargaInput = useMemo(() => {
+    const n = parseFloat(hargaStr.replace(",", "."));
+    return Number.isFinite(n) && n >= 0 ? n : 0;
+  }, [hargaStr]);
+  // Sumber harga:
+  //  - Mode gudang: dari input manual (per keputusan produk)
+  //  - Mode demo: dari harga tetap tiap produk
+  const hargaEfektif = selected.warehouseItemId ? hargaInput : selected.hargaPerKg;
+  const total = berat * hargaEfektif;
   const stokCukup = berat > 0 && berat <= selected.stokKg;
+  const hargaCukup = hargaEfektif > 0;
+  const bayarSiap = stokCukup && hargaCukup && !bayarBusy;
+  const quickAdds = useMemo(() => quickAddsFor(selected.unitLabel), [selected.unitLabel]);
+  const unit = selected.unitLabel;
+
+  // Sinkronisasi produk dengan gudang saat user login.
+  const refreshGudang = async (opts?: { silent?: boolean }) => {
+    const res = await loadGudangProduk();
+    if (!res.authed) {
+      setGudangSynced(false);
+      setGudangError(null);
+      return;
+    }
+    if (res.error) {
+      setGudangError(res.error);
+      if (!opts?.silent) {
+        setToast(`Gagal muat gudang: ${res.error}`);
+        setTimeout(() => setToast(null), 3000);
+      }
+      return;
+    }
+    setGudangError(null);
+    setGudangSynced(true);
+    if (res.produk.length === 0) {
+      setProduk([]);
+      return;
+    }
+    setProduk(res.produk);
+    setSelectedId((prev) => (res.produk.some((p) => p.id === prev) ? prev : res.produk[0].id));
+  };
+
+  useEffect(() => {
+    void refreshGudang({ silent: true });
+    const { data: sub } = supabase.auth.onAuthStateChange((event) => {
+      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
+        void refreshGudang({ silent: true });
+      }
+    });
+    return () => {
+      sub.subscription.unsubscribe();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const totalStok = useMemo(() => produk.reduce((s, p) => s + p.stokKg, 0), [produk]);
   const produkKritis = useMemo(
@@ -207,12 +272,56 @@ function PosKasirPage() {
     [produk, ambangStok],
   );
 
-  const bayar = () => {
+  const bayar = async () => {
+    if (bayarBusy) return;
     if (!stokCukup) {
       setToast(berat <= 0 ? "Masukkan berat terlebih dahulu" : "Stok tidak mencukupi");
       setTimeout(() => setToast(null), 2500);
       return;
     }
+    if (!hargaCukup) {
+      setToast("Masukkan harga per " + unit + " terlebih dahulu");
+      setTimeout(() => setToast(null), 2500);
+      return;
+    }
+    // Mode gudang: tulis ke tabel sales; trigger apply_sale kurangi stok.
+    if (selected.warehouseItemId) {
+      setBayarBusy(true);
+      const res = await recordSale({
+        warehouseItemId: selected.warehouseItemId,
+        qtyBase: berat,
+        pricePerBase: hargaEfektif,
+      });
+      setBayarBusy(false);
+      if (!res.ok) {
+        setToast(`❌ Gagal menyimpan: ${res.error}`);
+        setTimeout(() => setToast(null), 4000);
+        return;
+      }
+      const sisaStokKg = +(selected.stokKg - berat).toFixed(3);
+      const trxBaru: PosKasirTransaksi = {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        produkId: selected.id,
+        produkNama: selected.nama,
+        produkEmoji: selected.emoji,
+        beratKg: berat,
+        hargaPerKg: hargaEfektif,
+        total,
+        sisaStokKg,
+        waktu: Date.now(),
+        unitLabel: unit,
+        warehouseItemId: selected.warehouseItemId,
+        saleId: res.saleId,
+      };
+      setRiwayat((prev) => [trxBaru, ...prev]);
+      setStrukTransaksi(trxBaru);
+      setToast(`✅ Tersimpan · ${berat} ${unit} ${selected.nama} · ${rupiah(total)}`);
+      setBeratStr("0");
+      setTimeout(() => setToast(null), 3500);
+      void refreshGudang({ silent: true });
+      return;
+    }
+    // Mode demo (belum login) — perilaku lama, stok lokal.
     const sisaStokKg = +(selected.stokKg - berat).toFixed(3);
     const levelSebelum = levelStok(selected.stokKg, ambangStok);
     const levelSesudah = levelStok(sisaStokKg, ambangStok);
@@ -223,29 +332,46 @@ function PosKasirPage() {
       produkNama: selected.nama,
       produkEmoji: selected.emoji,
       beratKg: berat,
-      hargaPerKg: selected.hargaPerKg,
+      hargaPerKg: hargaEfektif,
       total,
       sisaStokKg,
       waktu: Date.now(),
+      unitLabel: unit,
     };
     setRiwayat((prev) => [trxBaru, ...prev]);
     setStrukTransaksi(trxBaru);
-    let pesan = `✅ Transaksi berhasil · ${berat} kg ${selected.nama} · ${rupiah(total)}`;
+    let pesan = `✅ Transaksi berhasil · ${berat} ${unit} ${selected.nama} · ${rupiah(total)}`;
     if (levelSesudah !== levelSebelum && levelSesudah !== "aman") {
       const meta = LEVEL_META[levelSesudah];
-      pesan += ` · ${meta.emoji} Stok ${selected.nama} kini ${meta.label.toLowerCase()} (${sisaStokKg.toLocaleString("id-ID")} kg)`;
+      pesan += ` · ${meta.emoji} Stok ${selected.nama} kini ${meta.label.toLowerCase()} (${sisaStokKg.toLocaleString("id-ID")} ${unit})`;
     }
     setToast(pesan);
     setBeratStr("0");
     setTimeout(() => setToast(null), 4500);
   };
 
-  const batalkanTransaksi = (t: PosKasirTransaksi) => {
+  const batalkanTransaksi = async (t: PosKasirTransaksi) => {
+    const u = t.unitLabel || "kg";
     if (typeof window !== "undefined") {
       const ok = window.confirm(
-        `Batalkan transaksi ${t.produkNama} (${t.beratKg.toLocaleString("id-ID")} kg · ${rupiah(t.total)})?\nStok akan dikembalikan.`,
+        `Batalkan transaksi ${t.produkNama} (${t.beratKg.toLocaleString("id-ID")} ${u} · ${rupiah(t.total)})?\nStok akan dikembalikan.`,
       );
       if (!ok) return;
+    }
+    if (t.saleId) {
+      const res = await refundSale(t.saleId);
+      if (!res.ok) {
+        setToast(`❌ Gagal batalkan: ${res.error}`);
+        setTimeout(() => setToast(null), 4000);
+        return;
+      }
+      setRiwayat((prev) => prev.filter((r) => r.id !== t.id));
+      setSwipeDx(0);
+      swipeStartX.current = null;
+      setToast(`↶ Transaksi dibatalkan · stok dikembalikan`);
+      setTimeout(() => setToast(null), 3000);
+      void refreshGudang({ silent: true });
+      return;
     }
     setProduk((prev) =>
       prev.map((p) =>
@@ -397,6 +523,23 @@ function PosKasirPage() {
     setBeratStr(String(next));
   };
 
+  // Edge case: user login tapi belum ada barang di gudang.
+  if (gudangSynced && produk.length === 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-6 flex items-center justify-center">
+        <div className="max-w-md text-center space-y-4 bg-slate-800/60 border border-slate-700 rounded-2xl p-6">
+          <div className="text-4xl">📦</div>
+          <h1 className="text-xl font-bold">Belum ada produk di gudang</h1>
+          <p className="text-sm text-slate-400">
+            POS Kasir menampilkan produk dari halaman <Link className="underline text-emerald-300" to="/gudang">Gudang</Link>.
+            Tambahkan minimal satu barang untuk mulai menjual.
+          </p>
+          {gudangError && <p className="text-xs text-red-300">{gudangError}</p>}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className={`min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 md:p-8 ${modeRingkas ? "p-2" : "p-3"}`}>
       <div className="mx-auto max-w-6xl">
@@ -429,6 +572,22 @@ function PosKasirPage() {
           </Link>
         </header>
 
+        <div className={`${modeRingkas ? "mb-2" : "mb-3"} rounded-lg border text-[11px] px-3 py-2 flex items-center justify-between gap-2 ${
+          gudangSynced
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
+            : "bg-amber-500/10 border-amber-500/30 text-amber-200"
+        }`}>
+          <span className="truncate">
+            {gudangSynced
+              ? "🔗 Tersinkron dengan Gudang · stok otomatis dari warehouse"
+              : "⚠ Mode demo · login untuk sinkron ke Gudang & catat penjualan"}
+          </span>
+          {gudangSynced ? (
+            <Link to="/gudang" className="shrink-0 underline">Kelola gudang →</Link>
+          ) : (
+            <Link to="/auth" className="shrink-0 underline">Masuk →</Link>
+          )}
+        </div>
 
         {/* Desktop header */}
         <header className="hidden md:flex mb-6 items-center justify-between">
@@ -634,16 +793,16 @@ function PosKasirPage() {
                   >
                     {displayBerat}
                   </span>
-                  <span className={`font-mono text-emerald-500 ${modeRingkas ? "text-lg" : "text-xl"}`}>kg</span>
+                  <span className={`font-mono text-emerald-500 ${modeRingkas ? "text-lg" : "text-xl"}`}>{unit}</span>
                 </div>
                 <div className={`border-t border-emerald-900/40 flex justify-between font-mono text-emerald-500/70 ${modeRingkas ? "mt-1 pt-1 text-[11px]" : "mt-2 pt-2 text-xs"}`}>
-                  <span>@ {rupiah(selected.hargaPerKg)}/KG</span>
+                  <span>@ {rupiah(hargaEfektif)}/{unit.toUpperCase()}</span>
                   <span>TOTAL {rupiah(total)}</span>
                 </div>
               </div>
 
               <div className={modeRingkas ? "mt-3" : "mt-4"}>
-                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Input Berat (kg)</label>
+                <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Input Jumlah ({unit})</label>
                 <input
                   type="number"
                   step="0.001"
@@ -662,18 +821,35 @@ function PosKasirPage() {
                   <div className={`flex items-start gap-2 rounded-lg bg-red-500/15 border border-red-500/40 text-xs text-red-200 ${modeRingkas ? "mt-1 p-1.5" : "mt-2 p-2"}`}>
                     <span className="shrink-0 text-red-400">⚠</span>
                     <div>
-                      Melebihi stok {selected.stokKg.toLocaleString("id-ID")} kg.
+                      Melebihi stok {selected.stokKg.toLocaleString("id-ID")} {unit}.
                     </div>
                   </div>
                 )}
               </div>
+              {selected.warehouseItemId && (
+                <div className={modeRingkas ? "mt-2" : "mt-3"}>
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Harga jual / {unit} (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    step="1"
+                    min="0"
+                    value={hargaStr}
+                    onChange={(e) => setHargaStr(e.target.value)}
+                    placeholder="0"
+                    className={`w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30 rounded-lg font-mono focus:outline-none focus:ring-2 ${modeRingkas ? "mt-1 px-2.5 py-2 text-sm" : "mt-2 px-3 py-2.5 text-base"}`}
+                  />
+                </div>
+              )}
             </div>
 
 
             {/* Mobile quick buttons */}
             <div className={`md:hidden ${modeRingkas ? "space-y-1.5" : "space-y-2"}`}>
               <div className={`grid grid-cols-5 ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
-                {QUICK_WEIGHTS.map((v) => {
+                {quickAdds.map((v) => {
                   const wouldExceed = berat + v > selected.stokKg;
                   return (
                     <button
@@ -707,7 +883,7 @@ function PosKasirPage() {
                 </button>
                 <button
                   onClick={bayar}
-                  disabled={!stokCukup}
+                  disabled={!bayarSiap}
                   className={`rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-xs font-bold text-white shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform ${modeRingkas ? "py-2" : "py-2.5"}`}
                 >
                   Bayar
@@ -734,17 +910,17 @@ function PosKasirPage() {
                   >
                     {displayBerat}
                   </span>
-                  <span className="text-2xl font-mono text-emerald-500">kg</span>
+                  <span className="text-2xl font-mono text-emerald-500">{unit}</span>
                 </div>
                 <div className="mt-3 pt-3 border-t border-emerald-900/40 flex justify-between text-xs font-mono text-emerald-500/70">
                   <span>PRODUK: {selected.nama.toUpperCase()}</span>
-                  <span>@ {rupiah(selected.hargaPerKg)}/KG</span>
+                  <span>@ {rupiah(hargaEfektif)}/{unit.toUpperCase()}</span>
                 </div>
               </div>
 
               <div className="mt-5">
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
-                  Input Berat (kg)
+                  Input Jumlah ({unit})
                 </label>
                 <input
                   type="number"
@@ -766,7 +942,7 @@ function PosKasirPage() {
                     <div>
                       <p className="font-semibold">Berat melebihi stok</p>
                       <p className="text-xs text-red-300/80 mt-0.5">
-                        Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} kg.
+                        Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} {unit}.
                       </p>
                       <p className="text-xs text-red-300/80 mt-0.5">
                         Kurangi berat agar tidak melebihi stok yang ada.
@@ -789,7 +965,7 @@ function PosKasirPage() {
                             : "bg-slate-800 hover:bg-slate-700 border-slate-700"
                         }`}
                       >
-                        +{v} kg
+                        +{v} {unit}
                       </button>
                     );
                   })}
@@ -801,6 +977,23 @@ function PosKasirPage() {
                   Reset (Tara)
                 </button>
               </div>
+              {selected.warehouseItemId && (
+                <div className="mt-4">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Harga jual / {unit} (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    step="1"
+                    min="0"
+                    value={hargaStr}
+                    onChange={(e) => setHargaStr(e.target.value)}
+                    placeholder="0"
+                    className="mt-2 w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30 rounded-lg px-4 py-3 text-lg font-mono focus:outline-none focus:ring-2"
+                  />
+                </div>
+              )}
             </div>
           </section>
 
@@ -814,17 +1007,17 @@ function PosKasirPage() {
                   <span className="font-medium">{selected.emoji} {selected.nama}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Harga/kg</span>
-                  <span className="font-mono">{rupiah(selected.hargaPerKg)}</span>
+                  <span className="text-slate-400">Harga/{unit}</span>
+                  <span className="font-mono">{rupiah(hargaEfektif)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Berat</span>
-                  <span className="font-mono">{berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg</span>
+                  <span className="font-mono">{berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unit}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Stok saat ini</span>
                   <span className={`font-mono ${!stokCukup && berat > 0 ? "text-red-400" : ""}`}>
-                    {selected.stokKg.toLocaleString("id-ID")} kg
+                    {selected.stokKg.toLocaleString("id-ID")} {unit}
                   </span>
                 </div>
                 <div className="border-t border-slate-700 pt-3 flex justify-between items-baseline">
@@ -837,15 +1030,14 @@ function PosKasirPage() {
                 <div className="mt-3 p-3 rounded-lg bg-red-500/15 border border-red-500/40 text-sm text-red-200">
                   <p className="font-semibold">⚠ Stok tidak mencukupi</p>
                   <p className="text-xs text-red-300/80 mt-0.5">
-                    Tersedia {selected.stokKg.toLocaleString("id-ID")} kg, butuh{" "}
-                    {berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg. Kurangi berat untuk melanjutkan pembayaran.
+                    Tersedia {selected.stokKg.toLocaleString("id-ID")} {unit}, butuh {berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} {unit}. Kurangi berat untuk melanjutkan pembayaran.
                   </p>
                 </div>
               )}
 
               <button
                 onClick={bayar}
-                disabled={!stokCukup}
+                disabled={!bayarSiap}
                 className="mt-5 w-full py-4 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 disabled:from-slate-700 disabled:to-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed font-bold text-lg shadow-lg shadow-emerald-500/30 transition-all"
               >
                 💳 Bayar
