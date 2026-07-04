@@ -712,7 +712,7 @@ function TugasBaruForm() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 p-4">
+    <div className="mx-auto max-w-2xl space-y-4 p-4 animate-fade-in">
       <div className="flex items-center justify-between gap-2">
         <div>
           <h1 className="text-lg font-semibold">Buat Tugas Pegawai</h1>
