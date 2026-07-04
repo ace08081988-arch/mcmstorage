@@ -297,9 +297,11 @@ function TugasBaruForm() {
   const [, forceTick] = useState(0);
   const lastSavedRef = useRef<string>("");
   const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone, token, scheduledAt });
-  useEffect(() => {
-    latestDraftRef.current = { title, note, pin, rows, phone, token, scheduledAt };
-  }, [title, note, pin, rows, phone, token, scheduledAt]);
+  // Update ref secara SINKRON selama render supaya cleanup unmount / event
+  // "pagehide" selalu punya snapshot input paling baru — termasuk keystroke
+  // terakhir sebelum unmount dipicu (mis. transisi auth sesaat). Menulis
+  // ke ref selama render aman: ref bukan state, tidak memicu re-render.
+  latestDraftRef.current = { title, note, pin, rows, phone, token, scheduledAt };
 
   const flushDraft = useCallback((reason: "auto" | "navigation" | "manual" = "auto") => {
     const cur = JSON.stringify(latestDraftRef.current);
