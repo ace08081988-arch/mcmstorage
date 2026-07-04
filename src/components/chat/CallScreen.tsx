@@ -38,7 +38,6 @@ import { describeCallError } from "@/lib/call-errors";
 import { usePersistedState, parseEnum } from "@/lib/use-persisted-state";
 import {
   computeVideoStyle, videoFitClassFor, presetPosToCss,
-  type VideoPosXY as CVPXY,
 } from "@/lib/call-video-style";
 import {
   Sheet,
