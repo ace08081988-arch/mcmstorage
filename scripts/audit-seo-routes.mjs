@@ -16,6 +16,7 @@ import { fileURLToPath } from "node:url";
 const ROOT = fileURLToPath(new URL("..", import.meta.url));
 const ROUTES_DIR = join(ROOT, "src/routes");
 const SITEMAP_FILE = join(ROUTES_DIR, "sitemap[.]xml.ts");
+const ROBOTS_FILE = join(ROOT, "public/robots.txt");
 
 // Rute yang sengaja tidak diindeks dan tidak perlu di-sitemap.
 // Tambahkan di sini bila ada rute internal/utility baru.
@@ -92,6 +93,38 @@ export function extractSitemapPaths(src) {
 }
 
 /**
+ * Ekstrak daftar aturan Disallow untuk User-agent: * dari robots.txt.
+ * Baris komentar (#…) diabaikan. Hanya blok wildcard `*` yang dipakai —
+ * itu yang berlaku untuk mayoritas crawler dan menjadi sumber kebenaran
+ * untuk audit konsistensi ini.
+ */
+export function extractRobotsDisallows(src) {
+  const rules = [];
+  let inStar = false;
+  for (const rawLine of src.split(/\r?\n/)) {
+    const line = rawLine.replace(/#.*$/, "").trim();
+    if (!line) continue;
+    const ua = line.match(/^User-agent:\s*(.+)$/i);
+    if (ua) {
+      inStar = ua[1].trim() === "*";
+      continue;
+    }
+    if (!inStar) continue;
+    const d = line.match(/^Disallow:\s*(.*)$/i);
+    if (d && d[1].trim()) rules.push(d[1].trim());
+  }
+  return rules;
+}
+
+/**
+ * Apakah URL cocok dengan salah satu aturan Disallow (prefix match sesuai
+ * spesifikasi robots.txt: `Disallow: /foo` menutup semua yang diawali `/foo`).
+ */
+export function robotsMatches(url, rules) {
+  return rules.some((r) => url === r || url.startsWith(r));
+}
+
+/**
  * Klasifikasikan satu rute berdasarkan sinyal-sinyal yang sudah diekstrak.
  * Dipisah dari I/O supaya bisa di-self-test tanpa menyentuh disk.
  * Mengembalikan { status, error? } — error hanya diisi bila benar-benar salah.
@@ -102,6 +135,7 @@ export function classifyRoute({
   inSitemap,
   noindex,
   allowlisted,
+  robotsDisallowed,
 }) {
   const isDynamic = /\$/.test(url);
   const isAuthGated = /\/_authenticated(\/|$)/.test(routeId);
@@ -114,6 +148,18 @@ export function classifyRoute({
     return {
       status: "CONFLICT",
       error: `${url} — masuk sitemap TAPI bertanda noindex`,
+    };
+  }
+  if (inSitemap && robotsDisallowed) {
+    return {
+      status: "CONFLICT-ROBOTS",
+      error: `${url} — masuk sitemap TAPI Disallow di robots.txt`,
+    };
+  }
+  if (noindex && !robotsDisallowed && !isAuthGated) {
+    return {
+      status: "MISSING-ROBOTS",
+      error: `${url} — noindex tetapi tidak Disallow di robots.txt`,
     };
   }
   if (isAuthGated) return { status: "auth-gated" };
@@ -135,74 +181,91 @@ function runSelfTests() {
   const cases = [
     {
       name: "/reset-password noindex + TIDAK di sitemap → noindex (ok)",
-      input: { routeId: "/reset-password", url: "/reset-password", inSitemap: false, noindex: true, allowlisted: false },
+      input: { routeId: "/reset-password", url: "/reset-password", inSitemap: false, noindex: true, allowlisted: false, robotsDisallowed: true },
       expect: "noindex",
     },
     {
       name: "/reset-password di sitemap + noindex → CONFLICT",
-      input: { routeId: "/reset-password", url: "/reset-password", inSitemap: true, noindex: true, allowlisted: false },
+      input: { routeId: "/reset-password", url: "/reset-password", inSitemap: true, noindex: true, allowlisted: false, robotsDisallowed: true },
       expect: "CONFLICT",
       expectError: true,
     },
     {
       name: "/forgot-password noindex + TIDAK di sitemap → noindex (ok)",
-      input: { routeId: "/forgot-password", url: "/forgot-password", inSitemap: false, noindex: true, allowlisted: false },
+      input: { routeId: "/forgot-password", url: "/forgot-password", inSitemap: false, noindex: true, allowlisted: false, robotsDisallowed: true },
       expect: "noindex",
     },
     {
       name: "/forgot-password tanpa noindex & tanpa sitemap → MISSING",
-      input: { routeId: "/forgot-password", url: "/forgot-password", inSitemap: false, noindex: false, allowlisted: false },
+      input: { routeId: "/forgot-password", url: "/forgot-password", inSitemap: false, noindex: false, allowlisted: false, robotsDisallowed: false },
       expect: "MISSING",
       expectError: true,
     },
     {
       name: "/forgot-password di sitemap + noindex → CONFLICT",
-      input: { routeId: "/forgot-password", url: "/forgot-password", inSitemap: true, noindex: true, allowlisted: false },
+      input: { routeId: "/forgot-password", url: "/forgot-password", inSitemap: true, noindex: true, allowlisted: false, robotsDisallowed: true },
       expect: "CONFLICT",
       expectError: true,
     },
     {
       name: "/change-email noindex + TIDAK di sitemap → noindex (ok)",
-      input: { routeId: "/change-email", url: "/change-email", inSitemap: false, noindex: true, allowlisted: false },
+      input: { routeId: "/change-email", url: "/change-email", inSitemap: false, noindex: true, allowlisted: false, robotsDisallowed: true },
       expect: "noindex",
     },
     {
       name: "/change-email tanpa noindex & tanpa sitemap → MISSING",
-      input: { routeId: "/change-email", url: "/change-email", inSitemap: false, noindex: false, allowlisted: false },
+      input: { routeId: "/change-email", url: "/change-email", inSitemap: false, noindex: false, allowlisted: false, robotsDisallowed: false },
       expect: "MISSING",
       expectError: true,
     },
     {
       name: "/change-email di sitemap + noindex → CONFLICT",
-      input: { routeId: "/change-email", url: "/change-email", inSitemap: true, noindex: true, allowlisted: false },
+      input: { routeId: "/change-email", url: "/change-email", inSitemap: true, noindex: true, allowlisted: false, robotsDisallowed: true },
       expect: "CONFLICT",
       expectError: true,
     },
     {
       name: "/change-email auth-gated tanpa sitemap → auth-gated (ok)",
-      input: { routeId: "/_authenticated/change-email", url: "/change-email", inSitemap: false, noindex: false, allowlisted: false },
+      input: { routeId: "/_authenticated/change-email", url: "/change-email", inSitemap: false, noindex: false, allowlisted: false, robotsDisallowed: true },
       expect: "auth-gated",
     },
     {
       name: "/refund di sitemap tanpa noindex → sitemap (ok)",
-      input: { routeId: "/refund", url: "/refund", inSitemap: true, noindex: false, allowlisted: false },
+      input: { routeId: "/refund", url: "/refund", inSitemap: true, noindex: false, allowlisted: false, robotsDisallowed: false },
       expect: "sitemap",
     },
     {
       name: "rute publik tanpa sitemap & tanpa noindex → MISSING",
-      input: { routeId: "/foo", url: "/foo", inSitemap: false, noindex: false, allowlisted: false },
+      input: { routeId: "/foo", url: "/foo", inSitemap: false, noindex: false, allowlisted: false, robotsDisallowed: false },
       expect: "MISSING",
       expectError: true,
     },
     {
       name: "rute auth-gated tanpa sitemap → auth-gated (ok)",
-      input: { routeId: "/_authenticated/audit", url: "/audit", inSitemap: false, noindex: false, allowlisted: false },
+      input: { routeId: "/_authenticated/audit", url: "/audit", inSitemap: false, noindex: false, allowlisted: false, robotsDisallowed: true },
       expect: "auth-gated",
     },
     {
       name: "rute dinamis dilewati",
-      input: { routeId: "/t/$token", url: "/t/$token", inSitemap: false, noindex: false, allowlisted: false },
+      input: { routeId: "/t/$token", url: "/t/$token", inSitemap: false, noindex: false, allowlisted: false, robotsDisallowed: true },
       expect: "DYNAMIC (skip)",
+    },
+    {
+      name: "sitemap TAPI Disallow di robots.txt → CONFLICT-ROBOTS",
+      input: { routeId: "/refund", url: "/refund", inSitemap: true, noindex: false, allowlisted: false, robotsDisallowed: true },
+      expect: "CONFLICT-ROBOTS",
+      expectError: true,
+    },
+    {
+      name: "noindex TAPI tidak Disallow → MISSING-ROBOTS",
+      input: { routeId: "/forgot-password", url: "/forgot-password", inSitemap: false, noindex: true, allowlisted: false, robotsDisallowed: false },
+      expect: "MISSING-ROBOTS",
+      expectError: true,
+    },
+    {
+      name: "noindex + Disallow → noindex (ok, konsisten)",
+      input: { routeId: "/change-email", url: "/change-email", inSitemap: false, noindex: true, allowlisted: false, robotsDisallowed: true },
+      expect: "noindex",
     },
   ];
   const failed = [];
@@ -225,6 +288,7 @@ function runSelfTests() {
 function main() {
   runSelfTests();
   const sitemapPaths = readSitemapPaths();
+  const robotsRules = extractRobotsDisallows(readFileSync(ROBOTS_FILE, "utf8"));
   const files = listRouteFiles(ROUTES_DIR);
   const rows = [];
   const errors = [];
@@ -237,12 +301,14 @@ function main() {
     const inSitemap = sitemapPaths.has(url);
     const noindex = hasNoindex(src);
     const allowlisted = ALLOWLIST_NO_SITEMAP.has(url);
+    const robotsDisallowed = robotsMatches(url, robotsRules);
     const { status, error } = classifyRoute({
       routeId: id,
       url,
       inSitemap,
       noindex,
       allowlisted,
+      robotsDisallowed,
     });
     if (error) errors.push(`  ${error} (${relative(ROOT, file)})`);
     rows.push({ url, status, file: relative(ROOT, file) });
