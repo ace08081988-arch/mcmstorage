@@ -145,6 +145,45 @@ function runSelfTests() {
       expectError: true,
     },
     {
+      name: "/forgot-password noindex + TIDAK di sitemap → noindex (ok)",
+      input: { routeId: "/forgot-password", url: "/forgot-password", inSitemap: false, noindex: true, allowlisted: false },
+      expect: "noindex",
+    },
+    {
+      name: "/forgot-password tanpa noindex & tanpa sitemap → MISSING",
+      input: { routeId: "/forgot-password", url: "/forgot-password", inSitemap: false, noindex: false, allowlisted: false },
+      expect: "MISSING",
+      expectError: true,
+    },
+    {
+      name: "/forgot-password di sitemap + noindex → CONFLICT",
+      input: { routeId: "/forgot-password", url: "/forgot-password", inSitemap: true, noindex: true, allowlisted: false },
+      expect: "CONFLICT",
+      expectError: true,
+    },
+    {
+      name: "/change-email noindex + TIDAK di sitemap → noindex (ok)",
+      input: { routeId: "/change-email", url: "/change-email", inSitemap: false, noindex: true, allowlisted: false },
+      expect: "noindex",
+    },
+    {
+      name: "/change-email tanpa noindex & tanpa sitemap → MISSING",
+      input: { routeId: "/change-email", url: "/change-email", inSitemap: false, noindex: false, allowlisted: false },
+      expect: "MISSING",
+      expectError: true,
+    },
+    {
+      name: "/change-email di sitemap + noindex → CONFLICT",
+      input: { routeId: "/change-email", url: "/change-email", inSitemap: true, noindex: true, allowlisted: false },
+      expect: "CONFLICT",
+      expectError: true,
+    },
+    {
+      name: "/change-email auth-gated tanpa sitemap → auth-gated (ok)",
+      input: { routeId: "/_authenticated/change-email", url: "/change-email", inSitemap: false, noindex: false, allowlisted: false },
+      expect: "auth-gated",
+    },
+    {
       name: "/refund di sitemap tanpa noindex → sitemap (ok)",
       input: { routeId: "/refund", url: "/refund", inSitemap: true, noindex: false, allowlisted: false },
       expect: "sitemap",
