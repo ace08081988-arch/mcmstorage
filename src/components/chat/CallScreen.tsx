@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
-  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -120,8 +120,39 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const doneRef = useRef(false);
   const helloReceivedRef = useRef(false);
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const toggleFullscreen = useCallback(async () => {
+    const root = rootRef.current;
+    if (!root) return;
+    try {
+      if (!document.fullscreenElement) {
+        await root.requestFullscreen?.();
+      } else {
+        await document.exitFullscreen?.();
+      }
+    } catch (err) {
+      console.warn("[call] fullscreen toggle gagal", err);
+      toast.error("Gagal mengaktifkan layar penuh di perangkat ini.");
+    }
+  }, []);
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => {
+          /* ignore */
+        });
+      }
+    };
+  }, []);
 
   const finalize = useCallback(
     async (status: "ended" | "declined" | "missed" | "cancelled" | "failed", reason?: string) => {
@@ -460,6 +491,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
 
   return (
     <div
+      ref={rootRef}
       className="fixed inset-0 z-[100] flex flex-col bg-black text-white"
       onPointerDown={resumePlayback}
     >
@@ -602,6 +634,23 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             ) : null}
             {phase === "connecting" || phase === "ringing" ? (
               <Loader2 className="h-4 w-4 animate-spin text-white/70" />
+            ) : null}
+            {kind === "video" ? (
+              <button
+                type="button"
+                onClick={() => void toggleFullscreen()}
+                aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+                aria-pressed={isFullscreen}
+                title={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+                data-testid="call-fullscreen-toggle"
+                className="rounded-full bg-black/40 p-1.5 text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                {isFullscreen ? (
+                  <Minimize className="h-4 w-4" />
+                ) : (
+                  <Maximize className="h-4 w-4" />
+                )}
+              </button>
             ) : null}
           </div>
         </div>
