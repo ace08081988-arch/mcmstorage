@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { getPosKasirRiwayat } from "@/lib/pos-kasir";
 
 const rupiah = (n: number) =>
@@ -30,6 +30,43 @@ function PosKasirRingkasanPage() {
   const omzetHariIni = hariIni.reduce((s, t) => s + t.total, 0);
   const beratHariIni = hariIni.reduce((s, t) => s + t.beratKg, 0);
   const jumlahHariIni = hariIni.length;
+
+  const [toast, setToast] = useState<string | null>(null);
+
+  const exportCSV = () => {
+    if (hariIni.length === 0) {
+      setToast("Belum ada transaksi hari ini untuk diekspor");
+      setTimeout(() => setToast(null), 2500);
+      return;
+    }
+    const header = ["Waktu", "Produk", "Berat (kg)", "Harga per kg (IDR)", "Total (IDR)", "Sisa Stok (kg)"];
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const rows = hariIni.map((t) =>
+      [
+        new Date(t.waktu).toLocaleString("id-ID"),
+        t.produkNama,
+        t.beratKg.toString().replace(".", ","),
+        t.hargaPerKg.toString(),
+        t.total.toString(),
+        t.sisaStokKg.toString().replace(".", ","),
+      ]
+        .map((c) => escape(String(c)))
+        .join(";")
+    );
+    const csv = "\uFEFF" + [header.map(escape).join(";"), ...rows].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `ringkasan-pos-kasir-hari-ini-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setToast(`✅ Diekspor ${hariIni.length} transaksi hari ini ke CSV`);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-4 md:p-8">
@@ -71,9 +108,18 @@ function PosKasirRingkasanPage() {
         </div>
 
         <section className="bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
-          <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-4">
-            Transaksi Hari Ini ({hariIni.length})
-          </h2>
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+            <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+              Transaksi Hari Ini ({hariIni.length})
+            </h2>
+            <button
+              onClick={exportCSV}
+              disabled={hariIni.length === 0}
+              className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-emerald-700 text-white font-medium"
+            >
+              ⬇ Ekspor CSV ({hariIni.length})
+            </button>
+          </div>
           {hariIni.length === 0 ? (
             <div className="text-center py-8 text-sm text-slate-500">
               Belum ada transaksi hari ini. Lakukan penjualan di halaman POS Kasir.
@@ -116,6 +162,12 @@ function PosKasirRingkasanPage() {
             </div>
           )}
         </section>
+
+        {toast && (
+          <div className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 rounded-lg bg-slate-900 border border-slate-700 px-4 py-2.5 text-sm text-slate-100 shadow-lg">
+            {toast}
+          </div>
+        )}
       </div>
     </div>
   );
