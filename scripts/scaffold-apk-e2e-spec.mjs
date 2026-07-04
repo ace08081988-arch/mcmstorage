@@ -393,7 +393,7 @@ async function main() {
     process.exit(1);
   }
 
-  const projectBlock = buildProjectBlock(name);
+  const projectBlock = buildProjectBlock(name, args.mode);
   const configText = await fs.readFile(CONFIG, "utf8");
   const { text: nextConfig, inserted, reason, insertAt } = insertProject(
     configText,
