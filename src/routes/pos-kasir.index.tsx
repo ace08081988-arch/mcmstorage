@@ -418,13 +418,29 @@ function PosKasirPage() {
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">🧾 POS Kasir · Produk Curah</h1>
             <p className="text-sm text-slate-400 mt-1">Simulasi timbangan digital & penjualan per kilogram</p>
           </div>
-          <Link
-            to="/pos-kasir/ringkasan"
-            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors"
-          >
-            📊 Ringkasan
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setModeRingkas((v) => !v)}
+              title={modeRingkas ? "Mode normal" : "Mode ringkas"}
+              aria-pressed={modeRingkas}
+              className={`rounded-lg border text-sm font-medium transition-colors ${
+                modeRingkas
+                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                  : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+              } px-4 py-2`}
+            >
+              {modeRingkas ? "📱 Mode ringkas" : "📱 Mode normal"}
+            </button>
+            <Link
+              to="/pos-kasir/ringkasan"
+              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors"
+            >
+              📊 Ringkasan
+            </Link>
+          </div>
         </header>
+
 
         {/* Mobile stock summary */}
         <section className="md:hidden mb-4 bg-slate-800/50 backdrop-blur rounded-xl p-3 border border-slate-700">
