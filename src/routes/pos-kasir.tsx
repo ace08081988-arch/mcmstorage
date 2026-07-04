@@ -178,16 +178,36 @@ function PosKasirPage() {
                   }`}
                   placeholder="0.000"
                 />
+                {berat > selected.stokKg && (
+                  <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-500/15 border border-red-500/40 p-3 text-sm text-red-200">
+                    <span className="shrink-0 text-red-400">⚠</span>
+                    <div>
+                      <p className="font-semibold">Berat melebihi stok</p>
+                      <p className="text-xs text-red-300/80 mt-0.5">
+                        Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} kg.\n                        Kurangi berat agar tidak melebihi stok yang ada.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-3 grid grid-cols-4 gap-2">
-                  {[0.25, 0.5, 1, 2].map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => setBeratStr(String((berat + v).toFixed(3)))}
-                      className="py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm font-medium"
-                    >
-                      +{v} kg
-                    </button>
-                  ))}
+                  {[0.25, 0.5, 1, 2].map((v) => {
+                    const wouldExceed = berat + v > selected.stokKg;
+                    return (
+                      <button
+                        key={v}
+                        onClick={() => setBeratStr(String((berat + v).toFixed(3)))}
+                        disabled={wouldExceed}
+                        className={`py-2 rounded-lg border text-sm font-medium transition-colors ${
+                          wouldExceed
+                            ? "bg-slate-800/50 border-slate-800 text-slate-600 cursor-not-allowed"
+                            : "bg-slate-800 hover:bg-slate-700 border-slate-700"
+                        }`}
+                      >
+                        +{v} kg
+                      </button>
+                    );
+                  })}
                 </div>
                 <button
                   onClick={() => setBeratStr("0")}
