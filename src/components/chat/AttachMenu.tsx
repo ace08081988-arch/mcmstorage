@@ -1113,7 +1113,7 @@ function ContactDialog({ conversationId, open, onOpenChange, onSent }: { convers
                 <button key={s.id} type="button" className="flex w-full items-center justify-between rounded px-2 py-1 text-left text-xs hover:bg-accent"
                   onClick={() => { setName(s.name); setPhone(s.wa_phone); }}>
                   <span className="truncate">{s.name}</span>
-                  <span className="text-muted-foreground">{s.wa_phone}</span>
+                  <span className="text-muted-foreground">{s.wa_phone ? `+${String(s.wa_phone).replace(/^\+?/, "")}` : "—"}</span>
                 </button>
               ))}
             </div>
@@ -1121,7 +1121,11 @@ function ContactDialog({ conversationId, open, onOpenChange, onSent }: { convers
         ) : null}
         <div className="space-y-2">
           <div><Label>Nama</Label><Input value={name} onChange={(e) => setName(e.target.value)} /></div>
-          <div><Label>Nomor MCM</Label><Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="62812..." /></div>
+          <div>
+            <Label>Nomor HP / WhatsApp</Label>
+            <Input value={phone} onChange={(e) => setPhone(e.target.value)} placeholder="cth: 62812xxxxxxx" inputMode="tel" />
+            <p className="mt-1 text-[10px] text-muted-foreground">Ini nomor telepon (untuk WhatsApp/telepon), bukan PIN chat MCM.</p>
+          </div>
           <div><Label>Catatan (opsional)</Label><Textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} /></div>
         </div>
         <DialogFooter>
