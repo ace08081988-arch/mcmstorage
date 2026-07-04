@@ -929,7 +929,7 @@ function PosKasirPage() {
                   )}
                 </div>
 
-                <div className="grid gap-2 md:grid-cols-2">
+                <div className={`grid md:grid-cols-2 ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
                   <div>
                     <label className="text-[10px] uppercase tracking-wider text-slate-500">
                       Nomor WA tujuan
@@ -942,11 +942,11 @@ function PosKasirPage() {
                       onChange={(e) => setWaNomor(e.target.value)}
                       placeholder="0812… atau 62812…"
                       aria-invalid={!!waNomor && !waNomorNorm}
-                      className={`mt-1 w-full text-sm px-3 py-2 rounded-lg bg-slate-900/60 border text-slate-100 font-mono focus:outline-none focus:ring-2 ${
+                      className={`w-full text-sm rounded-lg bg-slate-900/60 border text-slate-100 font-mono focus:outline-none focus:ring-2 ${
                         waNomor && !waNomorNorm
                           ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
                           : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
-                      }`}
+                      } ${modeRingkas ? "mt-0.5 px-2 py-1" : "mt-1 px-3 py-2"}`}
                     />
                     {waNomorError && waNomor.trim() !== "" && (
                       <p className="mt-1 text-[11px] text-red-300">{waNomorError}</p>
@@ -970,17 +970,18 @@ function PosKasirPage() {
                       placeholder="https://maps.google.com/…"
                       maxLength={500}
                       aria-invalid={!!waLokasiTrim && !waLokasiValid}
-                      className={`mt-1 w-full text-sm px-3 py-2 rounded-lg bg-slate-900/60 border text-slate-100 focus:outline-none focus:ring-2 ${
+                      className={`w-full text-sm rounded-lg bg-slate-900/60 border text-slate-100 focus:outline-none focus:ring-2 ${
                         waLokasiTrim && !waLokasiValid
                           ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
                           : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
-                      }`}
+                      } ${modeRingkas ? "mt-0.5 px-2 py-1" : "mt-1 px-3 py-2"}`}
                     />
                     {waLokasiError && waLokasiTrim !== "" && (
                       <p className="mt-1 text-[11px] text-red-300">{waLokasiError}</p>
                     )}
                   </div>
                 </div>
+
               </div>
 
               {/* Mobile: card list */}
