@@ -795,7 +795,9 @@ function ChatRoomPage() {
                     callerName: displayedPeerName,
                   }).catch(() => { /* ring gagal — UI tetap jalan */ });
                 } catch (e) {
-                  toast.error((e as { message?: string })?.message ?? "Gagal memulai panggilan");
+                  const { describeCallError } = await import("@/lib/call-errors");
+                  const info = describeCallError(e, "audio");
+                  toast.error(info.title, { description: info.hint, duration: 8000 });
                 } finally {
                   setStartingCall(false);
                 }
@@ -833,7 +835,9 @@ function ChatRoomPage() {
                     callerName: displayedPeerName,
                   }).catch(() => { /* ring gagal — UI tetap jalan */ });
                 } catch (e) {
-                  toast.error((e as { message?: string })?.message ?? "Gagal memulai panggilan");
+                  const { describeCallError } = await import("@/lib/call-errors");
+                  const info = describeCallError(e, "video");
+                  toast.error(info.title, { description: info.hint, duration: 8000 });
                 } finally {
                   setStartingCall(false);
                 }
