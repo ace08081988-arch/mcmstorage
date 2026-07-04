@@ -1676,7 +1676,7 @@ DECLARE
   v_new_member_a boolean := false;
   v_new_member_b boolean := false;
   v_b_phone text := '+62999' || substr(replace(gen_random_uuid()::text, '-', ''), 1, 10);
-  v_row public.get_chat_member_profiles;
+  v_row record;
   v_count int;
 BEGIN
   IF v_a IS NULL OR v_b IS NULL OR NOT current_setting('test.can_switch')::boolean THEN
