@@ -567,19 +567,15 @@ function PiutangTab({
           g.balance > 0.001 ? "hutang" : g.balance < -0.001 ? "kelebihan" : "lunas";
         return (
           <div key={g.customer.id} className="space-y-2 rounded-lg border bg-card p-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <div className="truncate text-sm font-semibold" title={g.customer.name}>{g.customer.name}</div>
-                <div className="text-[11px] text-muted-foreground">
-                  Hutang {rupiah(g.totalHutang)} · Bayar {rupiah(g.totalBayar)}
-                </div>
-              </div>
-              <StatusBadge variant={status}>
-                {status === "hutang" ? `Sisa ${rupiah(g.balance)}`
-                  : status === "kelebihan" ? `Kelebihan ${rupiah(-g.balance)}`
-                  : "✓ Lunas"}
-              </StatusBadge>
-            </div>
+            <PiutangCustomerHeader
+              customer={g.customer}
+              totalHutang={g.totalHutang}
+              totalBayar={g.totalBayar}
+              balance={g.balance}
+              status={status}
+              onLocalUpdateCustomer={onLocalUpdateCustomer}
+              onChanged={onChanged}
+            />
 
             <ShareCustomer
               customer={g.customer}
@@ -596,19 +592,14 @@ function PiutangTab({
                 {g.hutangSales.map((s) => {
                   const it = itemMap[s.item_id];
                   return (
-                    <li key={s.id} className="rounded border bg-background p-2 text-xs">
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="min-w-0">
-                          <div className="truncate font-semibold" title={it?.name || "(barang dihapus)"}>{it?.name || "(barang dihapus)"}</div>
-                          <div className="text-[11px] text-muted-foreground">
-                            {new Date(s.created_at).toLocaleDateString("id-ID")} · {fmtItemQty(Number(s.qty_base), it)}
-                          </div>
-                        </div>
-                        <div className="shrink-0 text-right text-[11px]">
-                          <div className="font-semibold">{rupiah(Number(s.total_revenue))}</div>
-                        </div>
-                      </div>
-                    </li>
+                    <EditableSaleRow
+                      key={s.id}
+                      sale={s}
+                      item={it}
+                      onLocalUpdateSale={onLocalUpdateSale}
+                      onLocalRemoveSale={onLocalRemoveSale}
+                      onChanged={onChanged}
+                    />
                   );
                 })}
               </ul>
@@ -625,29 +616,13 @@ function PiutangTab({
             {g.payments.length > 0 && (
               <ul className="space-y-1 border-t pt-2">
                 {g.payments.map((pay) => (
-                  <li key={pay.id} className="flex items-center justify-between gap-2 text-[11px]">
-                    <span className="truncate">
-                      {new Date(pay.created_at).toLocaleDateString("id-ID")} ·{" "}
-                      <b className="text-emerald-600 dark:text-emerald-400">{rupiah(Number(pay.amount))}</b>
-                      {pay.note && <span className="text-muted-foreground"> · {pay.note}</span>}
-                    </span>
-                    <button
-                      onClick={async () => {
-                        if (!(await confirm({
-                          title: "Hapus pembayaran?",
-                          description: "Catatan pembayaran ini akan dihapus permanen.",
-                          confirmText: "Hapus",
-                        }))) return;
-                        onLocalRemovePayment(pay.id);
-                        const { error } = await supabase.from("customer_payments").delete().eq("id", pay.id);
-                        if (error) { toast.error(friendlyError(error)); onChanged(); }
-                        else { toast.success("Pembayaran dihapus"); onChanged(); }
-                      }}
-                      className="shrink-0 rounded border px-1.5 py-0.5 text-[11px] text-destructive hover:bg-destructive/10"
-                    >
-                      Hapus
-                    </button>
-                  </li>
+                  <EditablePaymentRow
+                    key={pay.id}
+                    payment={pay}
+                    onLocalUpdatePayment={onLocalUpdatePayment}
+                    onLocalRemovePayment={onLocalRemovePayment}
+                    onChanged={onChanged}
+                  />
                 ))}
               </ul>
             )}
