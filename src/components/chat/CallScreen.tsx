@@ -120,8 +120,39 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const localVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteVideoRef = useRef<HTMLVideoElement | null>(null);
   const remoteAudioRef = useRef<HTMLAudioElement | null>(null);
+  const rootRef = useRef<HTMLDivElement | null>(null);
   const doneRef = useRef(false);
   const helloReceivedRef = useRef(false);
+
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const toggleFullscreen = useCallback(async () => {
+    const root = rootRef.current;
+    if (!root) return;
+    try {
+      if (!document.fullscreenElement) {
+        await root.requestFullscreen?.();
+      } else {
+        await document.exitFullscreen?.();
+      }
+    } catch (err) {
+      console.warn("[call] fullscreen toggle gagal", err);
+      toast.error("Gagal mengaktifkan layar penuh di perangkat ini.");
+    }
+  }, []);
+  useEffect(() => {
+    const onChange = () => setIsFullscreen(Boolean(document.fullscreenElement));
+    document.addEventListener("fullscreenchange", onChange);
+    return () => document.removeEventListener("fullscreenchange", onChange);
+  }, []);
+  useEffect(() => {
+    return () => {
+      if (document.fullscreenElement) {
+        document.exitFullscreen?.().catch(() => {
+          /* ignore */
+        });
+      }
+    };
+  }, []);
 
   const finalize = useCallback(
     async (status: "ended" | "declined" | "missed" | "cancelled" | "failed", reason?: string) => {
