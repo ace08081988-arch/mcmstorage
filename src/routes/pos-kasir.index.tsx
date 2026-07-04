@@ -26,6 +26,8 @@ const QUICK_WEIGHTS = [0.1, 0.25, 0.5, 1, 2];
 
 const AMBANG_STORAGE_KEY = "mcm-pos-kasir-ambang-stok";
 const AMBANG_DEFAULT = 5;
+const MODE_RINGKAS_KEY = "mcm-pos-kasir-mode-ringkas";
+
 
 type StokLevel = "habis" | "kritis" | "menipis" | "aman";
 
@@ -63,11 +65,22 @@ function PosKasirPage() {
     const n = raw ? parseFloat(raw) : NaN;
     return Number.isFinite(n) && n > 0 ? n : AMBANG_DEFAULT;
   });
+  const [modeRingkas, setModeRingkas] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const raw = localStorage.getItem(MODE_RINGKAS_KEY);
+    return raw === "true" ? true : raw === "false" ? false : false;
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     localStorage.setItem(AMBANG_STORAGE_KEY, String(ambangStok));
   }, [ambangStok]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(MODE_RINGKAS_KEY, String(modeRingkas));
+  }, [modeRingkas]);
+
 
   const waNomorNorm = useMemo(() => normalizeWaNumber(waNomor, "ID"), [waNomor]);
   const waNomorDisplay = useMemo(
@@ -367,23 +380,37 @@ function PosKasirPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-3 md:p-8">
+    <div className={`min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 md:p-8 ${modeRingkas ? "p-2" : "p-3"}`}>
       <div className="mx-auto max-w-6xl">
         {/* Mobile header */}
-        <header className="md:hidden mb-4 grid grid-cols-[minmax(0,1fr)_auto] items-center gap-3">
+        <header className={`md:hidden grid grid-cols-[minmax(0,1fr)_auto_auto] items-center gap-2 ${modeRingkas ? "mb-2" : "mb-4"}`}>
           <div className="min-w-0">
             <h1 className="truncate text-xl font-bold tracking-tight">🧾 POS Kasir</h1>
             <p className="truncate text-xs text-slate-400 mt-0.5">
               {riwayat.length} transaksi · {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
             </p>
           </div>
+          <button
+            type="button"
+            onClick={() => setModeRingkas((v) => !v)}
+            title={modeRingkas ? "Mode normal" : "Mode ringkas"}
+            aria-pressed={modeRingkas}
+            className={`shrink-0 rounded-lg border text-xs font-medium transition-colors ${
+              modeRingkas
+                ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+            } ${modeRingkas ? "px-2 py-1" : "px-3 py-1.5"}`}
+          >
+            {modeRingkas ? "📱 Ringkas" : "📱 Normal"}
+          </button>
           <Link
             to="/pos-kasir/ringkasan"
-            className="shrink-0 px-3 py-1.5 rounded-lg bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 hover:bg-slate-700 transition-colors"
+            className={`shrink-0 rounded-lg bg-slate-800 border border-slate-700 text-xs font-medium text-slate-200 hover:bg-slate-700 transition-colors ${modeRingkas ? "px-2 py-1" : "px-3 py-1.5"}`}
           >
             📊 Ringkasan
           </Link>
         </header>
+
 
         {/* Desktop header */}
         <header className="hidden md:flex mb-6 items-center justify-between">
@@ -391,21 +418,37 @@ function PosKasirPage() {
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">🧾 POS Kasir · Produk Curah</h1>
             <p className="text-sm text-slate-400 mt-1">Simulasi timbangan digital & penjualan per kilogram</p>
           </div>
-          <Link
-            to="/pos-kasir/ringkasan"
-            className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors"
-          >
-            📊 Ringkasan
-          </Link>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setModeRingkas((v) => !v)}
+              title={modeRingkas ? "Mode normal" : "Mode ringkas"}
+              aria-pressed={modeRingkas}
+              className={`rounded-lg border text-sm font-medium transition-colors ${
+                modeRingkas
+                  ? "bg-emerald-500/20 border-emerald-500/50 text-emerald-300"
+                  : "bg-slate-800 border-slate-700 text-slate-300 hover:bg-slate-700"
+              } px-4 py-2`}
+            >
+              {modeRingkas ? "📱 Mode ringkas" : "📱 Mode normal"}
+            </button>
+            <Link
+              to="/pos-kasir/ringkasan"
+              className="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-sm font-medium transition-colors"
+            >
+              📊 Ringkasan
+            </Link>
+          </div>
         </header>
 
+
         {/* Mobile stock summary */}
-        <section className="md:hidden mb-4 bg-slate-800/50 backdrop-blur rounded-xl p-3 border border-slate-700">
-          <div className="flex items-center justify-between mb-2">
+        <section className={`md:hidden bg-slate-800/50 backdrop-blur rounded-xl border border-slate-700 ${modeRingkas ? "mb-2 p-2" : "mb-4 p-3"}`}>
+          <div className={`flex items-center justify-between ${modeRingkas ? "mb-1" : "mb-2"}`}>
             <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Stok Tersisa</span>
             <span className="text-xs text-slate-400">{totalStok.toLocaleString("id-ID")} kg total</span>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          <div className={`flex overflow-x-auto scrollbar-thin ${modeRingkas ? "gap-1.5 pb-0.5" : "gap-2 pb-1"}`}>
             {produk.map((p) => {
               const active = p.id === selectedId;
               const level = levelStok(p.stokKg, ambangStok);
@@ -416,11 +459,11 @@ function PosKasirPage() {
                   key={p.id}
                   onClick={() => setSelectedId(p.id)}
                   disabled={habis}
-                  className={`relative shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs transition-colors ${meta.ring} ${
+                  className={`relative shrink-0 flex items-center gap-2 rounded-lg border text-xs transition-colors ${meta.ring} ${
                     active
                       ? "bg-emerald-500/20 border-emerald-400"
                       : "bg-slate-900/60 border-slate-700 hover:border-slate-500"
-                  } ${habis ? "opacity-40 cursor-not-allowed" : ""}`}
+                  } ${habis ? "opacity-40 cursor-not-allowed" : ""} ${modeRingkas ? "px-2 py-1.5" : "px-3 py-2"}`}
                 >
                   <span className="text-lg">{p.emoji}</span>
                   <div className="text-left min-w-0">
@@ -441,7 +484,7 @@ function PosKasirPage() {
               );
             })}
           </div>
-          <div className="mt-2 flex flex-col gap-1">
+          <div className={`mt-2 flex flex-col gap-1 ${modeRingkas ? "hidden" : ""}`}>
             {produkKritis.length > 0 && (
               <div className="text-[11px] text-rose-300">
                 🚨 Stok kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
@@ -475,9 +518,11 @@ function PosKasirPage() {
           </div>
         </section>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
+
+        <div className={`grid grid-cols-1 lg:grid-cols-3 md:gap-6 ${modeRingkas ? "gap-2" : "gap-4"}`}>
           {/* Main */}
-          <section className="lg:col-span-2 space-y-4 md:space-y-6">
+          <section className={`lg:col-span-2 ${modeRingkas ? "space-y-2 md:space-y-6" : "space-y-4 md:space-y-6"}`}>
+
             {/* Desktop product grid */}
             <div className="hidden md:block bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
               <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
@@ -555,31 +600,31 @@ function PosKasirPage() {
             </div>
 
             {/* Mobile scale */}
-            <div className="md:hidden bg-gradient-to-b from-slate-950 to-black rounded-2xl p-4 border-2 border-slate-700 shadow-2xl">
-              <div className="flex items-center justify-between mb-3">
+            <div className={`md:hidden bg-gradient-to-b from-slate-950 to-black rounded-2xl border-2 border-slate-700 shadow-2xl ${modeRingkas ? "p-3" : "p-4"}`}>
+              <div className={`flex items-center justify-between ${modeRingkas ? "mb-2" : "mb-3"}`}>
                 <span className="text-xs font-mono uppercase tracking-widest text-emerald-400">⚖ Timbangan</span>
                 <span className="text-xs text-slate-400 truncate">
                   {selected.emoji} {selected.nama}
                 </span>
               </div>
-              <div className="bg-black rounded-xl p-4 border border-emerald-900/50 relative overflow-hidden">
+              <div className={`bg-black rounded-xl border border-emerald-900/50 relative overflow-hidden ${modeRingkas ? "p-3" : "p-4"}`}>
                 <div className="absolute inset-0 bg-emerald-500/5" />
                 <div className="relative flex items-baseline justify-end gap-2">
                   <span
-                    className="font-mono text-5xl font-bold text-emerald-400 tabular-nums"
+                    className={`font-mono font-bold text-emerald-400 tabular-nums ${modeRingkas ? "text-4xl" : "text-5xl"}`}
                     style={{ textShadow: "0 0 20px rgba(52,211,153,0.6)", fontFamily: "'Courier New', monospace" }}
                   >
                     {displayBerat}
                   </span>
-                  <span className="text-xl font-mono text-emerald-500">kg</span>
+                  <span className={`font-mono text-emerald-500 ${modeRingkas ? "text-lg" : "text-xl"}`}>kg</span>
                 </div>
-                <div className="mt-2 pt-2 border-t border-emerald-900/40 flex justify-between text-xs font-mono text-emerald-500/70">
+                <div className={`border-t border-emerald-900/40 flex justify-between font-mono text-emerald-500/70 ${modeRingkas ? "mt-1 pt-1 text-[11px]" : "mt-2 pt-2 text-xs"}`}>
                   <span>@ {rupiah(selected.hargaPerKg)}/KG</span>
                   <span>TOTAL {rupiah(total)}</span>
                 </div>
               </div>
 
-              <div className="mt-4">
+              <div className={modeRingkas ? "mt-3" : "mt-4"}>
                 <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Input Berat (kg)</label>
                 <input
                   type="number"
@@ -588,15 +633,15 @@ function PosKasirPage() {
                   max={selected.stokKg}
                   value={beratStr}
                   onChange={(e) => setBeratStr(e.target.value)}
-                  className={`mt-2 w-full bg-slate-900 border rounded-lg px-3 py-2.5 text-base font-mono focus:outline-none focus:ring-2 transition-colors ${
+                  className={`w-full bg-slate-900 border rounded-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
                     berat > selected.stokKg
                       ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
                       : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
-                  }`}
+                  } ${modeRingkas ? "mt-1 px-2.5 py-2 text-sm" : "mt-2 px-3 py-2.5 text-base"}`}
                   placeholder="0.000"
                 />
                 {berat > selected.stokKg && (
-                  <div className="mt-2 flex items-start gap-2 rounded-lg bg-red-500/15 border border-red-500/40 p-2 text-xs text-red-200">
+                  <div className={`flex items-start gap-2 rounded-lg bg-red-500/15 border border-red-500/40 text-xs text-red-200 ${modeRingkas ? "mt-1 p-1.5" : "mt-2 p-2"}`}>
                     <span className="shrink-0 text-red-400">⚠</span>
                     <div>
                       Melebihi stok {selected.stokKg.toLocaleString("id-ID")} kg.
@@ -606,9 +651,10 @@ function PosKasirPage() {
               </div>
             </div>
 
+
             {/* Mobile quick buttons */}
-            <div className="md:hidden space-y-2">
-              <div className="grid grid-cols-5 gap-2">
+            <div className={`md:hidden ${modeRingkas ? "space-y-1.5" : "space-y-2"}`}>
+              <div className={`grid grid-cols-5 ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
                 {QUICK_WEIGHTS.map((v) => {
                   const wouldExceed = berat + v > selected.stokKg;
                   return (
@@ -616,40 +662,41 @@ function PosKasirPage() {
                       key={v}
                       onClick={() => addBerat(v)}
                       disabled={wouldExceed}
-                      className={`py-2.5 rounded-lg border text-xs font-semibold transition-colors ${
+                      className={`rounded-lg border text-xs font-semibold transition-colors ${
                         wouldExceed
                           ? "bg-slate-800/50 border-slate-800 text-slate-600 cursor-not-allowed"
                           : "bg-slate-800 hover:bg-slate-700 border-slate-700 active:bg-emerald-600/30"
-                      }`}
+                      } ${modeRingkas ? "py-2" : "py-2.5"}`}
                     >
                       +{v}
                     </button>
                   );
                 })}
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className={`grid grid-cols-3 ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
                 <button
                   onClick={() => addBerat(-0.25)}
                   disabled={berat <= 0}
-                  className="py-2.5 rounded-lg border border-slate-700 bg-slate-800 text-xs font-semibold disabled:opacity-50 active:bg-slate-700"
+                  className={`rounded-lg border border-slate-700 bg-slate-800 text-xs font-semibold disabled:opacity-50 active:bg-slate-700 ${modeRingkas ? "py-2" : "py-2.5"}`}
                 >
                   -0.25
                 </button>
                 <button
                   onClick={() => setBeratStr("0")}
-                  className="py-2.5 rounded-lg border border-slate-700 bg-slate-800 text-xs font-semibold text-slate-400 active:bg-slate-700"
+                  className={`rounded-lg border border-slate-700 bg-slate-800 text-xs font-semibold text-slate-400 active:bg-slate-700 ${modeRingkas ? "py-2" : "py-2.5"}`}
                 >
                   Reset
                 </button>
                 <button
                   onClick={bayar}
                   disabled={!stokCukup}
-                  className="py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-xs font-bold text-white shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform"
+                  className={`rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-700 disabled:text-slate-500 disabled:cursor-not-allowed text-xs font-bold text-white shadow-lg shadow-emerald-500/30 active:scale-95 transition-transform ${modeRingkas ? "py-2" : "py-2.5"}`}
                 >
                   Bayar
                 </button>
               </div>
             </div>
+
 
             {/* Desktop scale */}
             <div className="hidden md:block bg-gradient-to-b from-slate-950 to-black rounded-2xl p-6 border-2 border-slate-700 shadow-2xl">
@@ -793,8 +840,9 @@ function PosKasirPage() {
         </div>
 
         {/* Riwayat Transaksi */}
-        <section className="mt-4 md:mt-6 bg-slate-800/50 backdrop-blur rounded-2xl p-4 md:p-5 border border-slate-700">
-          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+        <section className={`md:mt-6 bg-slate-800/50 backdrop-blur rounded-2xl border border-slate-700 ${modeRingkas ? "mt-2 p-3 md:p-5" : "mt-4 p-4 md:p-5"}`}>
+          <div className={`flex flex-wrap items-center justify-between gap-3 ${modeRingkas ? "mb-2" : "mb-4"}`}>
+
             <div>
               <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
                 📋 Riwayat Transaksi
@@ -867,8 +915,8 @@ function PosKasirPage() {
           ) : (
             <>
               {/* WA share form */}
-              <div className="mb-4 rounded-xl border border-slate-700 bg-slate-900/40 p-3">
-                <div className="flex items-center justify-between gap-2 mb-2">
+              <div className={`rounded-xl border border-slate-700 bg-slate-900/40 ${modeRingkas ? "mb-2 p-2" : "mb-4 p-3"}`}>
+                <div className={`flex items-center justify-between gap-2 ${modeRingkas ? "mb-1" : "mb-2"}`}>
                   <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
                     💬 Kirim Struk via WA
                   </span>
@@ -880,7 +928,8 @@ function PosKasirPage() {
                     <span className="text-[11px] text-amber-400">Lengkapi nomor & lokasi</span>
                   )}
                 </div>
-                <div className="grid gap-2 md:grid-cols-2">
+
+                <div className={`grid md:grid-cols-2 ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
                   <div>
                     <label className="text-[10px] uppercase tracking-wider text-slate-500">
                       Nomor WA tujuan
@@ -893,11 +942,11 @@ function PosKasirPage() {
                       onChange={(e) => setWaNomor(e.target.value)}
                       placeholder="0812… atau 62812…"
                       aria-invalid={!!waNomor && !waNomorNorm}
-                      className={`mt-1 w-full text-sm px-3 py-2 rounded-lg bg-slate-900/60 border text-slate-100 font-mono focus:outline-none focus:ring-2 ${
+                      className={`w-full text-sm rounded-lg bg-slate-900/60 border text-slate-100 font-mono focus:outline-none focus:ring-2 ${
                         waNomor && !waNomorNorm
                           ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
                           : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
-                      }`}
+                      } ${modeRingkas ? "mt-0.5 px-2 py-1" : "mt-1 px-3 py-2"}`}
                     />
                     {waNomorError && waNomor.trim() !== "" && (
                       <p className="mt-1 text-[11px] text-red-300">{waNomorError}</p>
@@ -921,21 +970,22 @@ function PosKasirPage() {
                       placeholder="https://maps.google.com/…"
                       maxLength={500}
                       aria-invalid={!!waLokasiTrim && !waLokasiValid}
-                      className={`mt-1 w-full text-sm px-3 py-2 rounded-lg bg-slate-900/60 border text-slate-100 focus:outline-none focus:ring-2 ${
+                      className={`w-full text-sm rounded-lg bg-slate-900/60 border text-slate-100 focus:outline-none focus:ring-2 ${
                         waLokasiTrim && !waLokasiValid
                           ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
                           : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
-                      }`}
+                      } ${modeRingkas ? "mt-0.5 px-2 py-1" : "mt-1 px-3 py-2"}`}
                     />
                     {waLokasiError && waLokasiTrim !== "" && (
                       <p className="mt-1 text-[11px] text-red-300">{waLokasiError}</p>
                     )}
                   </div>
                 </div>
+
               </div>
 
               {/* Mobile: card list */}
-              <div className="grid gap-2 md:hidden">
+              <div className={`grid md:hidden ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
                   <input
@@ -944,9 +994,10 @@ function PosKasirPage() {
                     value={cariTransaksi}
                     onChange={(e) => setCariTransaksi(e.target.value)}
                     placeholder="Cari nama produk atau waktu…"
-                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-400"
+                    className={`w-full pl-9 pr-3 rounded-lg bg-slate-900/60 border border-slate-700 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-400 ${modeRingkas ? "py-1.5" : "py-2"}`}
                   />
                 </div>
+
                 {riwayatCariMobile.length === 0 ? (
                   <div className="text-center py-6 text-xs text-slate-500">
                     Tidak ada transaksi yang cocok dengan pencarian.
@@ -970,7 +1021,7 @@ function PosKasirPage() {
                         </div>
                       )}
                       <div
-                        className="rounded-xl bg-slate-900/60 border border-slate-700 p-3 relative transition-transform touch-pan-y"
+                        className={`rounded-xl bg-slate-900/60 border border-slate-700 relative transition-transform touch-pan-y ${modeRingkas ? "p-2" : "p-3"}`}
                         style={{ transform: `translateX(${dx}px)` }}
                         onTouchStart={(e) => {
                           if (!isTerakhir) return;
@@ -993,9 +1044,10 @@ function PosKasirPage() {
                           }
                         }}
                       >
+
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
-                          <span className="text-xl shrink-0">{t.produkEmoji}</span>
+                          <span className={`shrink-0 ${modeRingkas ? "text-lg" : "text-xl"}`}>{t.produkEmoji}</span>
                           <div className="min-w-0">
                             <div className="text-sm font-medium truncate">{t.produkNama}</div>
                             <div className="text-[11px] text-slate-500 font-mono">{waktuFmt.format(t.waktu)}</div>
@@ -1008,21 +1060,21 @@ function PosKasirPage() {
                           </div>
                         </div>
                       </div>
-                      <div className="mt-2 pt-2 border-t border-slate-800 flex justify-between text-[11px] text-slate-500">
+                      <div className={`border-t border-slate-800 flex justify-between text-[11px] text-slate-500 ${modeRingkas ? "mt-1.5 pt-1.5" : "mt-2 pt-2"}`}>
                         <span>@ {rupiah(t.hargaPerKg)}/kg</span>
                         <span>
                           Sisa:{" "}
                           <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} kg</span>
                         </span>
                       </div>
-                      <div className="mt-2 flex gap-2">
+                      <div className={`flex ${modeRingkas ? "mt-1.5 gap-1.5" : "mt-2 gap-2"}`}>
                         <button
                           type="button"
                           onClick={() => kirimWa(t)}
                           disabled={!waReady}
                           title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
                           aria-disabled={!waReady}
-                          className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                          className={`flex-1 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors ${modeRingkas ? "py-1" : "py-1.5"}`}
                         >
                           💬 Kirim WA
                         </button>
@@ -1030,7 +1082,7 @@ function PosKasirPage() {
                           <button
                             type="button"
                             onClick={() => batalkanTransaksi(t)}
-                            className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors"
+                            className={`rounded-lg text-[11px] font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors ${modeRingkas ? "px-2 py-1" : "px-3 py-1.5"}`}
                             title="Batalkan transaksi terakhir & kembalikan stok"
                           >
                             ↶ Batalkan
@@ -1038,11 +1090,12 @@ function PosKasirPage() {
                         )}
                       </div>
                       {isTerakhir && (
-                        <div className="mt-1 text-[10px] text-slate-500 text-center">
+                        <div className={`text-[10px] text-slate-500 text-center ${modeRingkas ? "mt-0.5" : "mt-1"}`}>
                           {revealed ? "Lepas untuk membatalkan →" : "Geser ← untuk membatalkan"}
                         </div>
                       )}
                       </div>
+
                     </div>
                     );
                   })
