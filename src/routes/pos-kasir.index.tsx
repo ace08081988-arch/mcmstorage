@@ -268,15 +268,21 @@ function PosKasirPage() {
     return riwayat.filter((t) => t.waktu >= dari && t.waktu <= sampai);
   }, [riwayat, dariTgl, sampaiTgl]);
 
+  const riwayatSorted = useMemo(() => {
+    return [...riwayatFiltered].sort((a, b) =>
+      urutan === "terbaru" ? b.waktu - a.waktu : a.waktu - b.waktu,
+    );
+  }, [riwayatFiltered, urutan]);
+
   const riwayatCariMobile = useMemo(() => {
     const q = cariTransaksi.trim().toLowerCase();
-    if (!q) return riwayatFiltered;
-    return riwayatFiltered.filter(
+    if (!q) return riwayatSorted;
+    return riwayatSorted.filter(
       (t) =>
         t.produkNama.toLowerCase().includes(q) ||
         waktuFmt.format(t.waktu).toLowerCase().includes(q),
     );
-  }, [riwayatFiltered, cariTransaksi]);
+  }, [riwayatSorted, cariTransaksi]);
 
   const exportCSV = () => {
     if (riwayatFiltered.length === 0) {
