@@ -1,3 +1,4 @@
+// README scenario: README.md#apk-scenario-example-terminal-only
 /**
  * Spec E2E APK — CONTOH PEMBANDING: HANYA `terminalGuard`, tanpa
  * `installServerFnPassthroughGuard`.

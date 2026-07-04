@@ -33,13 +33,13 @@ Setiap spec E2E yang menguji tile APK memasang stub `getApkVariantDetail`. Ada d
 
 | Spec | Skenario | Guard requirement | Perubahan checklist Guards |
 |---|---|---|---|
-| `apk-min-validate-form.spec.ts` | Form validasi `minSupported` | *form-only* | Tulis `// Guards : (spec form murni — bukan flow getApkVariantDetail, tidak memakai apk-stub / terminalGuard)`. Hapus semua marker stub. |
-| `apk-mount-quiescent.spec.ts` | Mount murni tile APK | `terminalGuard-only` | `primeInitial + assertPrimed` → `waitForServed` → `assertQuiescent` → `terminalGuard()`; tidak ada `trackedClick` karena mount-only; tambahkan `(mode: terminal)`. |
-| `apk-availability-refresh.spec.ts` | Idle → tap refresh Chat → aktif | `terminalGuard-only` | Base checklist stub + `trackedClick(expected.chat=1)` + `assertQuiescent` + `terminalGuard()`; `(mode: terminal)`. |
-| `apk-availability-refresh-storage.spec.ts` | Idle → tap refresh Storage → aktif | `terminalGuard-only` | Sama seperti di atas, tetapi `trackedClick(expected.storage=1)` untuk bukti independensi varian; `(mode: terminal)`. |
-| `apk-refresh-single-refetch.spec.ts` | Satu tap = satu refetch | `terminalGuard-only` | Base checklist + `trackedClick(expected.storage=1)` + `assertQuiescent` + `terminalGuard()`; fokus regression hitungan request; `(mode: terminal)`. |
-| `apk-example-terminal-only.spec.ts` | Contoh pembanding terminal-only | `terminalGuard-only` | Base checklist + `trackedClick(expected.chat=1)` + `assertQuiescent` + `terminalGuard()`; `(mode: terminal)`. |
-| `apk-*-copy-export-*.spec.ts` (bila ada) | Copy / export link APK Chat | `terminalGuard + installServerFnPassthroughGuard` | Base checklist stub + `passthrough.assertNoAdditionalRequests` + `passthrough.dispose()` di akhir; ganti tag menjadi `(mode: full)`. |
+| <a id="apk-scenario-min-validate-form"></a>`apk-min-validate-form.spec.ts` | Form validasi `minSupported` | *form-only* | Tulis `// Guards : (spec form murni — bukan flow getApkVariantDetail, tidak memakai apk-stub / terminalGuard)`. Hapus semua marker stub. |
+| <a id="apk-scenario-mount-quiescent"></a>`apk-mount-quiescent.spec.ts` | Mount murni tile APK | `terminalGuard-only` | `primeInitial + assertPrimed` → `waitForServed` → `assertQuiescent` → `terminalGuard()`; tidak ada `trackedClick` karena mount-only; tambahkan `(mode: terminal)`. |
+| <a id="apk-scenario-availability-refresh"></a>`apk-availability-refresh.spec.ts` | Idle → tap refresh Chat → aktif | `terminalGuard-only` | Base checklist stub + `trackedClick(expected.chat=1)` + `assertQuiescent` + `terminalGuard()`; `(mode: terminal)`. |
+| <a id="apk-scenario-availability-refresh-storage"></a>`apk-availability-refresh-storage.spec.ts` | Idle → tap refresh Storage → aktif | `terminalGuard-only` | Sama seperti di atas, tetapi `trackedClick(expected.storage=1)` untuk bukti independensi varian; `(mode: terminal)`. |
+| <a id="apk-scenario-refresh-single-refetch"></a>`apk-refresh-single-refetch.spec.ts` | Satu tap = satu refetch | `terminalGuard-only` | Base checklist + `trackedClick(expected.storage=1)` + `assertQuiescent` + `terminalGuard()`; fokus regression hitungan request; `(mode: terminal)`. |
+| <a id="apk-scenario-example-terminal-only"></a>`apk-example-terminal-only.spec.ts` | Contoh pembanding terminal-only | `terminalGuard-only` | Base checklist + `trackedClick(expected.chat=1)` + `assertQuiescent` + `terminalGuard()`; `(mode: terminal)`. |
+| <a id="apk-scenario-copy-chat-apk-aria-label"></a>`copy-chat-apk-aria-label.spec.ts` | Copy / export link APK Chat | `terminalGuard + installServerFnPassthroughGuard` | Base checklist stub + `passthrough.assertNoAdditionalRequests` + `passthrough.dispose()` di akhir; ganti tag menjadi `(mode: full)`. |
 
 **Cara membaca tabel:** baris `Spec` yang sudah ada di repo saat ini menunjukkan mode aktual; baris terakhir menunjukkan apa yang harus berubah ketika spec nantinya menyentuh server function di luar `getApkVariantDetail`. Perubahan checklist selalu dimulai dari base checklist stub (lima marker), lalu ditambah atau dihapus sesuai mode.
 
