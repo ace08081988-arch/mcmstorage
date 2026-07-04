@@ -90,10 +90,14 @@ export function AddContactFab() {
   );
 
   async function onSubmit() {
-    if (!canSubmit) return;
+    const v = validateInviteCode(input);
+    if (!v.ok) {
+      toast.error(v.reason);
+      return;
+    }
     setSubmitting(true);
     try {
-      const r = await addContactByInviteCode(cleaned);
+      const r = await addContactByInviteCode(v.code);
       if (r.alreadyFriends) {
         toast.success("Sudah berteman — kontak siap dipakai.");
       } else if (r.pending) {
