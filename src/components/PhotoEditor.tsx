@@ -1494,6 +1494,39 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         )}
       </div>
 
+      {/* Detailed first-use / returning guide modal for Teks/Stiker/Coret */}
+      {guideTool && TOOL_GUIDES[guideTool] && (
+        <Dialog
+          open
+          onOpenChange={(o) => {
+            if (!o) closeGuide(guideTool);
+          }}
+        >
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>{TOOL_GUIDES[guideTool]!.title}</DialogTitle>
+              <DialogDescription>
+                Panduan muncul saat pertama kali memilih tool ini atau setelah tidak dipakai {GUIDE_RETURN_DAYS} hari.
+              </DialogDescription>
+            </DialogHeader>
+            <ol className="my-2 list-decimal space-y-1.5 pl-5 text-sm text-foreground">
+              {TOOL_GUIDES[guideTool]!.steps.map((step, i) => (
+                <li key={i}>{step}</li>
+              ))}
+            </ol>
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-2 text-xs text-primary">
+              <span className="font-semibold">Tip:</span>{" "}
+              {TOOL_GUIDES[guideTool]!.tip}
+            </div>
+            <DialogFooter>
+              <Button onClick={() => closeGuide(guideTool)}>
+                <Check className="mr-1 h-4 w-4" /> Mengerti
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
+
       <Dialog open={textPrompt.open} onOpenChange={(o) => !o && setTextPrompt((s) => ({ ...s, open: false }))}>
         <DialogContent className="sm:max-w-sm">
           <DialogHeader>
