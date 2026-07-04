@@ -59,6 +59,24 @@ const TOOL_HINTS: Record<Tool, string> = {
   circle: "Seret dari pusat ke tepi, atau ketuk untuk ukuran default",
 };
 
+const TOOL_SHORTCUTS: Record<Tool, string | null> = {
+  select: "P",
+  draw: "C",
+  text: "T",
+  emoji: "S",
+  arrow: "A",
+  rect: "K",
+  circle: "L",
+};
+
+const KEY_TO_TOOL: Record<string, Tool> = Object.fromEntries(
+  Object.entries(TOOL_SHORTCUTS)
+    .filter(([, k]) => k !== null)
+    .map(([t, k]) => [k!.toLowerCase(), t as Tool])
+);
+
+
+
 
 function uid() { return Math.random().toString(36).slice(2, 10); }
 
@@ -170,6 +188,30 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   useEffect(() => { stateRef.current = state; }, [state]);
   useEffect(() => { viewRef.current = view; }, [view]);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+  // Keyboard shortcuts: single letter tanpa modifier, hanya bila fokus tidak
+  // berada di input/textarea/select/contenteditable (mis. saat mengetik teks).
+  useEffect(() => {
+    const isTyping = (target: EventTarget | null): boolean => {
+      if (!(target instanceof HTMLElement)) return false;
+      return (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.tagName === "SELECT" ||
+        target.isContentEditable
+      );
+    };
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.altKey || e.metaKey || e.shiftKey) return;
+      if (isTyping(e.target)) return;
+      const next = KEY_TO_TOOL[e.key.toLowerCase()];
+      if (!next) return;
+      e.preventDefault();
+      setTool(next);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [setTool]);
+
   const [textPrompt, setTextPrompt] = useState<{ open: boolean; x: number; y: number; value: string }>(
     { open: false, x: 0, y: 0, value: "" },
   );
@@ -1288,7 +1330,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary/70 opacity-75" />
             <span className="relative inline-flex h-full w-2 rounded-full bg-primary" />
           </span>
-          <span className="font-medium text-primary">{TOOL_LABELS[tool]} aktif</span>
+          <span className="font-medium text-primary">
+            {TOOL_SHORTCUTS[tool] ? `${TOOL_LABELS[tool]} (${TOOL_SHORTCUTS[tool]})` : TOOL_LABELS[tool]} aktif
+          </span>
           <span className="text-muted-foreground">— {TOOL_HINTS[tool]}</span>
         </div>
 
@@ -1298,13 +1342,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           aria-label="Toolbar editor foto"
           className="flex flex-wrap items-center gap-1"
         >
-          <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" />
-          <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" />
-          <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" hint="Ketuk kanvas atau tombol Tambah teks untuk menulis" />
-          <ToolBtn active={tool === "emoji"} onClick={() => setTool("emoji")} icon={<Smile className="h-4 w-4" />} label="Stiker" hint="Pilih emoji lalu ketuk untuk menempelkan di tengah" />
-          <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="h-4 w-4" />} label="Panah" hint="Pilih arah panah, otomatis tempel di tengah kanvas" />
-          <ToolBtn active={tool === "rect"} onClick={() => setTool("rect")} icon={<Square className="h-4 w-4" />} label="Kotak" hint="Seret untuk ukuran bebas, atau ketuk untuk kotak default" />
-          <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" hint="Seret dari pusat ke tepi, atau ketuk untuk ukuran default" />
+          <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" shortcut={TOOL_SHORTCUTS.select} />
+          <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" shortcut={TOOL_SHORTCUTS.draw} />
+          <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" hint="Ketuk kanvas atau tombol Tambah teks untuk menulis" shortcut={TOOL_SHORTCUTS.text} />
+          <ToolBtn active={tool === "emoji"} onClick={() => setTool("emoji")} icon={<Smile className="h-4 w-4" />} label="Stiker" hint="Pilih emoji lalu ketuk untuk menempelkan di tengah" shortcut={TOOL_SHORTCUTS.emoji} />
+          <ToolBtn active={tool === "arrow"} onClick={() => setTool("arrow")} icon={<ArrowRight className="h-4 w-4" />} label="Panah" hint="Pilih arah panah, otomatis tempel di tengah kanvas" shortcut={TOOL_SHORTCUTS.arrow} />
+          <ToolBtn active={tool === "rect"} onClick={() => setTool("rect")} icon={<Square className="h-4 w-4" />} label="Kotak" hint="Seret untuk ukuran bebas, atau ketuk untuk kotak default" shortcut={TOOL_SHORTCUTS.rect} />
+          <ToolBtn active={tool === "circle"} onClick={() => setTool("circle")} icon={<Circle className="h-4 w-4" />} label="Lingkaran" hint="Seret dari pusat ke tepi, atau ketuk untuk ukuran default" shortcut={TOOL_SHORTCUTS.circle} />
           <button
             type="button"
             onClick={() => setHelpOpen((v) => !v)}
@@ -1344,6 +1388,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               <li><b>Panah:</b> pilih arah 8 mata angin — otomatis tempel; ubah arah lagi untuk yang terpilih.</li>
               <li><b>Kotak / Lingkaran:</b> seret di kanvas untuk ukuran bebas, atau ketuk sekali untuk ukuran standar.</li>
             </ul>
+            <div className="mt-1 text-muted-foreground">
+              Pintasan keyboard: {Object.entries(TOOL_SHORTCUTS).map(([t, k]) => k && `${k} ${TOOL_LABELS[t as Tool]}`).filter(Boolean).join(", ")}.
+            </div>
             <div className="mt-1 text-muted-foreground">Semua objek bisa dipilih ulang → geser, duplikat, atau hapus lewat ikon di kanan.</div>
           </div>
         )}
@@ -1462,17 +1509,23 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   );
 }
 
-function ToolBtn({ active, onClick, icon, label, hint }: { active: boolean; onClick: () => void; icon: React.ReactNode; label: string; hint?: string }) {
+function ToolBtn({
+  active, onClick, icon, label, hint, shortcut,
+}: {
+  active: boolean; onClick: () => void; icon: React.ReactNode; label: string; hint?: string; shortcut?: string | null;
+}) {
   // `title` memberi tooltip native saat hover (desktop) dan long-press (Android/iOS).
-  // `aria-label` menambahkan konteks untuk pembaca layar ("Teks — ketuk kanvas
-  // untuk menempelkan tulisan"), tidak sekadar "Teks".
-  const aria = hint ? `${label} — ${hint}` : label;
+  // `aria-label` menambahkan konteks untuk pembaca layar, termasuk pintasan keyboard.
+  const suffix = shortcut ? ` (${shortcut})` : "";
+  const display = `${label}${suffix}`;
+  const aria = hint ? `${display} — ${hint}` : display;
   return (
     <button
       type="button"
       onClick={onClick}
-      title={hint ? `${label}: ${hint}` : label}
+      title={hint ? `${display}: ${hint}` : display}
       aria-label={aria}
+      aria-keyshortcuts={shortcut ?? undefined}
       aria-pressed={active}
       className={`inline-flex h-8 min-w-11 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${active ? "border-primary bg-primary/10" : ""}`}
     >
