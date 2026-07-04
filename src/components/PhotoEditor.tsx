@@ -159,6 +159,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   // Modal panduan detail untuk tool Teks/Stiker/Coret saat pertama kali dipilih
   // atau setelah tidak dipakai dalam beberapa hari.
   const [guideTool, setGuideTool] = useState<Tool | null>(null);
+  // Strip hint aktif bisa ditutup pengguna; akan muncul kembali saat tool berubah.
+  const [hintClosedForTool, setHintClosedForTool] = useState<Tool | null>(null);
 
   function readGuideSeenMap(): GuideSeenMap {
     if (typeof localStorage === "undefined") return {};
