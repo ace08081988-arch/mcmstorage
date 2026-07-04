@@ -140,14 +140,6 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     setVideoFit((f) => (f === "cover" ? "contain" : "cover"));
   }, [setVideoFit]);
   const videoFitClass = videoFit === "cover" ? "object-cover" : "object-contain";
-  // Style inline yang WAJIB dipakai di setiap elemen <video> — memastikan
-  // Crop/Fit + posisi crop diterapkan konsisten pada preview lokal (PiP
-  // maupun mode swap), video remote, dan tetap berlaku setelah kamera
-  // ditukar (ref elemen bisa berubah saat React remount / swap layout).
-  const videoStyle: React.CSSProperties = {
-    objectFit: videoFit,
-    objectPosition: videoFit === "cover" ? undefined : "50% 50%",
-  };
   // Pan/posisi crop — hanya berlaku saat mode "cover" (Crop). Mengontrol
   // CSS `object-position` supaya bagian penting frame tidak terpotong.
   // Disimpan terpisah per kamera juga (front biasanya butuh center/atas,
