@@ -24,6 +24,25 @@ const waktuFmt = new Intl.DateTimeFormat("id-ID", {
 
 const QUICK_WEIGHTS = [0.1, 0.25, 0.5, 1, 2];
 
+const AMBANG_STORAGE_KEY = "mcm-pos-kasir-ambang-stok";
+const AMBANG_DEFAULT = 5;
+
+type StokLevel = "habis" | "kritis" | "menipis" | "aman";
+
+function levelStok(stokKg: number, ambang: number): StokLevel {
+  if (stokKg <= 0) return "habis";
+  if (stokKg <= ambang / 2) return "kritis";
+  if (stokKg <= ambang) return "menipis";
+  return "aman";
+}
+
+const LEVEL_META: Record<StokLevel, { label: string; badge: string; text: string; ring: string; emoji: string }> = {
+  habis:   { label: "Habis",   badge: "bg-slate-700 text-slate-200 border-slate-600", text: "text-slate-400", ring: "ring-1 ring-slate-600",       emoji: "⛔" },
+  kritis:  { label: "Kritis",  badge: "bg-rose-500/20 text-rose-300 border-rose-500/40", text: "text-rose-300", ring: "ring-2 ring-rose-500/60 animate-pulse", emoji: "🚨" },
+  menipis: { label: "Menipis", badge: "bg-amber-500/20 text-amber-300 border-amber-500/40", text: "text-amber-300", ring: "ring-1 ring-amber-500/40", emoji: "⚠" },
+  aman:    { label: "Aman",    badge: "bg-emerald-500/15 text-emerald-300 border-emerald-500/30", text: "text-slate-300", ring: "", emoji: "" },
+};
+
 function PosKasirPage() {
   const [produk, setProduk] = useState<PosKasirProduk[]>(PRODUK_AWAL);
   const [selectedId, setSelectedId] = useState<string>(PRODUK_AWAL[0].id);
@@ -34,6 +53,17 @@ function PosKasirPage() {
   const [sampaiTgl, setSampaiTgl] = useState<string>("");
   const [waNomor, setWaNomor] = useState<string>("");
   const [waLokasi, setWaLokasi] = useState<string>("");
+  const [ambangStok, setAmbangStok] = useState<number>(() => {
+    if (typeof window === "undefined") return AMBANG_DEFAULT;
+    const raw = localStorage.getItem(AMBANG_STORAGE_KEY);
+    const n = raw ? parseFloat(raw) : NaN;
+    return Number.isFinite(n) && n > 0 ? n : AMBANG_DEFAULT;
+  });
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(AMBANG_STORAGE_KEY, String(ambangStok));
+  }, [ambangStok]);
 
   const waNomorNorm = useMemo(() => normalizeWaNumber(waNomor, "ID"), [waNomor]);
   const waNomorDisplay = useMemo(
@@ -107,7 +137,18 @@ function PosKasirPage() {
   const stokCukup = berat > 0 && berat <= selected.stokKg;
 
   const totalStok = useMemo(() => produk.reduce((s, p) => s + p.stokKg, 0), [produk]);
-  const produkMenipis = useMemo(() => produk.filter((p) => p.stokKg < 5 && p.stokKg > 0), [produk]);
+  const produkKritis = useMemo(
+    () => produk.filter((p) => levelStok(p.stokKg, ambangStok) === "kritis"),
+    [produk, ambangStok],
+  );
+  const produkMenipis = useMemo(
+    () => produk.filter((p) => levelStok(p.stokKg, ambangStok) === "menipis"),
+    [produk, ambangStok],
+  );
+  const produkHabis = useMemo(
+    () => produk.filter((p) => levelStok(p.stokKg, ambangStok) === "habis"),
+    [produk, ambangStok],
+  );
 
   const bayar = () => {
     if (!stokCukup) {
@@ -116,6 +157,8 @@ function PosKasirPage() {
       return;
     }
     const sisaStokKg = +(selected.stokKg - berat).toFixed(3);
+    const levelSebelum = levelStok(selected.stokKg, ambangStok);
+    const levelSesudah = levelStok(sisaStokKg, ambangStok);
     setProduk((prev) => prev.map((p) => (p.id === selected.id ? { ...p, stokKg: sisaStokKg } : p)));
     setRiwayat((prev) => [
       {
@@ -131,9 +174,14 @@ function PosKasirPage() {
       },
       ...prev,
     ]);
-    setToast(`✅ Transaksi berhasil · ${berat} kg ${selected.nama} · ${rupiah(total)}`);
+    let pesan = `✅ Transaksi berhasil · ${berat} kg ${selected.nama} · ${rupiah(total)}`;
+    if (levelSesudah !== levelSebelum && levelSesudah !== "aman") {
+      const meta = LEVEL_META[levelSesudah];
+      pesan += ` · ${meta.emoji} Stok ${selected.nama} kini ${meta.label.toLowerCase()} (${sisaStokKg.toLocaleString("id-ID")} kg)`;
+    }
+    setToast(pesan);
     setBeratStr("0");
-    setTimeout(() => setToast(null), 3500);
+    setTimeout(() => setToast(null), 4500);
   };
 
   const totalOmzet = riwayat.reduce((s, t) => s + t.total, 0);
@@ -300,13 +348,15 @@ function PosKasirPage() {
           <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
             {produk.map((p) => {
               const active = p.id === selectedId;
-              const habis = p.stokKg <= 0;
+              const level = levelStok(p.stokKg, ambangStok);
+              const meta = LEVEL_META[level];
+              const habis = level === "habis";
               return (
                 <button
                   key={p.id}
                   onClick={() => setSelectedId(p.id)}
                   disabled={habis}
-                  className={`shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs transition-colors ${
+                  className={`relative shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs transition-colors ${meta.ring} ${
                     active
                       ? "bg-emerald-500/20 border-emerald-400"
                       : "bg-slate-900/60 border-slate-700 hover:border-slate-500"
@@ -315,19 +365,54 @@ function PosKasirPage() {
                   <span className="text-lg">{p.emoji}</span>
                   <div className="text-left min-w-0">
                     <div className="font-medium truncate max-w-[80px]">{p.nama}</div>
-                    <div className={`font-mono ${p.stokKg < 5 ? "text-amber-400" : "text-slate-400"}`}>
+                    <div className={`font-mono ${level === "aman" ? "text-slate-400" : meta.text}`}>
                       {p.stokKg.toLocaleString("id-ID")} kg
                     </div>
                   </div>
+                  {level !== "aman" && (
+                    <span
+                      aria-label={`Stok ${meta.label}`}
+                      className={`absolute -top-1.5 -right-1.5 text-[10px] leading-none px-1.5 py-0.5 rounded-full border ${meta.badge}`}
+                    >
+                      {meta.emoji}
+                    </span>
+                  )}
                 </button>
               );
             })}
           </div>
-          {produkMenipis.length > 0 && (
-            <div className="mt-2 text-[11px] text-amber-400">
-              ⚠ Stok menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama}`).join(", ")}
-            </div>
-          )}
+          <div className="mt-2 flex flex-col gap-1">
+            {produkKritis.length > 0 && (
+              <div className="text-[11px] text-rose-300">
+                🚨 Stok kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+              </div>
+            )}
+            {produkMenipis.length > 0 && (
+              <div className="text-[11px] text-amber-300">
+                ⚠ Stok menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+              </div>
+            )}
+            {produkHabis.length > 0 && (
+              <div className="text-[11px] text-slate-400">
+                ⛔ Habis: {produkHabis.map((p) => `${p.emoji} ${p.nama}`).join(", ")}
+              </div>
+            )}
+            <label className="mt-1 flex items-center gap-2 text-[11px] text-slate-400">
+              Ambang notifikasi
+              <input
+                type="number"
+                min={0.5}
+                step={0.5}
+                value={ambangStok}
+                onChange={(e) => {
+                  const n = parseFloat(e.target.value.replace(",", "."));
+                  if (Number.isFinite(n) && n > 0) setAmbangStok(n);
+                }}
+                className="w-16 rounded-md bg-slate-900 border border-slate-700 px-2 py-0.5 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+              />
+              kg
+            </label>
+          </div>
         </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
@@ -335,17 +420,55 @@ function PosKasirPage() {
           <section className="lg:col-span-2 space-y-4 md:space-y-6">
             {/* Desktop product grid */}
             <div className="hidden md:block bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
-              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider mb-3">Pilih Produk</h2>
+              <div className="flex items-center justify-between mb-3 gap-3 flex-wrap">
+                <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">Pilih Produk</h2>
+                <label className="flex items-center gap-2 text-xs text-slate-400">
+                  Ambang notifikasi
+                  <input
+                    type="number"
+                    min={0.5}
+                    step={0.5}
+                    value={ambangStok}
+                    onChange={(e) => {
+                      const n = parseFloat(e.target.value.replace(",", "."));
+                      if (Number.isFinite(n) && n > 0) setAmbangStok(n);
+                    }}
+                    className="w-20 rounded-md bg-slate-900 border border-slate-700 px-2 py-1 text-xs text-slate-100 focus:outline-none focus:border-emerald-500"
+                  />
+                  kg
+                </label>
+              </div>
+              {(produkKritis.length > 0 || produkMenipis.length > 0 || produkHabis.length > 0) && (
+                <div className="mb-3 flex flex-col gap-1 text-xs">
+                  {produkKritis.length > 0 && (
+                    <div className="text-rose-300">
+                      🚨 Kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                    </div>
+                  )}
+                  {produkMenipis.length > 0 && (
+                    <div className="text-amber-300">
+                      ⚠ Menipis: {produkMenipis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
+                    </div>
+                  )}
+                  {produkHabis.length > 0 && (
+                    <div className="text-slate-400">
+                      ⛔ Habis: {produkHabis.map((p) => `${p.emoji} ${p.nama}`).join(", ")}
+                    </div>
+                  )}
+                </div>
+              )}
               <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                 {produk.map((p) => {
                   const active = p.id === selectedId;
-                  const habis = p.stokKg <= 0;
+                  const level = levelStok(p.stokKg, ambangStok);
+                  const meta = LEVEL_META[level];
+                  const habis = level === "habis";
                   return (
                     <button
                       key={p.id}
                       onClick={() => setSelectedId(p.id)}
                       disabled={habis}
-                      className={`text-left p-4 rounded-xl border transition-all ${
+                      className={`relative text-left p-4 rounded-xl border transition-all ${meta.ring} ${
                         active
                           ? "bg-emerald-500/20 border-emerald-400 shadow-lg shadow-emerald-500/20"
                           : "bg-slate-900/60 border-slate-700 hover:border-slate-500"
@@ -354,9 +477,17 @@ function PosKasirPage() {
                       <div className="text-3xl mb-2">{p.emoji}</div>
                       <div className="font-semibold text-sm">{p.nama}</div>
                       <div className="text-xs text-slate-400 mt-1">{rupiah(p.hargaPerKg)}/kg</div>
-                      <div className={`text-xs mt-2 ${p.stokKg < 5 ? "text-amber-400" : "text-slate-300"}`}>
+                      <div className={`text-xs mt-2 ${meta.text}`}>
                         Stok: {p.stokKg.toLocaleString("id-ID")} kg
                       </div>
+                      {level !== "aman" && (
+                        <span
+                          aria-label={`Stok ${meta.label}`}
+                          className={`absolute top-2 right-2 text-[10px] font-medium leading-none px-2 py-1 rounded-full border ${meta.badge}`}
+                        >
+                          {meta.emoji} {meta.label}
+                        </span>
+                      )}
                     </button>
                   );
                 })}
