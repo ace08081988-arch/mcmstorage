@@ -339,6 +339,12 @@ async function main() {
     process.exit(1);
   }
 
+  const modeInvalid = validateMode(args.mode);
+  if (modeInvalid) {
+    console.error(`✗ ${modeInvalid}`);
+    process.exit(1);
+  }
+
   const specPath = path.join(SPEC_DIR, `${name}.spec.ts`);
   try {
     await fs.access(specPath);
@@ -358,7 +364,7 @@ async function main() {
     process.exit(1);
   }
 
-  const specContent = buildSpec(template, name);
+  const specContent = buildSpec(template, name, args.mode);
   const specInvalid = validateSpecContent(specContent, {
     label: `spec hasil scaffolding (${name}.spec.ts)`,
   });
@@ -385,6 +391,7 @@ async function main() {
 
     console.log(`▸ Spec baru`);
     console.log(`  path  : ${path.relative(ROOT, specPath)}`);
+    console.log(`  mode  : ${args.mode}${args.mode === "full" ? " (terminalGuard + installServerFnPassthroughGuard)" : " (terminalGuard-only)"}`);
     console.log(`  size  : ${specLines} baris, ${specContent.length} chars`);
     console.log(`  guards:`);
     console.log(renderGuardSummary(specContent));
@@ -417,7 +424,9 @@ async function main() {
   }
 
   await fs.writeFile(specPath, specContent, "utf8");
-  console.log(`✓ Spec dibuat: ${path.relative(ROOT, specPath)}`);
+  console.log(
+    `✓ Spec dibuat: ${path.relative(ROOT, specPath)} (mode: ${args.mode})`,
+  );
 
   if (inserted) {
     await fs.writeFile(CONFIG, nextConfig, "utf8");
