@@ -2330,6 +2330,30 @@ export type Database = {
         }
         Relationships: []
       }
+      signup_attempts: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: number
+          ip: string
+          succeeded: boolean
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: number
+          ip: string
+          succeeded?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: number
+          ip?: string
+          succeeded?: boolean
+        }
+        Relationships: []
+      }
       staff_contacts: {
         Row: {
           created_at: string
@@ -2962,6 +2986,19 @@ export type Database = {
         Returns: undefined
       }
       check_acknowledge_rate_limit: { Args: never; Returns: Json }
+      check_and_record_signup_attempt: {
+        Args: {
+          p_email: string
+          p_ip: string
+          p_limit?: number
+          p_window?: string
+        }
+        Returns: {
+          allowed: boolean
+          attempts_in_window: number
+          retry_after_seconds: number
+        }[]
+      }
       create_chat_cart: {
         Args: { p_conversation_id: string; p_lines: Json; p_note?: string }
         Returns: string
