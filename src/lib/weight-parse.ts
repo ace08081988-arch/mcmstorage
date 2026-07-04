@@ -3,6 +3,7 @@
 //   1 kg  = 1000 gr
 //   1 ons =  100 gr
 //   1 gr  =    1 gr
+//   1 gr  = 0,01 ons
 //   1 mg  = 0.001 gr
 //
 // Input yang diterima (case-insensitive, spasi bebas, koma/titik desimal):
@@ -88,13 +89,27 @@ export function parseWeightToGrams(input: string | number | null | undefined): n
   return Math.round(grams * 1000) / 1000;
 }
 
+/** Konversi gram → ons (1 ons = 100 gram, 1 gram = 0,01 ons). */
+export function gramsToOns(grams: number): number {
+  const v = Number(grams);
+  if (!Number.isFinite(v)) return 0;
+  return v / 100;
+}
+
+/** Konversi ons → gram (1 ons = 100 gram). */
+export function onsToGrams(ons: number): number {
+  const v = Number(ons);
+  if (!Number.isFinite(v)) return 0;
+  return v * 100;
+}
+
 /**
  * Format tampilan gram jadi satuan yang paling ramah.
  *   1500 → "1,5 kg"
- *    300 → "300 gr" (kelipatan 100 di bawah 1000 tetap gr — hindari kejutan)
+ *    300 → "3 ons" (kelipatan 100 di bawah 1000 ditampilkan sebagai ons — aturan 1 ons = 100 gram)
  *   0.5  → "500 mg"
  *   200  → "200 gr"
- * Set `preferOns` true untuk mengubah kelipatan 100 (100..900) menjadi "X ons".
+ * Set `preferOns: false` untuk menonaktifkan konversi ons dan memaksa tampilan gr.
  */
 export function formatGramsSmart(grams: number, opts: { preferOns?: boolean } = {}): string {
   const v = Number(grams);
@@ -108,7 +123,8 @@ export function formatGramsSmart(grams: number, opts: { preferOns?: boolean } = 
   if (abs >= 1000) {
     return `${(v / 1000).toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`;
   }
-  if (opts.preferOns && v % 100 === 0) {
+  const preferOns = opts.preferOns ?? true;
+  if (preferOns && v % 100 === 0) {
     return `${(v / 100).toLocaleString("id-ID")} ons`;
   }
   return `${v.toLocaleString("id-ID", { maximumFractionDigits: 2 })} gr`;
