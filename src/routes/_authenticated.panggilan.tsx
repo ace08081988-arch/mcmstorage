@@ -151,6 +151,7 @@ function PanggilanPage() {
                 row={c}
                 myId={myId ?? null}
                 nameMap={profiles.data ?? {}}
+                isCalling={callingId === c.id}
                 onOpenChat={(conversationId) =>
                   void navigate({ to: "/chat/$conversationId", params: { conversationId } })
                 }
@@ -159,6 +160,7 @@ function PanggilanPage() {
                   const peerId = r.caller_id === myId ? r.callee_id : r.caller_id;
                   if (!peerId) return;
                   const peerName = (profiles.data ?? {})[peerId] || "Kontak";
+                  setCallingId(r.id);
                   try {
                     const row = await createCallRow({
                       conversationId: r.conversation_id,
@@ -177,6 +179,8 @@ function PanggilanPage() {
                     }).catch(() => { /* ring gagal — UI tetap jalan */ });
                   } catch (e) {
                     toast.error((e as { message?: string })?.message ?? "Gagal memulai panggilan");
+                  } finally {
+                    setCallingId(null);
                   }
                 }}
               />
