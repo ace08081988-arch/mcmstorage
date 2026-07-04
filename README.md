@@ -31,17 +31,22 @@ Setiap spec E2E yang menguji tile APK memasang stub `getApkVariantDetail`. Ada d
 
 ### Tabel pemetaan skenario APK aktual
 
-| Spec | Skenario | Guard requirement | Perubahan checklist Guards |
-|---|---|---|---|
-| <a id="apk-scenario-min-validate-form"></a>`apk-min-validate-form.spec.ts` | Form validasi `minSupported` | *form-only* | Tulis `// Guards : (spec form murni — bukan flow getApkVariantDetail, tidak memakai apk-stub / terminalGuard)`. Hapus semua marker stub. |
-| <a id="apk-scenario-mount-quiescent"></a>`apk-mount-quiescent.spec.ts` | Mount murni tile APK | `terminalGuard-only` | `primeInitial + assertPrimed` → `waitForServed` → `assertQuiescent` → `terminalGuard()`; tidak ada `trackedClick` karena mount-only; tambahkan `(mode: terminal)`. |
-| <a id="apk-scenario-availability-refresh"></a>`apk-availability-refresh.spec.ts` | Idle → tap refresh Chat → aktif | `terminalGuard-only` | Base checklist stub + `trackedClick(expected.chat=1)` + `assertQuiescent` + `terminalGuard()`; `(mode: terminal)`. |
-| <a id="apk-scenario-availability-refresh-storage"></a>`apk-availability-refresh-storage.spec.ts` | Idle → tap refresh Storage → aktif | `terminalGuard-only` | Sama seperti di atas, tetapi `trackedClick(expected.storage=1)` untuk bukti independensi varian; `(mode: terminal)`. |
-| <a id="apk-scenario-refresh-single-refetch"></a>`apk-refresh-single-refetch.spec.ts` | Satu tap = satu refetch | `terminalGuard-only` | Base checklist + `trackedClick(expected.storage=1)` + `assertQuiescent` + `terminalGuard()`; fokus regression hitungan request; `(mode: terminal)`. |
-| <a id="apk-scenario-example-terminal-only"></a>`apk-example-terminal-only.spec.ts` | Contoh pembanding terminal-only | `terminalGuard-only` | Base checklist + `trackedClick(expected.chat=1)` + `assertQuiescent` + `terminalGuard()`; `(mode: terminal)`. |
-| <a id="apk-scenario-copy-chat-apk-aria-label"></a>`copy-chat-apk-aria-label.spec.ts` | Copy / export link APK Chat | `terminalGuard + installServerFnPassthroughGuard` | Base checklist stub + `passthrough.assertNoAdditionalRequests` + `passthrough.dispose()` di akhir; ganti tag menjadi `(mode: full)`. |
+<!-- APK_TABLE:START (generated — jangan edit manual) -->
 
-**Cara membaca tabel:** baris `Spec` yang sudah ada di repo saat ini menunjukkan mode aktual; baris terakhir menunjukkan apa yang harus berubah ketika spec nantinya menyentuh server function di luar `getApkVariantDetail`. Perubahan checklist selalu dimulai dari base checklist stub (lima marker), lalu ditambah atau dihapus sesuai mode.
+> Dihasilkan otomatis oleh `bun run e2e:apk:table` dari header project block APK di `playwright.config.ts` + deteksi mode di setiap spec (aturan sama dengan `bun run e2e:apk:validate`). Jangan edit blok ini secara manual — jalankan generator ulang.
+
+| Spec | Skenario | Mode | Guards checklist (aktual) |
+|---|---|---|---|
+| <a id="apk-scenario-availability-refresh-storage"></a>`apk-availability-refresh-storage.spec.ts` | Tombol <DownloadStorageApkShortcut> — idle "Belum tersedia" → tap ikon refresh Storage → aktif "Unduh APK Storage". Hanya flag Storage di-flip; flag Chat sengaja dibiarkan kosong. | `terminalGuard-only` | ✓ primeInitial + assertPrimed ✓ waitForServed ✓ trackedClick(expected.storage=1) ✓ assertQuiescent ✓ terminalGuard() (mode: terminal) |
+| <a id="apk-scenario-availability-refresh"></a>`apk-availability-refresh.spec.ts` | Tombol pintas Pengaturan — alur idle "Belum tersedia" → tap ikon refresh varian Chat → state aktif "Unduh APK Chat". | `terminalGuard-only` | ✓ primeInitial + assertPrimed ✓ waitForServed ✓ trackedClick(expected.chat=1) ✓ assertQuiescent ✓ terminalGuard() (mode: terminal) |
+| <a id="apk-scenario-example-terminal-only"></a>`apk-example-terminal-only.spec.ts` | Mount kedua varian kosong → refetch Chat via trackedClick → state aktif "Unduh APK Chat". | `terminalGuard-only` | ✓ primeInitial + assertPrimed ✓ waitForServed ✓ trackedClick(expected.chat=1) ✓ assertQuiescent ✓ terminalGuard() (mode: terminal) |
+| <a id="apk-scenario-min-validate-form"></a>`apk-min-validate-form.spec.ts` | Form validasi `minSupported` di Pengaturan APK. | *form-only* | (spec form murni — bukan flow getApkVariantDetail, tidak memakai apk-stub / terminalGuard). |
+| <a id="apk-scenario-mount-quiescent"></a>`apk-mount-quiescent.spec.ts` | Mount murni — buka /lovable/visual/apk-availability-shortcuts dengan kedua varian merespons kosong; tidak ada aksi user. | `terminalGuard-only` | ✓ primeInitial + assertPrimed ✓ waitForServed (tidak ada trackedClick — mount-only) ✓ assertQuiescent ✓ terminalGuard() (mode: terminal) |
+| <a id="apk-scenario-refresh-single-refetch"></a>`apk-refresh-single-refetch.spec.ts` | Tap refresh Storage sekali → observasi servedCount & request count untuk kedua varian. | `terminalGuard-only` | ✓ primeInitial + assertPrimed ✓ waitForServed ✓ trackedClick(expected.storage=1) ✓ assertQuiescent ✓ terminalGuard() (mode: terminal) |
+
+<!-- APK_TABLE:END -->
+
+**Cara membaca tabel:** kolom `Mode` menampilkan mode aktual hasil deteksi validator (`installApkStub` / `installServerFnPassthroughGuard`) di setiap spec. Kolom `Guards checklist (aktual)` disalin apa adanya dari header project block APK di `playwright.config.ts` — sumber yang sama dengan `bun run e2e:apk:validate`. Untuk memperbarui tabel setelah menambah / mengubah spec, jalankan `bun run e2e:apk:table` (atau `bun run e2e:apk:table:check` di CI untuk mendeteksi drift).
 
 ### Arti setiap item checklist Guards
 

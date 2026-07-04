@@ -33,6 +33,8 @@
     "e2e:apk:regen:full": "node scripts/regen-apk-scaffolds.mjs --mode full",
     "e2e:apk:regen:apply": "node scripts/regen-apk-scaffolds.mjs --force",
     "e2e:apk:validate": "node scripts/validate-apk-scaffolds.mjs",
+    "e2e:apk:table": "node scripts/generate-apk-readme-table.mjs",
+    "e2e:apk:table:check": "node scripts/generate-apk-readme-table.mjs --check",
     "test:appearance-import": "node scripts/run-appearance-import-e2e.mjs",
     "test:security:sql": "psql -v ON_ERROR_STOP=1 -f supabase/tests/security_rls_authz.sql -f supabase/tests/security_definer_authz.sql",
     "test:security:sql:verbose": "node scripts/run-security-sql.mjs --verbose",
