@@ -151,7 +151,15 @@ function buildSpec(template, name) {
     `test.describe("APK ${name} — deterministic guard"`,
   );
 
-  return `${stampedHeader}\n\n${withDescribe}`;
+  // Rewrite import path: template ada di `tests/e2e/_helpers/`, sedangkan
+  // spec hasil scaffold ada di `tests/e2e/` — jadi `../_apk-availability-stub`
+  // harus jadi `./_apk-availability-stub` supaya import valid.
+  const withImport = withDescribe.replace(
+    /from "\.\.\/_apk-availability-stub"/g,
+    'from "./_apk-availability-stub"',
+  );
+
+  return `${stampedHeader}\n\n${withImport}`;
 }
 
 function buildProjectBlock(name) {
