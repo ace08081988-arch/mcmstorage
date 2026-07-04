@@ -8,7 +8,7 @@ import { computeBeliWarnings } from "@/lib/beli-warnings";
 import {
   createStrictDerivedSpy,
   createStrictWarningsSpy,
-} from "./_authenticated.gudang.strict-compute-spy";
+} from "./-_authenticated.gudang.strict-compute-spy";
 import {
   FIXTURE_ITEM,
   makeBeliItem,
