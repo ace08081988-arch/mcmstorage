@@ -169,14 +169,6 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
-      // TODO(scaffold): jelaskan skenario spec "apk-mode-full-check" — apa yang
-      // diuji, harness mana yang dipakai, dan invariant guard-nya.
-      name: "apk-mode-full-check-e2e",
-      testDir: "./tests/e2e",
-      testMatch: /apk-mode-full-check\.spec\.ts/,
-      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
-    },
-    {
       // Contoh pembanding: memakai HANYA `stub.terminalGuard()` (tanpa
       // `installServerFnPassthroughGuard`) untuk flow APK murni —
       // mount kedua varian + refetch `chat` via `trackedClick`.
