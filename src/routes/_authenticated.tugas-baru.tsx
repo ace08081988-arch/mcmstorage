@@ -263,13 +263,23 @@ function TugasBaruPage() {
  * tidak menggeser layout.
  */
 function TugasBaruSkeleton() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Alihkan fokus ke kontainer skeleton saat pertama muncul agar pembaca layar
+    // tidak terdampar di body/document sementara form asli belum siap.
+    ref.current?.focus();
+  }, []);
   return (
     <div
-      className="mx-auto max-w-2xl px-3 py-4 animate-fade-in"
+      ref={ref}
+      tabIndex={-1}
+      className="mx-auto max-w-2xl px-3 py-4 animate-fade-in focus:outline-none"
       role="status"
       aria-live="polite"
+      aria-atomic="true"
       aria-busy="true"
-      aria-label="Memuat form Buat Tugas Pegawai"
+      aria-labelledby="tugas-baru-skeleton-title"
+      aria-describedby="tugas-baru-skeleton-desc"
     >
       {/* Header: tombol kembali + judul */}
       <div className="mb-4 flex items-center gap-2">
@@ -318,7 +328,12 @@ function TugasBaruSkeleton() {
         </div>
       </div>
 
-      <span className="sr-only">Memeriksa izin akses…</span>
+      <span id="tugas-baru-skeleton-title" className="sr-only">
+        Memuat form Buat Tugas Pegawai
+      </span>
+      <span id="tugas-baru-skeleton-desc" className="sr-only">
+        Memeriksa izin akses…
+      </span>
     </div>
   );
 }
@@ -337,6 +352,20 @@ function TugasBaruForm() {
   const [restored] = useState(() => !!initialRef.current);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ token: string; pin: string; title: string; url: string } | null>(null);
+  const headingRef = useRef<HTMLHeadingElement>(null);
+  useEffect(() => {
+    // Saat form asli muncul (biasanya setelah skeleton), pindahkan fokus ke
+    // heading halaman agar pembaca layar langsung menyadari konten telah siap
+    // dan fokus tidak terdampar di body/document.
+    const h = headingRef.current;
+    if (h && typeof h.focus === "function") {
+      try {
+        h.focus({ preventScroll: true });
+      } catch {
+        h.focus();
+      }
+    }
+  }, []);
   const [titles, setTitles] = useState<TitleOpt[]>([]);
   type VerifyState = {
     status: "idle" | "checking" | "ok" | "missing" | "error";
@@ -715,7 +744,7 @@ function TugasBaruForm() {
     <div className="mx-auto max-w-2xl space-y-4 p-4 animate-fade-in">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h1 className="text-lg font-semibold">Buat Tugas Pegawai</h1>
+          <h1 ref={headingRef} tabIndex={-1} className="text-lg font-semibold focus:outline-none">Buat Tugas Pegawai</h1>
           <p className="text-xs text-muted-foreground">Buat token & PIN langsung dari UI — tanpa perlu akses database.</p>
         </div>
         <Link to="/tugas" className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
