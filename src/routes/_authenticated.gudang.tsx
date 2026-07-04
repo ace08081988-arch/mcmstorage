@@ -492,7 +492,9 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
 
 /* ----------------- PIUTANG ----------------- */
 function PiutangTab({
-  customers, sales, custPayments, itemMap, uid, onChanged, onLocalPayment, onLocalRemovePayment,
+  customers, sales, custPayments, itemMap, uid, onChanged,
+  onLocalPayment, onLocalRemovePayment,
+  onLocalUpdatePayment, onLocalUpdateSale, onLocalRemoveSale, onLocalUpdateCustomer,
 }: {
   customers: Customer[];
   sales: Sale[];
@@ -502,6 +504,10 @@ function PiutangTab({
   onChanged: () => void;
   onLocalPayment: (p: CustomerPayment) => void;
   onLocalRemovePayment: (id: string) => void;
+  onLocalUpdatePayment: (p: CustomerPayment) => void;
+  onLocalUpdateSale: (s: Sale) => void;
+  onLocalRemoveSale: (id: string) => void;
+  onLocalUpdateCustomer: (c: Customer) => void;
 }) {
   // Per-customer balance: piutang = sum(hutang sales) - sum(payments)
   // > 0 → pelanggan masih hutang, < 0 → kelebihan/deposit
