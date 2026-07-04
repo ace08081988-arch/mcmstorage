@@ -23,6 +23,8 @@ import {
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { publicTaskUrl } from "@/lib/prep";
+import { fetchAddressBook, upsertManualEntry, normalizePhone, type AddressBookRow } from "@/lib/address-book";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/request")({
   head: () => ({ meta: [{ title: "Penyiapan Request · MCM Storage" }] }),
@@ -750,6 +752,19 @@ function PrepEditorDialog({
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [qtyErrors, setQtyErrors] = useState<Record<number, string>>({});
+  // Kontak & autocomplete
+  const navigate = useNavigate();
+  const [contacts, setContacts] = useState<AddressBookRow[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [showSuggest, setShowSuggest] = useState(false);
+  // linked_user_id yang dipilih dari kontak — dipakai untuk start_dm.
+  const [pickedLinkedUserId, setPickedLinkedUserId] = useState<string | null>(null);
+  const [pickedName, setPickedName] = useState<string>("");
+  // Simpan ke buku alamat otomatis saat kirim berhasil (default on).
+  const [autoSaveContact, setAutoSaveContact] = useState(true);
+  // Nama tujuan (untuk buku alamat) — di-prefill saat memilih kontak,
+  // bisa juga diisi manual sebelum submit.
+  const [recipientName, setRecipientName] = useState("");
 
   function sanitizeActual(idx: number, raw: string): string {
     if (raw === "") {
@@ -798,7 +813,51 @@ function PrepEditorDialog({
     setRows(init);
     setInitialRows(init);
     setPhoto(null); setLocUrl(""); setGps(null); setNote(""); setWaPhone("");
+    setPickedLinkedUserId(null); setPickedName(""); setRecipientName("");
+    setShowSuggest(false);
   }, [open, titleItems]);
+
+  // Muat buku alamat saat dialog dibuka — dipakai untuk autocomplete
+  // tujuan (baik nomor WA maupun user MCM lewat linked_user_id).
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    setContactsLoading(true);
+    fetchAddressBook()
+      .then((rows) => { if (!cancelled) setContacts(rows); })
+      .catch(() => { /* diam-diam — autocomplete opsional */ })
+      .finally(() => { if (!cancelled) setContactsLoading(false); });
+    return () => { cancelled = true; };
+  }, [open]);
+
+  // Filter kontak berdasarkan input (nama / phone / phone_norm).
+  const suggestList = useMemo(() => {
+    const q = waPhone.trim().toLowerCase();
+    const nq = normalizePhone(waPhone) ?? "";
+    const base = contacts.slice().sort((a, b) => {
+      // Kontak dengan linked_user_id (bisa Chat MCM) di atas.
+      const la = a.linked_user_id ? 0 : 1;
+      const lb = b.linked_user_id ? 0 : 1;
+      if (la !== lb) return la - lb;
+      return a.name.localeCompare(b.name);
+    });
+    if (!q) return base.slice(0, 8);
+    return base
+      .filter((r) =>
+        r.name.toLowerCase().includes(q) ||
+        (r.phone ?? "").toLowerCase().includes(q) ||
+        (r.phone_norm ?? "").includes(nq),
+      )
+      .slice(0, 8);
+  }, [contacts, waPhone]);
+
+  function pickContact(row: AddressBookRow) {
+    if (row.phone) setWaPhone(row.phone);
+    setPickedLinkedUserId(row.linked_user_id);
+    setPickedName(row.name);
+    setRecipientName(row.name);
+    setShowSuggest(false);
+  }
 
   async function onFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; e.target.value = "";
@@ -847,7 +906,7 @@ function PrepEditorDialog({
     return lines.join("\n");
   }
 
-  async function save(opts?: { sendWa?: boolean }) {
+  async function save(opts?: { sendWa?: boolean; sendChat?: boolean }) {
     if (!photo) { toast.error("Wajib lampirkan foto"); return; }
     if (Object.keys(qtyErrors).length > 0 || rows.some((r) => r.actual_grams !== "" && Number(r.actual_grams) < 0)) {
       toast.error("Jumlah tidak boleh negatif. Perbaiki dulu."); return;
@@ -859,6 +918,12 @@ function PrepEditorDialog({
       const n = normalizeWaPhone(waPhone);
       if (n.error) { toast.error(n.error); return; }
       normalizedPhone = n.digits;
+    }
+    if (opts?.sendChat) {
+      if (!pickedLinkedUserId) {
+        toast.error("Pilih kontak MCM dari daftar dulu untuk kirim via Chat");
+        return;
+      }
     }
     setBusy(true);
     try {
@@ -901,6 +966,45 @@ function PrepEditorDialog({
           toast.error("Gagal kirim via MCM: " + (err as Error).message);
         }
       }
+      // Simpan otomatis ke buku alamat bila di-opt-in dan kontak yang
+      // dipakai belum ada rownya. Berlaku untuk WA (pakai nomor yang
+      // ternormalisasi) maupun Chat MCM (pakai pickedLinkedUserId).
+      if (autoSaveContact && (opts?.sendWa || opts?.sendChat)) {
+        try {
+          const nameForSave = (recipientName.trim() || pickedName.trim() || "").slice(0, 80);
+          const phoneForSave = opts?.sendWa ? normalizedPhone : (waPhone.trim() || "");
+          const phoneNorm = normalizePhone(phoneForSave);
+          const alreadyExists = contacts.some((c) =>
+            (pickedLinkedUserId && c.linked_user_id === pickedLinkedUserId) ||
+            (phoneNorm && c.phone_norm === phoneNorm),
+          );
+          if (!alreadyExists && (nameForSave || phoneForSave)) {
+            await upsertManualEntry({
+              name: nameForSave || (phoneForSave ? `+${phoneForSave}` : "Tanpa nama"),
+              phone: phoneForSave || null,
+            });
+          }
+        } catch { /* opsional — jangan gagalkan flow utama */ }
+      }
+      // Kirim via Chat MCM: buka DM dengan text prefill di composer.
+      // Foto sudah tersimpan di storage prep — sertakan signed URL supaya
+      // pengguna tinggal tekan Send.
+      if (opts?.sendChat && pickedLinkedUserId) {
+        try {
+          const { data: convId, error: dmErr } = await sb.rpc("start_dm", { _partner: pickedLinkedUserId });
+          if (dmErr) throw dmErr;
+          const photoSigned = await requestSignedUrl(photoPath, 60 * 60 * 24);
+          const prefillText = [buildMessage(), photoSigned ? `Foto: ${photoSigned}` : ""].filter(Boolean).join("\n");
+          try {
+            window.localStorage.setItem(`mcm.chat.prefill.${convId}`, prefillText);
+          } catch { /* ignore quota */ }
+          onSaved(); onClose();
+          navigate({ to: "/chat/$conversationId", params: { conversationId: String(convId) } });
+          return;
+        } catch (err) {
+          toast.error("Gagal buka Chat MCM: " + (err as Error).message);
+        }
+      }
       onSaved(); onClose();
     } catch (e) {
       toast.error("Gagal: " + (e as Error).message);
@@ -908,6 +1012,7 @@ function PrepEditorDialog({
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
       <DialogContent
         className="max-h-[90vh] max-w-md overflow-y-auto"
@@ -1045,28 +1150,97 @@ function PrepEditorDialog({
           </div>
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" />
 
-          <div>
-            <Label className="text-xs">Nomor MCM / HP tujuan</Label>
+          <div className="space-y-2">
+            <Label className="text-xs">Tujuan (Chat MCM / Nomor WA)</Label>
+            {/* Nama penerima — dipakai untuk auto-save ke buku alamat */}
             <Input
-              type="tel"
-              inputMode="tel"
-              value={waPhone}
-              onChange={(e) => setWaPhone(e.target.value)}
-              placeholder="cth: 628123456789"
+              value={recipientName}
+              onChange={(e) => setRecipientName(e.target.value)}
+              placeholder="Nama penerima (opsional, untuk simpan otomatis)"
+              className="text-xs"
             />
-            {waPhone.trim() === "" ? (
-              <p className="mt-1 text-[10px] text-muted-foreground">Format internasional tanpa tanda +. Awalan 0 otomatis diganti jadi 62.</p>
+            <div className="relative">
+              <Input
+                type="tel"
+                inputMode="tel"
+                value={waPhone}
+                onChange={(e) => {
+                  setWaPhone(e.target.value);
+                  setShowSuggest(true);
+                  // Jika user mulai ubah nomor, reset user MCM yang di-pick
+                  // supaya tombol Chat MCM tidak salah kirim ke akun lama.
+                  if (pickedLinkedUserId) setPickedLinkedUserId(null);
+                }}
+                onFocus={() => setShowSuggest(true)}
+                onBlur={() => setTimeout(() => setShowSuggest(false), 150)}
+                placeholder={contactsLoading ? "Memuat kontak…" : "Cari kontak / cth: 628123456789"}
+              />
+              {showSuggest && suggestList.length > 0 ? (
+                <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+                  {suggestList.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => pickContact(c)}
+                      className="flex w-full items-start justify-between gap-2 border-b px-2 py-1.5 text-left text-xs hover:bg-accent last:border-b-0"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{c.name}</div>
+                        <div className="truncate font-mono text-[10px] text-muted-foreground">
+                          {c.phone || "—"}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-[9px] uppercase tracking-wide text-muted-foreground">
+                        {c.linked_user_id ? "MCM" : c.source}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            {pickedLinkedUserId ? (
+              <p className="text-[10px] text-primary">
+                Kontak MCM terpilih: <span className="font-medium">{pickedName || "(tanpa nama)"}</span> — bisa kirim via Chat MCM.
+              </p>
+            ) : waPhone.trim() === "" ? (
+              <p className="text-[10px] text-muted-foreground">Ketik untuk cari kontak, atau isi nomor manual (awalan 0 → 62).</p>
             ) : waNorm.error ? (
-              <p className="mt-1 text-[10px] text-destructive">{waNorm.error}</p>
+              <p className="text-[10px] text-destructive">{waNorm.error}</p>
             ) : (
-              <p className="mt-1 text-[10px] text-muted-foreground">Akan dikirim ke: <span className="font-mono">+{waNorm.digits}</span></p>
+              <p className="text-[10px] text-muted-foreground">Akan dikirim ke: <span className="font-mono">+{waNorm.digits}</span></p>
             )}
+            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={autoSaveContact}
+                onChange={(e) => setAutoSaveContact(e.target.checked)}
+                className="h-3.5 w-3.5 accent-primary"
+              />
+              Simpan kontak ke buku alamat saat kirim berhasil
+            </label>
           </div>
         </div>
         <DialogFooter className="flex-col gap-2 sm:flex-col">
-          <Button size="sm" onClick={() => save({ sendWa: true })} disabled={busy || !!waNorm.error} className="w-full">
+          <Button
+            size="sm"
+            onClick={() => save({ sendWa: true })}
+            disabled={busy || !!waNorm.error}
+            className="w-full"
+          >
             {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Send className="mr-1 h-3 w-3" />}
-            Simpan &amp; Kirim via MCM
+            Simpan &amp; Kirim via WhatsApp
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => save({ sendChat: true })}
+            disabled={busy || !pickedLinkedUserId}
+            className="w-full"
+            title={pickedLinkedUserId ? "Buka DM MCM dengan pesan siap kirim" : "Pilih kontak MCM dari daftar dulu"}
+          >
+            {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <MessageCircle className="mr-1 h-3 w-3" />}
+            Simpan &amp; Buka Chat MCM
           </Button>
           <div className="flex w-full gap-2">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy} className="flex-1">Batal</Button>
@@ -1076,15 +1250,19 @@ function PrepEditorDialog({
           </div>
         </DialogFooter>
 
-        {editorOpen && editorSrc && (
-          <PhotoEditor
-            src={editorSrc}
-            onCancel={() => setEditorOpen(false)}
-            onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }}
-          />
-        )}
       </DialogContent>
     </Dialog>
+    {/* PhotoEditor di-hoist ke luar DialogContent agar `fixed inset-0`-nya
+        mengacu ke viewport (bukan ke DialogContent yang memakai transform),
+        sehingga editor selalu tampil full-screen setelah file dipilih. */}
+    {editorOpen && editorSrc && (
+      <PhotoEditor
+        src={editorSrc}
+        onCancel={() => setEditorOpen(false)}
+        onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }}
+      />
+    )}
+    </>
   );
 }
 // ------------------------------------------------------------------
