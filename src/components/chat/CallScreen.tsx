@@ -83,49 +83,36 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const PIP_CORNER_KEY = "mcm.call.pipCorner";
   const VIDEO_FIT_KEY = "mcm.call.videoFit";
   const [swapped, setSwapped] = useState(false);
-  const [pipSize, setPipSize] = useState<"sm" | "md" | "lg">(() => {
-    if (typeof window === "undefined") return "md";
-    const v = window.localStorage.getItem(PIP_SIZE_KEY);
-    return v === "sm" || v === "md" || v === "lg" ? v : "md";
-  });
-  const [pipCorner, setPipCorner] = useState<"tl" | "tr" | "bl" | "br">(() => {
-    if (typeof window === "undefined") return "br";
-    const v = window.localStorage.getItem(PIP_CORNER_KEY);
-    return v === "tl" || v === "tr" || v === "bl" || v === "br" ? v : "br";
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem(PIP_SIZE_KEY, pipSize); } catch { /* ignore */ }
-  }, [pipSize]);
-  useEffect(() => {
-    try { window.localStorage.setItem(PIP_CORNER_KEY, pipCorner); } catch { /* ignore */ }
-  }, [pipCorner]);
+  const [pipSize, setPipSize] = usePersistedState<"sm" | "md" | "lg">(
+    PIP_SIZE_KEY,
+    parseEnum(["sm", "md", "lg"] as const),
+    "md",
+  );
+  const [pipCorner, setPipCorner] = usePersistedState<"tl" | "tr" | "bl" | "br">(
+    PIP_CORNER_KEY,
+    parseEnum(["tl", "tr", "bl", "br"] as const),
+    "br",
+  );
   // Aspect ratio: "cover" (crop, isi penuh) atau "contain" (fit, tanpa terpotong).
-  const [videoFit, setVideoFit] = useState<"cover" | "contain">(() => {
-    if (typeof window === "undefined") return "cover";
-    const v = window.localStorage.getItem(VIDEO_FIT_KEY);
-    return v === "contain" ? "contain" : "cover";
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem(VIDEO_FIT_KEY, videoFit); } catch { /* ignore */ }
-  }, [videoFit]);
+  // Sinkron antar mount CallScreen & antar tab lewat `usePersistedState`.
+  const [videoFit, setVideoFit] = usePersistedState<"cover" | "contain">(
+    VIDEO_FIT_KEY,
+    parseEnum(["cover", "contain"] as const),
+    "cover",
+  );
   const toggleVideoFit = useCallback(() => {
     setVideoFit((f) => (f === "cover" ? "contain" : "cover"));
-  }, []);
+  }, [setVideoFit]);
   const videoFitClass = videoFit === "cover" ? "object-cover" : "object-contain";
   // Pan/posisi crop — hanya berlaku saat mode "cover" (Crop). Mengontrol
   // CSS `object-position` supaya bagian penting frame tidak terpotong.
   type VideoPos = "center" | "top" | "bottom" | "left" | "right";
   const VIDEO_POS_KEY = "mcm.call.videoPos";
-  const [videoPos, setVideoPos] = useState<VideoPos>(() => {
-    if (typeof window === "undefined") return "center";
-    const v = window.localStorage.getItem(VIDEO_POS_KEY);
-    return v === "top" || v === "bottom" || v === "left" || v === "right" || v === "center"
-      ? v
-      : "center";
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem(VIDEO_POS_KEY, videoPos); } catch { /* ignore */ }
-  }, [videoPos]);
+  const [videoPos, setVideoPos] = usePersistedState<VideoPos>(
+    VIDEO_POS_KEY,
+    parseEnum(["center", "top", "bottom", "left", "right"] as const),
+    "center",
+  );
   const cycleVideoPos = useCallback(() => {
     setVideoPos((p) =>
       p === "center" ? "top"
@@ -134,7 +121,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
       : p === "bottom" ? "left"
       : "center",
     );
-  }, []);
+  }, [setVideoPos]);
   const videoPosCss =
     videoPos === "center" ? "50% 50%"
     : videoPos === "top" ? "50% 0%"
@@ -151,19 +138,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // resolusi/bitrate untuk stabilitas di jaringan lemah.
   const VIDEO_QUALITY_KEY = "mcm.call.videoQuality";
   type VideoQuality = "auto" | "low" | "medium" | "high";
-  const [videoQuality, setVideoQuality] = useState<VideoQuality>(() => {
-    if (typeof window === "undefined") return "auto";
-    const v = window.localStorage.getItem(VIDEO_QUALITY_KEY);
-    return v === "low" || v === "medium" || v === "high" || v === "auto" ? v : "auto";
-  });
-  useEffect(() => {
-    try { window.localStorage.setItem(VIDEO_QUALITY_KEY, videoQuality); } catch { /* ignore */ }
-  }, [videoQuality]);
+  const [videoQuality, setVideoQuality] = usePersistedState<VideoQuality>(
+    VIDEO_QUALITY_KEY,
+    parseEnum(["auto", "low", "medium", "high"] as const),
+    "auto",
+  );
   const cycleVideoQuality = useCallback(() => {
     setVideoQuality((q) =>
       q === "auto" ? "low" : q === "low" ? "medium" : q === "medium" ? "high" : "auto",
     );
-  }, []);
+  }, [setVideoQuality]);
   const videoQualityLabel =
     videoQuality === "auto" ? "Auto"
     : videoQuality === "low" ? "Rendah"
