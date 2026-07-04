@@ -23,6 +23,8 @@ import {
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { publicTaskUrl } from "@/lib/prep";
+import { fetchAddressBook, upsertManualEntry, normalizePhone, type AddressBookRow } from "@/lib/address-book";
+import { useNavigate } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/_authenticated/request")({
   head: () => ({ meta: [{ title: "Penyiapan Request · MCM Storage" }] }),
