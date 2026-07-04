@@ -184,7 +184,10 @@ function PosKasirPage() {
                     <div>
                       <p className="font-semibold">Berat melebihi stok</p>
                       <p className="text-xs text-red-300/80 mt-0.5">
-                        Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} kg.\n                        Kurangi berat agar tidak melebihi stok yang ada.
+                        Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} kg.
+                      </p>
+                      <p className="text-xs text-red-300/80 mt-0.5">
+                        Kurangi berat agar tidak melebihi stok yang ada.
                       </p>
                     </div>
                   </div>
