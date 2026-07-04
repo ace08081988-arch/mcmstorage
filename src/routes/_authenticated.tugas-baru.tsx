@@ -910,6 +910,99 @@ function TugasBaruForm() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <AlertDialog open={!!preview} onOpenChange={(o) => { if (!o) setPreview(null); }}>
+        <AlertDialogContent className="max-w-lg">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pratinjau tugas pegawai</AlertDialogTitle>
+            <AlertDialogDescription>
+              Periksa detail berikut sebelum tugas dibuat & dibagikan ke pegawai.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          {preview && (() => {
+            const url = publicTaskUrl(preview.tokenTrim);
+            const jadwalStr = preview.scheduledIso
+              ? new Date(preview.scheduledIso).toLocaleString("id-ID", { dateStyle: "full", timeStyle: "short" })
+              : "— (segera)";
+            const itemsLines = preview.items
+              .map((it, i) => `${i + 1}. ${it.name} — ${it.qty}${it.unit ? " " + it.unit : ""}`)
+              .join("\n");
+            const noteTrim = note.trim();
+            const waMessage =
+              `Halo, tolong siapkan barang berikut untuk *${preview.t}*.\n\n` +
+              `${itemsLines}\n\n` +
+              (preview.scheduledIso ? `Jadwal: ${jadwalStr}\n` : "") +
+              (noteTrim ? `Catatan: ${noteTrim}\n` : "") +
+              `\nBuka link, masukkan PIN, foto barang & kirim:\n${url}\nPIN: ${pin}`;
+            return (
+              <div className="max-h-[60vh] space-y-3 overflow-y-auto text-xs">
+                <div className="rounded-lg border bg-muted/30 p-3">
+                  <div className="grid grid-cols-[90px_1fr] gap-y-1.5">
+                    <div className="text-muted-foreground">Judul</div>
+                    <div className="font-semibold">{preview.t}</div>
+                    <div className="text-muted-foreground">Token</div>
+                    <div className="break-all font-mono">{preview.tokenTrim}</div>
+                    <div className="text-muted-foreground">PIN</div>
+                    <div className="font-mono">{pin}</div>
+                    <div className="text-muted-foreground">Jadwal</div>
+                    <div>{jadwalStr}</div>
+                    <div className="text-muted-foreground">Catatan</div>
+                    <div className="whitespace-pre-wrap">{noteTrim || <span className="text-muted-foreground">—</span>}</div>
+                    <div className="text-muted-foreground">Link</div>
+                    <div className="break-all text-primary">{url}</div>
+                  </div>
+                </div>
+                <div>
+                  <div className="mb-1 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    Barang ({preview.items.length})
+                  </div>
+                  <ol className="space-y-1 rounded-lg border bg-card p-3">
+                    {preview.items.map((it, i) => (
+                      <li key={i} className="flex items-start justify-between gap-2">
+                        <span className="truncate">
+                          <span className="text-muted-foreground">{i + 1}.</span> {it.name}
+                          {!it.warehouse_item_id && (
+                            <span className="ml-1 text-[10px] text-amber-600 dark:text-amber-400">(tanpa cocok produk)</span>
+                          )}
+                        </span>
+                        <span className="shrink-0 font-mono">
+                          {it.qty}{it.unit ? " " + it.unit : ""}
+                        </span>
+                      </li>
+                    ))}
+                  </ol>
+                </div>
+                <div>
+                  <div className="mb-1 flex items-center justify-between">
+                    <div className="text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                      Pesan yang akan diteruskan
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => void copyText(waMessage)}
+                      className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-[10px] hover:bg-accent"
+                    >
+                      <Copy className="h-3 w-3" /> Salin
+                    </button>
+                  </div>
+                  <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap rounded-lg border bg-[#dcf8c6] p-3 text-[11px] leading-relaxed text-[#111] dark:bg-emerald-950/40 dark:text-emerald-50">
+                    {waMessage}
+                  </pre>
+                </div>
+              </div>
+            );
+          })()}
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={busy} onClick={() => setPreview(null)}>Batal / edit</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={busy}
+              onClick={(e) => { e.preventDefault(); if (preview) void submit(preview); }}
+            >
+              {busy ? "Membuat…" : "Konfirmasi & buat tugas"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
