@@ -744,7 +744,7 @@ function TugasBaruForm() {
     <div className="mx-auto max-w-2xl space-y-4 p-4 animate-fade-in">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <h1 className="text-lg font-semibold">Buat Tugas Pegawai</h1>
+          <h1 ref={headingRef} tabIndex={-1} className="text-lg font-semibold focus:outline-none">Buat Tugas Pegawai</h1>
           <p className="text-xs text-muted-foreground">Buat token & PIN langsung dari UI — tanpa perlu akses database.</p>
         </div>
         <Link to="/tugas" className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent">
