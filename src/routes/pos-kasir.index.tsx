@@ -887,42 +887,59 @@ function PosKasirPage() {
 
               {/* Mobile: card list */}
               <div className="grid gap-2 md:hidden">
-                {riwayatFiltered.map((t) => (
-                  <div key={t.id} className="rounded-xl bg-slate-900/60 border border-slate-700 p-3">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="flex min-w-0 items-center gap-2">
-                        <span className="text-xl shrink-0">{t.produkEmoji}</span>
-                        <div className="min-w-0">
-                          <div className="text-sm font-medium truncate">{t.produkNama}</div>
-                          <div className="text-[11px] text-slate-500 font-mono">{waktuFmt.format(t.waktu)}</div>
-                        </div>
-                      </div>
-                      <div className="text-right shrink-0">
-                        <div className="text-emerald-400 font-mono font-semibold text-sm">{rupiah(t.total)}</div>
-                        <div className="text-[11px] text-slate-400 font-mono">
-                          {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
-                        </div>
-                      </div>
-                    </div>
-                    <div className="mt-2 pt-2 border-t border-slate-800 flex justify-between text-[11px] text-slate-500">
-                      <span>@ {rupiah(t.hargaPerKg)}/kg</span>
-                      <span>
-                        Sisa:{" "}
-                        <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} kg</span>
-                      </span>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={() => kirimWa(t)}
-                      disabled={!waReady}
-                      title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
-                      aria-disabled={!waReady}
-                      className="mt-2 w-full py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
-                    >
-                      💬 Kirim WA
-                    </button>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
+                  <input
+                    type="search"
+                    inputMode="search"
+                    value={cariTransaksi}
+                    onChange={(e) => setCariTransaksi(e.target.value)}
+                    placeholder="Cari nama produk atau waktu…"
+                    className="w-full pl-9 pr-3 py-2 rounded-lg bg-slate-900/60 border border-slate-700 text-sm text-slate-100 placeholder:text-slate-500 focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+                {riwayatCariMobile.length === 0 ? (
+                  <div className="text-center py-6 text-xs text-slate-500">
+                    Tidak ada transaksi yang cocok dengan pencarian.
                   </div>
-                ))}
+                ) : (
+                  riwayatCariMobile.map((t) => (
+                    <div key={t.id} className="rounded-xl bg-slate-900/60 border border-slate-700 p-3">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex min-w-0 items-center gap-2">
+                          <span className="text-xl shrink-0">{t.produkEmoji}</span>
+                          <div className="min-w-0">
+                            <div className="text-sm font-medium truncate">{t.produkNama}</div>
+                            <div className="text-[11px] text-slate-500 font-mono">{waktuFmt.format(t.waktu)}</div>
+                          </div>
+                        </div>
+                        <div className="text-right shrink-0">
+                          <div className="text-emerald-400 font-mono font-semibold text-sm">{rupiah(t.total)}</div>
+                          <div className="text-[11px] text-slate-400 font-mono">
+                            {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                          </div>
+                        </div>
+                      </div>
+                      <div className="mt-2 pt-2 border-t border-slate-800 flex justify-between text-[11px] text-slate-500">
+                        <span>@ {rupiah(t.hargaPerKg)}/kg</span>
+                        <span>
+                          Sisa:{" "}
+                          <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} kg</span>
+                        </span>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => kirimWa(t)}
+                        disabled={!waReady}
+                        title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
+                        aria-disabled={!waReady}
+                        className="mt-2 w-full py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                      >
+                        💬 Kirim WA
+                      </button>
+                    </div>
+                  ))
+                )}
               </div>
 
               {/* Desktop: table */}
