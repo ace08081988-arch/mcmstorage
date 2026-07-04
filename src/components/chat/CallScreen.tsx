@@ -234,6 +234,63 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     objectFit: videoFit,
     objectPosition: videoFit === "cover" ? videoPosCss : "50% 50%",
   };
+  // Drag untuk menggeser posisi crop secara kontinu (bukan cuma preset).
+  // Berlaku pada elemen <video> "besar" saat mode Crop aktif. Menggeser
+  // pointer ke kanan menggeser frame ke kanan (image mengikuti jari) —
+  // dalam istilah `object-position` berarti nilai x% berkurang.
+  const cropDragRef = useRef<{
+    id: number; w: number; h: number; startX: number; startY: number;
+    baseX: number; baseY: number;
+  } | null>(null);
+  const cropDraggable = kind === "video" && videoFit === "cover";
+  const onCropPointerDown = useCallback((e: React.PointerEvent<HTMLVideoElement>) => {
+    if (!cropDraggable) return;
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const base = videoPosCustom ?? {
+      x: presetPosCss.startsWith("0%") ? 0 : presetPosCss.startsWith("100%") ? 100 : 50,
+      y: presetPosCss.endsWith(" 0%") ? 0 : presetPosCss.endsWith(" 100%") ? 100 : 50,
+    };
+    cropDragRef.current = {
+      id: e.pointerId,
+      w: rect.width,
+      h: rect.height,
+      startX: e.clientX,
+      startY: e.clientY,
+      baseX: base.x,
+      baseY: base.y,
+    };
+    try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+  }, [cropDraggable, videoPosCustom, presetPosCss]);
+  const onCropPointerMove = useCallback((e: React.PointerEvent<HTMLVideoElement>) => {
+    const st = cropDragRef.current;
+    if (!st || st.id !== e.pointerId) return;
+    const dxPct = ((e.clientX - st.startX) / st.w) * 100;
+    const dyPct = ((e.clientY - st.startY) / st.h) * 100;
+    // Gerakkan image mengikuti jari: object-position bergeser berlawanan arah.
+    const nx = Math.max(0, Math.min(100, st.baseX - dxPct));
+    const ny = Math.max(0, Math.min(100, st.baseY - dyPct));
+    setVideoPosCustom({ x: nx, y: ny });
+  }, [setVideoPosCustom]);
+  const onCropPointerUp = useCallback((e: React.PointerEvent<HTMLVideoElement>) => {
+    const st = cropDragRef.current;
+    if (!st || st.id !== e.pointerId) return;
+    cropDragRef.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+  }, []);
+  // Handler yang dipasang di elemen <video> "besar". Saat !swapped, video
+  // remote yang besar; saat swapped, video lokal yang besar. Video PiP
+  // (kecil) tidak menerima drag crop supaya tidak bentrok dengan drag
+  // untuk memindah posisi PiP.
+  const cropDragHandlersBig = cropDraggable
+    ? {
+        onPointerDown: onCropPointerDown,
+        onPointerMove: onCropPointerMove,
+        onPointerUp: onCropPointerUp,
+        onPointerCancel: onCropPointerUp,
+      }
+    : {};
   const videoPosLabel = videoPosCustom
     ? `${Math.round(videoPosCustom.x)}·${Math.round(videoPosCustom.y)}`
     : videoPos === "center" ? "Tengah"
