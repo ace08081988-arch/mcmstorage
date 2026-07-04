@@ -771,6 +771,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               onPointerDown={onPointerDown}
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
+              onPointerCancel={onPointerCancel}
               className="absolute inset-0 touch-none"
               style={{ width: `${view.w}px`, height: `${view.h}px` }}
             />
