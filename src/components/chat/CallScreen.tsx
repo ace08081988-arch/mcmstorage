@@ -1581,17 +1581,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             {kind === "video" ? (
               <button
                 type="button"
-                onClick={() => {
-                  // Reset Crop/Fit + posisi untuk kedua kamera, tidak hanya
-                  // kamera aktif, supaya swap kamera tetap terjaga default.
-                  setVideoPosCustomFront(null);
-                  setVideoPosCustomBack(null);
-                  setVideoPosFront("center");
-                  setVideoPosBack("center");
-                  setVideoFitFront("cover");
-                  setVideoFitBack("cover");
-                  toast.success("Crop/Fit dan posisi kembali ke default (front & back)");
-                }}
+                onClick={resetCropFit}
                 aria-label="Reset Crop/Fit dan posisi crop ke default untuk kamera depan dan belakang"
                 title="Reset Crop/Fit dan posisi crop ke default untuk kamera depan dan belakang"
                 data-testid="call-pos-reset"
