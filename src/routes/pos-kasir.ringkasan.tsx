@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { getPosKasirRiwayat } from "@/lib/pos-kasir";
 
 const rupiah = (n: number) =>
@@ -27,9 +27,44 @@ function PosKasirRingkasanPage() {
   const riwayat = useMemo(() => getPosKasirRiwayat(), []);
   const hariIni = useMemo(() => riwayat.filter((t) => isToday(t.waktu)), [riwayat]);
 
-  const omzetHariIni = hariIni.reduce((s, t) => s + t.total, 0);
-  const beratHariIni = hariIni.reduce((s, t) => s + t.beratKg, 0);
   const jumlahHariIni = hariIni.length;
+
+  const [toast, setToast] = useState<string | null>(null);
+
+  const exportCSV = () => {
+    if (hariIni.length === 0) {
+      setToast("Belum ada transaksi hari ini untuk diekspor");
+      setTimeout(() => setToast(null), 2500);
+      return;
+    }
+    const header = ["Waktu", "Produk", "Berat (kg)", "Harga per kg (IDR)", "Total (IDR)", "Sisa Stok (kg)"];
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const rows = hariIni.map((t) =>
+      [
+        new Date(t.waktu).toLocaleString("id-ID"),
+        t.produkNama,
+        t.beratKg.toString().replace(".", ","),
+        t.hargaPerKg.toString(),
+        t.total.toString(),
+        t.sisaStokKg.toString().replace(".", ","),
+      ]
+        .map((c) => escape(String(c)))
+        .join(";")
+    );
+    const csv = "\uFEFF" + [header.map(escape).join(";"), ...rows].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `ringkasan-pos-kasir-hari-ini-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setToast(`✅ Diekspor ${hariIni.length} transaksi hari ini ke CSV`);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-100 p-4 md:p-8">
