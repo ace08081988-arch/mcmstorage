@@ -752,6 +752,19 @@ function PrepEditorDialog({
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [qtyErrors, setQtyErrors] = useState<Record<number, string>>({});
+  // Kontak & autocomplete
+  const navigate = useNavigate();
+  const [contacts, setContacts] = useState<AddressBookRow[]>([]);
+  const [contactsLoading, setContactsLoading] = useState(false);
+  const [showSuggest, setShowSuggest] = useState(false);
+  // linked_user_id yang dipilih dari kontak — dipakai untuk start_dm.
+  const [pickedLinkedUserId, setPickedLinkedUserId] = useState<string | null>(null);
+  const [pickedName, setPickedName] = useState<string>("");
+  // Simpan ke buku alamat otomatis saat kirim berhasil (default on).
+  const [autoSaveContact, setAutoSaveContact] = useState(true);
+  // Nama tujuan (untuk buku alamat) — di-prefill saat memilih kontak,
+  // bisa juga diisi manual sebelum submit.
+  const [recipientName, setRecipientName] = useState("");
 
   function sanitizeActual(idx: number, raw: string): string {
     if (raw === "") {
