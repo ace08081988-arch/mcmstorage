@@ -840,6 +840,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerCancel}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              onTouchCancel={onTouchCancel}
               className="absolute inset-0 touch-none"
               style={{ width: `${view.w}px`, height: `${view.h}px` }}
             />
