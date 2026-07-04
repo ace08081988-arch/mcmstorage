@@ -48,23 +48,42 @@ function TugasPage() {
   const [openAudit, setOpenAudit] = useState(false);
   const [pinAlerts, setPinAlerts] = useState<PinAlert[]>([]);
   const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
+  const [progress, setProgress] = useState<Record<string, { items: number; submitted: number }>>({});
+  const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "progress" | "done">("all");
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
   async function load() {
     if (!uid) return;
-    const [{ data: t }, { data: w }, { data: v }, { data: cv }] = await Promise.all([
+    const [{ data: t }, { data: w }, { data: v }, { data: cv }, { data: ti }, { data: sb }] = await Promise.all([
       supabase.from("prep_tasks").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("id,name,category,image_path,stock_base,base_unit,package_type,package_size").order("name"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase.from as any)("warehouse_item_variants").select("*").order("position"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase.from as any)("warehouse_category_variants").select("*").order("position"),
+      supabase.from("prep_task_items").select("id,task_id"),
+      supabase.from("prep_submissions").select("task_id,task_item_id"),
     ]);
     setTasks((t ?? []) as Task[]);
     setWarehouse((w ?? []) as WItem[]);
     setVariants((v ?? []) as Variant[]);
     setCatVariants((cv ?? []) as CatVariant[]);
+    const itemsByTask: Record<string, number> = {};
+    for (const row of (ti ?? []) as { task_id: string }[]) {
+      itemsByTask[row.task_id] = (itemsByTask[row.task_id] ?? 0) + 1;
+    }
+    const submittedByTask: Record<string, Set<string>> = {};
+    for (const row of (sb ?? []) as { task_id: string; task_item_id: string }[]) {
+      const set = submittedByTask[row.task_id] ?? new Set<string>();
+      set.add(row.task_item_id);
+      submittedByTask[row.task_id] = set;
+    }
+    const prog: Record<string, { items: number; submitted: number }> = {};
+    for (const id of new Set([...Object.keys(itemsByTask), ...Object.keys(submittedByTask)])) {
+      prog[id] = { items: itemsByTask[id] ?? 0, submitted: submittedByTask[id]?.size ?? 0 };
+    }
+    setProgress(prog);
   }
   useEffect(() => { void load(); }, [uid]);
 
