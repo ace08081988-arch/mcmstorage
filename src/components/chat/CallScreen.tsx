@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
-  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -80,6 +80,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // Ukuran + pojok di-persist agar konsisten antar panggilan / antar layar.
   const PIP_SIZE_KEY = "mcm.call.pipSize";
   const PIP_CORNER_KEY = "mcm.call.pipCorner";
+  const VIDEO_FIT_KEY = "mcm.call.videoFit";
   const [swapped, setSwapped] = useState(false);
   const [pipSize, setPipSize] = useState<"sm" | "md" | "lg">(() => {
     if (typeof window === "undefined") return "md";
@@ -97,6 +98,19 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   useEffect(() => {
     try { window.localStorage.setItem(PIP_CORNER_KEY, pipCorner); } catch { /* ignore */ }
   }, [pipCorner]);
+  // Aspect ratio: "cover" (crop, isi penuh) atau "contain" (fit, tanpa terpotong).
+  const [videoFit, setVideoFit] = useState<"cover" | "contain">(() => {
+    if (typeof window === "undefined") return "cover";
+    const v = window.localStorage.getItem(VIDEO_FIT_KEY);
+    return v === "contain" ? "contain" : "cover";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(VIDEO_FIT_KEY, videoFit); } catch { /* ignore */ }
+  }, [videoFit]);
+  const toggleVideoFit = useCallback(() => {
+    setVideoFit((f) => (f === "cover" ? "contain" : "cover"));
+  }, []);
+  const videoFitClass = videoFit === "cover" ? "object-cover" : "object-contain";
   const pipSizeClass =
     pipSize === "sm" ? "h-24 w-20" : pipSize === "lg" ? "h-48 w-36" : "h-32 w-24";
   const pipCornerClass =
