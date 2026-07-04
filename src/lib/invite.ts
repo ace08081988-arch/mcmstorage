@@ -114,14 +114,12 @@ export async function sendFriendRequest(code: string): Promise<SendFriendRequest
     // Pastikan error selalu Error instance dengan pesan informatif, bukan
     // objek Postgrest polos (yang membuat `e instanceof Error` false dan
     // toast fallback ke "Gagal menambah kontak." tanpa detail).
+    const errObj = error as { details?: string; hint?: string; code?: string };
     const detail = [
       msg,
-      // @ts-expect-error PostgrestError shape
-      error?.details,
-      // @ts-expect-error PostgrestError shape
-      error?.hint,
-      // @ts-expect-error PostgrestError shape
-      error?.code ? `(kode ${error.code})` : "",
+      errObj.details,
+      errObj.hint,
+      errObj.code ? `(kode ${errObj.code})` : "",
     ]
       .filter(Boolean)
       .join(" · ");
