@@ -716,6 +716,24 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             {kind === "video" ? (
               <button
                 type="button"
+                onClick={toggleVideoFit}
+                aria-label={videoFit === "cover" ? "Ubah ke Fit (tanpa terpotong)" : "Ubah ke Crop (isi penuh)"}
+                aria-pressed={videoFit === "contain"}
+                title={videoFit === "cover" ? "Mode: Crop — ketuk untuk Fit" : "Mode: Fit — ketuk untuk Crop"}
+                data-testid="call-fit-toggle"
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                {videoFit === "cover" ? (
+                  <Crop className="h-3.5 w-3.5" />
+                ) : (
+                  <Scan className="h-3.5 w-3.5" />
+                )}
+                <span>{videoFit === "cover" ? "Crop" : "Fit"}</span>
+              </button>
+            ) : null}
+            {kind === "video" ? (
+              <button
+                type="button"
                 onClick={() => void toggleFullscreen()}
                 aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
                 aria-pressed={isFullscreen}
