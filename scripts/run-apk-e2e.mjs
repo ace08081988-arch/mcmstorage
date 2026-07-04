@@ -108,7 +108,12 @@ async function main() {
   if (args.mode === "full" || args.mode === "both")
     groups.push({ label: "full guards (terminal + passthrough)", specs: full });
 
-  let overall = 0;
+  // Cetak ringkasan pemilihan grup, lalu jalankan Playwright HANYA
+  // sekali dengan gabungan project. Klasifikasi & pemisahan output
+  // per-grup ditangani oleh `apk-grouped-reporter.ts` (dipasang di
+  // `playwright.config.ts`) sehingga hasil terminalGuard-only dan
+  // full-guards tetap tampil terpisah walau dijalankan bersamaan.
+  const allProjects = [];
   for (const g of groups) {
     if (g.specs.length === 0) {
       console.log(`\n▸ ${g.label}: (0 spec — dilewati)`);
@@ -116,12 +121,16 @@ async function main() {
     }
     console.log(`\n▸ ${g.label} — ${g.specs.length} spec`);
     for (const s of g.specs) console.log(`    --project=${s.project}`);
-    const code = await runPlaywright(g.specs.map((s) => s.project), args.extra);
-    console.log(`▸ ${g.label} exit: ${code}`);
-    if (code !== 0 && overall === 0) overall = code;
+    for (const s of g.specs) allProjects.push(s.project);
   }
 
-  process.exit(overall);
+  if (allProjects.length === 0) {
+    console.log("\n(Tidak ada spec APK yang cocok — tidak menjalankan Playwright.)");
+    process.exit(0);
+  }
+
+  const code = await runPlaywright(allProjects, args.extra);
+  process.exit(code);
 }
 
 main().catch((err) => {
