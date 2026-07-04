@@ -54,7 +54,7 @@ export const sendMessage = createServerFn({ method: "POST" })
           .single(),
         supabaseAdmin
           .from("profiles")
-          .select("display_name, email, avatar_url")
+          .select("display_name, avatar_url")
           .eq("id", userId)
           .single(),
       ]);
@@ -67,7 +67,7 @@ export const sendMessage = createServerFn({ method: "POST" })
         })
         .map((m) => m.user_id)
         .filter(Boolean) as string[];
-      const senderName = prof?.display_name || prof?.email || "Pengguna";
+      const senderName = prof?.display_name || "Pengguna";
       const isGroup = conv?.kind === "group" || conv?.kind === "order";
       const title = isGroup
         ? `${conv?.title ?? "Grup"} · ${senderName}`
