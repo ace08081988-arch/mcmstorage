@@ -202,12 +202,12 @@ Validator gagal umumnya karena project block di `playwright.config.ts` tidak coc
 
 ### Template copy-paste header spec
 
-Di bawah ini header komentar yang bisa langsung di-copy-paste ke bagian atas setiap `tests/e2e/apk-<flow>.spec.ts`. Ganti `<flow-name>`, `<URL>`, dan teks TODO dengan nilai riil. Penanda `Guards` menggunakan format yang sama dengan validator / tabel README.
+Di bawah ini header komentar yang bisa langsung di-copy-paste ke bagian atas setiap `tests/e2e/apk-<flow>.spec.ts`. Ganti `<flow>` dengan nama file tanpa awalan `apk-` dan tanpa `.spec.ts` (mis. `availability-refresh-storage`), ganti `<URL>` dan teks TODO dengan nilai riil. Penanda `Guards` menggunakan format yang sama dengan validator / tabel README.
 
 #### Mode `terminal` (hanya `installApkStub`)
 
 ```ts
-// README scenario: README.md#apk-scenario-<flow-name>
+// README scenario: README.md#apk-scenario-<flow>
 // Skenario : <aksi user yang diuji, mis. tap refresh Chat dari idle>
 // Harness  : <route/harness, mis. /lovable/visual/apk-availability-shortcuts>
 // Tujuan   : <invariant yang dibuktikan, mis. tidak ada leak getApkVariantDetail>
@@ -221,7 +221,7 @@ Di bawah ini header komentar yang bisa langsung di-copy-paste ke bagian atas set
 #### Mode `full` (`installApkStub` + `installServerFnPassthroughGuard`)
 
 ```ts
-// README scenario: README.md#apk-scenario-<flow-name>
+// README scenario: README.md#apk-scenario-<flow>
 // Skenario : <aksi user yang diuji, mis. copy link APK Chat lalu refresh>
 // Harness  : <route/harness, mis. /lovable/visual/apk-availability-shortcuts>
 // Tujuan   : <invariant yang dibuktikan, mis. tidak ada leak server function APK & non-APK>
@@ -236,7 +236,7 @@ Di bawah ini header komentar yang bisa langsung di-copy-paste ke bagian atas set
 #### Mode `form-only` (tidak memakai stub APK)
 
 ```ts
-// README scenario: README.md#apk-scenario-<flow-name>
+// README scenario: README.md#apk-scenario-<flow>
 // Skenario : <form / validasi yang diuji, mis. form minSupported>
 // Harness  : <route/harness>
 // Tujuan   : <invariant UI / validasi>
