@@ -1,6 +1,17 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { getPosKasirRiwayat } from "@/lib/pos-kasir";
+import {
+  ResponsiveContainer,
+  ComposedChart,
+  CartesianGrid,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  Bar,
+  Line,
+} from "recharts";
 
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
@@ -23,6 +34,22 @@ function isToday(ts: number) {
   );
 }
 
+function toDateKey(ts: number) {
+  const d = new Date(ts);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${dd}`;
+}
+
+function todayKey() {
+  return toDateKey(Date.now());
+}
+
+function daysAgoKey(n: number) {
+  return toDateKey(Date.now() - n * 24 * 60 * 60 * 1000);
+}
+
 function PosKasirRingkasanPage() {
   const riwayat = useMemo(() => getPosKasirRiwayat(), []);
   const hariIni = useMemo(() => riwayat.filter((t) => isToday(t.waktu)), [riwayat]);
@@ -32,6 +59,51 @@ function PosKasirRingkasanPage() {
   const jumlahHariIni = hariIni.length;
 
   const [toast, setToast] = useState<string | null>(null);
+  const [dariTanggal, setDariTanggal] = useState<string>(daysAgoKey(6));
+  const [sampaiTanggal, setSampaiTanggal] = useState<string>(todayKey());
+
+  const trenData = useMemo(() => {
+    if (!dariTanggal || !sampaiTanggal) return [];
+    const start = new Date(dariTanggal + "T00:00:00").getTime();
+    const end = new Date(sampaiTanggal + "T23:59:59.999").getTime();
+    if (isNaN(start) || isNaN(end) || start > end) return [];
+    const buckets = new Map<string, { omzet: number; beratKg: number; jumlah: number }>();
+    // seed all days so chart shows gaps as 0
+    for (let t = start; t <= end; t += 24 * 60 * 60 * 1000) {
+      buckets.set(toDateKey(t), { omzet: 0, beratKg: 0, jumlah: 0 });
+    }
+    for (const trx of riwayat) {
+      if (trx.waktu < start || trx.waktu > end) continue;
+      const key = toDateKey(trx.waktu);
+      const b = buckets.get(key) ?? { omzet: 0, beratKg: 0, jumlah: 0 };
+      b.omzet += trx.total;
+      b.beratKg += trx.beratKg;
+      b.jumlah += 1;
+      buckets.set(key, b);
+    }
+    return Array.from(buckets.entries())
+      .sort(([a], [b]) => a.localeCompare(b))
+      .map(([tanggal, v]) => {
+        const d = new Date(tanggal + "T00:00:00");
+        const label = d.toLocaleDateString("id-ID", { day: "2-digit", month: "short" });
+        return {
+          tanggal,
+          label,
+          omzet: v.omzet,
+          beratKg: Number(v.beratKg.toFixed(3)),
+          jumlah: v.jumlah,
+        };
+      });
+  }, [riwayat, dariTanggal, sampaiTanggal]);
+
+  const totalOmzetRentang = trenData.reduce((s, r) => s + r.omzet, 0);
+  const totalBeratRentang = trenData.reduce((s, r) => s + r.beratKg, 0);
+  const totalTrxRentang = trenData.reduce((s, r) => s + r.jumlah, 0);
+
+  const setPreset = (n: number) => {
+    setDariTanggal(daysAgoKey(n - 1));
+    setSampaiTanggal(todayKey());
+  };
 
   const exportCSV = () => {
     if (hariIni.length === 0) {
@@ -106,6 +178,117 @@ function PosKasirRingkasanPage() {
             </div>
           </div>
         </div>
+
+        <section className="bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700 mb-6">
+          <div className="flex flex-col gap-4 mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+              <div>
+                <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                  📈 Tren Omzet & Berat Terjual
+                </h2>
+                <p className="text-xs text-slate-500 mt-1">
+                  {trenData.length > 0
+                    ? `${trenData.length} hari · ${rupiah(totalOmzetRentang)} · ${totalBeratRentang.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg · ${totalTrxRentang} transaksi`
+                    : "Pilih rentang tanggal yang valid"}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {[
+                  { l: "7 hari", n: 7 },
+                  { l: "14 hari", n: 14 },
+                  { l: "30 hari", n: 30 },
+                ].map((p) => (
+                  <button
+                    key={p.n}
+                    onClick={() => setPreset(p.n)}
+                    className="text-xs px-3 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-700 border border-slate-700 text-slate-200"
+                  >
+                    {p.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <label className="flex flex-col gap-1 text-xs text-slate-400">
+                Dari tanggal
+                <input
+                  type="date"
+                  value={dariTanggal}
+                  max={sampaiTanggal || undefined}
+                  onChange={(e) => setDariTanggal(e.target.value)}
+                  className="rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                />
+              </label>
+              <label className="flex flex-col gap-1 text-xs text-slate-400">
+                Sampai tanggal
+                <input
+                  type="date"
+                  value={sampaiTanggal}
+                  min={dariTanggal || undefined}
+                  max={todayKey()}
+                  onChange={(e) => setSampaiTanggal(e.target.value)}
+                  className="rounded-lg bg-slate-900 border border-slate-700 px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-emerald-500"
+                />
+              </label>
+            </div>
+          </div>
+
+          {trenData.length === 0 ? (
+            <div className="text-center py-8 text-sm text-slate-500">
+              Tidak ada data untuk rentang tanggal ini.
+            </div>
+          ) : (
+            <div className="w-full h-72 md:h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <ComposedChart data={trenData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="label" stroke="#94a3b8" tick={{ fontSize: 11 }} />
+                  <YAxis
+                    yAxisId="left"
+                    stroke="#34d399"
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(v) =>
+                      v >= 1_000_000 ? `${(v / 1_000_000).toFixed(1)}jt` : v >= 1000 ? `${(v / 1000).toFixed(0)}rb` : `${v}`
+                    }
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    stroke="#60a5fa"
+                    tick={{ fontSize: 11 }}
+                    tickFormatter={(v) => `${v}kg`}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: "#0f172a",
+                      border: "1px solid #334155",
+                      borderRadius: 8,
+                      fontSize: 12,
+                    }}
+                    labelStyle={{ color: "#e2e8f0" }}
+                    formatter={(value: number, name: string) => {
+                      if (name === "Omzet") return [rupiah(value), name];
+                      if (name === "Berat (kg)")
+                        return [`${value.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`, name];
+                      return [value, name];
+                    }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 12 }} />
+                  <Bar yAxisId="left" dataKey="omzet" name="Omzet" fill="#10b981" radius={[4, 4, 0, 0]} />
+                  <Line
+                    yAxisId="right"
+                    type="monotone"
+                    dataKey="beratKg"
+                    name="Berat (kg)"
+                    stroke="#60a5fa"
+                    strokeWidth={2}
+                    dot={{ r: 3 }}
+                  />
+                </ComposedChart>
+              </ResponsiveContainer>
+            </div>
+          )}
+        </section>
 
         <section className="bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
