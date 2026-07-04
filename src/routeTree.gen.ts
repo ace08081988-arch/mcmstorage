@@ -19,8 +19,10 @@ import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
+import { Route as PosKasirIndexRouteImport } from './routes/pos-kasir.index'
 import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.index'
 import { Route as TTokenRouteImport } from './routes/t.$token'
+import { Route as PosKasirRingkasanRouteImport } from './routes/pos-kasir.ringkasan'
 import { Route as ICodeRouteImport } from './routes/i.$code'
 import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
 import { Route as DiagnostikPaketRouteImport } from './routes/diagnostik.paket'
@@ -150,6 +152,11 @@ const AuthenticatedRoute = AuthenticatedRouteImport.update({
   id: '/_authenticated',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PosKasirIndexRoute = PosKasirIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => PosKasirRoute,
+} as any)
 const AuthenticatedIndexRoute = AuthenticatedIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -159,6 +166,11 @@ const TTokenRoute = TTokenRouteImport.update({
   id: '/t/$token',
   path: '/t/$token',
   getParentRoute: () => rootRouteImport,
+} as any)
+const PosKasirRingkasanRoute = PosKasirRingkasanRouteImport.update({
+  id: '/ringkasan',
+  path: '/ringkasan',
+  getParentRoute: () => PosKasirRoute,
 } as any)
 const ICodeRoute = ICodeRouteImport.update({
   id: '/i/$code',
@@ -607,7 +619,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
-  '/pos-kasir': typeof PosKasirRoute
+  '/pos-kasir': typeof PosKasirRouteWithChildren
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -657,7 +669,9 @@ export interface FileRoutesByFullPath {
   '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/i/$code': typeof ICodeRoute
+  '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
+  '/pos-kasir/': typeof PosKasirIndexRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
@@ -698,7 +712,6 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
-  '/pos-kasir': typeof PosKasirRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -747,8 +760,10 @@ export interface FileRoutesByTo {
   '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/i/$code': typeof ICodeRoute
+  '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
+  '/pos-kasir': typeof PosKasirIndexRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
@@ -791,7 +806,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
-  '/pos-kasir': typeof PosKasirRoute
+  '/pos-kasir': typeof PosKasirRouteWithChildren
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -841,8 +856,10 @@ export interface FileRoutesById {
   '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
   '/i/$code': typeof ICodeRoute
+  '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/pos-kasir/': typeof PosKasirIndexRoute
   '/_authenticated/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
@@ -936,7 +953,9 @@ export interface FileRouteTypes {
     | '/diagnostik/paket'
     | '/download/$variant'
     | '/i/$code'
+    | '/pos-kasir/ringkasan'
     | '/t/$token'
+    | '/pos-kasir/'
     | '/admin/portal-error-log'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
@@ -977,7 +996,6 @@ export interface FileRouteTypes {
     | '/auth'
     | '/download'
     | '/error'
-    | '/pos-kasir'
     | '/refund'
     | '/reset-password'
     | '/sitemap.xml'
@@ -1026,8 +1044,10 @@ export interface FileRouteTypes {
     | '/diagnostik/paket'
     | '/download/$variant'
     | '/i/$code'
+    | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/'
+    | '/pos-kasir'
     | '/admin/portal-error-log'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
@@ -1119,8 +1139,10 @@ export interface FileRouteTypes {
     | '/diagnostik/paket'
     | '/download/$variant'
     | '/i/$code'
+    | '/pos-kasir/ringkasan'
     | '/t/$token'
     | '/_authenticated/'
+    | '/pos-kasir/'
     | '/_authenticated/admin/portal-error-log'
     | '/_authenticated/admin/worker-portal'
     | '/_authenticated/chat/$conversationId'
@@ -1163,7 +1185,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DownloadRoute: typeof DownloadRouteWithChildren
   ErrorRoute: typeof ErrorRoute
-  PosKasirRoute: typeof PosKasirRoute
+  PosKasirRoute: typeof PosKasirRouteWithChildren
   RefundRoute: typeof RefundRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -1271,6 +1293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pos-kasir/': {
+      id: '/pos-kasir/'
+      path: '/'
+      fullPath: '/pos-kasir/'
+      preLoaderRoute: typeof PosKasirIndexRouteImport
+      parentRoute: typeof PosKasirRoute
+    }
     '/_authenticated/': {
       id: '/_authenticated/'
       path: '/'
@@ -1284,6 +1313,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/t/$token'
       preLoaderRoute: typeof TTokenRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/pos-kasir/ringkasan': {
+      id: '/pos-kasir/ringkasan'
+      path: '/ringkasan'
+      fullPath: '/pos-kasir/ringkasan'
+      preLoaderRoute: typeof PosKasirRingkasanRouteImport
+      parentRoute: typeof PosKasirRoute
     }
     '/i/$code': {
       id: '/i/$code'
@@ -2013,12 +2049,26 @@ const DownloadRouteWithChildren = DownloadRoute._addFileChildren(
   DownloadRouteChildren,
 )
 
+interface PosKasirRouteChildren {
+  PosKasirRingkasanRoute: typeof PosKasirRingkasanRoute
+  PosKasirIndexRoute: typeof PosKasirIndexRoute
+}
+
+const PosKasirRouteChildren: PosKasirRouteChildren = {
+  PosKasirRingkasanRoute: PosKasirRingkasanRoute,
+  PosKasirIndexRoute: PosKasirIndexRoute,
+}
+
+const PosKasirRouteWithChildren = PosKasirRoute._addFileChildren(
+  PosKasirRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRoute: AuthenticatedRouteWithChildren,
   AuthRoute: AuthRoute,
   DownloadRoute: DownloadRouteWithChildren,
   ErrorRoute: ErrorRoute,
-  PosKasirRoute: PosKasirRoute,
+  PosKasirRoute: PosKasirRouteWithChildren,
   RefundRoute: RefundRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
