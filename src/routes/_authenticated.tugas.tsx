@@ -33,6 +33,17 @@ type TaskItem = { id: string; task_id: string; name_snapshot: string; category_s
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
 type PinAlert = { id: string; task_id: string; share_token: string; failure_count: number; window_start: string; window_end: string; created_at: string };
 
+function deriveTaskStatus(
+  rawStatus: string,
+  p: { items: number; submitted: number },
+): "Menunggu" | "Dikerjakan" | "Selesai" {
+  const s = String(rawStatus ?? "").toLowerCase();
+  if (s === "done" || s === "selesai") return "Selesai";
+  if (p.items > 0 && p.submitted >= p.items) return "Selesai";
+  if (p.submitted > 0) return "Dikerjakan";
+  return "Menunggu";
+}
+
 function TugasPage() {
   const [uid, setUid] = useState<string | null>(null);
   const [mode, setMode] = useState<"self" | "staff">("self");
