@@ -169,6 +169,17 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // Contoh pembanding: memakai HANYA `stub.terminalGuard()` (tanpa
+      // `installServerFnPassthroughGuard`) untuk flow APK murni —
+      // mount kedua varian + refetch `chat` via `trackedClick`.
+      // Invariant: setelah state aktif tercapai, tidak ada request
+      // `getApkVariantDetail` tambahan pada kedua varian.
+      name: "apk-example-terminal-only-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /apk-example-terminal-only\.spec\.ts/,
+      use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
+    },
+    {
       // E2E konsistensi label /diagnostik/paket: memverifikasi bahwa
       // "Isi / kemasan", "Harga per", dan "Ringkasan · yang tersedia"
       // SELALU konsisten dengan pilihan dropdown Jenis kemasan
