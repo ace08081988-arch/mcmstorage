@@ -264,6 +264,17 @@ function TugasBaruForm() {
   const [verify, setVerify] = useState<Record<string, VerifyState>>({});
   const verifySeq = useRef<Record<string, number>>({});
 
+  // Cek apakah token tautan pegawai sudah dipakai oleh tugas lain sebelum submit.
+  // Menggunakan RPC SECURITY DEFINER `prep_share_token_exists` (admin-only) agar
+  // lolos RLS prep_tasks yang hanya mengizinkan owner membaca datanya sendiri.
+  type TokenCheck = {
+    status: "idle" | "checking" | "unique" | "duplicate" | "invalid" | "error";
+    token?: string;
+    error?: string;
+  };
+  const [tokenCheck, setTokenCheck] = useState<TokenCheck>({ status: "idle" });
+  const tokenCheckSeq = useRef(0);
+
   // Debounced autosave so rapid edits (mengetik, memilih banyak item)
   // tidak menulis ke localStorage di setiap keystroke. Tetap simpan
   // segera saat tab disembunyikan / sebelum unload agar tidak hilang.
@@ -413,6 +424,31 @@ function TugasBaruForm() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // Debounced duplicate-token check. Menjalankan RPC setelah token stabil ~450ms
+  // sehingga tidak menembak DB pada setiap keystroke; hasil terakhir yang menang
+  // dijaga lewat sequence number untuk menghindari race.
+  useEffect(() => {
+    if (created) return;
+    const t = token.trim();
+    if (!/^[A-Za-z0-9_-]{8,48}$/.test(t)) {
+      setTokenCheck({ status: t.length === 0 ? "idle" : "invalid", token: t });
+      return;
+    }
+    const seq = ++tokenCheckSeq.current;
+    setTokenCheck({ status: "checking", token: t });
+    const handle = window.setTimeout(async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data, error } = await (supabase.rpc as any)("prep_share_token_exists", { _token: t });
+      if (tokenCheckSeq.current !== seq) return;
+      if (error) {
+        setTokenCheck({ status: "error", token: t, error: error.message });
+        return;
+      }
+      setTokenCheck({ status: data ? "duplicate" : "unique", token: t });
+    }, 450);
+    return () => window.clearTimeout(handle);
+  }, [token, created]);
+
   function updateRow(key: string, patch: Partial<Row>) {
     setRows((s) => s.map((r) => (r.key === key ? { ...r, ...patch } : r)));
   }
@@ -456,6 +492,16 @@ function TugasBaruForm() {
     const tokenTrim = token.trim();
     if (!/^[A-Za-z0-9_-]{8,48}$/.test(tokenTrim)) {
       toast.error("Token harus 8–48 karakter (huruf, angka, - atau _)"); return null;
+    }
+    if (tokenCheck.status === "duplicate" && tokenCheck.token === tokenTrim) {
+      toast.error("Token sudah dipakai", {
+        description: "Token ini pernah dipakai tugas lain. Tekan Acak untuk membuat token baru.",
+      });
+      return null;
+    }
+    if (tokenCheck.status === "checking" && tokenCheck.token === tokenTrim) {
+      toast.info("Sedang memeriksa token…", { description: "Tunggu sebentar lalu coba lagi." });
+      return null;
     }
     let scheduledIso: string | null = null;
     if (scheduledAt.trim()) {
@@ -727,6 +773,7 @@ function TugasBaruForm() {
             <div className="mt-1 text-[11px] text-muted-foreground">
               Token dipakai di URL pegawai. Isi sendiri untuk memudahkan dikenali, atau tekan Acak untuk mengganti. Tombol Salin URL bisa dipakai kapan saja setelah token terisi.
             </div>
+            <TokenDuplicateBadge check={tokenCheck} onRandom={() => setToken(genShareToken())} />
           </Field>
 
           <Field label="Jadwal penyiapan (opsional)">
@@ -1030,6 +1077,63 @@ function TugasBaruForm() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+    </div>
+  );
+}
+
+function TokenDuplicateBadge({
+  check,
+  onRandom,
+}: {
+  check: {
+    status: "idle" | "checking" | "unique" | "duplicate" | "invalid" | "error";
+    token?: string;
+    error?: string;
+  };
+  onRandom: () => void;
+}) {
+  if (check.status === "idle") return null;
+  if (check.status === "invalid") return null;
+  if (check.status === "checking") {
+    return (
+      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-muted px-2 py-0.5 text-[11px] text-muted-foreground">
+        <svg className="h-2.5 w-2.5 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+          <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="3" />
+          <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+        Memeriksa apakah token sudah dipakai…
+      </div>
+    );
+  }
+  if (check.status === "unique") {
+    return (
+      <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-emerald-500/15 px-2 py-0.5 text-[11px] font-medium text-emerald-700 dark:text-emerald-200">
+        <Check className="h-3 w-3" /> Token belum dipakai — aman
+      </div>
+    );
+  }
+  if (check.status === "duplicate") {
+    return (
+      <div className="mt-1 flex items-start justify-between gap-2 rounded-md border border-destructive/50 bg-destructive/10 px-2 py-1 text-[11px] text-destructive">
+        <span className="flex items-start gap-1">
+          <ShieldAlert className="mt-px h-3 w-3 shrink-0" />
+          <span>
+            <b>Token sudah dipakai</b> oleh tugas lain. Ubah tokennya atau tekan Acak agar tugas baru bisa dibuat.
+          </span>
+        </span>
+        <button
+          type="button"
+          onClick={onRandom}
+          className="shrink-0 rounded border border-destructive/40 px-2 py-0.5 text-[10px] font-medium hover:bg-destructive/10"
+        >
+          Acak token
+        </button>
+      </div>
+    );
+  }
+  return (
+    <div className="mt-1 inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-2 py-0.5 text-[11px] text-amber-700 dark:text-amber-200">
+      <Info className="h-3 w-3" /> Gagal memeriksa token{check.error ? `: ${check.error}` : ""}. Coba lagi.
     </div>
   );
 }

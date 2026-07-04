@@ -3231,6 +3231,7 @@ export type Database = {
         Args: { _pin: string; _task_id: string }
         Returns: boolean
       }
+      prep_share_token_exists: { Args: { _token: string }; Returns: boolean }
       prep_submit:
         | {
             Args: {
