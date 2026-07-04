@@ -187,6 +187,25 @@ function PosKasirPage() {
     setTimeout(() => setToast(null), 4500);
   };
 
+  const batalkanTransaksi = (t: PosKasirTransaksi) => {
+    if (typeof window !== "undefined") {
+      const ok = window.confirm(
+        `Batalkan transaksi ${t.produkNama} (${t.beratKg.toLocaleString("id-ID")} kg · ${rupiah(t.total)})?\nStok akan dikembalikan.`,
+      );
+      if (!ok) return;
+    }
+    setProduk((prev) =>
+      prev.map((p) =>
+        p.id === t.produkId ? { ...p, stokKg: +(p.stokKg + t.beratKg).toFixed(3) } : p,
+      ),
+    );
+    setRiwayat((prev) => prev.filter((r) => r.id !== t.id));
+    setSwipeDx(0);
+    swipeStartX.current = null;
+    setToast(`↶ Transaksi dibatalkan · ${t.produkNama} · ${rupiah(t.total)} dikembalikan`);
+    setTimeout(() => setToast(null), 3500);
+  };
+
   const totalOmzet = riwayat.reduce((s, t) => s + t.total, 0);
   const totalKg = riwayat.reduce((s, t) => s + t.beratKg, 0);
 
