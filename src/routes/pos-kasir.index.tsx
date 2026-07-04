@@ -54,6 +54,7 @@ function PosKasirPage() {
   const [cariTransaksi, setCariTransaksi] = useState<string>("");
   const [swipeDx, setSwipeDx] = useState<number>(0);
   const swipeStartX = useRef<number | null>(null);
+  const [strukTransaksi, setStrukTransaksi] = useState<PosKasirTransaksi | null>(null);
   const [waNomor, setWaNomor] = useState<string>("");
   const [waLokasi, setWaLokasi] = useState<string>("");
   const [ambangStok, setAmbangStok] = useState<number>(() => {
@@ -101,19 +102,47 @@ function PosKasirPage() {
       ? waLokasiError
       : "";
 
-  const buildWaUrl = (t: PosKasirTransaksi): string | null => {
-    if (!waNomorNorm || !waLokasiValid) return null;
+  const buildStrukText = (t: PosKasirTransaksi, withLokasi: boolean): string => {
     const lines = [
       "🧾 *Struk POS Kasir*",
       `${t.produkEmoji} ${t.produkNama}`,
       `Berat: ${t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`,
       `Harga: ${rupiah(t.hargaPerKg)}/kg`,
       `Total: *${rupiah(t.total)}*`,
+      `Sisa stok: ${t.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`,
       `Waktu: ${new Date(t.waktu).toLocaleString("id-ID")}`,
-      "",
-      `📍 Lokasi: ${waLokasiTrim}`,
     ];
-    return `https://wa.me/${waNomorNorm}?text=${encodeURIComponent(lines.join("\n"))}`;
+    if (withLokasi && waLokasiValid) {
+      lines.push("", `📍 Lokasi: ${waLokasiTrim}`);
+    }
+    return lines.join("\n");
+  };
+
+  const buildWaUrl = (t: PosKasirTransaksi): string | null => {
+    if (!waNomorNorm || !waLokasiValid) return null;
+    return `https://wa.me/${waNomorNorm}?text=${encodeURIComponent(buildStrukText(t, true))}`;
+  };
+
+  const salinStruk = async (t: PosKasirTransaksi) => {
+    const text = buildStrukText(t, waLokasiValid);
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setToast("📋 Ringkasan struk disalin");
+    } catch {
+      setToast("Gagal menyalin ringkasan");
+    }
+    setTimeout(() => setToast(null), 2500);
   };
 
   const kirimWa = (t: PosKasirTransaksi) => {
@@ -163,20 +192,19 @@ function PosKasirPage() {
     const levelSebelum = levelStok(selected.stokKg, ambangStok);
     const levelSesudah = levelStok(sisaStokKg, ambangStok);
     setProduk((prev) => prev.map((p) => (p.id === selected.id ? { ...p, stokKg: sisaStokKg } : p)));
-    setRiwayat((prev) => [
-      {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        produkId: selected.id,
-        produkNama: selected.nama,
-        produkEmoji: selected.emoji,
-        beratKg: berat,
-        hargaPerKg: selected.hargaPerKg,
-        total,
-        sisaStokKg,
-        waktu: Date.now(),
-      },
-      ...prev,
-    ]);
+    const trxBaru: PosKasirTransaksi = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      produkId: selected.id,
+      produkNama: selected.nama,
+      produkEmoji: selected.emoji,
+      beratKg: berat,
+      hargaPerKg: selected.hargaPerKg,
+      total,
+      sisaStokKg,
+      waktu: Date.now(),
+    };
+    setRiwayat((prev) => [trxBaru, ...prev]);
+    setStrukTransaksi(trxBaru);
     let pesan = `✅ Transaksi berhasil · ${berat} kg ${selected.nama} · ${rupiah(total)}`;
     if (levelSesudah !== levelSebelum && levelSesudah !== "aman") {
       const meta = LEVEL_META[levelSesudah];
