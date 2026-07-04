@@ -47,17 +47,46 @@ Setiap spec E2E yang menguji tile APK memasang stub `getApkVariantDetail`. Ada d
 
 Setiap project block `apk-*` di `playwright.config.ts` wajib memuat kolom `Guards` dengan checklist yang sesuai mode. Validator (`bun run e2e:apk:validate`) memastikan checklist tidak boleh kontradiksi dengan isi spec.
 
-| Item | Mode | Arti |
-|---|---|---|
-| `primeInitial + assertPrimed` | terminal / full | Respons untuk fetch awal di-enqueue SEBELUM `page.goto()`, dan setup sudah benar-benar lengkap sebelum navigasi. Tanpa ini test bisa hang karena waiter tidak pernah di-fulfill. |
-| `waitForServed` | terminal / full | Sinkronisasi deterministik: tunggu handler memberi respons untuk fetch awal sebelum assertion UI. Menghindari race antara render React dan data stub. |
-| `trackedClick(expected.<variant>=N)` | terminal / full | Setiap tap yang memicu refetch dibungkus guard per-aksi. `expected` sekaligus jadi regression check: kalau tap tiba-tiba tidak memicu request, test gagal. |
-| `assertQuiescent` | terminal / full | Setelah state aktif tercapai, verifikasi handler benar-benar idle selama window waktu tertentu. Menangkap polling / interval / refetch-on-focus. |
-| `terminalGuard()` | terminal / full | Guard akhir di penghujung spec dengan window default `APK_STUB_TERMINAL_WINDOW_MS`. Membuktikan kedua varian bebas leak jangka panjang. |
-| `passthrough.assertNoAdditionalRequests` | full | Tambahan dari `installServerFnPassthroughGuard`. Memastikan tidak ada server function tak terduga yang terpanggil di luar whitelist selama aksi copy/export. |
-| `tidak memakai apk-stub / terminalGuard` | form-only | Penanda eksplisit bahwa spec ini bukan flow `getApkVariantDetail` dan tidak memasang stub APK. |
-| `(mode: terminal)` | terminal | Penanda bahwa spec hanya memakai `installApkStub` tanpa `installServerFnPassthroughGuard`. |
-| `(mode: full)` | full | Penanda bahwa spec memasang `installServerFnPassthroughGuard` selain `installApkStub`. |
+| Item | Mode | Arti | Contoh singkat |
+|---|---|---|---|
+| `primeInitial + assertPrimed` | terminal / full | Respons untuk fetch awal di-enqueue SEBELUM `page.goto()`, dan setup sudah benar-benar lengkap sebelum navigasi. Tanpa ini test bisa hang karena waiter tidak pernah di-fulfill. | ```ts
+stub.primeInitial();
+stub.assertPrimed();
+await page.goto(URL);
+``` |
+| `waitForServed` | terminal / full | Sinkronisasi deterministik: tunggu handler memberi respons untuk fetch awal sebelum assertion UI. Menghindari race antara render React dan data stub. | ```ts
+await stub.waitForServed("chat", 1);
+await stub.waitForServed("storage", 1);
+// baru assert label idle
+await expect(chatDl.getByText("Belum tersedia")).toBeVisible();
+``` |
+| `trackedClick(expected.<variant>=N)` | terminal / full | Setiap tap yang memicu refetch dibungkus guard per-aksi. `expected` sekaligus jadi regression check: kalau tap tiba-tiba tidak memicu request, test gagal. | ```ts
+stub.enqueue("chat", [makeRelease("chat")]);
+await stub.trackedClick(chatRefresh, { expected: { chat: 1 } });
+``` |
+| `trackedAction(...)` | terminal / full | Sama seperti `trackedClick`, tetapi untuk aksi non-klik: keyboard, drag, focus, dsb. | ```ts
+await stub.trackedAction(
+  async () => { await page.keyboard.press("Enter"); },
+  { expected: { storage: 1 } },
+);
+``` |
+| `assertQuiescent` | terminal / full | Setelah state aktif tercapai, verifikasi handler benar-benar idle selama window waktu tertentu. Menangkap polling / interval / refetch-on-focus. | ```ts
+await stub.assertQuiescent("chat", { windowMs: 1000, stableTicks: 5 });
+await stub.assertQuiescent("storage", { windowMs: 500, stableTicks: 5 });
+``` |
+| `terminalGuard()` | terminal / full | Guard akhir di penghujung spec dengan window default `APK_STUB_TERMINAL_WINDOW_MS`. Membuktikan kedua varian bebas leak jangka panjang. | ```ts
+await stub.terminalGuard();
+``` |
+| `passthrough.assertNoAdditionalRequests` | full | Tambahan dari `installServerFnPassthroughGuard`. Memastikan tidak ada server function tak terduga yang terpanggil di luar whitelist selama aksi copy/export. | ```ts
+const passthrough = await installServerFnPassthroughGuard(page, {
+  whitelist: ["getApkVariantDetail", "getChatCopyLink"],
+});
+// ... skenario APK + copy/export ...
+await passthrough.assertNoAdditionalRequests();
+``` |
+| `tidak memakai apk-stub / terminalGuard` | form-only | Penanda eksplisit bahwa spec ini bukan flow `getApkVariantDetail` dan tidak memasang stub APK. | `// Guards : spec form murni — tidak memakai apk-stub / terminalGuard` |
+| `(mode: terminal)` | terminal | Penanda bahwa spec hanya memakai `installApkStub` tanpa `installServerFnPassthroughGuard`. | `// Guards : ... (mode: terminal)` |
+| `(mode: full)` | full | Penanda bahwa spec memasang `installServerFnPassthroughGuard` selain `installApkStub`. | `// Guards : ... (mode: full)` |
 
 ### Perintah yang sering dipakai
 
