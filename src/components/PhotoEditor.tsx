@@ -481,6 +481,21 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     const r = canvasRef.current!.getBoundingClientRect();
     return { x: e.clientX - r.left, y: e.clientY - r.top };
   }
+  function pointFromClient(clientX: number, clientY: number) {
+    const r = canvasRef.current!.getBoundingClientRect();
+    return { x: clientX - r.left, y: clientY - r.top };
+  }
+
+  // Pada sebagian Android WebView / Chromium mobile emulation, `pointerdown`
+  // di-supress oleh browser saat `touch-action:none` + touchstart mendahului.
+  // Kalau kita hanya andalkan onPointerDown, semua tool "tidak jalan" karena
+  // drawingRef tidak pernah diinisialisasi (hanya pointermove/pointerup yang
+  // sampai). Solusinya: dukung Touch Events juga sebagai jalur alternatif.
+  //
+  // Aturan agar tidak double-fire dengan pointer events pada perangkat yang
+  // MEMANG mengirim keduanya: sekali touch session aktif, blokir handler
+  // pointer sampai touchend/touchcancel.
+  const touchDrivingRef = useRef(false);
 
   function hitTest(p: { x: number; y: number }): Layer | null {
     // iterate top-most first
@@ -492,8 +507,16 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   function onPointerDown(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (touchDrivingRef.current) return; // touchstart already handled it
     const p = pointAt(e);
-    e.currentTarget.setPointerCapture?.(e.pointerId);
+    // Beberapa Android WebView / event yang tidak sepenuhnya trusted bisa
+    // melempar InvalidStateError di sini. Jangan biarkan itu membatalkan
+    // pemilihan tool — capture pointer adalah optimasi, bukan syarat.
+    try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch { /* noop */ }
+    handleDown(p);
+  }
+
+  function handleDown(p: { x: number; y: number }) {
     if (tool === "select") {
       const hit = hitTest(p);
       setSelectedId(hit?.id ?? null);
@@ -540,7 +563,12 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   function onPointerMove(e: React.PointerEvent<HTMLCanvasElement>) {
+    if (touchDrivingRef.current) return;
     const p = pointAt(e);
+    handleMove(p);
+  }
+
+  function handleMove(p: { x: number; y: number }) {
     const drag = dragLiveRef.current;
     if (drag && tool === "select") {
       const last = lastPointRef.current; if (!last) return;
@@ -565,6 +593,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   }
 
   function onPointerUp() {
+    if (touchDrivingRef.current) return;
+    handleUp();
+  }
+
+  function handleUp() {
     const drag = dragLiveRef.current;
     if (drag) {
       // Apply the accumulated drag delta to state once, with the pre-drag snapshot in history.
@@ -624,11 +657,46 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   // (scroll, palm rejection, multi-finger, keyboard opening). Without this,
   // dragLiveRef / drawingRef stay set forever and the editor feels frozen.
   function onPointerCancel() {
+    if (touchDrivingRef.current) return;
+    handleCancel();
+  }
+
+  function handleCancel() {
     dragLiveRef.current = null;
     drawingRef.current = null;
     commitBaselineRef.current = null;
     lastPointRef.current = null;
     scheduleRedraw();
+  }
+
+  // Touch fallback — needed on Android WebView / mobile Chrome where
+  // pointerdown is sometimes suppressed by the browser even though
+  // touchstart fires normally. See probe log in Playwright harness.
+  function onTouchStart(e: React.TouchEvent<HTMLCanvasElement>) {
+    if (e.touches.length !== 1) return;
+    const t = e.touches[0];
+    touchDrivingRef.current = true;
+    // Note: React 18 touch listeners are passive; preventDefault() would
+    // no-op with a console warning. CSS `touch-action: none` on the canvas
+    // already blocks browser gestures, so no preventDefault is needed.
+    handleDown(pointFromClient(t.clientX, t.clientY));
+  }
+  function onTouchMove(e: React.TouchEvent<HTMLCanvasElement>) {
+    if (!touchDrivingRef.current) return;
+    const t = e.touches[0]; if (!t) return;
+    handleMove(pointFromClient(t.clientX, t.clientY));
+  }
+  function onTouchEnd(e: React.TouchEvent<HTMLCanvasElement>) {
+    if (!touchDrivingRef.current) return;
+    handleUp();
+    // release after the microtask so pointer events fired by browser as
+    // a compat shim are ignored (they would double-commit otherwise).
+    setTimeout(() => { touchDrivingRef.current = false; }, 0);
+  }
+  function onTouchCancel() {
+    if (!touchDrivingRef.current) return;
+    handleCancel();
+    setTimeout(() => { touchDrivingRef.current = false; }, 0);
   }
 
   function patchSelected(patch: Partial<Layer>) {
@@ -772,6 +840,10 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
               onPointerMove={onPointerMove}
               onPointerUp={onPointerUp}
               onPointerCancel={onPointerCancel}
+              onTouchStart={onTouchStart}
+              onTouchMove={onTouchMove}
+              onTouchEnd={onTouchEnd}
+              onTouchCancel={onTouchCancel}
               className="absolute inset-0 touch-none"
               style={{ width: `${view.w}px`, height: `${view.h}px` }}
             />
