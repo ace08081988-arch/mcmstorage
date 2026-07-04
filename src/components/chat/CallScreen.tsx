@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
-  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -111,6 +111,33 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     setVideoFit((f) => (f === "cover" ? "contain" : "cover"));
   }, []);
   const videoFitClass = videoFit === "cover" ? "object-cover" : "object-contain";
+  // Kualitas video keluar — auto (biarkan browser adaptif) atau paksa preset
+  // resolusi/bitrate untuk stabilitas di jaringan lemah.
+  const VIDEO_QUALITY_KEY = "mcm.call.videoQuality";
+  type VideoQuality = "auto" | "low" | "medium" | "high";
+  const [videoQuality, setVideoQuality] = useState<VideoQuality>(() => {
+    if (typeof window === "undefined") return "auto";
+    const v = window.localStorage.getItem(VIDEO_QUALITY_KEY);
+    return v === "low" || v === "medium" || v === "high" || v === "auto" ? v : "auto";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(VIDEO_QUALITY_KEY, videoQuality); } catch { /* ignore */ }
+  }, [videoQuality]);
+  const cycleVideoQuality = useCallback(() => {
+    setVideoQuality((q) =>
+      q === "auto" ? "low" : q === "low" ? "medium" : q === "medium" ? "high" : "auto",
+    );
+  }, []);
+  const videoQualityLabel =
+    videoQuality === "auto" ? "Auto"
+    : videoQuality === "low" ? "Rendah"
+    : videoQuality === "medium" ? "Sedang"
+    : "Tinggi";
+  const videoQualityHint =
+    videoQuality === "auto" ? "Otomatis mengikuti jaringan"
+    : videoQuality === "low" ? "320p · hemat data, stabil di sinyal lemah"
+    : videoQuality === "medium" ? "480p · seimbang"
+    : "720p · kualitas tinggi (butuh koneksi baik)";
   const pipSizeClass =
     pipSize === "sm" ? "h-24 w-20" : pipSize === "lg" ? "h-48 w-36" : "h-32 w-24";
   const pipCornerClass =
