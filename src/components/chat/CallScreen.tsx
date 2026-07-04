@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
   Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, Minimize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal, SwitchCamera, Move, RotateCcw, RefreshCw, Eye, EyeOff,
+  Download, Upload,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
