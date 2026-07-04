@@ -1030,13 +1030,13 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // memindah elemen ke node baru sebelum React sempat mem-flush prop `style`.
   useEffect(() => {
     if (kind !== "video") return;
-    const pos = videoFit === "cover" ? videoPosCss : "50% 50%";
+    const pos = videoStyle.objectPosition ?? "50% 50%";
     for (const el of [localVideoRef.current, remoteVideoRef.current]) {
       if (!el) continue;
       el.style.objectFit = videoFit;
       el.style.objectPosition = pos;
     }
-  }, [videoFit, videoPosCss, kind, cameraSwapNonce, remoteReady, swapped]);
+  }, [videoFit, videoStyle.objectPosition, kind, cameraSwapNonce, remoteReady, swapped]);
 
   // Tukar kamera depan/belakang tanpa menutup panggilan: buka stream baru
   // dengan facingMode target, ganti track pada sender via `replaceTrack`,
