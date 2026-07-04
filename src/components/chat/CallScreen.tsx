@@ -832,6 +832,20 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             {kind === "video" ? (
               <button
                 type="button"
+                onClick={cycleVideoQuality}
+                aria-label={`Kualitas video: ${videoQualityLabel}. ${videoQualityHint}. Ketuk untuk ubah.`}
+                title={`Kualitas: ${videoQualityLabel} — ${videoQualityHint}`}
+                data-testid="call-quality-toggle"
+                data-quality={videoQuality}
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                <Signal className="h-3.5 w-3.5" />
+                <span>{videoQualityLabel}</span>
+              </button>
+            ) : null}
+            {kind === "video" ? (
+              <button
+                type="button"
                 onClick={() => void toggleFullscreen()}
                 aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
                 aria-pressed={isFullscreen}
