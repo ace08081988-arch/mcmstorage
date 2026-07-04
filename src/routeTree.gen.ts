@@ -14,6 +14,7 @@ import { Route as TermsRouteImport } from './routes/terms'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as RefundRouteImport } from './routes/refund'
+import { Route as PosKasirRouteImport } from './routes/pos-kasir'
 import { Route as ErrorRouteImport } from './routes/error'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -123,6 +124,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const RefundRoute = RefundRouteImport.update({
   id: '/refund',
   path: '/refund',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PosKasirRoute = PosKasirRouteImport.update({
+  id: '/pos-kasir',
+  path: '/pos-kasir',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ErrorRoute = ErrorRouteImport.update({
@@ -601,6 +607,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
+  '/pos-kasir': typeof PosKasirRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -691,6 +698,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
+  '/pos-kasir': typeof PosKasirRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -783,6 +791,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/download': typeof DownloadRouteWithChildren
   '/error': typeof ErrorRoute
+  '/pos-kasir': typeof PosKasirRoute
   '/refund': typeof RefundRoute
   '/reset-password': typeof ResetPasswordRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
@@ -877,6 +886,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/download'
     | '/error'
+    | '/pos-kasir'
     | '/refund'
     | '/reset-password'
     | '/sitemap.xml'
@@ -967,6 +977,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/download'
     | '/error'
+    | '/pos-kasir'
     | '/refund'
     | '/reset-password'
     | '/sitemap.xml'
@@ -1058,6 +1069,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/download'
     | '/error'
+    | '/pos-kasir'
     | '/refund'
     | '/reset-password'
     | '/sitemap.xml'
@@ -1151,6 +1163,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   DownloadRoute: typeof DownloadRouteWithChildren
   ErrorRoute: typeof ErrorRoute
+  PosKasirRoute: typeof PosKasirRoute
   RefundRoute: typeof RefundRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
@@ -1221,6 +1234,13 @@ declare module '@tanstack/react-router' {
       path: '/refund'
       fullPath: '/refund'
       preLoaderRoute: typeof RefundRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pos-kasir': {
+      id: '/pos-kasir'
+      path: '/pos-kasir'
+      fullPath: '/pos-kasir'
+      preLoaderRoute: typeof PosKasirRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/error': {
@@ -1998,6 +2018,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   DownloadRoute: DownloadRouteWithChildren,
   ErrorRoute: ErrorRoute,
+  PosKasirRoute: PosKasirRoute,
   RefundRoute: RefundRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
@@ -2038,13 +2059,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
