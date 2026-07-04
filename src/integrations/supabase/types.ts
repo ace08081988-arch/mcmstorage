@@ -2335,6 +2335,7 @@ export type Database = {
           created_at: string
           id: string
           name: string
+          pin_chat_mcm: string | null
           updated_at: string
           user_id: string
           wa_phone: string
@@ -2343,6 +2344,7 @@ export type Database = {
           created_at?: string
           id?: string
           name: string
+          pin_chat_mcm?: string | null
           updated_at?: string
           user_id: string
           wa_phone: string
@@ -2351,6 +2353,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string
+          pin_chat_mcm?: string | null
           updated_at?: string
           user_id?: string
           wa_phone?: string
