@@ -1402,7 +1402,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                       const cy = v.h ? v.h / 2 : 100;
                       const l: Layer = {
                         id: uid(), kind: "emoji", x: cx, y: cy,
-                        rotation: 0, scale: 1, color, emoji: em, size: textSize + 8,
+                        rotation: 0, scale: 1, color, opacity, emoji: em, size: textSize + 8,
                       };
                       pushHistory({ ...state, layers: [...state.layers, l] });
                       setSelectedId(l.id);
