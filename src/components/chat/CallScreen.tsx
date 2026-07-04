@@ -1006,6 +1006,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                   ? `absolute inset-0 h-full w-full ${videoFitClass} bg-black`
                   : `h-full w-full rounded-lg border border-white/20 ${videoFitClass} shadow-lg bg-black`
               }
+              style={videoStyle}
             />
             {!swapped ? (
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 rounded-b-lg bg-black/50 px-1.5 py-1 backdrop-blur">
