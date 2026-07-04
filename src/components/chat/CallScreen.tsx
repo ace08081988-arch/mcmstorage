@@ -183,6 +183,14 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     : videoPos === "bottom" ? "50% 100%"
     : videoPos === "left" ? "0% 50%"
     : "100% 50%";
+  // Style inline yang dipakai SEMUA elemen <video> (remote + preview lokal
+  // di mode PiP maupun swap). Menaruhnya di prop `style` menjamin nilainya
+  // ikut di-apply pada setiap render — termasuk saat swap layout memindah
+  // elemen ke DOM node baru dan saat kamera front/back ditukar.
+  const videoStyle: React.CSSProperties = {
+    objectFit: videoFit,
+    objectPosition: videoFit === "cover" ? videoPosCss : "50% 50%",
+  };
   const videoPosLabel =
     videoPos === "center" ? "Tengah"
     : videoPos === "top" ? "Atas"
