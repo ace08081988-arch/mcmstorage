@@ -169,6 +169,9 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     [facingMode, setVideoPosFront, setVideoPosBack],
   );
   const cycleVideoPos = useCallback(() => {
+    // Cycle ke preset — buang posisi custom (hasil drag) supaya preset
+    // kembali berlaku dan tidak "diabaikan" oleh nilai custom.
+    setVideoPosCustom(null);
     setVideoPos((p) =>
       p === "center" ? "top"
       : p === "top" ? "right"
@@ -177,12 +180,52 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
       : "center",
     );
   }, [setVideoPos]);
-  const videoPosCss =
+  // Posisi custom hasil drag (persen 0-100, per sumbu). Disimpan terpisah
+  // per kamera; bila `null`, preset di atas yang dipakai. Drag pada video
+  // besar mengisi nilai ini; tombol Reset mengosongkannya.
+  type VideoPosXY = { x: number; y: number };
+  const parseVideoPosXY = useCallback((raw: string | null): VideoPosXY | null => {
+    if (!raw) return null;
+    try {
+      const v = JSON.parse(raw) as unknown;
+      if (v && typeof v === "object") {
+        const x = (v as { x?: unknown }).x;
+        const y = (v as { y?: unknown }).y;
+        if (typeof x === "number" && typeof y === "number" &&
+            Number.isFinite(x) && Number.isFinite(y)) {
+          return { x: Math.max(0, Math.min(100, x)), y: Math.max(0, Math.min(100, y)) };
+        }
+      }
+    } catch { /* ignore */ }
+    return null;
+  }, []);
+  const [videoPosCustomFront, setVideoPosCustomFront] = usePersistedState<VideoPosXY | null>(
+    "mcm.call.videoPosXY.user",
+    parseVideoPosXY,
+    null,
+  );
+  const [videoPosCustomBack, setVideoPosCustomBack] = usePersistedState<VideoPosXY | null>(
+    "mcm.call.videoPosXY.environment",
+    parseVideoPosXY,
+    null,
+  );
+  const videoPosCustom = facingMode === "user" ? videoPosCustomFront : videoPosCustomBack;
+  const setVideoPosCustom = useCallback(
+    (v: (VideoPosXY | null) | ((prev: VideoPosXY | null) => VideoPosXY | null)) => {
+      if (facingMode === "user") setVideoPosCustomFront(v);
+      else setVideoPosCustomBack(v);
+    },
+    [facingMode, setVideoPosCustomFront, setVideoPosCustomBack],
+  );
+  const presetPosCss =
     videoPos === "center" ? "50% 50%"
     : videoPos === "top" ? "50% 0%"
     : videoPos === "bottom" ? "50% 100%"
     : videoPos === "left" ? "0% 50%"
     : "100% 50%";
+  const videoPosCss = videoPosCustom
+    ? `${videoPosCustom.x.toFixed(1)}% ${videoPosCustom.y.toFixed(1)}%`
+    : presetPosCss;
   // Style inline yang dipakai SEMUA elemen <video> (remote + preview lokal
   // di mode PiP maupun swap). Menaruhnya di prop `style` menjamin nilainya
   // ikut di-apply pada setiap render — termasuk saat swap layout memindah
@@ -191,8 +234,66 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     objectFit: videoFit,
     objectPosition: videoFit === "cover" ? videoPosCss : "50% 50%",
   };
-  const videoPosLabel =
-    videoPos === "center" ? "Tengah"
+  // Drag untuk menggeser posisi crop secara kontinu (bukan cuma preset).
+  // Berlaku pada elemen <video> "besar" saat mode Crop aktif. Menggeser
+  // pointer ke kanan menggeser frame ke kanan (image mengikuti jari) —
+  // dalam istilah `object-position` berarti nilai x% berkurang.
+  const cropDragRef = useRef<{
+    id: number; w: number; h: number; startX: number; startY: number;
+    baseX: number; baseY: number;
+  } | null>(null);
+  const cropDraggable = kind === "video" && videoFit === "cover";
+  const onCropPointerDown = useCallback((e: React.PointerEvent<HTMLVideoElement>) => {
+    if (!cropDraggable) return;
+    const el = e.currentTarget;
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    const base = videoPosCustom ?? {
+      x: presetPosCss.startsWith("0%") ? 0 : presetPosCss.startsWith("100%") ? 100 : 50,
+      y: presetPosCss.endsWith(" 0%") ? 0 : presetPosCss.endsWith(" 100%") ? 100 : 50,
+    };
+    cropDragRef.current = {
+      id: e.pointerId,
+      w: rect.width,
+      h: rect.height,
+      startX: e.clientX,
+      startY: e.clientY,
+      baseX: base.x,
+      baseY: base.y,
+    };
+    try { el.setPointerCapture(e.pointerId); } catch { /* ignore */ }
+  }, [cropDraggable, videoPosCustom, presetPosCss]);
+  const onCropPointerMove = useCallback((e: React.PointerEvent<HTMLVideoElement>) => {
+    const st = cropDragRef.current;
+    if (!st || st.id !== e.pointerId) return;
+    const dxPct = ((e.clientX - st.startX) / st.w) * 100;
+    const dyPct = ((e.clientY - st.startY) / st.h) * 100;
+    // Gerakkan image mengikuti jari: object-position bergeser berlawanan arah.
+    const nx = Math.max(0, Math.min(100, st.baseX - dxPct));
+    const ny = Math.max(0, Math.min(100, st.baseY - dyPct));
+    setVideoPosCustom({ x: nx, y: ny });
+  }, [setVideoPosCustom]);
+  const onCropPointerUp = useCallback((e: React.PointerEvent<HTMLVideoElement>) => {
+    const st = cropDragRef.current;
+    if (!st || st.id !== e.pointerId) return;
+    cropDragRef.current = null;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+  }, []);
+  // Handler yang dipasang di elemen <video> "besar". Saat !swapped, video
+  // remote yang besar; saat swapped, video lokal yang besar. Video PiP
+  // (kecil) tidak menerima drag crop supaya tidak bentrok dengan drag
+  // untuk memindah posisi PiP.
+  const cropDragHandlersBig = cropDraggable
+    ? {
+        onPointerDown: onCropPointerDown,
+        onPointerMove: onCropPointerMove,
+        onPointerUp: onCropPointerUp,
+        onPointerCancel: onCropPointerUp,
+      }
+    : {};
+  const videoPosLabel = videoPosCustom
+    ? `${Math.round(videoPosCustom.x)}·${Math.round(videoPosCustom.y)}`
+    : videoPos === "center" ? "Tengah"
     : videoPos === "top" ? "Atas"
     : videoPos === "bottom" ? "Bawah"
     : videoPos === "left" ? "Kiri"
@@ -935,6 +1036,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 : `absolute inset-0 h-full w-full ${videoFitClass} bg-black`
             }
             style={videoStyle}
+            {...(swapped ? {} : cropDragHandlersBig)}
           />
         ) : (
           <audio ref={remoteAudioRef} autoPlay playsInline />
@@ -1002,6 +1104,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                   : `h-full w-full rounded-lg border border-white/20 ${videoFitClass} shadow-lg bg-black`
               }
               style={videoStyle}
+              {...(swapped ? cropDragHandlersBig : {})}
             />
             {!swapped ? (
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 rounded-b-lg bg-black/50 px-1.5 py-1 backdrop-blur">
@@ -1139,7 +1242,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             {kind === "video" && videoFit === "cover" ? (
               <button
                 type="button"
-                onClick={() => setVideoPos("center")}
+                onClick={() => { setVideoPosCustom(null); setVideoPos("center"); }}
                 aria-label="Reset posisi crop ke tengah"
                 title="Reset posisi crop ke tengah"
                 data-testid="call-pos-reset"
