@@ -272,6 +272,9 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     if (prevToolRef.current !== tool) {
       editorFeedback.toolSwitch();
       prevToolRef.current = tool;
+      if (shouldShowGuide(tool)) {
+        setGuideTool(tool);
+      }
     }
   }, [tool]);
   // Keyboard shortcuts: single letter tanpa modifier, hanya bila fokus tidak
