@@ -1,5 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
-import { Loader2, Sparkles, RotateCw, Eraser, Plus, Star, Trash2, ArrowLeft, Bookmark } from "lucide-react";
+import { Loader2, Sparkles, RotateCw, Eraser, Plus, Star, Trash2, ArrowLeft, Bookmark, Pencil } from "lucide-react";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -17,7 +21,7 @@ import { StickerView } from "@/components/chat/StickerView";
 import { sendMessage } from "@/lib/chat.functions";
 import { generateAiSticker } from "@/lib/sticker-ai.functions";
 import {
-  useStickerLibrary, saveSticker, removeSaved, toggleFav, pushRecent, type SavedSticker,
+  useStickerLibrary, saveSticker, removeSaved, updateSaved, toggleFav, pushRecent, type SavedSticker,
 } from "@/lib/sticker-library";
 
 const ARROW_DIRS: StickerArrowDir[] = [
@@ -51,6 +55,13 @@ export function StickerPickerDialog({
     mode.kind === "edit" || initial ? "editor" : "library",
   );
   const [saveOnSend, setSaveOnSend] = useState(true);
+  // Jika berisi id, artinya kita sedang MENGEDIT stiker koleksi lokal (bukan
+  // stiker yang sudah terkirim di percakapan). Commit akan memanggil
+  // updateSaved dan tidak mengirim pesan baru.
+  const [editingSavedId, setEditingSavedId] = useState<string | null>(null);
+  // Konfirmasi hapus (Android tidak punya "hover", jadi ikon Trash selalu
+  // terlihat — konfirmasi mencegah tekan tak sengaja).
+  const [confirmDelete, setConfirmDelete] = useState<SavedSticker | null>(null);
   const lib = useStickerLibrary();
 
   useEffect(() => {
@@ -59,6 +70,8 @@ export function StickerPickerDialog({
     setTab(initial?.kind ?? "arrow");
     setView(mode.kind === "edit" || initial ? "editor" : "library");
     setSaveOnSend(true);
+    setEditingSavedId(null);
+    setConfirmDelete(null);
   }, [open, initial]);
 
   function switchTab(nextKind: string) {
@@ -87,6 +100,10 @@ export function StickerPickerDialog({
       const body = encodeCard(card);
       if (mode.kind === "edit") {
         await mode.onCommit(body);
+      } else if (editingSavedId) {
+        // Mode edit koleksi lokal: perbarui item, jangan kirim pesan baru.
+        updateSaved(editingSavedId, { card });
+        toast.success("Stiker diperbarui");
       } else {
         await sendMessage({ data: { conversationId, body } });
         pushRecent(card);
@@ -121,11 +138,17 @@ export function StickerPickerDialog({
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             {view === "editor" && mode.kind !== "edit" ? (
-              <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => setView("library")}>
+              <Button type="button" size="icon" variant="ghost" className="h-7 w-7" onClick={() => { setView("library"); setEditingSavedId(null); }}>
                 <ArrowLeft className="h-4 w-4" />
               </Button>
             ) : null}
-            {mode.kind === "edit" ? "Edit stiker" : view === "library" ? "Stiker" : "Buat stiker"}
+            {mode.kind === "edit"
+              ? "Edit stiker"
+              : view === "library"
+                ? "Stiker"
+                : editingSavedId
+                  ? "Edit stiker tersimpan"
+                  : "Buat stiker"}
           </DialogTitle>
         </DialogHeader>
 
@@ -137,7 +160,16 @@ export function StickerPickerDialog({
             busy={busy}
             onSend={sendFromLibrary}
             onToggleFav={(id) => toggleFav(id)}
-            onRemove={(id) => removeSaved(id)}
+            onRemove={(id) => {
+              const target = lib.saved.find((s) => s.id === id) ?? lib.recents.find((s) => s.id === id);
+              if (target) setConfirmDelete(target);
+            }}
+            onEdit={(s) => {
+              setEditingSavedId(s.id);
+              setCard(s.card);
+              setTab(s.card.kind);
+              setView("editor");
+            }}
             onNew={() => { setCard(defaultArrow()); setTab("arrow"); setView("editor"); }}
           />
         ) : (
@@ -173,7 +205,7 @@ export function StickerPickerDialog({
           </div>
         </div>
 
-        {mode.kind !== "edit" ? (
+        {mode.kind !== "edit" && !editingSavedId ? (
           <label className="flex items-center justify-between rounded-md border px-2 py-1.5 text-xs">
             <span className="flex items-center gap-1.5"><Bookmark className="h-3.5 w-3.5" /> Simpan ke koleksi setelah kirim</span>
             <Switch checked={saveOnSend} onCheckedChange={setSaveOnSend} />
@@ -183,24 +215,47 @@ export function StickerPickerDialog({
           <Button variant="ghost" onClick={() => onOpenChange(false)} disabled={busy}>Batal</Button>
           <Button onClick={commit} disabled={busy}>
             {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : null}
-            {mode.kind === "edit" ? "Simpan perubahan" : "Kirim"}
+            {mode.kind === "edit" || editingSavedId ? "Simpan perubahan" : "Kirim"}
           </Button>
         </DialogFooter>
         </>
         )}
       </DialogContent>
+      <AlertDialog open={!!confirmDelete} onOpenChange={(o) => !o && setConfirmDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus stiker?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Stiker ini akan hilang dari koleksi di perangkat ini. Pesan yang sudah terkirim tidak terpengaruh.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              onClick={() => {
+                if (confirmDelete) removeSaved(confirmDelete.id);
+                setConfirmDelete(null);
+              }}
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Dialog>
   );
 }
 
 /** Grid stiker tersimpan ala WA: Buat + Favorit + Tersimpan + Terbaru. */
 function StickerLibraryPanel({
-  saved, recents, fav, busy, onSend, onToggleFav, onRemove, onNew,
+  saved, recents, fav, busy, onSend, onToggleFav, onRemove, onEdit, onNew,
 }: {
   saved: SavedSticker[]; recents: SavedSticker[]; fav: Set<string>; busy: boolean;
   onSend: (s: SavedSticker) => void;
   onToggleFav: (id: string) => void;
   onRemove: (id: string) => void;
+  onEdit: (s: SavedSticker) => void;
   onNew: () => void;
 }) {
   const favs = useMemo(() => saved.filter((s) => fav.has(s.id)), [saved, fav]);
@@ -219,17 +274,17 @@ function StickerLibraryPanel({
       </Section>
       {favs.length ? (
         <Section title="Favorit">
-          <Grid items={favs} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} />
+          <Grid items={favs} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} onEdit={onEdit} />
         </Section>
       ) : null}
       {rest.length ? (
         <Section title="Tersimpan">
-          <Grid items={rest} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} />
+          <Grid items={rest} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} onEdit={onEdit} />
         </Section>
       ) : null}
       {recents.length ? (
         <Section title="Terbaru">
-          <Grid items={recents} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} compact />
+          <Grid items={recents} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} onEdit={onEdit} compact />
         </Section>
       ) : null}
       {empty ? (
@@ -251,10 +306,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Grid({
-  items, fav, busy, onSend, onToggleFav, onRemove, compact,
+  items, fav, busy, onSend, onToggleFav, onRemove, onEdit, compact,
 }: {
   items: SavedSticker[]; fav: Set<string>; busy: boolean;
   onSend: (s: SavedSticker) => void; onToggleFav: (id: string) => void; onRemove: (id: string) => void;
+  onEdit: (s: SavedSticker) => void;
   compact?: boolean;
 }) {
   return (
@@ -277,13 +333,30 @@ function Grid({
                   className="absolute left-0.5 top-0.5 rounded-full bg-background/80 p-0.5 backdrop-blur">
                   <Star className={`h-3 w-3 ${isFav ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
                 </button>
-                <button type="button" aria-label="Hapus"
-                  onClick={(e) => { e.stopPropagation(); onRemove(s.id); }}
-                  className="absolute right-0.5 top-0.5 rounded-full bg-background/80 p-0.5 opacity-0 backdrop-blur group-hover:opacity-100">
-                  <Trash2 className="h-3 w-3 text-rose-500" />
-                </button>
+                {/* Edit + Hapus selalu terlihat — Android tidak punya hover. */}
+                <div className="absolute right-0.5 top-0.5 flex gap-0.5">
+                  <button type="button" aria-label="Edit stiker"
+                    onClick={(e) => { e.stopPropagation(); onEdit(s); }}
+                    className="rounded-full bg-background/85 p-0.5 backdrop-blur transition hover:bg-background">
+                    <Pencil className="h-3 w-3 text-primary" />
+                  </button>
+                  <button type="button" aria-label="Hapus stiker"
+                    onClick={(e) => { e.stopPropagation(); onRemove(s.id); }}
+                    className="rounded-full bg-background/85 p-0.5 backdrop-blur transition hover:bg-background">
+                    <Trash2 className="h-3 w-3 text-rose-500" />
+                  </button>
+                </div>
               </>
-            ) : null}
+            ) : (
+              // Panel "Terbaru": Edit saja (stiker Terbaru bersifat riwayat,
+              // hapus tidak berarti banyak — tetap bisa dihapus lewat swipe
+              // manual di masa depan).
+              <button type="button" aria-label="Edit stiker"
+                onClick={(e) => { e.stopPropagation(); onEdit(s); }}
+                className="absolute right-0.5 top-0.5 rounded-full bg-background/85 p-0.5 backdrop-blur">
+                <Pencil className="h-3 w-3 text-primary" />
+              </button>
+            )}
           </div>
         );
       })}

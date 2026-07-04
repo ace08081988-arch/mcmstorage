@@ -68,6 +68,26 @@ export function removeSaved(id: string) {
   const fav = getFavSet(); if (fav.delete(id)) write(KEY_FAV, Array.from(fav));
 }
 
+/**
+ * Perbarui stiker tersimpan di tempat (mempertahankan id, created_at, dan
+ * status favorit). Dipakai fitur Edit di StickerPickerDialog agar perubahan
+ * kartu / label tidak menciptakan duplikat baru.
+ */
+export function updateSaved(id: string, patch: { card?: StickerCard; label?: string }) {
+  const list = getSaved();
+  const idx = list.findIndex((s) => s.id === id);
+  if (idx < 0) return null;
+  const next: SavedSticker = {
+    ...list[idx],
+    ...(patch.card ? { card: patch.card } : {}),
+    ...(patch.label !== undefined ? { label: patch.label } : {}),
+  };
+  const arr = [...list];
+  arr[idx] = next;
+  write(KEY_SAVED, arr);
+  return next;
+}
+
 export function toggleFav(id: string) {
   const fav = getFavSet();
   if (fav.has(id)) fav.delete(id); else fav.add(id);
