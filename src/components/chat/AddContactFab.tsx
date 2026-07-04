@@ -19,6 +19,7 @@ import {
   isLikelyInviteCode,
   normalizeInviteCode,
   resolveInviteCode,
+  validateInviteCode,
   type InviteProfile,
 } from "@/lib/invite";
 
