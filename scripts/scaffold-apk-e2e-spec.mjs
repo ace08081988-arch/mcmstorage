@@ -16,6 +16,14 @@
  *   node scripts/scaffold-apk-e2e-spec.mjs --name apk-focus-refetch-guard
  *   node scripts/scaffold-apk-e2e-spec.mjs            # prompt interaktif
  *   node scripts/scaffold-apk-e2e-spec.mjs --dry-run  # preview, no write
+ *
+ * Pilih mode guard:
+ *   --mode terminal        (default) hanya `stub.terminalGuard()` — cukup
+ *                          untuk flow APK murni (`getApkVariantDetail` saja).
+ *   --mode full            terminalGuard + `installServerFnPassthroughGuard`
+ *                          — wajib bila flow menyentuh server function di
+ *                          luar APK (copy chat link, export, dll).
+ *   Alias: `--full` = `--mode full`, `--terminal` = `--mode terminal`.
  */
 
 import { promises as fs } from "node:fs";
@@ -36,15 +44,27 @@ const CONFIG = path.join(ROOT, "playwright.config.ts");
 const NAME_RE = /^[a-z][a-z0-9]*(-[a-z0-9]+)*$/;
 
 function parseArgs(argv) {
-  const out = { name: null, dryRun: false };
+  const out = { name: null, dryRun: false, mode: "terminal" };
   for (let i = 2; i < argv.length; i++) {
     const a = argv[i];
     if (a === "--dry-run") out.dryRun = true;
+    else if (a === "--mode") out.mode = argv[++i] ?? "";
+    else if (a.startsWith("--mode=")) out.mode = a.slice("--mode=".length);
+    else if (a === "--full") out.mode = "full";
+    else if (a === "--terminal" || a === "--terminal-only") out.mode = "terminal";
     else if (a === "--name") out.name = argv[++i] ?? null;
     else if (a.startsWith("--name=")) out.name = a.slice("--name=".length);
     else if (!out.name && !a.startsWith("--")) out.name = a;
   }
   return out;
+}
+
+const VALID_MODES = new Set(["terminal", "full"]);
+
+function validateMode(mode) {
+  if (!VALID_MODES.has(mode))
+    return `Mode "${mode}" tidak dikenal. Pilih salah satu: terminal | full.`;
+  return null;
 }
 
 async function promptName() {
@@ -123,15 +143,27 @@ function validateSpecContent(content, { label } = { label: "spec" }) {
   return `Guard hilang di ${label}:\n${lines}`;
 }
 
-function buildSpec(template, name) {
+function buildSpec(template, name, mode = "terminal") {
   // Ganti header komentar dari "TEMPLATE — ..." menjadi rujukan spec.
+  const modeNote =
+    mode === "full"
+      ? ` Mode: FULL guards — memasang \`installServerFnPassthroughGuard\`
+ * di setup dan menutup dengan \`stub.terminalGuard()\` + passthrough
+ * assertion. Gunakan untuk flow yang menyentuh server function di luar
+ * \`getApkVariantDetail\` (copy chat link, export, dll).`
+      : ` Mode: TERMINAL-only — hanya \`stub.terminalGuard()\` di akhir.
+ * Cukup untuk flow APK murni yang tidak menyentuh server function lain.`;
   const stampedHeader = `/**
  * Spec E2E APK — flow "${name}".
  *
  * Dibuat dari \`tests/e2e/_helpers/apk-spec.template.ts\` via
- * \`scripts/scaffold-apk-e2e-spec.mjs\`. Pola guard (\`trackedClick\`,
+ * \`scripts/scaffold-apk-e2e-spec.mjs\` (--mode ${mode}).
+ * Pola guard (\`trackedClick\`,
  * \`trackedAction\`, \`assertQuiescent\`, \`terminalGuard\`) sudah
- * terpasang — LENGKAPI, JANGAN HAPUS. Detail pola & anti-pattern:
+ * terpasang — LENGKAPI, JANGAN HAPUS.
+ *${modeNote}
+ *
+ * Detail pola & anti-pattern:
  * \`tests/e2e/_helpers/README.md\`.
  */`;
 
@@ -159,7 +191,52 @@ function buildSpec(template, name) {
     'from "./_apk-availability-stub"',
   );
 
-  return `${stampedHeader}\n\n${withImport}`;
+  const finalBody =
+    mode === "full" ? applyFullGuardMode(withImport) : withImport;
+
+  return `${stampedHeader}\n\n${finalBody}`;
+}
+
+// Mode FULL: inject `installServerFnPassthroughGuard` di setup + assertion
+// akhir. Pola ini cocok untuk flow yang juga menyentuh server function di
+// luar APK (mis. copy chat link, export). Regex anchor: baris
+// `const stub = await installApkStub(page);` (setup) dan panggilan
+// `await stub.terminalGuard();` (akhir).
+function applyFullGuardMode(body) {
+  const IMPORT_LINE =
+    'import { installServerFnPassthroughGuard } from "./_helpers/serverfn-passthrough-guard";';
+  const SETUP_ANCHOR = "const stub = await installApkStub(page);";
+  const TERMINAL_ANCHOR = "await stub.terminalGuard();";
+
+  if (!body.includes(SETUP_ANCHOR) || !body.includes(TERMINAL_ANCHOR)) {
+    throw new Error(
+      "Mode --full membutuhkan anchor `installApkStub(page)` dan `stub.terminalGuard()` di template — template rusak?",
+    );
+  }
+
+  // Sisipkan import setelah baris import stub APK yang sudah di-rewrite.
+  const withImport = body.replace(
+    /(import \{ installApkStub[^}]*\} from "\.\/_apk-availability-stub";\n)/,
+    `$1${IMPORT_LINE}\n`,
+  );
+
+  // Sisipkan pemasangan passthrough guard tepat SETELAH stub setup.
+  const passthroughSetup = `${SETUP_ANCHOR}
+    // Mode FULL: pantau SEMUA server function (bukan hanya
+    // getApkVariantDetail). Wajib bila flow menyentuh copy/export/link.
+    const passthrough = await installServerFnPassthroughGuard(page);`;
+  const withSetup = withImport.replace(SETUP_ANCHOR, passthroughSetup);
+
+  // Sisipkan assertion + dispose SETELAH terminalGuard.
+  const passthroughTail = `${TERMINAL_ANCHOR}
+
+    // Mode FULL: verifikasi tidak ada server-fn asing (selain APK) yang
+    // firing setelah semua aksi selesai. windowMs default 750ms.
+    await passthrough.assertNoAdditionalRequests({ windowMs: 750 });
+    await passthrough.dispose();`;
+  const withTail = withSetup.replace(TERMINAL_ANCHOR, passthroughTail);
+
+  return withTail;
 }
 
 function buildProjectBlock(name) {
@@ -270,6 +347,12 @@ async function main() {
     process.exit(1);
   }
 
+  const modeInvalid = validateMode(args.mode);
+  if (modeInvalid) {
+    console.error(`✗ ${modeInvalid}`);
+    process.exit(1);
+  }
+
   const specPath = path.join(SPEC_DIR, `${name}.spec.ts`);
   try {
     await fs.access(specPath);
@@ -289,7 +372,7 @@ async function main() {
     process.exit(1);
   }
 
-  const specContent = buildSpec(template, name);
+  const specContent = buildSpec(template, name, args.mode);
   const specInvalid = validateSpecContent(specContent, {
     label: `spec hasil scaffolding (${name}.spec.ts)`,
   });
@@ -316,6 +399,7 @@ async function main() {
 
     console.log(`▸ Spec baru`);
     console.log(`  path  : ${path.relative(ROOT, specPath)}`);
+    console.log(`  mode  : ${args.mode}${args.mode === "full" ? " (terminalGuard + installServerFnPassthroughGuard)" : " (terminalGuard-only)"}`);
     console.log(`  size  : ${specLines} baris, ${specContent.length} chars`);
     console.log(`  guards:`);
     console.log(renderGuardSummary(specContent));
@@ -348,7 +432,9 @@ async function main() {
   }
 
   await fs.writeFile(specPath, specContent, "utf8");
-  console.log(`✓ Spec dibuat: ${path.relative(ROOT, specPath)}`);
+  console.log(
+    `✓ Spec dibuat: ${path.relative(ROOT, specPath)} (mode: ${args.mode})`,
+  );
 
   if (inserted) {
     await fs.writeFile(CONFIG, nextConfig, "utf8");
