@@ -906,7 +906,7 @@ function PrepEditorDialog({
     return lines.join("\n");
   }
 
-  async function save(opts?: { sendWa?: boolean }) {
+  async function save(opts?: { sendWa?: boolean; sendChat?: boolean }) {
     if (!photo) { toast.error("Wajib lampirkan foto"); return; }
     if (Object.keys(qtyErrors).length > 0 || rows.some((r) => r.actual_grams !== "" && Number(r.actual_grams) < 0)) {
       toast.error("Jumlah tidak boleh negatif. Perbaiki dulu."); return;
@@ -918,6 +918,12 @@ function PrepEditorDialog({
       const n = normalizeWaPhone(waPhone);
       if (n.error) { toast.error(n.error); return; }
       normalizedPhone = n.digits;
+    }
+    if (opts?.sendChat) {
+      if (!pickedLinkedUserId) {
+        toast.error("Pilih kontak MCM dari daftar dulu untuk kirim via Chat");
+        return;
+      }
     }
     setBusy(true);
     try {
@@ -958,6 +964,45 @@ function PrepEditorDialog({
           notifyShareResult(res);
         } catch (err) {
           toast.error("Gagal kirim via MCM: " + (err as Error).message);
+        }
+      }
+      // Simpan otomatis ke buku alamat bila di-opt-in dan kontak yang
+      // dipakai belum ada rownya. Berlaku untuk WA (pakai nomor yang
+      // ternormalisasi) maupun Chat MCM (pakai pickedLinkedUserId).
+      if (autoSaveContact && (opts?.sendWa || opts?.sendChat)) {
+        try {
+          const nameForSave = (recipientName.trim() || pickedName.trim() || "").slice(0, 80);
+          const phoneForSave = opts?.sendWa ? normalizedPhone : (waPhone.trim() || "");
+          const phoneNorm = normalizePhone(phoneForSave);
+          const alreadyExists = contacts.some((c) =>
+            (pickedLinkedUserId && c.linked_user_id === pickedLinkedUserId) ||
+            (phoneNorm && c.phone_norm === phoneNorm),
+          );
+          if (!alreadyExists && (nameForSave || phoneForSave)) {
+            await upsertManualEntry({
+              name: nameForSave || (phoneForSave ? `+${phoneForSave}` : "Tanpa nama"),
+              phone: phoneForSave || null,
+            });
+          }
+        } catch { /* opsional — jangan gagalkan flow utama */ }
+      }
+      // Kirim via Chat MCM: buka DM dengan text prefill di composer.
+      // Foto sudah tersimpan di storage prep — sertakan signed URL supaya
+      // pengguna tinggal tekan Send.
+      if (opts?.sendChat && pickedLinkedUserId) {
+        try {
+          const { data: convId, error: dmErr } = await sb.rpc("start_dm", { _partner: pickedLinkedUserId });
+          if (dmErr) throw dmErr;
+          const photoSigned = await requestSignedUrl(photoPath, 60 * 60 * 24);
+          const prefillText = [buildMessage(), photoSigned ? `Foto: ${photoSigned}` : ""].filter(Boolean).join("\n");
+          try {
+            window.localStorage.setItem(`mcm.chat.prefill.${convId}`, prefillText);
+          } catch { /* ignore quota */ }
+          onSaved(); onClose();
+          navigate({ to: "/chat/$conversationId", params: { conversationId: String(convId) } });
+          return;
+        } catch (err) {
+          toast.error("Gagal buka Chat MCM: " + (err as Error).message);
         }
       }
       onSaved(); onClose();
