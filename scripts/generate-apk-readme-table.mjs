@@ -88,7 +88,6 @@ function scenarioAnchor(specFile) {
   const base = specFile.replace(/\.spec\.ts$/, "").replace(/^apk-/, "");
   return `apk-scenario-${base}`;
 }
-}
 
 function modeLabel(mode) {
   if (mode === "form-only") return "*form-only*";
