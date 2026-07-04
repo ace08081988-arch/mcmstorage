@@ -799,7 +799,7 @@ function PosKasirPage() {
             {/* Mobile quick buttons */}
             <div className={`md:hidden ${modeRingkas ? "space-y-1.5" : "space-y-2"}`}>
               <div className={`grid grid-cols-5 ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
-                {QUICK_WEIGHTS.map((v) => {
+                {quickAdds.map((v) => {
                   const wouldExceed = berat + v > selected.stokKg;
                   return (
                     <button
