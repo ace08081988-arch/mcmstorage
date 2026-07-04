@@ -1299,17 +1299,33 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
       <div className="border-t bg-card px-2 py-2 text-xs shadow-sm">
         {/* Color + thickness row */}
         <div className="mb-2 flex flex-wrap items-center gap-2">
+          <span className="sr-only">Pilih warna</span>
           {COLORS.map((c) => (
-            <button key={c} onClick={() => {
+            <button
+              key={c}
+              type="button"
+              onClick={() => {
                 setColor(c);
                 if (selected) { liveBeginIfNeeded(); livePatchSelected({ color: c } as Partial<Layer>); commitLivePatch(); }
               }}
+              title={`Warna ${c}`}
+              aria-label={`Pilih warna ${c}`}
               style={{ background: c }}
-              className={`h-6 w-6 rounded-full border-2 ${color === c ? "border-primary" : "border-transparent"}`} />
+              className={`h-6 w-6 rounded-full border-2 transition hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${color === c ? "border-primary" : "border-transparent"}`}
+            />
           ))}
-          <label className="ml-auto flex items-center gap-1">Ukuran
+          <label
+            className="ml-auto flex items-center gap-1"
+            title="Ketebalan garis untuk coret, panah, kotak, dan lingkaran"
+          >
+            <span>Ketebalan</span>
             <input
-              type="range" min={2} max={30} value={thickness}
+              type="range"
+              min={2}
+              max={30}
+              value={thickness}
+              title="Ketebalan garis (2–30 px)"
+              aria-label="Ketebalan garis (2 sampai 30 piksel)"
               onPointerDown={() => { if (selected && "thickness" in (selected as object)) liveBeginIfNeeded(); }}
               onChange={(e) => {
                 const v = Number(e.target.value); setThickness(v);
