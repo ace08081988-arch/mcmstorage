@@ -2382,7 +2382,8 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
 
           <button className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Simpan penjualan</button>
         </>
-      )}
+        );
+      })()}
     </form>
   );
 }
