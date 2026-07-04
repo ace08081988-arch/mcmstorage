@@ -231,7 +231,7 @@ function TugasBaruPage() {
   }
   if (!isAdmin) {
     return (
-      <div className="mx-auto max-w-2xl px-3 py-6">
+      <div className="mx-auto max-w-2xl px-3 py-6 animate-fade-in">
         <div className="rounded-2xl border border-destructive/40 bg-destructive/5 p-5 text-sm">
           <div className="mb-2 flex items-center gap-2 font-semibold text-destructive">
             <ShieldAlert className="h-5 w-5" /> Akses ditolak
