@@ -27,7 +27,9 @@ const QUICK_WEIGHTS = [0.1, 0.25, 0.5, 1, 2];
 const AMBANG_STORAGE_KEY = "mcm-pos-kasir-ambang-stok";
 const AMBANG_DEFAULT = 5;
 const MODE_RINGKAS_KEY = "mcm-pos-kasir-mode-ringkas";
+const URUTAN_KEY = "mcm-pos-kasir-urutan";
 
+type UrutanTransaksi = "terbaru" | "terlama";
 
 type StokLevel = "habis" | "kritis" | "menipis" | "aman";
 
@@ -70,6 +72,11 @@ function PosKasirPage() {
     const raw = localStorage.getItem(MODE_RINGKAS_KEY);
     return raw === "true" ? true : raw === "false" ? false : false;
   });
+  const [urutan, setUrutan] = useState<UrutanTransaksi>(() => {
+    if (typeof window === "undefined") return "terbaru";
+    const raw = localStorage.getItem(URUTAN_KEY);
+    return raw === "terlama" ? "terlama" : "terbaru";
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -80,6 +87,11 @@ function PosKasirPage() {
     if (typeof window === "undefined") return;
     localStorage.setItem(MODE_RINGKAS_KEY, String(modeRingkas));
   }, [modeRingkas]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(URUTAN_KEY, urutan);
+  }, [urutan]);
 
 
   const waNomorNorm = useMemo(() => normalizeWaNumber(waNomor, "ID"), [waNomor]);
@@ -256,25 +268,31 @@ function PosKasirPage() {
     return riwayat.filter((t) => t.waktu >= dari && t.waktu <= sampai);
   }, [riwayat, dariTgl, sampaiTgl]);
 
+  const riwayatSorted = useMemo(() => {
+    return [...riwayatFiltered].sort((a, b) =>
+      urutan === "terbaru" ? b.waktu - a.waktu : a.waktu - b.waktu,
+    );
+  }, [riwayatFiltered, urutan]);
+
   const riwayatCariMobile = useMemo(() => {
     const q = cariTransaksi.trim().toLowerCase();
-    if (!q) return riwayatFiltered;
-    return riwayatFiltered.filter(
+    if (!q) return riwayatSorted;
+    return riwayatSorted.filter(
       (t) =>
         t.produkNama.toLowerCase().includes(q) ||
         waktuFmt.format(t.waktu).toLowerCase().includes(q),
     );
-  }, [riwayatFiltered, cariTransaksi]);
+  }, [riwayatSorted, cariTransaksi]);
 
   const exportCSV = () => {
-    if (riwayatFiltered.length === 0) {
+    if (riwayatSorted.length === 0) {
       setToast("Tidak ada transaksi pada rentang tanggal terpilih");
       setTimeout(() => setToast(null), 2500);
       return;
     }
     const header = ["Waktu", "Produk", "Berat (kg)", "Harga per kg (IDR)", "Total (IDR)", "Sisa Stok (kg)"];
     const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
-    const rows = riwayatFiltered.map((t) =>
+    const rows = riwayatSorted.map((t) =>
       [
         new Date(t.waktu).toLocaleString("id-ID"),
         t.produkNama,
@@ -297,12 +315,12 @@ function PosKasirPage() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    setToast(`✅ Diekspor ${riwayatFiltered.length} transaksi ke CSV`);
+    setToast(`✅ Diekspor ${riwayatSorted.length} transaksi ke CSV`);
     setTimeout(() => setToast(null), 2500);
   };
 
   const exportPDF = () => {
-    if (riwayatFiltered.length === 0) {
+    if (riwayatSorted.length === 0) {
       setToast("Tidak ada transaksi pada rentang tanggal terpilih");
       setTimeout(() => setToast(null), 2500);
       return;
@@ -310,8 +328,8 @@ function PosKasirPage() {
     const doc = new jsPDF({ unit: "pt", format: "a4" });
     const now = new Date();
     const stamp = now.toISOString().slice(0, 10);
-    const totalOmzetF = riwayatFiltered.reduce((s, t) => s + t.total, 0);
-    const totalKgF = riwayatFiltered.reduce((s, t) => s + t.beratKg, 0);
+    const totalOmzetF = riwayatSorted.reduce((s, t) => s + t.total, 0);
+    const totalKgF = riwayatSorted.reduce((s, t) => s + t.beratKg, 0);
     const rangeLabel =
       dariTgl || sampaiTgl
         ? `Periode: ${dariTgl || "awal"} s/d ${sampaiTgl || "sekarang"}`
@@ -325,7 +343,7 @@ function PosKasirPage() {
     doc.text(rangeLabel, 40, 58);
     doc.text(`Dibuat: ${now.toLocaleString("id-ID")}`, 40, 72);
     doc.text(
-      `Total transaksi: ${riwayatFiltered.length}  ·  Total berat: ${totalKgF.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg  ·  Omzet: ${rupiah(totalOmzetF)}`,
+      `Total transaksi: ${riwayatSorted.length}  ·  Total berat: ${totalKgF.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg  ·  Omzet: ${rupiah(totalOmzetF)}`,
       40,
       86,
     );
@@ -333,7 +351,7 @@ function PosKasirPage() {
     autoTable(doc, {
       startY: 100,
       head: [["Waktu", "Produk", "Berat (kg)", "Harga/kg", "Total", "Sisa Stok"]],
-      body: riwayatFiltered.map((t) => [
+      body: riwayatSorted.map((t) => [
         new Date(t.waktu).toLocaleString("id-ID"),
         `${t.produkEmoji} ${t.produkNama}`,
         t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 }),
@@ -368,7 +386,7 @@ function PosKasirPage() {
     });
 
     doc.save(`riwayat-pos-kasir-${stamp}.pdf`);
-    setToast(`✅ Diekspor ${riwayatFiltered.length} transaksi ke PDF`);
+    setToast(`✅ Diekspor ${riwayatSorted.length} transaksi ke PDF`);
     setTimeout(() => setToast(null), 2500);
   };
 
@@ -881,19 +899,45 @@ function PosKasirPage() {
                   Reset
                 </button>
               )}
+              <div className="flex items-center rounded-lg border border-slate-700 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setUrutan("terbaru")}
+                  className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                    urutan === "terbaru"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                  }`}
+                  aria-pressed={urutan === "terbaru"}
+                >
+                  Terbaru
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUrutan("terlama")}
+                  className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                    urutan === "terlama"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                  }`}
+                  aria-pressed={urutan === "terlama"}
+                >
+                  Terlama
+                </button>
+              </div>
               <button
                 onClick={exportCSV}
-                disabled={riwayatFiltered.length === 0}
+                disabled={riwayatSorted.length === 0}
                 className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-emerald-700 text-white font-medium"
               >
-                ⬇ Ekspor CSV ({riwayatFiltered.length})
+                ⬇ Ekspor CSV ({riwayatSorted.length})
               </button>
               <button
                 onClick={exportPDF}
-                disabled={riwayatFiltered.length === 0}
+                disabled={riwayatSorted.length === 0}
                 className="text-xs px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-rose-700 text-white font-medium"
               >
-                📄 Ekspor PDF ({riwayatFiltered.length})
+                📄 Ekspor PDF ({riwayatSorted.length})
               </button>
               {riwayat.length > 0 && (
                 <button
@@ -906,7 +950,7 @@ function PosKasirPage() {
             </div>
           </div>
 
-          {riwayatFiltered.length === 0 ? (
+          {riwayatSorted.length === 0 ? (
             <div className="text-center py-8 text-sm text-slate-500">
               {riwayat.length === 0
                 ? "Belum ada transaksi. Lakukan pembayaran untuk melihat riwayat di sini."
@@ -986,6 +1030,35 @@ function PosKasirPage() {
 
               {/* Mobile: card list */}
               <div className={`grid md:hidden ${modeRingkas ? "gap-1.5" : "gap-2"}`}>
+                <div className="flex items-center justify-between gap-2">
+                  <span className={`text-slate-500 ${modeRingkas ? "text-[11px]" : "text-xs"}`}>Urutan</span>
+                  <div className="flex rounded-lg border border-slate-700 overflow-hidden">
+                    <button
+                      type="button"
+                      onClick={() => setUrutan("terbaru")}
+                      className={`text-xs font-medium transition-colors ${
+                        urutan === "terbaru"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                      } ${modeRingkas ? "px-2 py-1" : "px-2.5 py-1.5"}`}
+                      aria-pressed={urutan === "terbaru"}
+                    >
+                      Terbaru
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setUrutan("terlama")}
+                      className={`text-xs font-medium transition-colors ${
+                        urutan === "terlama"
+                          ? "bg-emerald-600 text-white"
+                          : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                      } ${modeRingkas ? "px-2 py-1" : "px-2.5 py-1.5"}`}
+                      aria-pressed={urutan === "terlama"}
+                    >
+                      Terlama
+                    </button>
+                  </div>
+                </div>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500">🔍</span>
                   <input
@@ -1127,7 +1200,7 @@ function PosKasirPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
-                    {riwayatFiltered.map((t) => (
+                    {riwayatSorted.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-900/40">
                         <td className="py-2 pr-3 font-mono text-xs text-slate-400">{waktuFmt.format(t.waktu)}</td>
                         <td className="py-2 pr-3">
