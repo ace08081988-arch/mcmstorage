@@ -322,6 +322,37 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     : videoQuality === "low" ? "320p · hemat data, stabil di sinyal lemah"
     : videoQuality === "medium" ? "480p · seimbang"
     : "720p · kualitas tinggi (butuh koneksi baik)";
+  // Reset SEMUA setelan tampilan panggilan ke default pabrik: Crop/Fit,
+  // posisi crop (preset + custom drag) untuk kedua kamera, kualitas video,
+  // PiP (ukuran + pojok + swap), dan facingMode. Juga hapus kunci lama
+  // (single-value) supaya migrasi tidak menghidupkan setelan usang lagi.
+  const resetAllViewSettings = useCallback(() => {
+    setFacingMode("user");
+    setPipSize("md");
+    setPipCorner("br");
+    setSwapped(false);
+    setVideoFitFront("cover");
+    setVideoFitBack("cover");
+    setVideoPosFront("center");
+    setVideoPosBack("center");
+    setVideoPosCustomFront(null);
+    setVideoPosCustomBack(null);
+    setVideoQuality("auto");
+    if (typeof window !== "undefined") {
+      try {
+        window.localStorage.removeItem(LEGACY_VIDEO_FIT_KEY);
+        window.localStorage.removeItem(LEGACY_VIDEO_POS_KEY);
+      } catch { /* ignore */ }
+    }
+    toast.success("Setelan tampilan panggilan direset ke default");
+  }, [
+    setFacingMode, setPipSize, setPipCorner,
+    setVideoFitFront, setVideoFitBack,
+    setVideoPosFront, setVideoPosBack,
+    setVideoPosCustomFront, setVideoPosCustomBack,
+    setVideoQuality,
+    LEGACY_VIDEO_FIT_KEY, LEGACY_VIDEO_POS_KEY,
+  ]);
   const [flipping, setFlipping] = useState(false);
   // Bertambah tiap kali kamera dibalik — dipakai untuk memaksa Crop/Fit &
   // kualitas video di-apply ulang begitu track lokal baru terpasang.
