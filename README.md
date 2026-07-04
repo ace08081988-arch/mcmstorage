@@ -137,6 +137,38 @@ Mode yang tertera di kolom `Guards` bukan sekadar label; dia merefleksikan setup
 
 Singkatnya: tag mode harus jujur terhadap kode, dan setiap checklist item memiliki satu kegagalan spesifik yang akan lolos kalau item itu dihapus. Itulah sebabnya validator memeriksa checklist secara ketat di CI.
 
+### Contoh log kegagalan guard (hipotetis)
+
+Berikut dua contoh output log bila spec APK gagal di guard. Log ini tidak nyata — dibuat untuk memperjelas *guard mana* yang menolak dan *mengapa*.
+
+#### 1. `terminalGuard()` menangkap leak jangka panjang
+
+```text
+[apk-refresh-single-refetch] trackedClick(storageRefresh): ok (expected.storage=1, actual=1)
+[apk-refresh-single-refetch] assertQuiescent(storage): ok
+[terminalGuard] FAIL: getApkVariantDetail("storage") fired 1 request during terminal window (expected 0)
+[terminalGuard] Request: POST **/_serverFn/getApkVariantDetail  { variant: "storage" }
+[terminalGuard] Hint: disable polling, refetch-on-focus, or interval in the component.
+```
+
+**Guard yang gagal:** `stub.terminalGuard()` di akhir spec.
+
+**Alasannya:** Setelah semua aksi user selesai dan state aktif sudah tercapai, masih ada request `getApkVariantDetail(storage)` yang firing di window terminal guard. Penyebab umum: polling background, `refetchOnWindowFocus`, atau timer yang belum di-cleanup. Tanpa `terminalGuard()`, leak ini akan lolos karena test sudah dianggap sukses setelah assertQuiescent.
+
+#### 2. `passthrough.assertNoAdditionalRequests()` menangkap RPC non-APK tak terduga
+
+```text
+[copy-chat-apk-aria-label] terminalGuard: ok
+[passthrough] FAIL: unexpected server function call during action window
+[passthrough] Request: POST **/_serverFn/toggleUserPreference  (not in whitelist)
+[passthrough] Whitelist: ["getApkVariantDetail", "getChatCopyLink"]
+[passthrough] Hint: add expected calls to whitelist or remove the side effect.
+```
+
+**Guard yang gagal:** `passthrough.assertNoAdditionalRequests()` di mode `full`.
+
+**Alasannya:** Saat aksi user (mis. menyalin link APK Chat) berlangsung, aplikasi memicu server function `toggleUserPreference` yang tidak masuk whitelist. Ini berarti ada side effect non-APK yang ikut terpanggil — bisa jadi karena komponen share/toggle men-trigger state global, atau karena ada panggilan RPC tersembunyi. Mode `full` menangkapnya; mode `terminal` tidak akan melihatnya karena cakupannya hanya `getApkVariantDetail`.
+
 ### Perintah yang sering dipakai
 
 ```bash
