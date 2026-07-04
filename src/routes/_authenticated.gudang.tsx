@@ -2074,7 +2074,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
           <span className="text-muted-foreground">Harga per {displayPackageType}</span>
           <b>{rupiah(price)}</b>
         </div>
-        {displayPackageType !== "pcs" && baseAdded > 0 && (
+        {displayPackageType !== "pcs" && baseAdded > 0 && !packageDuplicatesBase && (
           <div className="flex justify-between">
             <span className="text-muted-foreground">Harga per {displayHumanBase}</span>
             <b>{rupiah(totalCost / baseAdded)}</b>
