@@ -961,6 +961,23 @@ function PosKasirPage() {
                   Reset (Tara)
                 </button>
               </div>
+              {selected.warehouseItemId && (
+                <div className="mt-4">
+                  <label className="text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                    Harga jual / {unit} (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    step="1"
+                    min="0"
+                    value={hargaStr}
+                    onChange={(e) => setHargaStr(e.target.value)}
+                    placeholder="0"
+                    className="mt-2 w-full bg-slate-900 border border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30 rounded-lg px-4 py-3 text-lg font-mono focus:outline-none focus:ring-2"
+                  />
+                </div>
+              )}
             </div>
           </section>
 
