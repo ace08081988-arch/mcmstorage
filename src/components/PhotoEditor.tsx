@@ -1416,6 +1416,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           <div className="mb-2 flex flex-wrap items-center gap-2">
             <button
               type="button"
+              title="Tambahkan teks baru di tengah kanvas"
+              aria-label="Tambahkan teks baru di tengah kanvas"
               onClick={() => {
                 const v = viewRef.current;
                 const cx = v.w ? v.w / 2 : 100;
@@ -1426,9 +1428,18 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             >
               <Type className="h-3.5 w-3.5" /> Tambah teks di tengah
             </button>
-            <label className="flex items-center gap-1">Font
+            <label
+              className="flex items-center gap-1"
+              title="Ukuran font teks (14–96 px)"
+            >
+              <span>Ukuran font</span>
               <input
-                type="range" min={14} max={96} value={textSize}
+                type="range"
+                min={14}
+                max={96}
+                value={textSize}
+                title="Ukuran font teks (14–96 px)"
+                aria-label="Ukuran font teks dari 14 sampai 96 piksel"
                 onPointerDown={() => { if (selected?.kind === "text") liveBeginIfNeeded(); }}
                 onChange={(e) => {
                   const v = Number(e.target.value); setTextSize(v);
