@@ -11,6 +11,7 @@ import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
 import { getWorkerPortalConfig, fetchAndApplyWorkerPortalConfig, applyPreviewOverrideFromHash } from "@/lib/worker-portal-config";
 import { StatusBadge } from "@/components/StatusBadge";
+import { reportPortalError } from "@/lib/portal-error-report";
 
 export const Route = createFileRoute("/t/$token")({
   head: () => ({
