@@ -1,0 +1,2 @@
+REVOKE EXECUTE ON FUNCTION public.check_and_record_signup_attempt(text, text, integer, interval, text) FROM anon, authenticated, PUBLIC;
+GRANT EXECUTE ON FUNCTION public.check_and_record_signup_attempt(text, text, integer, interval, text) TO service_role;
