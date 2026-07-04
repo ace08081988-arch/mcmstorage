@@ -224,7 +224,6 @@ export function useConversations() {
       // Contact aliases from address_book (nama kontak lokal) — prefer over profile display_name.
       const aliasByUser = new Map<string, string>();
       const aliasByPhone = new Map<string, string>();
-      const aliasByEmail = new Map<string, string>();
       if (otherIds.size > 0) {
         try {
           const idsArr = Array.from(otherIds);
@@ -242,7 +241,6 @@ export function useConversations() {
             if (!a.name) continue;
             if (a.linked_user_id) aliasByUser.set(a.linked_user_id, a.name);
             if (a.phone_norm) aliasByPhone.set(a.phone_norm, a.name);
-            if (a.email_norm) aliasByEmail.set(a.email_norm, a.name);
           }
         } catch (err) {
           console.warn("[chat] address_book alias lookup failed:", err);
