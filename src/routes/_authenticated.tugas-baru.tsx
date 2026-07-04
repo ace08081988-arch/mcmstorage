@@ -207,10 +207,6 @@ function clearDraft() {
 }
 
 function TugasBaruPage() {
-  return <TugasBaruGate />;
-}
-
-function TugasBaruGate() {
   const { isAdmin, isCheckingAdmin } = useAdminStatus();
   // Sticky admin gate: sekali user terkonfirmasi admin pada mount ini, tetap
   // render form meskipun `isAdmin` sesaat berubah karena event auth
