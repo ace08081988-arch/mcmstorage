@@ -1021,14 +1021,43 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             {EMOJIS.map((em) => (
               <button key={em} onClick={() => {
                   setEmoji(em);
-                  if (selected?.kind === "emoji") { liveBeginIfNeeded(); livePatchSelected({ emoji: em } as Partial<Layer>); commitLivePatch(); }
+                  if (selected?.kind === "emoji") {
+                    liveBeginIfNeeded();
+                    livePatchSelected({ emoji: em } as Partial<Layer>);
+                    commitLivePatch();
+                  } else {
+                    // Konsisten dengan tombol Panah: langsung tempelkan
+                    // stiker di tengah kanvas — user tidak perlu menebak
+                    // bahwa harus tap kanvas dulu.
+                    const v = viewRef.current;
+                    const cx = v.w ? v.w / 2 : 100;
+                    const cy = v.h ? v.h / 2 : 100;
+                    const l: Layer = {
+                      id: uid(), kind: "emoji", x: cx, y: cy,
+                      rotation: 0, scale: 1, color, emoji: em, size: textSize + 8,
+                    };
+                    pushHistory({ ...state, layers: [...state.layers, l] });
+                    setSelectedId(l.id);
+                  }
                 }}
                 className={`h-9 w-9 rounded border bg-background text-lg transition hover:bg-muted ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
             ))}
           </div>
         )}
         {tool === "text" && (
-          <div className="mb-2 flex items-center gap-2">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                const v = viewRef.current;
+                const cx = v.w ? v.w / 2 : 100;
+                const cy = v.h ? v.h / 2 : 100;
+                setTextPrompt({ open: true, x: cx, y: cy, value: "" });
+              }}
+              className="inline-flex h-8 items-center gap-1 rounded-md border border-primary bg-primary/10 px-2 text-[11px] font-medium transition hover:bg-primary/20"
+            >
+              <Type className="h-3.5 w-3.5" /> Tambah teks di tengah
+            </button>
             <label className="flex items-center gap-1">Font
               <input
                 type="range" min={14} max={96} value={textSize}
