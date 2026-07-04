@@ -5,6 +5,7 @@ import {
   Type, Eraser, Undo2, Redo2, RotateCw, Square, Circle, Pencil, Trash2,
   X, Check, Smile, MoveUp, MoveDown, Copy as CopyIcon, ZoomIn, ZoomOut, Maximize2, Minimize2,
   Loader2, AlertTriangle, RefreshCw, ClipboardCopy, ClipboardCheck,
+  Download,
 } from "lucide-react";
 import {
   Dialog,
@@ -752,7 +753,21 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     exportCancelledRef.current = false;
     setExporting(true);
     try {
-    // render at original resolution
+      const result = await composeExport(0.88);
+      if (!result || exportCancelledRef.current) return;
+      onSave(result.blob, result.dataUrl);
+    } finally {
+      setExporting(false);
+      exportCancelledRef.current = false;
+    }
+  }
+
+  // Kompos ulang JPEG hasil edit di resolusi asli foto. Dipakai bersama oleh
+  // "Simpan" (menyerahkan blob ke aplikasi) dan "Simpan ke galeri" (menulis
+  // file ke Documents di Android / mengunduh di web). Kualitas 0.92 dipakai
+  // untuk galeri agar hasil cetak/lihat ulang lebih tajam.
+  async function composeExport(quality: number): Promise<{ blob: Blob; dataUrl: string } | null> {
+    if (!img) return null;
     const rotated = state.rotation === 90 || state.rotation === 270;
     const outW = rotated ? img.height : img.width;
     const outH = rotated ? img.width : img.height;
@@ -764,20 +779,76 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     ctx.rotate((state.rotation * Math.PI) / 180);
     ctx.drawImage(img, -img.width / 2, -img.height / 2);
     ctx.restore();
-    // scale layers from view → output
     const sx = outW / view.w, sy = outH / view.h;
     ctx.save();
     ctx.scale(sx, sy);
     for (const layer of state.layers) drawLayer(ctx, layer, false);
     ctx.restore();
-    if (exportCancelledRef.current) return;
-    const dataUrl = cvs.toDataURL("image/jpeg", 0.88);
-    const blob: Blob | null = await new Promise((r) => cvs.toBlob(r, "image/jpeg", 0.88));
-    if (exportCancelledRef.current) return;
-    if (blob) onSave(blob, dataUrl);
+    const dataUrl = cvs.toDataURL("image/jpeg", quality);
+    const blob = await new Promise<Blob | null>((r) => cvs.toBlob(r, "image/jpeg", quality));
+    if (!blob) return null;
+    return { blob, dataUrl };
+  }
+
+  // Simpan hasil edit ke galeri/berkas perangkat. Di Android (Capacitor) file
+  // ditulis ke folder Documents/MCM Storage supaya mudah ditemukan lewat
+  // aplikasi Files bawaan; di web men-trigger unduhan browser.
+  async function saveToGallery() {
+    if (!img || exporting) return;
+    setExporting(true);
+    try {
+      const result = await composeExport(0.92);
+      if (!result) {
+        toast.error("Gagal menyiapkan gambar untuk disimpan.");
+        return;
+      }
+      const ts = new Date();
+      const pad = (n: number) => String(n).padStart(2, "0");
+      const stamp = `${ts.getFullYear()}${pad(ts.getMonth() + 1)}${pad(ts.getDate())}-${pad(ts.getHours())}${pad(ts.getMinutes())}${pad(ts.getSeconds())}`;
+      const filename = `mcm-foto-${stamp}.jpg`;
+
+      const { Capacitor } = await import("@capacitor/core");
+      if (Capacitor.isNativePlatform()) {
+        try {
+          const { Filesystem, Directory } = await import("@capacitor/filesystem");
+          const buf = await result.blob.arrayBuffer();
+          // base64 encode via chunks (menghindari stack overflow di file besar)
+          const bytes = new Uint8Array(buf);
+          let bin = "";
+          const CHUNK = 0x8000;
+          for (let i = 0; i < bytes.length; i += CHUNK) {
+            bin += String.fromCharCode.apply(null, Array.from(bytes.subarray(i, i + CHUNK)));
+          }
+          const b64 = btoa(bin);
+          await Filesystem.writeFile({
+            path: `MCM Storage/${filename}`,
+            data: b64,
+            directory: Directory.Documents,
+            recursive: true,
+          });
+          toast.success("Foto tersimpan", {
+            description: `Documents › MCM Storage › ${filename}`,
+          });
+          return;
+        } catch (err) {
+          console.error("saveToGallery native failed", err);
+          toast.error("Gagal menyimpan ke galeri perangkat.");
+          return;
+        }
+      }
+
+      // Web: unduh via <a download>.
+      const url = URL.createObjectURL(result.blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      toast.success("Foto diunduh", { description: filename });
     } finally {
       setExporting(false);
-      exportCancelledRef.current = false;
     }
   }
 
@@ -825,6 +896,16 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         >
           {exporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Check className="h-4 w-4" />}
           {exporting ? "Menyimpan…" : "Simpan"}
+        </button>
+        <button
+          onClick={saveToGallery}
+          disabled={exporting || !canvasReady}
+          title="Simpan salinan ke galeri / unduhan perangkat"
+          aria-label="Simpan ke galeri"
+          className="inline-flex h-9 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-3 text-sm font-semibold text-primary transition hover:bg-primary/20 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          <Download className="h-4 w-4" />
+          <span className="hidden sm:inline">Ke galeri</span>
         </button>
       </div>
 
