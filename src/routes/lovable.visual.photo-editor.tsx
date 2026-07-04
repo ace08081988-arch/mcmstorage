@@ -50,6 +50,19 @@ function Harness() {
     setSrc(makeTestPngDataUrl());
   }, []);
 
+  // Sembunyikan overlay development (build badge, dsb.) supaya tidak
+  // mengintersep klik toolbar saat harness dipakai untuk uji Playwright.
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.textContent = `
+      [data-tsd-source*="BuildVersionBadge"],
+      [data-testid="build-version-badge"],
+      .fixed.bottom-2.left-2.z-\\[9999\\] { display: none !important; }
+    `;
+    document.head.appendChild(style);
+    return () => { document.head.removeChild(style); };
+  }, []);
+
   const status = useMemo(() => {
     if (!src) return "loading";
     if (cancelled) return "cancelled";
