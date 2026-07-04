@@ -1749,6 +1749,7 @@ function insideLayer(l: Layer, p: { x: number; y: number }): boolean {
 
 function drawLayer(ctx: CanvasRenderingContext2D, l: Layer, selected: boolean) {
   ctx.save();
+  ctx.globalAlpha = l.opacity ?? 1;
   ctx.strokeStyle = l.color; ctx.fillStyle = l.color;
   ctx.lineCap = "round"; ctx.lineJoin = "round";
   if (l.kind === "stroke") {
