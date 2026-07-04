@@ -203,7 +203,7 @@ export function useConversations() {
           for (const uid of m) if (uid !== myId) otherIds.add(uid);
         }
       }
-      let profileMap = new Map<string, { display_name: string | null; phone: string | null; email: string | null }>();
+      let profileMap = new Map<string, { display_name: string | null; phone: string | null }>();
       if (otherIds.size > 0) {
         try {
           const { data: profs, error: pErr } = await supabase.rpc("get_chat_member_profiles", {
@@ -211,8 +211,8 @@ export function useConversations() {
           });
           if (pErr) throw pErr;
           profileMap = new Map(
-            ((profs ?? []) as Array<{ id: string; display_name: string | null; phone: string | null; email: string | null }>).map(
-              (p) => [p.id, { display_name: p.display_name, phone: p.phone, email: p.email }],
+            ((profs ?? []) as Array<{ id: string; display_name: string | null; phone: string | null }>).map(
+              (p) => [p.id, { display_name: p.display_name, phone: p.phone }],
             ),
           );
         } catch (err) {
@@ -231,13 +231,9 @@ export function useConversations() {
           const phones = idsArr
             .map((u) => profileMap.get(u)?.phone)
             .filter((p): p is string => !!p);
-          const emails = idsArr
-            .map((u) => profileMap.get(u)?.email?.toLowerCase().trim())
-            .filter((e): e is string => !!e);
           const orParts: string[] = [];
           orParts.push(`linked_user_id.in.(${idsArr.join(",")})`);
           if (phones.length) orParts.push(`phone_norm.in.(${phones.map((p) => p.replace(/[^\d+]/g, "")).join(",")})`);
-          if (emails.length) orParts.push(`email_norm.in.(${emails.join(",")})`);
           const { data: aliases } = await supabase
             .from("address_book")
             .select("name, linked_user_id, phone_norm, email_norm")
