@@ -493,6 +493,16 @@ function TugasBaruForm() {
     if (!/^[A-Za-z0-9_-]{8,48}$/.test(tokenTrim)) {
       toast.error("Token harus 8–48 karakter (huruf, angka, - atau _)"); return null;
     }
+    if (tokenCheck.status === "duplicate" && tokenCheck.token === tokenTrim) {
+      toast.error("Token sudah dipakai", {
+        description: "Token ini pernah dipakai tugas lain. Tekan Acak untuk membuat token baru.",
+      });
+      return null;
+    }
+    if (tokenCheck.status === "checking" && tokenCheck.token === tokenTrim) {
+      toast.info("Sedang memeriksa token…", { description: "Tunggu sebentar lalu coba lagi." });
+      return null;
+    }
     let scheduledIso: string | null = null;
     if (scheduledAt.trim()) {
       const d = new Date(scheduledAt);
