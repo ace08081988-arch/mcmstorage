@@ -1107,6 +1107,101 @@ function PosKasirPage() {
             {toast}
           </div>
         )}
+
+        {strukTransaksi && (
+          <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-3 animate-in fade-in"
+            onClick={() => setStrukTransaksi(null)}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl bg-slate-900 border border-emerald-500/40 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🧾</span>
+                  <span className="text-sm font-semibold text-emerald-300">Struk Transaksi</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStrukTransaksi(null)}
+                  className="text-slate-400 hover:text-slate-200 text-lg leading-none px-1"
+                  aria-label="Tutup"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{strukTransaksi.produkEmoji}</span>
+                  <div className="min-w-0">
+                    <div className="text-base font-semibold text-slate-100 truncate">
+                      {strukTransaksi.produkNama}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-mono">
+                      {new Date(strukTransaksi.waktu).toLocaleString("id-ID")}
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-slate-800/60 border border-slate-700 p-3 text-sm space-y-1.5 font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Berat</span>
+                    <span className="text-slate-100">
+                      {strukTransaksi.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Harga/kg</span>
+                    <span className="text-slate-100">{rupiah(strukTransaksi.hargaPerKg)}</span>
+                  </div>
+                  <div className="flex justify-between pt-1.5 border-t border-slate-700">
+                    <span className="text-slate-300">Total</span>
+                    <span className="text-emerald-400 font-semibold text-base">
+                      {rupiah(strukTransaksi.total)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-500">
+                    <span>Sisa stok</span>
+                    <span>
+                      {strukTransaksi.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => salinStruk(strukTransaksi)}
+                    className="py-2.5 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-600 text-slate-100 transition-colors"
+                  >
+                    📋 Salin ringkasan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => kirimWa(strukTransaksi)}
+                    disabled={!waReady}
+                    title={waDisabledReason || `Kirim ulang ke ${waNomorDisplay}`}
+                    aria-disabled={!waReady}
+                    className="py-2.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                  >
+                    💬 Kirim ulang WA
+                  </button>
+                </div>
+                {!waReady && (
+                  <p className="text-[11px] text-amber-300/80 text-center">
+                    {waDisabledReason}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setStrukTransaksi(null)}
+                  className="w-full py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
