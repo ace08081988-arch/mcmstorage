@@ -462,6 +462,7 @@ export const Route = createFileRoute("/pos-kasir/")({
     meta: [
       { title: "POS Kasir Curah · Simulasi Timbangan Digital" },
       { name: "description", content: "Kasir produk curah dengan simulasi layar timbangan digital real-time dan pengurangan stok otomatis." },
+      { name: "robots", content: "noindex,nofollow" },
     ],
   }),
   component: PosKasirPage,

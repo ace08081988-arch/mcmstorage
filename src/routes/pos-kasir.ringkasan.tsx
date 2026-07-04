@@ -126,6 +126,7 @@ export const Route = createFileRoute("/pos-kasir/ringkasan")({
     meta: [
       { title: "Ringkasan POS Kasir · Omzet Hari Ini" },
       { name: "description", content: "Ringkasan harian penjualan produk curah: omzet, berat terjual, dan jumlah transaksi." },
+      { name: "robots", content: "noindex,nofollow" },
     ],
   }),
   component: PosKasirRingkasanPage,
