@@ -36,6 +36,7 @@ function timeLabel(iso: string): string {
 function PanggilanPage() {
   const { data: myId } = useMyUserId();
   const navigate = useNavigate();
+  const [callingId, setCallingId] = useState<string | null>(null);
   const calls = useQuery({
     queryKey: ["chat-calls", myId ?? "_"],
     queryFn: () => listMyCalls(100),
