@@ -443,12 +443,12 @@ function PosKasirPage() {
 
 
         {/* Mobile stock summary */}
-        <section className="md:hidden mb-4 bg-slate-800/50 backdrop-blur rounded-xl p-3 border border-slate-700">
-          <div className="flex items-center justify-between mb-2">
+        <section className={`md:hidden bg-slate-800/50 backdrop-blur rounded-xl border border-slate-700 ${modeRingkas ? "mb-2 p-2" : "mb-4 p-3"}`}>
+          <div className={`flex items-center justify-between ${modeRingkas ? "mb-1" : "mb-2"}`}>
             <span className="text-xs font-semibold text-slate-300 uppercase tracking-wider">Stok Tersisa</span>
             <span className="text-xs text-slate-400">{totalStok.toLocaleString("id-ID")} kg total</span>
           </div>
-          <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-thin">
+          <div className={`flex overflow-x-auto scrollbar-thin ${modeRingkas ? "gap-1.5 pb-0.5" : "gap-2 pb-1"}`}>
             {produk.map((p) => {
               const active = p.id === selectedId;
               const level = levelStok(p.stokKg, ambangStok);
@@ -459,11 +459,11 @@ function PosKasirPage() {
                   key={p.id}
                   onClick={() => setSelectedId(p.id)}
                   disabled={habis}
-                  className={`relative shrink-0 flex items-center gap-2 px-3 py-2 rounded-lg border text-xs transition-colors ${meta.ring} ${
+                  className={`relative shrink-0 flex items-center gap-2 rounded-lg border text-xs transition-colors ${meta.ring} ${
                     active
                       ? "bg-emerald-500/20 border-emerald-400"
                       : "bg-slate-900/60 border-slate-700 hover:border-slate-500"
-                  } ${habis ? "opacity-40 cursor-not-allowed" : ""}`}
+                  } ${habis ? "opacity-40 cursor-not-allowed" : ""} ${modeRingkas ? "px-2 py-1.5" : "px-3 py-2"}`}
                 >
                   <span className="text-lg">{p.emoji}</span>
                   <div className="text-left min-w-0">
@@ -484,7 +484,7 @@ function PosKasirPage() {
               );
             })}
           </div>
-          <div className="mt-2 flex flex-col gap-1">
+          <div className={`mt-2 flex flex-col gap-1 ${modeRingkas ? "hidden" : ""}`}>
             {produkKritis.length > 0 && (
               <div className="text-[11px] text-rose-300">
                 🚨 Stok kritis: {produkKritis.map((p) => `${p.emoji} ${p.nama} (${p.stokKg}kg)`).join(", ")}
@@ -517,6 +517,7 @@ function PosKasirPage() {
             </label>
           </div>
         </section>
+
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 md:gap-6">
           {/* Main */}
