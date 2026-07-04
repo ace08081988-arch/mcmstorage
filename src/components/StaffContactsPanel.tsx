@@ -28,6 +28,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
   const [open, setOpen] = useState(false);
   const [name, setName] = useState("");
   const [phone, setPhone] = useState("");
+  const [pinChatMcm, setPinChatMcm] = useState("");
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
