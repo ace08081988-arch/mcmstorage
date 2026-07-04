@@ -2430,6 +2430,7 @@ export type Database = {
           id: number
           ip: string
           succeeded: boolean
+          user_agent: string | null
         }
         Insert: {
           created_at?: string
@@ -2437,6 +2438,7 @@ export type Database = {
           id?: number
           ip: string
           succeeded?: boolean
+          user_agent?: string | null
         }
         Update: {
           created_at?: string
@@ -2444,6 +2446,7 @@ export type Database = {
           id?: number
           ip?: string
           succeeded?: boolean
+          user_agent?: string | null
         }
         Relationships: []
       }
@@ -3084,6 +3087,7 @@ export type Database = {
           p_email: string
           p_ip: string
           p_limit?: number
+          p_user_agent?: string
           p_window?: string
         }
         Returns: {
