@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   getPosKasirRiwayat,
   setPosKasirRiwayat,
@@ -52,6 +52,8 @@ function PosKasirPage() {
   const [dariTgl, setDariTgl] = useState<string>("");
   const [sampaiTgl, setSampaiTgl] = useState<string>("");
   const [cariTransaksi, setCariTransaksi] = useState<string>("");
+  const [swipeDx, setSwipeDx] = useState<number>(0);
+  const swipeStartX = useRef<number | null>(null);
   const [waNomor, setWaNomor] = useState<string>("");
   const [waLokasi, setWaLokasi] = useState<string>("");
   const [ambangStok, setAmbangStok] = useState<number>(() => {
@@ -183,6 +185,25 @@ function PosKasirPage() {
     setToast(pesan);
     setBeratStr("0");
     setTimeout(() => setToast(null), 4500);
+  };
+
+  const batalkanTransaksi = (t: PosKasirTransaksi) => {
+    if (typeof window !== "undefined") {
+      const ok = window.confirm(
+        `Batalkan transaksi ${t.produkNama} (${t.beratKg.toLocaleString("id-ID")} kg · ${rupiah(t.total)})?\nStok akan dikembalikan.`,
+      );
+      if (!ok) return;
+    }
+    setProduk((prev) =>
+      prev.map((p) =>
+        p.id === t.produkId ? { ...p, stokKg: +(p.stokKg + t.beratKg).toFixed(3) } : p,
+      ),
+    );
+    setRiwayat((prev) => prev.filter((r) => r.id !== t.id));
+    setSwipeDx(0);
+    swipeStartX.current = null;
+    setToast(`↶ Transaksi dibatalkan · ${t.produkNama} · ${rupiah(t.total)} dikembalikan`);
+    setTimeout(() => setToast(null), 3500);
   };
 
   const totalOmzet = riwayat.reduce((s, t) => s + t.total, 0);
@@ -903,8 +924,47 @@ function PosKasirPage() {
                     Tidak ada transaksi yang cocok dengan pencarian.
                   </div>
                 ) : (
-                  riwayatCariMobile.map((t) => (
-                    <div key={t.id} className="rounded-xl bg-slate-900/60 border border-slate-700 p-3">
+                  riwayatCariMobile.map((t) => {
+                    const isTerakhir = riwayat[0]?.id === t.id;
+                    const dx = isTerakhir ? swipeDx : 0;
+                    const revealed = dx < -60;
+                    return (
+                    <div key={t.id} className="relative overflow-hidden rounded-xl">
+                      {isTerakhir && (
+                        <div className="absolute inset-y-0 right-0 flex items-center pr-3 bg-rose-600/90 rounded-xl">
+                          <button
+                            type="button"
+                            onClick={() => batalkanTransaksi(t)}
+                            className="text-white text-xs font-semibold px-3 py-1.5 rounded-md bg-rose-700 hover:bg-rose-800"
+                          >
+                            ↶ Batalkan
+                          </button>
+                        </div>
+                      )}
+                      <div
+                        className="rounded-xl bg-slate-900/60 border border-slate-700 p-3 relative transition-transform touch-pan-y"
+                        style={{ transform: `translateX(${dx}px)` }}
+                        onTouchStart={(e) => {
+                          if (!isTerakhir) return;
+                          swipeStartX.current = e.touches[0].clientX;
+                        }}
+                        onTouchMove={(e) => {
+                          if (!isTerakhir || swipeStartX.current === null) return;
+                          const delta = e.touches[0].clientX - swipeStartX.current;
+                          setSwipeDx(Math.min(0, Math.max(-140, delta)));
+                        }}
+                        onTouchEnd={() => {
+                          if (!isTerakhir) return;
+                          swipeStartX.current = null;
+                          if (swipeDx < -100) {
+                            batalkanTransaksi(t);
+                          } else if (swipeDx < -60) {
+                            setSwipeDx(-90);
+                          } else {
+                            setSwipeDx(0);
+                          }
+                        }}
+                      >
                       <div className="flex items-center justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-2">
                           <span className="text-xl shrink-0">{t.produkEmoji}</span>
@@ -927,18 +987,37 @@ function PosKasirPage() {
                           <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} kg</span>
                         </span>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => kirimWa(t)}
-                        disabled={!waReady}
-                        title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
-                        aria-disabled={!waReady}
-                        className="mt-2 w-full py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
-                      >
-                        💬 Kirim WA
-                      </button>
+                      <div className="mt-2 flex gap-2">
+                        <button
+                          type="button"
+                          onClick={() => kirimWa(t)}
+                          disabled={!waReady}
+                          title={waDisabledReason || `Kirim struk ke ${waNomorDisplay}`}
+                          aria-disabled={!waReady}
+                          className="flex-1 py-1.5 rounded-lg text-[11px] font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                        >
+                          💬 Kirim WA
+                        </button>
+                        {isTerakhir && (
+                          <button
+                            type="button"
+                            onClick={() => batalkanTransaksi(t)}
+                            className="px-3 py-1.5 rounded-lg text-[11px] font-semibold bg-rose-600 hover:bg-rose-500 text-white transition-colors"
+                            title="Batalkan transaksi terakhir & kembalikan stok"
+                          >
+                            ↶ Batalkan
+                          </button>
+                        )}
+                      </div>
+                      {isTerakhir && (
+                        <div className="mt-1 text-[10px] text-slate-500 text-center">
+                          {revealed ? "Lepas untuk membatalkan →" : "Geser ← untuk membatalkan"}
+                        </div>
+                      )}
+                      </div>
                     </div>
-                  ))
+                    );
+                  })
                 )}
               </div>
 
