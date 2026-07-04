@@ -35,7 +35,6 @@ function timeLabel(iso: string): string {
 
 function PanggilanPage() {
   const { data: myId } = useMyUserId();
-  const navigate = useNavigate();
   const [callingId, setCallingId] = useState<string | null>(null);
   const calls = useQuery({
     queryKey: ["chat-calls", myId ?? "_"],
@@ -152,9 +151,6 @@ function PanggilanPage() {
                 myId={myId ?? null}
                 nameMap={profiles.data ?? {}}
                 isCalling={callingId === c.id}
-                onOpenChat={(conversationId) =>
-                  void navigate({ to: "/chat/$conversationId", params: { conversationId } })
-                }
                 onStartCall={async (r) => {
                   if (!myId) return;
                   const peerId = r.caller_id === myId ? r.callee_id : r.caller_id;
