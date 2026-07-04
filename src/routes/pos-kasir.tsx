@@ -249,8 +249,11 @@ function PosKasirPage() {
               </div>
 
               {berat > 0 && !stokCukup && (
-                <div className="mt-3 p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-300">
-                  ⚠ Stok tidak mencukupi ({selected.stokKg} kg tersedia)
+                <div className="mt-3 p-3 rounded-lg bg-red-500/15 border border-red-500/40 text-sm text-red-200">
+                  <p className="font-semibold">⚠ Stok tidak mencukupi</p>
+                  <p className="text-xs text-red-300/80 mt-0.5">
+                    Tersedia {selected.stokKg.toLocaleString("id-ID")} kg, butuh {berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg. Kurangi berat untuk melanjutkan pembayaran.
+                  </p>
                 </div>
               )}
 
