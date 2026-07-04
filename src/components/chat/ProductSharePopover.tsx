@@ -14,16 +14,18 @@ import { friendlyError } from "@/lib/friendly-error";
 
 /**
  * Popover di sebelah tombol "Kirim" pada composer chat.
- * Menampilkan daftar paket **siap dikirim** (`ready_packages.status='ready'`)
- * dari gudang beserta nama produk + jumlah tersedia + varian (note).
+ * Menampilkan daftar paket **siap dikirim** dari dua sumber:
+ *   - `ready_packages.status='ready'` (via Pegawai / gudang) — foto di
+ *      bucket `ready-packages`, punya jumlah & unit.
+ *   - `self_prep_items.status='ready'` (Siapkan Sendiri di /tugas) —
+ *      foto di bucket `self-prep-photos`, tanpa jumlah/unit (judul bebas).
  *
  * Saat user tap satu paket:
  *   1. Foto & link Maps yang tersimpan di paket dikirim ke percakapan
  *      aktif via `shareToChat` (foto diunggah ulang ke bucket chat).
- *   2. Paket ditandai `status='sent'` + `sent_at=now()` + `sent_to_name`
- *      (nama alias lawan chat) — stok gudang tetap berkurang (deduksi
- *      sudah terjadi saat paket dibuat) dan paket pindah ke Riwayat
- *      terkirim di Panel Ready Packages.
+ *   2. Paket ditandai `status='sent'` di tabel asalnya — stok gudang
+ *      tetap berkurang (deduksi sudah terjadi saat paket dibuat) dan
+ *      paket pindah ke Riwayat terkirim.
  */
 
 type ReadyRow = {
@@ -42,11 +44,14 @@ type ReadyRow = {
 
 type Row = {
   id: string;
+  source: "ready" | "self";
+  bucket: "ready-packages" | "self-prep-photos";
   productName: string;
-  baseUnit: "g" | "pcs";
-  qty: number;
+  baseUnit: "g" | "pcs" | null;
+  qty: number | null;
   variant: string | null;
   photoPath: string | null;
+  photoPaths: string[];
   locationUrl: string | null;
 };
 
@@ -69,28 +74,64 @@ export function ProductSharePopover({
 
   async function reload() {
     setLoading(true);
-    const { data, error } = await supabase
-      .from("ready_packages")
-      .select(
-        "id,qty_base,photo_path,location_url,note,warehouse_item_id,created_at,warehouse_items(name,base_unit)",
-      )
-      .eq("status", "ready")
-      .order("created_at", { ascending: false });
+    const [readyRes, selfRes] = await Promise.all([
+      supabase
+        .from("ready_packages")
+        .select(
+          "id,qty_base,photo_path,location_url,note,warehouse_item_id,created_at,warehouse_items(name,base_unit)",
+        )
+        .eq("status", "ready")
+        .order("created_at", { ascending: false }),
+      // self_prep_items belum ada di typegen — pakai cast supaya build lolos.
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (supabase.from as any)("self_prep_items")
+        .select("id,title,note,photo_path,photo_paths,location_url,created_at")
+        .eq("status", "ready")
+        .order("created_at", { ascending: false }),
+    ]);
     setLoading(false);
-    if (error) {
-      toast.error(friendlyError(error));
+    if (readyRes.error) {
+      toast.error(friendlyError(readyRes.error));
       return;
     }
-    const mapped: Row[] = ((data ?? []) as unknown as ReadyRow[]).map((r) => ({
+    const mappedReady: Row[] = ((readyRes.data ?? []) as unknown as ReadyRow[]).map((r) => ({
       id: r.id,
+      source: "ready" as const,
+      bucket: "ready-packages" as const,
       productName: r.warehouse_items?.name ?? "Produk",
       baseUnit: (r.warehouse_items?.base_unit ?? "pcs") as "g" | "pcs",
       qty: Number(r.qty_base) || 0,
       variant: r.note?.trim() ? r.note.trim() : null,
       photoPath: r.photo_path,
+      photoPaths: r.photo_path ? [r.photo_path] : [],
       locationUrl: r.location_url,
     }));
-    setRows(mapped);
+    type SelfRow = {
+      id: string;
+      title: string;
+      note: string | null;
+      photo_path: string | null;
+      photo_paths: string[] | null;
+      location_url: string | null;
+    };
+    const mappedSelf: Row[] = ((selfRes.data ?? []) as SelfRow[]).map((r) => {
+      const paths = Array.from(
+        new Set([...(r.photo_path ? [r.photo_path] : []), ...((r.photo_paths ?? []) as string[])]),
+      );
+      return {
+        id: r.id,
+        source: "self" as const,
+        bucket: "self-prep-photos" as const,
+        productName: r.title || "Produk",
+        baseUnit: null,
+        qty: null,
+        variant: r.note?.trim() ? r.note.trim() : null,
+        photoPath: paths[0] ?? null,
+        photoPaths: paths,
+        locationUrl: r.location_url,
+      };
+    });
+    setRows([...mappedReady, ...mappedSelf]);
   }
 
   useEffect(() => {
@@ -109,27 +150,28 @@ export function ProductSharePopover({
     if (sendingId) return;
     setSendingId(row.id);
     try {
-      // 1. Fetch photo (if any) via signed URL and turn into a File for chat.
+      // 1. Fetch photos (if any) via signed URLs and turn them into Files.
       const shots: { id: string; file: File }[] = [];
-      if (row.photoPath) {
+      for (let i = 0; i < row.photoPaths.length; i++) {
+        const p = row.photoPaths[i];
         const { data: signed, error: signErr } = await supabase.storage
-          .from("ready-packages")
-          .createSignedUrl(row.photoPath, 3600);
+          .from(row.bucket)
+          .createSignedUrl(p, 3600);
         if (signErr || !signed?.signedUrl) {
           toast.error("Gagal mengambil foto produk");
           return;
         }
         const file = await urlToFile(
           signed.signedUrl,
-          `${row.productName.replace(/[^\w.-]+/g, "_")}.jpg`,
+          `${row.productName.replace(/[^\w.-]+/g, "_")}-${i + 1}.jpg`,
           "image/jpeg",
         );
-        if (file) shots.push({ id: row.id, file });
+        if (file) shots.push({ id: `${row.id}:${i}`, file });
       }
 
       const caption = [
         `📦 ${row.productName}`,
-        `Jumlah: ${fmtBase(row.qty, row.baseUnit)}`,
+        row.qty !== null && row.baseUnit ? `Jumlah: ${fmtBase(row.qty, row.baseUnit)}` : null,
         row.variant ? `Varian: ${row.variant}` : null,
       ]
         .filter(Boolean)
@@ -149,16 +191,25 @@ export function ProductSharePopover({
         return;
       }
 
-      // 3. Mark ready_package as sent so stock deduction persists AND the
-      //    row moves into "Riwayat terkirim" (ReadyPackagesPanel history tab).
-      const { error: upErr } = await supabase
-        .from("ready_packages")
-        .update({
-          status: "sent",
-          sent_at: new Date().toISOString(),
-          sent_to_name: peerName?.trim() || null,
-        })
-        .eq("id", row.id);
+      // 3. Mark row as sent di tabel asalnya (kolomnya beda antar tabel).
+      const nowIso = new Date().toISOString();
+      const peer = peerName?.trim() || null;
+      const summary = caption.length > 140 ? `${caption.slice(0, 140)}…` : caption;
+      const upErr = row.source === "ready"
+        ? (await supabase
+            .from("ready_packages")
+            .update({ status: "sent", sent_at: nowIso, sent_to_name: peer })
+            .eq("id", row.id)).error
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        : (await (supabase.from as any)("self_prep_items")
+            .update({
+              status: "sent",
+              sent_at: nowIso,
+              sent_channel: "chat",
+              sent_to: peer,
+              sent_summary: summary,
+            })
+            .eq("id", row.id)).error;
       if (upErr) {
         // Message already delivered — surface but don't rollback the send.
         toast.error(`Terkirim tapi gagal update status: ${friendlyError(upErr)}`);
