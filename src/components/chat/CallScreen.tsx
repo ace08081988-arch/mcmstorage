@@ -1314,6 +1314,19 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 )}
               </button>
             ) : null}
+            {kind === "video" ? (
+              <button
+                type="button"
+                onClick={resetAllViewSettings}
+                aria-label="Reset semua setelan tampilan panggilan (Crop/Fit, posisi crop, kualitas video, PiP, kamera) ke default"
+                title="Reset semua setelan tampilan (Crop/Fit, posisi, kualitas, PiP, kamera) ke default"
+                data-testid="call-reset-all"
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                <span>Reset semua</span>
+              </button>
+            ) : null}
           </div>
         </div>
 
