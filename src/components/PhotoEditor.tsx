@@ -1365,7 +1365,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                     const cy = v.h ? v.h / 2 : 100;
                     const l: Layer = {
                       id: uid(), kind: "arrow", x: cx, y: cy,
-                      rotation: 0, scale: 1, color, dir: d, size: 80, thickness,
+                      rotation: 0, scale: 1, color, opacity, dir: d, size: 80, thickness,
                     };
                     pushHistory({ ...state, layers: [...state.layers, l] });
                     setSelectedId(l.id);
