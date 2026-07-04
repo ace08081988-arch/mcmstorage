@@ -200,4 +200,47 @@ Validator gagal umumnya karena project block di `playwright.config.ts` tidak coc
 2. Lihat header project block: `grep -n -A8 "name: \"apk-<flow>-e2e\"" playwright.config.ts`.
 3. Setelah mengubah spec atau header, jalankan `bun run e2e:apk:validate` lagi, lalu `bun run e2e:apk:table` bila README perlu diperbarui.
 
+### Template copy-paste header spec
+
+Di bawah ini header komentar yang bisa langsung di-copy-paste ke bagian atas setiap `tests/e2e/apk-<flow>.spec.ts`. Ganti `<flow-name>`, `<URL>`, dan teks TODO dengan nilai riil. Penanda `Guards` menggunakan format yang sama dengan validator / tabel README.
+
+#### Mode `terminal` (hanya `installApkStub`)
+
+```ts
+// README scenario: README.md#apk-scenario-<flow-name>
+// Skenario : <aksi user yang diuji, mis. tap refresh Chat dari idle>
+// Harness  : <route/harness, mis. /lovable/visual/apk-availability-shortcuts>
+// Tujuan   : <invariant yang dibuktikan, mis. tidak ada leak getApkVariantDetail>
+// Guards   : ✓ primeInitial + assertPrimed
+//            ✓ waitForServed
+//            ✓ trackedClick(expected: { chat: 1 })
+//            ✓ assertQuiescent
+//            ✓ terminalGuard() (mode: terminal)
+```
+
+#### Mode `full` (`installApkStub` + `installServerFnPassthroughGuard`)
+
+```ts
+// README scenario: README.md#apk-scenario-<flow-name>
+// Skenario : <aksi user yang diuji, mis. copy link APK Chat lalu refresh>
+// Harness  : <route/harness, mis. /lovable/visual/apk-availability-shortcuts>
+// Tujuan   : <invariant yang dibuktikan, mis. tidak ada leak server function APK & non-APK>
+// Guards   : ✓ primeInitial + assertPrimed
+//            ✓ waitForServed
+//            ✓ trackedClick / trackedAction
+//            ✓ assertQuiescent
+//            ✓ terminalGuard()
+//            ✓ passthrough.assertNoAdditionalRequests (mode: full)
+```
+
+#### Mode `form-only` (tidak memakai stub APK)
+
+```ts
+// README scenario: README.md#apk-scenario-<flow-name>
+// Skenario : <form / validasi yang diuji, mis. form minSupported>
+// Harness  : <route/harness>
+// Tujuan   : <invariant UI / validasi>
+// Guards   : spec form murni — tidak memakai apk-stub / terminalGuard
+```
+
 Rincian teknis helper stub dan pola anti-pattern ada di `tests/e2e/_helpers/README.md` dan di header `tests/e2e/_helpers/apk-spec.template.ts`.
