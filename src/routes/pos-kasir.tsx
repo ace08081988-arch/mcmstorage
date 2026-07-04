@@ -422,7 +422,7 @@ function PosKasirPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
-                    {riwayat.map((t) => (
+                    {riwayatFiltered.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-900/40">
                         <td className="py-2 pr-3 font-mono text-xs text-slate-400">
                           {waktuFmt.format(t.waktu)}
