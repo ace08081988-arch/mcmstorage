@@ -193,13 +193,12 @@ function PanggilanPage() {
 }
 
 function CallRowItem({
-  row, myId, nameMap, isCalling, onOpenChat, onStartCall,
+  row, myId, nameMap, isCalling, onStartCall,
 }: {
   row: CallRow;
   myId: string | null;
   nameMap: Record<string, string>;
   isCalling: boolean;
-  onOpenChat: (conversationId: string) => void;
   onStartCall: (row: CallRow) => void | Promise<void>;
 }) {
   const outgoing = row.caller_id === myId;
@@ -213,9 +212,10 @@ function CallRowItem({
 
   return (
     <li className="flex items-center gap-1 px-2 py-1">
-      <button
-        type="button"
-        onClick={() => onOpenChat(row.conversation_id)}
+      <Link
+        to="/chat/$conversationId"
+        params={{ conversationId: row.conversation_id }}
+        preload="intent"
         className="flex flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/60 active:bg-muted"
         aria-label={`Buka chat dengan ${peerName}`}
       >
@@ -236,7 +236,7 @@ function CallRowItem({
             }
           />
         </div>
-      </button>
+      </Link>
       <button
         type="button"
         disabled={isCalling}
