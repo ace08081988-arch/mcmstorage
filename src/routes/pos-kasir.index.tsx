@@ -54,6 +54,7 @@ function PosKasirPage() {
   const [cariTransaksi, setCariTransaksi] = useState<string>("");
   const [swipeDx, setSwipeDx] = useState<number>(0);
   const swipeStartX = useRef<number | null>(null);
+  const [strukTransaksi, setStrukTransaksi] = useState<PosKasirTransaksi | null>(null);
   const [waNomor, setWaNomor] = useState<string>("");
   const [waLokasi, setWaLokasi] = useState<string>("");
   const [ambangStok, setAmbangStok] = useState<number>(() => {
@@ -101,19 +102,47 @@ function PosKasirPage() {
       ? waLokasiError
       : "";
 
-  const buildWaUrl = (t: PosKasirTransaksi): string | null => {
-    if (!waNomorNorm || !waLokasiValid) return null;
+  const buildStrukText = (t: PosKasirTransaksi, withLokasi: boolean): string => {
     const lines = [
       "🧾 *Struk POS Kasir*",
       `${t.produkEmoji} ${t.produkNama}`,
       `Berat: ${t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`,
       `Harga: ${rupiah(t.hargaPerKg)}/kg`,
       `Total: *${rupiah(t.total)}*`,
+      `Sisa stok: ${t.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`,
       `Waktu: ${new Date(t.waktu).toLocaleString("id-ID")}`,
-      "",
-      `📍 Lokasi: ${waLokasiTrim}`,
     ];
-    return `https://wa.me/${waNomorNorm}?text=${encodeURIComponent(lines.join("\n"))}`;
+    if (withLokasi && waLokasiValid) {
+      lines.push("", `📍 Lokasi: ${waLokasiTrim}`);
+    }
+    return lines.join("\n");
+  };
+
+  const buildWaUrl = (t: PosKasirTransaksi): string | null => {
+    if (!waNomorNorm || !waLokasiValid) return null;
+    return `https://wa.me/${waNomorNorm}?text=${encodeURIComponent(buildStrukText(t, true))}`;
+  };
+
+  const salinStruk = async (t: PosKasirTransaksi) => {
+    const text = buildStrukText(t, waLokasiValid);
+    try {
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        await navigator.clipboard.writeText(text);
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+      }
+      setToast("📋 Ringkasan struk disalin");
+    } catch {
+      setToast("Gagal menyalin ringkasan");
+    }
+    setTimeout(() => setToast(null), 2500);
   };
 
   const kirimWa = (t: PosKasirTransaksi) => {
@@ -163,20 +192,19 @@ function PosKasirPage() {
     const levelSebelum = levelStok(selected.stokKg, ambangStok);
     const levelSesudah = levelStok(sisaStokKg, ambangStok);
     setProduk((prev) => prev.map((p) => (p.id === selected.id ? { ...p, stokKg: sisaStokKg } : p)));
-    setRiwayat((prev) => [
-      {
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        produkId: selected.id,
-        produkNama: selected.nama,
-        produkEmoji: selected.emoji,
-        beratKg: berat,
-        hargaPerKg: selected.hargaPerKg,
-        total,
-        sisaStokKg,
-        waktu: Date.now(),
-      },
-      ...prev,
-    ]);
+    const trxBaru: PosKasirTransaksi = {
+      id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      produkId: selected.id,
+      produkNama: selected.nama,
+      produkEmoji: selected.emoji,
+      beratKg: berat,
+      hargaPerKg: selected.hargaPerKg,
+      total,
+      sisaStokKg,
+      waktu: Date.now(),
+    };
+    setRiwayat((prev) => [trxBaru, ...prev]);
+    setStrukTransaksi(trxBaru);
     let pesan = `✅ Transaksi berhasil · ${berat} kg ${selected.nama} · ${rupiah(total)}`;
     if (levelSesudah !== levelSebelum && levelSesudah !== "aman") {
       const meta = LEVEL_META[levelSesudah];
@@ -1077,6 +1105,101 @@ function PosKasirPage() {
         {toast && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 border border-emerald-500/50 rounded-xl px-5 py-3 shadow-2xl text-sm z-50 animate-in fade-in slide-in-from-bottom-4">
             {toast}
+          </div>
+        )}
+
+        {strukTransaksi && (
+          <div
+            className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-3 animate-in fade-in"
+            onClick={() => setStrukTransaksi(null)}
+          >
+            <div
+              className="w-full max-w-sm rounded-2xl bg-slate-900 border border-emerald-500/40 shadow-2xl overflow-hidden animate-in slide-in-from-bottom-4"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="px-4 py-3 border-b border-slate-800 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <span className="text-lg">🧾</span>
+                  <span className="text-sm font-semibold text-emerald-300">Struk Transaksi</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setStrukTransaksi(null)}
+                  className="text-slate-400 hover:text-slate-200 text-lg leading-none px-1"
+                  aria-label="Tutup"
+                >
+                  ✕
+                </button>
+              </div>
+              <div className="p-4 space-y-3">
+                <div className="flex items-center gap-3">
+                  <span className="text-3xl">{strukTransaksi.produkEmoji}</span>
+                  <div className="min-w-0">
+                    <div className="text-base font-semibold text-slate-100 truncate">
+                      {strukTransaksi.produkNama}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-mono">
+                      {new Date(strukTransaksi.waktu).toLocaleString("id-ID")}
+                    </div>
+                  </div>
+                </div>
+                <div className="rounded-lg bg-slate-800/60 border border-slate-700 p-3 text-sm space-y-1.5 font-mono">
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Berat</span>
+                    <span className="text-slate-100">
+                      {strukTransaksi.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                    </span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-400">Harga/kg</span>
+                    <span className="text-slate-100">{rupiah(strukTransaksi.hargaPerKg)}</span>
+                  </div>
+                  <div className="flex justify-between pt-1.5 border-t border-slate-700">
+                    <span className="text-slate-300">Total</span>
+                    <span className="text-emerald-400 font-semibold text-base">
+                      {rupiah(strukTransaksi.total)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-[11px] text-slate-500">
+                    <span>Sisa stok</span>
+                    <span>
+                      {strukTransaksi.sisaStokKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => salinStruk(strukTransaksi)}
+                    className="py-2.5 rounded-lg text-xs font-semibold bg-slate-700 hover:bg-slate-600 text-slate-100 transition-colors"
+                  >
+                    📋 Salin ringkasan
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => kirimWa(strukTransaksi)}
+                    disabled={!waReady}
+                    title={waDisabledReason || `Kirim ulang ke ${waNomorDisplay}`}
+                    aria-disabled={!waReady}
+                    className="py-2.5 rounded-lg text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed text-white transition-colors"
+                  >
+                    💬 Kirim ulang WA
+                  </button>
+                </div>
+                {!waReady && (
+                  <p className="text-[11px] text-amber-300/80 text-center">
+                    {waDisabledReason}
+                  </p>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setStrukTransaksi(null)}
+                  className="w-full py-2 rounded-lg text-xs font-medium text-slate-400 hover:text-slate-200"
+                >
+                  Tutup
+                </button>
+              </div>
+            </div>
           </div>
         )}
       </div>
