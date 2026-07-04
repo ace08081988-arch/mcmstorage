@@ -51,6 +51,7 @@ function PosKasirPage() {
   const [riwayat, setRiwayat] = useState<PosKasirTransaksi[]>(() => getPosKasirRiwayat());
   const [dariTgl, setDariTgl] = useState<string>("");
   const [sampaiTgl, setSampaiTgl] = useState<string>("");
+  const [cariTransaksi, setCariTransaksi] = useState<string>("");
   const [waNomor, setWaNomor] = useState<string>("");
   const [waLokasi, setWaLokasi] = useState<string>("");
   const [ambangStok, setAmbangStok] = useState<number>(() => {
