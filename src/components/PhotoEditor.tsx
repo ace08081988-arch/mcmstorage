@@ -872,6 +872,24 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                 </Button>
               </div>
             )}
+            {canvasReady && tool !== "select" && (
+              <div
+                role="status"
+                aria-live="polite"
+                className="pointer-events-none absolute left-1/2 top-2 z-10 flex -translate-x-1/2 items-center gap-1.5 rounded-full border border-primary/40 bg-primary/90 px-2.5 py-1 text-[11px] font-medium text-primary-foreground shadow-md"
+              >
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground/70 opacity-75" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-foreground" />
+                </span>
+                {tool === "draw" && <span>Coret aktif — seret jari di kanvas</span>}
+                {tool === "text" && <span>Teks aktif — ketuk kanvas untuk menempel</span>}
+                {tool === "emoji" && <span>Stiker aktif — pilih emoji atau ketuk kanvas</span>}
+                {tool === "arrow" && <span>Panah aktif — pilih arah atau ketuk kanvas</span>}
+                {tool === "rect" && <span>Kotak aktif — seret atau ketuk kanvas</span>}
+                {tool === "circle" && <span>Lingkaran aktif — seret atau ketuk kanvas</span>}
+              </div>
+            )}
             {exporting && (
               <div
                 ref={exportingOverlayRef}
