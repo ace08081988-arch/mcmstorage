@@ -29,5 +29,7 @@ Disallow: /pengaturan-kunci
 Disallow: /profil
 Disallow: /request
 Disallow: /tugas
+Disallow: /diagnostik/
+Disallow: /pos-kasir
 
 Sitemap: https://mcmstorage.biz/sitemap.xml
