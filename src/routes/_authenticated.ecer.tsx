@@ -1645,6 +1645,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   }
 
   return (
+    <>
     <Dialog open onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
       <DialogContent
         className="max-w-md"
@@ -1966,11 +1967,6 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
           </div>
         </DialogFooter>
 
-        {editorOpen && editorSrc && (
-          <PhotoEditor src={editorSrc} onCancel={() => setEditorOpen(false)}
-            onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }} />
-        )}
-
         {zoomOpen && photo && (
           <Dialog open onOpenChange={(o) => { if (!o) setZoomOpen(false); }}>
             <DialogContent className="max-w-3xl p-2">
@@ -1984,6 +1980,18 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
         )}
       </DialogContent>
     </Dialog>
+    {/* PhotoEditor di-hoist ke luar DialogContent agar `fixed inset-0`-nya
+        mengacu ke viewport (bukan ke DialogContent yang memakai transform +
+        focus trap Radix), sehingga toolbar & kanvas selalu bisa disentuh
+        di Android. */}
+    {editorOpen && editorSrc && (
+      <PhotoEditor
+        src={editorSrc}
+        onCancel={() => setEditorOpen(false)}
+        onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }}
+      />
+    )}
+    </>
   );
 }
 
