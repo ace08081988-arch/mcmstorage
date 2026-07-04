@@ -237,7 +237,10 @@ function TugasBaruPage() {
       </div>
     );
   }
+  return <TugasBaruForm />;
+}
 
+function TugasBaruForm() {
   // Restore draft on first render so a remount (e.g. router invalidation
   // triggered by realtime/sidebar refetch) doesn't wipe what was typed.
   const initialRef = useRef<Draft | null>(loadDraft());
