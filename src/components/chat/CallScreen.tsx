@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
-  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal, SwitchCamera,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -138,6 +138,21 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     : videoQuality === "low" ? "320p · hemat data, stabil di sinyal lemah"
     : videoQuality === "medium" ? "480p · seimbang"
     : "720p · kualitas tinggi (butuh koneksi baik)";
+  // Kamera depan/belakang — dipersist supaya panggilan berikutnya membuka
+  // kamera yang sama. Nilai default "user" (kamera depan) untuk video call.
+  const FACING_MODE_KEY = "mcm.call.facingMode";
+  const [facingMode, setFacingMode] = useState<"user" | "environment">(() => {
+    if (typeof window === "undefined") return "user";
+    const v = window.localStorage.getItem(FACING_MODE_KEY);
+    return v === "environment" ? "environment" : "user";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(FACING_MODE_KEY, facingMode); } catch { /* ignore */ }
+  }, [facingMode]);
+  const [flipping, setFlipping] = useState(false);
+  // Bertambah tiap kali kamera dibalik — dipakai untuk memaksa Crop/Fit &
+  // kualitas video di-apply ulang begitu track lokal baru terpasang.
+  const [cameraSwapNonce, setCameraSwapNonce] = useState(0);
   const pipSizeClass =
     pipSize === "sm" ? "h-24 w-20" : pipSize === "lg" ? "h-48 w-36" : "h-32 w-24";
   const pipCornerClass =
@@ -475,7 +490,72 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
       }
     })();
     return () => { cancelled = true; };
-  }, [videoQuality, kind, phase, remoteReady]);
+  }, [videoQuality, kind, phase, remoteReady, cameraSwapNonce]);
+
+  // Terapkan ulang aspect ratio Crop/Fit ke elemen <video> lokal setiap
+  // kali track lokal berubah (mis. setelah tukar kamera front/back).
+  // Kelas Tailwind sudah reaktif via className, tapi beberapa Chromium di
+  // Android kadang mempertahankan sisa layout saat srcObject diganti —
+  // menyentuh `style.objectFit` eksplisit memastikan setelan langsung berlaku.
+  useEffect(() => {
+    if (kind !== "video") return;
+    const v = localVideoRef.current;
+    if (v) v.style.objectFit = videoFit;
+    const rv = remoteVideoRef.current;
+    if (rv) rv.style.objectFit = videoFit;
+  }, [videoFit, kind, cameraSwapNonce, remoteReady]);
+
+  // Tukar kamera depan/belakang tanpa menutup panggilan: buka stream baru
+  // dengan facingMode target, ganti track pada sender via `replaceTrack`,
+  // lalu perbarui MediaStream lokal & elemen preview. Setelah selesai,
+  // effect kualitas + Crop/Fit di atas akan otomatis re-apply karena
+  // `cameraSwapNonce` di-increment.
+  const flipCamera = useCallback(async () => {
+    if (kind !== "video") return;
+    const session = sessionRef.current;
+    if (!session) return;
+    if (flipping) return;
+    setFlipping(true);
+    const next: "user" | "environment" = facingMode === "user" ? "environment" : "user";
+    let newStream: MediaStream | null = null;
+    try {
+      newStream = await navigator.mediaDevices.getUserMedia({
+        audio: false,
+        video: { facingMode: { ideal: next } },
+      });
+      const newTrack = newStream.getVideoTracks()[0];
+      if (!newTrack) throw new Error("Track kamera tidak tersedia");
+      newTrack.enabled = camOn;
+      const sender = session.pc.getSenders().find((s) => s.track?.kind === "video");
+      if (sender) {
+        await sender.replaceTrack(newTrack);
+      }
+      // Ganti track pada MediaStream lokal supaya preview mengikuti.
+      const oldTrack = session.localStream.getVideoTracks()[0];
+      if (oldTrack) {
+        try { session.localStream.removeTrack(oldTrack); } catch { /* ignore */ }
+        try { oldTrack.stop(); } catch { /* ignore */ }
+      }
+      session.localStream.addTrack(newTrack);
+      // Re-bind srcObject supaya <video> memuat frame baru + memicu paint;
+      // pakai stream yang sama agar identitasnya stabil untuk React.
+      const v = localVideoRef.current;
+      if (v) {
+        v.srcObject = session.localStream;
+        void v.play().catch(() => { /* akan retry saat user tap */ });
+      }
+      setFacingMode(next);
+      setCameraSwapNonce((n) => n + 1);
+    } catch (err) {
+      console.warn("[call] flip camera gagal", err);
+      toast.error("Gagal menukar kamera", {
+        description: "Perangkat ini mungkin hanya memiliki satu kamera.",
+      });
+      try { newStream?.getTracks().forEach((t) => t.stop()); } catch { /* ignore */ }
+    } finally {
+      setFlipping(false);
+    }
+  }, [kind, facingMode, camOn, flipping]);
 
   // Terapkan volume ke elemen remote setiap kali berubah + persist.
   useEffect(() => {
@@ -972,6 +1052,26 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             aria-label={camOn ? "Matikan kamera" : "Nyalakan kamera"}
           >
             {camOn ? <VideoIcon className="h-6 w-6" /> : <VideoOff className="h-6 w-6" />}
+          </Button>
+        ) : null}
+
+        {kind === "video" ? (
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            className="h-14 w-14 rounded-full bg-white/10"
+            onClick={() => void flipCamera()}
+            disabled={flipping || !camOn}
+            aria-label={facingMode === "user" ? "Tukar ke kamera belakang" : "Tukar ke kamera depan"}
+            data-testid="call-flip-camera"
+            data-facing={facingMode}
+          >
+            {flipping ? (
+              <Loader2 className="h-6 w-6 animate-spin" />
+            ) : (
+              <SwitchCamera className="h-6 w-6" />
+            )}
           </Button>
         ) : null}
 
