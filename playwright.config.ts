@@ -26,7 +26,15 @@ export default defineConfig({
   maxFailures: process.env.PWTEST_MAX_FAILURES
     ? Number(process.env.PWTEST_MAX_FAILURES)
     : 0,
-  reporter: [["list"], ["html", { open: "never", outputFolder: "playwright-report" }]],
+  reporter: [
+    ["list"],
+    ["html", { open: "never", outputFolder: "playwright-report" }],
+    // Ringkasan tambahan yang mengelompokkan hasil spec APK menjadi
+    // grup `terminalGuard-only` vs `full guards` di akhir run — aditif,
+    // tidak menggantikan reporter lain. Klasifikasi berbasis isi file
+    // spec (deteksi `installServerFnPassthroughGuard`).
+    ["./tests/e2e/_helpers/apk-grouped-reporter.ts"],
+  ],
   globalSetup: "./tests/visual/global-setup.ts",
   use: {
     baseURL: process.env.BASE_URL ?? "http://localhost:5173",
