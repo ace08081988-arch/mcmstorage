@@ -35,6 +35,42 @@
  *   - Keduanya bisa dipakai bersama di flow APK + copy/export: pasang passthrough
  *     guard di setup, lalu tutup spec dengan `stub.terminalGuard()`.
  *
+ * Checklist anti-pattern — jangan lakukan di spec APK:
+ *
+ *   ❌ Jangan memanggil `assertNoAdditionalRequests` secara manual dengan
+ *     `windowMs` literal. Pakai `stub.trackedClick(...)` / `stub.trackedAction(...)`
+ *     supaya threshold & log error konsisten.
+ *
+ *   ❌ Jangan menulis `page.waitForTimeout(...)` atau `expect.poll(...)` sebagai
+ *     sinkronisasi alur. Semua tunggu harus event-based (`waitForServed`,
+ *     `waitForHold`, `waitForIdle`).
+ *
+ *   ❌ Jangan lupa `stub.assertPrimed()` sebelum `page.goto()`. Tanpa ini,
+ *     waiter mount bisa tergantung tanpa respons, dan test akan hang.
+ *
+ *   ❌ Jangan lupa `stub.waitForServed(variant, count)` sebelum mengukur UI.
+ *     Assertion UI awal harus menunggu React render state yang sudah
+ *     deterministik.
+ *
+ *   ❌ Jangan melewatkan `expected` di `trackedClick` untuk aksi refetch.
+ *     `expected` bukan cuma whitelist, tapi juga regression check: kalau
+ *     tap tiba-tiba tidak memicu refetch, test harus gagal.
+ *
+ *   ❌ Jangan memanggil `assertQuiescent` sebelum `waitForIdle` / state aktif
+ *     tercapai. Quiescent guard hanya berarti setelah handler tidak lagi
+ *     menangani request aktif.
+ *
+ *   ❌ Jangan membiarkan spec berakhir tanpa `stub.terminalGuard()` — kecuali
+ *     spec memang bukan flow APK (bukan `getApkVariantDetail`).
+ *
+ *   ❌ Jangan mengganti `waitForServed` / `waitForIdle` dengan `terminalGuard`.
+ *     `terminalGuard` hanya membuktikan *absence* leak di akhir, bukan
+ *     menunggu request selesai di-fulfill.
+ *
+ *   ❌ Jangan menambahkan `assertQuiescent` di setiap aksi kecil. Gunakan
+ *     `trackedClick` per-aksi, dan `assertQuiescent` hanya sekali setelah
+ *     state aktif tercapai.
+ *
  * Prinsip yang WAJIB dipertahankan:
  *
  *   - **Deterministik**: tidak boleh ada `page.waitForTimeout` atau
