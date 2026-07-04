@@ -14,7 +14,7 @@
  *     event TOKEN_REFRESHED null datang.
  */
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { act, useRef, useState } from "react";
+import { act, useEffect, useRef, useState } from "react";
 import { createRoot, type Root } from "react-dom/client";
 
 (globalThis as unknown as { IS_REACT_ACT_ENVIRONMENT: boolean })
@@ -176,7 +176,11 @@ describe("Sticky admin gate · TugasBaruForm tetap mounted saat TOKEN_REFRESHED 
   //  - unmount ketika sticky belum pernah nyala DAN status akhir "bukan admin"
   function Form({ onCount }: { onCount: () => void }) {
     const [qty, setQty] = useState("0");
-    onCount();
+    // Hanya hitung MOUNT (bukan re-render) — kontrak yang kita jaga
+    // adalah form tidak di-unmount/remount saat event auth transient.
+    useEffect(() => {
+      onCount();
+    }, [onCount]);
     return (
       <input
         aria-label="qty"
