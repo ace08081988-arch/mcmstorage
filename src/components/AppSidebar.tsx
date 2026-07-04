@@ -290,6 +290,7 @@ const groups: { label: string; items: ReadonlyArray<NavItem> }[] = [
     items: [
       { title: "Gudang & Supplier", url: "/gudang", icon: Package },
       { title: "Penyiapan Ecer", url: "/ecer", icon: Scale },
+      { title: "POS Kasir Curah", url: "/pos-kasir", icon: Calculator },
       { title: "Penyiapan Request", url: "/request", icon: PackagePlus },
       { title: "Penyiapan Produk", url: "/tugas", icon: ClipboardList },
       { title: "Buat Tugas Manual", url: "/tugas-baru", icon: ClipboardCheck },
