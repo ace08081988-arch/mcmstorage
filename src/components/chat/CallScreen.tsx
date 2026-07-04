@@ -183,6 +183,14 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     : videoPos === "bottom" ? "50% 100%"
     : videoPos === "left" ? "0% 50%"
     : "100% 50%";
+  // Style inline yang dipakai SEMUA elemen <video> (remote + preview lokal
+  // di mode PiP maupun swap). Menaruhnya di prop `style` menjamin nilainya
+  // ikut di-apply pada setiap render — termasuk saat swap layout memindah
+  // elemen ke DOM node baru dan saat kamera front/back ditukar.
+  const videoStyle: React.CSSProperties = {
+    objectFit: videoFit,
+    objectPosition: videoFit === "cover" ? videoPosCss : "50% 50%",
+  };
   const videoPosLabel =
     videoPos === "center" ? "Tengah"
     : videoPos === "top" ? "Atas"
@@ -656,24 +664,19 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return () => { cancelled = true; };
   }, [videoQuality, kind, phase, remoteReady, cameraSwapNonce]);
 
-  // Terapkan ulang aspect ratio Crop/Fit ke elemen <video> lokal setiap
-  // kali track lokal berubah (mis. setelah tukar kamera front/back).
-  // Kelas Tailwind sudah reaktif via className, tapi beberapa Chromium di
-  // Android kadang mempertahankan sisa layout saat srcObject diganti —
-  // menyentuh `style.objectFit` eksplisit memastikan setelan langsung berlaku.
+  // Force-apply objectFit/objectPosition via ref juga — belt & suspenders
+  // untuk beberapa Chromium (Android WebView / Capacitor) yang kadang
+  // mempertahankan layout lama saat `srcObject` diganti atau swap layout
+  // memindah elemen ke node baru sebelum React sempat mem-flush prop `style`.
   useEffect(() => {
     if (kind !== "video") return;
-    const v = localVideoRef.current;
-    if (v) {
-      v.style.objectFit = videoFit;
-      v.style.objectPosition = videoFit === "cover" ? videoPosCss : "50% 50%";
+    const pos = videoFit === "cover" ? videoPosCss : "50% 50%";
+    for (const el of [localVideoRef.current, remoteVideoRef.current]) {
+      if (!el) continue;
+      el.style.objectFit = videoFit;
+      el.style.objectPosition = pos;
     }
-    const rv = remoteVideoRef.current;
-    if (rv) {
-      rv.style.objectFit = videoFit;
-      rv.style.objectPosition = videoFit === "cover" ? videoPosCss : "50% 50%";
-    }
-  }, [videoFit, videoPosCss, kind, cameraSwapNonce, remoteReady]);
+  }, [videoFit, videoPosCss, kind, cameraSwapNonce, remoteReady, swapped]);
 
   // Tukar kamera depan/belakang tanpa menutup panggilan: buka stream baru
   // dengan facingMode target, ganti track pada sender via `replaceTrack`,
@@ -931,6 +934,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                 ? `absolute ${pipCornerClass} ${pipSizeClass} rounded-lg border border-white/20 ${videoFitClass} shadow-lg z-10 bg-black`
                 : `absolute inset-0 h-full w-full ${videoFitClass} bg-black`
             }
+            style={videoStyle}
           />
         ) : (
           <audio ref={remoteAudioRef} autoPlay playsInline />
@@ -997,6 +1001,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                   ? `absolute inset-0 h-full w-full ${videoFitClass} bg-black`
                   : `h-full w-full rounded-lg border border-white/20 ${videoFitClass} shadow-lg bg-black`
               }
+              style={videoStyle}
             />
             {!swapped ? (
               <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 rounded-b-lg bg-black/50 px-1.5 py-1 backdrop-blur">
