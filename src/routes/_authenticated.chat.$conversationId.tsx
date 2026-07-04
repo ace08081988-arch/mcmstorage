@@ -1701,6 +1701,10 @@ function ChatRoomPage() {
           onOpenChange={setPeerProfileOpen}
           peerUserId={dmPeer.peerUserId}
           displayName={displayedPeerName}
+          peerPhone={dmPeer.peerPhone}
+          peerInviteCode={
+            profiles.data?.get(dmPeer.peerUserId)?.invite_code ?? null
+          }
           onEditName={() => setEditNameOpen(true)}
           onOpenAddressBook={() => {
             try {
