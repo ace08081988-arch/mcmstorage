@@ -21,11 +21,32 @@ const PRODUK_AWAL: Produk[] = [
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
 
+type Transaksi = {
+  id: string;
+  produkId: string;
+  produkNama: string;
+  produkEmoji: string;
+  beratKg: number;
+  hargaPerKg: number;
+  total: number;
+  sisaStokKg: number;
+  waktu: number;
+};
+
+const waktuFmt = new Intl.DateTimeFormat("id-ID", {
+  hour: "2-digit",
+  minute: "2-digit",
+  second: "2-digit",
+  day: "2-digit",
+  month: "short",
+});
+
 function PosKasirPage() {
   const [produk, setProduk] = useState<Produk[]>(PRODUK_AWAL);
   const [selectedId, setSelectedId] = useState<string>(PRODUK_AWAL[0].id);
   const [beratStr, setBeratStr] = useState<string>("0");
   const [toast, setToast] = useState<string | null>(null);
+  const [riwayat, setRiwayat] = useState<Transaksi[]>([]);
 
   const selected = produk.find((p) => p.id === selectedId)!;
   const berat = useMemo(() => {
@@ -42,13 +63,31 @@ function PosKasirPage() {
       setTimeout(() => setToast(null), 2500);
       return;
     }
+    const sisaStokKg = +(selected.stokKg - berat).toFixed(3);
     setProduk((prev) =>
-      prev.map((p) => (p.id === selected.id ? { ...p, stokKg: +(p.stokKg - berat).toFixed(3) } : p)),
+      prev.map((p) => (p.id === selected.id ? { ...p, stokKg: sisaStokKg } : p)),
     );
+    setRiwayat((prev) => [
+      {
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        produkId: selected.id,
+        produkNama: selected.nama,
+        produkEmoji: selected.emoji,
+        beratKg: berat,
+        hargaPerKg: selected.hargaPerKg,
+        total,
+        sisaStokKg,
+        waktu: Date.now(),
+      },
+      ...prev,
+    ]);
     setToast(`✅ Transaksi berhasil · ${berat} kg ${selected.nama} · ${rupiah(total)}`);
     setBeratStr("0");
     setTimeout(() => setToast(null), 3500);
   };
+
+  const totalOmzet = riwayat.reduce((s, t) => s + t.total, 0);
+  const totalKg = riwayat.reduce((s, t) => s + t.beratKg, 0);
 
   // Format 7-segment display: 5 digit integer + 3 decimal
   const displayBerat = berat.toFixed(3).padStart(9, " ");
@@ -203,6 +242,108 @@ function PosKasirPage() {
             </div>
           </aside>
         </div>
+
+        {/* Riwayat Transaksi */}
+        <section className="mt-6 bg-slate-800/50 backdrop-blur rounded-2xl p-5 border border-slate-700">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-4">
+            <div>
+              <h2 className="text-sm font-semibold text-slate-300 uppercase tracking-wider">
+                📋 Riwayat Transaksi
+              </h2>
+              <p className="text-xs text-slate-500 mt-1">
+                {riwayat.length} transaksi · {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg · omzet {rupiah(totalOmzet)}
+              </p>
+            </div>
+            {riwayat.length > 0 && (
+              <button
+                onClick={() => setRiwayat([])}
+                className="text-xs px-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-700 text-slate-400"
+              >
+                Bersihkan
+              </button>
+            )}
+          </div>
+
+          {riwayat.length === 0 ? (
+            <div className="text-center py-8 text-sm text-slate-500">
+              Belum ada transaksi. Lakukan pembayaran untuk melihat riwayat di sini.
+            </div>
+          ) : (
+            <>
+              {/* Mobile: card list */}
+              <div className="grid gap-2 md:hidden">
+                {riwayat.map((t) => (
+                  <div key={t.id} className="rounded-xl bg-slate-900/60 border border-slate-700 p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xl">{t.produkEmoji}</span>
+                        <div>
+                          <div className="text-sm font-medium">{t.produkNama}</div>
+                          <div className="text-[11px] text-slate-500 font-mono">
+                            {waktuFmt.format(t.waktu)}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-emerald-400 font-mono font-semibold text-sm">
+                          {rupiah(t.total)}
+                        </div>
+                        <div className="text-[11px] text-slate-400 font-mono">
+                          {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                        </div>
+                      </div>
+                    </div>
+                    <div className="mt-2 pt-2 border-t border-slate-800 flex justify-between text-[11px] text-slate-500">
+                      <span>@ {rupiah(t.hargaPerKg)}/kg</span>
+                      <span>Sisa stok: <span className="text-slate-300 font-mono">{t.sisaStokKg.toLocaleString("id-ID")} kg</span></span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Desktop: table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="text-left text-xs uppercase tracking-wider text-slate-400 border-b border-slate-700">
+                      <th className="py-2 pr-3 font-medium">Waktu</th>
+                      <th className="py-2 pr-3 font-medium">Produk</th>
+                      <th className="py-2 pr-3 font-medium text-right">Berat</th>
+                      <th className="py-2 pr-3 font-medium text-right">Harga/kg</th>
+                      <th className="py-2 pr-3 font-medium text-right">Total</th>
+                      <th className="py-2 font-medium text-right">Sisa Stok</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-800">
+                    {riwayat.map((t) => (
+                      <tr key={t.id} className="hover:bg-slate-900/40">
+                        <td className="py-2 pr-3 font-mono text-xs text-slate-400">
+                          {waktuFmt.format(t.waktu)}
+                        </td>
+                        <td className="py-2 pr-3">
+                          <span className="mr-1.5">{t.produkEmoji}</span>
+                          {t.produkNama}
+                        </td>
+                        <td className="py-2 pr-3 text-right font-mono">
+                          {t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg
+                        </td>
+                        <td className="py-2 pr-3 text-right font-mono text-slate-400">
+                          {rupiah(t.hargaPerKg)}
+                        </td>
+                        <td className="py-2 pr-3 text-right font-mono font-semibold text-emerald-400">
+                          {rupiah(t.total)}
+                        </td>
+                        <td className="py-2 text-right font-mono text-slate-300">
+                          {t.sisaStokKg.toLocaleString("id-ID")} kg
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </>
+          )}
+        </section>
 
         {toast && (
           <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-slate-900 border border-emerald-500/50 rounded-xl px-5 py-3 shadow-2xl text-sm z-50 animate-in fade-in slide-in-from-bottom-4">
