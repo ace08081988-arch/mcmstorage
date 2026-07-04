@@ -469,6 +469,22 @@ function ChatRoomPage() {
 
   const [body, setBody] = useState("");
 
+  // Prefill komposer dari flow lain (mis. Penyiapan Request → Buka Chat MCM).
+  // Handoff via localStorage key `mcm.chat.prefill.<convId>` supaya bisa
+  // dipakai dari navigate tanpa mengubah tipe search params rute.
+  useEffect(() => {
+    if (!conversationId) return;
+    if (typeof window === "undefined") return;
+    const key = `mcm.chat.prefill.${conversationId}`;
+    try {
+      const raw = window.localStorage.getItem(key);
+      if (raw && raw.trim()) {
+        setBody((prev) => (prev && prev.trim() ? prev : raw));
+        window.localStorage.removeItem(key);
+      }
+    } catch { /* ignore */ }
+  }, [conversationId]);
+
   // ---- Outbox (optimistic send + retry on failure / reconnect) ----
   type OutboxItem = {
     tempId: string;
