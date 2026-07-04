@@ -115,14 +115,56 @@ Singkatnya: tag mode harus jujur terhadap kode, dan setiap checklist item memili
 # Jalankan semua spec APK sekaligus
 bun run test:e2e:apk
 
+# Mode terminal (hanya APK stub)
+bun run test:e2e:apk:terminal
+
+# Mode full (APK stub + passthrough server function)
+bun run test:e2e:apk:full
+
 # Regenerasi scaffold (dry-run)
 bun run e2e:apk:regen
+
+# Regenerasi mode terminal/full
+bun run e2e:apk:regen:terminal
+bun run e2e:apk:regen:full
 
 # Regenerasi dan langsung tulis (apply)
 bun run e2e:apk:regen:apply
 
 # Validasi header & checklist Guards
 bun run e2e:apk:validate
+
+# Scaffold satu spec baru
+node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode terminal
+node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode full
+```
+
+### Perintah npm
+
+Jika proyek ini dijalankan tanpa `bun`, pakai perintah `npm` di bawah. Semua script di atas tetap memanggil runner Playwright melalui `node`, sehingga hasilnya identik:
+
+```bash
+# Jalankan semua spec APK sekaligus
+npm run test:e2e:apk
+
+# Jalankan hanya spec APK mode terminal
+npm run test:e2e:apk:terminal
+
+# Jalankan hanya spec APK mode full
+npm run test:e2e:apk:full
+
+# Jalankan satu spec langsung via Playwright (contoh: mode terminal)
+npx playwright test --project=apk-mount-quiescent-e2e
+
+# Jalankan satu spec langsung via Playwright (contoh: mode full)
+npx playwright test --project=copy-chat-apk-aria-label-e2e
+
+# Regenerasi, validasi, dan scaffold via npm
+npm run e2e:apk:regen
+npm run e2e:apk:regen:terminal
+npm run e2e:apk:regen:full
+npm run e2e:apk:regen:apply
+npm run e2e:apk:validate
 
 # Scaffold satu spec baru
 node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode terminal
