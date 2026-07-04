@@ -168,9 +168,14 @@ function PosKasirPage() {
                   type="number"
                   step="0.001"
                   min="0"
+                  max={selected.stokKg}
                   value={beratStr}
                   onChange={(e) => setBeratStr(e.target.value)}
-                  className="mt-2 w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-lg font-mono focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
+                  className={`mt-2 w-full bg-slate-900 border rounded-lg px-4 py-3 text-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
+                    berat > selected.stokKg
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
+                      : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
+                  }`}
                   placeholder="0.000"
                 />
                 <div className="mt-3 grid grid-cols-4 gap-2">
