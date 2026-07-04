@@ -65,11 +65,22 @@ function PosKasirPage() {
     const n = raw ? parseFloat(raw) : NaN;
     return Number.isFinite(n) && n > 0 ? n : AMBANG_DEFAULT;
   });
+  const [modeRingkas, setModeRingkas] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    const raw = localStorage.getItem(MODE_RINGKAS_KEY);
+    return raw === "true" ? true : raw === "false" ? false : false;
+  });
 
   useEffect(() => {
     if (typeof window === "undefined") return;
     localStorage.setItem(AMBANG_STORAGE_KEY, String(ambangStok));
   }, [ambangStok]);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    localStorage.setItem(MODE_RINGKAS_KEY, String(modeRingkas));
+  }, [modeRingkas]);
+
 
   const waNomorNorm = useMemo(() => normalizeWaNumber(waNomor, "ID"), [waNomor]);
   const waNomorDisplay = useMemo(
