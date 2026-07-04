@@ -101,13 +101,31 @@ export async function sendFriendRequest(code: string): Promise<SendFriendRequest
   // `as never` — RPC baru; types.ts akan di-regenerasi setelah migration.
   const { data, error } = await supabase.rpc("send_friend_request" as never, { _code: clean } as never);
   if (error) {
-    if (/invite_code_not_found/i.test(error.message)) {
+    // Log detail mentah supaya bisa didiagnosis kalau toast generic muncul.
+    // eslint-disable-next-line no-console
+    console.error("[sendFriendRequest] RPC error", { code, error });
+    const msg = String(error.message || "");
+    if (/invite_code_not_found/i.test(msg)) {
       throw new Error("PIN tidak ditemukan. Cek kembali kodenya.");
     }
-    if (/unauthorized/i.test(error.message)) {
+    if (/unauthorized/i.test(msg)) {
       throw new Error("Sesi tidak valid — silakan login ulang.");
     }
-    throw error;
+    // Pastikan error selalu Error instance dengan pesan informatif, bukan
+    // objek Postgrest polos (yang membuat `e instanceof Error` false dan
+    // toast fallback ke "Gagal menambah kontak." tanpa detail).
+    const detail = [
+      msg,
+      // @ts-expect-error PostgrestError shape
+      error?.details,
+      // @ts-expect-error PostgrestError shape
+      error?.hint,
+      // @ts-expect-error PostgrestError shape
+      error?.code ? `(kode ${error.code})` : "",
+    ]
+      .filter(Boolean)
+      .join(" · ");
+    throw new Error(detail || "Gagal mengirim permintaan pertemanan.");
   }
   const row = (Array.isArray(data) ? data[0] : data) as SendFriendRequestRow | null | undefined;
   if (!row) throw new Error("PIN tidak ditemukan.");
