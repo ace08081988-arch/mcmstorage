@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
-  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -75,6 +75,45 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   const [outputSheetOpen, setOutputSheetOpen] = useState(false);
   const [turnConfigured, setTurnConfigured] = useState<boolean | null>(null);
   const outputSupported = isOutputSelectionSupported();
+
+  // PiP (preview kecil) — user dapat swap besar/kecil, ubah ukuran, dan geser posisi.
+  const [swapped, setSwapped] = useState(false);
+  const [pipSize, setPipSize] = useState<"sm" | "md" | "lg">("md");
+  const [pipCorner, setPipCorner] = useState<"tl" | "tr" | "bl" | "br">("br");
+  const pipSizeClass =
+    pipSize === "sm" ? "h-24 w-20" : pipSize === "lg" ? "h-48 w-36" : "h-32 w-24";
+  const pipCornerClass =
+    pipCorner === "tl" ? "top-16 left-4"
+    : pipCorner === "tr" ? "top-16 right-4"
+    : pipCorner === "bl" ? "bottom-28 left-4"
+    : "bottom-28 right-4";
+  const cyclePipSize = useCallback(() => {
+    setPipSize((s) => (s === "sm" ? "md" : s === "md" ? "lg" : "sm"));
+  }, []);
+  const pipDragRef = useRef<{ id: number; startX: number; startY: number; moved: boolean } | null>(null);
+  const onPipPointerDown = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    pipDragRef.current = { id: e.pointerId, startX: e.clientX, startY: e.clientY, moved: false };
+    (e.currentTarget as HTMLDivElement).setPointerCapture(e.pointerId);
+  }, []);
+  const onPipPointerMove = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const d = pipDragRef.current;
+    if (!d || d.id !== e.pointerId) return;
+    if (Math.hypot(e.clientX - d.startX, e.clientY - d.startY) > 8) d.moved = true;
+  }, []);
+  const onPipPointerUp = useCallback((e: React.PointerEvent<HTMLDivElement>) => {
+    const d = pipDragRef.current;
+    pipDragRef.current = null;
+    try { (e.currentTarget as HTMLDivElement).releasePointerCapture(e.pointerId); } catch { /* ignore */ }
+    if (!d) return;
+    if (!d.moved) return; // tap tanpa drag: biar tombol yang handle
+    const rect = (e.currentTarget as HTMLDivElement).parentElement?.getBoundingClientRect();
+    if (!rect) return;
+    const cx = e.clientX - rect.left;
+    const cy = e.clientY - rect.top;
+    const isLeft = cx < rect.width / 2;
+    const isTop = cy < rect.height / 2;
+    setPipCorner(isTop ? (isLeft ? "tl" : "tr") : (isLeft ? "bl" : "br"));
+  }, []);
 
   const sessionRef = useRef<PeerSession | null>(null);
   const acceptedAtRef = useRef<string | null>(null);
@@ -431,7 +470,11 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             ref={remoteVideoRef}
             autoPlay
             playsInline
-            className="absolute inset-0 h-full w-full object-cover"
+            className={
+              swapped
+                ? `absolute ${pipCornerClass} ${pipSizeClass} rounded-lg border border-white/20 object-cover shadow-lg z-10`
+                : "absolute inset-0 h-full w-full object-cover"
+            }
           />
         ) : (
           <audio ref={remoteAudioRef} autoPlay playsInline />
@@ -474,15 +517,64 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
           </div>
         ) : null}
 
-        {/* Preview lokal kecil di pojok */}
+        {/* Preview lokal — dapat di-swap besar/kecil, diubah ukurannya, dan digeser */}
         {kind === "video" ? (
-          <video
-            ref={localVideoRef}
-            autoPlay
-            playsInline
-            muted
-            className="absolute bottom-4 right-4 h-32 w-24 rounded-lg border border-white/20 object-cover shadow-lg"
-          />
+          <div
+            className={
+              swapped
+                ? "absolute inset-0 z-0"
+                : `absolute ${pipCornerClass} ${pipSizeClass} z-10 touch-none`
+            }
+            onPointerDown={swapped ? undefined : onPipPointerDown}
+            onPointerMove={swapped ? undefined : onPipPointerMove}
+            onPointerUp={swapped ? undefined : onPipPointerUp}
+          >
+            <video
+              ref={localVideoRef}
+              autoPlay
+              playsInline
+              muted
+              className={
+                swapped
+                  ? "absolute inset-0 h-full w-full object-cover"
+                  : "h-full w-full rounded-lg border border-white/20 object-cover shadow-lg"
+              }
+            />
+            {!swapped ? (
+              <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 rounded-b-lg bg-black/50 px-1.5 py-1 backdrop-blur">
+                <button
+                  type="button"
+                  aria-label="Tukar video besar/kecil"
+                  title="Tukar besar/kecil"
+                  onClick={() => setSwapped((s) => !s)}
+                  className="rounded p-1 text-white/90 hover:bg-white/10"
+                >
+                  <ArrowLeftRight className="h-3.5 w-3.5" />
+                </button>
+                <button
+                  type="button"
+                  aria-label="Ubah ukuran preview"
+                  title={`Ukuran: ${pipSize.toUpperCase()}`}
+                  onClick={cyclePipSize}
+                  className="flex items-center gap-1 rounded p-1 text-[10px] font-semibold text-white/90 hover:bg-white/10"
+                >
+                  <Maximize2 className="h-3.5 w-3.5" />
+                  <span>{pipSize.toUpperCase()}</span>
+                </button>
+              </div>
+            ) : null}
+          </div>
+        ) : null}
+        {swapped && kind === "video" ? (
+          <button
+            type="button"
+            aria-label="Kembalikan tampilan video"
+            title="Tukar besar/kecil"
+            onClick={() => setSwapped(false)}
+            className="absolute bottom-28 left-1/2 z-20 -translate-x-1/2 rounded-full bg-black/50 px-3 py-1.5 text-xs text-white backdrop-blur hover:bg-black/70"
+          >
+            <ArrowLeftRight className="mr-1 inline h-3.5 w-3.5" /> Tukar
+          </button>
         ) : null}
 
         {/* Status bar atas */}
