@@ -635,6 +635,23 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
             {phase === "connecting" || phase === "ringing" ? (
               <Loader2 className="h-4 w-4 animate-spin text-white/70" />
             ) : null}
+            {kind === "video" ? (
+              <button
+                type="button"
+                onClick={() => void toggleFullscreen()}
+                aria-label={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+                aria-pressed={isFullscreen}
+                title={isFullscreen ? "Keluar layar penuh" : "Layar penuh"}
+                data-testid="call-fullscreen-toggle"
+                className="rounded-full bg-black/40 p-1.5 text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                {isFullscreen ? (
+                  <Minimize className="h-4 w-4" />
+                ) : (
+                  <Maximize className="h-4 w-4" />
+                )}
+              </button>
+            ) : null}
           </div>
         </div>
 
