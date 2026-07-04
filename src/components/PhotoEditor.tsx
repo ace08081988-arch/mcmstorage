@@ -1339,12 +1339,18 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         </div>
 
         {tool === "arrow" && (
-          <div className="mb-2 flex flex-wrap gap-1">
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Arah:</span>
             {([
-              ["up", ArrowUp], ["down", ArrowDown], ["left", ArrowLeft], ["right", ArrowRight],
-              ["upleft", ArrowUpLeft], ["upright", ArrowUpRight], ["downleft", ArrowDownLeft], ["downright", ArrowDownRight],
-            ] as const).map(([d, Ico]) => (
-              <button key={d} type="button" onClick={() => {
+              ["up", ArrowUp, "Atas"], ["down", ArrowDown, "Bawah"], ["left", ArrowLeft, "Kiri"], ["right", ArrowRight, "Kanan"],
+              ["upleft", ArrowUpLeft, "Kiri atas"], ["upright", ArrowUpRight, "Kanan atas"], ["downleft", ArrowDownLeft, "Kiri bawah"], ["downright", ArrowDownRight, "Kanan bawah"],
+            ] as const).map(([d, Ico, label]) => (
+              <button
+                key={d}
+                type="button"
+                title={`Arah panah ${label}`}
+                aria-label={`Pilih arah panah ${label}`}
+                onClick={() => {
                   setArrowDir(d);
                   if (selected?.kind === "arrow") {
                     // Sedang ada panah terpilih → cukup ubah arahnya.
@@ -1364,7 +1370,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
                     setSelectedId(l.id);
                   }
                 }}
-                className={`inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted ${arrowDir === d ? "border-primary bg-primary/10" : ""}`}>
+                className={`inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${arrowDir === d ? "border-primary bg-primary/10" : ""}`}>
                 <Ico className="h-4 w-4" />
               </button>
             ))}
