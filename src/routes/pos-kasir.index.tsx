@@ -899,19 +899,45 @@ function PosKasirPage() {
                   Reset
                 </button>
               )}
+              <div className="flex items-center rounded-lg border border-slate-700 overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setUrutan("terbaru")}
+                  className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                    urutan === "terbaru"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                  }`}
+                  aria-pressed={urutan === "terbaru"}
+                >
+                  Terbaru
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setUrutan("terlama")}
+                  className={`px-2.5 py-1.5 text-xs font-medium transition-colors ${
+                    urutan === "terlama"
+                      ? "bg-emerald-600 text-white"
+                      : "bg-slate-900/60 text-slate-400 hover:bg-slate-900"
+                  }`}
+                  aria-pressed={urutan === "terlama"}
+                >
+                  Terlama
+                </button>
+              </div>
               <button
                 onClick={exportCSV}
-                disabled={riwayatFiltered.length === 0}
+                disabled={riwayatSorted.length === 0}
                 className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-emerald-700 text-white font-medium"
               >
-                ⬇ Ekspor CSV ({riwayatFiltered.length})
+                ⬇ Ekspor CSV ({riwayatSorted.length})
               </button>
               <button
                 onClick={exportPDF}
-                disabled={riwayatFiltered.length === 0}
+                disabled={riwayatSorted.length === 0}
                 className="text-xs px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-rose-700 text-white font-medium"
               >
-                📄 Ekspor PDF ({riwayatFiltered.length})
+                📄 Ekspor PDF ({riwayatSorted.length})
               </button>
               {riwayat.length > 0 && (
                 <button
@@ -924,7 +950,7 @@ function PosKasirPage() {
             </div>
           </div>
 
-          {riwayatFiltered.length === 0 ? (
+          {riwayatSorted.length === 0 ? (
             <div className="text-center py-8 text-sm text-slate-500">
               {riwayat.length === 0
                 ? "Belum ada transaksi. Lakukan pembayaran untuk melihat riwayat di sini."
