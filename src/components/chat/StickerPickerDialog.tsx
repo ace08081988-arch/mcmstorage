@@ -249,12 +249,13 @@ export function StickerPickerDialog({
 
 /** Grid stiker tersimpan ala WA: Buat + Favorit + Tersimpan + Terbaru. */
 function StickerLibraryPanel({
-  saved, recents, fav, busy, onSend, onToggleFav, onRemove, onNew,
+  saved, recents, fav, busy, onSend, onToggleFav, onRemove, onEdit, onNew,
 }: {
   saved: SavedSticker[]; recents: SavedSticker[]; fav: Set<string>; busy: boolean;
   onSend: (s: SavedSticker) => void;
   onToggleFav: (id: string) => void;
   onRemove: (id: string) => void;
+  onEdit: (s: SavedSticker) => void;
   onNew: () => void;
 }) {
   const favs = useMemo(() => saved.filter((s) => fav.has(s.id)), [saved, fav]);
@@ -273,17 +274,17 @@ function StickerLibraryPanel({
       </Section>
       {favs.length ? (
         <Section title="Favorit">
-          <Grid items={favs} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} />
+          <Grid items={favs} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} onEdit={onEdit} />
         </Section>
       ) : null}
       {rest.length ? (
         <Section title="Tersimpan">
-          <Grid items={rest} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} />
+          <Grid items={rest} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} onEdit={onEdit} />
         </Section>
       ) : null}
       {recents.length ? (
         <Section title="Terbaru">
-          <Grid items={recents} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} compact />
+          <Grid items={recents} fav={fav} busy={busy} onSend={onSend} onToggleFav={onToggleFav} onRemove={onRemove} onEdit={onEdit} compact />
         </Section>
       ) : null}
       {empty ? (
@@ -305,10 +306,11 @@ function Section({ title, children }: { title: string; children: React.ReactNode
 }
 
 function Grid({
-  items, fav, busy, onSend, onToggleFav, onRemove, compact,
+  items, fav, busy, onSend, onToggleFav, onRemove, onEdit, compact,
 }: {
   items: SavedSticker[]; fav: Set<string>; busy: boolean;
   onSend: (s: SavedSticker) => void; onToggleFav: (id: string) => void; onRemove: (id: string) => void;
+  onEdit: (s: SavedSticker) => void;
   compact?: boolean;
 }) {
   return (
@@ -331,13 +333,30 @@ function Grid({
                   className="absolute left-0.5 top-0.5 rounded-full bg-background/80 p-0.5 backdrop-blur">
                   <Star className={`h-3 w-3 ${isFav ? "fill-amber-400 text-amber-400" : "text-muted-foreground"}`} />
                 </button>
-                <button type="button" aria-label="Hapus"
-                  onClick={(e) => { e.stopPropagation(); onRemove(s.id); }}
-                  className="absolute right-0.5 top-0.5 rounded-full bg-background/80 p-0.5 opacity-0 backdrop-blur group-hover:opacity-100">
-                  <Trash2 className="h-3 w-3 text-rose-500" />
-                </button>
+                {/* Edit + Hapus selalu terlihat — Android tidak punya hover. */}
+                <div className="absolute right-0.5 top-0.5 flex gap-0.5">
+                  <button type="button" aria-label="Edit stiker"
+                    onClick={(e) => { e.stopPropagation(); onEdit(s); }}
+                    className="rounded-full bg-background/85 p-0.5 backdrop-blur transition hover:bg-background">
+                    <Pencil className="h-3 w-3 text-primary" />
+                  </button>
+                  <button type="button" aria-label="Hapus stiker"
+                    onClick={(e) => { e.stopPropagation(); onRemove(s.id); }}
+                    className="rounded-full bg-background/85 p-0.5 backdrop-blur transition hover:bg-background">
+                    <Trash2 className="h-3 w-3 text-rose-500" />
+                  </button>
+                </div>
               </>
-            ) : null}
+            ) : (
+              // Panel "Terbaru": Edit saja (stiker Terbaru bersifat riwayat,
+              // hapus tidak berarti banyak — tetap bisa dihapus lewat swipe
+              // manual di masa depan).
+              <button type="button" aria-label="Edit stiker"
+                onClick={(e) => { e.stopPropagation(); onEdit(s); }}
+                className="absolute right-0.5 top-0.5 rounded-full bg-background/85 p-0.5 backdrop-blur">
+                <Pencil className="h-3 w-3 text-primary" />
+              </button>
+            )}
           </div>
         );
       })}
