@@ -225,7 +225,7 @@ function CallRowItem({
         to="/chat/$conversationId"
         params={{ conversationId: row.conversation_id }}
         preload="intent"
-        className="flex flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-muted/60 active:bg-muted"
+        className="flex min-h-[56px] flex-1 items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors touch-manipulation hover:bg-muted/60 active:bg-muted"
         aria-label={`Buka chat dengan ${peerName}`}
       >
         <div className="grid h-11 w-11 shrink-0 place-items-center rounded-full bg-muted text-sm font-semibold uppercase">
@@ -251,7 +251,7 @@ function CallRowItem({
         disabled={isCalling}
         aria-busy={isCalling}
         onClick={() => void onStartCall(row)}
-        className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors ${
+        className={`grid h-11 w-11 shrink-0 place-items-center rounded-full transition-colors touch-manipulation ${
           isCalling
             ? "cursor-not-allowed opacity-60"
             : "hover:bg-muted/60 active:bg-muted"
