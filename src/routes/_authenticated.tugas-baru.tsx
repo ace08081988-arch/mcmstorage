@@ -547,6 +547,25 @@ function TugasBaruForm() {
     clearDraft();
   }
 
+  async function copyTaskUrl() {
+    const t = token.trim();
+    if (!/^[A-Za-z0-9_-]{8,48}$/.test(t)) {
+      toast.error("Token belum valid", { description: "Isi token 8–48 karakter (huruf, angka, - atau _) terlebih dahulu." });
+      return;
+    }
+    try {
+      const url = publicTaskUrl(t);
+      const res = await copyText(url);
+      if (res.ok) {
+        toast.success("URL tugas disalin", { description: url });
+      } else {
+        toast.error("Gagal menyalin URL", { description: "Izinkan akses clipboard lalu coba lagi." });
+      }
+    } catch (e) {
+      toast.error("Token tidak bisa dibuat URL");
+    }
+  }
+
   function clearForm() {
     if (!window.confirm("Bersihkan formulir? Draft yang tersimpan akan dihapus.")) return;
     setTitle("");
@@ -696,9 +715,17 @@ function TugasBaruForm() {
               >
                 <RefreshCw className="h-3.5 w-3.5" /> Acak
               </button>
+              <button
+                type="button"
+                onClick={copyTaskUrl}
+                className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                title="Salin URL pegawai berdasarkan token ini"
+              >
+                <Copy className="h-3.5 w-3.5" /> Salin URL
+              </button>
             </div>
             <div className="mt-1 text-[11px] text-muted-foreground">
-              Token dipakai di URL pegawai. Isi sendiri untuk memudahkan dikenali, atau tekan Acak untuk mengganti.
+              Token dipakai di URL pegawai. Isi sendiri untuk memudahkan dikenali, atau tekan Acak untuk mengganti. Tombol Salin URL bisa dipakai kapan saja setelah token terisi.
             </div>
           </Field>
 

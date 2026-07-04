@@ -50,9 +50,10 @@ export async function uploadPrepPhoto(taskToken: string, itemId: string, blob: B
 }
 
 // Format token share: base64url 24 byte ≈ 32 char ([A-Za-z0-9_-]).
-// Validasi defensif sebelum membentuk URL agar tidak mengarahkan pegawai
-// ke halaman gagal saat token kosong/rusak.
-const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{16,128}$/;
+// Form pembuatan tugas memperbolehkan 8–48 karakter agar owner bisa
+// memakai token yang mudah dikenali; URL publik harus sinkron dengan
+// batasan tersebut agar tombol salin link tidak menolak token valid.
+const SHARE_TOKEN_RE = /^[A-Za-z0-9_-]{8,128}$/;
 
 export function isValidShareToken(token: unknown): token is string {
   return typeof token === "string" && SHARE_TOKEN_RE.test(token);
