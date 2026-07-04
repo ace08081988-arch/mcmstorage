@@ -1279,6 +1279,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         <div
           role="status"
           aria-live="polite"
+          aria-atomic="true"
+          aria-label="Petunjuk tool aktif"
           key={tool}
           className="mb-2 flex items-center gap-2 rounded-md border border-primary/30 bg-primary/5 px-2.5 py-1.5 text-[11px]"
         >
@@ -1291,7 +1293,11 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         </div>
 
         {/* Tools bar */}
-        <div className="flex flex-wrap items-center gap-1">
+        <div
+          role="toolbar"
+          aria-label="Toolbar editor foto"
+          className="flex flex-wrap items-center gap-1"
+        >
           <ToolBtn active={tool === "select"} onClick={() => setTool("select")} icon={<Pencil className="h-4 w-4 rotate-180" />} label="Pilih" hint="Ketuk objek untuk memilih, seret untuk memindahkan" />
           <ToolBtn active={tool === "draw"} onClick={() => setTool("draw")} icon={<Pencil className="h-4 w-4" />} label="Coret" hint="Seret jari di kanvas untuk menggambar bebas" />
           <ToolBtn active={tool === "text"} onClick={() => setTool("text")} icon={<Type className="h-4 w-4" />} label="Teks" hint="Ketuk kanvas atau tombol Tambah teks untuk menulis" />
@@ -1305,16 +1311,16 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
             title="Panduan singkat tiap tool"
             aria-label="Panduan singkat tiap tool"
             aria-expanded={helpOpen}
-            className={`inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background transition hover:bg-muted ${helpOpen ? "border-primary bg-primary/10 text-primary" : ""}`}
+            className={`inline-flex h-8 w-8 items-center justify-center rounded-md border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${helpOpen ? "border-primary bg-primary/10 text-primary" : ""}`}
           >
             <HelpCircle className="h-4 w-4" />
           </button>
           {selected && (
             <div className="ml-auto flex items-center gap-1">
-              <button onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><MoveDown className="h-4 w-4" /></button>
-              <button onClick={() => moveOrder(1)} title="Naikkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><MoveUp className="h-4 w-4" /></button>
-              <button onClick={duplicate} title="Duplikat" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted"><CopyIcon className="h-4 w-4" /></button>
-              <button onClick={removeSelected} title="Hapus" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background text-destructive transition hover:bg-muted"><Trash2 className="h-4 w-4" /></button>
+              <button type="button" onClick={() => moveOrder(-1)} title="Turunkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><MoveDown className="h-4 w-4" /></button>
+              <button type="button" onClick={() => moveOrder(1)} title="Naikkan lapisan" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><MoveUp className="h-4 w-4" /></button>
+              <button type="button" onClick={duplicate} title="Duplikat" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><CopyIcon className="h-4 w-4" /></button>
+              <button type="button" onClick={removeSelected} title="Hapus" className="inline-flex h-8 w-8 items-center justify-center rounded border bg-background text-destructive transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"><Trash2 className="h-4 w-4" /></button>
             </div>
           )}
         </div>
@@ -1463,10 +1469,12 @@ function ToolBtn({ active, onClick, icon, label, hint }: { active: boolean; onCl
   const aria = hint ? `${label} — ${hint}` : label;
   return (
     <button
+      type="button"
       onClick={onClick}
       title={hint ? `${label}: ${hint}` : label}
       aria-label={aria}
-      className={`inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted ${active ? "border-primary bg-primary/10" : ""}`}
+      aria-pressed={active}
+      className={`inline-flex h-8 min-w-11 items-center gap-1 rounded-md border bg-background px-2 text-[11px] transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${active ? "border-primary bg-primary/10" : ""}`}
     >
       {icon}<span>{label}</span>
     </button>
