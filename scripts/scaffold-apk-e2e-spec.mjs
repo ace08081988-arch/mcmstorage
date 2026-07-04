@@ -190,7 +190,65 @@ function insertProject(configText, name, projectBlock) {
   }
   const insertAt = closeIdx + "    },\n".length;
   const next = configText.slice(0, insertAt) + projectBlock + configText.slice(insertAt);
-  return { text: next, inserted: true };
+  return { text: next, inserted: true, insertAt };
+}
+
+// Ubah offset karakter → nomor baris (1-based).
+function offsetToLine(text, offset) {
+  let line = 1;
+  for (let i = 0; i < offset && i < text.length; i++) {
+    if (text[i] === "\n") line++;
+  }
+  return line;
+}
+
+// Render diff mini untuk penyisipan project di playwright.config.ts.
+// Menampilkan 3 baris konteks sebelum & sesudah insertAt, dengan setiap
+// baris projectBlock diberi prefix "+".
+function renderConfigDiff(configText, insertAt, projectBlock, contextLines = 3) {
+  const before = configText.slice(0, insertAt).split("\n");
+  const after = configText.slice(insertAt).split("\n");
+  const startLine = Math.max(1, before.length - contextLines);
+  const contextBefore = before.slice(-contextLines - 1, -1); // exclude empty tail after trailing \n
+  const contextAfter = after.slice(0, contextLines);
+  const insertedLines = projectBlock.replace(/\n$/, "").split("\n");
+  const out = [];
+  out.push(`  @@ playwright.config.ts (sekitar baris ${before.length}) @@`);
+  contextBefore.forEach((l, i) =>
+    out.push(`  ${String(startLine + i).padStart(4)}    ${l}`),
+  );
+  insertedLines.forEach((l) => out.push(`       + ${l}`));
+  contextAfter.forEach((l, i) =>
+    out.push(`  ${String(before.length + i).padStart(4)}    ${l}`),
+  );
+  return out.join("\n");
+}
+
+// Ringkasan hasil guard-check per rule (✓/✗) untuk log dry-run.
+function renderGuardSummary(content) {
+  return GUARD_CHECKS.map(
+    (c) => `    ${c.test(content) ? "✓" : "✗"} ${c.id}`,
+  ).join("\n");
+}
+
+// Preview head+tail dari file spec supaya user tahu isi yang akan ditulis
+// tanpa harus print seluruh 200+ baris.
+function renderSpecPreview(content, headLines = 6, tailLines = 4) {
+  const lines = content.split("\n");
+  if (lines.length <= headLines + tailLines + 2) {
+    return lines.map((l, i) => `  ${String(i + 1).padStart(3)}  ${l}`).join("\n");
+  }
+  const head = lines.slice(0, headLines);
+  const tail = lines.slice(-tailLines);
+  const headStr = head
+    .map((l, i) => `  ${String(i + 1).padStart(3)}  ${l}`)
+    .join("\n");
+  const tailStr = tail
+    .map((l, i) =>
+      `  ${String(lines.length - tailLines + i + 1).padStart(3)}  ${l}`,
+    )
+    .join("\n");
+  return `${headStr}\n       …  (${lines.length - headLines - tailLines} baris tengah dilewati)\n${tailStr}`;
 }
 
 async function main() {
