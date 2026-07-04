@@ -274,6 +274,8 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     if (prevToolRef.current !== tool) {
       editorFeedback.toolSwitch();
       prevToolRef.current = tool;
+      // Strip hint muncul lagi untuk tool yang baru dipilih.
+      setHintClosedForTool((closed) => (closed === tool ? closed : null));
       if (shouldShowGuide(tool)) {
         setGuideTool(tool);
       }
