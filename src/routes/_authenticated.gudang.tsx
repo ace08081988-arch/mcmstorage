@@ -112,7 +112,7 @@ export { BOTOL_PER_KARTON, fmtBase, fmtItemPrice, fmtItemQty, fmtQtyDual, rupiah
 import { computeBeliDerived } from "@/lib/beli-derived";
 import { computeBeliWarnings } from "@/lib/beli-warnings";
 import { beliResetKey } from "@/lib/beli-reset-key";
-import { humanBaseUnit } from "@/lib/unit-label";
+import { humanBaseUnit, isSameUnitLabel } from "@/lib/unit-label";
 import { SmartWeightInput } from "@/components/SmartWeightInput";
 import { KartonRumusPopover } from "@/components/KartonRumusPopover";
 import { KemasanRumusPopover } from "@/components/KemasanRumusPopover";
