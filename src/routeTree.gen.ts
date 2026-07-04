@@ -91,6 +91,7 @@ import { Route as AuthenticatedDevPressAuditDemoRouteImport } from './routes/_au
 import { Route as AuthenticatedDevPressAuditCodesRouteImport } from './routes/_authenticated.dev.press-audit-codes'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
+import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
 import { Route as ApiPublicHooksLogPortalErrorRouteImport } from './routes/api/public/hooks/log-portal-error'
@@ -545,6 +546,12 @@ const AuthenticatedAdminWorkerPortalRoute =
     path: '/admin/worker-portal',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminPortalErrorLogRoute =
+  AuthenticatedAdminPortalErrorLogRouteImport.update({
+    id: '/admin/portal-error-log',
+    path: '/admin/portal-error-log',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
     id: '/lovable/email/queue/process',
@@ -637,6 +644,7 @@ export interface FileRoutesByFullPath {
   '/download/$variant': typeof DownloadVariantRoute
   '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
+  '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
@@ -725,6 +733,7 @@ export interface FileRoutesByTo {
   '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
   '/': typeof AuthenticatedIndexRoute
+  '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
@@ -816,6 +825,7 @@ export interface FileRoutesById {
   '/i/$code': typeof ICodeRoute
   '/t/$token': typeof TTokenRoute
   '/_authenticated/': typeof AuthenticatedIndexRoute
+  '/_authenticated/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/_authenticated/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
@@ -907,6 +917,7 @@ export interface FileRouteTypes {
     | '/download/$variant'
     | '/i/$code'
     | '/t/$token'
+    | '/admin/portal-error-log'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/dev/press-audit-codes'
@@ -995,6 +1006,7 @@ export interface FileRouteTypes {
     | '/i/$code'
     | '/t/$token'
     | '/'
+    | '/admin/portal-error-log'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/dev/press-audit-codes'
@@ -1085,6 +1097,7 @@ export interface FileRouteTypes {
     | '/i/$code'
     | '/t/$token'
     | '/_authenticated/'
+    | '/_authenticated/admin/portal-error-log'
     | '/_authenticated/admin/worker-portal'
     | '/_authenticated/chat/$conversationId'
     | '/_authenticated/dev/press-audit-codes'
@@ -1735,6 +1748,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkerPortalRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/portal-error-log': {
+      id: '/_authenticated/admin/portal-error-log'
+      path: '/admin/portal-error-log'
+      fullPath: '/admin/portal-error-log'
+      preLoaderRoute: typeof AuthenticatedAdminPortalErrorLogRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
       path: '/lovable/email/queue/process'
@@ -1873,6 +1893,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedTugasBaruRoute: typeof AuthenticatedTugasBaruRoute
   AuthenticatedUndangRoute: typeof AuthenticatedUndangRoute
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
+  AuthenticatedAdminPortalErrorLogRoute: typeof AuthenticatedAdminPortalErrorLogRoute
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
   AuthenticatedDevPressAuditCodesRoute: typeof AuthenticatedDevPressAuditCodesRoute
   AuthenticatedDevPressAuditDemoRoute: typeof AuthenticatedDevPressAuditDemoRoute
@@ -1927,6 +1948,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedTugasBaruRoute: AuthenticatedTugasBaruRoute,
   AuthenticatedUndangRoute: AuthenticatedUndangRoute,
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
+  AuthenticatedAdminPortalErrorLogRoute: AuthenticatedAdminPortalErrorLogRoute,
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
   AuthenticatedDevPressAuditCodesRoute: AuthenticatedDevPressAuditCodesRoute,
   AuthenticatedDevPressAuditDemoRoute: AuthenticatedDevPressAuditDemoRoute,
