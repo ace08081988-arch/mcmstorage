@@ -1551,13 +1551,18 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
               <button
                 type="button"
                 onClick={() => {
-                  setVideoPosCustom(null);
-                  setVideoPos("center");
-                  setVideoFit("cover");
-                  toast.success("Crop/Fit dan object-position kembali ke default");
+                  // Reset Crop/Fit + posisi untuk kedua kamera, tidak hanya
+                  // kamera aktif, supaya swap kamera tetap terjaga default.
+                  setVideoPosCustomFront(null);
+                  setVideoPosCustomBack(null);
+                  setVideoPosFront("center");
+                  setVideoPosBack("center");
+                  setVideoFitFront("cover");
+                  setVideoFitBack("cover");
+                  toast.success("Crop/Fit dan posisi kembali ke default (front & back)");
                 }}
-                aria-label="Reset Crop/Fit dan posisi crop ke default"
-                title="Reset Crop/Fit dan posisi crop ke default"
+                aria-label="Reset Crop/Fit dan posisi crop ke default untuk kamera depan dan belakang"
+                title="Reset Crop/Fit dan posisi crop ke default untuk kamera depan dan belakang"
                 data-testid="call-pos-reset"
                 className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
               >
