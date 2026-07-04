@@ -19,8 +19,19 @@ export function useAdminStatus() {
       setUserId(data.user?.id ?? null);
       setReady(true);
     });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id ?? null);
+    // Jangan reset userId hanya karena event auth mengirim session sementara
+    // `null` (kondisi umum saat TOKEN_REFRESHED / INITIAL_SESSION / reconnect
+    // WebView di Android). Reset hanya pada SIGNED_OUT/USER_DELETED — jika
+    // dilakukan pada tiap event, komponen yang bergantung `isAdmin` (mis.
+    // halaman /tugas-baru) sempat swap ke layar "Akses ditolak" dan
+    // unmount, sehingga input yang sedang diketik user hilang.
+    const { data: sub } = supabase.auth.onAuthStateChange((event, session) => {
+      const nextId = session?.user?.id ?? null;
+      if (event === "SIGNED_OUT" || event === "USER_DELETED") {
+        setUserId(null);
+      } else if (nextId) {
+        setUserId((prev) => (prev === nextId ? prev : nextId));
+      }
       setReady(true);
     });
     return () => {
