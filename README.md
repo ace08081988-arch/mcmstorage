@@ -176,4 +176,28 @@ node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode terminal
 node scripts/scaffold-apk-e2e-spec.mjs --name <flow-name> --mode full
 ```
 
+### Troubleshooting validasi (`bun run e2e:apk:validate`)
+
+Validator gagal umumnya karena project block di `playwright.config.ts` tidak cocak dengan isi spec. Berikut penyebab paling sering dan cara memperbaikinya.
+
+| Pesan error / gejala | Penyebab | Cara perbaiki |
+|---|---|---|
+| `project "...-e2e" tidak ditemukan di playwright.config.ts` | Spec ada tapi project block belum ditambahkan, atau nama project tidak cocak (harus `<flow>-e2e`). | Tambahkan project block di `playwright.config.ts`, atau jalankan `bun run e2e:apk:regen:apply` untuk sinkron ulang. |
+| `kolom "// Skenario :" hilang` / `kolom "// Guards :" kosong` | Header project block tidak memuat keempat kolom wajib: `Skenario`, `Harness`, `Tujuan`, `Guards`. | Lengkapi komentar header di atas `name:` project block; contoh format ada di template. |
+| `kolom "// Guards :" masih memuat placeholder TODO` | Header baru dibuat scaffold dan belum diisi. | Ganti teks `TODO — ...` / `TODO(scaffold)` dengan deskripsi riil. |
+| `spec form-only ... Guards harus eksplisit menyebut "tidak memakai apk-stub / terminalGuard"` | Spec tidak memanggil `installApkStub`, tapi kolom `Guards` tidak mencantumkan penanda `form-only`. | Tambahkan kalimat seperti `// spec form murni — tidak memakai apk-stub / terminalGuard` di kolom `Guards`. |
+| `spec form-only tidak boleh memuat "(mode: terminal)"` | Spec form diberi tag mode terminal/full padahal tidak memakai stub. | Hapus `(mode: terminal)` / `(mode: full)` dari kolom `Guards` form-only. |
+| `Guards tidak memuat penanda "(mode: terminal)" / "(mode: full)"` | Spec memakai `installApkStub` tapi `Guards` tidak mencantumkan tag mode. | Tambahkan `(mode: terminal)` bila hanya `installApkStub`, atau `(mode: full)` bila juga ada `installServerFnPassthroughGuard`. |
+| `Guards menandai "(mode: terminal)" tapi spec sebenarnya "full"` | Tag mode di `Guards` tidak sesuai dengan setup stub di spec. | Perbaiki tag mode, atau ubah spec: tambah/hapus `installServerFnPassthroughGuard` sesuai flow. |
+| `Guards tidak memuat penanda primeInitial/assertPrimed/waitForServed/assertQuiescent/terminalGuard()` | Checklist dasar stub belum lengkap. | Tambahkan item yang hilang ke kolom `Guards` (hanya penanda teks, tidak harus kode runnable). |
+| `mode full: Guards WAJIB memuat "✓ passthrough.assertNoAdditionalRequests"` | Spec `full` memakai `installServerFnPassthroughGuard` tapi `Guards` tidak mencantumkan assert tersebut. | Tambahkan `✓ passthrough.assertNoAdditionalRequests` di kolom `Guards`. |
+| `mode terminal: Guards TIDAK boleh memuat "passthrough.assertNoAdditionalRequests"` | Spec terminal tidak memakai passthrough guard, tapi kolom `Guards` mencantumkannya. | Hapus `passthrough.assertNoAdditionalRequests` dari `Guards`. |
+| `README.md drift: tabel pemetaan APK sudah tidak sinkron` (dari `e2e:apk:table:check`) | Tabel di README beda dengan hasil generator. | Jalankan `bun run e2e:apk:table` untuk regenerate tabel. |
+
+**Cara debug cepat:**
+
+1. Lihat mode aktual spec: `grep -E "installApkStub|installServerFnPassthroughGuard" tests/e2e/apk-<flow>.spec.ts`.
+2. Lihat header project block: `grep -n -A8 "name: \"apk-<flow>-e2e\"" playwright.config.ts`.
+3. Setelah mengubah spec atau header, jalankan `bun run e2e:apk:validate` lagi, lalu `bun run e2e:apk:table` bila README perlu diperbarui.
+
 Rincian teknis helper stub dan pola anti-pattern ada di `tests/e2e/_helpers/README.md` dan di header `tests/e2e/_helpers/apk-spec.template.ts`.
