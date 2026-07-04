@@ -1,3 +1,4 @@
+// README scenario: README.md#apk-scenario-availability-refresh
 import { test, expect } from "@playwright/test";
 import { installApkStub, makeRelease } from "./_apk-availability-stub";
 

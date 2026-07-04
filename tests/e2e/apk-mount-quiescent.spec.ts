@@ -1,3 +1,4 @@
+// README scenario: README.md#apk-scenario-mount-quiescent
 import { test, expect } from "@playwright/test";
 import { installApkStub } from "./_apk-availability-stub";
 

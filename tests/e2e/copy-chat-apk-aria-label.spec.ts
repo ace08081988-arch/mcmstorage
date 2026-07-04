@@ -1,3 +1,4 @@
+// README scenario: README.md#apk-scenario-copy-chat-apk-aria-label
 import { test, expect } from "@playwright/test";
 import { installApkStub, makeRelease } from "./_apk-availability-stub";
 
