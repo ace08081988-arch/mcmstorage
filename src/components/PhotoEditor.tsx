@@ -1021,7 +1021,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     if (text) {
       const l: Layer = {
         id: uid(), kind: "text", x: textPrompt.x, y: textPrompt.y,
-        rotation: 0, scale: 1, color, text, size: textSize, bold: true,
+        rotation: 0, scale: 1, color, opacity, text, size: textSize, bold: true,
       };
       pushHistory({ ...state, layers: [...state.layers, l] });
       setSelectedId(l.id);
