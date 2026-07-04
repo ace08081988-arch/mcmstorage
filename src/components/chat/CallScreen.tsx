@@ -1030,7 +1030,7 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   // memindah elemen ke node baru sebelum React sempat mem-flush prop `style`.
   useEffect(() => {
     if (kind !== "video") return;
-    const pos = videoStyle.objectPosition ?? "50% 50%";
+    const pos = String(videoStyle.objectPosition ?? "50% 50%");
     for (const el of [localVideoRef.current, remoteVideoRef.current]) {
       if (!el) continue;
       el.style.objectFit = videoFit;
