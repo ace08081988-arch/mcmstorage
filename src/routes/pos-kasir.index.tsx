@@ -7,6 +7,7 @@ import {
   type PosKasirProduk,
   type PosKasirTransaksi,
 } from "@/lib/pos-kasir";
+import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
 
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
@@ -29,6 +30,66 @@ function PosKasirPage() {
   const [riwayat, setRiwayat] = useState<PosKasirTransaksi[]>(() => getPosKasirRiwayat());
   const [dariTgl, setDariTgl] = useState<string>("");
   const [sampaiTgl, setSampaiTgl] = useState<string>("");
+  const [waNomor, setWaNomor] = useState<string>("");
+  const [waLokasi, setWaLokasi] = useState<string>("");
+
+  const waNomorNorm = useMemo(() => normalizeWaNumber(waNomor, "ID"), [waNomor]);
+  const waNomorDisplay = useMemo(
+    () => (waNomorNorm ? formatWaDisplay(waNomorNorm, "ID") : ""),
+    [waNomorNorm],
+  );
+  const waLokasiTrim = waLokasi.trim();
+  const waLokasiValid = useMemo(() => {
+    if (!waLokasiTrim) return false;
+    if (waLokasiTrim.length > 500) return false;
+    try {
+      const u = new URL(waLokasiTrim);
+      return u.protocol === "http:" || u.protocol === "https:";
+    } catch {
+      return false;
+    }
+  }, [waLokasiTrim]);
+  const waNomorError = waNomor.trim() === ""
+    ? "Nomor WA wajib diisi"
+    : !waNomorNorm
+      ? "Nomor tidak valid (harus 8–15 digit, contoh: 0812… / 62812…)"
+      : "";
+  const waLokasiError = waLokasiTrim === ""
+    ? "Lokasi (URL) wajib diisi"
+    : !waLokasiValid
+      ? "Lokasi harus berupa URL http(s):// yang sah (mis. link Google Maps)"
+      : "";
+  const waReady = !!waNomorNorm && waLokasiValid;
+  const waDisabledReason = !waNomorNorm
+    ? waNomorError
+    : !waLokasiValid
+      ? waLokasiError
+      : "";
+
+  const buildWaUrl = (t: PosKasirTransaksi): string | null => {
+    if (!waNomorNorm || !waLokasiValid) return null;
+    const lines = [
+      "🧾 *Struk POS Kasir*",
+      `${t.produkEmoji} ${t.produkNama}`,
+      `Berat: ${t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg`,
+      `Harga: ${rupiah(t.hargaPerKg)}/kg`,
+      `Total: *${rupiah(t.total)}*`,
+      `Waktu: ${new Date(t.waktu).toLocaleString("id-ID")}`,
+      "",
+      `📍 Lokasi: ${waLokasiTrim}`,
+    ];
+    return `https://wa.me/${waNomorNorm}?text=${encodeURIComponent(lines.join("\n"))}`;
+  };
+
+  const kirimWa = (t: PosKasirTransaksi) => {
+    const url = buildWaUrl(t);
+    if (!url) {
+      setToast(waDisabledReason || "Lengkapi nomor & lokasi WA");
+      setTimeout(() => setToast(null), 2500);
+      return;
+    }
+    window.open(url, "_blank", "noopener,noreferrer");
+  };
 
   useEffect(() => {
     setPosKasirRiwayat(riwayat);
