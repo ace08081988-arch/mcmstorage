@@ -91,7 +91,7 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
       </div>
 
       {open && (
-        <div className="mt-3 grid grid-cols-1 gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-[1fr_1fr_auto]">
+        <div className="mt-3 grid grid-cols-1 gap-2 rounded-md border bg-muted/30 p-2 sm:grid-cols-[1fr_1fr_auto] sm:grid-rows-2">
           <input
             value={name} onChange={(e) => setName(e.target.value)} placeholder="Nama pegawai"
             className="h-9 rounded-md border bg-background px-2 text-sm"
@@ -102,8 +102,13 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
           />
           <button
             onClick={onAdd} disabled={busy}
-            className="h-9 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50"
+            className="h-9 rounded-md bg-primary px-3 text-xs font-semibold text-primary-foreground disabled:opacity-50 sm:row-span-2"
           >Simpan</button>
+          <input
+            value={pinChatMcm} onChange={(e) => setPinChatMcm(e.target.value)} placeholder="PIN chat MCM (opsional)"
+            inputMode="text" autoCapitalize="characters" maxLength={10}
+            className="col-span-1 sm:col-span-2 h-9 rounded-md border bg-background px-2 text-sm font-mono tracking-widest"
+          />
         </div>
       )}
 
