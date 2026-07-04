@@ -635,10 +635,16 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
   useEffect(() => {
     if (kind !== "video") return;
     const v = localVideoRef.current;
-    if (v) v.style.objectFit = videoFit;
+    if (v) {
+      v.style.objectFit = videoFit;
+      v.style.objectPosition = videoFit === "cover" ? videoPosCss : "50% 50%";
+    }
     const rv = remoteVideoRef.current;
-    if (rv) rv.style.objectFit = videoFit;
-  }, [videoFit, kind, cameraSwapNonce, remoteReady]);
+    if (rv) {
+      rv.style.objectFit = videoFit;
+      rv.style.objectPosition = videoFit === "cover" ? videoPosCss : "50% 50%";
+    }
+  }, [videoFit, videoPosCss, kind, cameraSwapNonce, remoteReady]);
 
   // Tukar kamera depan/belakang tanpa menutup panggilan: buka stream baru
   // dengan facingMode target, ganti track pada sender via `replaceTrack`,
