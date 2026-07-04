@@ -511,11 +511,13 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     }
     if (tool === "rect") {
       drawingRef.current = { id: uid(), kind: "rect", x: p.x, y: p.y, w: 0, h: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      lastPointRef.current = p; // used to detect tap-vs-drag on release
       scheduleRedraw();
       return;
     }
     if (tool === "circle") {
       drawingRef.current = { id: uid(), kind: "circle", x: p.x, y: p.y, r: 0, rotation: 0, scale: 1, color, thickness, fill: false };
+      lastPointRef.current = p;
       scheduleRedraw();
       return;
     }
@@ -594,17 +596,39 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
         const x = Math.min(final.x, final.x + final.w);
         const y = Math.min(final.y, final.y + final.h);
         final = { ...final, x, y, w: Math.abs(final.w), h: Math.abs(final.h) };
-        // skip zero-size shapes
-        if (final.w < 2 && final.h < 2) { drawingRef.current = null; scheduleRedraw(); return; }
+        // Tap-to-place fallback: user tapped without dragging → drop a
+        // sensible default-sized rectangle at the tap so the tool doesn't
+        // feel broken. 96px matches typical annotation size.
+        if (final.w < 4 && final.h < 4) {
+          const size = 96;
+          final = { ...final, x: final.x - size / 2, y: final.y - size / 2, w: size, h: size };
+        }
       } else if (final.kind === "circle") {
-        if (final.r < 2) { drawingRef.current = null; scheduleRedraw(); return; }
+        if (final.r < 4) final = { ...final, r: 48 };
       } else if (final.kind === "stroke") {
-        if (final.points.length < 2) { drawingRef.current = null; scheduleRedraw(); return; }
+        // Single-tap fallback: render a small dot so the pen tool always
+        // leaves a mark, then the user knows it worked.
+        if (final.points.length < 2) {
+          const p = final.points[0];
+          final = { ...final, points: [p, { x: p.x + 0.5, y: p.y + 0.5 }] };
+        }
       }
       pushHistory({ ...state, layers: [...state.layers, final] });
       setSelectedId(final.id);
       drawingRef.current = null;
+      lastPointRef.current = null;
     }
+  }
+
+  // Android/webview fires pointercancel when the OS intercepts the gesture
+  // (scroll, palm rejection, multi-finger, keyboard opening). Without this,
+  // dragLiveRef / drawingRef stay set forever and the editor feels frozen.
+  function onPointerCancel() {
+    dragLiveRef.current = null;
+    drawingRef.current = null;
+    commitBaselineRef.current = null;
+    lastPointRef.current = null;
+    scheduleRedraw();
   }
 
   function patchSelected(patch: Partial<Layer>) {
