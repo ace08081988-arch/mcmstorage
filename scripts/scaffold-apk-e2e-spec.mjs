@@ -239,14 +239,23 @@ function applyFullGuardMode(body) {
   return withTail;
 }
 
-function buildProjectBlock(name) {
+function buildProjectBlock(name, mode = "terminal") {
   // Nama project mengikuti konvensi `<flow>-e2e` (lihat project APK lain).
   const projectName = `${name}-e2e`;
   // Escape titik untuk regex `testMatch`.
   const testMatch = `/${name.replace(/-/g, "-")}\\.spec\\.ts/`;
+  const guardsLine =
+    mode === "full"
+      ? `✓ terminalGuard()  ✓ passthrough.assertNoAdditionalRequests  (mode: full)`
+      : `✓ terminalGuard()  (mode: terminal)`;
   return `    {
-      // TODO(scaffold): jelaskan skenario spec "${name}" — apa yang
-      // diuji, harness mana yang dipakai, dan invariant guard-nya.
+      // Skenario : TODO — jelaskan aksi user yang diuji di spec "${name}".
+      // Harness  : TODO — path route/harness (mis. /lovable/visual/...).
+      // Tujuan   : TODO — invariant yang dibuktikan (regression / leak /
+      //            state transition apa).
+      // Guards   : ✓ primeInitial + assertPrimed  ✓ waitForServed
+      //            ✓ trackedClick / trackedAction  ✓ assertQuiescent
+      //            ${guardsLine}
       name: "${projectName}",
       testDir: "./tests/e2e",
       testMatch: ${testMatch},
@@ -384,7 +393,7 @@ async function main() {
     process.exit(1);
   }
 
-  const projectBlock = buildProjectBlock(name);
+  const projectBlock = buildProjectBlock(name, args.mode);
   const configText = await fs.readFile(CONFIG, "utf8");
   const { text: nextConfig, inserted, reason, insertAt } = insertProject(
     configText,
