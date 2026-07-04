@@ -301,9 +301,8 @@ export function useConversations() {
           const alias =
             (other && aliasByUser.get(other)) ||
             (p?.phone && aliasByPhone.get(p.phone.replace(/[^\d+]/g, ""))) ||
-            (p?.email && aliasByEmail.get(p.email.toLowerCase().trim())) ||
             null;
-          display = alias || p?.display_name || p?.phone || p?.email || "Kontak";
+          display = alias || p?.display_name || p?.phone || "Kontak";
         } else if (!display) {
           display = c.kind === "order" ? "Diskusi pesanan" : "Grup";
         }
