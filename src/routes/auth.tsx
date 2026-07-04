@@ -516,12 +516,48 @@ function AuthPage() {
               className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           )}
+          {mode === "signup" && (
+            <div className="space-y-1">
+              {TURNSTILE_SITE_KEY ? (
+                <TurnstileWidget
+                  siteKey={TURNSTILE_SITE_KEY}
+                  onToken={onTurnstileToken}
+                  onError={onTurnstileError}
+                />
+              ) : (
+                <p className="rounded-md border border-dashed bg-muted/40 p-2 text-center text-[11px] text-muted-foreground">
+                  Verifikasi CAPTCHA belum dikonfigurasi. Pendaftaran dinonaktifkan sementara.
+                </p>
+              )}
+              {turnstileError && (
+                <p className="text-center text-[11px] text-destructive">
+                  Verifikasi CAPTCHA bermasalah ({turnstileError}). Muat ulang halaman lalu coba lagi.
+                </p>
+              )}
+              {rateLimitedUntil > Date.now() && (
+                <p className="text-center text-[11px] text-destructive">
+                  Terlalu banyak percobaan. Coba lagi ~
+                  {Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000))} menit.
+                </p>
+              )}
+            </div>
+          )}
           <button
             type="submit"
-            disabled={loading}
+            disabled={
+              loading ||
+              (mode === "signup" &&
+                (!TURNSTILE_SITE_KEY || !turnstileToken || rateLimitedUntil > Date.now()))
+            }
             className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
-            {loading ? "Memproses…" : mode === "signup" ? "Daftar" : "Masuk"}
+            {loading
+              ? "Memproses…"
+              : mode === "signup"
+              ? turnstileToken || !TURNSTILE_SITE_KEY
+                ? "Daftar"
+                : "Selesaikan verifikasi CAPTCHA…"
+              : "Masuk"}
           </button>
           {mode === "login" && (
             <button
