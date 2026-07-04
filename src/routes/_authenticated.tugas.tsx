@@ -33,6 +33,17 @@ type TaskItem = { id: string; task_id: string; name_snapshot: string; category_s
 type Submission = { id: string; task_id: string; task_item_id: string; photo_path: string | null; location_url: string | null; note: string | null; submitted_at: string };
 type PinAlert = { id: string; task_id: string; share_token: string; failure_count: number; window_start: string; window_end: string; created_at: string };
 
+function deriveTaskStatus(
+  rawStatus: string,
+  p: { items: number; submitted: number },
+): "Menunggu" | "Dikerjakan" | "Selesai" {
+  const s = String(rawStatus ?? "").toLowerCase();
+  if (s === "done" || s === "selesai") return "Selesai";
+  if (p.items > 0 && p.submitted >= p.items) return "Selesai";
+  if (p.submitted > 0) return "Dikerjakan";
+  return "Menunggu";
+}
+
 function TugasPage() {
   const [uid, setUid] = useState<string | null>(null);
   const [mode, setMode] = useState<"self" | "staff">("self");
@@ -48,23 +59,42 @@ function TugasPage() {
   const [openAudit, setOpenAudit] = useState(false);
   const [pinAlerts, setPinAlerts] = useState<PinAlert[]>([]);
   const [sharePinFor, setSharePinFor] = useState<Task | null>(null);
+  const [progress, setProgress] = useState<Record<string, { items: number; submitted: number }>>({});
+  const [statusFilter, setStatusFilter] = useState<"all" | "waiting" | "progress" | "done">("all");
 
   useEffect(() => { supabase.auth.getUser().then(({ data }) => setUid(data.user?.id ?? null)); }, []);
 
   async function load() {
     if (!uid) return;
-    const [{ data: t }, { data: w }, { data: v }, { data: cv }] = await Promise.all([
+    const [{ data: t }, { data: w }, { data: v }, { data: cv }, { data: ti }, { data: sb }] = await Promise.all([
       supabase.from("prep_tasks").select("*").order("created_at", { ascending: false }),
       supabase.from("warehouse_items").select("id,name,category,image_path,stock_base,base_unit,package_type,package_size").order("name"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase.from as any)("warehouse_item_variants").select("*").order("position"),
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (supabase.from as any)("warehouse_category_variants").select("*").order("position"),
+      supabase.from("prep_task_items").select("id,task_id"),
+      supabase.from("prep_submissions").select("task_id,task_item_id"),
     ]);
     setTasks((t ?? []) as Task[]);
     setWarehouse((w ?? []) as WItem[]);
     setVariants((v ?? []) as Variant[]);
     setCatVariants((cv ?? []) as CatVariant[]);
+    const itemsByTask: Record<string, number> = {};
+    for (const row of (ti ?? []) as { task_id: string }[]) {
+      itemsByTask[row.task_id] = (itemsByTask[row.task_id] ?? 0) + 1;
+    }
+    const submittedByTask: Record<string, Set<string>> = {};
+    for (const row of (sb ?? []) as { task_id: string; task_item_id: string }[]) {
+      const set = submittedByTask[row.task_id] ?? new Set<string>();
+      set.add(row.task_item_id);
+      submittedByTask[row.task_id] = set;
+    }
+    const prog: Record<string, { items: number; submitted: number }> = {};
+    for (const id of new Set([...Object.keys(itemsByTask), ...Object.keys(submittedByTask)])) {
+      prog[id] = { items: itemsByTask[id] ?? 0, submitted: submittedByTask[id]?.size ?? 0 };
+    }
+    setProgress(prog);
   }
   useEffect(() => { void load(); }, [uid]);
 
@@ -94,6 +124,19 @@ function TugasPage() {
       )
       .subscribe();
     return () => { void supabase.removeChannel(ch); };
+  }, [uid]);
+
+  // Realtime: refresh progres saat pegawai mengirim/menghapus submission
+  // atau ketika daftar item tugas berubah.
+  useEffect(() => {
+    if (!uid) return;
+    const ch = supabase
+      .channel("prep_progress-tugas")
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => { void load(); })
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items" }, () => { void load(); })
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid]);
 
   async function loadPinAlerts() {
@@ -280,12 +323,71 @@ function TugasPage() {
         ⚖️ <b>Anda</b> yang menentukan <b>berat / jumlah</b> yang harus disiapkan per item (boleh desimal, mis. <b>0.90</b> gram untuk eceran kristal). Pegawai cukup mengirim <b>foto + lokasi</b>. Stok gudang induk otomatis berkurang sesuai angka yang Anda isi (mis. 100 − 0.90 = 99.10).
       </div>
 
+      {(() => {
+        const counts = { all: tasks.length, waiting: 0, progress: 0, done: 0 };
+        for (const t of tasks) {
+          const p = progress[t.id] ?? { items: 0, submitted: 0 };
+          const s = deriveTaskStatus(t.status, p);
+          if (s === "Selesai") counts.done++;
+          else if (s === "Dikerjakan") counts.progress++;
+          else counts.waiting++;
+        }
+        const chip = (key: typeof statusFilter, label: string, n: number) => (
+          <button
+            key={key}
+            onClick={() => setStatusFilter(key)}
+            className={`inline-flex h-7 items-center gap-1 rounded-full border px-3 text-[11px] font-semibold transition ${statusFilter === key ? "bg-primary text-primary-foreground border-primary" : "bg-card text-muted-foreground hover:bg-accent"}`}
+          >
+            {label} <span className="opacity-70">({n})</span>
+          </button>
+        );
+        return (
+          <div className="mb-3 flex flex-wrap gap-1.5">
+            {chip("all", "Semua", counts.all)}
+            {chip("waiting", "Menunggu", counts.waiting)}
+            {chip("progress", "Dikerjakan", counts.progress)}
+            {chip("done", "Selesai", counts.done)}
+          </div>
+        );
+      })()}
+
       <div className="space-y-2">
-        {tasks.map((t) => (
+        {tasks
+          .filter((t) => {
+            if (statusFilter === "all") return true;
+            const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0 });
+            return (
+              (statusFilter === "waiting" && s === "Menunggu") ||
+              (statusFilter === "progress" && s === "Dikerjakan") ||
+              (statusFilter === "done" && s === "Selesai")
+            );
+          })
+          .map((t) => {
+          const p = progress[t.id] ?? { items: 0, submitted: 0 };
+          const s = deriveTaskStatus(t.status, p);
+          const pct = p.items > 0 ? Math.min(100, Math.round((p.submitted / p.items) * 100)) : 0;
+          const badgeCls =
+            s === "Selesai" ? "bg-emerald-500/15 text-emerald-700 border-emerald-500/40 dark:text-emerald-400"
+            : s === "Dikerjakan" ? "bg-amber-500/15 text-amber-700 border-amber-500/40 dark:text-amber-400"
+            : "bg-muted text-muted-foreground border-border";
+          return (
           <div key={t.id} className="flex items-center gap-2 rounded-xl border bg-card p-3 shadow-sm">
             <div className="min-w-0 flex-1">
-              <div className="truncate text-sm font-semibold">{t.title}</div>
-              <div className="text-[11px] text-muted-foreground">Dibuat {new Date(t.created_at).toLocaleString("id-ID")} · Status {t.status}</div>
+              <div className="flex items-center gap-2">
+                <span className={`inline-flex h-5 shrink-0 items-center rounded-full border px-2 text-[10px] font-semibold ${badgeCls}`}>{s}</span>
+                <div className="truncate text-sm font-semibold">{t.title}</div>
+              </div>
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                Dibuat {new Date(t.created_at).toLocaleString("id-ID")} · {p.submitted}/{p.items} item
+              </div>
+              {p.items > 0 && (
+                <div className="mt-1 h-1 w-full overflow-hidden rounded-full bg-muted">
+                  <div
+                    className={`h-full rounded-full transition-all ${s === "Selesai" ? "bg-emerald-500" : s === "Dikerjakan" ? "bg-amber-500" : "bg-muted-foreground/40"}`}
+                    style={{ width: `${pct}%` }}
+                  />
+                </div>
+              )}
             </div>
             <button onClick={() => setOpenTask(t)} className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs">Buka</button>
             <button
@@ -304,8 +406,20 @@ function TugasPage() {
             </button>
             <button onClick={() => removeTask(t.id)} className="inline-flex h-8 w-8 items-center justify-center rounded-md border text-destructive" title="Hapus tugas"><Trash2 className="h-4 w-4" /></button>
           </div>
-        ))}
+          );
+        })}
         {tasks.length === 0 && <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Belum ada tugas. Klik "Buat tugas".</div>}
+        {tasks.length > 0 && tasks.filter((t) => {
+          if (statusFilter === "all") return true;
+          const s = deriveTaskStatus(t.status, progress[t.id] ?? { items: 0, submitted: 0 });
+          return (
+            (statusFilter === "waiting" && s === "Menunggu") ||
+            (statusFilter === "progress" && s === "Dikerjakan") ||
+            (statusFilter === "done" && s === "Selesai")
+          );
+        }).length === 0 && (
+          <div className="rounded-xl border bg-card p-6 text-center text-sm text-muted-foreground">Tidak ada tugas pada filter ini.</div>
+        )}
       </div>
 
       {openCreate && (
