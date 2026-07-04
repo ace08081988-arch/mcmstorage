@@ -572,6 +572,22 @@ function PosKasirPage() {
           </Link>
         </header>
 
+        <div className={`${modeRingkas ? "mb-2" : "mb-3"} rounded-lg border text-[11px] px-3 py-2 flex items-center justify-between gap-2 ${
+          gudangSynced
+            ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-200"
+            : "bg-amber-500/10 border-amber-500/30 text-amber-200"
+        }`}>
+          <span className="truncate">
+            {gudangSynced
+              ? "🔗 Tersinkron dengan Gudang · stok otomatis dari warehouse"
+              : "⚠ Mode demo · login untuk sinkron ke Gudang & catat penjualan"}
+          </span>
+          {gudangSynced ? (
+            <Link to="/gudang" className="shrink-0 underline">Kelola gudang →</Link>
+          ) : (
+            <Link to="/auth" className="shrink-0 underline">Masuk →</Link>
+          )}
+        </div>
 
         {/* Desktop header */}
         <header className="hidden md:flex mb-6 items-center justify-between">
