@@ -263,13 +263,23 @@ function TugasBaruPage() {
  * tidak menggeser layout.
  */
 function TugasBaruSkeleton() {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    // Alihkan fokus ke kontainer skeleton saat pertama muncul agar pembaca layar
+    // tidak terdampar di body/document sementara form asli belum siap.
+    ref.current?.focus();
+  }, []);
   return (
     <div
-      className="mx-auto max-w-2xl px-3 py-4 animate-fade-in"
+      ref={ref}
+      tabIndex={-1}
+      className="mx-auto max-w-2xl px-3 py-4 animate-fade-in focus:outline-none"
       role="status"
       aria-live="polite"
+      aria-atomic="true"
       aria-busy="true"
-      aria-label="Memuat form Buat Tugas Pegawai"
+      aria-labelledby="tugas-baru-skeleton-title"
+      aria-describedby="tugas-baru-skeleton-desc"
     >
       {/* Header: tombol kembali + judul */}
       <div className="mb-4 flex items-center gap-2">
@@ -318,7 +328,12 @@ function TugasBaruSkeleton() {
         </div>
       </div>
 
-      <span className="sr-only">Memeriksa izin akses…</span>
+      <span id="tugas-baru-skeleton-title" className="sr-only">
+        Memuat form Buat Tugas Pegawai
+      </span>
+      <span id="tugas-baru-skeleton-desc" className="sr-only">
+        Memeriksa izin akses…
+      </span>
     </div>
   );
 }
