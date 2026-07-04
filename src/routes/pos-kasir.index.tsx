@@ -8,6 +8,8 @@ import {
   type PosKasirTransaksi,
 } from "@/lib/pos-kasir";
 import { normalizeWaNumber, formatWaDisplay } from "@/lib/phone";
+import { jsPDF } from "jspdf";
+import autoTable from "jspdf-autotable";
 
 const rupiah = (n: number) =>
   new Intl.NumberFormat("id-ID", { style: "currency", currency: "IDR", maximumFractionDigits: 0 }).format(n || 0);
@@ -175,6 +177,77 @@ function PosKasirPage() {
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
     setToast(`✅ Diekspor ${riwayatFiltered.length} transaksi ke CSV`);
+    setTimeout(() => setToast(null), 2500);
+  };
+
+  const exportPDF = () => {
+    if (riwayatFiltered.length === 0) {
+      setToast("Tidak ada transaksi pada rentang tanggal terpilih");
+      setTimeout(() => setToast(null), 2500);
+      return;
+    }
+    const doc = new jsPDF({ unit: "pt", format: "a4" });
+    const now = new Date();
+    const stamp = now.toISOString().slice(0, 10);
+    const totalOmzetF = riwayatFiltered.reduce((s, t) => s + t.total, 0);
+    const totalKgF = riwayatFiltered.reduce((s, t) => s + t.beratKg, 0);
+    const rangeLabel =
+      dariTgl || sampaiTgl
+        ? `Periode: ${dariTgl || "awal"} s/d ${sampaiTgl || "sekarang"}`
+        : "Periode: seluruh riwayat";
+
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.text("Laporan Riwayat POS Kasir", 40, 40);
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.text(rangeLabel, 40, 58);
+    doc.text(`Dibuat: ${now.toLocaleString("id-ID")}`, 40, 72);
+    doc.text(
+      `Total transaksi: ${riwayatFiltered.length}  ·  Total berat: ${totalKgF.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg  ·  Omzet: ${rupiah(totalOmzetF)}`,
+      40,
+      86,
+    );
+
+    autoTable(doc, {
+      startY: 100,
+      head: [["Waktu", "Produk", "Berat (kg)", "Harga/kg", "Total", "Sisa Stok"]],
+      body: riwayatFiltered.map((t) => [
+        new Date(t.waktu).toLocaleString("id-ID"),
+        `${t.produkEmoji} ${t.produkNama}`,
+        t.beratKg.toLocaleString("id-ID", { maximumFractionDigits: 3 }),
+        rupiah(t.hargaPerKg),
+        rupiah(t.total),
+        `${t.sisaStokKg.toLocaleString("id-ID")} kg`,
+      ]),
+      styles: { fontSize: 9, cellPadding: 4 },
+      headStyles: { fillColor: [16, 185, 129], textColor: 255, fontStyle: "bold" },
+      alternateRowStyles: { fillColor: [245, 245, 245] },
+      columnStyles: {
+        2: { halign: "right" },
+        3: { halign: "right" },
+        4: { halign: "right" },
+        5: { halign: "right" },
+      },
+      margin: { left: 40, right: 40 },
+      didDrawPage: (data) => {
+        const pageCount = doc.getNumberOfPages();
+        const pageSize = doc.internal.pageSize;
+        const pageHeight = pageSize.getHeight();
+        doc.setFontSize(8);
+        doc.setTextColor(120);
+        doc.text(
+          `Halaman ${data.pageNumber} / ${pageCount}`,
+          pageSize.getWidth() - 40,
+          pageHeight - 20,
+          { align: "right" },
+        );
+        doc.setTextColor(0);
+      },
+    });
+
+    doc.save(`riwayat-pos-kasir-${stamp}.pdf`);
+    setToast(`✅ Diekspor ${riwayatFiltered.length} transaksi ke PDF`);
     setTimeout(() => setToast(null), 2500);
   };
 
@@ -575,6 +648,13 @@ function PosKasirPage() {
                 className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-emerald-700 text-white font-medium"
               >
                 ⬇ Ekspor CSV ({riwayatFiltered.length})
+              </button>
+              <button
+                onClick={exportPDF}
+                disabled={riwayatFiltered.length === 0}
+                className="text-xs px-3 py-1.5 rounded-lg bg-rose-600 hover:bg-rose-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-rose-700 text-white font-medium"
+              >
+                📄 Ekspor PDF ({riwayatFiltered.length})
               </button>
               {riwayat.length > 0 && (
                 <button
