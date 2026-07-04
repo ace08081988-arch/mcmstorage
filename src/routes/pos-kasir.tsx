@@ -168,21 +168,49 @@ function PosKasirPage() {
                   type="number"
                   step="0.001"
                   min="0"
+                  max={selected.stokKg}
                   value={beratStr}
                   onChange={(e) => setBeratStr(e.target.value)}
-                  className="mt-2 w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-3 text-lg font-mono focus:outline-none focus:border-emerald-400 focus:ring-2 focus:ring-emerald-400/30"
+                  className={`mt-2 w-full bg-slate-900 border rounded-lg px-4 py-3 text-lg font-mono focus:outline-none focus:ring-2 transition-colors ${
+                    berat > selected.stokKg
+                      ? "border-red-500 focus:border-red-500 focus:ring-red-500/30 text-red-300"
+                      : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
+                  }`}
                   placeholder="0.000"
                 />
+                {berat > selected.stokKg && (
+                  <div className="mt-3 flex items-start gap-2 rounded-lg bg-red-500/15 border border-red-500/40 p-3 text-sm text-red-200">
+                    <span className="shrink-0 text-red-400">⚠</span>
+                    <div>
+                      <p className="font-semibold">Berat melebihi stok</p>
+                      <p className="text-xs text-red-300/80 mt-0.5">
+                        Stok {selected.nama} tersedia {selected.stokKg.toLocaleString("id-ID")} kg.
+                      </p>
+                      <p className="text-xs text-red-300/80 mt-0.5">
+                        Kurangi berat agar tidak melebihi stok yang ada.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
                 <div className="mt-3 grid grid-cols-4 gap-2">
-                  {[0.25, 0.5, 1, 2].map((v) => (
-                    <button
-                      key={v}
-                      onClick={() => setBeratStr(String((berat + v).toFixed(3)))}
-                      className="py-2 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-sm font-medium"
-                    >
-                      +{v} kg
-                    </button>
-                  ))}
+                  {[0.25, 0.5, 1, 2].map((v) => {
+                    const wouldExceed = berat + v > selected.stokKg;
+                    return (
+                      <button
+                        key={v}
+                        onClick={() => setBeratStr(String((berat + v).toFixed(3)))}
+                        disabled={wouldExceed}
+                        className={`py-2 rounded-lg border text-sm font-medium transition-colors ${
+                          wouldExceed
+                            ? "bg-slate-800/50 border-slate-800 text-slate-600 cursor-not-allowed"
+                            : "bg-slate-800 hover:bg-slate-700 border-slate-700"
+                        }`}
+                      >
+                        +{v} kg
+                      </button>
+                    );
+                  })}
                 </div>
                 <button
                   onClick={() => setBeratStr("0")}
@@ -224,8 +252,11 @@ function PosKasirPage() {
               </div>
 
               {berat > 0 && !stokCukup && (
-                <div className="mt-3 p-2 rounded-lg bg-red-500/10 border border-red-500/30 text-xs text-red-300">
-                  ⚠ Stok tidak mencukupi ({selected.stokKg} kg tersedia)
+                <div className="mt-3 p-3 rounded-lg bg-red-500/15 border border-red-500/40 text-sm text-red-200">
+                  <p className="font-semibold">⚠ Stok tidak mencukupi</p>
+                  <p className="text-xs text-red-300/80 mt-0.5">
+                    Tersedia {selected.stokKg.toLocaleString("id-ID")} kg, butuh {berat.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg. Kurangi berat untuk melanjutkan pembayaran.
+                  </p>
                 </div>
               )}
 
