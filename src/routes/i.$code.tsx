@@ -9,6 +9,7 @@ import {
   formatInviteCode,
   normalizeInviteCode,
   resolveInviteCode,
+  validateInviteCode,
   type InviteProfile,
 } from "@/lib/invite";
 
