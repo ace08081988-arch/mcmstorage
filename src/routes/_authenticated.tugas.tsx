@@ -1777,7 +1777,7 @@ function TaskDetail({ task, onClose }: { task: Task; onClose: () => void }) {
         <CompleteTaskDialog
           busy={busy}
           onClose={() => setCompleteOpen(false)}
-          onConfirm={markDone}
+          onConfirm={(n) => { void markDone(n); }}
         />
       )}
       {sharePinOpen && (
