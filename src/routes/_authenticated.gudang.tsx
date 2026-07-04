@@ -633,6 +633,381 @@ function PiutangTab({
   );
 }
 
+/* ---------- Piutang: editable header, sale row, payment row ---------- */
+
+/** Konversi ISO timestamp → nilai untuk <input type="date"> (yyyy-mm-dd, local). */
+function toDateInputValue(iso: string): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return "";
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
+/** Kembalikan ISO timestamp baru dengan tanggal dari input (menjaga jam:menit:detik lama). */
+function withNewDate(originalIso: string, ymd: string): string {
+  const orig = new Date(originalIso);
+  const [y, m, d] = ymd.split("-").map((s) => Number(s));
+  if (!y || !m || !d) return originalIso;
+  const next = new Date(orig);
+  next.setFullYear(y, m - 1, d);
+  return next.toISOString();
+}
+
+function PiutangCustomerHeader({
+  customer, totalHutang, totalBayar, balance, status,
+  onLocalUpdateCustomer, onChanged,
+}: {
+  customer: Customer;
+  totalHutang: number;
+  totalBayar: number;
+  balance: number;
+  status: "hutang" | "lunas" | "kelebihan";
+  onLocalUpdateCustomer: (c: Customer) => void;
+  onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [name, setName] = useState(customer.name);
+  const [contact, setContact] = useState(customer.contact ?? "");
+  const [notes, setNotes] = useState(customer.notes ?? "");
+  const [busy, setBusy] = useState(false);
+
+  function cancel() {
+    setName(customer.name);
+    setContact(customer.contact ?? "");
+    setNotes(customer.notes ?? "");
+    setEditing(false);
+  }
+  async function save() {
+    const nm = name.trim();
+    if (!nm) { toast.error("Nama pelanggan wajib diisi"); return; }
+    setBusy(true);
+    const payload = {
+      name: nm.slice(0, 100),
+      contact: contact.trim() ? contact.trim().slice(0, 50) : null,
+      notes: notes.trim() ? notes.trim().slice(0, 200) : null,
+    };
+    const { data, error } = await supabase
+      .from("customers")
+      .update(payload)
+      .eq("id", customer.id)
+      .select()
+      .single();
+    setBusy(false);
+    if (error) { toast.error(friendlyError(error)); return; }
+    if (data) onLocalUpdateCustomer(data as Customer);
+    toast.success("Data pelanggan diperbarui");
+    setEditing(false);
+    onChanged();
+  }
+
+  if (editing) {
+    return (
+      <div className="space-y-1.5 rounded border border-primary/40 bg-primary/5 p-2">
+        <div className="text-[11px] font-semibold text-primary">Edit pelanggan</div>
+        <input className="w-full rounded border bg-background px-2 py-1 text-xs"
+          placeholder="Nama pelanggan *" value={name} maxLength={100}
+          onChange={(e) => setName(e.target.value)} />
+        <input className="w-full rounded border bg-background px-2 py-1 text-xs"
+          placeholder="No. MCM / kontak (opsional)" value={contact} maxLength={50}
+          onChange={(e) => setContact(e.target.value)} />
+        <input className="w-full rounded border bg-background px-2 py-1 text-xs"
+          placeholder="Catatan (opsional)" value={notes} maxLength={200}
+          onChange={(e) => setNotes(e.target.value)} />
+        <div className="flex gap-1.5">
+          <button type="button" disabled={busy} onClick={save}
+            className="rounded bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground disabled:opacity-50">
+            Simpan
+          </button>
+          <button type="button" disabled={busy} onClick={cancel}
+            className="rounded border px-2 py-1 text-[11px] hover:bg-accent">
+            Batal
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="flex items-center justify-between gap-2">
+      <div className="min-w-0">
+        <div className="flex items-center gap-1.5">
+          <div className="truncate text-sm font-semibold" title={customer.name}>{customer.name}</div>
+          <button type="button" onClick={() => setEditing(true)}
+            className="shrink-0 rounded border px-1.5 py-0.5 text-[10px] hover:bg-accent"
+            title="Edit info pelanggan">
+            ✎ Edit
+          </button>
+        </div>
+        <div className="text-[11px] text-muted-foreground">
+          Hutang {rupiah(totalHutang)} · Bayar {rupiah(totalBayar)}
+        </div>
+      </div>
+      <StatusBadge variant={status}>
+        {status === "hutang" ? `Sisa ${rupiah(balance)}`
+          : status === "kelebihan" ? `Kelebihan ${rupiah(-balance)}`
+          : "✓ Lunas"}
+      </StatusBadge>
+    </div>
+  );
+}
+
+function EditableSaleRow({
+  sale, item, onLocalUpdateSale, onLocalRemoveSale, onChanged,
+}: {
+  sale: Sale;
+  item: WItem | undefined;
+  onLocalUpdateSale: (s: Sale) => void;
+  onLocalRemoveSale: (id: string) => void;
+  onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [total, setTotal] = useState(String(Number(sale.total_revenue)));
+  const [note, setNote] = useState(sale.note ?? "");
+  const [date, setDate] = useState(toDateInputValue(sale.created_at));
+  const [busy, setBusy] = useState(false);
+
+  function cancel() {
+    setTotal(String(Number(sale.total_revenue)));
+    setNote(sale.note ?? "");
+    setDate(toDateInputValue(sale.created_at));
+    setEditing(false);
+  }
+
+  async function save() {
+    const parsed = Number(total);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      toast.error("Nominal transaksi harus lebih dari 0");
+      return;
+    }
+    setBusy(true);
+    // Catatan: hanya mengubah nominal, catatan & tanggal — bukan qty/harga
+    // per satuan — supaya stok gudang tidak ikut berubah tanpa reversal.
+    // Untuk koreksi qty/berat, hapus baris ini lalu catat ulang di tab Jual.
+    const patch: Partial<Sale> = {
+      total_revenue: parsed,
+      note: note.trim() ? note.trim().slice(0, 200) : null,
+      created_at: withNewDate(sale.created_at, date),
+    };
+    const { data, error } = await supabase
+      .from("sales")
+      .update(patch)
+      .eq("id", sale.id)
+      .select()
+      .single();
+    setBusy(false);
+    if (error) { toast.error(friendlyError(error)); return; }
+    if (data) onLocalUpdateSale(data as Sale);
+    toast.success("Transaksi diperbarui");
+    setEditing(false);
+    onChanged();
+  }
+
+  async function remove() {
+    if (!(await confirm({
+      title: "Hapus baris transaksi?",
+      description:
+        "Baris hutang ini akan dihapus permanen. Stok gudang otomatis dikembalikan seolah penjualan tidak pernah terjadi.",
+      confirmText: "Hapus",
+    }))) return;
+    setBusy(true);
+    onLocalRemoveSale(sale.id);
+    const { error } = await supabase.from("sales").delete().eq("id", sale.id);
+    setBusy(false);
+    if (error) { toast.error(friendlyError(error)); onChanged(); return; }
+    toast.success("Transaksi dihapus");
+    onChanged();
+  }
+
+  if (editing) {
+    return (
+      <li className="rounded border border-primary/40 bg-primary/5 p-2 text-xs">
+        <div className="mb-1 truncate text-[11px] font-semibold">
+          {item?.name || "(barang dihapus)"}
+        </div>
+        <div className="grid grid-cols-2 gap-1.5">
+          <label className="text-[10px] text-muted-foreground">
+            Nominal
+            <input type="number" step="1" min="0" value={total}
+              onChange={(e) => setTotal(e.target.value)}
+              className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs" />
+          </label>
+          <label className="text-[10px] text-muted-foreground">
+            Tanggal
+            <input type="date" value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs" />
+          </label>
+        </div>
+        <input type="text" placeholder="Catatan (opsional)" maxLength={200}
+          value={note} onChange={(e) => setNote(e.target.value)}
+          className="mt-1.5 w-full rounded border bg-background px-2 py-1 text-xs" />
+        <div className="mt-1.5 flex gap-1.5">
+          <button type="button" disabled={busy} onClick={save}
+            className="rounded bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground disabled:opacity-50">
+            Simpan
+          </button>
+          <button type="button" disabled={busy} onClick={cancel}
+            className="rounded border px-2 py-1 text-[11px] hover:bg-accent">
+            Batal
+          </button>
+          <button type="button" disabled={busy} onClick={remove}
+            className="ml-auto rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">
+            Hapus
+          </button>
+        </div>
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          Untuk mengubah <b>jumlah/berat</b>, hapus baris ini lalu catat ulang di tab Jual — stok gudang menyesuaikan otomatis.
+        </p>
+      </li>
+    );
+  }
+
+  return (
+    <li className="rounded border bg-background p-2 text-xs">
+      <div className="flex items-start justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate font-semibold" title={item?.name || "(barang dihapus)"}>
+            {item?.name || "(barang dihapus)"}
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            {new Date(sale.created_at).toLocaleDateString("id-ID")} · {fmtItemQty(Number(sale.qty_base), item)}
+          </div>
+          {sale.note && <div className="text-[11px] text-muted-foreground">{sale.note}</div>}
+        </div>
+        <div className="shrink-0 text-right">
+          <div className="text-[11px] font-semibold">{rupiah(Number(sale.total_revenue))}</div>
+          <button type="button" onClick={() => setEditing(true)}
+            className="mt-1 rounded border px-1.5 py-0.5 text-[10px] hover:bg-accent"
+            title="Edit baris transaksi">
+            ✎ Edit
+          </button>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function EditablePaymentRow({
+  payment, onLocalUpdatePayment, onLocalRemovePayment, onChanged,
+}: {
+  payment: CustomerPayment;
+  onLocalUpdatePayment: (p: CustomerPayment) => void;
+  onLocalRemovePayment: (id: string) => void;
+  onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [amount, setAmount] = useState(String(Number(payment.amount)));
+  const [note, setNote] = useState(payment.note ?? "");
+  const [date, setDate] = useState(toDateInputValue(payment.created_at));
+  const [busy, setBusy] = useState(false);
+
+  function cancel() {
+    setAmount(String(Number(payment.amount)));
+    setNote(payment.note ?? "");
+    setDate(toDateInputValue(payment.created_at));
+    setEditing(false);
+  }
+
+  async function save() {
+    const parsed = Number(amount);
+    if (!Number.isFinite(parsed) || parsed <= 0) {
+      toast.error("Nominal pembayaran harus lebih dari 0");
+      return;
+    }
+    setBusy(true);
+    const patch: Partial<CustomerPayment> = {
+      amount: parsed,
+      note: note.trim() ? note.trim().slice(0, 200) : null,
+      created_at: withNewDate(payment.created_at, date),
+    };
+    const { data, error } = await supabase
+      .from("customer_payments")
+      .update(patch)
+      .eq("id", payment.id)
+      .select()
+      .single();
+    setBusy(false);
+    if (error) { toast.error(friendlyError(error)); return; }
+    if (data) onLocalUpdatePayment(data as CustomerPayment);
+    toast.success("Pembayaran diperbarui");
+    setEditing(false);
+    onChanged();
+  }
+
+  async function remove() {
+    if (!(await confirm({
+      title: "Hapus pembayaran?",
+      description: "Catatan pembayaran ini akan dihapus permanen.",
+      confirmText: "Hapus",
+    }))) return;
+    onLocalRemovePayment(payment.id);
+    const { error } = await supabase.from("customer_payments").delete().eq("id", payment.id);
+    if (error) { toast.error(friendlyError(error)); onChanged(); return; }
+    toast.success("Pembayaran dihapus");
+    onChanged();
+  }
+
+  if (editing) {
+    return (
+      <li className="rounded border border-primary/40 bg-primary/5 p-2 text-xs">
+        <div className="mb-1 text-[11px] font-semibold text-primary">Edit pembayaran</div>
+        <div className="grid grid-cols-2 gap-1.5">
+          <label className="text-[10px] text-muted-foreground">
+            Nominal
+            <input type="number" step="1" min="0" value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs" />
+          </label>
+          <label className="text-[10px] text-muted-foreground">
+            Tanggal
+            <input type="date" value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="mt-0.5 w-full rounded border bg-background px-2 py-1 text-xs" />
+          </label>
+        </div>
+        <input type="text" placeholder="Catatan (opsional)" maxLength={200}
+          value={note} onChange={(e) => setNote(e.target.value)}
+          className="mt-1.5 w-full rounded border bg-background px-2 py-1 text-xs" />
+        <div className="mt-1.5 flex gap-1.5">
+          <button type="button" disabled={busy} onClick={save}
+            className="rounded bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground disabled:opacity-50">
+            Simpan
+          </button>
+          <button type="button" disabled={busy} onClick={cancel}
+            className="rounded border px-2 py-1 text-[11px] hover:bg-accent">
+            Batal
+          </button>
+          <button type="button" disabled={busy} onClick={remove}
+            className="ml-auto rounded border px-2 py-1 text-[11px] text-destructive hover:bg-destructive/10">
+            Hapus
+          </button>
+        </div>
+      </li>
+    );
+  }
+
+  return (
+    <li className="flex items-center justify-between gap-2 text-[11px]">
+      <span className="min-w-0 truncate">
+        {new Date(payment.created_at).toLocaleDateString("id-ID")} ·{" "}
+        <b className="text-emerald-600 dark:text-emerald-400">{rupiah(Number(payment.amount))}</b>
+        {payment.note && <span className="text-muted-foreground"> · {payment.note}</span>}
+      </span>
+      <div className="flex shrink-0 gap-1">
+        <button type="button" onClick={() => setEditing(true)}
+          className="rounded border px-1.5 py-0.5 text-[11px] hover:bg-accent">
+          Edit
+        </button>
+        <button type="button" onClick={remove}
+          className="rounded border px-1.5 py-0.5 text-[11px] text-destructive hover:bg-destructive/10">
+          Hapus
+        </button>
+      </div>
+    </li>
+  );
+}
+
 function CustomerPayForm({
   customerId, balance, uid, onChanged, onLocalPayment,
 }: {
