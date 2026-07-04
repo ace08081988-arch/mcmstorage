@@ -44,6 +44,9 @@ type Row = {
   status: "ready" | "sent";
   wa_target: string | null;
   sent_at: string | null;
+  sent_channel?: "wa" | "chat" | null;
+  sent_to?: string | null;
+  sent_summary?: string | null;
   created_at: string;
 };
 
@@ -270,8 +273,15 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
     const result = await shareToWhatsApp({ text, files });
     notifyShareResult(result);
     if (result.status === "shared" || result.status === "fallback") {
+      const summary = text.length > 140 ? `${text.slice(0, 140)}…` : text;
       const { error } = await table()
-        .update({ status: "sent", sent_at: new Date().toISOString() })
+        .update({
+          status: "sent",
+          sent_at: new Date().toISOString(),
+          sent_channel: "wa",
+          sent_to: "WhatsApp",
+          sent_summary: summary,
+        })
         .eq("id", r.id);
       if (error) toast.error(`Status gagal diperbarui: ${error.message}`);
       else await load();
@@ -321,8 +331,15 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
       toast.dismiss(tid);
       if (result.status === "shared") {
         toast.success(`Terkirim ke ${convTitle} (${result.messageCount} pesan).`);
+        const summary = caption.length > 140 ? `${caption.slice(0, 140)}…` : caption;
         const { error } = await table()
-          .update({ status: "sent", sent_at: new Date().toISOString() })
+          .update({
+            status: "sent",
+            sent_at: new Date().toISOString(),
+            sent_channel: "chat",
+            sent_to: convTitle,
+            sent_summary: summary,
+          })
           .eq("id", r.id);
         if (error) toast.error(`Status gagal diperbarui: ${error.message}`);
         else await load();
@@ -728,6 +745,34 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                   <div className="text-[11px] text-muted-foreground">
                     Dikirim {r.sent_at ? new Date(r.sent_at).toLocaleString("id-ID") : "—"}
                   </div>
+                  {r.sent_channel && (
+                    <div className="mt-1 flex flex-wrap items-center gap-1 text-[11px]">
+                      <span
+                        className={
+                          "inline-flex items-center gap-1 rounded-full border px-1.5 py-0.5 font-semibold " +
+                          (r.sent_channel === "chat"
+                            ? "border-primary/40 bg-primary/10 text-primary"
+                            : "border-[#25D366]/40 bg-[#25D366]/10 text-[#1ea952]")
+                        }
+                      >
+                        {r.sent_channel === "chat" ? (
+                          <><MessageCircle className="h-3 w-3" /> MCM Chat</>
+                        ) : (
+                          <><Send className="h-3 w-3" /> WhatsApp</>
+                        )}
+                      </span>
+                      {r.sent_to && (
+                        <span className="truncate text-muted-foreground" title={r.sent_to}>
+                          → {r.sent_to}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  {r.sent_summary && (
+                    <div className="mt-1 line-clamp-2 whitespace-pre-wrap rounded-md border border-dashed bg-muted/40 px-2 py-1 text-[11px] text-muted-foreground" title={r.sent_summary}>
+                      {r.sent_summary}
+                    </div>
+                  )}
                   {r.location_url && (
                     <a href={r.location_url} target="_blank" rel="noreferrer"
                       className="mt-0.5 inline-flex items-center gap-1 text-[11px] text-primary underline">
