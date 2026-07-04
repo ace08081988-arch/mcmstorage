@@ -111,6 +111,41 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     setVideoFit((f) => (f === "cover" ? "contain" : "cover"));
   }, []);
   const videoFitClass = videoFit === "cover" ? "object-cover" : "object-contain";
+  // Pan/posisi crop — hanya berlaku saat mode "cover" (Crop). Mengontrol
+  // CSS `object-position` supaya bagian penting frame tidak terpotong.
+  type VideoPos = "center" | "top" | "bottom" | "left" | "right";
+  const VIDEO_POS_KEY = "mcm.call.videoPos";
+  const [videoPos, setVideoPos] = useState<VideoPos>(() => {
+    if (typeof window === "undefined") return "center";
+    const v = window.localStorage.getItem(VIDEO_POS_KEY);
+    return v === "top" || v === "bottom" || v === "left" || v === "right" || v === "center"
+      ? v
+      : "center";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(VIDEO_POS_KEY, videoPos); } catch { /* ignore */ }
+  }, [videoPos]);
+  const cycleVideoPos = useCallback(() => {
+    setVideoPos((p) =>
+      p === "center" ? "top"
+      : p === "top" ? "right"
+      : p === "right" ? "bottom"
+      : p === "bottom" ? "left"
+      : "center",
+    );
+  }, []);
+  const videoPosCss =
+    videoPos === "center" ? "50% 50%"
+    : videoPos === "top" ? "50% 0%"
+    : videoPos === "bottom" ? "50% 100%"
+    : videoPos === "left" ? "0% 50%"
+    : "100% 50%";
+  const videoPosLabel =
+    videoPos === "center" ? "Tengah"
+    : videoPos === "top" ? "Atas"
+    : videoPos === "bottom" ? "Bawah"
+    : videoPos === "left" ? "Kiri"
+    : "Kanan";
   // Kualitas video keluar — auto (biarkan browser adaptif) atau paksa preset
   // resolusi/bitrate untuk stabilitas di jaringan lemah.
   const VIDEO_QUALITY_KEY = "mcm.call.videoQuality";
