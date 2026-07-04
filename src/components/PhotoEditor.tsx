@@ -18,6 +18,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { editorFeedback } from "@/lib/editor-feedback";
 
 type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string };
 type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
@@ -188,6 +189,14 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   useEffect(() => { stateRef.current = state; }, [state]);
   useEffect(() => { viewRef.current = view; }, [view]);
   useEffect(() => { selectedIdRef.current = selectedId; }, [selectedId]);
+  // Feedback halus (getar + bunyi) saat berganti tool. Skip pemuatan awal.
+  const prevToolRef = useRef<Tool>(tool);
+  useEffect(() => {
+    if (prevToolRef.current !== tool) {
+      editorFeedback.toolSwitch();
+      prevToolRef.current = tool;
+    }
+  }, [tool]);
   // Keyboard shortcuts: single letter tanpa modifier, hanya bila fokus tidak
   // berada di input/textarea/select/contenteditable (mis. saat mengetik teks).
   useEffect(() => {
@@ -517,6 +526,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setHistory((h) => [...h.slice(-29), state]);
     setFuture([]);
     setState(next);
+    editorFeedback.commit();
   }
   // Push an explicit baseline into history and set a new state.
   // Use when the "before" state isn't the current React state (e.g. after a live drag).
@@ -524,6 +534,7 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
     setHistory((h) => [...h.slice(-29), baseline]);
     setFuture([]);
     setState(next);
+    editorFeedback.commit();
   }
   function undo() {
     setHistory((h) => {
