@@ -47,6 +47,8 @@ function PosKasirPage() {
   const [beratStr, setBeratStr] = useState<string>("0");
   const [toast, setToast] = useState<string | null>(null);
   const [riwayat, setRiwayat] = useState<Transaksi[]>([]);
+  const [dariTgl, setDariTgl] = useState<string>("");
+  const [sampaiTgl, setSampaiTgl] = useState<string>("");
 
   const selected = produk.find((p) => p.id === selectedId)!;
   const berat = useMemo(() => {
@@ -88,6 +90,43 @@ function PosKasirPage() {
 
   const totalOmzet = riwayat.reduce((s, t) => s + t.total, 0);
   const totalKg = riwayat.reduce((s, t) => s + t.beratKg, 0);
+
+  const riwayatFiltered = useMemo(() => {
+    const dari = dariTgl ? new Date(dariTgl + "T00:00:00").getTime() : -Infinity;
+    const sampai = sampaiTgl ? new Date(sampaiTgl + "T23:59:59.999").getTime() : Infinity;
+    return riwayat.filter((t) => t.waktu >= dari && t.waktu <= sampai);
+  }, [riwayat, dariTgl, sampaiTgl]);
+
+  const exportCSV = () => {
+    if (riwayatFiltered.length === 0) {
+      setToast("Tidak ada transaksi pada rentang tanggal terpilih");
+      setTimeout(() => setToast(null), 2500);
+      return;
+    }
+    const header = ["Waktu", "Produk", "Berat (kg)", "Harga per kg (IDR)", "Total (IDR)", "Sisa Stok (kg)"];
+    const escape = (v: string) => `"${v.replace(/"/g, '""')}"`;
+    const rows = riwayatFiltered.map((t) => [
+      new Date(t.waktu).toLocaleString("id-ID"),
+      t.produkNama,
+      t.beratKg.toString().replace(".", ","),
+      t.hargaPerKg.toString(),
+      t.total.toString(),
+      t.sisaStokKg.toString().replace(".", ","),
+    ].map((c) => escape(String(c))).join(";"));
+    const csv = "\uFEFF" + [header.map(escape).join(";"), ...rows].join("\r\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `riwayat-pos-kasir-${stamp}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    setToast(`✅ Diekspor ${riwayatFiltered.length} transaksi ke CSV`);
+    setTimeout(() => setToast(null), 2500);
+  };
 
   // Format 7-segment display: 5 digit integer + 3 decimal
   const displayBerat = berat.toFixed(3).padStart(9, " ");
@@ -285,25 +324,62 @@ function PosKasirPage() {
                 {riwayat.length} transaksi · {totalKg.toLocaleString("id-ID", { maximumFractionDigits: 3 })} kg · omzet {rupiah(totalOmzet)}
               </p>
             </div>
-            {riwayat.length > 0 && (
+            <div className="flex flex-wrap items-end gap-2">
+              <label className="flex flex-col text-[10px] uppercase tracking-wider text-slate-500">
+                Dari
+                <input
+                  type="date"
+                  value={dariTgl}
+                  onChange={(e) => setDariTgl(e.target.value)}
+                  className="mt-1 text-xs px-2 py-1.5 rounded-lg bg-slate-900/60 border border-slate-700 text-slate-200"
+                />
+              </label>
+              <label className="flex flex-col text-[10px] uppercase tracking-wider text-slate-500">
+                Sampai
+                <input
+                  type="date"
+                  value={sampaiTgl}
+                  onChange={(e) => setSampaiTgl(e.target.value)}
+                  className="mt-1 text-xs px-2 py-1.5 rounded-lg bg-slate-900/60 border border-slate-700 text-slate-200"
+                />
+              </label>
+              {(dariTgl || sampaiTgl) && (
+                <button
+                  onClick={() => { setDariTgl(""); setSampaiTgl(""); }}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-700 text-slate-400"
+                >
+                  Reset
+                </button>
+              )}
               <button
-                onClick={() => setRiwayat([])}
-                className="text-xs px-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-700 text-slate-400"
+                onClick={exportCSV}
+                disabled={riwayatFiltered.length === 0}
+                className="text-xs px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-800 disabled:text-slate-600 disabled:cursor-not-allowed border border-emerald-700 text-white font-medium"
               >
-                Bersihkan
+                ⬇ Ekspor CSV ({riwayatFiltered.length})
               </button>
-            )}
+              {riwayat.length > 0 && (
+                <button
+                  onClick={() => setRiwayat([])}
+                  className="text-xs px-3 py-1.5 rounded-lg bg-slate-900/60 hover:bg-slate-900 border border-slate-700 text-slate-400"
+                >
+                  Bersihkan
+                </button>
+              )}
+            </div>
           </div>
 
-          {riwayat.length === 0 ? (
+          {riwayatFiltered.length === 0 ? (
             <div className="text-center py-8 text-sm text-slate-500">
-              Belum ada transaksi. Lakukan pembayaran untuk melihat riwayat di sini.
+              {riwayat.length === 0
+                ? "Belum ada transaksi. Lakukan pembayaran untuk melihat riwayat di sini."
+                : "Tidak ada transaksi pada rentang tanggal terpilih."}
             </div>
           ) : (
             <>
               {/* Mobile: card list */}
               <div className="grid gap-2 md:hidden">
-                {riwayat.map((t) => (
+                {riwayatFiltered.map((t) => (
                   <div key={t.id} className="rounded-xl bg-slate-900/60 border border-slate-700 p-3">
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
@@ -346,7 +422,7 @@ function PosKasirPage() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-800">
-                    {riwayat.map((t) => (
+                    {riwayatFiltered.map((t) => (
                       <tr key={t.id} className="hover:bg-slate-900/40">
                         <td className="py-2 pr-3 font-mono text-xs text-slate-400">
                           {waktuFmt.format(t.waktu)}
