@@ -1012,6 +1012,7 @@ function PrepEditorDialog({
   }
 
   return (
+    <>
     <Dialog open={open} onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
       <DialogContent
         className="max-h-[90vh] max-w-md overflow-y-auto"
@@ -1149,28 +1150,97 @@ function PrepEditorDialog({
           </div>
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" />
 
-          <div>
-            <Label className="text-xs">Nomor MCM / HP tujuan</Label>
+          <div className="space-y-2">
+            <Label className="text-xs">Tujuan (Chat MCM / Nomor WA)</Label>
+            {/* Nama penerima — dipakai untuk auto-save ke buku alamat */}
             <Input
-              type="tel"
-              inputMode="tel"
-              value={waPhone}
-              onChange={(e) => setWaPhone(e.target.value)}
-              placeholder="cth: 628123456789"
+              value={recipientName}
+              onChange={(e) => setRecipientName(e.target.value)}
+              placeholder="Nama penerima (opsional, untuk simpan otomatis)"
+              className="text-xs"
             />
-            {waPhone.trim() === "" ? (
-              <p className="mt-1 text-[10px] text-muted-foreground">Format internasional tanpa tanda +. Awalan 0 otomatis diganti jadi 62.</p>
+            <div className="relative">
+              <Input
+                type="tel"
+                inputMode="tel"
+                value={waPhone}
+                onChange={(e) => {
+                  setWaPhone(e.target.value);
+                  setShowSuggest(true);
+                  // Jika user mulai ubah nomor, reset user MCM yang di-pick
+                  // supaya tombol Chat MCM tidak salah kirim ke akun lama.
+                  if (pickedLinkedUserId) setPickedLinkedUserId(null);
+                }}
+                onFocus={() => setShowSuggest(true)}
+                onBlur={() => setTimeout(() => setShowSuggest(false), 150)}
+                placeholder={contactsLoading ? "Memuat kontak…" : "Cari kontak / cth: 628123456789"}
+              />
+              {showSuggest && suggestList.length > 0 ? (
+                <div className="absolute z-20 mt-1 max-h-56 w-full overflow-y-auto rounded-md border bg-popover shadow-md">
+                  {suggestList.map((c) => (
+                    <button
+                      key={c.id}
+                      type="button"
+                      onMouseDown={(e) => e.preventDefault()}
+                      onClick={() => pickContact(c)}
+                      className="flex w-full items-start justify-between gap-2 border-b px-2 py-1.5 text-left text-xs hover:bg-accent last:border-b-0"
+                    >
+                      <div className="min-w-0">
+                        <div className="truncate font-medium">{c.name}</div>
+                        <div className="truncate font-mono text-[10px] text-muted-foreground">
+                          {c.phone || "—"}
+                        </div>
+                      </div>
+                      <div className="shrink-0 text-[9px] uppercase tracking-wide text-muted-foreground">
+                        {c.linked_user_id ? "MCM" : c.source}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
+            {pickedLinkedUserId ? (
+              <p className="text-[10px] text-primary">
+                Kontak MCM terpilih: <span className="font-medium">{pickedName || "(tanpa nama)"}</span> — bisa kirim via Chat MCM.
+              </p>
+            ) : waPhone.trim() === "" ? (
+              <p className="text-[10px] text-muted-foreground">Ketik untuk cari kontak, atau isi nomor manual (awalan 0 → 62).</p>
             ) : waNorm.error ? (
-              <p className="mt-1 text-[10px] text-destructive">{waNorm.error}</p>
+              <p className="text-[10px] text-destructive">{waNorm.error}</p>
             ) : (
-              <p className="mt-1 text-[10px] text-muted-foreground">Akan dikirim ke: <span className="font-mono">+{waNorm.digits}</span></p>
+              <p className="text-[10px] text-muted-foreground">Akan dikirim ke: <span className="font-mono">+{waNorm.digits}</span></p>
             )}
+            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <input
+                type="checkbox"
+                checked={autoSaveContact}
+                onChange={(e) => setAutoSaveContact(e.target.checked)}
+                className="h-3.5 w-3.5 accent-primary"
+              />
+              Simpan kontak ke buku alamat saat kirim berhasil
+            </label>
           </div>
         </div>
         <DialogFooter className="flex-col gap-2 sm:flex-col">
-          <Button size="sm" onClick={() => save({ sendWa: true })} disabled={busy || !!waNorm.error} className="w-full">
+          <Button
+            size="sm"
+            onClick={() => save({ sendWa: true })}
+            disabled={busy || !!waNorm.error}
+            className="w-full"
+          >
             {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <Send className="mr-1 h-3 w-3" />}
-            Simpan &amp; Kirim via MCM
+            Simpan &amp; Kirim via WhatsApp
+          </Button>
+          <Button
+            size="sm"
+            variant="secondary"
+            onClick={() => save({ sendChat: true })}
+            disabled={busy || !pickedLinkedUserId}
+            className="w-full"
+            title={pickedLinkedUserId ? "Buka DM MCM dengan pesan siap kirim" : "Pilih kontak MCM dari daftar dulu"}
+          >
+            {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <MessageCircle className="mr-1 h-3 w-3" />}
+            Simpan &amp; Buka Chat MCM
           </Button>
           <div className="flex w-full gap-2">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy} className="flex-1">Batal</Button>
@@ -1180,15 +1250,19 @@ function PrepEditorDialog({
           </div>
         </DialogFooter>
 
-        {editorOpen && editorSrc && (
-          <PhotoEditor
-            src={editorSrc}
-            onCancel={() => setEditorOpen(false)}
-            onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }}
-          />
-        )}
       </DialogContent>
     </Dialog>
+    {/* PhotoEditor di-hoist ke luar DialogContent agar `fixed inset-0`-nya
+        mengacu ke viewport (bukan ke DialogContent yang memakai transform),
+        sehingga editor selalu tampil full-screen setelah file dipilih. */}
+    {editorOpen && editorSrc && (
+      <PhotoEditor
+        src={editorSrc}
+        onCancel={() => setEditorOpen(false)}
+        onSave={(blob, dataUrl) => { setPhoto({ blob, dataUrl }); setEditorOpen(false); }}
+      />
+    )}
+    </>
   );
 }
 // ------------------------------------------------------------------
