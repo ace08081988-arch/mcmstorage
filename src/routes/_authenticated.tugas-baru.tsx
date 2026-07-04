@@ -619,6 +619,51 @@ function TugasBaruPage() {
             </div>
           </Field>
 
+          <Field label="Token tautan pegawai (8–48 karakter)">
+            <div className="flex items-center gap-2">
+              <input
+                value={token}
+                onChange={(e) => setToken(e.target.value.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 48))}
+                placeholder="mis. abc123XYZ"
+                className="flex-1 rounded-md border bg-background px-2 py-1.5 font-mono text-sm"
+              />
+              <button
+                type="button"
+                onClick={() => setToken(genShareToken())}
+                className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                title="Buat token acak baru"
+              >
+                <RefreshCw className="h-3.5 w-3.5" /> Acak
+              </button>
+            </div>
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              Token dipakai di URL pegawai. Isi sendiri untuk memudahkan dikenali, atau tekan Acak untuk mengganti.
+            </div>
+          </Field>
+
+          <Field label="Jadwal penyiapan (opsional)">
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                type="datetime-local"
+                value={scheduledAt}
+                onChange={(e) => setScheduledAt(e.target.value)}
+                className="rounded-md border bg-background px-2 py-1.5 text-sm"
+              />
+              {scheduledAt && (
+                <button
+                  type="button"
+                  onClick={() => setScheduledAt("")}
+                  className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                >
+                  Hapus
+                </button>
+              )}
+            </div>
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              Waktu yang direncanakan pegawai mulai menyiapkan. Kosongkan bila tidak ada jadwal tetap.
+            </div>
+          </Field>
+
           <div>
             <div className="mb-1 flex items-center justify-between">
               <div className="text-xs font-medium text-muted-foreground">Daftar barang</div>
