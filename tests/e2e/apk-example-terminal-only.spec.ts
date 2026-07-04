@@ -1,22 +1,41 @@
 /**
- * Spec E2E APK — flow "apk-example-terminal-only".
+ * Spec E2E APK — CONTOH PEMBANDING: HANYA `terminalGuard`, tanpa
+ * `installServerFnPassthroughGuard`.
  *
- * Dibuat dari `tests/e2e/_helpers/apk-spec.template.ts` via
- * `scripts/scaffold-apk-e2e-spec.mjs`. Pola guard (`trackedClick`,
- * `trackedAction`, `assertQuiescent`, `terminalGuard`) sudah
- * terpasang — LENGKAPI, JANGAN HAPUS. Detail pola & anti-pattern:
- * `tests/e2e/_helpers/README.md`.
+ * Referensi bandingan:
+ *   - `tests/e2e/_helpers/apk-spec.template.ts` → menjelaskan kedua
+ *     opsi (terminalGuard vs passthrough) sebagai "flow D" untuk
+ *     copy/export chat link.
+ *   - `tests/e2e/apk-mount-quiescent.spec.ts` → pola mount-only
+ *     (tanpa aksi refetch), juga terminalGuard-only.
+ *   - Spec INI → pola mount + refetch (trackedClick), tetap
+ *     terminalGuard-only.
+ *
+ * Kapan pola ini cukup (TIDAK perlu passthrough guard):
+ *   1. Flow hanya menyentuh `getApkVariantDetail` — tidak ada aksi
+ *      copy/export chat link atau server function lain.
+ *   2. Semua aksi refetch sudah di-wrap `trackedClick`/`trackedAction`
+ *      (guard per-aksi memantau `getApkVariantDetail`).
+ *   3. `terminalGuard()` di akhir cukup untuk membuktikan tidak ada
+ *      polling / refetch-on-focus tertinggal untuk KEDUA varian.
+ *
+ * Kapan harus upgrade ke `installServerFnPassthroughGuard`:
+ *   - Spec juga memicu server function di luar APK (copy chat link,
+ *     export, dsb.). Passthrough guard memantau SEMUA server fn,
+ *     bukan cuma `getApkVariantDetail`.
+ *   - Pasang passthrough di setup, TETAP tutup dengan `terminalGuard()`.
  */
 
 
 import { test, expect } from "@playwright/test";
-import { installApkStub, makeRelease } from "../_apk-availability-stub";
+import { installApkStub, makeRelease } from "./_apk-availability-stub";
 
-// Ganti URL sesuai harness yang diuji (contoh: shortcut / halaman admin).
 const URL = "/lovable/visual/apk-availability-shortcuts";
 
-test.describe("APK apk-example-terminal-only — deterministic guard", () => {
-  test("<skenario yang diuji>", async ({ page }) => {
+test.describe("APK example · terminalGuard-only (tanpa passthrough)", () => {
+  test("mount + refetch chat: terminalGuard cukup untuk buktikan zero-leak", async ({
+    page,
+  }) => {
     // ────────────────────────────────────────────────────────────
     // (1) SETUP STUB — WAJIB SEBELUM page.goto
     // ────────────────────────────────────────────────────────────
