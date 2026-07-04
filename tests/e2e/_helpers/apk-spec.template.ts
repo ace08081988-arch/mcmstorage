@@ -24,6 +24,58 @@
  *     idle setelah state aktif tercapai.
  *   - `stub.terminalGuard()` → wajib di akhir spec untuk menangkap leak jangka panjang.
  *
+ * Contoh nilai nyata per flow (copy langsung, sesuaikan variant/testid saja):
+ *
+ *   ── Flow A: shortcut "cek ulang" satu varian (mis. `apk-shortcut-recheck-chat`)
+ *     stub.primeInitial();                                  // kedua varian kosong
+ *     stub.assertPrimed();
+ *     await stub.waitForServed("chat", 1);                  // fetch mount chat
+ *     await stub.waitForServed("storage", 1);               // fetch mount storage
+ *     stub.enqueue("chat", [makeRelease("chat")]);          // payload refetch chat
+ *     await stub.trackedClick(chatRefresh, { expected: { chat: 1 } });
+ *     await stub.waitForIdle();
+ *     await stub.assertQuiescent("chat",    { windowMs: 1000, stableTicks: 5 });
+ *     await stub.assertQuiescent("storage", { windowMs: 500,  stableTicks: 5 });
+ *     await stub.terminalGuard();                           // default window OK
+ *
+ *   ── Flow B: hold → release (mis. `apk-install-progress-hold`)
+ *     stub.primeInitial([makeRelease("chat")], []);         // chat SUDAH tersedia, storage kosong
+ *     stub.assertPrimed();
+ *     await stub.waitForServed("chat", 1);
+ *     await stub.waitForServed("storage", 1);
+ *     await stub.trackedClick(chatRefresh, { variant: "chat", expected: { chat: 1 } });
+ *     await stub.waitForHold("chat");                       // waiter tergantung
+ *     // → assertion UI busy di sini (spinner / "Memeriksa…")
+ *     stub.enqueue("chat", [makeRelease("chat", { versionName: "1.2.3" })]);
+ *     await stub.waitForServed("chat", 2);                  // count = mount(1) + refetch(1)
+ *     await stub.waitForIdle();
+ *     await stub.assertQuiescent("chat", { windowMs: 1500, stableTicks: 5 });
+ *     await stub.terminalGuard();
+ *
+ *   ── Flow C: aksi non-klik (drag / keyboard / focus refetch)
+ *     stub.enqueue("storage", [makeRelease("storage")]);
+ *     await stub.trackedAction(
+ *       async () => { await page.keyboard.press("Enter"); },  // aksi apa pun
+ *       { expected: { storage: 1 } },
+ *     );
+ *
+ *   ── Flow D: APK + copy/export chat link (mis. `apk-copy-export-guard`)
+ *     import { installServerFnPassthroughGuard } from "../_server-fn-passthrough-guard";
+ *     const passthrough = await installServerFnPassthroughGuard(page, {
+ *       whitelist: ["getApkVariantDetail", "getChatCopyLink"],
+ *     });
+ *     // … skenario APK biasa …
+ *     await stub.terminalGuard();
+ *     await passthrough.assertNoUnexpected();               // guard SEMUA server fn
+ *
+ * Panduan nilai windowMs / stableTicks:
+ *   - `assertQuiescent` per-varian: 500–1500 ms + `stableTicks: 5`.
+ *     Naikkan hanya kalau ada animasi / timer UI yang benar-benar diperlukan.
+ *   - `terminalGuard()` TANPA argumen — pakai default `APK_STUB_TERMINAL_WINDOW_MS`
+ *     supaya CI tetap konsisten lintas spec.
+ *   - `trackedClick` / `trackedAction` TANPA `windowMs` literal — helper pakai
+ *     `APK_STUB_PER_ACTION_WINDOW_MS` otomatis.
+ *
  * terminalGuard vs installServerFnPassthroughGuard:
  *   - Gunakan `stub.terminalGuard()` di AKHIR spec APK saja. Ini hanya memantau
  *     `getApkVariantDetail` (chat/storage) dan memastikan tidak ada request
