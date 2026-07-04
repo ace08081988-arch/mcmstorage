@@ -467,7 +467,7 @@ function PublicPrepPage() {
     setLoading(false);
     if (error) {
       const msg = "Tidak bisa menghubungi server. Periksa koneksi internet lalu coba lagi.";
-      setLastError({ kind: "network", message: msg, detail: error.message, code: (error as any).code, raw: safeJson({ error, data }) });
+      setLastError({ kind: "network", message: msg, code: (error as any).code, raw: safeJson({ code: (error as any).code }) });
       toast.error(msg);
       return false;
     }
