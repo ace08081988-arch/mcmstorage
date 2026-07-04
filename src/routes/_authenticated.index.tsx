@@ -27,6 +27,7 @@ import { SecurityScanReminder } from "@/components/SecurityScanReminder";
 import { SecurityFindingsBanner } from "@/components/SecurityFindingsBanner";
 import { ReadyEcerSection } from "@/components/ReadyEcerSection";
 import { ReadyRequestSection } from "@/components/ReadyRequestSection";
+import { ReadySelfPrepSection } from "@/components/ReadySelfPrepSection";
 import { DownloadStorageApkShortcut } from "@/components/DownloadStorageApkShortcut";
 import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
 import { CopyChatApkLinksButton } from "@/components/CopyChatApkLinksButton";
