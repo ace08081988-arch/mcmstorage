@@ -371,6 +371,74 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     setVideoQuality,
     LEGACY_VIDEO_FIT_KEY, LEGACY_VIDEO_POS_KEY,
   ]);
+
+  // Toast singkat saat setelan panggilan dipulihkan dari localStorage.
+  // Saat mount: toast langsung muncul sebagai konfirmasi state dipulihkan.
+  // Saat tab kembali visible: toast hanya muncul bila ada nilai localStorage
+  // yang berubah, supaya tidak spam tiap kali fokus tanpa perubahan.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const syncedKeys = [
+      PIP_SIZE_KEY,
+      PIP_CORNER_KEY,
+      PIP_SWAPPED_KEY,
+      PIP_HIDDEN_KEY,
+      PIP_MINIMIZED_KEY,
+      FACING_MODE_KEY,
+      "mcm.call.videoFit.user",
+      "mcm.call.videoFit.environment",
+      "mcm.call.videoPos.user",
+      "mcm.call.videoPos.environment",
+      "mcm.call.videoPosXY.user",
+      "mcm.call.videoPosXY.environment",
+      VIDEO_QUALITY_KEY,
+    ];
+    const lastValues = new Map<string, string | null>();
+    const refreshSnapshot = () => {
+      syncedKeys.forEach((k) => {
+        try {
+          lastValues.set(k, window.localStorage.getItem(k));
+        } catch {
+          lastValues.set(k, null);
+        }
+      });
+    };
+    refreshSnapshot();
+    const showToast = () => {
+      toast.success("Setelan panggilan tersinkron", { duration: 1500 });
+    };
+    // Saat mount: state sudah dibaca oleh usePersistedState; beri konfirmasi.
+    showToast();
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== null && !syncedKeys.includes(e.key)) return;
+      refreshSnapshot();
+      showToast();
+    };
+    const onVisible = () => {
+      if (document.visibilityState !== "visible") return;
+      let changed = false;
+      syncedKeys.forEach((k) => {
+        const current = (() => {
+          try { return window.localStorage.getItem(k); } catch { return null; }
+        })();
+        if (current !== lastValues.get(k)) {
+          changed = true;
+          lastValues.set(k, current);
+        }
+      });
+      if (changed) showToast();
+    };
+    window.addEventListener("storage", onStorage);
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [
+    PIP_SIZE_KEY, PIP_CORNER_KEY, PIP_SWAPPED_KEY, PIP_HIDDEN_KEY,
+    PIP_MINIMIZED_KEY, FACING_MODE_KEY, VIDEO_QUALITY_KEY,
+  ]);
+
   const [flipping, setFlipping] = useState(false);
   // Bertambah tiap kali kamera dibalik — dipakai untuk memaksa Crop/Fit &
   // kualitas video di-apply ulang begitu track lokal baru terpasang.
