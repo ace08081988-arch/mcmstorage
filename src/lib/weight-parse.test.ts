@@ -52,13 +52,16 @@ describe("formatGramsSmart", () => {
     expect(formatGramsSmart(2500)).toBe("2,5 kg");
   });
   it("format gr default", () => {
-    expect(formatGramsSmart(500)).toBe("500 gr");
+    expect(formatGramsSmart(500)).toBe("5 ons");
     expect(formatGramsSmart(250)).toBe("250 gr");
   });
-  it("preferOns aktif untuk kelipatan 100", () => {
-    expect(formatGramsSmart(200, { preferOns: true })).toBe("2 ons");
-    expect(formatGramsSmart(300, { preferOns: true })).toBe("3 ons");
+  it("ons default aktif untuk kelipatan 100 (1 ons = 100 gram)", () => {
+    expect(formatGramsSmart(100)).toBe("1 ons");
+    expect(formatGramsSmart(200)).toBe("2 ons");
+    expect(formatGramsSmart(300)).toBe("3 ons");
     expect(formatGramsSmart(250, { preferOns: true })).toBe("250 gr");
+    // Opt-out: matikan ons secara eksplisit.
+    expect(formatGramsSmart(500, { preferOns: false })).toBe("500 gr");
   });
   it("format mg untuk < 1 gr", () => {
     expect(formatGramsSmart(0.5)).toBe("500 mg");
