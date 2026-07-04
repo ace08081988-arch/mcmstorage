@@ -29,6 +29,20 @@ Setiap spec E2E yang menguji tile APK memasang stub `getApkVariantDetail`. Ada d
 | Copy / salin link APK Chat yang memanggil server function selain `getApkVariantDetail` | `full` | Perlu `installServerFnPassthroughGuard` agar round-trip copy/export tidak bocor |
 | Form validasi `minSupported` | *form-only* | Bukan flow APK, tidak memakai `installApkStub`, tidak memakai `terminalGuard` |
 
+### Tabel pemetaan skenario APK aktual
+
+| Spec | Skenario | Guard requirement | Perubahan checklist Guards |
+|---|---|---|---|
+| `apk-min-validate-form.spec.ts` | Form validasi `minSupported` | *form-only* | Tulis `// Guards : (spec form murni — bukan flow getApkVariantDetail, tidak memakai apk-stub / terminalGuard)`. Hapus semua marker stub. |
+| `apk-mount-quiescent.spec.ts` | Mount murni tile APK | `terminalGuard-only` | `primeInitial + assertPrimed` → `waitForServed` → `assertQuiescent` → `terminalGuard()`; tidak ada `trackedClick` karena mount-only; tambahkan `(mode: terminal)`. |
+| `apk-availability-refresh.spec.ts` | Idle → tap refresh Chat → aktif | `terminalGuard-only` | Base checklist stub + `trackedClick(expected.chat=1)` + `assertQuiescent` + `terminalGuard()`; `(mode: terminal)`. |
+| `apk-availability-refresh-storage.spec.ts` | Idle → tap refresh Storage → aktif | `terminalGuard-only` | Sama seperti di atas, tetapi `trackedClick(expected.storage=1)` untuk bukti independensi varian; `(mode: terminal)`. |
+| `apk-refresh-single-refetch.spec.ts` | Satu tap = satu refetch | `terminalGuard-only` | Base checklist + `trackedClick(expected.storage=1)` + `assertQuiescent` + `terminalGuard()`; fokus regression hitungan request; `(mode: terminal)`. |
+| `apk-example-terminal-only.spec.ts` | Contoh pembanding terminal-only | `terminalGuard-only` | Base checklist + `trackedClick(expected.chat=1)` + `assertQuiescent` + `terminalGuard()`; `(mode: terminal)`. |
+| `apk-*-copy-export-*.spec.ts` (bila ada) | Copy / export link APK Chat | `terminalGuard + installServerFnPassthroughGuard` | Base checklist stub + `passthrough.assertNoAdditionalRequests` + `passthrough.dispose()` di akhir; ganti tag menjadi `(mode: full)`. |
+
+**Cara membaca tabel:** baris `Spec` yang sudah ada di repo saat ini menunjukkan mode aktual; baris terakhir menunjukkan apa yang harus berubah ketika spec nantinya menyentuh server function di luar `getApkVariantDetail`. Perubahan checklist selalu dimulai dari base checklist stub (lima marker), lalu ditambah atau dihapus sesuai mode.
+
 ### Arti setiap item checklist Guards
 
 Setiap project block `apk-*` di `playwright.config.ts` wajib memuat kolom `Guards` dengan checklist yang sesuai mode. Validator (`bun run e2e:apk:validate`) memastikan checklist tidak boleh kontradiksi dengan isi spec.
