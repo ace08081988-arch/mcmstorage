@@ -1377,31 +1377,39 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
           </div>
         )}
         {tool === "emoji" && (
-          <div className="mb-2 flex flex-wrap gap-1">
-            {EMOJIS.map((em) => (
-              <button key={em} onClick={() => {
-                  setEmoji(em);
-                  if (selected?.kind === "emoji") {
-                    liveBeginIfNeeded();
-                    livePatchSelected({ emoji: em } as Partial<Layer>);
-                    commitLivePatch();
-                  } else {
-                    // Konsisten dengan tombol Panah: langsung tempelkan
-                    // stiker di tengah kanvas — user tidak perlu menebak
-                    // bahwa harus tap kanvas dulu.
-                    const v = viewRef.current;
-                    const cx = v.w ? v.w / 2 : 100;
-                    const cy = v.h ? v.h / 2 : 100;
-                    const l: Layer = {
-                      id: uid(), kind: "emoji", x: cx, y: cy,
-                      rotation: 0, scale: 1, color, emoji: em, size: textSize + 8,
-                    };
-                    pushHistory({ ...state, layers: [...state.layers, l] });
-                    setSelectedId(l.id);
-                  }
-                }}
-                className={`h-9 w-9 rounded border bg-background text-lg transition hover:bg-muted ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
-            ))}
+          <div className="mb-2 flex flex-wrap items-center gap-2">
+            <span className="text-muted-foreground">Stiker:</span>
+            <div className="flex flex-wrap gap-1">
+              {EMOJIS.map((em) => (
+                <button
+                  key={em}
+                  type="button"
+                  title={`Stiker ${em}`}
+                  aria-label={`Pilih stiker ${em}`}
+                  onClick={() => {
+                    setEmoji(em);
+                    if (selected?.kind === "emoji") {
+                      liveBeginIfNeeded();
+                      livePatchSelected({ emoji: em } as Partial<Layer>);
+                      commitLivePatch();
+                    } else {
+                      // Konsisten dengan tombol Panah: langsung tempelkan
+                      // stiker di tengah kanvas — user tidak perlu menebak
+                      // bahwa harus tap kanvas dulu.
+                      const v = viewRef.current;
+                      const cx = v.w ? v.w / 2 : 100;
+                      const cy = v.h ? v.h / 2 : 100;
+                      const l: Layer = {
+                        id: uid(), kind: "emoji", x: cx, y: cy,
+                        rotation: 0, scale: 1, color, emoji: em, size: textSize + 8,
+                      };
+                      pushHistory({ ...state, layers: [...state.layers, l] });
+                      setSelectedId(l.id);
+                    }
+                  }}
+                  className={`h-9 w-9 rounded border bg-background text-lg transition hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${emoji === em ? "border-primary bg-primary/10" : ""}`}>{em}</button>
+              ))}
+            </div>
           </div>
         )}
         {tool === "text" && (
