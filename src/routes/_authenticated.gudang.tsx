@@ -1781,6 +1781,9 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
     if (!isWItem(selectedItem)) return;
     if (selectedItem.package_type !== "botol" && inputKarton) setInputKarton(false);
     if (selectedItem.package_type === "pcs" && priceMode !== "base") setPriceMode("base");
+    // Kalau jenis kemasan cuma sinonim dari satuan dasar (mis. gram vs g),
+    // paksa priceMode "base" agar tidak ada label duplikat di ringkasan/input.
+    if (packageDuplicatesBase && priceMode !== "base") setPriceMode("base");
   }, [mode, itemId, inputKarton, priceMode]);
 
   // Kunci/reset state saat pengguna cepat mengganti item atau mode agar
