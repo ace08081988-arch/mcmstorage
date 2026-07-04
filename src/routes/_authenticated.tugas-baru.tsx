@@ -173,7 +173,7 @@ function useTooltipMode(): [TooltipMode, (m: TooltipMode) => void] {
   }, [scheduleExternal]);
   return [mode, update];
 }
-type Draft = { title: string; note: string; pin: string; rows: Row[]; phone: string };
+type Draft = { title: string; note: string; pin: string; rows: Row[]; phone: string; token?: string; scheduledAt?: string };
 function loadDraft(): Draft | null {
   if (typeof window === "undefined") return null;
   try {
@@ -212,6 +212,8 @@ function TugasBaruPage() {
   const [pin, setPin] = useState(() => initialRef.current?.pin ?? genPin());
   const [rows, setRows] = useState<Row[]>(() => initialRef.current?.rows ?? [newRow()]);
   const [phone, setPhone] = useState(() => initialRef.current?.phone ?? "");
+  const [token, setToken] = useState<string>(() => initialRef.current?.token ?? genShareToken());
+  const [scheduledAt, setScheduledAt] = useState<string>(() => initialRef.current?.scheduledAt ?? "");
   const [restored] = useState(() => !!initialRef.current);
   const [busy, setBusy] = useState(false);
   const [created, setCreated] = useState<{ token: string; pin: string; title: string; url: string } | null>(null);
@@ -235,10 +237,10 @@ function TugasBaruPage() {
   const [tooltipMode, setTooltipMode] = useTooltipMode();
   const [, forceTick] = useState(0);
   const lastSavedRef = useRef<string>("");
-  const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone });
+  const latestDraftRef = useRef<Draft>({ title, note, pin, rows, phone, token, scheduledAt });
   useEffect(() => {
-    latestDraftRef.current = { title, note, pin, rows, phone };
-  }, [title, note, pin, rows, phone]);
+    latestDraftRef.current = { title, note, pin, rows, phone, token, scheduledAt };
+  }, [title, note, pin, rows, phone, token, scheduledAt]);
 
   const flushDraft = useCallback((reason: "auto" | "navigation" | "manual" = "auto") => {
     const cur = JSON.stringify(latestDraftRef.current);
@@ -302,7 +304,7 @@ function TugasBaruPage() {
       window.removeEventListener("pagehide", onPageHide);
       window.removeEventListener("popstate", onPopState);
     };
-  }, [title, note, pin, rows, phone, created, flushDraft]);
+  }, [title, note, pin, rows, phone, token, scheduledAt, created, flushDraft]);
 
   // Flush draft when this route unmounts (any SPA navigation away,
   // including programmatic <Link> clicks and router.history.back()).
