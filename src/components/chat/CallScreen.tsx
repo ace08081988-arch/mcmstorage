@@ -431,6 +431,26 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     return () => clearInterval(t);
   }, [phase]);
 
+  // Toast rekomendasi turunkan kualitas saat jaringan buruk berkepanjangan.
+  // Hanya muncul sekali sampai jaringan pulih agar tidak spam.
+  const poorNoticedRef = useRef(false);
+  useEffect(() => {
+    if (phase !== "in-call") return;
+    if (netStats.tier === "poor" && videoQuality !== "low" && !poorNoticedRef.current) {
+      poorNoticedRef.current = true;
+      toast.warning("Jaringan lemah", {
+        description: "Coba turunkan kualitas video ke Rendah agar panggilan lebih stabil.",
+        action: {
+          label: "Turunkan",
+          onClick: () => setVideoQuality("low"),
+        },
+      });
+    }
+    if (netStats.tier === "good") {
+      poorNoticedRef.current = false;
+    }
+  }, [netStats.tier, phase, videoQuality]);
+
   // Polling statistik jaringan tiap 2 detik selama panggilan aktif.
   // Menghitung RTT dari candidate-pair terpilih & packet loss inbound
   // (audio+video) dari selisih antar sampel, lalu derivasi tier kualitas.
