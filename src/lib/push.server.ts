@@ -2,6 +2,29 @@ import webpush from "web-push";
 
 let configured = false;
 
+// Workerd's `Buffer` polyfill (via unenv/nodejs_compat) is backed by a
+// Uint8Array subclass whose prototype chain does not always expose
+// `Object.prototype.hasOwnProperty`. `web-push` internally calls
+// `buffer.hasOwnProperty(...)` while validating VAPID/subscription keys,
+// which throws `buffer.hasOwnProperty is not a function` on the edge.
+// Patch the prototypes once so the check works.
+function ensureBufferHasOwnPropertyShim() {
+  const hop = Object.prototype.hasOwnProperty;
+  const targets: unknown[] = [
+    (globalThis as { Buffer?: { prototype?: object } }).Buffer?.prototype,
+    Uint8Array.prototype,
+  ];
+  for (const proto of targets) {
+    if (proto && typeof (proto as { hasOwnProperty?: unknown }).hasOwnProperty !== "function") {
+      Object.defineProperty(proto, "hasOwnProperty", {
+        value: hop,
+        writable: true,
+        configurable: true,
+      });
+    }
+  }
+}
+
 export const VAPID_PUBLIC_KEY =
   "BPu9dnY_SQKEYY_G9tz1YjsBWMuoYZbHPa0lDz0oSsH35dtczBKPIPCxXEF4UuMnDHH_ln-agOhpJwQLmcgNEHw";
 
@@ -10,6 +33,7 @@ function ensureConfigured() {
   const priv = process.env.VAPID_PRIVATE_KEY;
   const subject = process.env.VAPID_SUBJECT || "mailto:admin@example.com";
   if (!priv) throw new Error("VAPID_PRIVATE_KEY tidak diset");
+  ensureBufferHasOwnPropertyShim();
   webpush.setVapidDetails(subject, VAPID_PUBLIC_KEY, priv);
   configured = true;
 }
