@@ -22,6 +22,11 @@ export function fmtBase(n: number, u: "g" | "pcs") {
       const mg = v * 1000;
       return `${mg.toLocaleString("id-ID", { maximumFractionDigits: 2 })} mg`;
     }
+    // Konversi ons: 1 ons = 100 gram. Untuk kelipatan 100 di [100..900],
+    // tampilkan sebagai "X ons" (lebih natural dalam Bahasa Indonesia).
+    if (Math.abs(v) >= 100 && Math.abs(v) < 1000 && v % 100 === 0) {
+      return `${(v / 100).toLocaleString("id-ID")} ons`;
+    }
     return `${v.toLocaleString("id-ID", { maximumFractionDigits: 2 })} g`;
   }
   return `${v.toLocaleString("id-ID")} pcs`;
