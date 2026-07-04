@@ -372,10 +372,10 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     LEGACY_VIDEO_FIT_KEY, LEGACY_VIDEO_POS_KEY,
   ]);
 
-  // Toast singkat saat setelan panggilan dipulihkan dari localStorage:
-  // saat CallScreen pertama kali mount dan saat tab kembali visible
-  // setelah berpindah tab. Hanya toast bila ada perubahan aktual dari
-  // localStorage supaya tidak spam setiap kali fokus tanpa perubahan.
+  // Toast singkat saat setelan panggilan dipulihkan dari localStorage.
+  // Saat mount: toast langsung muncul sebagai konfirmasi state dipulihkan.
+  // Saat tab kembali visible: toast hanya muncul bila ada nilai localStorage
+  // yang berubah, supaya tidak spam tiap kali fokus tanpa perubahan.
   useEffect(() => {
     if (typeof window === "undefined") return;
     const syncedKeys = [
