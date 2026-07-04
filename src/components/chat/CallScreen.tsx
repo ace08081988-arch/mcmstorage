@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Mic, MicOff, Video as VideoIcon, VideoOff, PhoneOff, Loader2,
-  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan,
+  Volume2, VolumeX, Volume1, ChevronDown, AlertTriangle, Maximize2, ArrowLeftRight, Maximize, Minimize, Crop, Scan, Signal,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -111,6 +111,33 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     setVideoFit((f) => (f === "cover" ? "contain" : "cover"));
   }, []);
   const videoFitClass = videoFit === "cover" ? "object-cover" : "object-contain";
+  // Kualitas video keluar — auto (biarkan browser adaptif) atau paksa preset
+  // resolusi/bitrate untuk stabilitas di jaringan lemah.
+  const VIDEO_QUALITY_KEY = "mcm.call.videoQuality";
+  type VideoQuality = "auto" | "low" | "medium" | "high";
+  const [videoQuality, setVideoQuality] = useState<VideoQuality>(() => {
+    if (typeof window === "undefined") return "auto";
+    const v = window.localStorage.getItem(VIDEO_QUALITY_KEY);
+    return v === "low" || v === "medium" || v === "high" || v === "auto" ? v : "auto";
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(VIDEO_QUALITY_KEY, videoQuality); } catch { /* ignore */ }
+  }, [videoQuality]);
+  const cycleVideoQuality = useCallback(() => {
+    setVideoQuality((q) =>
+      q === "auto" ? "low" : q === "low" ? "medium" : q === "medium" ? "high" : "auto",
+    );
+  }, []);
+  const videoQualityLabel =
+    videoQuality === "auto" ? "Auto"
+    : videoQuality === "low" ? "Rendah"
+    : videoQuality === "medium" ? "Sedang"
+    : "Tinggi";
+  const videoQualityHint =
+    videoQuality === "auto" ? "Otomatis mengikuti jaringan"
+    : videoQuality === "low" ? "320p · hemat data, stabil di sinyal lemah"
+    : videoQuality === "medium" ? "480p · seimbang"
+    : "720p · kualitas tinggi (butuh koneksi baik)";
   const pipSizeClass =
     pipSize === "sm" ? "h-24 w-20" : pipSize === "lg" ? "h-48 w-36" : "h-32 w-24";
   const pipCornerClass =
@@ -378,6 +405,77 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
     const t = setInterval(() => setSeconds((s) => s + 1), 1000);
     return () => clearInterval(t);
   }, [phase]);
+
+  // Terapkan preset kualitas video ke track lokal + parameter encoder
+  // sender. "auto" melepas batasan dan menyerahkan adaptasi ke browser.
+  useEffect(() => {
+    if (kind !== "video") return;
+    const session = sessionRef.current;
+    if (!session) return;
+    const preset: Record<
+      Exclude<VideoQuality, "auto">,
+      { width: number; height: number; frameRate: number; maxBitrate: number; scale: number }
+    > = {
+      low: { width: 320, height: 240, frameRate: 15, maxBitrate: 150_000, scale: 4 },
+      medium: { width: 640, height: 480, frameRate: 24, maxBitrate: 500_000, scale: 2 },
+      high: { width: 1280, height: 720, frameRate: 30, maxBitrate: 1_500_000, scale: 1 },
+    };
+    let cancelled = false;
+    (async () => {
+      try {
+        const videoTrack = session.localStream.getVideoTracks()[0];
+        if (videoTrack) {
+          try {
+            if (videoQuality === "auto") {
+              await videoTrack.applyConstraints({
+                width: { ideal: 640 },
+                height: { ideal: 480 },
+                frameRate: { ideal: 30 },
+              });
+            } else {
+              const p = preset[videoQuality];
+              await videoTrack.applyConstraints({
+                width: { ideal: p.width, max: p.width },
+                height: { ideal: p.height, max: p.height },
+                frameRate: { ideal: p.frameRate, max: p.frameRate },
+              });
+            }
+          } catch (err) {
+            console.warn("[call] applyConstraints gagal", err);
+          }
+        }
+        const sender = session.pc.getSenders().find((s) => s.track?.kind === "video");
+        if (sender) {
+          const params = sender.getParameters();
+          if (!params.encodings || params.encodings.length === 0) {
+            params.encodings = [{}];
+          }
+          if (videoQuality === "auto") {
+            for (const enc of params.encodings) {
+              delete (enc as { maxBitrate?: number }).maxBitrate;
+              delete (enc as { scaleResolutionDownBy?: number }).scaleResolutionDownBy;
+              delete (enc as { maxFramerate?: number }).maxFramerate;
+            }
+          } else {
+            const p = preset[videoQuality];
+            for (const enc of params.encodings) {
+              enc.maxBitrate = p.maxBitrate;
+              (enc as { maxFramerate?: number }).maxFramerate = p.frameRate;
+              (enc as { scaleResolutionDownBy?: number }).scaleResolutionDownBy = p.scale;
+            }
+          }
+          try {
+            await sender.setParameters(params);
+          } catch (err) {
+            console.warn("[call] setParameters gagal", err);
+          }
+        }
+      } catch (err) {
+        if (!cancelled) console.warn("[call] apply video quality gagal", err);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [videoQuality, kind, phase, remoteReady]);
 
   // Terapkan volume ke elemen remote setiap kali berubah + persist.
   useEffect(() => {
@@ -729,6 +827,20 @@ export function CallScreen({ callId, meId, role, kind, peerName, onClose }: Prop
                   <Scan className="h-3.5 w-3.5" />
                 )}
                 <span>{videoFit === "cover" ? "Crop" : "Fit"}</span>
+              </button>
+            ) : null}
+            {kind === "video" ? (
+              <button
+                type="button"
+                onClick={cycleVideoQuality}
+                aria-label={`Kualitas video: ${videoQualityLabel}. ${videoQualityHint}. Ketuk untuk ubah.`}
+                title={`Kualitas: ${videoQualityLabel} — ${videoQualityHint}`}
+                data-testid="call-quality-toggle"
+                data-quality={videoQuality}
+                className="flex items-center gap-1 rounded-full bg-black/40 px-2 py-1.5 text-[11px] text-white/90 backdrop-blur hover:bg-black/60"
+              >
+                <Signal className="h-3.5 w-3.5" />
+                <span>{videoQualityLabel}</span>
               </button>
             ) : null}
             {kind === "video" ? (
