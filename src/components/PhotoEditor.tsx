@@ -156,6 +156,38 @@ export function PhotoEditor({ src, onCancel, onSave }: PhotoEditorProps) {
   // Panel panduan singkat tiap tool. Disembunyikan by default agar toolbar
   // tetap padat; pengguna baru bisa tap ikon "?" untuk membacanya.
   const [helpOpen, setHelpOpen] = useState(false);
+  // Modal panduan detail untuk tool Teks/Stiker/Coret saat pertama kali dipilih
+  // atau setelah tidak dipakai dalam beberapa hari.
+  const [guideTool, setGuideTool] = useState<Tool | null>(null);
+
+  function readGuideSeenMap(): GuideSeenMap {
+    if (typeof localStorage === "undefined") return {};
+    try {
+      const raw = localStorage.getItem(GUIDE_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as GuideSeenMap) : {};
+    } catch {
+      return {};
+    }
+  }
+  function writeGuideSeenMap(map: GuideSeenMap) {
+    if (typeof localStorage === "undefined") return;
+    try { localStorage.setItem(GUIDE_STORAGE_KEY, JSON.stringify(map)); } catch { /* noop */ }
+  }
+  function shouldShowGuide(t: Tool): boolean {
+    if (!GUIDED_TOOLS.includes(t)) return false;
+    const lastSeen = readGuideSeenMap()[t];
+    if (!lastSeen) return true;
+    return Date.now() - lastSeen > GUIDE_RETURN_DAYS * 24 * 60 * 60 * 1000;
+  }
+  function markGuideSeen(t: Tool) {
+    const map = readGuideSeenMap();
+    map[t] = Date.now();
+    writeGuideSeenMap(map);
+  }
+  function closeGuide(t: Tool) {
+    markGuideSeen(t);
+    setGuideTool(null);
+  }
   // Set to true when the user presses "Batal" while exportImage is running so
   // we can skip onSave once the async toBlob resolves.
   const exportCancelledRef = useRef(false);
