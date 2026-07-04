@@ -2225,15 +2225,32 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
         </select>
       </label>
 
-      {item && (
+      {item && (() => {
+        const humU = humanBaseUnit(item.package_type, item.base_unit);
+        const pkgLabel = (item.package_type ?? "").trim();
+        // Sembunyikan tombol "per package" kalau labelnya sama persis dengan
+        // label satuan dasar (mis. GS: base "botol" = package "botol"), atau
+        // kalau package_size ≤ 1 sehingga tidak ada konversi bermakna.
+        const showPackageBtn =
+          pkgLabel !== "" &&
+          pkgLabel !== "pcs" &&
+          pkgLabel.toLowerCase() !== humU.toLowerCase() &&
+          Number(item.package_size) > 1;
+        // Sinkronkan sellMode kalau tombolnya hilang.
+        if (!showPackageBtn && sellMode === "package") {
+          // schedule via microtask to avoid setState during render
+          Promise.resolve().then(() => setSellMode("base"));
+        }
+        const packageLabelForQty = showPackageBtn ? pkgLabel : humU;
+        return (
         <>
           <div className="flex gap-1 text-xs">
             <button type="button" onClick={() => setSellMode("base")} className={`flex-1 rounded border px-2 py-1 ${sellMode === "base" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
-              Jual per {humanBaseUnit(item.package_type, item.base_unit)}
+              Jual per {humU}
             </button>
-            {item.package_type !== "pcs" && (
+            {showPackageBtn && (
               <button type="button" onClick={() => setSellMode("package")} className={`flex-1 rounded border px-2 py-1 ${sellMode === "package" ? "bg-primary text-primary-foreground border-primary" : ""}`}>
-                Jual per {item.package_type}
+                Jual per {pkgLabel}
               </button>
             )}
             {item.package_type === "botol" && (
@@ -2253,9 +2270,9 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             >
               {item.package_type === "botol"
                 ? `ℹ️ 1 karton = ${BOTOL_PER_KARTON} botol`
-                : item.package_type !== "pcs" && Number(item.package_size) > 1
-                  ? `ℹ️ 1 ${item.package_type} = ${item.package_size} ${humanBaseUnit(item.package_type, item.base_unit)}`
-                  : `ℹ️ Rumus konversi`}
+                : showPackageBtn
+                  ? `ℹ️ 1 ${pkgLabel} = ${item.package_size} ${humU}`
+                  : `ℹ️ Satuan dasar: ${humU}`}
             </KemasanRumusPopover>
             <KemasanKonversiBadge
               packageType={item.package_type}
@@ -2270,7 +2287,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
           <div className="grid grid-cols-2 gap-2">
             <label className="block">
               <span className="text-[11px] text-muted-foreground">
-                Jumlah ({sellMode === "base" ? humanBaseUnit(item.package_type, item.base_unit) : sellMode === "karton" ? "karton" : item.package_type})
+                Jumlah ({sellMode === "base" ? humU : sellMode === "karton" ? "karton" : packageLabelForQty})
               </span>
               {sellMode === "base" && item.base_unit === "g" ? (
                 <SmartWeightInput
@@ -2288,13 +2305,13 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
             </label>
             {sellMode === "base" ? (
               <label className="block">
-                <span className="text-[11px] text-muted-foreground">Harga / {humanBaseUnit(item.package_type, item.base_unit)} (Rp)</span>
+                <span className="text-[11px] text-muted-foreground">Harga / {humU} (Rp)</span>
                 <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerBase} onChange={(e) => setPricePerBase(e.target.value)} required />
               </label>
             ) : (
               <label className="block">
                 <span className="text-[11px] text-muted-foreground">
-                  Harga / {sellMode === "karton" ? "karton" : item.package_type} (Rp)
+                  Harga / {sellMode === "karton" ? "karton" : packageLabelForQty} (Rp)
                 </span>
                 <input type="number" step="1" min="0" className="mt-1 w-full rounded-md border bg-background px-2 py-1.5 text-sm" value={pricePerPackage} onChange={(e) => setPricePerPackage(e.target.value)} required />
               </label>
@@ -2365,7 +2382,8 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
 
           <button className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground">Simpan penjualan</button>
         </>
-      )}
+        );
+      })()}
     </form>
   );
 }
