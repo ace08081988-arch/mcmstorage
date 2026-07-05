@@ -1142,22 +1142,16 @@ function TitleDetailView({
           Belum ada penyiapan untuk judul ini.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {preps.map((p, idx) => (
-            <PrepCard
-              key={p.id}
-              index={preps.length - idx}
-              prep={p}
-              items={prepItems.filter((pi) => pi.preparation_id === p.id)}
-              warehouseItems={warehouseItems}
-              titleItems={titleItems}
-              titleName={title.name}
-              customers={customers}
-              onDelete={() => handleDelete(p)}
-              onSent={() => { onChanged(); void load(); }}
-            />
-          ))}
-        </div>
+        <PrepSections
+          preps={preps}
+          prepItems={prepItems}
+          warehouseItems={warehouseItems}
+          titleItems={titleItems}
+          titleName={title.name}
+          customers={customers}
+          onDelete={handleDelete}
+          onChanged={() => { onChanged(); void load(); }}
+        />
       )}
 
       <PrepEditorDialog
