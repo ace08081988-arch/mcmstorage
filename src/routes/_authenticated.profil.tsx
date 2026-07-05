@@ -44,6 +44,7 @@ import { PushNotificationSettings } from "@/components/chat/PushNotificationSett
 import { OrgNameSettings } from "@/components/OrgNameSettings";
 import { UpgradeToStorageCard } from "@/components/UpgradeToStorageCard";
 import { AccessStatusCard } from "@/components/AccessStatusCard";
+import { EmailVerificationStatus } from "@/components/EmailVerificationStatus";
 import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
 import { CopyChatApkLinksButton } from "@/components/CopyChatApkLinksButton";
 import { Link } from "@tanstack/react-router";
@@ -481,6 +482,8 @@ function ProfilPage() {
       <Separator />
 
       <AccessStatusCard />
+
+      <EmailVerificationStatus />
 
       <UpgradeToStorageCard />
 
