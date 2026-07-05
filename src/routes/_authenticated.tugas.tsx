@@ -685,17 +685,60 @@ function NumberInput({
 }
 
 function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreated }: { warehouse: WItem[]; variants: Variant[]; onVariantsChanged: () => void | Promise<void>; onClose: () => void; onCreated: (info: { token: string; pin: string; title: string }) => void }) {
-  const [title, setTitle] = useState("Tugas siapkan barang");
-  const [note, setNote] = useState("");
-  const [pin, setPin] = useState(genPin());
-  const [phone, setPhone] = useState(() => {
+  // Restore draf terakhir supaya reload tak sengaja (chunk error, auto-lock,
+  // rebuild preview) tidak menghapus pekerjaan yang belum dikirim.
+  const draft = useMemo(() => readCreateDraft(), []);
+  const [title, setTitle] = useState<string>(draft?.title ?? "Tugas siapkan barang");
+  const [note, setNote] = useState<string>(draft?.note ?? "");
+  const [pin, setPin] = useState<string>(draft?.pin && /^\d{4,8}$/.test(draft.pin) ? draft.pin : genPin());
+  const [phone, setPhone] = useState<string>(() => {
+    if (draft?.phone) return draft.phone;
     if (typeof window === "undefined") return "";
     return localStorage.getItem("prep:last_phone") ?? "";
   });
   const [query, setQuery] = useState("");
-  const [picked, setPicked] = useState<Record<string, PickedEntry>>({});
+  const [picked, setPicked] = useState<Record<string, PickedEntry>>(() => {
+    const d = draft?.picked;
+    return d && typeof d === "object" ? (d as Record<string, PickedEntry>) : {};
+  });
   const [manageVariantsFor, setManageVariantsFor] = useState<WItem | null>(null);
   const [busy, setBusy] = useState(false);
+
+  // Auto-persist draf tiap kali field berubah. sessionStorage-scoped: hilang
+  // saat tab ditutup, tapi tahan reload di tab yang sama.
+  useEffect(() => {
+    writeCreateDraft({ title, note, pin, phone, picked });
+  }, [title, note, pin, phone, picked]);
+
+  // Apakah draf punya isi bermakna → dipakai untuk konfirmasi tutup.
+  const hasContent =
+    Object.keys(picked).length > 0 ||
+    note.trim() !== "" ||
+    title.trim() !== "Tugas siapkan barang";
+
+  function requestClose() {
+    if (hasContent) {
+      const ok = window.confirm(
+        "Tutup dialog Buat tugas baru? Isian akan dipertahankan sebagai draf, dan dialog akan otomatis terbuka kembali saat halaman dimuat ulang.",
+      );
+      if (!ok) return;
+    } else {
+      clearCreateDraft();
+    }
+    onClose();
+  }
+
+  // Peringatan sebelum menutup tab / hard-refresh saat draf punya isi.
+  useEffect(() => {
+    if (!hasContent) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [hasContent]);
+
   // Status validasi per baris (count / weight) — dipakai untuk badge indikator.
   type LineStatus = "valid" | "partial" | "invalid";
   const [lineStatus, setLineStatus] = useState<Record<string, { count: LineStatus; weight: LineStatus }>>({});
