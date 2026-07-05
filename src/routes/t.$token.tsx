@@ -427,6 +427,13 @@ function PublicPrepPage() {
   const lastKeepAliveAtRef = useRef(0);
   const setWorkerOperationActive = useCallback((active: boolean) => {
     activeWorkerOpsRef.current = Math.max(0, activeWorkerOpsRef.current + (active ? 1 : -1));
+    // Naikkan flag global `__mcmBusy` supaya cache-buster tidak reload di
+    // tengah proses ambil/edit/upload foto (lihat src/lib/build-cache-buster.ts).
+    try {
+      const w = window as unknown as { __mcmBusy?: number };
+      const cur = typeof w.__mcmBusy === "number" ? w.__mcmBusy : 0;
+      w.__mcmBusy = Math.max(0, cur + (active ? 1 : -1));
+    } catch { /* ignore */ }
   }, []);
   const keepWorkerSessionAlive = useCallback(() => {
     const now = Date.now();
