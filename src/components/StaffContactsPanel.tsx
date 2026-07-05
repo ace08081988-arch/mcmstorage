@@ -142,12 +142,23 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
       <div className="flex items-center gap-2">
         <Users className="h-4 w-4" />
         <div className="text-sm font-semibold">Kontak Pegawai</div>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="ml-auto inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs"
-        >
-          <Plus className="h-3.5 w-3.5" /> {open ? "Batal" : "Tambah"}
-        </button>
+        <div className="ml-auto flex items-center gap-1.5">
+          <button
+            onClick={() => { invalidateCache(); void load(true); }}
+            disabled={refreshing}
+            title="Muat ulang data"
+            aria-label="Muat ulang kontak pegawai"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          </button>
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs"
+          >
+            <Plus className="h-3.5 w-3.5" /> {open ? "Batal" : "Tambah"}
+          </button>
+        </div>
       </div>
 
       {open && (
