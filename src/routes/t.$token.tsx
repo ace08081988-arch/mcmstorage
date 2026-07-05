@@ -1702,7 +1702,7 @@ function PublicPrepPage() {
             className="mx-auto max-w-2xl px-4 pb-2"
           >
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-snug text-amber-800 dark:text-amber-200">
-              <RefreshCcw className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-pulse" />
+              <RefreshCw className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-pulse" />
               <div className="min-w-0 flex-1">
                 <div className="font-semibold">Versi baru menunggu — refresh ditahan</div>
                 <div className="opacity-90">
