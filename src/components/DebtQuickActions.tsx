@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Wallet, CheckCircle2, HandCoins } from "lucide-react";
+import { Loader2, Plus, Wallet, CheckCircle2, HandCoins, Banknote } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
@@ -163,7 +163,7 @@ export function DebtQuickActions({
   }, [q.data]);
 
   const [amountRaw, setAmountRaw] = useState("");
-  const [busy, setBusy] = useState<null | "add" | "pay" | "lunas">(null);
+  const [busy, setBusy] = useState<null | "add" | "pay" | "lunas" | "cash">(null);
   const parsed = Number(amountRaw.replace(/\D+/g, ""));
   const hasAmount = Number.isFinite(parsed) && parsed > 0;
 
@@ -199,12 +199,13 @@ export function DebtQuickActions({
   const saldo = summary?.saldo ?? 0;
   const openDebts = summary?.openDebts ?? [];
 
-  async function addDebt() {
+  async function addDebt(opts?: { markPaid?: boolean; label?: "add" | "cash" }) {
     if (!uid || !data?.party || !hasAmount) {
       if (!hasAmount) toast.error("Isi jumlah dulu.");
       return;
     }
-    setBusy("add");
+    const busyKey = opts?.label ?? "add";
+    setBusy(busyKey);
     try {
       const insert: Record<string, unknown> = {
         user_id: uid,
@@ -212,12 +213,46 @@ export function DebtQuickActions({
         party_name: partyLabel,
         amount: parsed,
         source: "manual",
+        note:
+          opts?.markPaid
+            ? kind === "piutang"
+              ? "Jual tunai via pratinjau kirim"
+              : "Beli tunai via pratinjau kirim"
+            : kind === "piutang"
+              ? "Harga jual via pratinjau kirim"
+              : "Harga beli via pratinjau kirim",
       };
       if (kind === "piutang") insert.customer_id = data.party.id;
       else insert.supplier_id = data.party.id;
-      const { error } = await supabase.from("debts").insert(insert as never);
+      const { data: inserted, error } = await supabase
+        .from("debts")
+        .insert(insert as never)
+        .select("id")
+        .single();
       if (error) throw error;
-      toast.success(`${kindLabel} baru ${rupiah(parsed)} tercatat.`);
+      // Bila "Tunai", langsung catat pembayaran penuh sehingga tagihan
+      // baru saldo = 0 dan tetap tersimpan sebagai jejak transaksi tunai.
+      if (opts?.markPaid && inserted && (inserted as { id?: string }).id) {
+        const today = new Date().toISOString().slice(0, 10);
+        const { error: payErr } = await supabase.from("debt_payments").insert({
+          user_id: uid,
+          debt_id: (inserted as { id: string }).id,
+          amount: parsed,
+          paid_at: today,
+          note:
+            kind === "piutang"
+              ? "Jual tunai — otomatis lunas"
+              : "Beli tunai — otomatis lunas",
+        });
+        if (payErr) throw payErr;
+        toast.success(
+          `${kind === "piutang" ? "Jual tunai" : "Beli tunai"} ${rupiah(parsed)} tercatat (lunas).`,
+        );
+      } else {
+        toast.success(
+          `${kind === "piutang" ? "Harga jual" : "Harga beli"} ${rupiah(parsed)} tercatat sebagai ${kindLabel.toLowerCase()}.`,
+        );
+      }
       setAmountRaw("");
       await qc.invalidateQueries({ queryKey });
     } catch (e) {
