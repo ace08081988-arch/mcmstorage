@@ -1893,12 +1893,28 @@ function RequestForm({
         </div>
       )}
       <div className="grid grid-cols-2 gap-2">
-        <button onClick={() => cameraRef.current?.click()} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}</button>
-        <button onClick={() => galleryRef.current?.click()} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}</button>
+        <button onClick={pickCamera} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}</button>
+        <button onClick={pickGallery} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}</button>
       </div>
       <p className="-mt-1 text-[10px] text-muted-foreground">Bisa pilih beberapa foto sekaligus dari galeri.</p>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onCameraFile} />
       <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={onGalleryFiles} />
+      <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
+        <button
+          type="button"
+          onClick={() => setHelpKind("camera")}
+          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <HelpCircle className="h-3 w-3" /> Kamera tidak bisa dibuka?
+        </button>
+        <button
+          type="button"
+          onClick={() => setHelpKind("gallery")}
+          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <HelpCircle className="h-3 w-3" /> Galeri tidak muncul?
+        </button>
+      </div>
 
       <div className="flex gap-2">
         <input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="Link Google Maps (opsional)" className="h-10 flex-1 rounded-lg border bg-background px-3 text-xs" />
@@ -1928,6 +1944,7 @@ function RequestForm({
           }}
         />
       )}
+      <PermissionHelpDialog open={helpKind !== null} kind={helpKind ?? "camera"} onClose={() => setHelpKind(null)} />
     </div>
   );
 }
