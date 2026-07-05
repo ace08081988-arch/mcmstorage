@@ -6,6 +6,9 @@ import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepSubmissionRow, t
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
 import { stageFile, type StagedPhoto as StagedPhotoT } from "@/lib/prep-file-staging";
+import { queryCameraPermission, permissionToastMessage, type MediaKind } from "@/lib/media-permission";
+import { PermissionHelpDialog } from "@/components/prep/PermissionHelpDialog";
+import { HelpCircle } from "lucide-react";
 import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff, Inbox } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
