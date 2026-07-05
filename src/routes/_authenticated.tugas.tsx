@@ -916,7 +916,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
   }
 
   return (
-    <Modal title="Buat tugas baru" onClose={onClose}>
+    <Modal title="Buat tugas baru" onClose={requestClose}>
       {manageVariantsFor && (
         <VariantManager
           item={manageVariantsFor}
