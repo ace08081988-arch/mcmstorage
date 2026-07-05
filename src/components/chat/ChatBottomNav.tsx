@@ -48,14 +48,18 @@ export function ChatBottomNav() {
             key={to}
             to={to}
             aria-current={active ? "page" : undefined}
+            aria-label={
+              badge && badge > 0 ? `${label}, ${badge} belum dibaca` : label
+            }
             className={
-              "relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[11px] leading-snug transition-colors duration-300 ease-out " +
+              "relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[11px] leading-snug transition-colors duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background " +
               (active
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground")
             }
           >
             <span
+              aria-hidden="true"
               className={
                 "grid h-7 w-14 place-items-center rounded-full transition-[background-color,transform] duration-300 ease-out " +
                 (active ? "bg-primary/15 scale-100" : "bg-transparent scale-95")
@@ -65,13 +69,15 @@ export function ChatBottomNav() {
               {badge && badge > 0 ? (
                 <span
                   className="absolute right-[calc(50%-1.75rem)] top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white"
-                  aria-label={`${badge} belum dibaca`}
+                  aria-hidden="true"
                 >
                   {badge > 99 ? "99+" : badge}
                 </span>
               ) : null}
             </span>
-            <span className={active ? "font-semibold" : ""}>{label}</span>
+            <span aria-hidden="true" className={active ? "font-semibold" : ""}>
+              {label}
+            </span>
           </Link>
         );
       })}
