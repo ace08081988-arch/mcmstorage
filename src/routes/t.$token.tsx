@@ -1654,35 +1654,54 @@ function PublicPrepPage() {
                   })();
                   return (
                     <section key={g.key} className="space-y-2">
-                      <div className="sticky top-0 z-[1] -mx-1 rounded-md border bg-background/95 px-2 py-1.5 backdrop-blur">
-                        <button
-                          type="button"
-                          onClick={() => setCollapsedGroups((prev) => ({ ...prev, [g.key]: !prev[g.key] }))}
-                          aria-expanded={!collapsed}
-                          aria-label={collapsed ? `Buka ${g.label}` : `Tutup ${g.label}`}
-                          className="flex w-full items-center justify-between gap-2 text-left"
-                        >
+                      <div
+                        className="sticky top-0 z-[1] -mx-1 rounded-md border bg-background/95 px-2 py-1.5 backdrop-blur cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedGroup(g)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setSelectedGroup(g);
+                          }
+                        }}
+                        aria-label={`Buka ringkasan detail ${g.label}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
                             <div className="flex items-center gap-1 truncate text-[12px] font-semibold">
-                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`} aria-hidden />
                               <span className="truncate">{g.label}</span>
                             </div>
                             {g.category && (
                               <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{g.category}</div>
                             )}
                           </div>
-                          <div className="flex shrink-0 items-baseline gap-1 tabular-nums">
-                            <span className={`text-[13px] font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
-                              {doneCount}/{totalCount}
-                            </span>
-                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                              paket
-                            </span>
-                            <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${allDone ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-primary/10 text-primary"}`}>
-                              {pct}%
-                            </span>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <div className="flex items-baseline gap-1 tabular-nums">
+                              <span className={`text-[13px] font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
+                                {doneCount}/{totalCount}
+                              </span>
+                              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                paket
+                              </span>
+                              <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${allDone ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-primary/10 text-primary"}`}>
+                                {pct}%
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCollapsedGroups((prev) => ({ ...prev, [g.key]: !prev[g.key] }));
+                              }}
+                              aria-expanded={!collapsed}
+                              aria-label={collapsed ? `Buka ${g.label}` : `Tutup ${g.label}`}
+                              className="rounded-md p-1 hover:bg-muted"
+                            >
+                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`} aria-hidden />
+                            </button>
                           </div>
-                        </button>
+                        </div>
                         <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                           <div
                             className={`h-full rounded-full transition-[width] duration-300 ease-out ${allDone ? "bg-emerald-500" : "bg-primary"}`}
