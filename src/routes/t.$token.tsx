@@ -1310,11 +1310,26 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
   const [refSigned, setRefSigned] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
+  const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
 
   useEffect(() => { signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned); }, [item.ref_photo_path]);
 
-  function pickCamera() { cameraRef.current?.click(); }
-  function pickGallery() { galleryRef.current?.click(); }
+  async function pickCamera() {
+    const state = await queryCameraPermission();
+    if (state === "denied") {
+      toast.error(permissionToastMessage("camera", "denied"), {
+        action: { label: "Panduan", onClick: () => setHelpKind("camera") },
+      });
+      setHelpKind("camera");
+      return;
+    }
+    cameraRef.current?.click();
+  }
+  function pickGallery() {
+    // Web tidak menyediakan Permissions API khusus untuk galeri; tetap
+    // buka file picker, kalau kosong user bisa klik panduan di bawah.
+    galleryRef.current?.click();
+  }
 
   const fileToStaged = stageFile;
   function triggerAutoGps() {
