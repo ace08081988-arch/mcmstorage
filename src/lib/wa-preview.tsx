@@ -21,6 +21,7 @@ import { useLiveIdemByIds, channelFromKey } from "@/lib/idempotency";
 import type { SendPayloadSummary } from "@/lib/idempotency";
 import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
+import { DebtQuickActions } from "@/components/DebtQuickActions";
 
 const SKIP_PREVIEW_KEY = "wa-skip-preview";
 
@@ -57,6 +58,8 @@ type Request = {
   previousLog?: SendLogEntry[];
   /** Daftar shot ID (sorted, koma) untuk sinkronisasi idempotency lintas channel. */
   idemIdsKey?: string;
+  /** Info lawan bicara (pelanggan / supplier) untuk tombol Hutang / Bayar / Lunas. */
+  peer?: { name?: string; phone?: string; accountUserId?: string } | null;
   resolve: (result: { ok: boolean; text?: string; force?: boolean }) => void;
 };
 
@@ -79,11 +82,15 @@ export function confirmWaShare(input: {
   currentSummary?: SendPayloadSummary;
   previousLog?: SendLogEntry[];
   idemIdsKey?: string;
+  peer?: { name?: string; phone?: string; accountUserId?: string } | null;
 }): Promise<{ ok: boolean; text?: string; force?: boolean }> {
   // Tampilkan pratinjau saat klik ganda terdeteksi, meski user pernah meminta "jangan
   // tampilkan lagi" — operator perlu lihat peringatan duplikat & tombol force.
   const dupActive = !!input.duplicate && input.duplicate.status !== "failed";
-  if (getWaSkipPreview() && !dupActive) return Promise.resolve({ ok: true, text: input.text });
+  // Bila peer terdeteksi, tetap tampilkan pratinjau agar tombol Hutang/Bayar/Lunas
+  // bisa diakses meski user pernah mencentang "Jangan tampilkan lagi".
+  const hasPeer = !!(input.peer && (input.peer.phone || input.peer.accountUserId));
+  if (getWaSkipPreview() && !dupActive && !hasPeer) return Promise.resolve({ ok: true, text: input.text });
   return new Promise((resolve) => {
     const req: Request = { ...input, resolve };
     if (openRequest) openRequest(req);
