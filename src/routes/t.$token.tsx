@@ -425,6 +425,17 @@ function PublicPrepPage() {
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
   const activeWorkerOpsRef = useRef(0);
   const lastKeepAliveAtRef = useRef(0);
+  // Antrian pekerjaan yang harus ditunda selama busy > 0 (mis. auto-logout
+  // TTL, kembali ke PIN). Dijalankan sekali setelah counter turun ke 0.
+  const idleQueueRef = useRef<Array<() => void>>([]);
+  const pendingSessionExpiryRef = useRef(false);
+  const runIdleQueue = useCallback(() => {
+    const q = idleQueueRef.current;
+    idleQueueRef.current = [];
+    for (const fn of q) {
+      try { fn(); } catch { /* noop */ }
+    }
+  }, []);
   const setWorkerOperationActive = useCallback((active: boolean) => {
     activeWorkerOpsRef.current = Math.max(0, activeWorkerOpsRef.current + (active ? 1 : -1));
     // Naikkan flag global `__mcmBusy` supaya cache-buster tidak reload di
@@ -434,7 +445,18 @@ function PublicPrepPage() {
       const cur = typeof w.__mcmBusy === "number" ? w.__mcmBusy : 0;
       w.__mcmBusy = Math.max(0, cur + (active ? 1 : -1));
     } catch { /* ignore */ }
-  }, []);
+    // Ketika seluruh operasi selesai, jalankan aksi yang tadi ditunda
+    // (misal auto-logout TTL, kembali ke PIN, atau silentRefresh yang
+    // sempat dilewati saat busy).
+    if (activeWorkerOpsRef.current === 0) {
+      runIdleQueue();
+      // Refresh ringan sekali setelah idle supaya data pasti terkini.
+      try { void silentRefreshRef.current?.(); } catch { /* noop */ }
+    }
+  }, [runIdleQueue]);
+  // Ref ke silentRefresh untuk dipanggil dari setWorkerOperationActive
+  // tanpa menciptakan siklus dependensi.
+  const silentRefreshRef = useRef<null | (() => Promise<void>)>(null);
   const keepWorkerSessionAlive = useCallback(() => {
     const now = Date.now();
     if (now - lastKeepAliveAtRef.current < 30_000) return;
@@ -444,6 +466,17 @@ function PublicPrepPage() {
     writeSession(currentPin);
   }, []);
   const isWorkerOperationActive = () => activeWorkerOpsRef.current > 0;
+
+  // Bungkus aksi yang tidak boleh mengganggu proses ambil/edit/upload foto.
+  // Bila sedang busy, aksi ditunda sampai idle dan user diberi toast.
+  const runWhenIdle = useCallback(
+    (fn: () => void, busyMessage = "Selesaikan foto/editor dulu, aksi akan dilanjutkan otomatis.") => {
+      if (!isWorkerOperationActive()) { fn(); return; }
+      idleQueueRef.current.push(fn);
+      toast.info(busyMessage);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!authed) return;
@@ -526,8 +559,10 @@ function PublicPrepPage() {
     }, 50);
   }
   function reloginNow() {
-    goBackToPin();
-    focusPinInput();
+    runWhenIdle(() => {
+      goBackToPin();
+      focusPinInput();
+    });
   }
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
   // berturut-turut sebelum input PIN dikunci selama LOCK_SECONDS.
@@ -701,6 +736,26 @@ function PublicPrepPage() {
   useEffect(() => {
     if (!authed || !sessionExpiresAt) return;
     if (sessionSecondsLeft > 0) return;
+    // Jangan cabut sesi di tengah proses ambil/edit/upload foto — draft
+    // foto & PIN hilang. Tandai sebagai pending; setWorkerOperationActive
+    // akan menjalankannya begitu counter turun ke 0.
+    if (isWorkerOperationActive()) {
+      if (!pendingSessionExpiryRef.current) {
+        pendingSessionExpiryRef.current = true;
+        idleQueueRef.current.push(() => {
+          pendingSessionExpiryRef.current = false;
+          clearSession();
+          setAuthed(false);
+          setPin("");
+          pinRef.current = "";
+          setSessionJustExpired(true);
+          toast.info("Sesi PIN berakhir — silakan masuk ulang.");
+          focusPinInput();
+        });
+        toast.info("Sesi PIN habis, akan diakhiri setelah foto selesai.");
+      }
+      return;
+    }
     // TTL habis → lepas sesi & kembalikan ke layar PIN.
     clearSession();
     setAuthed(false);
@@ -1010,6 +1065,26 @@ function PublicPrepPage() {
     setItems(normalizedItems);
     setLastSyncAt(Date.now());
   }
+
+  // Daftarkan silentRefresh ke ref agar setWorkerOperationActive dapat
+  // memicu satu kali refresh saat semua operasi busy selesai.
+  useEffect(() => {
+    silentRefreshRef.current = silentRefresh;
+    return () => { silentRefreshRef.current = null; };
+  });
+
+  // Beri peringatan sebelum tab ditutup / reload saat foto masih diproses
+  // agar draft tidak hilang tanpa disadari.
+  useEffect(() => {
+    if (!authed) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isWorkerOperationActive()) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [authed]);
 
   function clearStale(itemId: string) {
     setStaleItemIds((s) => {
@@ -1527,8 +1602,10 @@ function PublicPrepPage() {
             <button
               type="button"
               onClick={() => {
-                setClosedReason(null);
-                goBackToPin();
+                runWhenIdle(() => {
+                  setClosedReason(null);
+                  goBackToPin();
+                });
               }}
               className="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-semibold transition hover:bg-muted"
             >
@@ -1546,7 +1623,7 @@ function PublicPrepPage() {
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
           <button
             type="button"
-            onClick={goBackToPin}
+            onClick={() => runWhenIdle(goBackToPin)}
             aria-label="Kembali ke halaman awal"
             className="flex h-9 w-9 items-center justify-center rounded-lg border bg-background text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
