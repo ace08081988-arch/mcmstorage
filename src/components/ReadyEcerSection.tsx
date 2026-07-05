@@ -422,6 +422,8 @@ export function ReadyEcerSection() {
   const [bulkConfirm, setBulkConfirm] = useState<null | "delete">(null);
   const [bulkPickChat, setBulkPickChat] = useState(false);
   const [bulkBusy, setBulkBusy] = useState<null | "wa" | "chat" | "delete">(null);
+  const [layout, setLayout] = useLayoutMode("readyEcer", "grid");
+  const ecerGridClass = layoutGridClass(layout);
   // Reset pilihan jika tab/view berganti.
   useEffect(() => {
     setSelectedIds(new Set());
