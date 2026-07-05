@@ -76,6 +76,27 @@ function PosKasirPage() {
   const [strukTransaksi, setStrukTransaksi] = useState<PosKasirTransaksi | null>(null);
   const [waNomor, setWaNomor] = useState<string>("");
   const [waLokasi, setWaLokasi] = useState<string>("");
+  const [gpsBusy, setGpsBusy] = useState<boolean>(false);
+
+  const ambilLokasiGps = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      alert("GPS tidak tersedia di perangkat ini");
+      return;
+    }
+    setGpsBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setWaLokasi(`https://www.google.com/maps?q=${latitude},${longitude}`);
+        setGpsBusy(false);
+      },
+      (err) => {
+        setGpsBusy(false);
+        alert("Gagal ambil GPS: " + err.message);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
+    );
+  };
   const [ambangStok, setAmbangStok] = useState<number>(() => {
     if (typeof window === "undefined") return AMBANG_DEFAULT;
     const raw = localStorage.getItem(AMBANG_STORAGE_KEY);
@@ -1197,21 +1218,33 @@ function PosKasirPage() {
                     <label className="text-[10px] uppercase tracking-wider text-slate-500">
                       Lokasi (URL Maps / http-https)
                     </label>
-                    <input
-                      type="url"
-                      inputMode="url"
-                      autoComplete="off"
-                      value={waLokasi}
-                      onChange={(e) => setWaLokasi(e.target.value)}
-                      placeholder="https://maps.google.com/…"
-                      maxLength={500}
-                      aria-invalid={!!waLokasiTrim && !waLokasiValid}
-                      className={`w-full text-sm rounded-lg bg-slate-900/60 border text-slate-100 focus:outline-none focus:ring-2 ${
-                        waLokasiTrim && !waLokasiValid
-                          ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
-                          : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
-                      } ${modeRingkas ? "mt-0.5 px-2 py-1" : "mt-1 px-3 py-2"}`}
-                    />
+                    <div className={`flex items-stretch gap-2 ${modeRingkas ? "mt-0.5" : "mt-1"}`}>
+                      <input
+                        type="url"
+                        inputMode="url"
+                        autoComplete="off"
+                        value={waLokasi}
+                        onChange={(e) => setWaLokasi(e.target.value)}
+                        placeholder="https://maps.google.com/…"
+                        maxLength={500}
+                        aria-invalid={!!waLokasiTrim && !waLokasiValid}
+                        className={`flex-1 min-w-0 text-sm rounded-lg bg-slate-900/60 border text-slate-100 focus:outline-none focus:ring-2 ${
+                          waLokasiTrim && !waLokasiValid
+                            ? "border-red-500/60 focus:border-red-500 focus:ring-red-500/30"
+                            : "border-slate-700 focus:border-emerald-400 focus:ring-emerald-400/30"
+                        } ${modeRingkas ? "px-2 py-1" : "px-3 py-2"}`}
+                      />
+                      <button
+                        type="button"
+                        onClick={ambilLokasiGps}
+                        disabled={gpsBusy}
+                        title="Ambil lokasi GPS saat ini"
+                        aria-label="Ambil lokasi GPS saat ini"
+                        className={`shrink-0 inline-flex items-center gap-1 rounded-lg border border-emerald-500/40 bg-emerald-500/10 text-emerald-300 hover:bg-emerald-500/20 disabled:opacity-60 ${modeRingkas ? "px-2 py-1 text-xs" : "px-3 py-2 text-sm"}`}
+                      >
+                        📍 <span>{gpsBusy ? "…" : "GPS"}</span>
+                      </button>
+                    </div>
                     {waLokasiError && waLokasiTrim !== "" && (
                       <p className="mt-1 text-[11px] text-red-300">{waLokasiError}</p>
                     )}
