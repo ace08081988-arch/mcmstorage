@@ -1207,6 +1207,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   const [waPreviewText, setWaPreviewText] = useState("");
   const [waPreviewLocation, setWaPreviewLocation] = useState<string | null>(null);
   const [waPreviewPhotoCount, setWaPreviewPhotoCount] = useState(0);
+  // Ringkasan pengelompokan atomik per folder untuk ditampilkan di pratinjau.
+  const [waPreviewFolders, setWaPreviewFolders] = useState<
+    Array<{ label: string; count: number; included: boolean }>
+  >([]);
   const [pickChatOpen, setPickChatOpen] = useState(false);
   const [chatSending, setChatSending] = useState(false);
   const [chatPreparing, setChatPreparing] = useState(false);
