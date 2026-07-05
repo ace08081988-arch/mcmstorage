@@ -692,12 +692,30 @@ function TugasBaruForm() {
     // Pesan dibangun via fungsi murni yang diuji di
     // src/lib/tugas-share.test.ts — invariant "foto tiap barang" dan
     // "link Google Maps" dipertahankan lewat test, bukan komentar.
+    const items = rows
+      .filter((r) => r.name.trim().length > 0)
+      .map((r) => ({ name: r.name.trim(), qty: Number(r.qty) || null, unit: r.unit.trim() || null }));
     const text = buildTugasBaruWaMessage({
       title: created.title,
       pin: created.pin,
       url: created.url,
-      itemsCount: rows.filter((r) => r.name.trim().length > 0).length,
+      items,
     });
+    // Validasi pra-kirim: pastikan setiap item punya baris foto & instruksi
+    // maps sebelum tugas dibagikan. Jika ada yang hilang, blokir kirim dan
+    // beri tahu admin persis apa yang bermasalah supaya bisa diperbaiki.
+    const v = validateTugasBaruWaMessage(text, {
+      title: created.title,
+      pin: created.pin,
+      url: created.url,
+      items,
+    });
+    if (!v.ok) {
+      toast.error("Pesan WA belum lengkap", {
+        description: v.issues.join(" · "),
+      });
+      return;
+    }
     const res = await shareToWhatsApp({ title: created.title, text, url: created.url, phone: cleaned || undefined });
     notifyShareResult(res);
   }
