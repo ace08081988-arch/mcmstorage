@@ -291,6 +291,17 @@ function RequestPage() {
                   <div
                     role="button"
                     tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); setSendLinkTitle(t); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setSendLinkTitle(t); } }}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20"
+                    aria-label="Kirim link ke pegawai"
+                    title="Buat link + PIN untuk pegawai yang menyiapkan"
+                  >
+                    <Send className="h-3 w-3" /> Kirim link ke pegawai
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); void deleteTitle(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void deleteTitle(); } }}
                     className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive hover:bg-destructive/20"
