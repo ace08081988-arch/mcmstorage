@@ -134,6 +134,17 @@ async function checkServerBuildId(): Promise<string | null> {
 }
 
 let installed = false;
+let externalRecheck: (() => void) | null = null;
+
+/**
+ * Paksa cek versi sekali. Aman dipanggil kapan pun; internal function ini
+ * yang menjalankan seluruh guard (busy, portal, editing). Dipakai oleh
+ * portal pegawai saat operasi foto selesai — begitu busy=0, coba reload
+ * lagi kalau server sudah bumped build id.
+ */
+export function recheckBuildVersion(): void {
+  externalRecheck?.();
+}
 
 export function installBuildCacheBuster(): void {
   if (installed) return;
@@ -189,6 +200,7 @@ export function installBuildCacheBuster(): void {
 
   // Cek segera + interval + saat tab kembali visible.
   void runCheck();
+  externalRecheck = () => { void runCheck(); };
   const iv = window.setInterval(() => { void runCheck(); }, POLL_INTERVAL_MS);
   const onVis = () => {
     if (document.visibilityState === "visible") void runCheck();
