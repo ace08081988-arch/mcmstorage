@@ -104,6 +104,16 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
     },
     {
+      // E2E alur kamera → editor → kembali tanpa reload di `/t/:token`.
+      // Regresi guard hardening 5 Juli 2026: mekanisme `__mcmBusy` +
+      // build-cache-buster harus mencegah reload selama pegawai mengedit
+      // foto, dan seluruh state (thumbnail, sesi PIN) harus tetap ada.
+      name: "worker-portal-camera-no-reload-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /worker-portal-camera-no-reload\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // E2E multi-tab: simulasi N tab same-origin menulis SYNC_KEY
       // bersamaan & verifikasi coalescing scheduler hanya melakukan 1
       // apply per jendela. Pakai desktop viewport karena uji ini tidak
