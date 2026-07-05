@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { stageFile, isHeic, formatFileSize, formatLabel } from "./prep-file-staging";
+import * as staging from "./prep-file-staging";
+const { stageFile, isHeic, formatFileSize, formatLabel } = staging;
 
 vi.mock("heic2any", () => ({
   default: async ({ blob }: { blob: Blob }) =>
