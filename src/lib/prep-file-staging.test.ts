@@ -1,5 +1,10 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
-import { stageFile } from "./prep-file-staging";
+import { stageFile, isHeic } from "./prep-file-staging";
+
+vi.mock("heic2any", () => ({
+  default: async ({ blob }: { blob: Blob }) =>
+    new Blob([await blob.text(), "-converted"], { type: "image/jpeg" }),
+}));
 
 type G = {
   URL?: { createObjectURL?: (b: Blob) => string };
@@ -96,5 +101,38 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
     const res = await stageFile(blob as File);
     expect(res.blob).toBe(blob);
     expect(res.blob.type).toBe("image/webp");
+  });
+
+  it("isHeic() mengenali MIME dan ekstensi HEIC/HEIF", () => {
+    expect(isHeic(new File(["x"], "IMG_0001.HEIC", { type: "" }))).toBe(true);
+    expect(isHeic(new File(["x"], "IMG_0001.heif", { type: "" }))).toBe(true);
+    expect(isHeic(new Blob(["x"], { type: "image/heic" }))).toBe(true);
+    expect(isHeic(new Blob(["x"], { type: "image/heif-sequence" }))).toBe(true);
+    expect(isHeic(new File(["x"], "IMG_0001.jpg", { type: "image/jpeg" }))).toBe(false);
+    expect(isHeic(new Blob(["x"], { type: "image/png" }))).toBe(false);
+  });
+
+  it("mengkonversi foto HEIC iPhone → JPEG sebelum stage (agar tidak hilang di editor)", async () => {
+    g.URL = { createObjectURL: (b: Blob) => `blob:mock/${b.type}` };
+    const heic = new File(["heic-bytes"], "IMG_0001.HEIC", { type: "image/heic" });
+    const res = await stageFile(heic);
+    expect(res.blob.type).toBe("image/jpeg");
+    expect((res.blob as File).name).toBe("IMG_0001.jpg");
+    expect(res.dataUrl).toBe("blob:mock/image/jpeg");
+  });
+
+  it("mengkonversi HEIC berdasar ekstensi walau MIME kosong (share dari WhatsApp/iOS)", async () => {
+    g.URL = { createObjectURL: (b: Blob) => `blob:mock/${b.type}` };
+    const heic = new File(["heic-bytes"], "photo.heif", { type: "" });
+    const res = await stageFile(heic);
+    expect(res.blob.type).toBe("image/jpeg");
+    expect((res.blob as File).name).toBe("photo.jpg");
+  });
+
+  it("meneruskan foto JPEG apa adanya tanpa memanggil konverter", async () => {
+    g.URL = { createObjectURL: () => "blob:mock/jpg" };
+    const jpg = new File(["j"], "foo.jpg", { type: "image/jpeg" });
+    const res = await stageFile(jpg);
+    expect(res.blob).toBe(jpg); // referensi sama = tidak dikonversi
   });
 });
