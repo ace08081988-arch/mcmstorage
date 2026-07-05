@@ -17,6 +17,7 @@ import {
   formatFileSize,
   type StagedPhoto as StagedPhotoT,
 } from "@/lib/prep-file-staging";
+import { mergeStagedPhotos } from "@/lib/prep-photo-merge";
 import {
   saveDraftPhotos,
   loadDraftPhotos,
@@ -53,6 +54,7 @@ import {
   AlertCircle,
   X as XIcon,
   ChevronDown,
+  Layers,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
@@ -1618,6 +1620,30 @@ function ItemCard({
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
   const [expanded, setExpanded] = useState(false);
+  // Antrian foto galeri yang akan dibuka di PhotoEditor satu per satu.
+  const editQueueRef = useRef<number[]>([]);
+  const photosRef = useRef<StagedPhoto[]>([]);
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+  function openEditForIdx(i: number) {
+    const p = photosRef.current[i];
+    if (!p) return;
+    setEditingIdx(i);
+    setEditorSrc(p.dataUrl);
+    setEditorOpen(true);
+  }
+  function advanceEditQueue() {
+    const q = editQueueRef.current;
+    if (q.length === 0) {
+      setEditingIdx(null);
+      setEditorOpen(false);
+      return;
+    }
+    const nextIdx = q.shift()!;
+    // Tunggu 1 tick supaya setPhotos yang barusan sudah menyebar ke photosRef.
+    setTimeout(() => openEditForIdx(nextIdx), 0);
+  }
   // Status kirim per-item yang ditampilkan jelas di header kartu:
   // idle (belum pernah tekan Kirim), sending, success, failed.
   const [sendStatus, setSendStatus] = useState<
@@ -1769,7 +1795,18 @@ function ItemCard({
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (files.length === 0) return;
-    await Promise.all(files.map((f) => stageOne(f, false)));
+    const results = await Promise.all(files.map((f) => stageOne(f, false)));
+    const okCount = results.filter(Boolean).length;
+    if (okCount === 0) return;
+    // Setelah semua foto ter-stage, buka PhotoEditor untuk tiap foto baru
+    // secara berurutan. Pakai photosRef supaya index-nya akurat setelah
+    // state selesai flush.
+    await new Promise((r) => setTimeout(r, 0));
+    const len = photosRef.current.length;
+    const startIdx = len - okCount;
+    const idxs = Array.from({ length: okCount }, (_, i) => startIdx + i);
+    editQueueRef.current = idxs.slice(1);
+    openEditForIdx(idxs[0]);
   }
 
   function takeLocation() {
@@ -2102,6 +2139,18 @@ function ItemCard({
           onRetryAllUploads={() => {
             void submit();
           }}
+          onMerge={async () => {
+            if (photos.length < 2) return;
+            try {
+              const merged = await mergeStagedPhotos(photos);
+              setPhotos([merged]);
+              // Buka editor langsung supaya bisa tambah teks / panah.
+              editQueueRef.current = [];
+              setTimeout(() => openEditForIdx(0), 0);
+            } catch (err) {
+              toast.error("Gagal gabung foto: " + ((err as Error).message || "unknown"));
+            }
+          }}
         />
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button
@@ -2214,7 +2263,12 @@ function ItemCard({
         {editorOpen && editorSrc && (
           <PhotoEditor
             src={editorSrc}
-            onCancel={() => setEditorOpen(false)}
+            onCancel={() => {
+              // Batalkan seluruh antrian edit galeri saat pengguna menutup editor.
+              editQueueRef.current = [];
+              setEditingIdx(null);
+              setEditorOpen(false);
+            }}
             onSave={(blob, dataUrl) => {
               setPhotos((prev) => {
                 if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
@@ -2224,8 +2278,9 @@ function ItemCard({
                 }
                 return [...prev, buildStagedPhoto(dataUrl, blob)];
               });
-              setEditingIdx(null);
-              setEditorOpen(false);
+              // Lanjut ke foto berikutnya dalam antrian galeri (kalau ada),
+              // atau tutup editor.
+              advanceEditQueue();
             }}
           />
         )}
@@ -2281,6 +2336,7 @@ function PhotoTileGrid({
   onClearAll,
   onRetryUpload,
   onRetryAllUploads,
+  onMerge,
 }: {
   photos: StagedPhotoT[];
   pending: PendingPhoto[];
@@ -2293,6 +2349,7 @@ function PhotoTileGrid({
   onClearAll: () => void;
   onRetryUpload?: (i: number) => void;
   onRetryAllUploads?: () => void;
+  onMerge?: () => void;
 }) {
   const total = photos.length + pending.length;
   if (total === 0) return null;
@@ -2321,6 +2378,16 @@ function PhotoTileGrid({
               className="inline-flex h-7 items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 text-[10px] font-medium text-primary hover:bg-primary/10"
             >
               <RefreshCw className="h-3 w-3" /> Coba lagi {uploadErrCount} foto gagal
+            </button>
+          )}
+          {onMerge && photos.length >= 2 && !isUploading && (
+            <button
+              type="button"
+              onClick={onMerge}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 text-[10px] font-medium text-primary hover:bg-primary/10"
+              title="Gabungkan semua foto menjadi satu"
+            >
+              <Layers className="h-3 w-3" /> Gabung foto
             </button>
           )}
           <button
@@ -2711,6 +2778,29 @@ function RequestForm({
 
   // Draft foto persisten untuk paket request.
   const draftKey = requestDraftKey(token, title.id);
+  // Antrian foto galeri yang dibuka di PhotoEditor satu per satu.
+  const editQueueRef = useRef<number[]>([]);
+  const photosRef = useRef<StagedPhoto[]>([]);
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+  function openEditForIdx(i: number) {
+    const p = photosRef.current[i];
+    if (!p) return;
+    setEditingIdx(i);
+    setEditorSrc(p.dataUrl);
+    setEditorOpen(true);
+  }
+  function advanceEditQueue() {
+    const q = editQueueRef.current;
+    if (q.length === 0) {
+      setEditingIdx(null);
+      setEditorOpen(false);
+      return;
+    }
+    const nextIdx = q.shift()!;
+    setTimeout(() => openEditForIdx(nextIdx), 0);
+  }
   const draftLoadedRef = useRef(false);
   useEffect(() => {
     let cancelled = false;
@@ -2836,7 +2926,15 @@ function RequestForm({
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (files.length === 0) return;
-    await Promise.all(files.map((f) => stageOne(f, false)));
+    const results = await Promise.all(files.map((f) => stageOne(f, false)));
+    const okCount = results.filter(Boolean).length;
+    if (okCount === 0) return;
+    await new Promise((r) => setTimeout(r, 0));
+    const len = photosRef.current.length;
+    const startIdx = len - okCount;
+    const idxs = Array.from({ length: okCount }, (_, i) => startIdx + i);
+    editQueueRef.current = idxs.slice(1);
+    openEditForIdx(idxs[0]);
   }
 
   function takeLocation() {
@@ -3004,6 +3102,17 @@ function RequestForm({
         onRetryAllUploads={() => {
           void submit();
         }}
+        onMerge={async () => {
+          if (photos.length < 2) return;
+          try {
+            const merged = await mergeStagedPhotos(photos);
+            setPhotos([merged]);
+            editQueueRef.current = [];
+            setTimeout(() => openEditForIdx(0), 0);
+          } catch (err) {
+            toast.error("Gagal gabung foto: " + ((err as Error).message || "unknown"));
+          }
+        }}
       />
       <div className="grid grid-cols-2 gap-2">
         <button
@@ -3090,7 +3199,11 @@ function RequestForm({
       {editorOpen && editorSrc && (
         <PhotoEditor
           src={editorSrc}
-          onCancel={() => setEditorOpen(false)}
+          onCancel={() => {
+            editQueueRef.current = [];
+            setEditingIdx(null);
+            setEditorOpen(false);
+          }}
           onSave={(blob, dataUrl) => {
             setPhotos((prev) => {
               if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
@@ -3100,8 +3213,7 @@ function RequestForm({
               }
               return [...prev, buildStagedPhoto(dataUrl, blob)];
             });
-            setEditingIdx(null);
-            setEditorOpen(false);
+            advanceEditQueue();
           }}
         />
       )}
