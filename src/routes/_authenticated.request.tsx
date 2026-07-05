@@ -1142,22 +1142,16 @@ function TitleDetailView({
           Belum ada penyiapan untuk judul ini.
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {preps.map((p, idx) => (
-            <PrepCard
-              key={p.id}
-              index={preps.length - idx}
-              prep={p}
-              items={prepItems.filter((pi) => pi.preparation_id === p.id)}
-              warehouseItems={warehouseItems}
-              titleItems={titleItems}
-              titleName={title.name}
-              customers={customers}
-              onDelete={() => handleDelete(p)}
-              onSent={() => { onChanged(); void load(); }}
-            />
-          ))}
-        </div>
+        <PrepSections
+          preps={preps}
+          prepItems={prepItems}
+          warehouseItems={warehouseItems}
+          titleItems={titleItems}
+          titleName={title.name}
+          customers={customers}
+          onDelete={handleDelete}
+          onChanged={() => { onChanged(); void load(); }}
+        />
       )}
 
       <PrepEditorDialog
@@ -1168,6 +1162,79 @@ function TitleDetailView({
         onClose={() => setCreating(false)}
         onSaved={() => { onChanged(); void load(); }}
       />
+    </div>
+  );
+}
+
+function PrepSections({
+  preps, prepItems, warehouseItems, titleItems, titleName, customers, onDelete, onChanged,
+}: {
+  preps: RequestPreparation[];
+  prepItems: Array<{ id: string; preparation_id: string; warehouse_item_id: string; actual_grams: number }>;
+  warehouseItems: WarehouseItem[];
+  titleItems: RequestTitleItem[];
+  titleName: string;
+  customers: CustomerRow[];
+  onDelete: (p: RequestPreparation) => void;
+  onChanged: () => void;
+}) {
+  const [showHistory, setShowHistory] = useState(true);
+  const active = preps.filter((p) => !p.sold_at);
+  const sent = preps.filter((p) => !!p.sold_at);
+  const total = preps.length;
+  const renderCard = (p: RequestPreparation, idx: number, listLen: number) => (
+    <PrepCard
+      key={p.id}
+      index={listLen - idx}
+      prep={p}
+      items={prepItems.filter((pi) => pi.preparation_id === p.id)}
+      warehouseItems={warehouseItems}
+      titleItems={titleItems}
+      titleName={titleName}
+      customers={customers}
+      onDelete={() => onDelete(p)}
+      onSent={onChanged}
+    />
+  );
+  return (
+    <div className="space-y-4">
+      <div>
+        <div className="mb-2 flex items-center justify-between">
+          <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
+            Siap Kirim <span className="text-foreground/70">({active.length})</span>
+          </p>
+        </div>
+        {active.length === 0 ? (
+          <div className="rounded-xl border border-dashed bg-card p-4 text-center text-[11px] text-muted-foreground">
+            Tidak ada penyiapan yang menunggu dikirim.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            {active.map((p, idx) => renderCard(p, idx, total))}
+          </div>
+        )}
+      </div>
+      {sent.length > 0 && (
+        <div>
+          <button
+            type="button"
+            onClick={() => setShowHistory((v) => !v)}
+            className="mb-2 flex w-full items-center justify-between rounded-md border bg-muted/30 px-3 py-1.5 text-[11px] uppercase tracking-wide text-muted-foreground hover:bg-muted/50"
+            aria-expanded={showHistory}
+          >
+            <span className="inline-flex items-center gap-1.5">
+              <History className="h-3.5 w-3.5" />
+              Riwayat Terkirim <span className="text-foreground/70">({sent.length})</span>
+            </span>
+            <span className="text-[10px]">{showHistory ? "Sembunyikan" : "Tampilkan"}</span>
+          </button>
+          {showHistory && (
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+              {sent.map((p, idx) => renderCard(p, idx, sent.length))}
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 }
