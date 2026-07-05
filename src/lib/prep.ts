@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
+import { compressImage } from "@/lib/prep-image-compress";
 
 export const PREP_BUCKET = "prep-photos";
 
@@ -36,10 +37,112 @@ export async function signedUrl(path: string | null | undefined, expiresIn = 60 
   return data?.signedUrl ?? null;
 }
 
-export async function uploadPrepPhoto(taskToken: string, itemId: string, blob: Blob, ext = "jpg", client: StorageClient = supabase): Promise<string | null> {
-  const path = `${taskToken}/${itemId}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
-  const { error } = await client.storage.from(PREP_BUCKET).upload(path, blob, {
-    contentType: blob.type || "image/jpeg",
+// Ambang re-kompresi safety-net di lapisan upload. stageFile() sudah
+// mengompres saat file dipilih user, tapi:
+//   • hasil edit PhotoEditor bisa lebih besar dari input (mis. rotasi
+//     ulang atau crop di zoom tinggi meninggalkan area kosong),
+//   • blob dari alur lain (mis. drag-drop di masa depan) belum tentu
+//     lewat stageFile.
+// Threshold 1.5 MB dipilih karena RPC/storage lancar di bawahnya dan foto
+// bukti timbangan tetap tajam pada quality 0.8 sisi 2048 px.
+const UPLOAD_COMPRESS_THRESHOLD = 1.5 * 1024 * 1024;
+const UPLOAD_QUALITY = 0.8;
+const UPLOAD_MAX_DIM = 2048;
+
+// Peta MIME → ekstensi file. Batasi hanya ke format raster yang benar-benar
+// bisa dihasilkan pipeline stageFile / PhotoEditor supaya tidak ada file
+// aneh (mis. HEIC mentah) yang lolos ke storage.
+const MIME_EXT: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+};
+
+function extFromMime(mime: string | undefined | null): string {
+  const m = (mime || "").toLowerCase();
+  return MIME_EXT[m] ?? "jpg";
+}
+
+function mimeFromExt(ext: string): string {
+  const e = ext.toLowerCase().replace(/^\./, "");
+  if (e === "png") return "image/png";
+  if (e === "webp") return "image/webp";
+  return "image/jpeg";
+}
+
+export type UploadPrepPhotoOptions = {
+  /** Ekstensi override; default: turunkan dari MIME blob (fallback "jpg"). */
+  ext?: string;
+  /**
+   * Nama file yang dikirim ke storage backend. Jika `blob` sudah `File`,
+   * dipakai apa adanya; jika tidak, blob dibungkus jadi `File(name, type)`
+   * dengan nama unik + ekstensi yang konsisten. Nama ini juga muncul di
+   * header `Content-Disposition` sehingga owner bisa mengenali foto saat
+   * mengunduh dari dashboard.
+   */
+  fileName?: string;
+  /**
+   * Nonaktifkan safety-net kompresi (mis. saat test) — normalnya biarkan
+   * `undefined` supaya foto > 1.5 MB otomatis dipangkas ke JPEG q=0.8.
+   */
+  skipCompress?: boolean;
+};
+
+export async function uploadPrepPhoto(
+  taskToken: string,
+  itemId: string,
+  blob: Blob,
+  extOrOpts: string | UploadPrepPhotoOptions = {},
+  client: StorageClient = supabase,
+): Promise<string | null> {
+  const opts: UploadPrepPhotoOptions =
+    typeof extOrOpts === "string" ? { ext: extOrOpts } : (extOrOpts ?? {});
+
+  // 1) Safety-net kompresi. compressImage() sendiri sudah menerapkan aturan
+  //    "skip bila < minBytes / hasil >= asli", jadi aman dipanggil dua
+  //    kali (di stageFile & di sini) tanpa risiko re-encode berulang.
+  let out: Blob = blob;
+  if (!opts.skipCompress) {
+    try {
+      const compressed = await compressImage(out, {
+        maxDim: UPLOAD_MAX_DIM,
+        quality: UPLOAD_QUALITY,
+        minBytes: UPLOAD_COMPRESS_THRESHOLD,
+        mimeType: "image/jpeg",
+      });
+      if (compressed && compressed.size > 0) out = compressed;
+    } catch {
+      // biarkan blob asli
+    }
+  }
+
+  // 2) Tentukan ekstensi & MIME final. Prioritas: opts.ext > MIME blob >
+  //    "jpg". MIME final selalu konsisten dengan ekstensi (jangan sampai
+  //    file `.jpg` diupload dengan Content-Type `image/heic`).
+  const ext = (opts.ext ?? extFromMime(out.type)).toLowerCase().replace(/^\./, "");
+  const contentType = mimeFromExt(ext);
+
+  // 3) Bungkus jadi File dengan nama pasti supaya storage & unduhan owner
+  //    tetap punya nama file yang bermakna. `blob` yang datang dari
+  //    stageFile umumnya sudah File, tapi kita tetap normalisasi agar
+  //    MIME dan nama ekstensi selalu sinkron.
+  const stamp = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+  const fileName = opts.fileName ?? `${itemId}-${stamp}.${ext}`;
+  const path = `${taskToken}/${itemId}/${stamp}.${ext}`;
+
+  let payload: Blob = out;
+  const FileCtor = (globalThis as unknown as { File?: typeof File }).File;
+  if (typeof FileCtor === "function") {
+    try {
+      payload = new FileCtor([out], fileName, { type: contentType });
+    } catch {
+      payload = out;
+    }
+  }
+
+  const { error } = await client.storage.from(PREP_BUCKET).upload(path, payload, {
+    contentType,
     upsert: false,
   });
   if (error) {
