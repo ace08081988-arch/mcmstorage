@@ -821,6 +821,7 @@ function SendPrepLinkDialog({
       a.click();
       a.remove();
       toast.success("PNG diunduh");
+      void logDelivery("download_png");
     } catch (e) {
       toast.error("Gagal unduh PNG: " + ((e as Error).message ?? String(e)));
     }
@@ -888,6 +889,7 @@ function SendPrepLinkDialog({
       }
       doc.save(`${fileSlug()}.pdf`);
       toast.success("PDF diunduh");
+      void logDelivery("download_pdf");
     } catch (e) {
       toast.error("Gagal unduh PDF: " + ((e as Error).message ?? String(e)));
     }
