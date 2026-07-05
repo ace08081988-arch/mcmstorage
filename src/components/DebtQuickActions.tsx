@@ -333,6 +333,106 @@ export function DebtQuickActions({
     return { lines, applied: amount - left, leftover: left };
   }
 
+  type EditPreview =
+    | { valid: false; reason: string }
+    | {
+        valid: true;
+        kind: "amount";
+        prevAmount: number;
+        nextAmount: number;
+        paidAfter: number;
+        sisaBefore: number;
+        sisaAfter: number;
+        deltaSaldo: number;
+        newSaldo: number;
+      }
+    | {
+        valid: true;
+        kind: "reallocate";
+        lines: Array<{ id: string; created_at: string; take: number; sisaBefore: number; sisaAfter: number }>;
+        applied: number;
+        leftover: number;
+        prevApplied: number;
+        deltaSaldo: number;
+        newSaldo: number;
+      };
+
+  function computeEditPreview(): EditPreview | null {
+    if (!lastTx) return null;
+    const raw = editAmountRaw.replace(/\D+/g, "");
+    const next = Number(raw);
+    if (!raw || !Number.isFinite(next) || next <= 0) {
+      return { valid: false, reason: "Masukkan nominal baru (Rp)." };
+    }
+    if (next === lastTx.amount) {
+      return { valid: false, reason: "Nominal sama dengan sebelumnya." };
+    }
+    if ("paymentIds" in lastTx) {
+      const paidByDebt = new Map<string, number>();
+      for (const p of data?.payments ?? []) {
+        if (lastTx.paymentIds.includes(p.id)) continue;
+        paidByDebt.set(p.debt_id, (paidByDebt.get(p.debt_id) ?? 0) + Number(p.amount));
+      }
+      const openNow: Array<{ id: string; sisa: number; created_at: string }> = [];
+      for (const row of data?.debts ?? []) {
+        const sisa = Math.max(0, Number(row.amount) - (paidByDebt.get(row.id) ?? 0));
+        if (sisa > 0) openNow.push({ id: row.id, sisa, created_at: row.created_at });
+      }
+      openNow.sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+      const totalOpenBefore = openNow.reduce((s, d) => s + d.sisa, 0);
+      let left = next;
+      const linesArr: Array<{ id: string; created_at: string; take: number; sisaBefore: number; sisaAfter: number }> = [];
+      for (const d of openNow) {
+        if (left <= 0) break;
+        const take = Math.min(left, d.sisa);
+        linesArr.push({ id: d.id, created_at: d.created_at, take, sisaBefore: d.sisa, sisaAfter: d.sisa - take });
+        left -= take;
+      }
+      const applied = next - left;
+      const newSaldo = totalOpenBefore - applied;
+      const deltaSaldo = newSaldo - saldo;
+      return {
+        valid: true,
+        kind: "reallocate",
+        lines: linesArr,
+        applied,
+        leftover: left,
+        prevApplied: lastTx.amount,
+        newSaldo,
+        deltaSaldo,
+      };
+    }
+    // add / cash
+    const debtRow = (data?.debts ?? []).find((d) => d.id === lastTx.debtId);
+    const currentAmount = Number(debtRow?.amount ?? lastTx.amount);
+    const otherPaymentsSum = (data?.payments ?? [])
+      .filter((p) => p.debt_id === lastTx.debtId && (lastTx.wasCash ? p.id !== lastTx.paymentId : true))
+      .reduce((s, p) => s + Number(p.amount), 0);
+    const paidAfter = lastTx.wasCash ? next + otherPaymentsSum : otherPaymentsSum;
+    if (next < otherPaymentsSum) {
+      return {
+        valid: false,
+        reason: `Tidak boleh di bawah pembayaran lain yang sudah tercatat (${rupiah(otherPaymentsSum)}) untuk tagihan ini.`,
+      };
+    }
+    const sisaBefore = Math.max(0, currentAmount - (lastTx.wasCash ? currentAmount : 0) - otherPaymentsSum);
+    // wasCash: sisaBefore = 0 (lunas). non-cash: sisaBefore = currentAmount - otherPayments.
+    const sisaAfter = Math.max(0, next - paidAfter);
+    const deltaSaldo = sisaAfter - sisaBefore;
+    const newSaldo = saldo + deltaSaldo;
+    return {
+      valid: true,
+      kind: "amount",
+      prevAmount: lastTx.amount,
+      nextAmount: next,
+      paidAfter,
+      sisaBefore,
+      sisaAfter,
+      deltaSaldo,
+      newSaldo,
+    };
+  }
+
   async function addDebt(opts?: { markPaid?: boolean; label?: "add" | "cash" }): Promise<{ ok: boolean; error?: string }> {
     if (!uid || !data?.party || !hasAmount) {
       if (!hasAmount) toast.error("Isi jumlah dulu.");
@@ -479,6 +579,16 @@ export function DebtQuickActions({
     if (next === tx.amount) {
       setEditOpen(false);
       return;
+    }
+    // Validasi guard: cegah saldo negatif / tidak konsisten.
+    if (!("paymentIds" in tx)) {
+      const otherPaymentsSum = (data?.payments ?? [])
+        .filter((p) => p.debt_id === tx.debtId && (tx.wasCash ? p.id !== tx.paymentId : true))
+        .reduce((s, p) => s + Number(p.amount), 0);
+      if (next < otherPaymentsSum) {
+        toast.error(`Nominal baru < pembayaran tercatat (${rupiah(otherPaymentsSum)}).`);
+        return;
+      }
     }
     setReverting(true);
     try {
@@ -882,10 +992,94 @@ export function DebtQuickActions({
             className="h-9 w-full rounded-md border bg-background px-2 text-right font-mono text-sm"
             disabled={reverting}
           />
+          {(() => {
+            const preview = computeEditPreview();
+            if (!preview) return null;
+            if (!preview.valid) {
+              return (
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-800 dark:text-amber-200">
+                  {preview.reason}
+                </div>
+              );
+            }
+            const deltaColor =
+              preview.deltaSaldo === 0
+                ? "text-muted-foreground"
+                : preview.deltaSaldo > 0
+                  ? (lastTx && lastTx.kind === "piutang" ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300")
+                  : "text-red-700 dark:text-red-300";
+            const deltaSign = preview.deltaSaldo > 0 ? "+" : preview.deltaSaldo < 0 ? "−" : "";
+            return (
+              <div className="rounded-md border bg-muted/30 p-2 text-[11px] space-y-1">
+                {preview.kind === "amount" ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Nominal</span>
+                      <span className="font-mono">{rupiah(preview.prevAmount)} → <b className="text-foreground">{rupiah(preview.nextAmount)}</b></span>
+                    </div>
+                    {preview.paidAfter > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Pembayaran tercatat</span>
+                        <span className="font-mono">{rupiah(preview.paidAfter)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Sisa tagihan ini</span>
+                      <span className="font-mono">{rupiah(preview.sisaBefore)} → <b className={preview.sisaAfter === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}>{rupiah(preview.sisaAfter)}{preview.sisaAfter === 0 ? " · lunas" : ""}</b></span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between font-semibold text-foreground">
+                      <span>Alokasi ulang (terlama dulu)</span>
+                      <span className="font-mono">{preview.lines.length} tagihan</span>
+                    </div>
+                    {preview.lines.length === 0 ? (
+                      <div className="text-muted-foreground">Tidak ada tagihan terbuka setelah pembayaran lama dibalik.</div>
+                    ) : (
+                      <ol className="space-y-0.5">
+                        {preview.lines.map((ln, i) => (
+                          <li key={ln.id} className="flex items-center justify-between gap-2">
+                            <span className="min-w-0 truncate text-muted-foreground">
+                              {i + 1}. {formatDate(ln.created_at)}
+                              <span className="ml-1 font-mono">· sisa {rupiah(ln.sisaBefore)}</span>
+                            </span>
+                            <span className="shrink-0 text-right font-mono">
+                              − {rupiah(ln.take)}
+                              <span className={"ml-1 " + (ln.sisaAfter === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                                → {rupiah(ln.sisaAfter)}{ln.sisaAfter === 0 ? " · lunas" : ""}
+                              </span>
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                    <div className="flex items-center justify-between border-t pt-1">
+                      <span className="text-muted-foreground">Terpakai</span>
+                      <span className="font-mono font-semibold">{rupiah(preview.prevApplied)} → <b className="text-foreground">{rupiah(preview.applied)}</b></span>
+                    </div>
+                    {preview.leftover > 0 && (
+                      <div className="flex items-center justify-between text-amber-700 dark:text-amber-300">
+                        <span>Sisa input tidak terpakai</span>
+                        <span className="font-mono">{rupiah(preview.leftover)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="flex items-center justify-between border-t pt-1">
+                  <span className="text-muted-foreground">Saldo {lastTx && lastTx.kind === "piutang" ? "piutang" : "hutang"}</span>
+                  <span className="font-mono">
+                    {rupiah(saldo)} → <b className="text-foreground">{rupiah(Math.max(0, preview.newSaldo))}</b>
+                    <span className={"ml-1 " + deltaColor}>({deltaSign}{rupiah(Math.abs(preview.deltaSaldo))})</span>
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={reverting}>Batal</AlertDialogCancel>
             <AlertDialogAction
-              disabled={reverting}
+              disabled={reverting || !(computeEditPreview()?.valid)}
               onClick={async (e) => {
                 e.preventDefault();
                 editConfirmedRef.current = true;
