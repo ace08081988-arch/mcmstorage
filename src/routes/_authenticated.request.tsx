@@ -1287,6 +1287,297 @@ function PrepCard({
   );
 }
 
+// -----------------------------------------------------------------------
+// SendPrepToCustomerDialog
+// Konversi 1 penyiapan request → penjualan + (opsional) piutang, lampirkan
+// SEMUA foto ke pesan WhatsApp. Stok gudang aman: RPC atomik menghapus
+// request_preparation_items (mengembalikan stok) lalu INSERT sales
+// (memotong stok lagi). Bila metode = hutang, otomatis catat piutang di
+// tabel debts terhubung ke customer_id.
+// -----------------------------------------------------------------------
+function SendPrepToCustomerDialog({
+  open, onClose, prep, items, warehouseItems, titleItems, titleName,
+  customers, photoPaths, unitFor, onSent,
+}: {
+  open: boolean;
+  onClose: () => void;
+  prep: RequestPreparation;
+  items: Array<{ id: string; warehouse_item_id: string; actual_grams: number }>;
+  warehouseItems: WarehouseItem[];
+  titleItems: RequestTitleItem[];
+  titleName: string;
+  customers: CustomerRow[];
+  photoPaths: string[];
+  unitFor: (wid: string) => string;
+  onSent: () => void;
+}) {
+  const [mode, setMode] = useState<"link" | "manual">("link");
+  const [customerId, setCustomerId] = useState<string>("");
+  const [manualName, setManualName] = useState("");
+  const [totalStr, setTotalStr] = useState("");
+  const [payMethod, setPayMethod] = useState<"kas" | "hutang">("kas");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  // Reset saat dialog dibuka kembali.
+  useEffect(() => {
+    if (open) {
+      setMode(customers.length > 0 ? "link" : "manual");
+      setCustomerId(customers[0]?.id ?? "");
+      setManualName("");
+      setTotalStr("");
+      setPayMethod("kas");
+      setNote(prep.note ?? "");
+    }
+  }, [open, customers, prep.note]);
+
+  const totalAmount = useMemo(() => {
+    const n = Number(totalStr.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  }, [totalStr]);
+
+  const resolvedParty = useMemo(() => {
+    if (mode === "link") {
+      const c = customers.find((x) => x.id === customerId);
+      return { id: c?.id ?? null, name: c?.name ?? "", contact: c?.contact ?? null };
+    }
+    return { id: null as string | null, name: manualName.trim(), contact: null as string | null };
+  }, [mode, customerId, customers, manualName]);
+
+  const totalQty = useMemo(() => items.reduce((s, it) => s + Number(it.actual_grams || 0), 0), [items]);
+  const canSend = !!resolvedParty.name && totalAmount >= 0 && items.length > 0 && !busy;
+
+  function buildCaption(): string {
+    const lines: string[] = [];
+    lines.push(`*${titleName}*`);
+    lines.push("");
+    if (items.length > 0) {
+      lines.push("Isi paket:");
+      items.forEach((it) => {
+        const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
+        lines.push(`• ${w?.name ?? "?"} ${it.actual_grams}${unitFor(it.warehouse_item_id)}`);
+      });
+      lines.push("");
+    }
+    lines.push(`Total: *${rupiah(totalAmount)}*`);
+    lines.push(payMethod === "hutang" ? "Metode: *Hutang* (akan dicatat sebagai piutang)" : "Metode: *Lunas*");
+    if (resolvedParty.name) lines.push(`Untuk: ${resolvedParty.name}`);
+    if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
+    if (prep.location_url) {
+      lines.push("");
+      lines.push(`📍 Lokasi ambil:`);
+      lines.push(prep.location_url);
+    }
+    lines.push("");
+    lines.push("Terima kasih 🙏");
+    return lines.join("\n");
+  }
+
+  async function fetchPhotoFiles(): Promise<File[]> {
+    const files: File[] = [];
+    for (let i = 0; i < photoPaths.length; i++) {
+      const url = await requestSignedUrl(photoPaths[i], 60 * 10);
+      if (!url) continue;
+      const f = await urlToFile(url, `${(titleName || "paket").replace(/\W+/g, "-")}-${i + 1}.jpg`);
+      if (f) files.push(f);
+    }
+    return files;
+  }
+
+  async function handleSend() {
+    if (!canSend) return;
+    if (!resolvedParty.name) { toast.error("Pilih atau isi nama pelanggan"); return; }
+    if (totalAmount <= 0) {
+      if (!confirm("Total belum diisi (Rp 0). Lanjutkan tanpa mencatat penjualan?")) return;
+    }
+    setBusy(true);
+    try {
+      // 1) RPC atomik: hapus prep items (kembalikan stok) + catat sales + piutang.
+      const { error: rpcErr } = await sb.rpc("send_request_prep_to_customer", {
+        _prep_id: prep.id,
+        _customer_id: resolvedParty.id,
+        _party_name: resolvedParty.name,
+        _total_amount: totalAmount,
+        _payment_method: payMethod,
+        _note: note.trim() || null,
+      });
+      if (rpcErr) throw rpcErr;
+
+      // 2) Kirim WA dengan foto asli terlampir (bukan cuma link/teks).
+      const files = await fetchPhotoFiles();
+      const text = buildCaption();
+      const phone = resolvedParty.contact ? normalizePhone(resolvedParty.contact).digits : undefined;
+      const res = await shareToWhatsApp({
+        text,
+        title: titleName,
+        files,
+        // Jika ada foto, jangan set phone → biar share sheet muncul & foto ikut.
+        phone: files.length === 0 ? phone : undefined,
+      });
+      notifyShareResult(res);
+
+      toast.success(
+        payMethod === "hutang"
+          ? "Terkirim — penjualan & piutang tercatat"
+          : "Terkirim — penjualan tercatat, stok gudang tersinkron",
+      );
+      onSent();
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? String(e);
+      toast.error("Gagal kirim: " + msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
+      <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Send className="h-4 w-4 text-primary" /> Kirim ke pelanggan
+          </DialogTitle>
+          <DialogDescription>
+            Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 text-xs">
+          {/* Ringkasan item */}
+          <div className="rounded-md border bg-muted/30 p-2">
+            <div className="mb-1 font-semibold">{titleName}</div>
+            <div className="flex flex-wrap gap-1">
+              {items.map((it) => {
+                const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
+                return (
+                  <span key={it.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    {w?.name ?? "?"} {it.actual_grams}{unitFor(it.warehouse_item_id)}
+                  </span>
+                );
+              })}
+            </div>
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              {photoPaths.length > 0
+                ? `${photoPaths.length} foto akan dilampirkan`
+                : "Tidak ada foto pada paket ini"}
+              {totalQty > 0 && ` · total qty ${totalQty}`}
+            </div>
+          </div>
+
+          {/* Pelanggan */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px]">Pelanggan</Label>
+            <div className="flex gap-1 text-[10px]">
+              <button
+                type="button"
+                onClick={() => setMode("link")}
+                disabled={customers.length === 0}
+                className={`flex-1 rounded-md border px-2 py-1 ${mode === "link" ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"} ${customers.length === 0 ? "opacity-40" : ""}`}
+              >
+                Dari buku alamat
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("manual")}
+                className={`flex-1 rounded-md border px-2 py-1 ${mode === "manual" ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"}`}
+              >
+                Ketik nama
+              </button>
+            </div>
+            {mode === "link" ? (
+              customers.length === 0 ? (
+                <div className="text-[10px] text-muted-foreground">
+                  Belum ada pelanggan tersimpan. Pilih "Ketik nama" atau tambah di menu Hutang-Piutang.
+                </div>
+              ) : (
+                <select
+                  value={customerId}
+                  onChange={(e) => setCustomerId(e.target.value)}
+                  className="h-9 w-full rounded-md border bg-card px-2 text-xs"
+                >
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}{c.contact ? ` · ${c.contact}` : ""}
+                    </option>
+                  ))}
+                </select>
+              )
+            ) : (
+              <Input
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                placeholder="Nama pelanggan"
+                className="h-9 text-xs"
+              />
+            )}
+          </div>
+
+          {/* Total */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px]">Total harga (Rp)</Label>
+            <Input
+              value={totalStr}
+              onChange={(e) => setTotalStr(e.target.value)}
+              placeholder="Contoh: 25000"
+              inputMode="numeric"
+              className="h-9 tabular-nums text-xs"
+            />
+            {totalAmount > 0 && (
+              <div className="text-[10px] text-muted-foreground">= {rupiah(totalAmount)}</div>
+            )}
+          </div>
+
+          {/* Metode bayar */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px]">Metode bayar</Label>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setPayMethod("kas")}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "kas" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <Wallet className="h-3.5 w-3.5" /> Lunas (kas)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayMethod("hutang")}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "hutang" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <HandCoins className="h-3.5 w-3.5" /> Hutang (piutang)
+              </button>
+            </div>
+            {payMethod === "hutang" && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-1.5 text-[10px] text-amber-800 dark:text-amber-200">
+                Akan otomatis dicatat sebagai piutang di menu Hutang-Piutang atas nama <b>{resolvedParty.name || "-"}</b>.
+              </div>
+            )}
+          </div>
+
+          {/* Catatan */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px]">Catatan (opsional)</Label>
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              className="text-xs"
+              placeholder="Mis. antar sore, titip di warung, dsb."
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
+          <Button size="sm" onClick={handleSend} disabled={!canSend}>
+            {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
+            {payMethod === "hutang" ? "Kirim & catat piutang" : "Kirim & catat penjualan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function PrepEditorDialog({
   open, title, titleItems, warehouseItems, onClose, onSaved,
 }: {
