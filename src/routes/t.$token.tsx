@@ -1964,6 +1964,7 @@ function RequestForm({
   const [photos, setPhotos] = useState<StagedPhoto[]>([]);
   const [pending, setPending] = useState<PendingPhoto[]>([]);
   const [justOk, setJustOk] = useState<Set<Blob>>(new Set());
+  const [uploads, setUploads] = useState<PhotoUploadStatus[]>([]);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
