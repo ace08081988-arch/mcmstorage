@@ -1670,6 +1670,7 @@ function PublicPrepPage() {
                         <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
                             <div className="flex items-center gap-1 truncate text-[12px] font-semibold">
+                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`} aria-hidden="true" />
                               <span className="truncate">{g.label}</span>
                             </div>
                             {g.category && (
