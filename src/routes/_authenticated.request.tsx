@@ -567,46 +567,58 @@ function SendPrepLinkDialog({
   const [session, setSession] = useState<{ url: string; pin: string; token: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [workerName, setWorkerName] = useState("");
-  const createdRef = useRef(false);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) { setSession(null); setError(null); setBusy(false); setWorkerName(""); createdRef.current = false; return; }
-    if (createdRef.current || !title) return;
-    createdRef.current = true;
-    void (async () => {
-      setBusy(true);
-      setError(null);
-      try {
-        const pin = genPin();
-        const token = genShareToken();
-        const noteLines: string[] = [];
-        noteLines.push(`Siapkan paket untuk judul "${title.name}".`);
-        if (title.note) noteLines.push(title.note);
-        if (titleItems.length > 0) {
-          noteLines.push("");
-          noteLines.push("Target isi paket:");
-          for (const i of titleItems) {
-            const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
-            noteLines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
-          }
+    if (!open) { setSession(null); setError(null); setBusy(false); setWorkerName(""); setNameError(null); }
+  }, [open]);
+
+  function validateWorkerName(name: string): string | null {
+    const trimmed = name.trim();
+    if (!trimmed) return "Nama pegawai wajib diisi agar pesan bisa dibuat.";
+    if (trimmed.length < 2) return "Nama pegawai minimal 2 karakter.";
+    if (trimmed.length > 40) return "Nama pegawai maksimal 40 karakter.";
+    if (!/^[\p{L}\p{M}\s'.-]+$/u.test(trimmed)) return "Nama pegawai hanya boleh huruf, spasi, titik, apostrof, atau tanda hubung.";
+    return null;
+  }
+
+  async function createSession() {
+    if (!title) return;
+    const err = validateWorkerName(workerName);
+    setNameError(err);
+    if (err) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const pin = genPin();
+      const token = genShareToken();
+      const noteLines: string[] = [];
+      noteLines.push(`Siapkan paket untuk judul "${title.name}".`);
+      if (title.note) noteLines.push(title.note);
+      if (titleItems.length > 0) {
+        noteLines.push("");
+        noteLines.push("Target isi paket:");
+        for (const i of titleItems) {
+          const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
+          noteLines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: rpcErr } = await (supabase.rpc as any)("prep_create_task", {
-          _title: `Request: ${title.name}`,
-          _note: noteLines.join("\n"),
-          _pin: pin,
-          _share_token: token,
-          _items: [],
-        });
-        if (rpcErr) throw rpcErr;
-        setSession({ url: publicTaskUrl(token, pin), pin, token });
-      } catch (e) {
-        setError((e as Error).message || "Gagal membuat link tugas");
-      } finally {
-        setBusy(false);
       }
-    })();
-  }, [open, title, titleItems, warehouseItems]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: rpcErr } = await (supabase.rpc as any)("prep_create_task", {
+        _title: `Request: ${title.name}`,
+        _note: noteLines.join("\n"),
+        _pin: pin,
+        _share_token: token,
+        _items: [],
+      });
+      if (rpcErr) throw rpcErr;
+      setSession({ url: publicTaskUrl(token, pin), pin, token });
+    } catch (e) {
+      setError((e as Error).message || "Gagal membuat link tugas");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const waMessage = useMemo(() => {
     if (!session || !title) return "";
