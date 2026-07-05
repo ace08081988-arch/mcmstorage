@@ -1343,6 +1343,26 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       // foto di pesan WA konsisten dengan lampiran.
       const folderName = (s: typeof take[number]) =>
         s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
+      // Gerbang validasi: bila pratinjau menyertakan snapshot ekspektasi,
+      // pastikan folder yang benar-benar akan terkirim (id + jumlah foto)
+      // SAMA PERSIS dengan yang ditampilkan di pratinjau. Kalau tidak,
+      // batalkan sebelum share sheet terbuka dan minta operator membuka
+      // pratinjau ulang — mencegah mismatch pratinjau vs pesan terkirim.
+      if (expected) {
+        const actualIds = [...includedShots.map((s) => s.id)].sort();
+        const idsMatch =
+          actualIds.length === expected.folderIds.length &&
+          actualIds.every((id, i) => id === expected.folderIds[i]);
+        const countMatch = freshSlots.length === expected.photoCount;
+        if (!idsMatch || !countMatch) {
+          toast.warning(
+            `Kiriman berubah sejak pratinjau (folder ${expected.folderIds.length}→${actualIds.length}, foto ${expected.photoCount}→${freshSlots.length}). Buka pratinjau ulang.`,
+          );
+          setSending(false);
+          setSendStatus("idle");
+          return;
+        }
+      }
       const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const firstLocationFresh = includedShots.find((s) => s.location_url)?.location_url ?? null;
       const omitted = shots.length - includedShots.length;
