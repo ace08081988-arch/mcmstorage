@@ -1771,6 +1771,80 @@ function PublicPrepPage() {
                     </section>
                   );
                 })}
+                <Dialog open={!!selectedGroup} onOpenChange={(open) => { if (!open) setSelectedGroup(null); }}>
+                  {selectedGroup && (
+                    <DialogContent className="max-w-md">
+                      {(() => {
+                        const sg = groups.find((x) => x.key === selectedGroup.key) || selectedGroup;
+                        const totalReq = sg.entries.reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
+                        const doneCount = sg.entries.filter((e) => (e.it.submissions?.length ?? 0) > 0).length;
+                        const totalCount = sg.entries.length;
+                        const doneReq = sg.entries
+                          .filter((e) => (e.it.submissions?.length ?? 0) > 0)
+                          .reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
+                        const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+                        const allDone = doneCount === totalCount && totalCount > 0;
+                        const unit = displayUnit(sg.entries[0].it.name, sg.entries[0].it.unit_label);
+                        return (
+                          <>
+                            <DialogHeader>
+                              <DialogTitle>{sg.label}</DialogTitle>
+                              {sg.category && (
+                                <DialogDescription>{sg.category}</DialogDescription>
+                              )}
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="rounded-md border p-2 text-center">
+                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Diminta</div>
+                                  <div className="text-base font-semibold tabular-nums">{totalReq}</div>
+                                  <div className="text-[10px] text-muted-foreground">{totalCount} paket</div>
+                                </div>
+                                <div className="rounded-md border p-2 text-center">
+                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Siap</div>
+                                  <div className={`text-base font-semibold tabular-nums ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>{doneReq}</div>
+                                  <div className="text-[10px] text-muted-foreground">{doneCount} paket</div>
+                                </div>
+                                <div className="rounded-md border p-2 text-center">
+                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Sisa</div>
+                                  <div className="text-base font-semibold tabular-nums text-foreground">{Math.max(0, totalReq - doneReq)}</div>
+                                  <div className="text-[10px] text-muted-foreground">{totalCount - doneCount} paket</div>
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-muted-foreground">Progres</span>
+                                  <span className="font-semibold tabular-nums">{doneCount}/{totalCount} · {pct}%</span>
+                                </div>
+                                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                                  <div className={`h-full rounded-full ${allDone ? "bg-emerald-500" : "bg-primary"}`} style={{ width: `${pct}%` }} />
+                                </div>
+                              </div>
+                              <div className="max-h-60 overflow-y-auto rounded-md border">
+                                <div className="divide-y">
+                                  {sg.entries.map(({ it, idx }) => {
+                                    const done = (it.submissions?.length ?? 0) > 0;
+                                    return (
+                                      <div key={it.id} className="flex items-center justify-between p-2 text-sm">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <div className={`h-2 w-2 shrink-0 rounded-full ${done ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                                          <span className="truncate">{it.name}</span>
+                                        </div>
+                                        <div className="shrink-0 tabular-nums text-muted-foreground">
+                                          {it.qty_requested} {unit}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </DialogContent>
+                  )}
+                </Dialog>
               </div>
             );
           })()
