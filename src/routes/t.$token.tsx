@@ -1725,6 +1725,9 @@ function PhotoTileGrid({
               }`}
             >
               <img src={p.dataUrl} alt="" className="h-full w-full object-cover" />
+              <div className="absolute left-1 top-1 z-10 rounded bg-black/55 px-1 py-0.5 text-[9px] font-medium text-white shadow">
+                {p.originalFormat && p.originalFormat !== p.format ? `${p.originalFormat} → ${p.format}` : p.format} · {formatFileSize(p.size)}
+              </div>
               {up === "uploading" && (
                 <div
                   className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/55 text-white"
