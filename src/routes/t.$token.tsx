@@ -2139,6 +2139,18 @@ function ItemCard({
           onRetryAllUploads={() => {
             void submit();
           }}
+          onMerge={async () => {
+            if (photos.length < 2) return;
+            try {
+              const merged = await mergeStagedPhotos(photos);
+              setPhotos([merged]);
+              // Buka editor langsung supaya bisa tambah teks / panah.
+              editQueueRef.current = [];
+              setTimeout(() => openEditForIdx(0), 0);
+            } catch (err) {
+              toast.error("Gagal gabung foto: " + ((err as Error).message || "unknown"));
+            }
+          }}
         />
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button
