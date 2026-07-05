@@ -12,6 +12,11 @@ import {
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
 import {
+  subscribeDeferredReload,
+  recheckBuildVersion,
+  type DeferredReloadState,
+} from "@/lib/build-cache-buster";
+import {
   stageFile,
   buildStagedPhoto,
   formatFileSize,
