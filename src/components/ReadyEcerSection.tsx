@@ -1552,6 +1552,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       toast.info("Belum ada kiriman pegawai untuk judul ini.");
       return;
     }
+    setLastSendChannel("chat");
     const take = shots.slice(0, 6);
     const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
     const idemKey = buildSendKey({ channel: "chat", conversationId, ids: take.map((s) => s.id) });
