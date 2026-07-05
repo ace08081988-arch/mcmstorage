@@ -275,6 +275,22 @@ export function ChatSharePreviewDialog({
                   )}
                 </div>
               )}
+              {data.failedPhotoLabels && data.failedPhotoLabels.length > 0 && (
+                <div
+                  role="alert"
+                  className="mt-2 rounded-md border border-amber-300 bg-amber-50 p-2 text-[11.5px] leading-snug text-amber-900"
+                >
+                  <div className="font-semibold">Foto berikut gagal dibaca dan tidak ikut dilampirkan:</div>
+                  <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                    {data.failedPhotoLabels.slice(0, 8).map((label, i) => (
+                      <li key={i}>{label}</li>
+                    ))}
+                    {data.failedPhotoLabels.length > 8 && (
+                      <li>…dan {data.failedPhotoLabels.length - 8} foto lainnya</li>
+                    )}
+                  </ul>
+                </div>
+              )}
               <p className="mt-1 text-[11px] text-muted-foreground">Tiap foto dikirim sebagai pesan terpisah.</p>
             </section>
 
