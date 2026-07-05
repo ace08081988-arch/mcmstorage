@@ -135,4 +135,109 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
     const res = await stageFile(jpg);
     expect(res.blob).toBe(jpg); // referensi sama = tidak dikonversi
   });
+
+  // ────────────────────────────────────────────────────────────────
+  // Kasus HEIC saat createObjectURL gagal (WebView lama, memori penuh):
+  // hasil konversi JPEG dari heic2any harus dibaca via FileReader.
+  // Regresi guard: jangan lempar error HEIC generik saat sebenarnya
+  // konversi sudah sukses & yang gagal adalah createObjectURL.
+  it("HEIC → JPEG sukses, tapi createObjectURL melempar → fallback FileReader", async () => {
+    g.URL = { createObjectURL: () => { throw new DOMException("out of memory", "InvalidStateError"); } };
+    class FR {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      result: string | null = null;
+      error: Error | null = null;
+      readAsDataURL(b: Blob) {
+        // Pastikan yang dibaca adalah hasil JPEG (bukan HEIC asli).
+        setTimeout(() => {
+          this.result = `data:${b.type};base64,SGVpY0NvbnZlcnRlZA==`;
+          this.onload?.();
+        }, 0);
+      }
+    }
+    g.FileReader = FR as unknown as typeof FileReader;
+    const heic = new File(["heic-bytes"], "IMG_0002.HEIC", { type: "image/heic" });
+    const res = await stageFile(heic);
+    expect(res.blob.type).toBe("image/jpeg");
+    expect(res.dataUrl).toBe("data:image/jpeg;base64,SGVpY0NvbnZlcnRlZA==");
+  });
+
+  it("HEIC gagal dikonversi (heic2any melempar) → pesan panduan iPhone", async () => {
+    vi.doMock("heic2any", () => ({
+      default: async () => { throw new Error("libheif not available"); },
+    }));
+    // Import ulang modul supaya versi baru dari mock dipakai.
+    const mod = await import("./prep-file-staging?nocache=heic-fail" as string).catch(() => import("./prep-file-staging"));
+    g.URL = { createObjectURL: () => "blob:mock/heic" };
+    const heic = new File(["heic-bytes"], "IMG_0003.heic", { type: "image/heic" });
+    await expect(mod.stageFile(heic)).rejects.toThrow(/Paling Kompatibel|HEIC/i);
+    vi.doUnmock("heic2any");
+  });
+
+  // ────────────────────────────────────────────────────────────────
+  // Kasus foto berukuran besar (mis. burst 12MP dari kamera Android):
+  // - createObjectURL bisa `SecurityError`/`QuotaExceededError` di WebView
+  //   terbatas memori → wajib fallback ke FileReader.
+  // - Kalau FileReader juga gagal (memori tidak cukup), promise HARUS
+  //   ditolak dengan pesan bermakna sehingga caller bisa `toast.error`.
+  it("foto besar: createObjectURL melempar QuotaExceededError → dibaca via FileReader", async () => {
+    // Simulasi blob besar (2 MB) tanpa benar-benar mengalokasikan gambar.
+    const bigBytes = new Uint8Array(2 * 1024 * 1024);
+    const bigBlob = new Blob([bigBytes], { type: "image/jpeg" });
+    g.URL = {
+      createObjectURL: () => {
+        throw new DOMException("quota exceeded", "QuotaExceededError");
+      },
+    };
+    class FR {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      result: string | null = null;
+      error: Error | null = null;
+      readAsDataURL(_b: Blob) {
+        setTimeout(() => {
+          this.result = "data:image/jpeg;base64,QklHUEhPVE8=";
+          this.onload?.();
+        }, 0);
+      }
+    }
+    g.FileReader = FR as unknown as typeof FileReader;
+    const res = await stageFile(bigBlob as File);
+    expect(res.dataUrl).toMatch(/^data:image\/jpeg;base64,/);
+    expect(res.blob).toBe(bigBlob); // upload tetap pakai blob asli
+  });
+
+  it("foto besar: FileReader.onerror QuotaExceeded → promise reject, siap di-toast", async () => {
+    const bigBlob = new Blob([new Uint8Array(4 * 1024 * 1024)], { type: "image/jpeg" });
+    g.URL = { createObjectURL: () => "" }; // paksa masuk fallback
+    class FR {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      result: string | null = null;
+      error: Error | null = new DOMException("File terlalu besar untuk dibaca", "NotReadableError");
+      readAsDataURL(_b: Blob) {
+        setTimeout(() => { this.onerror?.(); }, 0);
+      }
+    }
+    g.FileReader = FR as unknown as typeof FileReader;
+    // Rejection message harus mengandung sesuatu yang bisa ditampilkan ke user.
+    await expect(stageFile(bigBlob as File)).rejects.toThrow(/terlalu besar|NotReadable|Tidak bisa/i);
+  });
+
+  it("foto besar: dataUrl hasil FileReader kosong → error 'Foto kosong / rusak'", async () => {
+    const bigBlob = new Blob([new Uint8Array(1024 * 1024)], { type: "image/jpeg" });
+    g.URL = { createObjectURL: () => { throw new Error("no memory"); } };
+    class FR {
+      onload: (() => void) | null = null;
+      onerror: (() => void) | null = null;
+      result: string | null = null;
+      error: Error | null = null;
+      readAsDataURL(_b: Blob) {
+        setTimeout(() => { this.result = ""; this.onload?.(); }, 0);
+      }
+    }
+    g.FileReader = FR as unknown as typeof FileReader;
+    await expect(stageFile(bigBlob as File)).rejects.toThrow(/kosong|rusak/i);
+  });
 });
