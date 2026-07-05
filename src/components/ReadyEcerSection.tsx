@@ -1656,6 +1656,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       const MAX_CHAT_SLOTS = 10;
       let foldersIncluded = 0;
       const includedShots: typeof take = [];
+      const failedPhotos: Array<{ shotId: string; folder: string; index: number }> = [];
+      const chatFolderName = (s: typeof take[number]) =>
+        s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
@@ -1671,11 +1674,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           const p = paths[pi];
           attemptedPaths++;
           const url = await resolveShotSignedUrl(p, s.source, 600);
-          if (!url) continue;
+          if (!url) { failedPhotos.push({ shotId: s.id, folder: chatFolderName(s), index: pi + 1 }); continue; }
           const f = await urlToFile(url, `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
           if (f) {
             chatShots.push({ id: `${s.id}:${pi}`, file: f });
             if (thumbUrls.length < 4) thumbUrls.push(url);
+          } else {
+            failedPhotos.push({ shotId: s.id, folder: chatFolderName(s), index: pi + 1 });
           }
         }
         if (chatShots.length > folderStart) { foldersIncluded++; includedShots.push(s); }
@@ -1693,6 +1698,15 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         ...lines,
       ].join("\n");
       toast.dismiss(tid);
+      if (failedPhotos.length > 0) {
+        const details = failedPhotos.map((f) => `${f.folder} · foto #${f.index}`);
+        const preview = details.slice(0, 4).join(", ");
+        const more = details.length > 4 ? ` (+${details.length - 4} lagi)` : "";
+        toast.warning(
+          `${failedPhotos.length}/${attemptedPaths} foto gagal dibaca: ${preview}${more}`,
+          { description: "Foto tersebut tidak akan ikut dilampirkan ke Chat." },
+        );
+      }
       const preview: ChatSharePreviewData = {
         conversationTitle: convTitle,
         caption,
@@ -1701,6 +1715,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         thumbs: thumbUrls,
         totalPhotos: chatShots.length,
         missingPhotos: Math.max(0, attemptedPaths - chatShots.length),
+        failedPhotoLabels: failedPhotos.map((f) => `${f.folder} · foto #${f.index}`),
         mapsUrl: firstLocation,
       };
       // Fingerprint payload Chat: caption + conv + lokasi + daftar id foto.
