@@ -2070,7 +2070,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             )}
             <button
               type="button"
-              onClick={sendWA}
+              onClick={openWAPreview}
               disabled={sending}
               aria-label="Kirim via MCM"
               className="ml-auto inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
