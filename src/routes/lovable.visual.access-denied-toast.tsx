@@ -39,14 +39,12 @@ function AccessDeniedToastHarness() {
   useEffect(() => {
     const sink = document.getElementById("assign-sink");
     const orig = window.location.assign.bind(window.location);
-    // @ts-expect-error — sengaja override untuk instrumen test
-    window.location.assign = (url: string | URL) => {
+    (window.location as unknown as { assign: (u: string | URL) => void }).assign = (url: string | URL) => {
       const s = typeof url === "string" ? url : url.toString();
       if (sink) sink.setAttribute("data-last-assign", s);
     };
     return () => {
-      // @ts-expect-error — kembalikan assign asli
-      window.location.assign = orig;
+      (window.location as unknown as { assign: (u: string | URL) => void }).assign = orig;
     };
   }, []);
 
