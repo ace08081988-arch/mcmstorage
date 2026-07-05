@@ -2006,7 +2006,7 @@ function DeliveryHistoryDialog({
   const [error, setError] = useState<string | null>(null);
 
   const filterTitleId = target && target !== "all" ? target.id : null;
-  const headerLabel = target === "all" ? "semua judul" : target && target !== "all" ? target.name : "";
+  const headerLabel = !target ? "" : target === "all" ? "semua judul" : target.name;
 
   async function load() {
     if (!open) return;
