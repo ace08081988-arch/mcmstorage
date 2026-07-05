@@ -1235,6 +1235,14 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   const [waPreviewFolders, setWaPreviewFolders] = useState<
     Array<{ label: string; count: number; included: boolean }>
   >([]);
+  // Snapshot ekspektasi (folder ids + jumlah foto) yang dihitung saat pratinjau
+  // dibuka. Dipakai sebagai gerbang validasi tepat sebelum kirim WA agar
+  // pratinjau dan pesan yang benar-benar terkirim TIDAK PERNAH beda —
+  // bila `shots` berubah antara klik "Pratinjau" dan "Kirim WA", alur kirim
+  // dibatalkan dan operator diminta membuka pratinjau ulang.
+  const [waPreviewExpected, setWaPreviewExpected] = useState<
+    { folderIds: string[]; photoCount: number } | null
+  >(null);
   // Ingat kanal terakhir yang dipakai untuk kirim, supaya tombol "Kirim ulang"
   // di badge Gagal bisa memicu alur yang sama tanpa harus menandai ulang.
   const [lastSendChannel, setLastSendChannel] = useState<"wa" | "chat" | null>(null);
