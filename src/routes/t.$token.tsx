@@ -1692,6 +1692,7 @@ function ItemCard({
   isStale,
   onAcknowledgeStale,
   onSubmitted,
+  autoOpen,
 }: {
   item: PrepItemRow;
   index: number;
@@ -1699,7 +1700,9 @@ function ItemCard({
   pin: string;
   isStale?: boolean;
   onAcknowledgeStale?: () => void;
-  onSubmitted: () => void;
+  onSubmitted: (justDoneId: string) => void;
+  /** Berubah (tick > 0) ketika parent minta kartu ini otomatis terbuka. */
+  autoOpen?: number;
 }) {
   const [photos, setPhotos] = useState<StagedPhoto[]>([]);
   const [pending, setPending] = useState<PendingPhoto[]>([]);
