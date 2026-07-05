@@ -166,13 +166,43 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
         </div>
       )}
 
+      {rows.length > 0 && (
+        <div className="mt-3 relative">
+          <Search
+            className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground"
+            aria-hidden
+          />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari nama, nomor, atau PIN…"
+            aria-label="Cari kontak pegawai"
+            className="h-9 w-full rounded-md border bg-background pl-7 pr-8 text-sm"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery("")}
+              aria-label="Bersihkan pencarian"
+              className="absolute right-1.5 top-1/2 inline-flex h-6 w-6 -translate-y-1/2 items-center justify-center rounded-md text-muted-foreground hover:bg-accent"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      )}
+
       <div className="mt-3 space-y-2">
         {rows.length === 0 ? (
           <div className="rounded-md border border-dashed p-3 text-center text-[11px] text-muted-foreground">
             Belum ada kontak pegawai. Tambah dulu agar mudah kirim link tugas via WA.
           </div>
+        ) : filteredRows.length === 0 ? (
+          <div className="rounded-md border border-dashed p-3 text-center text-[11px] text-muted-foreground">
+            Tidak ada kontak yang cocok dengan “{debounced}”.
+          </div>
         ) : (
-          rows.map((c) => (
+          filteredRows.map((c) => (
             <div key={c.id} className="flex items-center gap-2 rounded-md border bg-background p-2">
               <div className="min-w-0 flex-1">
                 <div className="truncate text-sm font-semibold">{c.name}</div>
