@@ -40,7 +40,35 @@ export async function convertHeicToJpeg(file: File | Blob): Promise<File> {
   return new File([jpegBlob], `${baseName}.jpg`, { type: "image/jpeg" });
 }
 
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0 || !Number.isFinite(bytes)) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.max(0, Math.min(sizes.length - 1, Math.floor(Math.log(bytes) / Math.log(k))));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
+export function formatLabel(file: Blob): string {
+  const t = (file.type || "").toLowerCase();
+  if (t === "image/heic" || t === "image/heif" || t === "image/heic-sequence" || t === "image/heif-sequence") return "HEIC";
+  if (t === "image/jpeg") return "JPEG";
+  if (t === "image/png") return "PNG";
+  if (t === "image/webp") return "WEBP";
+  if (t === "image/gif") return "GIF";
+  if (t === "image/svg+xml") return "SVG";
+  const name = (file as File).name?.toLowerCase?.() ?? "";
+  const ext = name.split(".").pop() || "";
+  if (/^(heic|heif)$/.test(ext)) return "HEIC";
+  if (ext) return ext.toUpperCase();
+  return t.replace("image/", "").toUpperCase() || "FOTO";
+}
+
+export function buildStagedPhoto(dataUrl: string, blob: Blob): StagedPhoto {
+  return { dataUrl, blob, format: formatLabel(blob), size: blob.size };
+}
+
 export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
+  const originalFormat = formatLabel(file);
   // 1) Jika HEIC/HEIF, konversi ke JPEG dulu supaya bisa dirender di <img>
   //    dan PhotoEditor di semua browser (khususnya foto dari iPhone).
   let f: File | Blob = file;
