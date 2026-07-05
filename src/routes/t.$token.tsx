@@ -2131,7 +2131,7 @@ type PendingPhoto = {
 export type PhotoUploadStatus =
   | { status: "idle" }
   | { status: "uploading" }
-  | { status: "done" }
+  | { status: "done"; path: string }
   | { status: "error"; error: string };
 
 // Grid tile foto dengan indikator status per foto (loading / sukses / gagal).
