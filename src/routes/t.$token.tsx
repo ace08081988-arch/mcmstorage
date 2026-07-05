@@ -431,7 +431,16 @@ function PublicPrepPage() {
   const [deferredReload, setDeferredReload] = useState<DeferredReloadState>({
     pending: false, reason: null, serverBuildId: null, since: null,
   });
+  const [deferredTick, setDeferredTick] = useState(0);
   useEffect(() => subscribeDeferredReload(setDeferredReload), []);
+  useEffect(() => {
+    if (!deferredReload.pending || !deferredReload.since) return;
+    const since = deferredReload.since;
+    const update = () => setDeferredTick(Math.max(0, Math.round((Date.now() - since) / 1000)));
+    update();
+    const id = window.setInterval(update, 1000);
+    return () => window.clearInterval(id);
+  }, [deferredReload.pending, deferredReload.since]);
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
   const activeWorkerOpsRef = useRef(0);
   const lastKeepAliveAtRef = useRef(0);
@@ -1707,13 +1716,13 @@ function PublicPrepPage() {
                 <div className="font-semibold">Versi baru menunggu — refresh ditahan</div>
                 <div className="opacity-90">
                   {deferredReload.reason === "worker-portal"
-                    ? "Halaman ini tidak akan me-refresh sendiri selama Anda masih di portal pegawai — supaya draft foto & sesi PIN tidak hilang."
+                    ? "Portal pegawai aktif: halaman tidak akan me-refresh sendiri agar draft foto & sesi PIN tetap aman."
                     : deferredReload.reason === "app-busy"
-                      ? "Sedang proses foto/edit/unggah. Refresh akan berjalan otomatis begitu selesai."
-                      : "Anda sedang mengetik. Refresh akan berjalan otomatis setelah selesai."}
+                      ? "Aplikasi sedang sibuk (foto / edit / unggah): refresh akan berjalan otomatis setelah proses selesai."
+                      : "Anda sedang mengetik: refresh akan berjalan otomatis setelah selesai."}
                   {deferredReload.since && (
                     <span className="ml-1 opacity-70">
-                      · ditahan {Math.max(1, Math.round((Date.now() - deferredReload.since) / 1000))} dtk
+                      · ditahan {deferredTick} dtk
                     </span>
                   )}
                 </div>
