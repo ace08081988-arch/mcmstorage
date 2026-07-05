@@ -2163,6 +2163,8 @@ function PhotoTileGrid({
   onRetry,
   onDismiss,
   onClearAll,
+  onRetryUpload,
+  onRetryAllUploads,
 }: {
   photos: StagedPhotoT[];
   pending: PendingPhoto[];
@@ -2173,6 +2175,8 @@ function PhotoTileGrid({
   onRetry: (id: string) => void;
   onDismiss: (id: string) => void;
   onClearAll: () => void;
+  onRetryUpload?: (i: number) => void;
+  onRetryAllUploads?: () => void;
 }) {
   const total = photos.length + pending.length;
   if (total === 0) return null;
@@ -2184,7 +2188,7 @@ function PhotoTileGrid({
   const isUploading = uploads !== undefined && uploads.some((u) => u.status !== "idle");
   return (
     <div className="mt-3 space-y-2">
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
         <span aria-live="polite">
           {photos.length} foto siap
           {loadingCount > 0 ? ` · ${loadingCount} memuat…` : ""}
@@ -2193,14 +2197,25 @@ function PhotoTileGrid({
           {uploadingCount > 0 ? " · mengunggah…" : ""}
           {uploadErrCount > 0 ? ` · ${uploadErrCount} gagal unggah` : ""}
         </span>
-        <button
-          type="button"
-          onClick={onClearAll}
-          disabled={isUploading}
-          className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10"
-        >
-          Hapus semua
-        </button>
+        <div className="flex items-center gap-1.5">
+          {uploadErrCount > 0 && !isUploading && onRetryAllUploads && (
+            <button
+              type="button"
+              onClick={onRetryAllUploads}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 text-[10px] font-medium text-primary hover:bg-primary/10"
+            >
+              <RefreshCw className="h-3 w-3" /> Coba lagi {uploadErrCount} foto gagal
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClearAll}
+            disabled={isUploading}
+            className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10"
+          >
+            Hapus semua
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-1.5">
         {photos.map((p, i) => {
