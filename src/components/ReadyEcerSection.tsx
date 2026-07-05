@@ -1656,7 +1656,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         caption,
         locationUrl: firstLocation,
         chatShots,
-        markIds: take.map((s) => s.id),
+        // Pindah ke Riwayat terkirim = SATU entri per folder yang benar-benar
+        // ikut atomically (includedShots), bukan `take` mentah.
+        markIds: includedShots.map((s) => s.id),
         preview,
         duplicate,
         previousLog,
