@@ -1700,7 +1700,7 @@ function PublicPrepPage() {
                               aria-label={collapsed ? `Buka ${g.label}` : `Tutup ${g.label}`}
                               className="rounded-md p-1 hover:bg-muted"
                             >
-                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`} aria-hidden />
+                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform duration-200 ${collapsed ? "-rotate-90" : ""}`} aria-hidden />
                             </button>
                           </div>
                         </div>
