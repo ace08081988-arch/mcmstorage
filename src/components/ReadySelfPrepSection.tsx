@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { PackagePlus, MapPin, Image as ImageIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
@@ -25,6 +26,9 @@ type Row = {
  */
 export function ReadySelfPrepSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
+  const [layout, setLayout] = useLayoutMode("readySelfPrep", "list");
+  const gridClass = layoutGridClass(layout);
+  const compact = layout === "compact";
 
   useEffect(() => {
     void (async () => {
@@ -44,13 +48,16 @@ export function ReadySelfPrepSection() {
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
           Siapkan Sendiri — Siap Dikirim
         </p>
-        <Link to="/tugas" className="text-[11px] font-medium text-primary hover:underline">
-          Kelola →
-        </Link>
+        <div className="flex items-center gap-2">
+          <LayoutModeToggle mode={layout} onChange={setLayout} />
+          <Link to="/tugas" className="text-[11px] font-medium text-primary hover:underline">
+            Kelola →
+          </Link>
+        </div>
       </div>
 
       {rows === null ? (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-busy="true">
+        <div className={gridClass} aria-busy="true">
           {Array.from({ length: 2 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-1.5 rounded-md border bg-card p-2.5">
               <Skeleton className="h-3 w-1/2" />
@@ -70,7 +77,7 @@ export function ReadySelfPrepSection() {
           <span>Tap untuk menyiapkan produk sendiri.</span>
         </Link>
       ) : (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className={gridClass}>
           {rows.map((r) => {
             const photoCount =
               (r.photo_paths?.length ?? 0) + (r.photo_path && !(r.photo_paths ?? []).includes(r.photo_path) ? 1 : 0);
@@ -78,7 +85,10 @@ export function ReadySelfPrepSection() {
               <Link
                 key={r.id}
                 to="/tugas"
-                className="flex flex-col gap-0.5 rounded-md border bg-card p-2.5 hover:border-primary/40 hover:bg-accent"
+                className={
+                  "flex flex-col gap-0.5 rounded-md border bg-card hover:border-primary/40 hover:bg-accent " +
+                  (compact ? "px-2.5 py-1.5" : "p-2.5")
+                }
               >
                 <div className="flex items-center justify-between gap-2">
                   <span className="truncate text-xs font-semibold">{r.title}</span>
@@ -86,6 +96,7 @@ export function ReadySelfPrepSection() {
                     siap
                   </span>
                 </div>
+                {!compact && (
                 <div className="flex items-center gap-2 text-[11px] text-muted-foreground">
                   {photoCount > 0 && (
                     <span className="inline-flex items-center gap-0.5">
@@ -99,6 +110,7 @@ export function ReadySelfPrepSection() {
                   )}
                   {r.note && <span className="line-clamp-1">{r.note}</span>}
                 </div>
+                )}
               </Link>
             );
           })}
