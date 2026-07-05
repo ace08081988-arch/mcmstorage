@@ -33,6 +33,9 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
     expect(create).toHaveBeenCalledTimes(1);
     expect(res.dataUrl).toBe("blob:mock/abc-123");
     expect(res.blob).toBe(blob);
+    expect(res.format).toBe("JPEG");
+    expect(res.size).toBe(blob.size);
+    expect(res.converted).toBe(false);
   });
 
   it("thumbnail selalu punya dataUrl non-kosong (untuk <img> grid)", async () => {
