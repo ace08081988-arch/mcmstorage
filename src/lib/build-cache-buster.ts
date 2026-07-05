@@ -32,6 +32,30 @@ function isEditingText(): boolean {
   return false;
 }
 
+// Portal pegawai (`/t/<token>`) tidak boleh di-hard-reload otomatis: proses
+// ambil foto → editor → upload sangat rentan terhadap remount (draft foto,
+// section terbuka, dan sesi PIN semua hilang). Reload akan ikut terjadi
+// secara alami saat pegawai keluar dari portal.
+function isWorkerPortalActive(): boolean {
+  try {
+    return typeof location !== "undefined" && /^\/t\//.test(location.pathname);
+  } catch {
+    return false;
+  }
+}
+
+// Flag global yang bisa di-set halaman lain saat sedang melakukan pekerjaan
+// yang tidak boleh diinterupsi reload (mis. staging/upload foto). Diperiksa
+// setiap kali polling BUILD_ID hendak reload.
+function isAppBusy(): boolean {
+  try {
+    const w = window as unknown as { __mcmBusy?: number };
+    return typeof w.__mcmBusy === "number" && w.__mcmBusy > 0;
+  } catch {
+    return false;
+  }
+}
+
 function hardReloadOnce() {
   try {
     const prev = Number(sessionStorage.getItem(RELOAD_GUARD_KEY) || "0");
@@ -98,6 +122,10 @@ export function installBuildCacheBuster(): void {
     if (serverId === BUILD_ID) return;
     // Jangan interupsi user yang sedang mengetik.
     if (document.visibilityState === "visible" && isEditingText()) return;
+    // Jangan reload saat pegawai sedang di portal PIN — foto & sesi hilang.
+    if (isWorkerPortalActive()) return;
+    // Jangan reload saat ada operasi aktif yang mem-flag busy (mis. upload foto).
+    if (isAppBusy()) return;
     // Bersihkan cache SW lalu reload.
     await purgeSwCaches(serverId);
     hardReloadOnce();
