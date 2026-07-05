@@ -1064,6 +1064,26 @@ function PublicPrepPage() {
     setLastSyncAt(Date.now());
   }
 
+  // Daftarkan silentRefresh ke ref agar setWorkerOperationActive dapat
+  // memicu satu kali refresh saat semua operasi busy selesai.
+  useEffect(() => {
+    silentRefreshRef.current = silentRefresh;
+    return () => { silentRefreshRef.current = null; };
+  });
+
+  // Beri peringatan sebelum tab ditutup / reload saat foto masih diproses
+  // agar draft tidak hilang tanpa disadari.
+  useEffect(() => {
+    if (!authed) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (!isWorkerOperationActive()) return;
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [authed]);
+
   function clearStale(itemId: string) {
     setStaleItemIds((s) => {
       if (!s[itemId]) return s;
