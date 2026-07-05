@@ -688,7 +688,20 @@ function TugasBaruForm() {
   async function shareWa() {
     if (!created) return;
     const cleaned = phone.replace(/\D/g, "");
-    const text = `Tolong siapkan barang berikut. Buka link, masukkan PIN, foto barangnya & kirim:\n\n${created.title}\nPIN: ${created.pin}`;
+    // Perintah eksplisit untuk pegawai: buka link → masukkan PIN → foto
+    // setiap barang + kirim titik lokasi (link Google Maps). Tanpa dua
+    // lampiran ini kiriman dianggap belum lengkap.
+    const text = [
+      `Tolong siapkan barang berikut. Ikuti langkah ini di HP:`,
+      `1) Buka link di bawah`,
+      `2) Masukkan PIN`,
+      `3) *Foto* setiap barang yang sudah disiapkan`,
+      `4) *Kirim lokasi (link Google Maps)* dari tempat penyiapan`,
+      `5) Tekan Kirim`,
+      ``,
+      `Judul: *${created.title}*`,
+      `PIN: *${created.pin}*`,
+    ].join("\n");
     const res = await shareToWhatsApp({ title: created.title, text, url: created.url, phone: cleaned || undefined });
     notifyShareResult(res);
   }
