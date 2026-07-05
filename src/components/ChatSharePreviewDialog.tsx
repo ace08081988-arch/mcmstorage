@@ -14,6 +14,8 @@ export type ChatSharePreviewData = {
   conversationTitle: string;
   caption: string;
   photoCount: number;
+  /** Jumlah folder kiriman (ecer/prep) yang benar-benar ikut terlampir. */
+  folderCount: number;
   /** Hingga 4 thumbnail untuk pratinjau visual. */
   thumbs: string[];
   /** Total foto yang sebenarnya akan dikirim (>= thumbs.length). */
