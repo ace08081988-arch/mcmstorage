@@ -23,6 +23,43 @@ const RELOAD_GUARD_KEY = "mcm:auto-reload-at";
 const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 menit
 const RELOAD_COOLDOWN_MS = 60 * 1000;
 
+// Status "reload versi baru sedang ditahan". Diekspos ke UI sehingga
+// pegawai/owner tahu kenapa halaman tidak refresh saat versi baru sudah live.
+export type DeferredReloadReason = "worker-portal" | "app-busy" | "editing-text";
+export type DeferredReloadState = {
+  pending: boolean;
+  reason: DeferredReloadReason | null;
+  serverBuildId: string | null;
+  since: number | null;
+};
+let deferredState: DeferredReloadState = {
+  pending: false,
+  reason: null,
+  serverBuildId: null,
+  since: null,
+};
+const deferredListeners = new Set<(s: DeferredReloadState) => void>();
+function setDeferredState(next: DeferredReloadState) {
+  const changed =
+    next.pending !== deferredState.pending ||
+    next.reason !== deferredState.reason ||
+    next.serverBuildId !== deferredState.serverBuildId;
+  deferredState = next;
+  if (!changed) return;
+  for (const fn of deferredListeners) {
+    try { fn(deferredState); } catch { /* noop */ }
+  }
+}
+export function getDeferredReloadState(): DeferredReloadState {
+  return deferredState;
+}
+export function subscribeDeferredReload(cb: (s: DeferredReloadState) => void): () => void {
+  deferredListeners.add(cb);
+  // Kirim state saat ini agar subscriber langsung sinkron.
+  try { cb(deferredState); } catch { /* noop */ }
+  return () => { deferredListeners.delete(cb); };
+}
+
 function isEditingText(): boolean {
   const el = document.activeElement as HTMLElement | null;
   if (!el) return false;
@@ -97,6 +134,17 @@ async function checkServerBuildId(): Promise<string | null> {
 }
 
 let installed = false;
+let externalRecheck: (() => void) | null = null;
+
+/**
+ * Paksa cek versi sekali. Aman dipanggil kapan pun; internal function ini
+ * yang menjalankan seluruh guard (busy, portal, editing). Dipakai oleh
+ * portal pegawai saat operasi foto selesai — begitu busy=0, coba reload
+ * lagi kalau server sudah bumped build id.
+ */
+export function recheckBuildVersion(): void {
+  externalRecheck?.();
+}
 
 export function installBuildCacheBuster(): void {
   if (installed) return;
@@ -119,13 +167,32 @@ export function installBuildCacheBuster(): void {
   const runCheck = async () => {
     const serverId = await checkServerBuildId();
     if (!serverId) return;
-    if (serverId === BUILD_ID) return;
-    // Jangan interupsi user yang sedang mengetik.
-    if (document.visibilityState === "visible" && isEditingText()) return;
-    // Jangan reload saat pegawai sedang di portal PIN — foto & sesi hilang.
-    if (isWorkerPortalActive()) return;
-    // Jangan reload saat ada operasi aktif yang mem-flag busy (mis. upload foto).
-    if (isAppBusy()) return;
+    if (serverId === BUILD_ID) {
+      // Server balik sama — pastikan indikator "ditahan" dibersihkan.
+      if (deferredState.pending) {
+        setDeferredState({ pending: false, reason: null, serverBuildId: null, since: null });
+      }
+      return;
+    }
+    // Tentukan alasan penundaan (jika ada). Urutan diperiksa dari yang
+    // paling spesifik: operasi aktif (upload/edit foto) > portal pegawai >
+    // user sedang mengetik.
+    let reason: DeferredReloadReason | null = null;
+    if (isAppBusy()) reason = "app-busy";
+    else if (isWorkerPortalActive()) reason = "worker-portal";
+    else if (document.visibilityState === "visible" && isEditingText()) reason = "editing-text";
+
+    if (reason) {
+      // Publikasikan status "reload ditahan" agar UI bisa menampilkan
+      // badge; simpan sejak kapan supaya UI bisa memberi hint "sejak N mnt lalu".
+      setDeferredState({
+        pending: true,
+        reason,
+        serverBuildId: serverId,
+        since: deferredState.since && deferredState.pending ? deferredState.since : Date.now(),
+      });
+      return;
+    }
     // Bersihkan cache SW lalu reload.
     await purgeSwCaches(serverId);
     hardReloadOnce();
@@ -133,6 +200,7 @@ export function installBuildCacheBuster(): void {
 
   // Cek segera + interval + saat tab kembali visible.
   void runCheck();
+  externalRecheck = () => { void runCheck(); };
   const iv = window.setInterval(() => { void runCheck(); }, POLL_INTERVAL_MS);
   const onVis = () => {
     if (document.visibilityState === "visible") void runCheck();

@@ -12,6 +12,11 @@ import {
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
 import {
+  subscribeDeferredReload,
+  recheckBuildVersion,
+  type DeferredReloadState,
+} from "@/lib/build-cache-buster";
+import {
   stageFile,
   buildStagedPhoto,
   formatFileSize,
@@ -422,6 +427,11 @@ function PublicPrepPage() {
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [syncTick, setSyncTick] = useState(0); // memicu re-render label "x dtk lalu"
   const [resyncing, setResyncing] = useState(false);
+  // Status "reload versi baru sedang ditahan" dari build-cache-buster.
+  const [deferredReload, setDeferredReload] = useState<DeferredReloadState>({
+    pending: false, reason: null, serverBuildId: null, since: null,
+  });
+  useEffect(() => subscribeDeferredReload(setDeferredReload), []);
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
   const activeWorkerOpsRef = useRef(0);
   const lastKeepAliveAtRef = useRef(0);
@@ -452,6 +462,9 @@ function PublicPrepPage() {
       runIdleQueue();
       // Refresh ringan sekali setelah idle supaya data pasti terkini.
       try { void silentRefreshRef.current?.(); } catch { /* noop */ }
+      // Cek versi sekali lagi: bila deploy baru sudah live sementara
+      // kita sibuk, sekarang saatnya reload dengan aman.
+      try { recheckBuildVersion(); } catch { /* noop */ }
     }
   }, [runIdleQueue]);
   // Ref ke silentRefresh untuk dipanggil dari setWorkerOperationActive
@@ -1680,6 +1693,32 @@ function PublicPrepPage() {
                 {`Re-login pada ${new Date(sessionExpiresAt).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" })}`}
               </span>
             )}
+          </div>
+        )}
+        {deferredReload.pending && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mx-auto max-w-2xl px-4 pb-2"
+          >
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-snug text-amber-800 dark:text-amber-200">
+              <RefreshCw className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-pulse" />
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold">Versi baru menunggu — refresh ditahan</div>
+                <div className="opacity-90">
+                  {deferredReload.reason === "worker-portal"
+                    ? "Halaman ini tidak akan me-refresh sendiri selama Anda masih di portal pegawai — supaya draft foto & sesi PIN tidak hilang."
+                    : deferredReload.reason === "app-busy"
+                      ? "Sedang proses foto/edit/unggah. Refresh akan berjalan otomatis begitu selesai."
+                      : "Anda sedang mengetik. Refresh akan berjalan otomatis setelah selesai."}
+                  {deferredReload.since && (
+                    <span className="ml-1 opacity-70">
+                      · ditahan {Math.max(1, Math.round((Date.now() - deferredReload.since) / 1000))} dtk
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </header>
