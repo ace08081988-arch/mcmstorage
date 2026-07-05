@@ -2891,6 +2891,15 @@ function RequestForm({
           setPhotos([]);
           setPending([]);
         }}
+        onRetryUpload={(i) => {
+          setUploads((prev) =>
+            prev.map((u, j) => (j === i ? { status: "idle" } : u)),
+          );
+          void submit();
+        }}
+        onRetryAllUploads={() => {
+          void submit();
+        }}
       />
       <div className="grid grid-cols-2 gap-2">
         <button
