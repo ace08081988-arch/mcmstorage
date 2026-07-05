@@ -289,10 +289,17 @@ export function DebtQuickActions({
   };
 
   async function runPending(p: PendingAction) {
-    if (p.kind === "add") await addDebt({ label: "add" });
-    else if (p.kind === "cash") await addDebt({ markPaid: true, label: "cash" });
-    else if (p.kind === "pay") await allocatePayment(p.amount, "pay");
-    else await allocatePayment(p.amount, "lunas");
+    let result: { ok: boolean; error?: string; applied?: number };
+    if (p.kind === "add") result = await addDebt({ label: "add" });
+    else if (p.kind === "cash") result = await addDebt({ markPaid: true, label: "cash" });
+    else if (p.kind === "pay") result = await allocatePayment(p.amount, "pay");
+    else result = await allocatePayment(p.amount, "lunas");
+    logAction(
+      p.kind,
+      result.ok ? "confirmed" : "failed",
+      p.kind === "pay" || p.kind === "lunas" ? (result.applied ?? p.amount) : parsed,
+      { note: result.error },
+    );
   }
 
   function formatDate(iso: string): string {
