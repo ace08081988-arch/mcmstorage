@@ -44,6 +44,39 @@ function deriveTaskStatus(
   return "Menunggu";
 }
 
+// Kunci sessionStorage untuk membuat draf dialog "Buat tugas baru" tahan
+// reload (chunk-load recovery, auto-lock, rebuild preview, dst).
+const CREATE_OPEN_KEY = "mcm:tugas-baru:open";
+const CREATE_DRAFT_KEY = "mcm:tugas-baru:draft";
+type CreateDraft = {
+  title: string;
+  note: string;
+  pin: string;
+  phone: string;
+  picked: Record<string, PickedEntry>;
+};
+function readCreateDraft(): Partial<CreateDraft> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(CREATE_DRAFT_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return parsed && typeof parsed === "object" ? parsed : null;
+  } catch { return null; }
+}
+function writeCreateDraft(d: CreateDraft) {
+  if (typeof window === "undefined") return;
+  try { window.sessionStorage.setItem(CREATE_DRAFT_KEY, JSON.stringify(d)); }
+  catch { /* ignore quota */ }
+}
+function clearCreateDraft() {
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.removeItem(CREATE_DRAFT_KEY);
+    window.sessionStorage.removeItem(CREATE_OPEN_KEY);
+  } catch { /* ignore */ }
+}
+
 function TugasPage() {
   const [uid, setUid] = useState<string | null>(null);
   const [mode, setMode] = useState<"self" | "staff">("self");
