@@ -2330,6 +2330,7 @@ function PhotoTileGrid({
   onClearAll,
   onRetryUpload,
   onRetryAllUploads,
+  onMerge,
 }: {
   photos: StagedPhotoT[];
   pending: PendingPhoto[];
@@ -2342,6 +2343,7 @@ function PhotoTileGrid({
   onClearAll: () => void;
   onRetryUpload?: (i: number) => void;
   onRetryAllUploads?: () => void;
+  onMerge?: () => void;
 }) {
   const total = photos.length + pending.length;
   if (total === 0) return null;
