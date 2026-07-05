@@ -42,6 +42,10 @@ export type ShareInput = {
   previousLog?: import("./send-log").SendLogEntry[];
   /** Daftar shot ID (sorted, koma) untuk sinkronisasi idempotency lintas channel. */
   idemIdsKey?: string;
+  /** Info lawan (pelanggan / supplier) untuk tombol Hutang/Bayar/Lunas
+   *  di pratinjau. Bila dikosongkan tetapi `phone` terisi, `phone` dipakai
+   *  sebagai fallback pencarian pelanggan/supplier milik user. */
+  peer?: { name?: string; phone?: string; accountUserId?: string } | null;
 };
 
 import { toast } from "sonner";
@@ -138,13 +142,20 @@ export type ShareResult =
 
 export async function shareToWhatsApp(input: ShareInput): Promise<ShareResult> {
   let { text } = input;
-  const { title, url, files, phone, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey } = input;
+  const { title, url, files, phone, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey, peer } = input;
   const nav = typeof navigator !== "undefined" ? navigator : undefined;
 
   // Pratinjau pesan + daftar foto sebelum benar-benar membuka WA. Pratinjau
   // dapat menambah file via retryMissing (memutasi array `files`), jadi cek
   // `hasFiles` SETELAH konfirmasi.
-  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey });
+  // Auto-derive peer dari `phone` + `title` bila caller tidak memberikan peer
+  // eksplisit — nomor sudah cukup untuk mencocokkan pelanggan/supplier.
+  const effectivePeer =
+    peer ??
+    (phone
+      ? { phone, name: title }
+      : null);
+  const approved = await confirmWaShare({ text, url, files, expectedCount, retryMissing, duplicate, previousLog, currentFingerprint, currentSummary, idemIdsKey, peer: effectivePeer });
   if (!approved.ok) return { status: "cancelled" };
   if (typeof approved.text === "string") text = approved.text;
   const hasFiles = !!(files && files.length > 0);

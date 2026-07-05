@@ -9,6 +9,7 @@ import { InflightStepProgress } from "@/components/InflightStepProgress";
 import type { SendPayloadSummary } from "@/lib/idempotency";
 import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
+import { DebtQuickActions } from "@/components/DebtQuickActions";
 
 export type ChatSharePreviewData = {
   conversationTitle: string;
@@ -93,6 +94,8 @@ export function ChatSharePreviewDialog({
   currentFingerprint,
   currentSummary,
   idemIdsKey,
+  peer,
+  conversationId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -112,6 +115,10 @@ export function ChatSharePreviewDialog({
    *  lintas channel — bila WA/Chat untuk shot yang sama sedang in-flight,
    *  banner dan tombol dialog ini ikut tersinkron secara real-time. */
   idemIdsKey?: string;
+  /** Info lawan bicara (pelanggan) untuk tombol Hutang / Bayar / Lunas. */
+  peer?: { name?: string; phone?: string; accountUserId?: string } | null;
+  /** ID percakapan aktif — dipakai untuk resolve peer via conversation_members. */
+  conversationId?: string | null;
 }) {
   const progressActive = !!status && (sending || !!status.outcome);
   const totalSteps = (status?.captionStep ? 1 : 0) + (status?.photosTotal ?? 0) + (status?.locationStep ? 1 : 0);
@@ -180,6 +187,14 @@ export function ChatSharePreviewDialog({
                 </span>
               </div>
             </div>
+            {peer || conversationId ? (
+              <DebtQuickActions
+                peerPhone={peer?.phone ?? null}
+                peerName={peer?.name ?? data.conversationTitle}
+                peerAccountUserId={peer?.accountUserId ?? null}
+                conversationId={conversationId ?? null}
+              />
+            ) : null}
             {effectiveDup && !progressActive && !outcome ? (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2.5 text-[12px] text-amber-900 dark:text-amber-200">
                 <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
