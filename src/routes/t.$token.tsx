@@ -294,6 +294,18 @@ function PublicPrepPage() {
   // Nilai bertambah tiap trigger (nanoid-ish) supaya efek di ItemCard bisa bereaksi
   // meski id target sama dengan sebelumnya.
   const [autoOpen, setAutoOpen] = useState<{ id: string | null; tick: number }>({ id: null, tick: 0 });
+  const collapsedStorageKey = `worker.collapsedGroups.${token}`;
+  const [collapsedGroups, setCollapsedGroups] = useState<Record<string, boolean>>(() => {
+    try {
+      const raw = typeof window !== "undefined" ? window.localStorage.getItem(collapsedStorageKey) : null;
+      return raw ? (JSON.parse(raw) as Record<string, boolean>) : {};
+    } catch {
+      return {};
+    }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem(collapsedStorageKey, JSON.stringify(collapsedGroups)); } catch {}
+  }, [collapsedGroups, collapsedStorageKey]);
   // Status koneksi realtime: 'connecting' saat awal, 'connected' setelah SUBSCRIBED,
   // 'error' bila channel gagal/terputus. lastSyncAt diisi setiap silentRefresh sukses.
   const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
