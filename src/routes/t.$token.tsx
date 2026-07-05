@@ -10,7 +10,7 @@ import { saveDraftPhotos, loadDraftPhotos, clearDraftPhotos, itemDraftKey, reque
 import { queryCameraPermission, permissionToastMessage, type MediaKind } from "@/lib/media-permission";
 import { PermissionHelpDialog } from "@/components/prep/PermissionHelpDialog";
 import { HelpCircle } from "lucide-react";
-import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff, Inbox } from "lucide-react";
+import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff, Inbox, AlertCircle, X as XIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
@@ -1301,6 +1301,8 @@ function PublicPrepPage() {
 
 function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubmitted }: { item: PrepItemRow; index: number; token: string; pin: string; isStale?: boolean; onAcknowledgeStale?: () => void; onSubmitted: () => void }) {
   const [photos, setPhotos] = useState<StagedPhoto[]>([]);
+  const [pending, setPending] = useState<PendingPhoto[]>([]);
+  const [justOk, setJustOk] = useState<Set<Blob>>(new Set());
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
@@ -1355,7 +1357,6 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
     galleryRef.current?.click();
   }
 
-  const fileToStaged = stageFile;
   function triggerAutoGps() {
     if (!gps && !locUrl && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -1369,34 +1370,57 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       );
     }
   }
+  function markSuccess(blob: Blob) {
+    setJustOk((s) => { const n = new Set(s); n.add(blob); return n; });
+    setTimeout(() => setJustOk((s) => { const n = new Set(s); n.delete(blob); return n; }), 1500);
+  }
+  async function stageOne(f: File, openEditor: boolean): Promise<StagedPhoto | null> {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setPending((p) => [...p, { id, status: "loading", name: f.name || "foto", file: f }]);
+    try {
+      const staged = await stageFile(f);
+      setPending((p) => p.filter((x) => x.id !== id));
+      setPhotos((prev) => {
+        if (openEditor) setEditingIdx(prev.length);
+        return [...prev, staged];
+      });
+      markSuccess(staged.blob);
+      if (openEditor) { setEditorSrc(staged.dataUrl); setEditorOpen(true); }
+      triggerAutoGps();
+      return staged;
+    } catch (err) {
+      const msg = (err as Error).message || "Gagal membaca foto";
+      setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "error", error: msg } : x)));
+      toast.error("Gagal memuat foto: " + msg);
+      return null;
+    }
+  }
+  async function retryPending(id: string) {
+    const entry = pending.find((x) => x.id === id);
+    if (!entry?.file) return;
+    setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)));
+    try {
+      const staged = await stageFile(entry.file);
+      setPending((p) => p.filter((x) => x.id !== id));
+      setPhotos((prev) => [...prev, staged]);
+      markSuccess(staged.blob);
+    } catch (err) {
+      const msg = (err as Error).message || "Gagal membaca foto";
+      setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "error", error: msg } : x)));
+    }
+  }
+  function dismissPending(id: string) {
+    setPending((p) => p.filter((x) => x.id !== id));
+  }
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
-    try {
-      const staged = await fileToStaged(f);
-      // Tampilkan langsung di grid + buka editor untuk anotasi opsional.
-      // Kalau editor gagal memuat (HEIC/dsb), foto tetap ada di grid.
-      setPhotos((prev) => {
-        setEditingIdx(prev.length);
-        return [...prev, staged];
-      });
-      setEditorSrc(staged.dataUrl);
-      setEditorOpen(true);
-      triggerAutoGps();
-    } catch (err) {
-      toast.error("Gagal memuat foto: " + (err as Error).message);
-    }
+    await stageOne(f, true);
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []); e.target.value = "";
     if (files.length === 0) return;
-    try {
-      const staged = await Promise.all(files.map((f) => fileToStaged(f)));
-      setPhotos((prev) => [...prev, ...staged]);
-      triggerAutoGps();
-    } catch (err) {
-      toast.error("Gagal memuat foto: " + (err as Error).message);
-    }
+    await Promise.all(files.map((f) => stageOne(f, false)));
   }
 
   function takeLocation() {
@@ -1516,25 +1540,16 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
         </div>
       </div>
 
-      {photos.length > 0 && (
-        <div className="mt-3 space-y-2">
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>{photos.length} foto dipilih</span>
-            <button type="button" onClick={() => setPhotos([])} className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10">Hapus semua</button>
-          </div>
-          <div className="grid grid-cols-3 gap-1.5">
-            {photos.map((p, i) => (
-              <div key={i} className="group relative aspect-square overflow-hidden rounded-md border bg-muted">
-                <img src={p.dataUrl} alt="" className="h-full w-full object-cover" />
-                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
-                  <button type="button" onClick={() => { setEditingIdx(i); setEditorSrc(p.dataUrl); setEditorOpen(true); }} className="rounded bg-black/50 px-1.5 py-0.5">Edit</button>
-                  <button type="button" onClick={() => setPhotos((prev) => prev.filter((_, j) => j !== i))} className="rounded bg-destructive/80 px-1.5 py-0.5">Hapus</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <PhotoTileGrid
+        photos={photos}
+        pending={pending}
+        justOk={justOk}
+        onEdit={(i) => { setEditingIdx(i); setEditorSrc(photos[i].dataUrl); setEditorOpen(true); }}
+        onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
+        onRetry={(id) => { void retryPending(id); }}
+        onDismiss={dismissPending}
+        onClearAll={() => { setPhotos([]); setPending([]); }}
+      />
       <div className="mt-3 grid grid-cols-2 gap-2">
         <button onClick={pickCamera} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"><Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}</button>
         <button onClick={pickGallery} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"><ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}</button>
@@ -1613,6 +1628,112 @@ function SubmissionThumb({ path }: { path: string | null }) {
   useEffect(() => { signedUrl(path, 60 * 60, publicSupabase).then(setUrl); }, [path]);
   if (!url) return <div className="h-12 w-12 shrink-0 rounded border bg-muted" />;
   return <img src={url} alt="" className="h-12 w-12 shrink-0 rounded border object-cover" />;
+}
+
+// Item foto yang sedang / gagal dimuat oleh stageFile. Dipisah dari
+// StagedPhoto agar tetap kompatibel dengan draft store & flow submit.
+type PendingPhoto = { id: string; status: "loading" | "error"; name: string; error?: string; file?: File };
+
+// Grid tile foto dengan indikator status per foto (loading / sukses / gagal).
+// Dipakai oleh ItemCard maupun RequestForm supaya perilaku UI konsisten.
+function PhotoTileGrid({
+  photos, pending, justOk, onEdit, onRemove, onRetry, onDismiss, onClearAll,
+}: {
+  photos: StagedPhotoT[];
+  pending: PendingPhoto[];
+  justOk: Set<Blob>;
+  onEdit: (i: number) => void;
+  onRemove: (i: number) => void;
+  onRetry: (id: string) => void;
+  onDismiss: (id: string) => void;
+  onClearAll: () => void;
+}) {
+  const total = photos.length + pending.length;
+  if (total === 0) return null;
+  const loadingCount = pending.filter((p) => p.status === "loading").length;
+  const errorCount = pending.filter((p) => p.status === "error").length;
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span aria-live="polite">
+          {photos.length} foto siap
+          {loadingCount > 0 ? ` · ${loadingCount} memuat…` : ""}
+          {errorCount > 0 ? ` · ${errorCount} gagal` : ""}
+        </span>
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10"
+        >
+          Hapus semua
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {photos.map((p, i) => {
+          const ok = justOk.has(p.blob);
+          return (
+            <div key={`ok-${i}`} className={`group relative aspect-square overflow-hidden rounded-md border bg-muted transition ${ok ? "ring-2 ring-emerald-500" : ""}`}>
+              <img src={p.dataUrl} alt="" className="h-full w-full object-cover" />
+              {ok && (
+                <div className="pointer-events-none absolute right-1 top-1 rounded-full bg-emerald-500 p-0.5 text-white shadow" aria-label="Foto siap">
+                  <CheckCircle2 className="h-3 w-3" />
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
+                <button type="button" onClick={() => onEdit(i)} className="rounded bg-black/50 px-1.5 py-0.5">Edit</button>
+                <button type="button" onClick={() => onRemove(i)} className="rounded bg-destructive/80 px-1.5 py-0.5">Hapus</button>
+              </div>
+            </div>
+          );
+        })}
+        {pending.map((p) => (
+          <div
+            key={`pend-${p.id}`}
+            className={`relative flex aspect-square flex-col items-center justify-center gap-1 overflow-hidden rounded-md border p-1.5 text-center text-[10px] ${
+              p.status === "loading"
+                ? "border-primary/40 bg-primary/5 text-primary"
+                : "border-destructive/50 bg-destructive/10 text-destructive"
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            {p.status === "loading" ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                <div className="line-clamp-2 break-all text-[9px] opacity-80">{p.name}</div>
+                <div className="text-[9px] font-medium">Memuat…</div>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-5 w-5" aria-hidden />
+                <div className="line-clamp-2 break-all text-[9px] font-medium">{p.name}</div>
+                <div className="line-clamp-2 text-[9px] opacity-80">{p.error || "Gagal membaca foto"}</div>
+                <div className="mt-0.5 flex items-center gap-1">
+                  {p.file && (
+                    <button
+                      type="button"
+                      onClick={() => onRetry(p.id)}
+                      className="inline-flex h-5 items-center gap-0.5 rounded bg-destructive/80 px-1.5 text-[9px] font-medium text-white"
+                    >
+                      <RefreshCw className="h-2.5 w-2.5" /> Coba lagi
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onDismiss(p.id)}
+                    aria-label="Buang foto gagal"
+                    className="inline-flex h-5 w-5 items-center justify-center rounded bg-background/80 text-foreground"
+                  >
+                    <XIcon className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 }
 
 // Indikator status sinkron realtime di header halaman pegawai.
@@ -1763,6 +1884,8 @@ function RequestForm({
     })),
   );
   const [photos, setPhotos] = useState<StagedPhoto[]>([]);
+  const [pending, setPending] = useState<PendingPhoto[]>([]);
+  const [justOk, setJustOk] = useState<Set<Blob>>(new Set());
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
@@ -1822,33 +1945,57 @@ function RequestForm({
       );
     }
   }
-  const fileToStaged = stageFile;
+  function markSuccess(blob: Blob) {
+    setJustOk((s) => { const n = new Set(s); n.add(blob); return n; });
+    setTimeout(() => setJustOk((s) => { const n = new Set(s); n.delete(blob); return n; }), 1500);
+  }
+  async function stageOne(f: File, openEditor: boolean): Promise<StagedPhoto | null> {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setPending((p) => [...p, { id, status: "loading", name: f.name || "foto", file: f }]);
+    try {
+      const staged = await stageFile(f);
+      setPending((p) => p.filter((x) => x.id !== id));
+      setPhotos((prev) => {
+        if (openEditor) setEditingIdx(prev.length);
+        return [...prev, staged];
+      });
+      markSuccess(staged.blob);
+      if (openEditor) { setEditorSrc(staged.dataUrl); setEditorOpen(true); }
+      triggerAutoGps();
+      return staged;
+    } catch (err) {
+      const msg = (err as Error).message || "Gagal membaca foto";
+      setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "error", error: msg } : x)));
+      toast.error("Gagal memuat foto: " + msg);
+      return null;
+    }
+  }
+  async function retryPending(id: string) {
+    const entry = pending.find((x) => x.id === id);
+    if (!entry?.file) return;
+    setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)));
+    try {
+      const staged = await stageFile(entry.file);
+      setPending((p) => p.filter((x) => x.id !== id));
+      setPhotos((prev) => [...prev, staged]);
+      markSuccess(staged.blob);
+    } catch (err) {
+      const msg = (err as Error).message || "Gagal membaca foto";
+      setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "error", error: msg } : x)));
+    }
+  }
+  function dismissPending(id: string) {
+    setPending((p) => p.filter((x) => x.id !== id));
+  }
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
-    try {
-      const staged = await fileToStaged(f);
-      setPhotos((prev) => {
-        setEditingIdx(prev.length);
-        return [...prev, staged];
-      });
-      setEditorSrc(staged.dataUrl);
-      setEditorOpen(true);
-      triggerAutoGps();
-    } catch (err) {
-      toast.error("Gagal memuat foto: " + (err as Error).message);
-    }
+    await stageOne(f, true);
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []); e.target.value = "";
     if (files.length === 0) return;
-    try {
-      const staged = await Promise.all(files.map((f) => fileToStaged(f)));
-      setPhotos((prev) => [...prev, ...staged]);
-      triggerAutoGps();
-    } catch (err) {
-      toast.error("Gagal memuat foto: " + (err as Error).message);
-    }
+    await Promise.all(files.map((f) => stageOne(f, false)));
   }
 
   function takeLocation() {
@@ -1923,25 +2070,16 @@ function RequestForm({
         ))}
       </div>
 
-      {photos.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>{photos.length} foto dipilih</span>
-            <button type="button" onClick={() => setPhotos([])} className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10">Hapus semua</button>
-          </div>
-          <div className="grid grid-cols-3 gap-1.5">
-            {photos.map((p, i) => (
-              <div key={i} className="group relative aspect-square overflow-hidden rounded-md border bg-muted">
-                <img src={p.dataUrl} alt="" className="h-full w-full object-cover" />
-                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
-                  <button type="button" onClick={() => { setEditingIdx(i); setEditorSrc(p.dataUrl); setEditorOpen(true); }} className="rounded bg-black/50 px-1.5 py-0.5">Edit</button>
-                  <button type="button" onClick={() => setPhotos((prev) => prev.filter((_, j) => j !== i))} className="rounded bg-destructive/80 px-1.5 py-0.5">Hapus</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <PhotoTileGrid
+        photos={photos}
+        pending={pending}
+        justOk={justOk}
+        onEdit={(i) => { setEditingIdx(i); setEditorSrc(photos[i].dataUrl); setEditorOpen(true); }}
+        onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
+        onRetry={(id) => { void retryPending(id); }}
+        onDismiss={dismissPending}
+        onClearAll={() => { setPhotos([]); setPending([]); }}
+      />
       <div className="grid grid-cols-2 gap-2">
         <button onClick={pickCamera} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}</button>
         <button onClick={pickGallery} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}</button>
