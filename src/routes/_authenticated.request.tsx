@@ -651,6 +651,168 @@ function SendPrepLinkDialog({
 
   const qrUrl = session ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(session.url)}` : "";
 
+  function fileSlug(): string {
+    const base = (title?.name ?? "tugas").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40) || "tugas";
+    return `request-${base}`;
+  }
+
+  async function renderQrDataUrl(size = 512): Promise<string> {
+    if (!session) throw new Error("Sesi belum siap");
+    const { default: QRCode } = await import("qrcode");
+    return await QRCode.toDataURL(session.url, { width: size, margin: 1, errorCorrectionLevel: "M" });
+  }
+
+  async function composePosterPng(): Promise<string> {
+    if (!session || !title) throw new Error("Sesi belum siap");
+    const qrData = await renderQrDataUrl(560);
+    const qrImg = await new Promise<HTMLImageElement>((resolve, reject) => {
+      const im = new Image();
+      im.onload = () => resolve(im);
+      im.onerror = () => reject(new Error("Gagal memuat QR"));
+      im.src = qrData;
+    });
+    const W = 900, H = 1200;
+    const canvas = document.createElement("canvas");
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) throw new Error("Canvas tidak tersedia");
+    ctx.fillStyle = "#ffffff";
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#0f172a";
+    ctx.font = "600 28px system-ui, -apple-system, Segoe UI, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Tugas Penyiapan Request", W / 2, 70);
+    ctx.font = "700 40px system-ui, -apple-system, Segoe UI, sans-serif";
+    // Wrap title
+    const maxTitleWidth = W - 80;
+    const words = title.name.split(/\s+/);
+    const lines: string[] = [];
+    let cur = "";
+    for (const w of words) {
+      const test = cur ? `${cur} ${w}` : w;
+      if (ctx.measureText(test).width > maxTitleWidth && cur) { lines.push(cur); cur = w; }
+      else cur = test;
+    }
+    if (cur) lines.push(cur);
+    let ty = 130;
+    for (const l of lines.slice(0, 2)) { ctx.fillText(l, W / 2, ty); ty += 48; }
+    // QR
+    const qrSize = 560;
+    const qx = (W - qrSize) / 2;
+    const qy = ty + 20;
+    ctx.strokeStyle = "#e2e8f0";
+    ctx.lineWidth = 2;
+    ctx.strokeRect(qx - 12, qy - 12, qrSize + 24, qrSize + 24);
+    ctx.drawImage(qrImg, qx, qy, qrSize, qrSize);
+    // Link
+    let y = qy + qrSize + 60;
+    ctx.font = "500 20px system-ui, -apple-system, Segoe UI, sans-serif";
+    ctx.fillStyle = "#475569";
+    ctx.fillText("Link", W / 2, y);
+    y += 30;
+    ctx.font = "500 22px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillStyle = "#0f172a";
+    // shrink link to fit
+    let linkText = session.url;
+    while (ctx.measureText(linkText).width > W - 80 && linkText.length > 20) {
+      ctx.font = `500 ${Math.max(14, parseInt(ctx.font) - 1)}px ui-monospace, SFMono-Regular, Menlo, monospace`;
+      if (parseInt(ctx.font) <= 14) break;
+    }
+    ctx.fillText(linkText, W / 2, y);
+    y += 60;
+    ctx.font = "500 20px system-ui, -apple-system, Segoe UI, sans-serif";
+    ctx.fillStyle = "#475569";
+    ctx.fillText("PIN", W / 2, y);
+    y += 44;
+    ctx.font = "700 44px ui-monospace, SFMono-Regular, Menlo, monospace";
+    ctx.fillStyle = "#0f172a";
+    ctx.fillText(session.pin.split("").join("  "), W / 2, y);
+    return canvas.toDataURL("image/png");
+  }
+
+  async function downloadPng() {
+    if (!session) return;
+    try {
+      const dataUrl = await composePosterPng();
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = `${fileSlug()}.png`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      toast.success("PNG diunduh");
+    } catch (e) {
+      toast.error("Gagal unduh PNG: " + ((e as Error).message ?? String(e)));
+    }
+  }
+
+  async function downloadPdf() {
+    if (!session || !title) return;
+    try {
+      const qrData = await renderQrDataUrl(560);
+      const { default: jsPDF } = await import("jspdf");
+      const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const pageW = doc.internal.pageSize.getWidth();
+      let y = 20;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(12);
+      doc.setTextColor(90);
+      doc.text("Tugas Penyiapan Request", pageW / 2, y, { align: "center" });
+      y += 10;
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(20);
+      doc.setTextColor(15);
+      const titleLines = doc.splitTextToSize(title.name, pageW - 30);
+      doc.text(titleLines.slice(0, 2), pageW / 2, y, { align: "center" });
+      y += titleLines.slice(0, 2).length * 8 + 6;
+      const qrSize = 90;
+      doc.addImage(qrData, "PNG", (pageW - qrSize) / 2, y, qrSize, qrSize);
+      y += qrSize + 12;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(90);
+      doc.text("Link", pageW / 2, y, { align: "center" });
+      y += 6;
+      doc.setFont("courier", "normal");
+      doc.setFontSize(11);
+      doc.setTextColor(15);
+      const linkLines = doc.splitTextToSize(session.url, pageW - 20);
+      doc.text(linkLines, pageW / 2, y, { align: "center" });
+      y += linkLines.length * 5 + 8;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(90);
+      doc.text("PIN", pageW / 2, y, { align: "center" });
+      y += 8;
+      doc.setFont("courier", "bold");
+      doc.setFontSize(24);
+      doc.setTextColor(15);
+      doc.text(session.pin.split("").join("  "), pageW / 2, y, { align: "center" });
+      y += 14;
+      // Items
+      if (titleItems.length > 0) {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.setTextColor(15);
+        doc.text("Isi paket:", 15, y);
+        y += 6;
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(10);
+        for (const i of titleItems) {
+          const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
+          const line = `• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`;
+          doc.text(line, 15, y);
+          y += 5;
+          if (y > 280) { doc.addPage(); y = 20; }
+        }
+      }
+      doc.save(`${fileSlug()}.pdf`);
+      toast.success("PDF diunduh");
+    } catch (e) {
+      toast.error("Gagal unduh PDF: " + ((e as Error).message ?? String(e)));
+    }
+  }
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-md">
