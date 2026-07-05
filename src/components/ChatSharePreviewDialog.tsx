@@ -9,6 +9,7 @@ import { InflightStepProgress } from "@/components/InflightStepProgress";
 import type { SendPayloadSummary } from "@/lib/idempotency";
 import { SendPayloadDiff } from "@/components/SendPayloadDiff";
 import { FingerprintInfoTooltip } from "@/components/FingerprintInfoTooltip";
+import { DebtQuickActions } from "@/components/DebtQuickActions";
 
 export type ChatSharePreviewData = {
   conversationTitle: string;
@@ -93,6 +94,8 @@ export function ChatSharePreviewDialog({
   currentFingerprint,
   currentSummary,
   idemIdsKey,
+  peer,
+  conversationId,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -112,6 +115,10 @@ export function ChatSharePreviewDialog({
    *  lintas channel — bila WA/Chat untuk shot yang sama sedang in-flight,
    *  banner dan tombol dialog ini ikut tersinkron secara real-time. */
   idemIdsKey?: string;
+  /** Info lawan bicara (pelanggan) untuk tombol Hutang / Bayar / Lunas. */
+  peer?: { name?: string; phone?: string; accountUserId?: string } | null;
+  /** ID percakapan aktif — dipakai untuk resolve peer via conversation_members. */
+  conversationId?: string | null;
 }) {
   const progressActive = !!status && (sending || !!status.outcome);
   const totalSteps = (status?.captionStep ? 1 : 0) + (status?.photosTotal ?? 0) + (status?.locationStep ? 1 : 0);
