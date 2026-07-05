@@ -55,6 +55,7 @@ import {
   X as XIcon,
   ChevronDown,
   Layers,
+  Info,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
