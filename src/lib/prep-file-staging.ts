@@ -9,6 +9,8 @@
 // menggantung selamanya.
 export type StagedPhoto = { dataUrl: string; blob: Blob };
 
+import { compressImage } from "./prep-image-compress";
+
 // Sebagian browser (Android WebView lama, Chromium desktop, Firefox) tidak
 // bisa men-decode HEIC/HEIF. `<img>` gagal senyap → foto seolah "hilang" saat
 // masuk PhotoEditor. Konversi ke JPEG di sisi klien memakai heic2any (dimuat
@@ -45,6 +47,21 @@ export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
           `(${(err as Error).message || "gagal konversi"})`,
       );
     }
+  }
+  // 2) Kompresi/resize otomatis untuk foto besar (mis. 12MP dari kamera
+  //    Android). Ini menjaga performa PhotoEditor di WebView (canvas
+  //    besar → OOM/lag) dan memangkas ukuran upload. Gagal → blob asli.
+  try {
+    const compressed = await compressImage(f);
+    if (compressed && compressed !== f) {
+      // Pertahankan nama file agar upload tetap punya ekstensi masuk akal.
+      const name = ((f as File).name ?? "photo").replace(/\.(png|webp|heic|heif)$/i, ".jpg");
+      f = new File([compressed], name.endsWith(".jpg") ? name : `${name}.jpg`, {
+        type: compressed.type || "image/jpeg",
+      });
+    }
+  } catch {
+    // biarkan f apa adanya
   }
   const g = globalThis as unknown as {
     URL?: { createObjectURL?: (b: Blob) => string };
