@@ -2160,6 +2160,7 @@ function ItemCard({
           onClose={() => setHelpKind(null)}
         />
       </div>
+      )}
     </div>
   );
 }
