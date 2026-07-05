@@ -1203,6 +1203,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
   const [sendError, setSendError] = useState<string | null>(null);
+  const [waPreviewOpen, setWaPreviewOpen] = useState(false);
+  const [waPreviewText, setWaPreviewText] = useState("");
+  const [waPreviewLocation, setWaPreviewLocation] = useState<string | null>(null);
+  const [waPreviewPhotoCount, setWaPreviewPhotoCount] = useState(0);
   const [pickChatOpen, setPickChatOpen] = useState(false);
   const [chatSending, setChatSending] = useState(false);
   const [chatPreparing, setChatPreparing] = useState(false);
@@ -1439,6 +1443,44 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     } finally {
       setSending(false);
     }
+  }
+
+  function openWAPreview(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (sending) return;
+    if (shots.length === 0) {
+      toast.info("Belum ada kiriman pegawai untuk judul ini.");
+      return;
+    }
+    const canonicalShots = [...shots].sort((a, b) => a.id.localeCompare(b.id));
+    const take = canonicalShots.slice(0, 6);
+    const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+    const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
+    const text = [
+      `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
+      `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
+      ...lines,
+      ...(firstLocation ? [``, `📍 Lokasi: ${firstLocation}`] : []),
+    ].join("\n");
+    let photoCount = 0;
+    for (const s of take) {
+      const paths = new Set<string>([
+        ...((s.photo_paths ?? []) as string[]),
+        ...(s.photo_path ? [s.photo_path] : []),
+      ]);
+      photoCount += Array.from(paths).filter(Boolean).length;
+    }
+    setWaPreviewText(text);
+    setWaPreviewLocation(firstLocation);
+    setWaPreviewPhotoCount(Math.min(photoCount, 10));
+    setWaPreviewOpen(true);
+  }
+
+  async function confirmSendWA() {
+    setWaPreviewOpen(false);
+    const fake = { preventDefault() {}, stopPropagation() {} } as unknown as React.MouseEvent;
+    try { await sendWA(fake); } catch { /* dilaporkan di kartu */ }
   }
 
   function undoSent(e: React.MouseEvent) {
@@ -1835,6 +1877,36 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog open={waPreviewOpen} onOpenChange={setWaPreviewOpen}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()} className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pratinjau pesan WhatsApp</AlertDialogTitle>
+            <AlertDialogDescription>
+              Periksa isi teks sebelum dikirim. {waPreviewPhotoCount > 0 ? `${waPreviewPhotoCount} foto akan dilampirkan.` : "Tidak ada foto yang bisa dilampirkan."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/40 p-3">
+            <pre className="whitespace-pre-wrap break-words font-sans text-[12px] leading-relaxed text-foreground">{waPreviewText}</pre>
+            {waPreviewLocation && (
+              <a
+                href={waPreviewLocation}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MapPin className="h-3 w-3" /> Buka lokasi di peta
+              </a>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSendWA} className="bg-[#25D366] text-white hover:bg-[#1ebe57]">
+              <MessageCircle className="mr-1 h-3.5 w-3.5" /> Kirim WA
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {selectMode && (
         <button
           type="button"
@@ -1998,7 +2070,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             )}
             <button
               type="button"
-              onClick={sendWA}
+              onClick={openWAPreview}
               disabled={sending}
               aria-label="Kirim via MCM"
               className="ml-auto inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
