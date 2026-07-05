@@ -1303,6 +1303,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
   const [photos, setPhotos] = useState<StagedPhoto[]>([]);
   const [pending, setPending] = useState<PendingPhoto[]>([]);
   const [justOk, setJustOk] = useState<Set<Blob>>(new Set());
+  const [uploads, setUploads] = useState<PhotoUploadStatus[]>([]);
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
@@ -1452,12 +1453,31 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       if (!/^https:\/\//i.test(locUrl)) { toast.error("URL lokasi harus diawali https://"); return; }
     }
     setBusy(true);
+    // Reset & inisialisasi status upload per foto.
+    setUploads(photos.map(() => ({ status: "idle" as const })));
     try {
       const uploaded: string[] = [];
       for (let i = 0; i < photos.length; i++) {
-        const p = await uploadPrepPhoto(token, item.id, photos[i].blob, "jpg", publicSupabase);
-        if (!p) { toast.error(`Upload foto ${i + 1} gagal`); setBusy(false); return; }
-        uploaded.push(p);
+        setUploads((prev) => prev.map((u, j) => (j === i ? { status: "uploading" } : u)));
+        let uploadedPath: string | null = null;
+        try {
+          uploadedPath = await uploadPrepPhoto(token, item.id, photos[i].blob, "jpg", publicSupabase);
+        } catch (uerr) {
+          const msg = (uerr as Error).message || "Gagal mengunggah";
+          setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
+          toast.error(`Foto ${i + 1} gagal unggah: ${msg}`);
+          setBusy(false);
+          return;
+        }
+        if (!uploadedPath) {
+          const msg = "Server menolak upload";
+          setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
+          toast.error(`Foto ${i + 1} gagal unggah: ${msg}`);
+          setBusy(false);
+          return;
+        }
+        setUploads((prev) => prev.map((u, j) => (j === i ? { status: "done" } : u)));
+        uploaded.push(uploadedPath);
       }
       const args = {
         _token: token, _pin: pin, _task_item_id: item.id,
@@ -1486,7 +1506,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
         throw new Error(msg);
       }
       toast.success(`Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${displayUnit(item.name, item.unit_label)}`);
-      setPhotos([]); setLocUrl(""); setGps(null); setNote("");
+      setPhotos([]); setLocUrl(""); setGps(null); setNote(""); setUploads([]);
       void clearDraftPhotos(draftKey);
       onSubmitted();
     } catch (e) {
