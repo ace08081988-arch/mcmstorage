@@ -6,6 +6,9 @@ import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepSubmissionRow, t
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
 import { stageFile, type StagedPhoto as StagedPhotoT } from "@/lib/prep-file-staging";
+import { queryCameraPermission, permissionToastMessage, type MediaKind } from "@/lib/media-permission";
+import { PermissionHelpDialog } from "@/components/prep/PermissionHelpDialog";
+import { HelpCircle } from "lucide-react";
 import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff, Inbox } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
@@ -1307,11 +1310,26 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
   const [refSigned, setRefSigned] = useState<string | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
+  const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
 
   useEffect(() => { signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned); }, [item.ref_photo_path]);
 
-  function pickCamera() { cameraRef.current?.click(); }
-  function pickGallery() { galleryRef.current?.click(); }
+  async function pickCamera() {
+    const state = await queryCameraPermission();
+    if (state === "denied") {
+      toast.error(permissionToastMessage("camera", "denied"), {
+        action: { label: "Panduan", onClick: () => setHelpKind("camera") },
+      });
+      setHelpKind("camera");
+      return;
+    }
+    cameraRef.current?.click();
+  }
+  function pickGallery() {
+    // Web tidak menyediakan Permissions API khusus untuk galeri; tetap
+    // buka file picker, kalau kosong user bisa klik panduan di bawah.
+    galleryRef.current?.click();
+  }
 
   const fileToStaged = stageFile;
   function triggerAutoGps() {
@@ -1499,6 +1517,22 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       <p className="mt-1 text-[10px] text-muted-foreground">Bisa pilih beberapa foto sekaligus dari galeri.</p>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onCameraFile} />
       <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={onGalleryFiles} />
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
+        <button
+          type="button"
+          onClick={() => setHelpKind("camera")}
+          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <HelpCircle className="h-3 w-3" /> Kamera tidak bisa dibuka?
+        </button>
+        <button
+          type="button"
+          onClick={() => setHelpKind("gallery")}
+          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <HelpCircle className="h-3 w-3" /> Galeri tidak muncul?
+        </button>
+      </div>
 
       <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
         Siapkan <b>{item.qty_requested} {displayUnit(item.name, item.unit_label)}</b> sesuai instruksi pemilik. Setelah foto + lokasi terkirim, stok gudang otomatis berkurang sebanyak itu — Anda tidak perlu mengisi angka apa pun.
@@ -1543,6 +1577,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
           }}
         />
       )}
+      <PermissionHelpDialog open={helpKind !== null} kind={helpKind ?? "camera"} onClose={() => setHelpKind(null)} />
       </div>
     </div>
   );
@@ -1712,6 +1747,20 @@ function RequestForm({
   const [busy, setBusy] = useState(false);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
+  const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
+
+  async function pickCamera() {
+    const state = await queryCameraPermission();
+    if (state === "denied") {
+      toast.error(permissionToastMessage("camera", "denied"), {
+        action: { label: "Panduan", onClick: () => setHelpKind("camera") },
+      });
+      setHelpKind("camera");
+      return;
+    }
+    cameraRef.current?.click();
+  }
+  function pickGallery() { galleryRef.current?.click(); }
 
   function triggerAutoGps() {
     if (!gps && !locUrl && navigator.geolocation) {
@@ -1844,12 +1893,28 @@ function RequestForm({
         </div>
       )}
       <div className="grid grid-cols-2 gap-2">
-        <button onClick={() => cameraRef.current?.click()} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}</button>
-        <button onClick={() => galleryRef.current?.click()} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}</button>
+        <button onClick={pickCamera} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}</button>
+        <button onClick={pickGallery} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}</button>
       </div>
       <p className="-mt-1 text-[10px] text-muted-foreground">Bisa pilih beberapa foto sekaligus dari galeri.</p>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onCameraFile} />
       <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={onGalleryFiles} />
+      <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
+        <button
+          type="button"
+          onClick={() => setHelpKind("camera")}
+          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <HelpCircle className="h-3 w-3" /> Kamera tidak bisa dibuka?
+        </button>
+        <button
+          type="button"
+          onClick={() => setHelpKind("gallery")}
+          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <HelpCircle className="h-3 w-3" /> Galeri tidak muncul?
+        </button>
+      </div>
 
       <div className="flex gap-2">
         <input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="Link Google Maps (opsional)" className="h-10 flex-1 rounded-lg border bg-background px-3 text-xs" />
@@ -1879,6 +1944,7 @@ function RequestForm({
           }}
         />
       )}
+      <PermissionHelpDialog open={helpKind !== null} kind={helpKind ?? "camera"} onClose={() => setHelpKind(null)} />
     </div>
   );
 }
