@@ -4,6 +4,16 @@ import { Loader2, Plus, Wallet, CheckCircle2, HandCoins, Banknote } from "lucide
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 type Kind = "hutang" | "piutang";
 type DebtRow = {
@@ -164,6 +174,12 @@ export function DebtQuickActions({
 
   const [amountRaw, setAmountRaw] = useState("");
   const [busy, setBusy] = useState<null | "add" | "pay" | "lunas" | "cash">(null);
+  type PendingAction =
+    | { kind: "add" }
+    | { kind: "cash" }
+    | { kind: "pay"; amount: number }
+    | { kind: "lunas"; amount: number };
+  const [pending, setPending] = useState<PendingAction | null>(null);
   const parsed = Number(amountRaw.replace(/\D+/g, ""));
   const hasAmount = Number.isFinite(parsed) && parsed > 0;
 
@@ -198,6 +214,47 @@ export function DebtQuickActions({
   const partyLabel = data.party.name ?? peerName ?? "Lawan";
   const saldo = summary?.saldo ?? 0;
   const openDebts = summary?.openDebts ?? [];
+
+  const confirmCopy: Record<
+    PendingAction["kind"],
+    { title: string; desc: string; cta: string; ctaClass?: string }
+  > = {
+    add: {
+      title: kind === "piutang" ? `Catat harga jual ${rupiah(parsed)}?` : `Catat harga beli ${rupiah(parsed)}?`,
+      desc:
+        kind === "piutang"
+          ? `Menambah piutang baru atas nama ${partyLabel} sebesar ${rupiah(parsed)} (belum dibayar).`
+          : `Menambah hutang baru ke ${partyLabel} sebesar ${rupiah(parsed)} (belum dibayar).`,
+      cta: kind === "piutang" ? "Ya, catat harga jual" : "Ya, catat harga beli",
+    },
+    cash: {
+      title: kind === "piutang" ? `Catat jual tunai ${rupiah(parsed)}?` : `Catat beli tunai ${rupiah(parsed)}?`,
+      desc:
+        kind === "piutang"
+          ? `${partyLabel} bayar ${rupiah(parsed)} tunai — tercatat lunas, tidak menambah piutang.`
+          : `Bayar ${rupiah(parsed)} tunai ke ${partyLabel} — tercatat lunas, tidak menambah hutang.`,
+      cta: "Ya, catat tunai",
+    },
+    pay: {
+      title: `Catat pembayaran ${rupiah(parsed)}?`,
+      desc:
+        `Mengurangi ${kindLabel.toLowerCase()} ${partyLabel} sebesar ${rupiah(parsed)}. Saldo saat ini ${rupiah(saldo)} — dialokasi ke tagihan paling lama dulu.`,
+      cta: "Ya, bayar sekian",
+    },
+    lunas: {
+      title: `Lunasi seluruh ${kindLabel.toLowerCase()} ${partyLabel}?`,
+      desc: `Melunasi seluruh saldo ${rupiah(saldo)} atas nama ${partyLabel}. Tindakan ini tidak bisa diurungkan otomatis.`,
+      cta: `Ya, lunasi ${rupiah(saldo)}`,
+      ctaClass: "bg-emerald-600 hover:bg-emerald-700 text-white",
+    },
+  };
+
+  async function runPending(p: PendingAction) {
+    if (p.kind === "add") await addDebt({ label: "add" });
+    else if (p.kind === "cash") await addDebt({ markPaid: true, label: "cash" });
+    else if (p.kind === "pay") await allocatePayment(p.amount, "pay");
+    else await allocatePayment(p.amount, "lunas");
+  }
 
   async function addDebt(opts?: { markPaid?: boolean; label?: "add" | "cash" }) {
     if (!uid || !data?.party || !hasAmount) {
@@ -348,7 +405,7 @@ export function DebtQuickActions({
         />
         <button
           type="button"
-          onClick={() => void addDebt({ label: "add" })}
+          onClick={() => setPending({ kind: "add" })}
           disabled={busy !== null || !hasAmount}
           className={
             "inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] font-semibold disabled:opacity-50 " +
@@ -367,7 +424,7 @@ export function DebtQuickActions({
         </button>
         <button
           type="button"
-          onClick={() => void addDebt({ markPaid: true, label: "cash" })}
+          onClick={() => setPending({ kind: "cash" })}
           disabled={busy !== null || !hasAmount}
           className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] font-semibold hover:bg-accent disabled:opacity-50"
           title={
@@ -381,7 +438,7 @@ export function DebtQuickActions({
         </button>
         <button
           type="button"
-          onClick={() => void allocatePayment(parsed, "pay")}
+          onClick={() => setPending({ kind: "pay", amount: parsed })}
           disabled={busy !== null || !hasAmount || saldo <= 0}
           className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] font-semibold hover:bg-accent disabled:opacity-50"
           title="Catat pembayaran sebagian sesuai jumlah di kiri"
@@ -391,7 +448,7 @@ export function DebtQuickActions({
         </button>
         <button
           type="button"
-          onClick={() => void allocatePayment(saldo, "lunas")}
+          onClick={() => setPending({ kind: "lunas", amount: saldo })}
           disabled={busy !== null || saldo <= 0}
           className="inline-flex h-8 items-center gap-1 rounded-md border border-emerald-500/60 bg-emerald-500 px-2 text-[11px] font-semibold text-white hover:bg-emerald-600 disabled:opacity-50"
           title={`Lunasi semua ${kindLabel.toLowerCase()} (${rupiah(saldo)})`}
@@ -403,6 +460,33 @@ export function DebtQuickActions({
       <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
         Tersinkron ke Hutang & Piutang MCM Storage. <b>Harga Jual</b> = tambah piutang, <b>Tunai</b> = jual langsung lunas, <b>Bayar/Lunas</b> = pelunasan piutang yang ada (dialokasi ke tagihan paling lama).
       </p>
+      <AlertDialog open={pending !== null} onOpenChange={(o) => { if (!o) setPending(null); }}>
+        <AlertDialogContent>
+          {pending && (
+            <>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{confirmCopy[pending.kind].title}</AlertDialogTitle>
+                <AlertDialogDescription>{confirmCopy[pending.kind].desc}</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={busy !== null}>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={busy !== null}
+                  className={confirmCopy[pending.kind].ctaClass}
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    const p = pending;
+                    setPending(null);
+                    if (p) await runPending(p);
+                  }}
+                >
+                  {confirmCopy[pending.kind].cta}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </>
+          )}
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
