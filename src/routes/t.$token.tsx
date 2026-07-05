@@ -3102,6 +3102,17 @@ function RequestForm({
         onRetryAllUploads={() => {
           void submit();
         }}
+        onMerge={async () => {
+          if (photos.length < 2) return;
+          try {
+            const merged = await mergeStagedPhotos(photos);
+            setPhotos([merged]);
+            editQueueRef.current = [];
+            setTimeout(() => openEditForIdx(0), 0);
+          } catch (err) {
+            toast.error("Gagal gabung foto: " + ((err as Error).message || "unknown"));
+          }
+        }}
       />
       <div className="grid grid-cols-2 gap-2">
         <button
@@ -3188,7 +3199,11 @@ function RequestForm({
       {editorOpen && editorSrc && (
         <PhotoEditor
           src={editorSrc}
-          onCancel={() => setEditorOpen(false)}
+          onCancel={() => {
+            editQueueRef.current = [];
+            setEditingIdx(null);
+            setEditorOpen(false);
+          }}
           onSave={(blob, dataUrl) => {
             setPhotos((prev) => {
               if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
@@ -3198,8 +3213,7 @@ function RequestForm({
               }
               return [...prev, buildStagedPhoto(dataUrl, blob)];
             });
-            setEditingIdx(null);
-            setEditorOpen(false);
+            advanceEditQueue();
           }}
         />
       )}
