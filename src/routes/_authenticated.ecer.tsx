@@ -1021,9 +1021,25 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   }
 
   async function sendWA() {
-    if (sending || shots.length === 0) return;
+    if (sending) return;
     setSending(true);
     try {
+      // Belum ada kiriman pegawai → kirim *perintah* teks-only ke pegawai
+      // supaya owner tetap bisa memicu tugas langsung dari halaman detail
+      // penyiapan, tanpa harus pindah ke halaman Tugas terlebih dahulu.
+      if (shots.length === 0) {
+        const text = [
+          `📦 *Perintah penyiapan* — ${title.name}`,
+          `Produk: ${itemName}`,
+          `Target per kotak: *${title.target_grams} ${displayUnitStr}*`,
+          `ID judul: ${title.id}`,
+          "",
+          "Mohon siapkan kotak sesuai target di atas, lalu unggah foto + lokasi di aplikasi MCM (halaman Tugas).",
+        ].join("\n");
+        const res = await shareToWhatsApp({ text, title: title.name });
+        notifyShareResult(res);
+        return;
+      }
       const take = shots.slice(0, 6);
       const files: File[] = [];
       for (const s of take) {
@@ -1082,8 +1098,19 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             <Button size="sm" variant="outline" onClick={refresh} disabled={refreshing || loading}>
               <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} /> Segarkan
             </Button>
-            <Button size="sm" onClick={sendWA} disabled={sending || shots.length === 0} className="bg-emerald-600 hover:bg-emerald-700">
-              <MessageCircle className="h-3.5 w-3.5" /> Kirim WA
+            <Button
+              size="sm"
+              onClick={sendWA}
+              disabled={sending}
+              aria-label={
+                shots.length === 0
+                  ? "Kirim perintah penyiapan ke pegawai via WhatsApp"
+                  : `Kirim ${shots.length} kiriman pegawai via WhatsApp`
+              }
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
+              <MessageCircle className="h-3.5 w-3.5" />
+              {shots.length === 0 ? "Kirim perintah" : "Kirim WA"}
             </Button>
           </div>
         </div>
