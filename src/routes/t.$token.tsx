@@ -1896,6 +1896,8 @@ function RequestForm({
       const res = data as { ok: boolean; error?: string };
       if (!res?.ok) throw new Error(res?.error || "submit_failed");
       toast.success(`Paket request terkirim (${uploaded.length} foto), stok dikurangi`);
+      setPhotos([]);
+      void clearDraftPhotos(draftKey);
       onDone();
     } catch (e) {
       toast.error("Gagal: " + (e as Error).message);
