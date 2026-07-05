@@ -239,7 +239,7 @@ function PembaruanPage() {
     () => haptic(intensity);
 
   return (
-    <div className="mx-auto flex min-h-dvh max-w-2xl flex-col bg-background pb-24">
+    <div className="mx-auto flex h-dvh max-w-2xl flex-col overflow-hidden bg-background">
       {/*
        * Skip-to-content: tersembunyi secara visual, muncul saat menerima
        * fokus keyboard (Tab pertama). Melompatkan fokus ke <main> di bawah
@@ -296,7 +296,7 @@ function PembaruanPage() {
         </DropdownMenu>
       </header>
 
-      <main id="pembaruan-main" tabIndex={-1} className="outline-none">
+      <main id="pembaruan-main" tabIndex={-1} className="flex-1 overflow-y-auto pb-4 outline-none">
       {/* Status */}
       <section className="px-4" aria-labelledby="pembaruan-status-h">
         <h2 id="pembaruan-status-h" className="mb-2 text-lg font-semibold">
