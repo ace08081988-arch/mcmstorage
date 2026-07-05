@@ -2070,25 +2070,16 @@ function RequestForm({
         ))}
       </div>
 
-      {photos.length > 0 && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-[11px] text-muted-foreground">
-            <span>{photos.length} foto dipilih</span>
-            <button type="button" onClick={() => setPhotos([])} className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10">Hapus semua</button>
-          </div>
-          <div className="grid grid-cols-3 gap-1.5">
-            {photos.map((p, i) => (
-              <div key={i} className="group relative aspect-square overflow-hidden rounded-md border bg-muted">
-                <img src={p.dataUrl} alt="" className="h-full w-full object-cover" />
-                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
-                  <button type="button" onClick={() => { setEditingIdx(i); setEditorSrc(p.dataUrl); setEditorOpen(true); }} className="rounded bg-black/50 px-1.5 py-0.5">Edit</button>
-                  <button type="button" onClick={() => setPhotos((prev) => prev.filter((_, j) => j !== i))} className="rounded bg-destructive/80 px-1.5 py-0.5">Hapus</button>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <PhotoTileGrid
+        photos={photos}
+        pending={pending}
+        justOk={justOk}
+        onEdit={(i) => { setEditingIdx(i); setEditorSrc(photos[i].dataUrl); setEditorOpen(true); }}
+        onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
+        onRetry={(id) => { void retryPending(id); }}
+        onDismiss={dismissPending}
+        onClearAll={() => { setPhotos([]); setPending([]); }}
+      />
       <div className="grid grid-cols-2 gap-2">
         <button onClick={pickCamera} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}</button>
         <button onClick={pickGallery} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}</button>
