@@ -1269,7 +1269,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       // slicing 10 memotong di tengah folder. Pertahankan slot yang gagal
       // agar bisa di-retry dari pratinjau tanpa mengulang alur kirim.
       type Slot = { path: string; name: string; source: typeof take[number]["source"] };
-      const folderSlots: Slot[][] = [];
+      const folderGroups: Array<{ shot: typeof take[number]; slots: Slot[] }> = [];
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
@@ -1281,22 +1281,29 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           name: `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`,
           source: s.source,
         }));
-        folderSlots.push(group);
+        folderGroups.push({ shot: s, slots: group });
       }
       const MAX_SLOTS = 10;
       const freshSlots: Slot[] = [];
-      for (const g of folderSlots) {
+      const includedShots: typeof take = [];
+      for (const g of folderGroups) {
         // Selalu sertakan folder pertama secara utuh, bahkan bila jumlah foto
         // > MAX_SLOTS — supaya kiriman tidak terpotong di tengah folder.
-        if (freshSlots.length === 0) { freshSlots.push(...g); continue; }
-        if (freshSlots.length + g.length > MAX_SLOTS) break;
-        freshSlots.push(...g);
+        if (freshSlots.length === 0) {
+          freshSlots.push(...g.slots); includedShots.push(g.shot); continue;
+        }
+        if (freshSlots.length + g.slots.length > MAX_SLOTS) break;
+        freshSlots.push(...g.slots); includedShots.push(g.shot);
       }
-      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLocationFresh = take.find((s) => s.location_url)?.location_url ?? null;
+      // Judul & daftar item HARUS mencerminkan folder yang benar-benar ikut
+      // dikirim, bukan `take` mentah — supaya hitungan "kiriman" dan daftar
+      // foto di pesan WA konsisten dengan lampiran.
+      const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const firstLocationFresh = includedShots.find((s) => s.location_url)?.location_url ?? null;
+      const omitted = shots.length - includedShots.length;
       const freshText = [
         `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
+        `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${freshSlots.length} foto terlampir:`,
         ...lines,
         ...(firstLocationFresh ? [``, `📍 Lokasi: ${firstLocationFresh}`] : []),
       ].join("\n");
@@ -1471,25 +1478,38 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     }
     const canonicalShots = [...shots].sort((a, b) => a.id.localeCompare(b.id));
     const take = canonicalShots.slice(0, 6);
-    const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-    const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
-    const text = [
-      `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-      `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
-      ...lines,
-      ...(firstLocation ? [``, `📍 Lokasi: ${firstLocation}`] : []),
-    ].join("\n");
-    let photoCount = 0;
+    // Cerminkan logika atomik-per-folder yang sama dengan sendWA agar
+    // hitungan "kiriman" & daftar item di pratinjau selalu = yang benar-
+    // benar akan terkirim.
+    const MAX_SLOTS = 10;
+    const folderGroups: Array<{ shot: typeof take[number]; count: number }> = [];
     for (const s of take) {
       const paths = new Set<string>([
         ...((s.photo_paths ?? []) as string[]),
         ...(s.photo_path ? [s.photo_path] : []),
       ]);
-      photoCount += Array.from(paths).filter(Boolean).length;
+      const n = Array.from(paths).filter(Boolean).length;
+      if (n > 0) folderGroups.push({ shot: s, count: n });
     }
+    const includedShots: typeof take = [];
+    let photoCount = 0;
+    for (const g of folderGroups) {
+      if (photoCount === 0) { photoCount += g.count; includedShots.push(g.shot); continue; }
+      if (photoCount + g.count > MAX_SLOTS) break;
+      photoCount += g.count; includedShots.push(g.shot);
+    }
+    const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+    const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
+    const omitted = shots.length - includedShots.length;
+    const text = [
+      `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
+      `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${photoCount} foto terlampir:`,
+      ...lines,
+      ...(firstLocation ? [``, `📍 Lokasi: ${firstLocation}`] : []),
+    ].join("\n");
     setWaPreviewText(text);
     setWaPreviewLocation(firstLocation);
-    setWaPreviewPhotoCount(Math.min(photoCount, 10));
+    setWaPreviewPhotoCount(photoCount);
     setWaPreviewOpen(true);
   }
 
@@ -1532,6 +1552,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       const thumbUrls: string[] = [];
       const MAX_CHAT_SLOTS = 10;
       let foldersIncluded = 0;
+      const includedShots: typeof take = [];
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
@@ -1554,13 +1575,16 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             if (thumbUrls.length < 4) thumbUrls.push(url);
           }
         }
-        if (chatShots.length > folderStart) foldersIncluded++;
+        if (chatShots.length > folderStart) { foldersIncluded++; includedShots.push(s); }
       }
-      const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
-      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      // Judul & daftar item HARUS mencerminkan folder yang benar-benar ikut
+      // terlampir, agar hitungan "kiriman" dan daftar foto konsisten.
+      const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
+      const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const omitted = shots.length - includedShots.length;
       const caption = [
         `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${chatShots.length} foto terlampir:`,
+        `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${chatShots.length} foto terlampir:`,
         ...lines,
       ].join("\n");
       toast.dismiss(tid);
