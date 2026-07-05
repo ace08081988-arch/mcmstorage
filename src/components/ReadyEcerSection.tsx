@@ -2397,6 +2397,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         currentFingerprint={chatPreview?.fingerprint}
         currentSummary={chatPreview?.summary}
         idemIdsKey={chatPreview?.idemIdsKey}
+        conversationId={chatPreview?.conversationId ?? null}
+        peer={chatPreview ? { name: chatPreview.conversationTitle } : null}
       />
     </div>
   );
