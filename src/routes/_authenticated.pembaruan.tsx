@@ -370,10 +370,11 @@ function PembaruanPage() {
               key={s.id}
               type="button"
               aria-current={active ? "true" : undefined}
+              aria-controls={`pembaruan-sec-${s.id}`}
               onPointerDown={onPressStart("selection")}
               onClick={() => scrollToSection(s.id)}
               className={
-                `rounded-full px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-300 ease-out ${PRESS_CHIP} ` +
+                `rounded-full px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-300 ease-out outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background ${PRESS_CHIP} ` +
                 (active
                   ? "bg-primary/15 text-primary"
                   : "bg-muted text-muted-foreground hover:bg-muted/80")
@@ -384,6 +385,20 @@ function PembaruanPage() {
           );
         })}
       </nav>
+      {/*
+       * Live region: mengumumkan perubahan section aktif ke pembaca layar
+       * tanpa memindahkan fokus keyboard (jadi tab order tetap stabil saat
+       * pengguna menggulir konten atau menekan chip).
+       */}
+      <div className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+        {`Bagian aktif: ${
+          activeSection === "status"
+            ? "Status"
+            : activeSection === "saluran"
+              ? "Saluran"
+              : "Temukan"
+        }`}
+      </div>
 
       <main
         id="pembaruan-main"
