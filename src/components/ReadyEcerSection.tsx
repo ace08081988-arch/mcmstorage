@@ -1272,7 +1272,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   const extra = Math.max(0, shots.length - thumbs.length);
   const unit = r.product_name.trim().toLowerCase() === "gs" ? "botol" : r.unit_label;
 
-  async function sendWA(e: React.MouseEvent) {
+  async function sendWA(
+    e: React.MouseEvent,
+    expected?: { folderIds: string[]; photoCount: number } | null,
+  ) {
     e.preventDefault();
     e.stopPropagation();
     if (sending) return;
