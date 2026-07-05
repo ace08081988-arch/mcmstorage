@@ -457,6 +457,9 @@ function PublicPrepPage() {
       runIdleQueue();
       // Refresh ringan sekali setelah idle supaya data pasti terkini.
       try { void silentRefreshRef.current?.(); } catch { /* noop */ }
+      // Cek versi sekali lagi: bila deploy baru sudah live sementara
+      // kita sibuk, sekarang saatnya reload dengan aman.
+      try { recheckBuildVersion(); } catch { /* noop */ }
     }
   }, [runIdleQueue]);
   // Ref ke silentRefresh untuk dipanggil dari setWorkerOperationActive
