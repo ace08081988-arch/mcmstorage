@@ -880,7 +880,7 @@ function SendPrepLinkDialog({
               </div>
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Nama pegawai (opsional)</Label>
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Nama pegawai</Label>
               <Input
                 value={workerName}
                 onChange={(e) => setWorkerName(e.target.value)}
