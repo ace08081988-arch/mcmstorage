@@ -381,8 +381,7 @@ export function DebtQuickActions({
       openNow.sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
       const totalOpenBefore = openNow.reduce((s, d) => s + d.sisa, 0);
       let left = next;
-      const lines: EditPreview extends { lines: infer L } ? L : never = [] as never;
-      const linesArr: Array<{ id: string; created_at: string; take: number; sisaBefore: number; sisaAfter: number }> = lines as never;
+      const linesArr: Array<{ id: string; created_at: string; take: number; sisaBefore: number; sisaAfter: number }> = [];
       for (const d of openNow) {
         if (left <= 0) break;
         const take = Math.min(left, d.sisa);
