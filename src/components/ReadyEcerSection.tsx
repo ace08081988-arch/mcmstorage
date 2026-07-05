@@ -1330,7 +1330,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       // Judul & daftar item HARUS mencerminkan folder yang benar-benar ikut
       // dikirim, bukan `take` mentah — supaya hitungan "kiriman" dan daftar
       // foto di pesan WA konsisten dengan lampiran.
-      const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const folderName = (s: typeof take[number]) =>
+        s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
+      const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const firstLocationFresh = includedShots.find((s) => s.location_url)?.location_url ?? null;
       const omitted = shots.length - includedShots.length;
       const freshText = [
