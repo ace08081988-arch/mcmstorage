@@ -94,6 +94,16 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // E2E ambil foto (kamera) + pilih dari galeri di `/t/:token`:
+      // regresi guard supaya thumbnail dan PhotoEditor selalu tampil
+      // setelah `setInputFiles` pada input tersembunyi kamera/galeri.
+      // Mobile viewport (Pixel 5, 411x893) karena pegawai lewat APK.
+      name: "worker-portal-pick-photo-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /worker-portal-pick-photo\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // E2E multi-tab: simulasi N tab same-origin menulis SYNC_KEY
       // bersamaan & verifikasi coalescing scheduler hanya melakukan 1
       // apply per jendela. Pakai desktop viewport karena uji ini tidak
