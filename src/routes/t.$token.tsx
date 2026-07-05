@@ -434,10 +434,13 @@ function PublicPrepPage() {
   const [deferredTick, setDeferredTick] = useState(0);
   useEffect(() => subscribeDeferredReload(setDeferredReload), []);
   useEffect(() => {
-    if (!deferredReload.pending) return;
-    const id = window.setInterval(() => setDeferredTick((n) => n + 1), 1000);
+    if (!deferredReload.pending || !deferredReload.since) return;
+    const update = () =>
+      setDeferredTick(Math.max(0, Math.round((Date.now() - deferredReload.since) / 1000)));
+    update();
+    const id = window.setInterval(update, 1000);
     return () => window.clearInterval(id);
-  }, [deferredReload.pending]);
+  }, [deferredReload.pending, deferredReload.since]);
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
   const activeWorkerOpsRef = useRef(0);
   const lastKeepAliveAtRef = useRef(0);
