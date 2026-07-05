@@ -2778,6 +2778,29 @@ function RequestForm({
 
   // Draft foto persisten untuk paket request.
   const draftKey = requestDraftKey(token, title.id);
+  // Antrian foto galeri yang dibuka di PhotoEditor satu per satu.
+  const editQueueRef = useRef<number[]>([]);
+  const photosRef = useRef<StagedPhoto[]>([]);
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+  function openEditForIdx(i: number) {
+    const p = photosRef.current[i];
+    if (!p) return;
+    setEditingIdx(i);
+    setEditorSrc(p.dataUrl);
+    setEditorOpen(true);
+  }
+  function advanceEditQueue() {
+    const q = editQueueRef.current;
+    if (q.length === 0) {
+      setEditingIdx(null);
+      setEditorOpen(false);
+      return;
+    }
+    const nextIdx = q.shift()!;
+    setTimeout(() => openEditForIdx(nextIdx), 0);
+  }
   const draftLoadedRef = useRef(false);
   useEffect(() => {
     let cancelled = false;
