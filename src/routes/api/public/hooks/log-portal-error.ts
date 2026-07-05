@@ -13,7 +13,10 @@ const PayloadSchema = z.object({
   code: z.string().max(80).optional().nullable(),
   status: z.string().max(40).optional().nullable(),
   route: z.string().max(120).optional().nullable(),
-  token: z.string().max(200).optional().nullable(),
+  // Wajib: worker portal selalu mengirim share_token dari URL PIN.
+  // Endpoint publik ini terautentikasi lewat pengetahuan share_token
+  // yang masih aktif — tanpa itu, tidak ada log dan tidak ada alert.
+  token: z.string().min(8).max(200),
 });
 
 function sha256(input: string): string {
@@ -66,7 +69,30 @@ export const Route = createFileRoute("/api/public/hooks/log-portal-error")({
         const code = redact(parsed.data.code ?? null);
         const status = redact(parsed.data.status ?? null);
         const route = redact(parsed.data.route ?? null);
-        const tokenHash = parsed.data.token ? sha256(parsed.data.token) : null;
+        const rawToken = parsed.data.token;
+
+        // Verifikasi token: harus cocok dengan prep_tasks.share_token yang
+        // masih aktif (status != revoked, belum kedaluwarsa). Anonim POST
+        // tanpa token valid → 401. Menutup dua vektor abuse: (1) sampah di
+        // portal_error_events, (2) spam admin lewat portal_error_alerts.
+        const { data: task, error: taskErr } = await supabase
+          .from("prep_tasks")
+          .select("id, status, expires_at")
+          .eq("share_token", rawToken)
+          .maybeSingle();
+        if (taskErr) {
+          console.error("[log-portal-error] token lookup failed", taskErr.message);
+          return Response.json({ ok: false }, { status: 500 });
+        }
+        if (!task) return new Response("invalid_token", { status: 401 });
+        if (task.status === "revoked") {
+          return new Response("token_revoked", { status: 401 });
+        }
+        if (task.expires_at && new Date(task.expires_at).getTime() < Date.now()) {
+          return new Response("token_expired", { status: 401 });
+        }
+
+        const tokenHash = sha256(rawToken);
         const ipHash = sha256(clientIp(request));
         const ua = (request.headers.get("user-agent") ?? "").slice(0, 200);
 
@@ -85,23 +111,23 @@ export const Route = createFileRoute("/api/public/hooks/log-portal-error")({
 
         // Deteksi error berulang -> alert
         const sinceIso = new Date(Date.now() - ALERT_WINDOW_SEC * 1000).toISOString();
-        let countQ = supabase
+        const countQ = supabase
           .from("portal_error_events")
           .select("id", { count: "exact", head: true })
           .eq("kind", kind)
+          .eq("token_hash", tokenHash)
           .gte("created_at", sinceIso);
-        if (tokenHash) countQ = countQ.eq("token_hash", tokenHash);
         const { count } = await countQ;
 
         if ((count ?? 0) >= ALERT_COUNT) {
           // cooldown: jangan buat alert baru bila sudah ada dalam ALERT_COOLDOWN_SEC
           const cooldownIso = new Date(Date.now() - ALERT_COOLDOWN_SEC * 1000).toISOString();
-          let recentQ = supabase
+          const recentQ = supabase
             .from("portal_error_alerts")
             .select("id", { count: "exact", head: true })
             .eq("kind", kind)
+            .eq("token_hash", tokenHash)
             .gte("created_at", cooldownIso);
-          if (tokenHash) recentQ = recentQ.eq("token_hash", tokenHash);
           const { count: recentAlerts } = await recentQ;
           if ((recentAlerts ?? 0) === 0) {
             await supabase.from("portal_error_alerts").insert({
