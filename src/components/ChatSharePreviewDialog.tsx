@@ -187,6 +187,14 @@ export function ChatSharePreviewDialog({
                 </span>
               </div>
             </div>
+            {peer || conversationId ? (
+              <DebtQuickActions
+                peerPhone={peer?.phone ?? null}
+                peerName={peer?.name ?? data.conversationTitle}
+                peerAccountUserId={peer?.accountUserId ?? null}
+                conversationId={conversationId ?? null}
+              />
+            ) : null}
             {effectiveDup && !progressActive && !outcome ? (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2.5 text-[12px] text-amber-900 dark:text-amber-200">
                 <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
