@@ -35,6 +35,20 @@ function normalizePhone(input: string): string {
   return s;
 }
 
+function SkeletonRow() {
+  return (
+    <div className="flex items-center gap-2 rounded-md border bg-background/50 p-2">
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-3 w-1/2" />
+      </div>
+      <Skeleton className="h-8 w-8 rounded-md" />
+      <Skeleton className="h-8 w-8 rounded-md" />
+      <Skeleton className="h-8 w-8 rounded-md" />
+    </div>
+  );
+}
+
 export function StaffContactsPanel({ uid }: { uid: string | null }) {
   const [rows, setRows] = useState<Contact[]>(() =>
     uid ? (contactsCache.get(uid)?.rows ?? []) : [],
