@@ -2208,7 +2208,10 @@ function RequestForm({
       <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" className="h-10 w-full rounded-lg border bg-background px-3 text-xs" />
 
       <button disabled={busy} onClick={submit} className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50">
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Kirim Paket
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        {busy && uploads.some((u) => u.status !== "idle")
+          ? `Mengunggah ${uploads.filter((u) => u.status === "done").length}/${photos.length}…`
+          : "Kirim Paket"}
       </button>
 
       {editorOpen && editorSrc && (
