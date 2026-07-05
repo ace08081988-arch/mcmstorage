@@ -14,6 +14,8 @@ export type ChatSharePreviewData = {
   conversationTitle: string;
   caption: string;
   photoCount: number;
+  /** Jumlah folder kiriman (ecer/prep) yang benar-benar ikut terlampir. */
+  folderCount: number;
   /** Hingga 4 thumbnail untuk pratinjau visual. */
   thumbs: string[];
   /** Total foto yang sebenarnya akan dikirim (>= thumbs.length). */
@@ -168,6 +170,14 @@ export function ChatSharePreviewDialog({
 
         {data && (
           <div className="space-y-3 text-sm">
+            <div className="rounded-md border border-primary/20 bg-primary/5 p-2.5">
+              <div className="flex items-center justify-between text-[12px] font-semibold">
+                <span className="text-foreground">Ringkasan payload</span>
+                <span className="text-primary">
+                  {data.folderCount} kiriman · {data.totalPhotos} foto terlampir
+                </span>
+              </div>
+            </div>
             {effectiveDup && !progressActive && !outcome ? (
               <div className="flex items-start gap-2 rounded-md border border-amber-500/50 bg-amber-500/10 p-2.5 text-[12px] text-amber-900 dark:text-amber-200">
                 <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
