@@ -55,8 +55,16 @@ import {
   X as XIcon,
   ChevronDown,
   Layers,
+  Info,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
 import {
@@ -78,6 +86,13 @@ export const Route = createFileRoute("/t/$token")({
 });
 
 type StagedPhoto = StagedPhotoT;
+
+type VariantGroup = {
+  key: string;
+  label: string;
+  category: string | null;
+  entries: Array<{ it: PrepItemRow; idx: number }>;
+};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -319,6 +334,7 @@ function PublicPrepPage() {
   useEffect(() => {
     try { window.localStorage.setItem(sortStorageKey, sortMode); } catch {}
   }, [sortMode, sortStorageKey]);
+  const [selectedGroup, setSelectedGroup] = useState<VariantGroup | null>(null);
   // Status koneksi realtime: 'connecting' saat awal, 'connected' setelah SUBSCRIBED,
   // 'error' bila channel gagal/terputus. lastSyncAt diisi setiap silentRefresh sukses.
   const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
@@ -1638,35 +1654,55 @@ function PublicPrepPage() {
                   })();
                   return (
                     <section key={g.key} className="space-y-2">
-                      <div className="sticky top-0 z-[1] -mx-1 rounded-md border bg-background/95 px-2 py-1.5 backdrop-blur">
-                        <button
-                          type="button"
-                          onClick={() => setCollapsedGroups((prev) => ({ ...prev, [g.key]: !prev[g.key] }))}
-                          aria-expanded={!collapsed}
-                          aria-label={collapsed ? `Buka ${g.label}` : `Tutup ${g.label}`}
-                          className="flex w-full items-center justify-between gap-2 text-left"
-                        >
+                      <div
+                        className="sticky top-0 z-[1] -mx-1 rounded-md border bg-background/95 px-2 py-1.5 backdrop-blur cursor-pointer"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedGroup(g)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            setSelectedGroup(g);
+                          }
+                        }}
+                        aria-label={`Buka ringkasan detail ${g.label}`}
+                      >
+                        <div className="flex items-center justify-between gap-2">
                           <div className="min-w-0">
                             <div className="flex items-center gap-1 truncate text-[12px] font-semibold">
-                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`} aria-hidden />
                               <span className="truncate">{g.label}</span>
                             </div>
                             {g.category && (
                               <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{g.category}</div>
                             )}
                           </div>
-                          <div className="flex shrink-0 items-baseline gap-1 tabular-nums">
-                            <span className={`text-[13px] font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
-                              {doneCount}/{totalCount}
-                            </span>
-                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
-                              paket
-                            </span>
-                            <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${allDone ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-primary/10 text-primary"}`}>
-                              {pct}%
-                            </span>
+                          <div className="flex shrink-0 items-center gap-2">
+                            <div className="flex items-baseline gap-1 tabular-nums">
+                              <span className={`text-[13px] font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
+                                {doneCount}/{totalCount}
+                              </span>
+                              <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                                paket
+                              </span>
+                              <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${allDone ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-primary/10 text-primary"}`}>
+                                {pct}%
+                              </span>
+                              <Info className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden="true" />
+                            </div>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setCollapsedGroups((prev) => ({ ...prev, [g.key]: !prev[g.key] }));
+                              }}
+                              aria-expanded={!collapsed}
+                              aria-label={collapsed ? `Buka ${g.label}` : `Tutup ${g.label}`}
+                              className="rounded-md p-1 hover:bg-muted"
+                            >
+                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`} aria-hidden />
+                            </button>
                           </div>
-                        </button>
+                        </div>
                         <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                           <div
                             className={`h-full rounded-full transition-[width] duration-300 ease-out ${allDone ? "bg-emerald-500" : "bg-primary"}`}
@@ -1736,6 +1772,80 @@ function PublicPrepPage() {
                     </section>
                   );
                 })}
+                <Dialog open={!!selectedGroup} onOpenChange={(open) => { if (!open) setSelectedGroup(null); }}>
+                  {selectedGroup && (
+                    <DialogContent className="max-w-md">
+                      {(() => {
+                        const sg = groups.find((x) => x.key === selectedGroup.key) || selectedGroup;
+                        const totalReq = sg.entries.reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
+                        const doneCount = sg.entries.filter((e) => (e.it.submissions?.length ?? 0) > 0).length;
+                        const totalCount = sg.entries.length;
+                        const doneReq = sg.entries
+                          .filter((e) => (e.it.submissions?.length ?? 0) > 0)
+                          .reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
+                        const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+                        const allDone = doneCount === totalCount && totalCount > 0;
+                        const unit = displayUnit(sg.entries[0].it.name, sg.entries[0].it.unit_label);
+                        return (
+                          <>
+                            <DialogHeader>
+                              <DialogTitle>{sg.label}</DialogTitle>
+                              {sg.category && (
+                                <DialogDescription>{sg.category}</DialogDescription>
+                              )}
+                            </DialogHeader>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-3 gap-2">
+                                <div className="rounded-md border p-2 text-center">
+                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Diminta</div>
+                                  <div className="text-base font-semibold tabular-nums">{totalReq}</div>
+                                  <div className="text-[10px] text-muted-foreground">{totalCount} paket</div>
+                                </div>
+                                <div className="rounded-md border p-2 text-center">
+                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Siap</div>
+                                  <div className={`text-base font-semibold tabular-nums ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>{doneReq}</div>
+                                  <div className="text-[10px] text-muted-foreground">{doneCount} paket</div>
+                                </div>
+                                <div className="rounded-md border p-2 text-center">
+                                  <div className="text-[10px] uppercase tracking-wide text-muted-foreground">Sisa</div>
+                                  <div className="text-base font-semibold tabular-nums text-foreground">{Math.max(0, totalReq - doneReq)}</div>
+                                  <div className="text-[10px] text-muted-foreground">{totalCount - doneCount} paket</div>
+                                </div>
+                              </div>
+                              <div className="space-y-1">
+                                <div className="flex justify-between text-xs">
+                                  <span className="text-muted-foreground">Progres</span>
+                                  <span className="font-semibold tabular-nums">{doneCount}/{totalCount} · {pct}%</span>
+                                </div>
+                                <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                                  <div className={`h-full rounded-full ${allDone ? "bg-emerald-500" : "bg-primary"}`} style={{ width: `${pct}%` }} />
+                                </div>
+                              </div>
+                              <div className="max-h-60 overflow-y-auto rounded-md border">
+                                <div className="divide-y">
+                                  {sg.entries.map(({ it, idx }) => {
+                                    const done = (it.submissions?.length ?? 0) > 0;
+                                    return (
+                                      <div key={it.id} className="flex items-center justify-between p-2 text-sm">
+                                        <div className="flex items-center gap-2 min-w-0">
+                                          <div className={`h-2 w-2 shrink-0 rounded-full ${done ? "bg-emerald-500" : "bg-muted-foreground"}`} />
+                                          <span className="truncate">{it.name}</span>
+                                        </div>
+                                        <div className="shrink-0 tabular-nums text-muted-foreground">
+                                          {it.qty_requested} {unit}
+                                        </div>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                              </div>
+                            </div>
+                          </>
+                        );
+                      })()}
+                    </DialogContent>
+                  )}
+                </Dialog>
               </div>
             );
           })()
