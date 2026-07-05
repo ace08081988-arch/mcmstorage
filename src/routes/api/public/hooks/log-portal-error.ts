@@ -3,10 +3,13 @@ import { createClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
 import { z } from "zod";
 
-// Alert threshold: N event dgn kind+token_hash yg sama dalam window seconds.
+// Alert threshold: N event dgn (kind, code, token_hash) yg sama dalam window seconds.
 const ALERT_COUNT = 5;
 const ALERT_WINDOW_SEC = 300;
-const ALERT_COOLDOWN_SEC = 600;
+// Cooldown deduplikasi: selama window ini, error yang sama tidak membuat alert baru.
+// Bila ada alert terbuka (belum di-ack) untuk key yang sama, kita hanya menaikkan
+// count/severity-nya, bukan membuat baris baru — jadi admin tidak dispam.
+const ALERT_COOLDOWN_SEC = 1800; // 30 menit
 
 const PayloadSchema = z.object({
   kind: z.string().min(1).max(40),
@@ -120,23 +123,46 @@ export const Route = createFileRoute("/api/public/hooks/log-portal-error")({
         const { count } = await countQ;
 
         if ((count ?? 0) >= ALERT_COUNT) {
-          // cooldown: jangan buat alert baru bila sudah ada dalam ALERT_COOLDOWN_SEC
+          const nowCount = count ?? 0;
+          const nextSeverity = nowCount >= ALERT_COUNT * 3 ? "critical" : "warning";
           const cooldownIso = new Date(Date.now() - ALERT_COOLDOWN_SEC * 1000).toISOString();
-          const recentQ = supabase
+
+          // Dedup key: (kind, code, token_hash). `code` sudah diredaksi PII di atas,
+          // jadi aman dipakai sebagai bagian kunci deduplikasi.
+          let openQ = supabase
             .from("portal_error_alerts")
-            .select("id", { count: "exact", head: true })
+            .select("id, count, severity, created_at, acknowledged_at")
             .eq("kind", kind)
             .eq("token_hash", tokenHash)
-            .gte("created_at", cooldownIso);
-          const { count: recentAlerts } = await recentQ;
-          if ((recentAlerts ?? 0) === 0) {
+            .order("created_at", { ascending: false })
+            .limit(1);
+          openQ = code ? openQ.eq("code", code) : openQ.is("code", null);
+          const { data: existingRows } = await openQ;
+          const existing = existingRows?.[0] ?? null;
+
+          if (existing && existing.acknowledged_at === null) {
+            // Alert masih terbuka → gabungkan (bump count + severity), jangan buat baru.
+            const mergedCount = Math.max(existing.count ?? 0, nowCount);
+            const mergedSeverity =
+              existing.severity === "critical" || nextSeverity === "critical"
+                ? "critical"
+                : "warning";
+            if (mergedCount !== existing.count || mergedSeverity !== existing.severity) {
+              await supabase
+                .from("portal_error_alerts")
+                .update({ count: mergedCount, severity: mergedSeverity })
+                .eq("id", existing.id);
+            }
+          } else if (existing && existing.created_at >= cooldownIso) {
+            // Sudah di-ack tapi masih dalam cooldown → suppress, jangan bikin baru.
+          } else {
             await supabase.from("portal_error_alerts").insert({
               kind,
               code,
               token_hash: tokenHash,
-              count: count ?? 0,
+              count: nowCount,
               window_seconds: ALERT_WINDOW_SEC,
-              severity: (count ?? 0) >= ALERT_COUNT * 3 ? "critical" : "warning",
+              severity: nextSeverity,
             });
           }
         }
