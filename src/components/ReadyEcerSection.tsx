@@ -1008,12 +1008,14 @@ function fmtAgo(ts: number, now = Date.now()): string {
   return `${day} hari lalu`;
 }
 
-function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
+function SendStatusBadge({ status, error, view, lastSentAt, sentCount, onResend, resendLabel }: {
   status: "idle" | "sending" | "success" | "failed" | "cancelled";
   error: string | null;
   view: "active" | "sent";
   lastSentAt: number | null;
   sentCount: number;
+  onResend?: () => void;
+  resendLabel?: string;
 }) {
   const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
   if (status === "sending") {
@@ -1025,6 +1027,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
   }
   if (status === "failed") {
     return (
+      <span className="inline-flex items-center gap-1">
       <Popover>
         <PopoverTrigger asChild>
           <button type="button" onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[11px] font-semibold text-destructive">
@@ -1034,9 +1037,30 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
         <PopoverContent align="start" className="w-64 space-y-1 p-2.5 text-[11px]" onClick={stop}>
           <div className="font-semibold text-foreground">Gagal kirim via MCM</div>
           <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
-          <p className="text-muted-foreground">Tekan tombol MCM lagi untuk mencoba ulang.</p>
+          {onResend ? (
+            <button
+              type="button"
+              onClick={(e) => { stop(e); onResend(); }}
+              className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <RefreshCw className="h-3 w-3" /> {resendLabel || "Kirim ulang"}
+            </button>
+          ) : (
+            <p className="text-muted-foreground">Tekan tombol MCM lagi untuk mencoba ulang.</p>
+          )}
         </PopoverContent>
       </Popover>
+      {onResend && (
+        <button
+          type="button"
+          onClick={(e) => { stop(e); onResend(); }}
+          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20"
+          title={resendLabel || "Kirim ulang"}
+        >
+          <RefreshCw className="h-2.5 w-2.5" /> Kirim ulang
+        </button>
+      )}
+      </span>
     );
   }
   if (status === "cancelled") {
@@ -1211,6 +1235,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   const [waPreviewFolders, setWaPreviewFolders] = useState<
     Array<{ label: string; count: number; included: boolean }>
   >([]);
+  // Ingat kanal terakhir yang dipakai untuk kirim, supaya tombol "Kirim ulang"
+  // di badge Gagal bisa memicu alur yang sama tanpa harus menandai ulang.
+  const [lastSendChannel, setLastSendChannel] = useState<"wa" | "chat" | null>(null);
   const [pickChatOpen, setPickChatOpen] = useState(false);
   const [chatSending, setChatSending] = useState(false);
   const [chatPreparing, setChatPreparing] = useState(false);
@@ -1245,6 +1272,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       toast.info("Belum ada kiriman pegawai untuk judul ini.");
       return;
     }
+    setLastSendChannel("wa");
     // Urutan kanonik: sort by id (naik) sebelum slice — sehingga urutan
     // shots di UI (yang bisa berubah karena pegawai baru menyerobot masuk
     // atau resort submitted_at) tidak mempengaruhi identitas idempotency
@@ -1548,6 +1576,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       toast.info("Belum ada kiriman pegawai untuk judul ini.");
       return;
     }
+    setLastSendChannel("chat");
     const take = shots.slice(0, 6);
     const idemIdsKey = [...new Set(take.map((s) => s.id).filter(Boolean))].sort().join(",");
     const idemKey = buildSendKey({ channel: "chat", conversationId, ids: take.map((s) => s.id) });
@@ -2063,6 +2092,32 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             view={view}
             lastSentAt={lastSentAt}
             sentCount={view === "sent" ? shots.length : 0}
+            resendLabel={lastSendChannel === "chat" ? "Kirim ulang Chat" : "Kirim ulang WA"}
+            onResend={
+              sending || chatSending || chatPreparing
+                ? undefined
+                : () => {
+                    const fake = {
+                      preventDefault() {},
+                      stopPropagation() {},
+                    } as unknown as React.MouseEvent;
+                    if (lastSendChannel === "chat") {
+                      // Buka lagi pratinjau Chat terakhir tanpa menandai foto ulang.
+                      // chatPreview + snapshot idempotency masih tersedia — pengguna
+                      // cukup menekan "Kirim" lagi di dialog.
+                      if (chatPreview) {
+                        setChatPreviewOpen(true);
+                      } else {
+                        toast.info("Pilih tujuan Chat lagi untuk mengirim ulang.");
+                        setPickChatOpen(true);
+                      }
+                    } else {
+                      // WA: buka pratinjau supaya folder yang sama (via snapshot
+                      // idempotency) dikirim ulang tanpa foto perlu ditandai ulang.
+                      openWAPreview(fake);
+                    }
+                  }
+            }
           />
           <Popover>
             <PopoverTrigger asChild>
