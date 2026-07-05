@@ -253,4 +253,21 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
     g.FileReader = FR as unknown as typeof FileReader;
     await expect(stageFile(bigBlob as File)).rejects.toThrow(/kosong|rusak/i);
   });
+
+  it("formatLabel mengenali HEIC, HEIF, JPEG, PNG, WEBP", () => {
+    expect(formatLabel(new Blob(["x"], { type: "image/heic" }))).toBe("HEIC");
+    expect(formatLabel(new Blob(["x"], { type: "image/heif-sequence" }))).toBe("HEIC");
+    expect(formatLabel(new Blob(["x"], { type: "image/jpeg" }))).toBe("JPEG");
+    expect(formatLabel(new Blob(["x"], { type: "image/png" }))).toBe("PNG");
+    expect(formatLabel(new Blob(["x"], { type: "image/webp" }))).toBe("WEBP");
+    expect(formatLabel(new File(["x"], "IMG.heic", { type: "" }))).toBe("HEIC");
+  });
+
+  it("formatFileSize menampilkan ukuran manusiawi (B, KB, MB, GB)", () => {
+    expect(formatFileSize(0)).toBe("0 B");
+    expect(formatFileSize(512)).toBe("512 B");
+    expect(formatFileSize(1536)).toBe("1.5 KB");
+    expect(formatFileSize(1.5 * 1024 * 1024)).toBe("1.5 MB");
+    expect(formatFileSize(2.5 * 1024 * 1024 * 1024)).toBe("2.5 GB");
+  });
 });
