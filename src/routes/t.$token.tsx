@@ -2015,6 +2015,46 @@ function ItemCard({
       </button>
       {expanded && (
       <div className="border-t px-3 pb-3 pt-3">
+        {sendStatus.kind === "sending" && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-2 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-[12px] font-medium text-primary"
+          >
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            {sendStatus.phase === "upload"
+              ? "Mengunggah foto ke server…"
+              : "Mengirim ke gudang…"}
+          </div>
+        )}
+        {sendStatus.kind === "failed" && !isDone && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-[12px] leading-relaxed text-destructive"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">Gagal kirim</div>
+              <div className="mt-0.5 break-words opacity-90">{sendStatus.error}</div>
+            </div>
+          </div>
+        )}
+        {sendStatus.kind === "success" && !isDone && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-2 flex items-start gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-[12px] leading-relaxed text-emerald-700 dark:text-emerald-300"
+          >
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">Berhasil terkirim</div>
+              <div className="mt-0.5 opacity-90">
+                {sendStatus.count} foto sudah masuk folder <b>{item.name}</b>.
+              </div>
+            </div>
+          </div>
+        )}
         {item.note && (
           <div className="mb-2 rounded-md bg-muted/50 px-2 py-1.5 text-[11px] text-muted-foreground">
             Catatan: {item.note}
