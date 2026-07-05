@@ -1919,11 +1919,18 @@ function ItemCard({
 
   const isDone = (item.submissions?.length ?? 0) > 0;
   const hasDraft = photos.length > 0 || pending.length > 0;
-  // Auto-expand kalau ada draft foto tersimpan atau item baru diubah admin,
-  // supaya user tidak kehilangan pekerjaan yang belum terkirim.
+  // Auto-expand kalau ada draft foto, item baru diubah admin, atau sedang /
+  // habis dicoba kirim — supaya status berhasil / gagal langsung terlihat.
   useEffect(() => {
-    if (hasDraft || isStale) setExpanded(true);
-  }, [hasDraft, isStale]);
+    if (
+      hasDraft ||
+      isStale ||
+      sendStatus.kind === "sending" ||
+      sendStatus.kind === "failed"
+    ) {
+      setExpanded(true);
+    }
+  }, [hasDraft, isStale, sendStatus.kind]);
   return (
     <div
       className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}
