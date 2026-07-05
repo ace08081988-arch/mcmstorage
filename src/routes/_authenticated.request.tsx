@@ -306,6 +306,17 @@ function RequestPage() {
                   <div
                     role="button"
                     tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); setHistoryTitle(t); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setHistoryTitle(t); } }}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border px-2 py-0.5 text-[10px] text-muted-foreground hover:bg-muted"
+                    aria-label="Riwayat pengiriman"
+                    title="Riwayat pengiriman link ke pegawai untuk judul ini"
+                  >
+                    <History className="h-3 w-3" /> Riwayat
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); void deleteTitle(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void deleteTitle(); } }}
                     className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive hover:bg-destructive/20"
