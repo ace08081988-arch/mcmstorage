@@ -52,6 +52,7 @@ import {
   Inbox,
   AlertCircle,
   X as XIcon,
+  ChevronDown,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
@@ -1478,12 +1479,12 @@ function PublicPrepPage() {
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {items.map((it, idx) => (
             <WorkerSectionBoundary
               key={it.id}
               renderFallback={(error) => (
-                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                <div className="col-span-2 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                     <div className="min-w-0">
@@ -1516,7 +1517,7 @@ function PublicPrepPage() {
           ))}
           {items.length === 0 &&
             (loading ? (
-              <div className="space-y-3" aria-busy="true" aria-label="Memuat daftar tugas">
+              <div className="col-span-2 space-y-3" aria-busy="true" aria-label="Memuat daftar tugas">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="space-y-3 rounded-xl border bg-card p-4">
                     <div className="flex items-start gap-3">
@@ -1532,7 +1533,7 @@ function PublicPrepPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
+              <div className="col-span-2 flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Inbox className="h-5 w-5" />
                 </div>
@@ -1611,6 +1612,7 @@ function ItemCard({
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
     signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned);
@@ -1896,6 +1898,12 @@ function ItemCard({
   }
 
   const isDone = (item.submissions?.length ?? 0) > 0;
+  const hasDraft = photos.length > 0 || pending.length > 0;
+  // Auto-expand kalau ada draft foto tersimpan atau item baru diubah admin,
+  // supaya user tidak kehilangan pekerjaan yang belum terkirim.
+  useEffect(() => {
+    if (hasDraft || isStale) setExpanded(true);
+  }, [hasDraft, isStale]);
   return (
     <div
       className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}
@@ -1915,46 +1923,67 @@ function ItemCard({
           </button>
         </div>
       )}
-      <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
-          Item #{index}
-        </div>
-        {isDone ? (
-          <StatusBadge size="xs" variant="siap">
-            <CheckCircle2 className="mr-1 h-3 w-3" /> Selesai
-          </StatusBadge>
-        ) : (
-          <StatusBadge size="xs" variant="menunggu">
-            Belum dikirim
-          </StatusBadge>
-        )}
-      </div>
-      <div className="p-3">
-        <div className="flex items-start gap-3">
-          {refSigned ? (
-            <img src={refSigned} alt="" className="h-16 w-16 rounded-lg border object-cover" />
-          ) : (
-            <div className="flex h-16 w-16 items-center justify-center rounded-lg border bg-muted text-[10px] text-muted-foreground">
-              No img
-            </div>
-          )}
-          <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-semibold leading-tight">{item.name}</div>
-            <div className="text-[11px] text-muted-foreground">{item.category ?? "—"}</div>
-            <div className="mt-1.5 flex flex-wrap gap-1.5">
-              <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                Target {item.qty_requested} {displayUnit(item.name, item.unit_label)}
-              </span>
-              <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                Disiapkan {item.qty_prepared ?? 0}
-              </span>
-            </div>
-            {item.note && (
-              <div className="mt-1 text-[11px] text-muted-foreground">Catatan: {item.note}</div>
+      <button
+        type="button"
+        onClick={() => setExpanded((v) => !v)}
+        aria-expanded={expanded}
+        className="block w-full text-left"
+      >
+        <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-2.5 py-1.5">
+          <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+            #{index}
+          </div>
+          <div className="flex items-center gap-1.5">
+            {isDone ? (
+              <StatusBadge size="xs" variant="siap">
+                <CheckCircle2 className="mr-1 h-3 w-3" /> Selesai
+              </StatusBadge>
+            ) : hasDraft ? (
+              <StatusBadge size="xs" variant="menunggu">
+                Draft {photos.length + pending.length}
+              </StatusBadge>
+            ) : (
+              <StatusBadge size="xs" variant="menunggu">Belum</StatusBadge>
             )}
+            <ChevronDown
+              className={`h-3.5 w-3.5 text-muted-foreground transition-transform ${expanded ? "rotate-180" : ""}`}
+              aria-hidden="true"
+            />
           </div>
         </div>
-
+        <div className="p-2.5">
+          <div className="flex items-start gap-2">
+            {refSigned ? (
+              <img src={refSigned} alt="" className="h-14 w-14 shrink-0 rounded-lg border object-cover" />
+            ) : (
+              <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg border bg-muted text-[10px] text-muted-foreground">
+                No img
+              </div>
+            )}
+            <div className="min-w-0 flex-1">
+              <div className="line-clamp-2 text-[13px] font-semibold leading-tight">{item.name}</div>
+              <div className="mt-0.5 truncate text-[10px] text-muted-foreground">{item.category ?? "—"}</div>
+              <div className="mt-1 flex flex-wrap gap-1">
+                <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                  {item.qty_requested} {displayUnit(item.name, item.unit_label)}
+                </span>
+                {(item.qty_prepared ?? 0) > 0 && (
+                  <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    Siap {item.qty_prepared}
+                  </span>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
+      </button>
+      {expanded && (
+      <div className="border-t px-3 pb-3 pt-3">
+        {item.note && (
+          <div className="mb-2 rounded-md bg-muted/50 px-2 py-1.5 text-[11px] text-muted-foreground">
+            Catatan: {item.note}
+          </div>
+        )}
         {isDone && !isStale ? (
           <div className="mt-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300">
             <div className="flex items-center gap-1.5 font-semibold">
@@ -2131,6 +2160,7 @@ function ItemCard({
           onClose={() => setHelpKind(null)}
         />
       </div>
+      )}
     </div>
   );
 }
