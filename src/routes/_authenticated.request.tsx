@@ -889,10 +889,17 @@ function SendPrepLinkDialog({
               <Input
                 value={workerName}
                 onChange={(e) => setWorkerName(e.target.value)}
+                onBlur={() => setNameError(validateWorkerName(workerName))}
                 placeholder="mis. Budi"
                 maxLength={40}
                 className="h-8"
               />
+              {nameError && (
+                <div className="mt-1.5 flex items-start gap-1 text-[11px] text-destructive">
+                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span>{nameError}</span>
+                </div>
+              )}
             </div>
             <div>
               <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Pratinjau pesan WhatsApp</Label>
@@ -905,19 +912,19 @@ function SendPrepLinkDialog({
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" onClick={copyMessage} disabled={!waMessage}>
+              <Button variant="outline" size="sm" onClick={copyMessage} disabled={!canPrepare}>
                 <Copy className="mr-1 h-3.5 w-3.5" /> Salin pesan
               </Button>
               <Button
                 size="sm"
                 onClick={sendWA}
-                disabled={!waMessage}
+                disabled={!canPrepare}
                 className="bg-[#25D366] text-white hover:bg-[#20b959]"
               >
                 <Send className="mr-1 h-3.5 w-3.5" /> Kirim via WhatsApp
               </Button>
             </div>
-            <Button variant="ghost" size="sm" className="w-full" onClick={copyLinkPin} disabled={!session}>
+            <Button variant="ghost" size="sm" className="w-full" onClick={copyLinkPin} disabled={!canPrepare}>
               <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link + PIN saja
             </Button>
             <div className="grid grid-cols-2 gap-2">
