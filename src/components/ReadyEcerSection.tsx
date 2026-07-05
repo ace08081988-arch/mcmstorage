@@ -1211,6 +1211,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   const [waPreviewFolders, setWaPreviewFolders] = useState<
     Array<{ label: string; count: number; included: boolean }>
   >([]);
+  // Ingat kanal terakhir yang dipakai untuk kirim, supaya tombol "Kirim ulang"
+  // di badge Gagal bisa memicu alur yang sama tanpa harus menandai ulang.
+  const [lastSendChannel, setLastSendChannel] = useState<"wa" | "chat" | null>(null);
   const [pickChatOpen, setPickChatOpen] = useState(false);
   const [chatSending, setChatSending] = useState(false);
   const [chatPreparing, setChatPreparing] = useState(false);
