@@ -1774,6 +1774,29 @@ function RequestForm({
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
 
+  // Draft foto persisten untuk paket request.
+  const draftKey = requestDraftKey(token, title.id);
+  const draftLoadedRef = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const blobs = await loadDraftPhotos(draftKey);
+        if (cancelled) return;
+        if (blobs.length > 0) {
+          const staged = await Promise.all(blobs.map((b) => stageFile(b)));
+          if (!cancelled) setPhotos(staged);
+        }
+      } catch { /* abaikan */ }
+      finally { draftLoadedRef.current = true; }
+    })();
+    return () => { cancelled = true; };
+  }, [draftKey]);
+  useEffect(() => {
+    if (!draftLoadedRef.current) return;
+    void saveDraftPhotos(draftKey, photos.map((p) => p.blob));
+  }, [photos, draftKey]);
+
   async function pickCamera() {
     const state = await queryCameraPermission();
     if (state === "denied") {
