@@ -69,7 +69,7 @@ const PROBES: ProbeSpec[] = [
     table: "conversations",
     query: "select id from conversations limit 1",
     policy: "auth.uid() = user_id (tanpa cek chat_only)",
-    run: () => supabase.from("conversations").select("id").limit(1),
+    run: async () => await supabase.from("conversations").select("id").limit(1),
   },
   {
     key: "gudang",
@@ -77,7 +77,7 @@ const PROBES: ProbeSpec[] = [
     table: "warehouse_items",
     query: "select id from warehouse_items limit 1",
     policy: "user_id = auth.uid() AND NOT is_chat_only(auth.uid())",
-    run: () => supabase.from("warehouse_items").select("id").limit(1),
+    run: async () => await supabase.from("warehouse_items").select("id").limit(1),
   },
   {
     key: "penjualan",
@@ -85,7 +85,7 @@ const PROBES: ProbeSpec[] = [
     table: "sales",
     query: "select id from sales limit 1",
     policy: "user_id = auth.uid() AND NOT is_chat_only(auth.uid())",
-    run: () => supabase.from("sales").select("id").limit(1),
+    run: async () => await supabase.from("sales").select("id").limit(1),
   },
   {
     key: "hutang_piutang",
@@ -93,7 +93,7 @@ const PROBES: ProbeSpec[] = [
     table: "debts",
     query: "select id from debts limit 1",
     policy: "user_id = auth.uid() AND NOT is_chat_only(auth.uid())",
-    run: () => supabase.from("debts").select("id").limit(1),
+    run: async () => await supabase.from("debts").select("id").limit(1),
   },
   {
     key: "penyiapan",
@@ -101,7 +101,7 @@ const PROBES: ProbeSpec[] = [
     table: "prep_tasks",
     query: "select id from prep_tasks limit 1",
     policy: "user_id = auth.uid() AND NOT is_chat_only(auth.uid())",
-    run: () => supabase.from("prep_tasks").select("id").limit(1),
+    run: async () => await supabase.from("prep_tasks").select("id").limit(1),
   },
   {
     key: "pos_kasir",
@@ -109,7 +109,7 @@ const PROBES: ProbeSpec[] = [
     table: "warehouse_item_variants",
     query: "select id from warehouse_item_variants limit 1",
     policy: "user_id = auth.uid() AND NOT is_chat_only(auth.uid())",
-    run: () => supabase.from("warehouse_item_variants").select("id").limit(1),
+    run: async () => await supabase.from("warehouse_item_variants").select("id").limit(1),
   },
 ];
 
