@@ -138,6 +138,11 @@ describe("StaffContactsPanel — refresh manual", () => {
     const refreshBtn = document.querySelector('[aria-label="Muat ulang kontak pegawai"]') as HTMLButtonElement;
     expect(refreshBtn).not.toBeNull();
     act(() => refreshBtn.click());
+
+    // Saat async load berjalan, skeleton UI muncul supaya tidak terlihat reload "terus".
+    const skeletons = document.querySelectorAll('[class*="animate-pulse"]');
+    expect(skeletons.length).toBeGreaterThan(0);
+
     await flush();
 
     // Refresh manual harus memaksa satu select tambahan, meski cache masih fresh.
