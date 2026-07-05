@@ -208,6 +208,9 @@ function RequestPage() {
         <Button size="sm" variant="outline" onClick={() => setTestOpen(true)}>
           <FlaskConical className="mr-1 h-4 w-4" /> Uji Coba Alur Pegawai
         </Button>
+        <Button size="sm" variant="outline" onClick={() => setHistoryTitle("all")}>
+          <History className="mr-1 h-4 w-4" /> Riwayat kirim link
+        </Button>
         <Button size="sm" onClick={() => setCreatingTitle(true)}>
           <Plus className="mr-1 h-4 w-4" /> Judul Request Baru
         </Button>
