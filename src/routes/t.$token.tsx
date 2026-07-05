@@ -2263,7 +2263,12 @@ function ItemCard({
         {editorOpen && editorSrc && (
           <PhotoEditor
             src={editorSrc}
-            onCancel={() => setEditorOpen(false)}
+            onCancel={() => {
+              // Batalkan seluruh antrian edit galeri saat pengguna menutup editor.
+              editQueueRef.current = [];
+              setEditingIdx(null);
+              setEditorOpen(false);
+            }}
             onSave={(blob, dataUrl) => {
               setPhotos((prev) => {
                 if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
@@ -2273,8 +2278,9 @@ function ItemCard({
                 }
                 return [...prev, buildStagedPhoto(dataUrl, blob)];
               });
-              setEditingIdx(null);
-              setEditorOpen(false);
+              // Lanjut ke foto berikutnya dalam antrian galeri (kalau ada),
+              // atau tutup editor.
+              advanceEditQueue();
             }}
           />
         )}
