@@ -485,7 +485,9 @@ function ProfilPage() {
 
       <EmailVerificationStatus />
 
-      <UpgradeToStorageCard />
+      <div id="upgrade-to-storage" className="scroll-mt-20">
+        <UpgradeToStorageCard />
+      </div>
 
       <Separator />
 
