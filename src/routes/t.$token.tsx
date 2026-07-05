@@ -290,6 +290,10 @@ function PublicPrepPage() {
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
+  // ID item yang di-auto-open oleh flow "selesai satu, buka berikutnya di varian sama".
+  // Nilai bertambah tiap trigger (nanoid-ish) supaya efek di ItemCard bisa bereaksi
+  // meski id target sama dengan sebelumnya.
+  const [autoOpen, setAutoOpen] = useState<{ id: string | null; tick: number }>({ id: null, tick: 0 });
   // Status koneksi realtime: 'connecting' saat awal, 'connected' setelah SUBSCRIBED,
   // 'error' bila channel gagal/terputus. lastSyncAt diisi setiap silentRefresh sukses.
   const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
