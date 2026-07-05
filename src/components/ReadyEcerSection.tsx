@@ -2092,6 +2092,32 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             view={view}
             lastSentAt={lastSentAt}
             sentCount={view === "sent" ? shots.length : 0}
+            resendLabel={lastSendChannel === "chat" ? "Kirim ulang Chat" : "Kirim ulang WA"}
+            onResend={
+              sending || chatSending || chatPreparing
+                ? undefined
+                : () => {
+                    const fake = {
+                      preventDefault() {},
+                      stopPropagation() {},
+                    } as unknown as React.MouseEvent;
+                    if (lastSendChannel === "chat") {
+                      // Buka lagi pratinjau Chat terakhir tanpa menandai foto ulang.
+                      // chatPreview + snapshot idempotency masih tersedia — pengguna
+                      // cukup menekan "Kirim" lagi di dialog.
+                      if (chatPreview) {
+                        setChatPreviewOpen(true);
+                      } else {
+                        toast.info("Pilih tujuan Chat lagi untuk mengirim ulang.");
+                        setPickChatOpen(true);
+                      }
+                    } else {
+                      // WA: buka pratinjau supaya folder yang sama (via snapshot
+                      // idempotency) dikirim ulang tanpa foto perlu ditandai ulang.
+                      openWAPreview(fake);
+                    }
+                  }
+            }
           />
           <Popover>
             <PopoverTrigger asChild>
