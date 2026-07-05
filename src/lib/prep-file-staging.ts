@@ -10,10 +10,10 @@
 export type StagedPhoto = {
   dataUrl: string;
   blob: Blob;
-  format: string;          // format final yang akan di-upload (JPEG, PNG, WEBP, dsb)
-  size: number;            // ukuran blob final dalam bytes
+  format: string; // format final yang akan di-upload (JPEG, PNG, WEBP, dsb)
+  size: number; // ukuran blob final dalam bytes
   originalFormat?: string; // format asli sebelum konversi/kompresi (bila berbeda)
-  converted?: boolean;     // true bila format asli berubah (mis. HEIC → JPEG)
+  converted?: boolean; // true bila format asli berubah (mis. HEIC → JPEG)
 };
 
 import { compressImage } from "./prep-image-compress";
@@ -24,12 +24,22 @@ import { compressImage } from "./prep-image-compress";
 // dinamis agar tidak menambah bundle awal).
 export function isHeic(file: File | Blob): boolean {
   const t = (file.type || "").toLowerCase();
-  if (t === "image/heic" || t === "image/heif" || t === "image/heic-sequence" || t === "image/heif-sequence") return true;
+  if (
+    t === "image/heic" ||
+    t === "image/heif" ||
+    t === "image/heic-sequence" ||
+    t === "image/heif-sequence"
+  )
+    return true;
   const name = (file as File).name?.toLowerCase?.() ?? "";
   return /\.(heic|heif)$/.test(name);
 }
 
-type Heic2AnyFn = (opts: { blob: Blob; toType?: string; quality?: number }) => Promise<Blob | Blob[]>;
+type Heic2AnyFn = (opts: {
+  blob: Blob;
+  toType?: string;
+  quality?: number;
+}) => Promise<Blob | Blob[]>;
 
 export async function convertHeicToJpeg(file: File | Blob): Promise<File> {
   const mod = (await import("heic2any")) as unknown as { default: Heic2AnyFn };
@@ -50,7 +60,13 @@ export function formatFileSize(bytes: number): string {
 
 export function formatLabel(file: Blob): string {
   const t = (file.type || "").toLowerCase();
-  if (t === "image/heic" || t === "image/heif" || t === "image/heic-sequence" || t === "image/heif-sequence") return "HEIC";
+  if (
+    t === "image/heic" ||
+    t === "image/heif" ||
+    t === "image/heic-sequence" ||
+    t === "image/heif-sequence"
+  )
+    return "HEIC";
   if (t === "image/jpeg") return "JPEG";
   if (t === "image/png") return "PNG";
   if (t === "image/webp") return "WEBP";

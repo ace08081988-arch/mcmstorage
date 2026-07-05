@@ -23,8 +23,12 @@ function restoreGlobals(prev: { URL: G["URL"]; FileReader: G["FileReader"] }) {
 
 describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () => {
   let prev: ReturnType<typeof saveGlobals>;
-  beforeEach(() => { prev = saveGlobals(); });
-  afterEach(() => { restoreGlobals(prev); });
+  beforeEach(() => {
+    prev = saveGlobals();
+  });
+  afterEach(() => {
+    restoreGlobals(prev);
+  });
 
   it("pakai URL.createObjectURL kalau tersedia (path utama Android/Chrome)", async () => {
     const create = vi.fn((_b: Blob) => "blob:mock/abc-123");
@@ -47,14 +51,21 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
   });
 
   it("fallback ke FileReader kalau createObjectURL melempar (regresi WebView)", async () => {
-    g.URL = { createObjectURL: () => { throw new Error("boom"); } };
+    g.URL = {
+      createObjectURL: () => {
+        throw new Error("boom");
+      },
+    };
     class FR {
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;
       result: string | null = null;
       error: Error | null = null;
       readAsDataURL(_b: Blob) {
-        setTimeout(() => { this.result = "data:image/jpeg;base64,AAA"; this.onload?.(); }, 0);
+        setTimeout(() => {
+          this.result = "data:image/jpeg;base64,AAA";
+          this.onload?.();
+        }, 0);
       }
     }
     g.FileReader = FR as unknown as typeof FileReader;
@@ -70,7 +81,10 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
       result: string | null = null;
       error: Error | null = null;
       readAsDataURL(_b: Blob) {
-        setTimeout(() => { this.result = "data:image/png;base64,BBB"; this.onload?.(); }, 0);
+        setTimeout(() => {
+          this.result = "data:image/png;base64,BBB";
+          this.onload?.();
+        }, 0);
       }
     }
     g.FileReader = FR as unknown as typeof FileReader;
@@ -86,7 +100,9 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
       result: string | null = null;
       error: Error | null = new Error("decode gagal");
       readAsDataURL(_b: Blob) {
-        setTimeout(() => { this.onerror?.(); }, 0);
+        setTimeout(() => {
+          this.onerror?.();
+        }, 0);
       }
     }
     g.FileReader = FR as unknown as typeof FileReader;
@@ -154,7 +170,11 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
   // Regresi guard: jangan lempar error HEIC generik saat sebenarnya
   // konversi sudah sukses & yang gagal adalah createObjectURL.
   it("HEIC → JPEG sukses, tapi createObjectURL melempar → fallback FileReader", async () => {
-    g.URL = { createObjectURL: () => { throw new DOMException("out of memory", "InvalidStateError"); } };
+    g.URL = {
+      createObjectURL: () => {
+        throw new DOMException("out of memory", "InvalidStateError");
+      },
+    };
     class FR {
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;
@@ -176,9 +196,7 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
   });
 
   it("HEIC gagal dikonversi (heic2any melempar) → pesan panduan iPhone", async () => {
-    vi.spyOn(staging, "convertHeicToJpeg").mockRejectedValue(
-      new Error("libheif not available"),
-    );
+    vi.spyOn(staging, "convertHeicToJpeg").mockRejectedValue(new Error("libheif not available"));
     g.URL = { createObjectURL: () => "blob:mock/heic" };
     const heic = new File(["heic-bytes"], "IMG_0003.heic", { type: "image/heic" });
     await expect(staging.stageFile(heic)).rejects.toThrow(/Paling Kompatibel|HEIC/i);
@@ -227,24 +245,35 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
       result: string | null = null;
       error: Error | null = new DOMException("File terlalu besar untuk dibaca", "NotReadableError");
       readAsDataURL(_b: Blob) {
-        setTimeout(() => { this.onerror?.(); }, 0);
+        setTimeout(() => {
+          this.onerror?.();
+        }, 0);
       }
     }
     g.FileReader = FR as unknown as typeof FileReader;
     // Rejection message harus mengandung sesuatu yang bisa ditampilkan ke user.
-    await expect(stageFile(bigBlob as File)).rejects.toThrow(/terlalu besar|NotReadable|Tidak bisa/i);
+    await expect(stageFile(bigBlob as File)).rejects.toThrow(
+      /terlalu besar|NotReadable|Tidak bisa/i,
+    );
   });
 
   it("foto besar: dataUrl hasil FileReader kosong → error 'Foto kosong / rusak'", async () => {
     const bigBlob = new Blob([new Uint8Array(1024 * 1024)], { type: "image/jpeg" });
-    g.URL = { createObjectURL: () => { throw new Error("no memory"); } };
+    g.URL = {
+      createObjectURL: () => {
+        throw new Error("no memory");
+      },
+    };
     class FR {
       onload: (() => void) | null = null;
       onerror: (() => void) | null = null;
       result: string | null = null;
       error: Error | null = null;
       readAsDataURL(_b: Blob) {
-        setTimeout(() => { this.result = ""; this.onload?.(); }, 0);
+        setTimeout(() => {
+          this.result = "";
+          this.onload?.();
+        }, 0);
       }
     }
     g.FileReader = FR as unknown as typeof FileReader;
