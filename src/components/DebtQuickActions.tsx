@@ -183,14 +183,21 @@ export function DebtQuickActions({
 
   const [amountRaw, setAmountRaw] = useState("");
   const [busy, setBusy] = useState<null | "add" | "pay" | "lunas" | "cash">(null);
-  type LastTx = {
-    debtId: string;
-    paymentId: string | null;
-    amount: number;
-    kind: Kind;
-    wasCash: boolean;
-    label: "add" | "cash";
-  };
+  type LastTx =
+    | {
+        label: "add" | "cash";
+        debtId: string;
+        paymentId: string | null;
+        amount: number;
+        kind: Kind;
+        wasCash: boolean;
+      }
+    | {
+        label: "pay" | "lunas";
+        paymentIds: string[];
+        amount: number;
+        kind: Kind;
+      };
   const [lastTx, setLastTx] = useState<LastTx | null>(null);
   const [editOpen, setEditOpen] = useState(false);
   const [editAmountRaw, setEditAmountRaw] = useState("");
@@ -414,29 +421,43 @@ export function DebtQuickActions({
 
   async function revertLastTx() {
     if (!lastTx || !uid) return;
+    const tx = lastTx;
     setReverting(true);
     try {
-      if (lastTx.paymentId) {
-        const { error: pe } = await supabase
-          .from("debt_payments")
-          .delete()
-          .eq("id", lastTx.paymentId);
-        if (pe) throw pe;
+      if ("paymentIds" in tx) {
+        if (tx.paymentIds.length > 0) {
+          const { error: pe } = await supabase
+            .from("debt_payments")
+            .delete()
+            .in("id", tx.paymentIds);
+          if (pe) throw pe;
+        }
+        toast.success(
+          `Pembayaran ${rupiah(tx.amount)} dibatalkan. Saldo dikembalikan.`,
+        );
+      } else {
+        if (tx.paymentId) {
+          const { error: pe } = await supabase
+            .from("debt_payments")
+            .delete()
+            .eq("id", tx.paymentId);
+          if (pe) throw pe;
+        }
+        // Hapus juga pembayaran lain yang mungkin tersangkut agar saldo bersih.
+        await supabase.from("debt_payments").delete().eq("debt_id", tx.debtId);
+        const { error } = await supabase.from("debts").delete().eq("id", tx.debtId);
+        if (error) throw error;
+        toast.success(
+          `${tx.wasCash ? "Transaksi tunai" : tx.kind === "piutang" ? "Piutang" : "Hutang"} ${rupiah(tx.amount)} dibatalkan. Saldo dibalik.`,
+        );
       }
-      // Hapus juga pembayaran lain yang mungkin tersangkut agar saldo bersih.
-      await supabase.from("debt_payments").delete().eq("debt_id", lastTx.debtId);
-      const { error } = await supabase.from("debts").delete().eq("id", lastTx.debtId);
-      if (error) throw error;
-      toast.success(
-        `${lastTx.wasCash ? "Transaksi tunai" : lastTx.kind === "piutang" ? "Piutang" : "Hutang"} ${rupiah(lastTx.amount)} dibatalkan. Saldo dibalik.`,
-      );
       setLastTx(null);
       setUndoOpen(false);
       await qc.invalidateQueries({ queryKey });
       emitDebtTx({
-        kind: lastTx.kind,
-        wasCash: lastTx.wasCash,
-        amount: -lastTx.amount,
+        kind: tx.kind,
+        wasCash: tx.label === "cash",
+        amount: -tx.amount,
         partyId: data?.party?.id ?? null,
         at: Date.now(),
       });
@@ -449,37 +470,86 @@ export function DebtQuickActions({
 
   async function saveEditLastTx() {
     if (!lastTx || !uid) return;
+    const tx = lastTx;
     const next = Number(editAmountRaw.replace(/\D+/g, ""));
     if (!Number.isFinite(next) || next <= 0) {
       toast.error("Jumlah baru tidak valid.");
       return;
     }
-    if (next === lastTx.amount) {
+    if (next === tx.amount) {
       setEditOpen(false);
       return;
     }
     setReverting(true);
     try {
-      const { error } = await supabase
-        .from("debts")
-        .update({ amount: next })
-        .eq("id", lastTx.debtId);
-      if (error) throw error;
-      if (lastTx.wasCash && lastTx.paymentId) {
-        const { error: pe } = await supabase
-          .from("debt_payments")
+      if ("paymentIds" in tx) {
+        // Balik dulu payment lama, lalu alokasi ulang dengan nominal baru.
+        if (tx.paymentIds.length > 0) {
+          const { error: pe } = await supabase
+            .from("debt_payments")
+            .delete()
+            .in("id", tx.paymentIds);
+          if (pe) throw pe;
+        }
+        await qc.invalidateQueries({ queryKey });
+        const refreshed = await qc.fetchQuery({ queryKey });
+        const paidByDebt = new Map<string, number>();
+        const rq = refreshed as { debts: DebtRow[]; payments: PaymentRow[] } | undefined;
+        for (const p of rq?.payments ?? []) {
+          paidByDebt.set(p.debt_id, (paidByDebt.get(p.debt_id) ?? 0) + Number(p.amount));
+        }
+        const openNow: Array<{ id: string; sisa: number; created_at: string }> = [];
+        for (const row of rq?.debts ?? []) {
+          const sisa = Math.max(0, Number(row.amount) - (paidByDebt.get(row.id) ?? 0));
+          if (sisa > 0) openNow.push({ id: row.id, sisa, created_at: row.created_at });
+        }
+        openNow.sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+        const today = new Date().toISOString().slice(0, 10);
+        const rows: Array<{ user_id: string; debt_id: string; amount: number; paid_at: string; note: string }> = [];
+        let left = next;
+        for (const d of openNow) {
+          if (left <= 0) break;
+          const take = Math.min(left, d.sisa);
+          rows.push({
+            user_id: uid,
+            debt_id: d.id,
+            amount: take,
+            paid_at: today,
+            note: tx.label === "lunas" ? "Lunas via pratinjau kirim (edit)" : "Bayar sekian via pratinjau kirim (edit)",
+          });
+          left -= take;
+        }
+        let newIds: string[] = [];
+        if (rows.length > 0) {
+          const { data: ins, error: ie } = await supabase.from("debt_payments").insert(rows).select("id");
+          if (ie) throw ie;
+          newIds = ((ins ?? []) as Array<{ id: string }>).map((r) => r.id);
+        }
+        const applied = next - left;
+        toast.success(`Pembayaran diubah ke ${rupiah(applied)}. Saldo disesuaikan.`);
+        setLastTx({ ...tx, amount: applied, paymentIds: newIds });
+      } else {
+        const { error } = await supabase
+          .from("debts")
           .update({ amount: next })
-          .eq("id", lastTx.paymentId);
-        if (pe) throw pe;
+          .eq("id", tx.debtId);
+        if (error) throw error;
+        if (tx.wasCash && tx.paymentId) {
+          const { error: pe } = await supabase
+            .from("debt_payments")
+            .update({ amount: next })
+            .eq("id", tx.paymentId);
+          if (pe) throw pe;
+        }
+        toast.success(`Nominal diubah ke ${rupiah(next)}. Saldo disesuaikan.`);
+        setLastTx({ ...tx, amount: next });
       }
-      toast.success(`Nominal diubah ke ${rupiah(next)}. Saldo disesuaikan.`);
-      setLastTx({ ...lastTx, amount: next });
       setEditOpen(false);
       await qc.invalidateQueries({ queryKey });
       emitDebtTx({
-        kind: lastTx.kind,
-        wasCash: lastTx.wasCash,
-        amount: next - lastTx.amount,
+        kind: tx.kind,
+        wasCash: tx.label === "cash",
+        amount: next - tx.amount,
         partyId: data?.party?.id ?? null,
         at: Date.now(),
       });
@@ -519,16 +589,30 @@ export function DebtQuickActions({
         toast.error("Tidak ada saldo untuk dibayar.");
         return { ok: false, error: "Tidak ada saldo untuk dibayar" };
       }
-      const { error } = await supabase.from("debt_payments").insert(rows);
+      const { data: ins, error } = await supabase.from("debt_payments").insert(rows).select("id");
       if (error) throw error;
       const applied = amount - left;
+      const paymentIds = ((ins ?? []) as Array<{ id: string }>).map((r) => r.id);
       toast.success(
         label === "lunas"
           ? `${kindLabel} ${partyLabel} dilunasi (${rupiah(applied)}).`
           : `Pembayaran ${rupiah(applied)} tercatat${left > 0 ? ` (sisa input ${rupiah(left)} tidak dipakai)` : ""}.`,
       );
+      setLastTx({
+        label,
+        kind,
+        paymentIds,
+        amount: applied,
+      });
       setAmountRaw("");
       await qc.invalidateQueries({ queryKey });
+      emitDebtTx({
+        kind,
+        wasCash: false,
+        amount: -applied,
+        partyId: data?.party?.id ?? null,
+        at: Date.now(),
+      });
       return { ok: true, applied };
     } catch (e) {
       const msg = (e as { message?: string })?.message ?? "Gagal mencatat pembayaran.";
@@ -638,9 +722,11 @@ export function DebtQuickActions({
         <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md border border-dashed bg-background/60 px-2 py-1.5 text-[11px]">
           <span className="text-muted-foreground">Transaksi terakhir:</span>
           <span className="font-semibold text-foreground">
-            {lastTx.wasCash
-              ? lastTx.kind === "piutang" ? "Jual tunai" : "Beli tunai"
-              : lastTx.kind === "piutang" ? "Harga jual" : "Harga beli"}
+            {"paymentIds" in lastTx
+              ? (lastTx.label === "lunas" ? "Lunas" : "Bayar")
+              : lastTx.wasCash
+                ? (lastTx.kind === "piutang" ? "Jual tunai" : "Beli tunai")
+                : (lastTx.kind === "piutang" ? "Harga jual" : "Harga beli")}
             {" "}· {rupiah(lastTx.amount)}
           </span>
           <button
@@ -742,7 +828,9 @@ export function DebtQuickActions({
             <AlertDialogTitle>Batalkan transaksi terakhir?</AlertDialogTitle>
             <AlertDialogDescription>
               {lastTx
-                ? `Menghapus catatan ${lastTx.wasCash ? "tunai" : (lastTx.kind === "piutang" ? "piutang" : "hutang")} ${rupiah(lastTx.amount)} atas ${partyLabel}. Saldo dikembalikan ke sebelum transaksi ini.`
+                ? ("paymentIds" in lastTx
+                    ? `Menghapus pembayaran ${rupiah(lastTx.amount)} atas ${partyLabel}. Saldo ${lastTx.kind === "piutang" ? "piutang" : "hutang"} akan bertambah kembali.`
+                    : `Menghapus catatan ${lastTx.wasCash ? "tunai" : (lastTx.kind === "piutang" ? "piutang" : "hutang")} ${rupiah(lastTx.amount)} atas ${partyLabel}. Saldo dikembalikan ke sebelum transaksi ini.`)
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -780,7 +868,9 @@ export function DebtQuickActions({
             <AlertDialogTitle>Ubah nominal transaksi terakhir</AlertDialogTitle>
             <AlertDialogDescription>
               {lastTx
-                ? `Sebelumnya ${rupiah(lastTx.amount)}. Masukkan nominal baru — saldo ${lastTx.kind === "piutang" ? "piutang" : "hutang"} otomatis disesuaikan${lastTx.wasCash ? " (pembayaran tunai ikut diperbarui)" : ""}.`
+                ? ("paymentIds" in lastTx
+                    ? `Sebelumnya membayar ${rupiah(lastTx.amount)}. Masukkan nominal baru — pembayaran lama dibalik dan dialokasi ulang ke tagihan terlama dulu.`
+                    : `Sebelumnya ${rupiah(lastTx.amount)}. Masukkan nominal baru — saldo ${lastTx.kind === "piutang" ? "piutang" : "hutang"} otomatis disesuaikan${lastTx.wasCash ? " (pembayaran tunai ikut diperbarui)" : ""}.`)
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
