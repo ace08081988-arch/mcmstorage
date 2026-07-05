@@ -855,7 +855,7 @@ function SendPrepLinkDialog({
               <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Gagal membuat link</div>
               <div className="mt-1 break-words">{error}</div>
             </div>
-            <Button variant="outline" size="sm" className="w-full" onClick={() => { createdRef.current = false; setError(null); setSession(null); }}>
+            <Button variant="outline" size="sm" className="w-full" onClick={() => { setError(null); setSession(null); }}>
               <RotateCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
             </Button>
           </div>
