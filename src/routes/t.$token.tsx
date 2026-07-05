@@ -1687,6 +1687,7 @@ function PublicPrepPage() {
                               <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${allDone ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-primary/10 text-primary"}`}>
                                 {pct}%
                               </span>
+                              <Info className="h-3 w-3 shrink-0 text-muted-foreground" aria-hidden="true" />
                             </div>
                             <button
                               type="button"
