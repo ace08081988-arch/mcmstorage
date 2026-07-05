@@ -1181,6 +1181,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
     error?: string;
   };
   const [shareDiag, setShareDiag] = useState<ShareDiag | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const resolvePhotoUrl = async (path: string | null | undefined, expiresIn?: number) => {
     if (!path) return null;
     // Worker submissions menyimpan foto di bucket `prep-photos`; siapkan-sendiri di `ecer-photos`.
