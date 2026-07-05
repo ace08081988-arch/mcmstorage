@@ -98,6 +98,8 @@ export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
   } catch {
     // biarkan f apa adanya
   }
+  const finalFormat = formatLabel(f);
+  const converted = originalFormat !== finalFormat;
   const g = globalThis as unknown as {
     URL?: { createObjectURL?: (b: Blob) => string };
     FileReader?: typeof FileReader;
@@ -106,7 +108,14 @@ export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
     try {
       const dataUrl = g.URL.createObjectURL(f);
       if (typeof dataUrl === "string" && dataUrl.length > 0) {
-        return { dataUrl, blob: f };
+        return {
+          dataUrl,
+          blob: f,
+          format: finalFormat,
+          size: f.size,
+          originalFormat: converted ? originalFormat : undefined,
+          converted,
+        };
       }
     } catch {
       // lanjut ke fallback FileReader
@@ -122,5 +131,12 @@ export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
     r.readAsDataURL(f);
   });
   if (!dataUrl) throw new Error("Foto kosong / rusak");
-  return { dataUrl, blob: f };
+  return {
+    dataUrl,
+    blob: f,
+    format: finalFormat,
+    size: f.size,
+    originalFormat: converted ? originalFormat : undefined,
+    converted,
+  };
 }
