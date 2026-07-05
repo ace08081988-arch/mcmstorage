@@ -425,6 +425,17 @@ function PublicPrepPage() {
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
   const activeWorkerOpsRef = useRef(0);
   const lastKeepAliveAtRef = useRef(0);
+  // Antrian pekerjaan yang harus ditunda selama busy > 0 (mis. auto-logout
+  // TTL, kembali ke PIN). Dijalankan sekali setelah counter turun ke 0.
+  const idleQueueRef = useRef<Array<() => void>>([]);
+  const pendingSessionExpiryRef = useRef(false);
+  const runIdleQueue = useCallback(() => {
+    const q = idleQueueRef.current;
+    idleQueueRef.current = [];
+    for (const fn of q) {
+      try { fn(); } catch { /* noop */ }
+    }
+  }, []);
   const setWorkerOperationActive = useCallback((active: boolean) => {
     activeWorkerOpsRef.current = Math.max(0, activeWorkerOpsRef.current + (active ? 1 : -1));
     // Naikkan flag global `__mcmBusy` supaya cache-buster tidak reload di
@@ -434,7 +445,18 @@ function PublicPrepPage() {
       const cur = typeof w.__mcmBusy === "number" ? w.__mcmBusy : 0;
       w.__mcmBusy = Math.max(0, cur + (active ? 1 : -1));
     } catch { /* ignore */ }
-  }, []);
+    // Ketika seluruh operasi selesai, jalankan aksi yang tadi ditunda
+    // (misal auto-logout TTL, kembali ke PIN, atau silentRefresh yang
+    // sempat dilewati saat busy).
+    if (activeWorkerOpsRef.current === 0) {
+      runIdleQueue();
+      // Refresh ringan sekali setelah idle supaya data pasti terkini.
+      try { void silentRefreshRef.current?.(); } catch { /* noop */ }
+    }
+  }, [runIdleQueue]);
+  // Ref ke silentRefresh untuk dipanggil dari setWorkerOperationActive
+  // tanpa menciptakan siklus dependensi.
+  const silentRefreshRef = useRef<null | (() => Promise<void>)>(null);
   const keepWorkerSessionAlive = useCallback(() => {
     const now = Date.now();
     if (now - lastKeepAliveAtRef.current < 30_000) return;
@@ -444,6 +466,17 @@ function PublicPrepPage() {
     writeSession(currentPin);
   }, []);
   const isWorkerOperationActive = () => activeWorkerOpsRef.current > 0;
+
+  // Bungkus aksi yang tidak boleh mengganggu proses ambil/edit/upload foto.
+  // Bila sedang busy, aksi ditunda sampai idle dan user diberi toast.
+  const runWhenIdle = useCallback(
+    (fn: () => void, busyMessage = "Selesaikan foto/editor dulu, aksi akan dilanjutkan otomatis.") => {
+      if (!isWorkerOperationActive()) { fn(); return; }
+      idleQueueRef.current.push(fn);
+      toast.info(busyMessage);
+    },
+    [],
+  );
 
   useEffect(() => {
     if (!authed) return;
