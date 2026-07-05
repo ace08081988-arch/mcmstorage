@@ -1943,6 +1943,34 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               Periksa isi teks sebelum dikirim. {waPreviewPhotoCount > 0 ? `${waPreviewPhotoCount} foto akan dilampirkan.` : "Tidak ada foto yang bisa dilampirkan."}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          {waPreviewFolders.length > 0 && (
+            <div className="rounded-md border bg-background p-2">
+              <div className="mb-1 flex items-center justify-between text-[11px] font-semibold">
+                <span>Pengelompokan folder</span>
+                <span className="text-muted-foreground">
+                  {waPreviewFolders.filter((f) => f.included).length}/{waPreviewFolders.length} folder · {waPreviewPhotoCount} foto
+                </span>
+              </div>
+              <ul className="space-y-0.5 text-[11px]">
+                {waPreviewFolders.map((f, i) => (
+                  <li
+                    key={i}
+                    className={`flex items-center justify-between gap-2 rounded px-1.5 py-1 ${
+                      f.included ? "bg-emerald-500/10 text-foreground" : "bg-muted/60 text-muted-foreground line-through"
+                    }`}
+                  >
+                    <span className="truncate">{f.label}</span>
+                    <span className="shrink-0 tabular-nums">{f.count} foto{f.included ? "" : " · dilewati"}</span>
+                  </li>
+                ))}
+              </ul>
+              {waPreviewFolders.some((f) => !f.included) && (
+                <p className="mt-1 text-[10px] text-muted-foreground">
+                  Folder dilewati karena batas 10 foto per pengiriman. Kirim sisanya di batch berikutnya.
+                </p>
+              )}
+            </div>
+          )}
           <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/40 p-3">
             <pre className="whitespace-pre-wrap break-words font-sans text-[12px] leading-relaxed text-foreground">{waPreviewText}</pre>
             {waPreviewLocation && (
