@@ -1330,7 +1330,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       // Judul & daftar item HARUS mencerminkan folder yang benar-benar ikut
       // dikirim, bukan `take` mentah — supaya hitungan "kiriman" dan daftar
       // foto di pesan WA konsisten dengan lampiran.
-      const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const folderName = (s: typeof take[number]) =>
+        s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
+      const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const firstLocationFresh = includedShots.find((s) => s.location_url)?.location_url ?? null;
       const omitted = shots.length - includedShots.length;
       const freshText = [
@@ -1536,12 +1538,14 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     }
     // Ringkasan folder untuk pratinjau: tandai mana yang ikut / tidak.
     const includedIds = new Set(includedShots.map((s) => s.id));
+    const folderName = (s: typeof take[number]) =>
+      s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
     const folderSummary = folderGroups.map((g, i) => ({
-      label: `Folder ${i + 1} · ${new Date(g.shot.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`,
+      label: `Folder ${i + 1}: ${folderName(g.shot)} · ${new Date(g.shot.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`,
       count: g.count,
       included: includedIds.has(g.shot.id),
     }));
-    const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+    const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
     const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
     const omitted = shots.length - includedShots.length;
     const text = [
@@ -1625,7 +1629,9 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       // Judul & daftar item HARUS mencerminkan folder yang benar-benar ikut
       // terlampir, agar hitungan "kiriman" dan daftar foto konsisten.
       const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
-      const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const folderName = (s: typeof take[number]) =>
+        s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
+      const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const omitted = shots.length - includedShots.length;
       const caption = [
         `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
