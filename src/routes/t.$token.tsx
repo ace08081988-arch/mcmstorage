@@ -435,8 +435,8 @@ function PublicPrepPage() {
   useEffect(() => subscribeDeferredReload(setDeferredReload), []);
   useEffect(() => {
     if (!deferredReload.pending || !deferredReload.since) return;
-    const update = () =>
-      setDeferredTick(Math.max(0, Math.round((Date.now() - deferredReload.since) / 1000)));
+    const since = deferredReload.since;
+    const update = () => setDeferredTick(Math.max(0, Math.round((Date.now() - since) / 1000)));
     update();
     const id = window.setInterval(update, 1000);
     return () => window.clearInterval(id);
