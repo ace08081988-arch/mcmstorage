@@ -43,22 +43,28 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
   const [phone, setPhone] = useState("");
   const [pinChatMcm, setPinChatMcm] = useState("");
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   // Search: `query` = input mentah (responsif), `debounced` = versi yang
   // dipakai filter (delay 200ms) supaya render list tidak dihitung ulang
   // tiap keystroke pada koleksi besar.
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     if (!uid) return;
     const cached = contactsCache.get(uid);
-    const fresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
-    if (fresh) return; // masih fresh → skip network sepenuhnya.
-    const { data, error } = await table().select("*").order("created_at", { ascending: false });
-    if (error) { toast.error(error.message); return; }
-    const next = (data ?? []) as Contact[];
-    contactsCache.set(uid, { rows: next, ts: Date.now() });
-    setRows(next);
+    const fresh = !force && cached && Date.now() - cached.ts < CACHE_TTL_MS;
+    if (fresh) return; // masih fresh dan bukan refresh manual → skip network.
+    try {
+      setRefreshing(true);
+      const { data, error } = await table().select("*").order("created_at", { ascending: false });
+      if (error) { toast.error(error.message); return; }
+      const next = (data ?? []) as Contact[];
+      contactsCache.set(uid, { rows: next, ts: Date.now() });
+      setRows(next);
+    } finally {
+      setRefreshing(false);
+    }
   }, [uid]);
   useEffect(() => { void load(); }, [load]);
 
