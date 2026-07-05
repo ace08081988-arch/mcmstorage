@@ -91,7 +91,7 @@ export function ProductSharePopover({
     ]);
     setLoading(false);
     if (readyRes.error) {
-      toast.error(friendlyError(readyRes.error));
+      notifyError(readyRes.error);
       return;
     }
     const mappedReady: Row[] = ((readyRes.data ?? []) as unknown as ReadyRow[]).map((r) => ({

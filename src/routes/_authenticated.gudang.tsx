@@ -131,7 +131,7 @@ async function uploadItemPhoto(file: File, uid: string): Promise<string | null> 
   });
   if (error) {
     logStorageError({ bucket: "item-photos", op: "upload", path, source: "uploadItemPhoto" }, error);
-    toast.error("Gagal upload foto: " + friendlyError(error));
+    notifyError(error, { prefix: "Gagal upload foto: " });
     return null;
   }
   return path;
@@ -427,11 +427,11 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
     const payload = { name: name.trim(), contact: contact.trim() || null, notes: notes.trim() || null };
     if (editingId) {
       const { error } = await supabase.from("customers").update(payload).eq("id", editingId);
-      if (error) { toast.error(friendlyError(error)); return; }
+      if (error) { notifyError(error); return; }
       toast.success("Pelanggan diperbarui");
     } else {
       const { error } = await supabase.from("customers").insert({ user_id: uid, ...payload });
-      if (error) { toast.error(friendlyError(error)); return; }
+      if (error) { notifyError(error); return; }
       toast.success("Pelanggan ditambahkan");
     }
     resetForm(); onChanged();
@@ -443,7 +443,7 @@ function CustomerTab({ customers, uid, onChanged }: { customers: Customer[]; uid
       confirmText: "Hapus",
     }))) return;
     const { error } = await supabase.from("customers").delete().eq("id", id);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else { toast.success("Pelanggan dihapus"); if (editingId === id) resetForm(); onChanged(); }
   }
   return (
@@ -694,7 +694,7 @@ function PiutangCustomerHeader({
       .select()
       .single();
     setBusy(false);
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     if (data) onLocalUpdateCustomer(data as Customer);
     toast.success("Data pelanggan diperbarui");
     setEditing(false);
@@ -796,7 +796,7 @@ function EditableSaleRow({
       .select()
       .single();
     setBusy(false);
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     if (data) onLocalUpdateSale(data as Sale);
     toast.success("Transaksi diperbarui");
     setEditing(false);
@@ -814,7 +814,7 @@ function EditableSaleRow({
     onLocalRemoveSale(sale.id);
     const { error } = await supabase.from("sales").delete().eq("id", sale.id);
     setBusy(false);
-    if (error) { toast.error(friendlyError(error)); onChanged(); return; }
+    if (error) { notifyError(error); onChanged(); return; }
     toast.success("Transaksi dihapus");
     onChanged();
   }
@@ -928,7 +928,7 @@ function EditablePaymentRow({
       .select()
       .single();
     setBusy(false);
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     if (data) onLocalUpdatePayment(data as CustomerPayment);
     toast.success("Pembayaran diperbarui");
     setEditing(false);
@@ -943,7 +943,7 @@ function EditablePaymentRow({
     }))) return;
     onLocalRemovePayment(payment.id);
     const { error } = await supabase.from("customer_payments").delete().eq("id", payment.id);
-    if (error) { toast.error(friendlyError(error)); onChanged(); return; }
+    if (error) { notifyError(error); onChanged(); return; }
     toast.success("Pembayaran dihapus");
     onChanged();
   }
@@ -1035,7 +1035,7 @@ function CustomerPayForm({
       note: note.trim() || null,
     }).select().single();
     setBusy(false);
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     if (data) onLocalPayment(data as CustomerPayment);
     toast.success("Pembayaran dicatat");
     setAmount(""); setNote("");
@@ -1388,7 +1388,7 @@ function StokTab({ items, uid, onChanged }: { items: WItem[]; uid: string | null
       confirmText: "Hapus",
     }))) return;
     const { error } = await supabase.from("warehouse_items").delete().eq("id", id);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else { toast.success("Barang dihapus"); onChanged(); }
   }
   if (items.length === 0)
@@ -1710,7 +1710,7 @@ function EditItemDialog({ item, uid, onClose, onSaved, onSilentRefresh }: { item
       image_path: imagePath,
     }).eq("id", item.id);
     setSaving(false);
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     toast.success("Barang diperbarui");
     onSaved();
   }
@@ -1876,11 +1876,11 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
     };
     if (editingId) {
       const { error } = await supabase.from("suppliers").update(payload).eq("id", editingId);
-      if (error) { toast.error(friendlyError(error)); return; }
+      if (error) { notifyError(error); return; }
       toast.success("Supplier diperbarui");
     } else {
       const { error } = await supabase.from("suppliers").insert({ user_id: uid, ...payload });
-      if (error) { toast.error(friendlyError(error)); return; }
+      if (error) { notifyError(error); return; }
       toast.success("Supplier ditambahkan");
     }
     resetForm();
@@ -1893,7 +1893,7 @@ function SupplierTab({ suppliers, uid, onChanged }: { suppliers: Supplier[]; uid
       confirmText: "Hapus",
     }))) return;
     const { error } = await supabase.from("suppliers").delete().eq("id", id);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else {
       toast.success("Supplier dihapus");
       if (editingId === id) resetForm();
@@ -2231,7 +2231,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
         base_unit: baseUnit,
         image_path: newImagePath,
       }).select().single();
-      if (error || !data) { toast.error(friendlyError(error) || "Gagal buat barang"); return; }
+      if (error || !data) { notifyError(error, { fallback: "Gagal buat barang" }); return; }
       useItemId = (data as WItem).id;
       useSize = (data as WItem).package_size;
     } else {
@@ -2251,7 +2251,7 @@ function BeliTab({ suppliers, items, uid, onChanged, defaultPayment = "kas" }: {
       total_cost: pkgQ * price,
       payment_method: paymentMethod,
     });
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     toast.success(`Pembelian dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok bertambah`);
     setName(""); setCategory(""); setPackageQty("1"); setPricePerPackage(""); setPricePerBase(""); setNewImagePath(null);
     onChanged();
@@ -2556,7 +2556,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
         .insert({ user_id: uid, name: nm, contact: wa || null })
         .select("id")
         .single();
-      if (ncErr || !nc) { toast.error(friendlyError(ncErr ?? new Error("Gagal simpan pelanggan"))); return; }
+      if (ncErr || !nc) { notifyError(ncErr ?? new Error("Gagal simpan pelanggan")); return; }
       useCustomerId = nc.id;
     }
     if (paymentMethod === "hutang" && !useCustomerId) {
@@ -2574,7 +2574,7 @@ function JualTab({ items, customers, uid, onChanged }: { items: WItem[]; custome
       customer_id: useCustomerId,
       payment_method: paymentMethod,
     });
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     toast.success(`Penjualan dicatat (${paymentMethod === "hutang" ? "hutang" : "kas"}), stok berkurang`);
     setQty(""); setPricePerBase(""); setPricePerPackage(""); setNote("");
     setNewCustName(""); setNewCustWa("");
@@ -2794,7 +2794,7 @@ function RiwayatTab({
       confirmText: "Hapus",
     }))) return;
     const { error } = await supabase.from("purchases").delete().eq("id", id);
-    if (error) toast.error(friendlyError(error)); else { toast.success("Pembelian dihapus"); onChanged(); }
+    if (error) notifyError(error); else { toast.success("Pembelian dihapus"); onChanged(); }
   }
   async function delSale(id: string) {
     if (!(await confirm({
@@ -2803,7 +2803,7 @@ function RiwayatTab({
       confirmText: "Hapus",
     }))) return;
     const { error } = await supabase.from("sales").delete().eq("id", id);
-    if (error) toast.error(friendlyError(error)); else { toast.success("Penjualan dihapus"); onChanged(); }
+    if (error) notifyError(error); else { toast.success("Penjualan dihapus"); onChanged(); }
   }
 
   return (
@@ -3065,7 +3065,7 @@ function HutangTab({
                               }))) return;
                               onLocalRemovePayment(pay.id);
                               const { error } = await supabase.from("supplier_payments").delete().eq("id", pay.id);
-                              if (error) { toast.error(friendlyError(error)); onChanged(); }
+                              if (error) { notifyError(error); onChanged(); }
                               else { toast.success("Pembayaran dihapus"); onChanged(); }
                             }}
                             className="shrink-0 rounded border px-1.5 py-0.5 text-[11px] text-destructive hover:bg-destructive/10"
@@ -3119,7 +3119,7 @@ function PayForm({
       note: note.trim() || null,
     }).select().single();
     setBusy(false);
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     if (data) onLocalPayment(data as Payment);
     toast.success(useAmount >= remaining ? "Hutang lunas" : "Pembayaran dicatat");
     setAmount(""); setNote("");
@@ -3240,7 +3240,7 @@ function PesananTab({
         .insert({ user_id: uid, name: nm, contact: wa || null })
         .select("id")
         .single();
-      if (ncErr || !nc) { toast.error(friendlyError(ncErr ?? new Error("Gagal simpan pelanggan"))); return; }
+      if (ncErr || !nc) { notifyError(ncErr ?? new Error("Gagal simpan pelanggan")); return; }
       useCustomerId = nc.id;
     }
     // Simpan ke skema lama: karton → konversi ke package (botol) ×100.
@@ -3260,7 +3260,7 @@ function PesananTab({
       price_per_unit: storedPrice,
       note: note.trim() || null,
     });
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     toast.success("Pesanan ditambahkan");
     setQty(""); setPrice(""); setNote("");
     setNewCustName(""); setNewCustWa("");
@@ -3270,7 +3270,7 @@ function PesananTab({
 
   async function setStatus(id: string, status: OrderRequest["status"], opts: { silent?: boolean } = {}) {
     const { error } = await supabase.from("order_requests").update({ status }).eq("id", id);
-    if (error) { toast.error(friendlyError(error)); return false; }
+    if (error) { notifyError(error); return false; }
     if (!opts.silent) toast.success(`Status: ${status}`);
     onChanged();
     return true;
@@ -3298,7 +3298,7 @@ function PesananTab({
       price_per_base: perBase, total_revenue: qBase * perBase, cost_at_sale: 0,
       note: `Pesanan: ${o.note ?? "-"}`, customer_id: o.customer_id, payment_method: "kas",
     });
-    if (error) { toast.error(friendlyError(error)); return false; }
+    if (error) { notifyError(error); return false; }
     await supabase.from("order_requests").update({ status: "selesai" }).eq("id", o.id);
     if (!skipConfirm) toast.success("Pesanan dijadikan penjualan");
     onChanged();
@@ -3353,7 +3353,7 @@ function PesananTab({
       confirmText: "Hapus",
     }))) return;
     const { error } = await supabase.from("order_requests").delete().eq("id", id);
-    if (error) toast.error(friendlyError(error)); else { toast.success("Dihapus"); onChanged(); }
+    if (error) notifyError(error); else { toast.success("Dihapus"); onChanged(); }
   }
 
   function fmtQty(o: OrderRequest) {

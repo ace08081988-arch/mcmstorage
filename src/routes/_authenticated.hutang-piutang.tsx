@@ -110,7 +110,7 @@ function HutangPiutangPage() {
       supabase.from("suppliers").select("id,name,contact").order("name"),
       supabase.from("customers").select("id,name,contact").order("name"),
     ]);
-    if (d.error) toast.error(friendlyError(d.error));
+    if (d.error) notifyError(d.error);
     else setDebts((d.data ?? []) as Debt[]);
     if (p.data) setPayments(p.data as Payment[]);
     if (s.data) setSuppliers(s.data as Party[]);
@@ -198,7 +198,7 @@ function HutangPiutangPage() {
     )
       return;
     const { error } = await supabase.from("debts").delete().eq("id", d.id);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else {
       toast.success("Dihapus");
       void refresh();
@@ -740,7 +740,7 @@ function HutangPiutangPage() {
                   .from("debt_payments")
                   .delete()
                   .eq("id", id);
-                if (error) toast.error(friendlyError(error));
+                if (error) notifyError(error);
                 else {
                   toast.success("Pembayaran dihapus");
                   void refresh();
@@ -844,7 +844,7 @@ function PaymentHistory({
                         .from("debt_payments")
                         .delete()
                         .eq("id", p.id);
-                      if (error) toast.error(friendlyError(error));
+                      if (error) notifyError(error);
                       else {
                         toast.success("Pembayaran dihapus");
                         onChange();
@@ -1114,7 +1114,7 @@ function AddDebtDialog({
     });
     setSaving(false);
     if (error) {
-      toast.error(friendlyError(error));
+      notifyError(error);
       return;
     }
     toast.success("Tersimpan");
@@ -1279,7 +1279,7 @@ function PaymentDialog({
     });
     setSaving(false);
     if (error) {
-      toast.error(friendlyError(error));
+      notifyError(error);
       return;
     }
     toast.success("Pembayaran dicatat");

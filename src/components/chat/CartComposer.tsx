@@ -77,7 +77,7 @@ export function CartComposer({
         ...(trimmedNote ? { p_note: trimmedNote } : {}),
       });
       if (error || !cartId) {
-        toast.error(friendlyError(error) || "Gagal membuat pesanan.");
+        notifyError(error, { fallback: "Gagal membuat pesanan." });
         return;
       }
 
@@ -120,7 +120,7 @@ export function CartComposer({
         body: encodeCard(card, preview),
       });
       if (msgErr) {
-        toast.error(friendlyError(msgErr) || "Gagal mengirim keranjang.");
+        notifyError(msgErr, { fallback: "Gagal mengirim keranjang." });
         return;
       }
 

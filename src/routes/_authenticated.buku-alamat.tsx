@@ -89,7 +89,7 @@ function BukuAlamatPage() {
     try {
       setRows(await fetchAddressBook());
     } catch (e) {
-      toast.error(friendlyError(e));
+      notifyError(e);
     } finally {
       setLoading(false);
     }
@@ -112,7 +112,7 @@ function BukuAlamatPage() {
       // Auto-match against profiles after import
       void runMatchOnLatest();
     } catch (e) {
-      toast.error(friendlyError(e));
+      notifyError(e);
     } finally {
       setImporting(false);
     }
@@ -131,7 +131,7 @@ function BukuAlamatPage() {
         toast.info("Tidak ada kecocokan baru dengan akun terdaftar.");
       }
     } catch (e) {
-      toast.error(friendlyError(e));
+      notifyError(e);
     } finally {
       setMatching(false);
     }
@@ -152,7 +152,7 @@ function BukuAlamatPage() {
       toast.success("Kontak dihapus");
       setRows((rs) => rs.filter((r) => r.id !== row.id));
     } catch (e) {
-      toast.error(friendlyError(e));
+      notifyError(e);
     }
   };
 
@@ -178,7 +178,7 @@ function BukuAlamatPage() {
       if (!cid) throw new Error("Tidak menerima ID percakapan");
       navigate({ to: "/chat/$conversationId", params: { conversationId: cid } });
     } catch (e) {
-      toast.error(friendlyError(e));
+      notifyError(e);
     } finally {
       setChatting(null);
     }
@@ -190,7 +190,7 @@ function BukuAlamatPage() {
       else await promoteToSupplier(row);
       toast.success(`${row.name} ditambahkan ke ${kind === "customer" ? "pelanggan" : "pemasok"}.`);
     } catch (e) {
-      toast.error(friendlyError(e));
+      notifyError(e);
     }
   };
 
@@ -550,7 +550,7 @@ function EditDialog({
       }
       await onSaved();
     } catch (e) {
-      toast.error(friendlyError(e));
+      notifyError(e);
     } finally {
       setBusy(false);
     }

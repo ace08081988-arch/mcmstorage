@@ -124,7 +124,7 @@ function AdminWorkerPortalPage() {
         .select("worker_portal_config")
         .eq("id", true)
         .maybeSingle();
-      if (error) toast.error(friendlyError(error));
+      if (error) notifyError(error);
       const raw = (data as { worker_portal_config?: unknown } | null)?.worker_portal_config;
       setForm(toFormState((raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {}) as Partial<WorkerPortalConfig>));
       setLoading(false);
@@ -223,7 +223,7 @@ function AdminWorkerPortalPage() {
       .update({ worker_portal_config: parsed.data })
       .eq("id", true);
     setSaving(false);
-    if (error) return toast.error(friendlyError(error));
+    if (error) return notifyError(error);
     toast.success("Konfigurasi portal pegawai disimpan. Perangkat pegawai akan memakai nilai baru pada mount berikutnya.");
   }
 
