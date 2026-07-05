@@ -86,6 +86,7 @@ import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from '
 import { Route as LovableVisualAppearanceImportRouteImport } from './routes/lovable.visual.appearance-import'
 import { Route as LovableVisualApkAvailabilityShortcutsRouteImport } from './routes/lovable.visual.apk-availability-shortcuts'
 import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
+import { Route as LovableVisualAccessDeniedToastRouteImport } from './routes/lovable.visual.access-denied-toast'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
@@ -522,6 +523,12 @@ const LovableVisualAdminVisibilityRoute =
     path: '/lovable/visual/admin-visibility',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualAccessDeniedToastRoute =
+  LovableVisualAccessDeniedToastRouteImport.update({
+    id: '/lovable/visual/access-denied-toast',
+    path: '/lovable/visual/access-denied-toast',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicPrepRealtimeTokenRoute =
   ApiPublicPrepRealtimeTokenRouteImport.update({
     id: '/api/public/prep-realtime-token',
@@ -699,6 +706,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
@@ -793,6 +801,7 @@ export interface FileRoutesByTo {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
@@ -891,6 +900,7 @@ export interface FileRoutesById {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
@@ -989,6 +999,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
     | '/lovable/visual/apk-availability-shortcuts'
     | '/lovable/visual/appearance-import'
@@ -1083,6 +1094,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
     | '/lovable/visual/apk-availability-shortcuts'
     | '/lovable/visual/appearance-import'
@@ -1180,6 +1192,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
     | '/lovable/visual/apk-availability-shortcuts'
     | '/lovable/visual/appearance-import'
@@ -1224,6 +1237,7 @@ export interface RootRouteChildren {
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
+  LovableVisualAccessDeniedToastRoute: typeof LovableVisualAccessDeniedToastRoute
   LovableVisualAdminVisibilityRoute: typeof LovableVisualAdminVisibilityRoute
   LovableVisualApkAvailabilityShortcutsRoute: typeof LovableVisualApkAvailabilityShortcutsRoute
   LovableVisualAppearanceImportRoute: typeof LovableVisualAppearanceImportRoute
@@ -1788,6 +1802,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualAdminVisibilityRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/access-denied-toast': {
+      id: '/lovable/visual/access-denied-toast'
+      path: '/lovable/visual/access-denied-toast'
+      fullPath: '/lovable/visual/access-denied-toast'
+      preLoaderRoute: typeof LovableVisualAccessDeniedToastRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/prep-realtime-token': {
       id: '/api/public/prep-realtime-token'
       path: '/api/public/prep-realtime-token'
@@ -2125,6 +2146,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
+  LovableVisualAccessDeniedToastRoute: LovableVisualAccessDeniedToastRoute,
   LovableVisualAdminVisibilityRoute: LovableVisualAdminVisibilityRoute,
   LovableVisualApkAvailabilityShortcutsRoute:
     LovableVisualApkAvailabilityShortcutsRoute,

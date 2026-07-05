@@ -133,6 +133,20 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"], viewport: { width: 1280, height: 800 } },
     },
     {
+      // Skenario : Toast "Perbaiki Akses" muncul saat error akses
+      //            ditolak (42501 / PGRST301 / 401 / 403) dan tombolnya
+      //            memicu navigasi ke `/profil`. Error non-akses (mis.
+      //            23505) TIDAK menampilkan tombol.
+      // Harness  : /lovable/visual/access-denied-toast (publik, no-auth).
+      // Tujuan   : Regresi guard supaya pengguna yang kena RLS tidak
+      //            terdampar tanpa jalan keluar — selalu ada CTA ke
+      //            halaman upgrade akun.
+      name: "access-denied-toast-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /access-denied-toast\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // Skenario : Form validasi `minSupported` di Pengaturan APK.
       // Harness  : /lovable/visual/min-supported-form (publik, no-auth).
       // Tujuan   : Membuktikan pesan inline per-field, banner form-level,
