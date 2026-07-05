@@ -1479,12 +1479,12 @@ function PublicPrepPage() {
           </div>
         </div>
 
-        <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-2 sm:gap-3">
           {items.map((it, idx) => (
             <WorkerSectionBoundary
               key={it.id}
               renderFallback={(error) => (
-                <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                <div className="col-span-2 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
                   <div className="flex items-start gap-2">
                     <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
                     <div className="min-w-0">
@@ -1517,7 +1517,7 @@ function PublicPrepPage() {
           ))}
           {items.length === 0 &&
             (loading ? (
-              <div className="space-y-3" aria-busy="true" aria-label="Memuat daftar tugas">
+              <div className="col-span-2 space-y-3" aria-busy="true" aria-label="Memuat daftar tugas">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="space-y-3 rounded-xl border bg-card p-4">
                     <div className="flex items-start gap-3">
@@ -1533,7 +1533,7 @@ function PublicPrepPage() {
                 ))}
               </div>
             ) : (
-              <div className="flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
+              <div className="col-span-2 flex flex-col items-center gap-3 rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
                 <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-primary">
                   <Inbox className="h-5 w-5" />
                 </div>
