@@ -734,6 +734,26 @@ function PublicPrepPage() {
   useEffect(() => {
     if (!authed || !sessionExpiresAt) return;
     if (sessionSecondsLeft > 0) return;
+    // Jangan cabut sesi di tengah proses ambil/edit/upload foto — draft
+    // foto & PIN hilang. Tandai sebagai pending; setWorkerOperationActive
+    // akan menjalankannya begitu counter turun ke 0.
+    if (isWorkerOperationActive()) {
+      if (!pendingSessionExpiryRef.current) {
+        pendingSessionExpiryRef.current = true;
+        idleQueueRef.current.push(() => {
+          pendingSessionExpiryRef.current = false;
+          clearSession();
+          setAuthed(false);
+          setPin("");
+          pinRef.current = "";
+          setSessionJustExpired(true);
+          toast.info("Sesi PIN berakhir — silakan masuk ulang.");
+          focusPinInput();
+        });
+        toast.info("Sesi PIN habis, akan diakhiri setelah foto selesai.");
+      }
+      return;
+    }
     // TTL habis → lepas sesi & kembalikan ke layar PIN.
     clearSession();
     setAuthed(false);
