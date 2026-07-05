@@ -100,7 +100,7 @@ describe("StaffContactsPanel — no remount on parent re-render", () => {
     expect(selectCalls).toBe(1);
   });
 
-  it("pola bug (<Block /> sebagai JSX) — remount + select berulang; membuktikan alasan fix", async () => {
+  it("pola bug (<Block /> sebagai JSX) — cache modul-level meredam refetch meski remount", async () => {
     let bump: (() => void) | null = null;
     function Parent() {
       const [n, setN] = useState(0);
@@ -121,7 +121,11 @@ describe("StaffContactsPanel — no remount on parent re-render", () => {
       await flush();
     }
 
-    expect(selectCalls).toBeGreaterThan(1);
+    // Dua lapis pertahanan: pertama pola fix `Block()` di sumber
+    // aslinya mencegah remount, kedua cache modul-level (TTL 60s) di
+    // dalam panel meredam refetch bahkan bila remount terjadi. Kontrak
+    // yang dijaga: paling banyak SATU `select()` untuk uid yang sama.
+    expect(selectCalls).toBeLessThanOrEqual(1);
   });
 });
 
