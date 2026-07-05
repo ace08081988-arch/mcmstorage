@@ -270,6 +270,30 @@ export function DebtQuickActions({
     else await allocatePayment(p.amount, "lunas");
   }
 
+  function formatDate(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" });
+    } catch {
+      return iso.slice(0, 10);
+    }
+  }
+
+  function allocationPreview(amount: number): {
+    lines: Array<{ id: string; created_at: string; take: number; sisaBefore: number; sisaAfter: number }>;
+    applied: number;
+    leftover: number;
+  } {
+    let left = amount;
+    const lines: Array<{ id: string; created_at: string; take: number; sisaBefore: number; sisaAfter: number }> = [];
+    for (const d of openDebts) {
+      if (left <= 0) break;
+      const take = Math.min(left, d.sisa);
+      lines.push({ id: d.id, created_at: d.created_at, take, sisaBefore: d.sisa, sisaAfter: d.sisa - take });
+      left -= take;
+    }
+    return { lines, applied: amount - left, leftover: left };
+  }
+
   async function addDebt(opts?: { markPaid?: boolean; label?: "add" | "cash" }) {
     if (!uid || !data?.party || !hasAmount) {
       if (!hasAmount) toast.error("Isi jumlah dulu.");
@@ -660,6 +684,55 @@ export function DebtQuickActions({
                 <AlertDialogTitle>{confirmCopy[pending.kind].title}</AlertDialogTitle>
                 <AlertDialogDescription>{confirmCopy[pending.kind].desc}</AlertDialogDescription>
               </AlertDialogHeader>
+              {(pending.kind === "pay" || pending.kind === "lunas") && (() => {
+                const preview = allocationPreview(pending.amount);
+                if (preview.lines.length === 0) {
+                  return (
+                    <div className="rounded-md border border-dashed p-2 text-[11px] text-muted-foreground">
+                      Tidak ada tagihan terbuka untuk dialokasi.
+                    </div>
+                  );
+                }
+                return (
+                  <div className="rounded-md border bg-muted/30 p-2 text-[11px]">
+                    <div className="mb-1 flex items-center justify-between font-semibold text-foreground">
+                      <span>Alokasi ke tagihan (terlama dulu)</span>
+                      <span className="font-mono">{preview.lines.length} tagihan</span>
+                    </div>
+                    <ol className="space-y-1">
+                      {preview.lines.map((ln, i) => (
+                        <li key={ln.id} className="flex items-center justify-between gap-2">
+                          <span className="min-w-0 truncate text-muted-foreground">
+                            {i + 1}. {formatDate(ln.created_at)}
+                            <span className="ml-1 font-mono">· sisa {rupiah(ln.sisaBefore)}</span>
+                          </span>
+                          <span className="shrink-0 text-right">
+                            <span className="font-mono font-semibold text-foreground">− {rupiah(ln.take)}</span>
+                            <span className={"ml-1 font-mono " + (ln.sisaAfter === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                              → {rupiah(ln.sisaAfter)}
+                              {ln.sisaAfter === 0 ? " · lunas" : ""}
+                            </span>
+                          </span>
+                        </li>
+                      ))}
+                    </ol>
+                    <div className="mt-1.5 flex items-center justify-between border-t pt-1 font-semibold">
+                      <span className="text-muted-foreground">Total terpakai</span>
+                      <span className="font-mono text-foreground">{rupiah(preview.applied)}</span>
+                    </div>
+                    {preview.leftover > 0 && (
+                      <div className="mt-0.5 flex items-center justify-between text-amber-700 dark:text-amber-300">
+                        <span>Sisa input tidak terpakai</span>
+                        <span className="font-mono">{rupiah(preview.leftover)}</span>
+                      </div>
+                    )}
+                    <div className="mt-0.5 flex items-center justify-between text-muted-foreground">
+                      <span>Saldo setelah bayar</span>
+                      <span className="font-mono">{rupiah(Math.max(0, saldo - preview.applied))}</span>
+                    </div>
+                  </div>
+                );
+              })()}
               <AlertDialogFooter>
                 <AlertDialogCancel disabled={busy !== null}>Batal</AlertDialogCancel>
                 <AlertDialogAction
