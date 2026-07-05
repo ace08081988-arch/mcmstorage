@@ -1315,6 +1315,29 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
 
   useEffect(() => { signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned); }, [item.ref_photo_path]);
 
+  // Draft foto persisten: bertahan lintas refresh & pindah tab.
+  const draftKey = itemDraftKey(token, item.id);
+  const draftLoadedRef = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const blobs = await loadDraftPhotos(draftKey);
+        if (cancelled) return;
+        if (blobs.length > 0) {
+          const staged = await Promise.all(blobs.map((b) => stageFile(b)));
+          if (!cancelled) setPhotos(staged);
+        }
+      } catch { /* abaikan draft rusak */ }
+      finally { draftLoadedRef.current = true; }
+    })();
+    return () => { cancelled = true; };
+  }, [draftKey]);
+  useEffect(() => {
+    if (!draftLoadedRef.current) return;
+    void saveDraftPhotos(draftKey, photos.map((p) => p.blob));
+  }, [photos, draftKey]);
+
   async function pickCamera() {
     const state = await queryCameraPermission();
     if (state === "denied") {
