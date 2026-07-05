@@ -1151,7 +1151,10 @@ function TitleDetailView({
               items={prepItems.filter((pi) => pi.preparation_id === p.id)}
               warehouseItems={warehouseItems}
               titleItems={titleItems}
+              titleName={title.name}
+              customers={customers}
               onDelete={() => handleDelete(p)}
+              onSent={() => { onChanged(); void load(); }}
             />
           ))}
         </div>
