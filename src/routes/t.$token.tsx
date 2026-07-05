@@ -2032,7 +2032,7 @@ function ItemCard({
       if (!res?.ok) {
         if (res?.error === "item_changed") {
           toast.error("Item baru saja diubah admin. Periksa kembali sebelum kirim.");
-          onSubmitted(); // muat ulang dari server
+          onSubmitted(item.id); // muat ulang dari server
           return;
         }
         const msg =
@@ -2055,7 +2055,7 @@ function ItemCard({
       setNote("");
       setUploads([]);
       void clearDraftPhotos(draftKey);
-      onSubmitted();
+      onSubmitted(item.id);
     } catch (e) {
       const msg = (e as Error).message || "Gagal kirim";
       toast.error("Gagal kirim: " + msg);
