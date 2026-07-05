@@ -1269,7 +1269,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       // slicing 10 memotong di tengah folder. Pertahankan slot yang gagal
       // agar bisa di-retry dari pratinjau tanpa mengulang alur kirim.
       type Slot = { path: string; name: string; source: typeof take[number]["source"] };
-      const folderSlots: Slot[][] = [];
+      const folderGroups: Array<{ shot: typeof take[number]; slots: Slot[] }> = [];
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
@@ -1281,22 +1281,29 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           name: `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`,
           source: s.source,
         }));
-        folderSlots.push(group);
+        folderGroups.push({ shot: s, slots: group });
       }
       const MAX_SLOTS = 10;
       const freshSlots: Slot[] = [];
-      for (const g of folderSlots) {
+      const includedShots: typeof take = [];
+      for (const g of folderGroups) {
         // Selalu sertakan folder pertama secara utuh, bahkan bila jumlah foto
         // > MAX_SLOTS — supaya kiriman tidak terpotong di tengah folder.
-        if (freshSlots.length === 0) { freshSlots.push(...g); continue; }
-        if (freshSlots.length + g.length > MAX_SLOTS) break;
-        freshSlots.push(...g);
+        if (freshSlots.length === 0) {
+          freshSlots.push(...g.slots); includedShots.push(g.shot); continue;
+        }
+        if (freshSlots.length + g.slots.length > MAX_SLOTS) break;
+        freshSlots.push(...g.slots); includedShots.push(g.shot);
       }
-      const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLocationFresh = take.find((s) => s.location_url)?.location_url ?? null;
+      // Judul & daftar item HARUS mencerminkan folder yang benar-benar ikut
+      // dikirim, bukan `take` mentah — supaya hitungan "kiriman" dan daftar
+      // foto di pesan WA konsisten dengan lampiran.
+      const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const firstLocationFresh = includedShots.find((s) => s.location_url)?.location_url ?? null;
+      const omitted = shots.length - includedShots.length;
       const freshText = [
         `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-        `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
+        `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${freshSlots.length} foto terlampir:`,
         ...lines,
         ...(firstLocationFresh ? [``, `📍 Lokasi: ${firstLocationFresh}`] : []),
       ].join("\n");
