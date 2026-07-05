@@ -2167,6 +2167,7 @@ function RequestForm({
         photos={photos}
         pending={pending}
         justOk={justOk}
+        uploads={uploads}
         onEdit={(i) => { setEditingIdx(i); setEditorSrc(photos[i].dataUrl); setEditorOpen(true); }}
         onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
         onRetry={(id) => { void retryPending(id); }}
