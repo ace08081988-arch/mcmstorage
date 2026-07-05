@@ -1502,6 +1502,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       if (photoCount + g.count > MAX_SLOTS) break;
       photoCount += g.count; includedShots.push(g.shot);
     }
+    // Ringkasan folder untuk pratinjau: tandai mana yang ikut / tidak.
+    const includedIds = new Set(includedShots.map((s) => s.id));
+    const folderSummary = folderGroups.map((g, i) => ({
+      label: `Folder ${i + 1} · ${new Date(g.shot.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`,
+      count: g.count,
+      included: includedIds.has(g.shot.id),
+    }));
     const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
     const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
     const omitted = shots.length - includedShots.length;
@@ -1514,6 +1521,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     setWaPreviewText(text);
     setWaPreviewLocation(firstLocation);
     setWaPreviewPhotoCount(photoCount);
+    setWaPreviewFolders(folderSummary);
     setWaPreviewOpen(true);
   }
 
