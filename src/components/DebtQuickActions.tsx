@@ -663,7 +663,14 @@ export function DebtQuickActions({
           </button>
         </div>
       )}
-      <AlertDialog open={undoOpen} onOpenChange={(o) => { if (!reverting) setUndoOpen(o); }}>
+      <AlertDialog open={undoOpen} onOpenChange={(o) => {
+        if (reverting) return;
+        if (!o && undoOpen && !undoConfirmedRef.current && lastTx) {
+          logAction("undo", "cancelled", lastTx.amount);
+        }
+        if (o) undoConfirmedRef.current = false;
+        setUndoOpen(o);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Batalkan transaksi terakhir?</AlertDialogTitle>
@@ -678,14 +685,30 @@ export function DebtQuickActions({
             <AlertDialogAction
               disabled={reverting}
               className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={async (e) => { e.preventDefault(); await revertLastTx(); }}
+              onClick={async (e) => {
+                e.preventDefault();
+                undoConfirmedRef.current = true;
+                const amt = lastTx?.amount ?? 0;
+                const before = lastTx;
+                await revertLastTx();
+                if (before) {
+                  logAction("undo", "confirmed", amt);
+                }
+              }}
             >
               Ya, batalkan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={editOpen} onOpenChange={(o) => { if (!reverting) setEditOpen(o); }}>
+      <AlertDialog open={editOpen} onOpenChange={(o) => {
+        if (reverting) return;
+        if (!o && editOpen && !editConfirmedRef.current && lastTx) {
+          logAction("edit", "cancelled", lastTx.amount, { prevAmount: lastTx.amount });
+        }
+        if (o) editConfirmedRef.current = false;
+        setEditOpen(o);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Ubah nominal transaksi terakhir</AlertDialogTitle>
@@ -707,14 +730,28 @@ export function DebtQuickActions({
             <AlertDialogCancel disabled={reverting}>Batal</AlertDialogCancel>
             <AlertDialogAction
               disabled={reverting}
-              onClick={async (e) => { e.preventDefault(); await saveEditLastTx(); }}
+              onClick={async (e) => {
+                e.preventDefault();
+                editConfirmedRef.current = true;
+                const prev = lastTx?.amount ?? 0;
+                const next = Number(editAmountRaw.replace(/\D+/g, ""));
+                await saveEditLastTx();
+                logAction("edit", "confirmed", Number.isFinite(next) ? next : prev, { prevAmount: prev });
+              }}
             >
               Simpan perubahan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={pending !== null} onOpenChange={(o) => { if (!o) setPending(null); }}>
+      <AlertDialog open={pending !== null} onOpenChange={(o) => {
+        if (!o && pending && !pendingConfirmedRef.current) {
+          const amt = pending.kind === "pay" || pending.kind === "lunas" ? pending.amount : parsed;
+          logAction(pending.kind, "cancelled", amt);
+        }
+        if (o) pendingConfirmedRef.current = false;
+        if (!o) setPending(null);
+      }}>
         <AlertDialogContent>
           {pending && (
             <>
@@ -778,6 +815,7 @@ export function DebtQuickActions({
                   className={confirmCopy[pending.kind].ctaClass}
                   onClick={async (e) => {
                     e.preventDefault();
+                    pendingConfirmedRef.current = true;
                     const p = pending;
                     setPending(null);
                     if (p) await runPending(p);
