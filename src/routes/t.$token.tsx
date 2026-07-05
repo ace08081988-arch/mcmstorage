@@ -1795,7 +1795,18 @@ function ItemCard({
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
     if (files.length === 0) return;
-    await Promise.all(files.map((f) => stageOne(f, false)));
+    const results = await Promise.all(files.map((f) => stageOne(f, false)));
+    const okCount = results.filter(Boolean).length;
+    if (okCount === 0) return;
+    // Setelah semua foto ter-stage, buka PhotoEditor untuk tiap foto baru
+    // secara berurutan. Pakai photosRef supaya index-nya akurat setelah
+    // state selesai flush.
+    await new Promise((r) => setTimeout(r, 0));
+    const len = photosRef.current.length;
+    const startIdx = len - okCount;
+    const idxs = Array.from({ length: okCount }, (_, i) => startIdx + i);
+    editQueueRef.current = idxs.slice(1);
+    openEditForIdx(idxs[0]);
   }
 
   function takeLocation() {
