@@ -1987,6 +1987,17 @@ function ItemCard({
             setPhotos([]);
             setPending([]);
           }}
+          onRetryUpload={(i) => {
+            // Tandai foto ini idle supaya submit() mengulang HANYA foto
+            // ini; foto lain yang sudah "done" tetap dipertahankan.
+            setUploads((prev) =>
+              prev.map((u, j) => (j === i ? { status: "idle" } : u)),
+            );
+            void submit();
+          }}
+          onRetryAllUploads={() => {
+            void submit();
+          }}
         />
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button
