@@ -431,7 +431,13 @@ function PublicPrepPage() {
   const [deferredReload, setDeferredReload] = useState<DeferredReloadState>({
     pending: false, reason: null, serverBuildId: null, since: null,
   });
+  const [deferredTick, setDeferredTick] = useState(0);
   useEffect(() => subscribeDeferredReload(setDeferredReload), []);
+  useEffect(() => {
+    if (!deferredReload.pending) return;
+    const id = window.setInterval(() => setDeferredTick((n) => n + 1), 1000);
+    return () => window.clearInterval(id);
+  }, [deferredReload.pending]);
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
   const activeWorkerOpsRef = useRef(0);
   const lastKeepAliveAtRef = useRef(0);
