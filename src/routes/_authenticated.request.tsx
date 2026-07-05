@@ -644,6 +644,11 @@ function SendPrepLinkDialog({
     return lines.join("\n");
   }, [session, title, titleItems, warehouseItems, workerName]);
 
+  const canPrepare = useMemo(() => {
+    if (!session || !title) return false;
+    return validateWorkerName(workerName) === null;
+  }, [session, title, workerName]);
+
   async function copyLinkPin() {
     if (!session) return;
     try {
