@@ -1,10 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Wallet, CheckCircle2, HandCoins, Banknote, Undo2, Pencil } from "lucide-react";
+import { Loader2, Plus, Wallet, CheckCircle2, HandCoins, Banknote, Undo2, Pencil, ScrollText, ChevronDown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { emitDebtTx } from "@/lib/debt-tx-event";
+import {
+  appendDebtAction,
+  useDebtActionLog,
+  clearDebtActionLog,
+  actionLabel,
+  type DebtActionKind,
+  type DebtActionStatus,
+} from "@/lib/debt-action-log";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -194,8 +202,25 @@ export function DebtQuickActions({
     | { kind: "pay"; amount: number }
     | { kind: "lunas"; amount: number };
   const [pending, setPending] = useState<PendingAction | null>(null);
+  const pendingConfirmedRef = useRef(false);
+  const undoConfirmedRef = useRef(false);
+  const editConfirmedRef = useRef(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const log = useDebtActionLog();
   const parsed = Number(amountRaw.replace(/\D+/g, ""));
   const hasAmount = Number.isFinite(parsed) && parsed > 0;
+
+  function logAction(kind: DebtActionKind, status: DebtActionStatus, amount: number, extra?: { prevAmount?: number; note?: string }) {
+    appendDebtAction({
+      kind,
+      status,
+      amount,
+      prevAmount: extra?.prevAmount,
+      note: extra?.note,
+      balanceKind: (data?.kind ?? "piutang") as "piutang" | "hutang",
+      party: data?.party?.name ?? peerName ?? "Lawan",
+    });
+  }
 
   if (!uid) return null;
   if (q.isLoading) {
@@ -264,10 +289,17 @@ export function DebtQuickActions({
   };
 
   async function runPending(p: PendingAction) {
-    if (p.kind === "add") await addDebt({ label: "add" });
-    else if (p.kind === "cash") await addDebt({ markPaid: true, label: "cash" });
-    else if (p.kind === "pay") await allocatePayment(p.amount, "pay");
-    else await allocatePayment(p.amount, "lunas");
+    let result: { ok: boolean; error?: string; applied?: number };
+    if (p.kind === "add") result = await addDebt({ label: "add" });
+    else if (p.kind === "cash") result = await addDebt({ markPaid: true, label: "cash" });
+    else if (p.kind === "pay") result = await allocatePayment(p.amount, "pay");
+    else result = await allocatePayment(p.amount, "lunas");
+    logAction(
+      p.kind,
+      result.ok ? "confirmed" : "failed",
+      p.kind === "pay" || p.kind === "lunas" ? (result.applied ?? p.amount) : parsed,
+      { note: result.error },
+    );
   }
 
   function formatDate(iso: string): string {
@@ -294,10 +326,10 @@ export function DebtQuickActions({
     return { lines, applied: amount - left, leftover: left };
   }
 
-  async function addDebt(opts?: { markPaid?: boolean; label?: "add" | "cash" }) {
+  async function addDebt(opts?: { markPaid?: boolean; label?: "add" | "cash" }): Promise<{ ok: boolean; error?: string }> {
     if (!uid || !data?.party || !hasAmount) {
       if (!hasAmount) toast.error("Isi jumlah dulu.");
-      return;
+      return { ok: false, error: !hasAmount ? "Jumlah kosong" : "Data tidak lengkap" };
     }
     const busyKey = opts?.label ?? "add";
     setBusy(busyKey);
@@ -370,8 +402,11 @@ export function DebtQuickActions({
         partyId: data.party.id,
         at: Date.now(),
       });
+      return { ok: true };
     } catch (e) {
-      toast.error((e as { message?: string })?.message ?? "Gagal mencatat.");
+      const msg = (e as { message?: string })?.message ?? "Gagal mencatat.";
+      toast.error(msg);
+      return { ok: false, error: msg };
     } finally {
       setBusy(null);
     }
@@ -455,8 +490,8 @@ export function DebtQuickActions({
     }
   }
 
-  async function allocatePayment(amount: number, label: "pay" | "lunas") {
-    if (!uid || amount <= 0) return;
+  async function allocatePayment(amount: number, label: "pay" | "lunas"): Promise<{ ok: boolean; error?: string; applied?: number }> {
+    if (!uid || amount <= 0) return { ok: false, error: "Jumlah tidak valid" };
     setBusy(label);
     try {
       let left = amount;
@@ -482,7 +517,7 @@ export function DebtQuickActions({
       }
       if (rows.length === 0) {
         toast.error("Tidak ada saldo untuk dibayar.");
-        return;
+        return { ok: false, error: "Tidak ada saldo untuk dibayar" };
       }
       const { error } = await supabase.from("debt_payments").insert(rows);
       if (error) throw error;
@@ -494,8 +529,11 @@ export function DebtQuickActions({
       );
       setAmountRaw("");
       await qc.invalidateQueries({ queryKey });
+      return { ok: true, applied };
     } catch (e) {
-      toast.error((e as { message?: string })?.message ?? "Gagal mencatat pembayaran.");
+      const msg = (e as { message?: string })?.message ?? "Gagal mencatat pembayaran.";
+      toast.error(msg);
+      return { ok: false, error: msg };
     } finally {
       setBusy(null);
     }
@@ -625,7 +663,80 @@ export function DebtQuickActions({
           </button>
         </div>
       )}
-      <AlertDialog open={undoOpen} onOpenChange={(o) => { if (!reverting) setUndoOpen(o); }}>
+      <div className="mt-2 rounded-md border bg-background/50">
+        <button
+          type="button"
+          onClick={() => setHistoryOpen((v) => !v)}
+          aria-expanded={historyOpen}
+          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold hover:bg-accent"
+        >
+          <ScrollText className="h-3 w-3 text-muted-foreground" />
+          <span>Riwayat aksi</span>
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">{log.length}</span>
+          <ChevronDown className={"ml-auto h-3 w-3 text-muted-foreground transition-transform " + (historyOpen ? "rotate-180" : "")} />
+        </button>
+        {historyOpen && (
+          <div className="border-t">
+            {log.length === 0 ? (
+              <div className="px-2 py-2 text-[11px] text-muted-foreground">
+                Belum ada aksi tercatat. Setiap tekanan Harga Jual / Beli / Tunai / Bayar / Lunas akan muncul di sini.
+              </div>
+            ) : (
+              <>
+                <ol className="max-h-48 overflow-y-auto divide-y text-[11px]">
+                  {log.map((e) => {
+                    const statusColor =
+                      e.status === "confirmed"
+                        ? "text-emerald-700 dark:text-emerald-300"
+                        : e.status === "failed"
+                          ? "text-red-700 dark:text-red-300"
+                          : "text-muted-foreground";
+                    const statusLabel =
+                      e.status === "confirmed" ? "OK" : e.status === "failed" ? "Gagal" : "Batal";
+                    return (
+                      <li key={e.id} className="flex items-center gap-2 px-2 py-1.5">
+                        <span className="font-mono text-[10px] text-muted-foreground shrink-0 w-14">
+                          {new Date(e.at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate">
+                          <b>{actionLabel(e.kind, e.balanceKind)}</b>
+                          <span className="ml-1 font-mono">
+                            {e.kind === "edit" && e.prevAmount !== undefined
+                              ? `${rupiah(e.prevAmount)} → ${rupiah(e.amount)}`
+                              : rupiah(e.amount)}
+                          </span>
+                          <span className="ml-1 text-muted-foreground">· {e.party}</span>
+                        </span>
+                        <span className={"shrink-0 font-semibold " + statusColor}>{statusLabel}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <div className="flex items-center justify-between border-t px-2 py-1 text-[10px] text-muted-foreground">
+                  <span>Tersimpan lokal di perangkat ini (maks. 50 entri).</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm("Hapus semua riwayat aksi lokal?")) clearDebtActionLog();
+                    }}
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold text-red-700 hover:bg-red-500/10 dark:text-red-300"
+                  >
+                    <Trash2 className="h-3 w-3" /> Hapus riwayat
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
+      <AlertDialog open={undoOpen} onOpenChange={(o) => {
+        if (reverting) return;
+        if (!o && undoOpen && !undoConfirmedRef.current && lastTx) {
+          logAction("undo", "cancelled", lastTx.amount);
+        }
+        if (o) undoConfirmedRef.current = false;
+        setUndoOpen(o);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Batalkan transaksi terakhir?</AlertDialogTitle>
@@ -640,14 +751,30 @@ export function DebtQuickActions({
             <AlertDialogAction
               disabled={reverting}
               className="bg-red-600 hover:bg-red-700 text-white"
-              onClick={async (e) => { e.preventDefault(); await revertLastTx(); }}
+              onClick={async (e) => {
+                e.preventDefault();
+                undoConfirmedRef.current = true;
+                const amt = lastTx?.amount ?? 0;
+                const before = lastTx;
+                await revertLastTx();
+                if (before) {
+                  logAction("undo", "confirmed", amt);
+                }
+              }}
             >
               Ya, batalkan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={editOpen} onOpenChange={(o) => { if (!reverting) setEditOpen(o); }}>
+      <AlertDialog open={editOpen} onOpenChange={(o) => {
+        if (reverting) return;
+        if (!o && editOpen && !editConfirmedRef.current && lastTx) {
+          logAction("edit", "cancelled", lastTx.amount, { prevAmount: lastTx.amount });
+        }
+        if (o) editConfirmedRef.current = false;
+        setEditOpen(o);
+      }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Ubah nominal transaksi terakhir</AlertDialogTitle>
@@ -669,14 +796,28 @@ export function DebtQuickActions({
             <AlertDialogCancel disabled={reverting}>Batal</AlertDialogCancel>
             <AlertDialogAction
               disabled={reverting}
-              onClick={async (e) => { e.preventDefault(); await saveEditLastTx(); }}
+              onClick={async (e) => {
+                e.preventDefault();
+                editConfirmedRef.current = true;
+                const prev = lastTx?.amount ?? 0;
+                const next = Number(editAmountRaw.replace(/\D+/g, ""));
+                await saveEditLastTx();
+                logAction("edit", "confirmed", Number.isFinite(next) ? next : prev, { prevAmount: prev });
+              }}
             >
               Simpan perubahan
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      <AlertDialog open={pending !== null} onOpenChange={(o) => { if (!o) setPending(null); }}>
+      <AlertDialog open={pending !== null} onOpenChange={(o) => {
+        if (!o && pending && !pendingConfirmedRef.current) {
+          const amt = pending.kind === "pay" || pending.kind === "lunas" ? pending.amount : parsed;
+          logAction(pending.kind, "cancelled", amt);
+        }
+        if (o) pendingConfirmedRef.current = false;
+        if (!o) setPending(null);
+      }}>
         <AlertDialogContent>
           {pending && (
             <>
@@ -740,6 +881,7 @@ export function DebtQuickActions({
                   className={confirmCopy[pending.kind].ctaClass}
                   onClick={async (e) => {
                     e.preventDefault();
+                    pendingConfirmedRef.current = true;
                     const p = pending;
                     setPending(null);
                     if (p) await runPending(p);
