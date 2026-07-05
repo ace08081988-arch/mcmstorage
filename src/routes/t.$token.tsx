@@ -1569,7 +1569,21 @@ function PublicPrepPage() {
             });
             return (
               <div className="space-y-4">
-                <div className="-mb-2 flex items-center justify-end gap-2">
+                <div className="-mb-2 flex flex-wrap items-center justify-end gap-2">
+                  <label className="inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                    <span>Urutkan:</span>
+                    <select
+                      value={sortMode}
+                      onChange={(e) => setSortMode(e.target.value as SortMode)}
+                      className="rounded-md border bg-background px-1.5 py-1 text-[11px] text-foreground"
+                    >
+                      <option value="index">Nomor urut</option>
+                      <option value="pending-first">Belum siap dulu</option>
+                      <option value="done-first">Sudah siap dulu</option>
+                      <option value="weight-desc">Berat terbesar</option>
+                      <option value="weight-asc">Berat terkecil</option>
+                    </select>
+                  </label>
                   <button
                     type="button"
                     onClick={() => {
@@ -1600,6 +1614,28 @@ function PublicPrepPage() {
                   const allDone = doneCount === totalCount && totalCount > 0;
                   const unit = displayUnit(g.entries[0].it.name, g.entries[0].it.unit_label);
                   const collapsed = !!collapsedGroups[g.key];
+                  const sortedEntries = (() => {
+                    const arr = [...g.entries];
+                    const isDone = (e: typeof arr[number]) => (e.it.submissions?.length ?? 0) > 0;
+                    const wt = (e: typeof arr[number]) => Number(e.it.qty_requested) || 0;
+                    switch (sortMode) {
+                      case "pending-first":
+                        arr.sort((a, b) => Number(isDone(a)) - Number(isDone(b)) || a.idx - b.idx);
+                        break;
+                      case "done-first":
+                        arr.sort((a, b) => Number(isDone(b)) - Number(isDone(a)) || a.idx - b.idx);
+                        break;
+                      case "weight-desc":
+                        arr.sort((a, b) => wt(b) - wt(a) || a.idx - b.idx);
+                        break;
+                      case "weight-asc":
+                        arr.sort((a, b) => wt(a) - wt(b) || a.idx - b.idx);
+                        break;
+                      default:
+                        arr.sort((a, b) => a.idx - b.idx);
+                    }
+                    return arr;
+                  })();
                   return (
                     <section key={g.key} className="space-y-2">
                       <div className="sticky top-0 z-[1] -mx-1 rounded-md border bg-background/95 px-2 py-1.5 backdrop-blur">
