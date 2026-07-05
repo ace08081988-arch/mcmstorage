@@ -1789,12 +1789,21 @@ function ItemCard({
       }
     }
     setBusy(true);
-    // Reset & inisialisasi status upload per foto.
-    setUploads(photos.map(() => ({ status: "idle" as const })));
+    // Preserve status "done" (dengan path yang sudah terunggah) dari
+    // attempt sebelumnya, supaya klik "Coba lagi" hanya mengulang foto yang
+    // gagal — sama sekali tidak menghitung ulang kuota storage untuk foto
+    // yang sudah sukses.
+    const state: PhotoUploadStatus[] =
+      uploads.length === photos.length
+        ? uploads.map((u) => (u.status === "done" ? u : { status: "idle" as const }))
+        : photos.map(() => ({ status: "idle" as const }));
+    setUploads(state);
     try {
-      const uploaded: string[] = [];
+      // Upload hanya index yang belum "done".
       for (let i = 0; i < photos.length; i++) {
-        setUploads((prev) => prev.map((u, j) => (j === i ? { status: "uploading" } : u)));
+        if (state[i].status === "done") continue;
+        state[i] = { status: "uploading" };
+        setUploads(state.slice());
         let uploadedPath: string | null = null;
         try {
           uploadedPath = await uploadPrepPhoto(
@@ -1806,21 +1815,29 @@ function ItemCard({
           );
         } catch (uerr) {
           const msg = (uerr as Error).message || "Gagal mengunggah";
-          setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
-          toast.error(`Foto ${i + 1} gagal unggah: ${msg}`);
-          setBusy(false);
-          return;
+          state[i] = { status: "error", error: msg };
+          setUploads(state.slice());
+          continue;
         }
         if (!uploadedPath) {
-          const msg = "Server menolak upload";
-          setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
-          toast.error(`Foto ${i + 1} gagal unggah: ${msg}`);
-          setBusy(false);
-          return;
+          state[i] = { status: "error", error: "Server menolak upload" };
+          setUploads(state.slice());
+          continue;
         }
-        setUploads((prev) => prev.map((u, j) => (j === i ? { status: "done" } : u)));
-        uploaded.push(uploadedPath);
+        state[i] = { status: "done", path: uploadedPath };
+        setUploads(state.slice());
       }
+      const failed = state.filter((u) => u.status === "error").length;
+      if (failed > 0) {
+        toast.error(
+          `${failed} foto gagal unggah. Tekan "Coba lagi" pada foto yang gagal — foto yang sudah sukses tidak akan diulang.`,
+        );
+        setBusy(false);
+        return;
+      }
+      const uploaded = state.map((u) =>
+        u.status === "done" ? u.path : "",
+      );
       const args = {
         _token: token,
         _pin: pin,
