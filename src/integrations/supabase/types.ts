@@ -1477,6 +1477,54 @@ export type Database = {
         }
         Relationships: []
       }
+      prep_link_deliveries: {
+        Row: {
+          channel: string
+          id: string
+          owner_user_id: string
+          sent_at: string
+          task_id: string | null
+          title_id: string | null
+          title_name: string
+          worker_name: string
+        }
+        Insert: {
+          channel: string
+          id?: string
+          owner_user_id: string
+          sent_at?: string
+          task_id?: string | null
+          title_id?: string | null
+          title_name: string
+          worker_name: string
+        }
+        Update: {
+          channel?: string
+          id?: string
+          owner_user_id?: string
+          sent_at?: string
+          task_id?: string | null
+          title_id?: string | null
+          title_name?: string
+          worker_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prep_link_deliveries_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_link_deliveries_title_id_fkey"
+            columns: ["title_id"]
+            isOneToOne: false
+            referencedRelation: "request_titles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       prep_pin_alerts: {
         Row: {
           acknowledged_at: string | null
