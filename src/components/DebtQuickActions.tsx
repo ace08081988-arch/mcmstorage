@@ -270,6 +270,30 @@ export function DebtQuickActions({
     else await allocatePayment(p.amount, "lunas");
   }
 
+  function formatDate(iso: string): string {
+    try {
+      return new Date(iso).toLocaleDateString("id-ID", { day: "2-digit", month: "short", year: "2-digit" });
+    } catch {
+      return iso.slice(0, 10);
+    }
+  }
+
+  function allocationPreview(amount: number): {
+    lines: Array<{ id: string; created_at: string; take: number; sisaBefore: number; sisaAfter: number }>;
+    applied: number;
+    leftover: number;
+  } {
+    let left = amount;
+    const lines: Array<{ id: string; created_at: string; take: number; sisaBefore: number; sisaAfter: number }> = [];
+    for (const d of openDebts) {
+      if (left <= 0) break;
+      const take = Math.min(left, d.sisa);
+      lines.push({ id: d.id, created_at: d.created_at, take, sisaBefore: d.sisa, sisaAfter: d.sisa - take });
+      left -= take;
+    }
+    return { lines, applied: amount - left, leftover: left };
+  }
+
   async function addDebt(opts?: { markPaid?: boolean; label?: "add" | "cash" }) {
     if (!uid || !data?.party || !hasAmount) {
       if (!hasAmount) toast.error("Isi jumlah dulu.");
