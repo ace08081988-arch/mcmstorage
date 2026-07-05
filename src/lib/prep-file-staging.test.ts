@@ -133,6 +133,9 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
     const res = await stageFile(heic);
     expect(res.blob.type).toBe("image/jpeg");
     expect((res.blob as File).name).toBe("photo.jpg");
+    expect(res.originalFormat).toBe("HEIC");
+    expect(res.format).toBe("JPEG");
+    expect(res.converted).toBe(true);
   });
 
   it("meneruskan foto JPEG apa adanya tanpa memanggil konverter", async () => {
@@ -140,6 +143,8 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
     const jpg = new File(["j"], "foo.jpg", { type: "image/jpeg" });
     const res = await stageFile(jpg);
     expect(res.blob).toBe(jpg); // referensi sama = tidak dikonversi
+    expect(res.format).toBe("JPEG");
+    expect(res.converted).toBe(false);
   });
 
   // ────────────────────────────────────────────────────────────────
