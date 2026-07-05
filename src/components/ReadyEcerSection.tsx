@@ -723,7 +723,7 @@ export function ReadyEcerSection() {
       </AlertDialog>
 
       {rows === null ? (
-        <div className="grid grid-cols-2 gap-2" aria-busy="true" aria-label="Memuat produk eceran">
+        <div className={ecerGridClass} aria-busy="true" aria-label="Memuat produk eceran">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-1 rounded-md border bg-card px-3 py-2.5">
               <div className="flex items-center gap-1.5">
@@ -764,9 +764,9 @@ export function ReadyEcerSection() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div className={ecerGridClass}>
           {visible.length === 0 ? (
-            <div className="col-span-2 flex flex-col items-center gap-1 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground">
+            <div className="col-span-full flex flex-col items-center gap-1 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground">
               {view === "sent" ? (
                 <>
                   <History className="h-4 w-4" />
