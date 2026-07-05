@@ -2,6 +2,27 @@
 // Avoid leaking raw PostgreSQL / Supabase error text (constraint names,
 // table/column identifiers) into toasts. Full details are still visible
 // in browser devtools / server logs for debugging.
+import { toast } from "sonner";
+
+/**
+ * True saat error berasal dari policy RLS / Postgres yang menolak akses
+ * (kode 42501) atau PostgREST 301 (JWT tidak mengizinkan). Toast untuk
+ * kasus ini seharusnya menampilkan tombol menuju halaman pengaturan akses
+ * (`/profil`), tempat pengguna bisa upgrade akun MCM Chat → MCM Storage.
+ */
+export function isAccessDeniedError(err: unknown): boolean {
+  if (!err) return false;
+  const e = err as { code?: string; status?: number; message?: string };
+  if (e.code === "42501" || e.code === "PGRST301") return true;
+  if (e.status === 401 || e.status === 403) return true;
+  const msg = (e.message ?? "").toLowerCase();
+  return (
+    msg.includes("row-level security") ||
+    msg.includes("permission denied") ||
+    msg.includes("tidak memiliki akses")
+  );
+}
+
 export function friendlyError(
   err: unknown,
   fallback = "Terjadi kesalahan. Coba lagi.",
@@ -77,4 +98,33 @@ export function friendlyError(
   // instead of a generic "try again" loop.
   if (e.message && e.message.length < 200) return e.message;
   return fallback;
+}
+
+/**
+ * Tampilkan toast error yang ramah pengguna. Untuk error akses-ditolak,
+ * otomatis lampirkan tombol "Perbaiki Akses" yang membuka `/profil`
+ * (kartu upgrade akun) di tab yang sama. Prefix opsional (mis. "Gagal: ")
+ * disisipkan sebelum pesan.
+ */
+export function notifyError(
+  err: unknown,
+  opts: { prefix?: string; fallback?: string } = {},
+): string | number {
+  const msg = (opts.prefix ?? "") + friendlyError(err, opts.fallback);
+  if (isAccessDeniedError(err)) {
+    return toast.error(msg, {
+      description:
+        "Akun Anda mungkin masih MCM Chat saja. Buka Profil untuk upgrade ke MCM Storage.",
+      action: {
+        label: "Perbaiki Akses",
+        onClick: () => {
+          if (typeof window !== "undefined") {
+            window.location.assign("/profil");
+          }
+        },
+      },
+      duration: 8000,
+    });
+  }
+  return toast.error(msg);
 }
