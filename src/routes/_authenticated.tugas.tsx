@@ -1150,7 +1150,7 @@ function CreateDialog({ warehouse, variants, onVariantsChanged, onClose, onCreat
         </div>
       </div>
       <div className="mt-4 flex justify-end gap-2">
-        <button onClick={onClose} className="h-9 rounded-md border px-3 text-sm">Batal</button>
+        <button onClick={requestClose} className="h-9 rounded-md border px-3 text-sm">Batal</button>
         {(() => {
           const canSend =
             summary.validLines > 0 &&
