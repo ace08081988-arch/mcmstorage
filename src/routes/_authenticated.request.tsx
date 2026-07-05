@@ -1945,3 +1945,206 @@ function WorkerTestDialog({
     </Dialog>
   );
 }
+
+// ------------------------------------------------------------------
+// Riwayat pengiriman link ke pegawai
+// ------------------------------------------------------------------
+type DeliveryRow = {
+  id: string;
+  task_id: string | null;
+  title_id: string | null;
+  title_name: string;
+  worker_name: string;
+  channel: "whatsapp" | "copy_message" | "copy_link_pin" | "download_png" | "download_pdf";
+  sent_at: string;
+};
+type TaskStatusRow = {
+  id: string;
+  status: "active" | "done" | "cancelled" | "expired";
+  expires_at: string;
+  completed_at: string | null;
+};
+
+function channelLabel(c: DeliveryRow["channel"]): string {
+  switch (c) {
+    case "whatsapp": return "WhatsApp";
+    case "copy_message": return "Salin pesan";
+    case "copy_link_pin": return "Salin Link+PIN";
+    case "download_png": return "Unduh PNG";
+    case "download_pdf": return "Unduh PDF";
+  }
+}
+
+function taskStatusLabel(t: TaskStatusRow | undefined): { label: string; tone: string } {
+  if (!t) return { label: "Tugas dihapus", tone: "border-muted text-muted-foreground bg-muted/40" };
+  const expired = t.status === "expired" || new Date(t.expires_at).getTime() < Date.now();
+  if (t.status === "done") return { label: "Selesai", tone: "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-400" };
+  if (t.status === "cancelled") return { label: "Dibatalkan", tone: "border-destructive/40 bg-destructive/10 text-destructive" };
+  if (expired) return { label: "Kedaluwarsa", tone: "border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400" };
+  return { label: "Menunggu", tone: "border-primary/40 bg-primary/10 text-primary" };
+}
+
+function formatWaktu(iso: string): string {
+  try {
+    const d = new Date(iso);
+    return d.toLocaleString("id-ID", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return iso;
+  }
+}
+
+function DeliveryHistoryDialog({
+  target, onClose,
+}: {
+  target: RequestTitle | "all" | null;
+  onClose: () => void;
+}) {
+  const open = !!target;
+  const [rows, setRows] = useState<DeliveryRow[]>([]);
+  const [tasks, setTasks] = useState<Record<string, TaskStatusRow>>({});
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const filterTitleId = target && target !== "all" ? target.id : null;
+  const headerLabel = target === "all" ? "semua judul" : target && target !== "all" ? target.name : "";
+
+  async function load() {
+    if (!open) return;
+    setLoading(true);
+    setError(null);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q = (supabase.from as any)("prep_link_deliveries")
+        .select("id, task_id, title_id, title_name, worker_name, channel, sent_at")
+        .order("sent_at", { ascending: false })
+        .limit(200);
+      if (filterTitleId) q = q.eq("title_id", filterTitleId);
+      const { data, error: e } = await q;
+      if (e) throw e;
+      const list: DeliveryRow[] = data ?? [];
+      setRows(list);
+      const taskIds = Array.from(new Set(list.map((r) => r.task_id).filter(Boolean))) as string[];
+      if (taskIds.length > 0) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data: taskData, error: te } = await (supabase.from as any)("prep_tasks")
+          .select("id, status, expires_at, completed_at")
+          .in("id", taskIds);
+        if (te) throw te;
+        const map: Record<string, TaskStatusRow> = {};
+        (taskData ?? []).forEach((t: TaskStatusRow) => { map[t.id] = t; });
+        setTasks(map);
+      } else {
+        setTasks({});
+      }
+    } catch (e) {
+      setError((e as Error).message ?? "Gagal memuat riwayat");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    if (!open) { setRows([]); setTasks({}); setError(null); return; }
+    void load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, filterTitleId]);
+
+  // Group per (task_id or synthetic key) to avoid noise when user hits multiple buttons
+  const grouped = useMemo(() => {
+    const map = new Map<string, { key: string; title_name: string; worker_name: string; task_id: string | null; entries: DeliveryRow[] }>();
+    for (const r of rows) {
+      const key = r.task_id ?? `no-task:${r.id}`;
+      const existing = map.get(key);
+      if (existing) {
+        existing.entries.push(r);
+      } else {
+        map.set(key, { key, title_name: r.title_name, worker_name: r.worker_name, task_id: r.task_id, entries: [r] });
+      }
+    }
+    return Array.from(map.values());
+  }, [rows]);
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <History className="h-4 w-4 text-primary" /> Riwayat pengiriman link
+          </DialogTitle>
+          <DialogDescription>
+            Daftar pengiriman link tugas ke pegawai untuk <b>{headerLabel}</b>. Status diambil dari tugas terkait.
+          </DialogDescription>
+        </DialogHeader>
+
+        {loading ? (
+          <div className="flex items-center justify-center gap-2 py-10 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Memuat riwayat…
+          </div>
+        ) : error ? (
+          <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+            <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Gagal memuat</div>
+            <div className="mt-1 break-words">{error}</div>
+            <Button size="sm" variant="outline" className="mt-2" onClick={() => void load()}>
+              <RotateCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
+            </Button>
+          </div>
+        ) : grouped.length === 0 ? (
+          <div className="rounded-md border border-dashed bg-muted/30 p-6 text-center text-xs text-muted-foreground">
+            Belum ada riwayat pengiriman.
+          </div>
+        ) : (
+          <div className="max-h-[60vh] space-y-2 overflow-y-auto pr-1">
+            {grouped.map((g) => {
+              const t = g.task_id ? tasks[g.task_id] : undefined;
+              const status = taskStatusLabel(t);
+              const firstSent = g.entries[g.entries.length - 1]?.sent_at ?? g.entries[0].sent_at;
+              const lastSent = g.entries[0]?.sent_at;
+              return (
+                <div key={g.key} className="rounded-lg border bg-card p-3 text-xs">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-semibold text-sm">{g.worker_name}</div>
+                      {target === "all" && (
+                        <div className="truncate text-[11px] text-muted-foreground">{g.title_name}</div>
+                      )}
+                    </div>
+                    <span className={`shrink-0 rounded-full border px-2 py-0.5 text-[10px] font-medium ${status.tone}`}>
+                      {status.label}
+                    </span>
+                  </div>
+                  <div className="mt-1.5 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
+                    <div><span className="text-[10px] uppercase tracking-wide">Kirim pertama</span><br />{formatWaktu(firstSent)}</div>
+                    {lastSent !== firstSent && (
+                      <div><span className="text-[10px] uppercase tracking-wide">Kirim terakhir</span><br />{formatWaktu(lastSent)}</div>
+                    )}
+                    {t?.completed_at && (
+                      <div className="col-span-2"><span className="text-[10px] uppercase tracking-wide">Selesai</span><br />{formatWaktu(t.completed_at)}</div>
+                    )}
+                  </div>
+                  <div className="mt-1.5 flex flex-wrap gap-1">
+                    {g.entries.map((e) => (
+                      <span
+                        key={e.id}
+                        className="rounded-full border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
+                        title={formatWaktu(e.sent_at)}
+                      >
+                        {channelLabel(e.channel)} · {formatWaktu(e.sent_at)}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" size="sm" onClick={() => void load()} disabled={loading}>
+            <RotateCw className="mr-1 h-3.5 w-3.5" /> Segarkan
+          </Button>
+          <Button variant="ghost" size="sm" onClick={onClose}>Tutup</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
