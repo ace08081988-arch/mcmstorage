@@ -1602,8 +1602,10 @@ function PublicPrepPage() {
             <button
               type="button"
               onClick={() => {
-                setClosedReason(null);
-                goBackToPin();
+                runWhenIdle(() => {
+                  setClosedReason(null);
+                  goBackToPin();
+                });
               }}
               className="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-semibold transition hover:bg-muted"
             >
@@ -1621,7 +1623,7 @@ function PublicPrepPage() {
         <div className="mx-auto flex max-w-2xl items-center gap-2 px-4 py-3">
           <button
             type="button"
-            onClick={goBackToPin}
+            onClick={() => runWhenIdle(goBackToPin)}
             aria-label="Kembali ke halaman awal"
             className="flex h-9 w-9 items-center justify-center rounded-lg border bg-background text-muted-foreground transition hover:bg-muted hover:text-foreground"
           >
