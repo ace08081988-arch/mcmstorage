@@ -1649,6 +1649,17 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       setSendStatus("success");
       const msgCount = "messageCount" in res ? res.messageCount ?? 0 : 0;
       appendSendLog(ctx.idemKey, { kind: "outcome", label: `Selesai · ${msgCount} pesan terkirim` });
+      // Pindahkan kartu (foto + link) ke Riwayat terkirim secara otomatis,
+      // agar simetris dengan alur WA. Tanpa ini, kiriman via Chat tidak
+      // pernah pindah ke tab Riwayat sehingga terasa "belum terkirim".
+      if (ctx.markIds.length > 0) {
+        markSent(ctx.markIds, {
+          channel: "chat",
+          mapsUrl: ctx.locationUrl ?? null,
+          status: "success",
+          idemKey: ctx.idemKey,
+        });
+      }
       setChatStatus((prev) => prev ? {
         ...prev,
         outcome: {
