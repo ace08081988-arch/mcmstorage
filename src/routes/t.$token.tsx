@@ -1347,11 +1347,12 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
     if (!f) return;
     try {
       const staged = await fileToStaged(f);
-      // Tampilkan langsung di grid supaya user tahu foto berhasil dipilih,
-      // lalu buka editor untuk anotasi opsional. Jika editor gagal memuat
-      // (mis. HEIC), foto tetap ada di grid dan bisa dikirim tanpa edit.
-      setPhotos((prev) => [...prev, staged]);
-      setEditingIdx(null);
+      // Tampilkan langsung di grid + buka editor untuk anotasi opsional.
+      // Kalau editor gagal memuat (HEIC/dsb), foto tetap ada di grid.
+      setPhotos((prev) => {
+        setEditingIdx(prev.length);
+        return [...prev, staged];
+      });
       setEditorSrc(staged.dataUrl);
       setEditorOpen(true);
       triggerAutoGps();
@@ -1758,8 +1759,10 @@ function RequestForm({
     if (!f) return;
     try {
       const staged = await fileToStaged(f);
-      setPhotos((prev) => [...prev, staged]);
-      setEditingIdx(null);
+      setPhotos((prev) => {
+        setEditingIdx(prev.length);
+        return [...prev, staged];
+      });
       setEditorSrc(staged.dataUrl);
       setEditorOpen(true);
       triggerAutoGps();
