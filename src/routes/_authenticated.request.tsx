@@ -632,16 +632,24 @@ function SendPrepLinkDialog({
     return lines.join("\n");
   }, [session, title, titleItems, warehouseItems, workerName]);
 
-  function copyLinkPin() {
+  async function copyLinkPin() {
     if (!session) return;
-    void navigator.clipboard.writeText(`Tugas: Request ${title?.name ?? ""}\nLink: ${session.url}\nPIN: ${session.pin}`);
-    toast.success("Link + PIN disalin");
+    try {
+      await navigator.clipboard.writeText(`Tugas: Request ${title?.name ?? ""}\nLink: ${session.url}\nPIN: ${session.pin}`);
+      toast.success("Link + PIN disalin", { description: "Tempel di WhatsApp untuk kirim ulang." });
+    } catch (e) {
+      toast.error("Gagal menyalin Link + PIN", { description: (e as Error)?.message ?? "Periksa izin clipboard." });
+    }
   }
 
-  function copyMessage() {
+  async function copyMessage() {
     if (!waMessage) return;
-    void navigator.clipboard.writeText(waMessage);
-    toast.success("Pesan disalin — tempel di WhatsApp");
+    try {
+      await navigator.clipboard.writeText(waMessage);
+      toast.success("Pesan WhatsApp disalin", { description: "Tempel di WhatsApp Business untuk kirim ke pegawai." });
+    } catch (e) {
+      toast.error("Gagal menyalin pesan", { description: (e as Error)?.message ?? "Periksa izin clipboard." });
+    }
   }
 
   function sendWA() {
@@ -1694,10 +1702,14 @@ function WorkerTestDialog({
     } finally { setBusy(false); }
   }
 
-  function copyAll() {
+  async function copyAll() {
     if (!session) return;
-    void navigator.clipboard.writeText(`Link: ${session.url}\nPIN: ${session.pin}`);
-    toast.success("Disalin");
+    try {
+      await navigator.clipboard.writeText(`Link: ${session.url}\nPIN: ${session.pin}`);
+      toast.success("Link + PIN disalin", { description: "Sekarang bisa kirim ulang ke pegawai." });
+    } catch (e) {
+      toast.error("Gagal menyalin", { description: (e as Error)?.message ?? "Periksa izin clipboard." });
+    }
   }
 
   async function cancelSession() {
