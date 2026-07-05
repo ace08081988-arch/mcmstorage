@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl } from "@/lib/prep";
+import { buildTugasBaruWaMessage } from "@/lib/tugas-share";
 import { copyText, shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck, ArrowLeft, Info, Check } from "lucide-react";
 import { ShieldAlert } from "lucide-react";
@@ -688,20 +689,15 @@ function TugasBaruForm() {
   async function shareWa() {
     if (!created) return;
     const cleaned = phone.replace(/\D/g, "");
-    // Perintah eksplisit untuk pegawai: buka link → masukkan PIN → foto
-    // setiap barang + kirim titik lokasi (link Google Maps). Tanpa dua
-    // lampiran ini kiriman dianggap belum lengkap.
-    const text = [
-      `Tolong siapkan barang berikut. Ikuti langkah ini di HP:`,
-      `1) Buka link di bawah`,
-      `2) Masukkan PIN`,
-      `3) *Foto* setiap barang yang sudah disiapkan`,
-      `4) *Kirim lokasi (link Google Maps)* dari tempat penyiapan`,
-      `5) Tekan Kirim`,
-      ``,
-      `Judul: *${created.title}*`,
-      `PIN: *${created.pin}*`,
-    ].join("\n");
+    // Pesan dibangun via fungsi murni yang diuji di
+    // src/lib/tugas-share.test.ts — invariant "foto tiap barang" dan
+    // "link Google Maps" dipertahankan lewat test, bukan komentar.
+    const text = buildTugasBaruWaMessage({
+      title: created.title,
+      pin: created.pin,
+      url: created.url,
+      itemsCount: rows.filter((r) => r.name.trim().length > 0).length,
+    });
     const res = await shareToWhatsApp({ title: created.title, text, url: created.url, phone: cleaned || undefined });
     notifyShareResult(res);
   }
