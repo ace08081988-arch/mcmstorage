@@ -20,10 +20,12 @@ export function isHeic(file: File | Blob): boolean {
   return /\.(heic|heif)$/.test(name);
 }
 
+type Heic2AnyFn = (opts: { blob: Blob; toType?: string; quality?: number }) => Promise<Blob | Blob[]>;
+
 export async function convertHeicToJpeg(file: File | Blob): Promise<File> {
-  const mod = await import("heic2any");
-  const heic2any = (mod as { default: typeof import("heic2any") }).default;
-  const out = await heic2any({ blob: file, toType: "image/jpeg", quality: 0.85 });
+  const mod = (await import("heic2any")) as unknown as { default: Heic2AnyFn };
+  const heic2any = mod.default;
+  const out = await heic2any({ blob: file as Blob, toType: "image/jpeg", quality: 0.85 });
   const jpegBlob = Array.isArray(out) ? out[0] : out;
   const baseName = ((file as File).name ?? "photo").replace(/\.(heic|heif)$/i, "") || "photo";
   return new File([jpegBlob], `${baseName}.jpg`, { type: "image/jpeg" });
