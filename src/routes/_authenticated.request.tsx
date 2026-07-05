@@ -331,6 +331,13 @@ function RequestPage() {
         titleItemsCount={titleItems.length}
         onClose={() => setTestOpen(false)}
       />
+
+      <SendPrepLinkDialog
+        title={sendLinkTitle}
+        titleItems={sendLinkTitle ? titleItems.filter((i) => i.title_id === sendLinkTitle.id) : []}
+        warehouseItems={items}
+        onClose={() => setSendLinkTitle(null)}
+      />
     </div>
   );
 }
