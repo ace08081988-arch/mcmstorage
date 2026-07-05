@@ -1613,6 +1613,14 @@ function ItemCard({
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
   const [expanded, setExpanded] = useState(false);
+  // Status kirim per-item yang ditampilkan jelas di header kartu:
+  // idle (belum pernah tekan Kirim), sending, success, failed.
+  const [sendStatus, setSendStatus] = useState<
+    | { kind: "idle" }
+    | { kind: "sending"; phase: "upload" | "submit" }
+    | { kind: "success"; at: number; count: number }
+    | { kind: "failed"; error: string }
+  >({ kind: "idle" });
 
   useEffect(() => {
     signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned);
@@ -1778,19 +1786,23 @@ function ItemCard({
     }
     if (photos.length === 0) {
       toast.error("Wajib lampirkan foto bukti timbangan/barang");
+      setSendStatus({ kind: "failed", error: "Belum ada foto bukti" });
       return;
     }
     if (locUrl) {
       if (locUrl.length > 2048) {
         toast.error("URL lokasi terlalu panjang");
+        setSendStatus({ kind: "failed", error: "URL lokasi terlalu panjang" });
         return;
       }
       if (!/^https:\/\//i.test(locUrl)) {
         toast.error("URL lokasi harus diawali https://");
+        setSendStatus({ kind: "failed", error: "URL lokasi harus diawali https://" });
         return;
       }
     }
     setBusy(true);
+    setSendStatus({ kind: "sending", phase: "upload" });
     // Preserve status "done" (dengan path yang sudah terunggah) dari
     // attempt sebelumnya, supaya klik "Coba lagi" hanya mengulang foto yang
     // gagal — sama sekali tidak menghitung ulang kuota storage untuk foto
@@ -1834,9 +1846,14 @@ function ItemCard({
         toast.error(
           `${failed} foto gagal unggah. Tekan "Coba lagi" pada foto yang gagal — foto yang sudah sukses tidak akan diulang.`,
         );
+        setSendStatus({
+          kind: "failed",
+          error: `${failed} foto gagal unggah`,
+        });
         setBusy(false);
         return;
       }
+      setSendStatus({ kind: "sending", phase: "submit" });
       const uploaded = state.map((u) =>
         u.status === "done" ? u.path : "",
       );
@@ -1883,6 +1900,7 @@ function ItemCard({
       toast.success(
         `Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${displayUnit(item.name, item.unit_label)}`,
       );
+      setSendStatus({ kind: "success", at: Date.now(), count: uploaded.length });
       setPhotos([]);
       setLocUrl("");
       setGps(null);
@@ -1891,7 +1909,9 @@ function ItemCard({
       void clearDraftPhotos(draftKey);
       onSubmitted();
     } catch (e) {
-      toast.error("Gagal kirim: " + (e as Error).message);
+      const msg = (e as Error).message || "Gagal kirim";
+      toast.error("Gagal kirim: " + msg);
+      setSendStatus({ kind: "failed", error: msg });
     } finally {
       setBusy(false);
     }
@@ -1899,11 +1919,18 @@ function ItemCard({
 
   const isDone = (item.submissions?.length ?? 0) > 0;
   const hasDraft = photos.length > 0 || pending.length > 0;
-  // Auto-expand kalau ada draft foto tersimpan atau item baru diubah admin,
-  // supaya user tidak kehilangan pekerjaan yang belum terkirim.
+  // Auto-expand kalau ada draft foto, item baru diubah admin, atau sedang /
+  // habis dicoba kirim — supaya status berhasil / gagal langsung terlihat.
   useEffect(() => {
-    if (hasDraft || isStale) setExpanded(true);
-  }, [hasDraft, isStale]);
+    if (
+      hasDraft ||
+      isStale ||
+      sendStatus.kind === "sending" ||
+      sendStatus.kind === "failed"
+    ) {
+      setExpanded(true);
+    }
+  }, [hasDraft, isStale, sendStatus.kind]);
   return (
     <div
       className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}
@@ -1934,14 +1961,23 @@ function ItemCard({
             #{index}
           </div>
           <div className="flex items-center gap-1.5">
-            {isDone ? (
+            {sendStatus.kind === "sending" ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                {sendStatus.phase === "upload" ? "Mengunggah…" : "Mengirim…"}
+              </span>
+            ) : sendStatus.kind === "failed" && !isDone ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
+                <AlertCircle className="h-3 w-3" aria-hidden="true" /> Gagal
+              </span>
+            ) : isDone || sendStatus.kind === "success" ? (
               <StatusBadge size="xs" variant="siap">
-                <CheckCircle2 className="mr-1 h-3 w-3" /> Selesai
+                <CheckCircle2 className="mr-1 h-3 w-3" /> Berhasil
               </StatusBadge>
             ) : hasDraft ? (
-              <StatusBadge size="xs" variant="menunggu">
-                Draft {photos.length + pending.length}
-              </StatusBadge>
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                <Clock className="h-3 w-3" aria-hidden="true" /> Menunggu {photos.length + pending.length}
+              </span>
             ) : (
               <StatusBadge size="xs" variant="menunggu">Belum</StatusBadge>
             )}
@@ -1979,6 +2015,46 @@ function ItemCard({
       </button>
       {expanded && (
       <div className="border-t px-3 pb-3 pt-3">
+        {sendStatus.kind === "sending" && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-2 flex items-center gap-2 rounded-lg border border-primary/40 bg-primary/5 px-3 py-2 text-[12px] font-medium text-primary"
+          >
+            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            {sendStatus.phase === "upload"
+              ? "Mengunggah foto ke server…"
+              : "Mengirim ke gudang…"}
+          </div>
+        )}
+        {sendStatus.kind === "failed" && !isDone && (
+          <div
+            role="alert"
+            aria-live="assertive"
+            className="mb-2 flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/5 px-3 py-2 text-[12px] leading-relaxed text-destructive"
+          >
+            <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">Gagal kirim</div>
+              <div className="mt-0.5 break-words opacity-90">{sendStatus.error}</div>
+            </div>
+          </div>
+        )}
+        {sendStatus.kind === "success" && !isDone && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mb-2 flex items-start gap-2 rounded-lg border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-[12px] leading-relaxed text-emerald-700 dark:text-emerald-300"
+          >
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div className="min-w-0 flex-1">
+              <div className="font-semibold">Berhasil terkirim</div>
+              <div className="mt-0.5 opacity-90">
+                {sendStatus.count} foto sudah masuk folder <b>{item.name}</b>.
+              </div>
+            </div>
+          </div>
+        )}
         {item.note && (
           <div className="mb-2 rounded-md bg-muted/50 px-2 py-1.5 text-[11px] text-muted-foreground">
             Catatan: {item.note}
