@@ -374,6 +374,13 @@ export function DebtQuickActions({
       setLastTx(null);
       setUndoOpen(false);
       await qc.invalidateQueries({ queryKey });
+      emitDebtTx({
+        kind: lastTx.kind,
+        wasCash: lastTx.wasCash,
+        amount: -lastTx.amount,
+        partyId: data?.party?.id ?? null,
+        at: Date.now(),
+      });
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Gagal membatalkan transaksi.");
     } finally {
@@ -410,6 +417,13 @@ export function DebtQuickActions({
       setLastTx({ ...lastTx, amount: next });
       setEditOpen(false);
       await qc.invalidateQueries({ queryKey });
+      emitDebtTx({
+        kind: lastTx.kind,
+        wasCash: lastTx.wasCash,
+        amount: next - lastTx.amount,
+        partyId: data?.party?.id ?? null,
+        at: Date.now(),
+      });
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Gagal mengubah nominal.");
     } finally {
