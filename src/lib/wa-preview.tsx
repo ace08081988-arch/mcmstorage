@@ -238,6 +238,13 @@ export function WaPreviewHost() {
         </DialogHeader>
 
         <div className="max-h-[60vh] space-y-3 overflow-y-auto px-5 py-4">
+          {current?.peer && (current.peer.phone || current.peer.accountUserId) ? (
+            <DebtQuickActions
+              peerPhone={current.peer.phone ?? null}
+              peerName={current.peer.name ?? null}
+              peerAccountUserId={current.peer.accountUserId ?? null}
+            />
+          ) : null}
           {dupActive ? (
             <div className="flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-500/10 p-3 text-[12px] text-amber-900 dark:text-amber-200">
               <ShieldAlert className="mt-0.5 h-4 w-4 shrink-0" />
