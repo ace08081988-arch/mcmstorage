@@ -589,6 +589,38 @@ function SendPrepLinkDialog({
   const [workerName, setWorkerName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
 
+  async function logDelivery(channel: "whatsapp" | "copy_message" | "copy_link_pin" | "download_png" | "download_pdf") {
+    if (!title || !session) return;
+    const nm = workerName.trim();
+    if (!nm) return;
+    try {
+      const { data: sess } = await supabase.auth.getSession();
+      const uid = sess.session?.user.id;
+      if (!uid) return;
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      await (supabase.from as any)("prep_link_deliveries").insert({
+        owner_user_id: uid,
+        task_id: session.token ? (await resolveTaskId(session.token)) : null,
+        title_id: title.id,
+        title_name: title.name,
+        worker_name: nm,
+        channel,
+      });
+    } catch {
+      // best-effort; don't block the user action on log failures
+    }
+  }
+
+  async function resolveTaskId(shareToken: string): Promise<string | null> {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase.from as any)("prep_tasks").select("id").eq("share_token", shareToken).maybeSingle();
+      return (data?.id as string) ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   useEffect(() => {
     if (!open) { setSession(null); setError(null); setBusy(false); setWorkerName(""); setNameError(null); }
   }, [open]);
