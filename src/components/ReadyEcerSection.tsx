@@ -1422,8 +1422,26 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         pendingSlots = failed;
         return ok;
       };
-      if (files.length === 0) {
-        toast.warning("Foto pegawai tidak bisa diunduh untuk dilampirkan via MCM.");
+      // Peringatan detail: jelaskan foto mana yang gagal dibaca dari bucket
+      // agar operator tahu folder + urutan foto yang tidak ikut terlampir.
+      const describeFailedSlot = (sl: Slot) => {
+        const ownerId = snapshot.orderedIds.find((id) => sl.name.includes(id.slice(0, 6)));
+        const owner = includedShots.find((s) => s.id === ownerId) ?? take.find((s) => s.id === ownerId);
+        const label = owner ? folderName(owner) : (ownerId ? `Kiriman ${ownerId.slice(0, 6)}` : "Kiriman");
+        const idx = sl.name.match(/-(\d+)\.jpg$/)?.[1] ?? "?";
+        return `${label} · foto #${idx}`;
+      };
+      if (initial.failed.length > 0) {
+        const details = initial.failed.map(describeFailedSlot);
+        const preview = details.slice(0, 4).join(", ");
+        const more = details.length > 4 ? ` (+${details.length - 4} lagi)` : "";
+        const msg = files.length === 0
+          ? `Semua ${initial.failed.length} foto gagal dibaca: ${preview}${more}`
+          : `${initial.failed.length}/${expectedCount} foto gagal dibaca: ${preview}${more}`;
+        toast.warning(msg, {
+          description: "Bisa dicoba ulang dari tombol Kirim ulang setelah share sheet muncul.",
+        });
+        appendSendLog(idemKey, { kind: "error", label: `Foto gagal dibaca (${initial.failed.length}/${expectedCount})`, detail: details.join(" · ") });
       }
       // Payload TETAP diambil dari snapshot — pengiriman kedua/ketiga wajib
       // menghasilkan teks, urutan foto, dan link lokasi yang identik dengan
