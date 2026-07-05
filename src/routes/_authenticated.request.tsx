@@ -900,6 +900,109 @@ function SendPrepLinkDialog({
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={copyMessage} disabled={!waMessage}>
+                <Copy className="mr-1 h-3.5 w-3.5" /> Salin pesan
+              </Button>
+              <Button
+                size="sm"
+                onClick={sendWA}
+                disabled={!waMessage}
+                className="bg-[#25D366] text-white hover:bg-[#20b959]"
+              >
+                <Send className="mr-1 h-3.5 w-3.5" /> Kirim via WhatsApp
+              </Button>
+            </div>
+            <Button variant="ghost" size="sm" className="w-full" onClick={copyLinkPin} disabled={!session}>
+              <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link + PIN saja
+            </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={() => void downloadPng()}>
+                <Download className="mr-1 h-3.5 w-3.5" /> Unduh PNG
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => void downloadPdf()}>
+                <FileText className="mr-1 h-3.5 w-3.5" /> Unduh PDF
+              </Button>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="w-full">
+              <a href={session.url} target="_blank" rel="noreferrer">
+                <ExternalLink className="mr-1 h-3.5 w-3.5" /> Buka di tab baru untuk cek
+              </a>
+            </Button>
+          </div>
+        ) : (
+          <div className="space-y-3 py-1">
+            <div>
+              <Label htmlFor="worker-name" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Nama pegawai <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="worker-name"
+                value={workerName}
+                onChange={(e) => { setWorkerName(e.target.value); if (nameError) setNameError(validateWorkerName(e.target.value)); }}
+                onBlur={() => setNameError(validateWorkerName(workerName))}
+                placeholder="mis. Budi"
+                maxLength={40}
+                className="h-8"
+                autoComplete="off"
+              />
+              {nameError ? (
+                <div className="mt-1.5 flex items-start gap-1 text-[11px] text-destructive">
+                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span>{nameError}</span>
+                </div>
+              ) : (
+                <div className="mt-1.5 text-[11px] text-muted-foreground">Wajib diisi sebelum link & PIN dibuat.</div>
+              )}
+            </div>
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+              <b>Langkah:</b> masukkan nama pegawai yang akan mengerjakan, lalu tekan <b>Buat link & PIN</b>. Setelah itu baru bisa menyalin atau mengunduh pesan.
+            </div>
+            <Button className="w-full" onClick={() => void createSession()} disabled={busy}>
+              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
+              Buat link & PIN
+            </Button>
+          </div>
+        )}
+          <div className="space-y-3">
+            <div className="flex justify-center rounded-lg border bg-white p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrUrl} alt="QR tugas pegawai" width={200} height={200} />
+            </div>
+            <div className="space-y-1.5">
+              <div>
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link</Label>
+                <div className="break-all rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono">
+                  {session.url}
+                </div>
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">PIN</Label>
+                <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-center text-lg font-bold tracking-[0.4em] tabular-nums">
+                  {session.pin}
+                </div>
+              </div>
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Nama pegawai</Label>
+              <Input
+                value={workerName}
+                onChange={(e) => setWorkerName(e.target.value)}
+                placeholder="mis. Budi"
+                maxLength={40}
+                className="h-8"
+              />
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Pratinjau pesan WhatsApp</Label>
+              <Textarea
+                readOnly
+                value={waMessage}
+                rows={8}
+                className="mt-1 resize-none text-[11px] leading-relaxed font-mono"
+                onFocus={(e) => e.currentTarget.select()}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
               <Button variant="outline" size="sm" onClick={copyMessage}>
                 <Copy className="mr-1 h-3.5 w-3.5" /> Salin pesan
               </Button>
