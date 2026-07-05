@@ -1615,6 +1615,112 @@ function SubmissionThumb({ path }: { path: string | null }) {
   return <img src={url} alt="" className="h-12 w-12 shrink-0 rounded border object-cover" />;
 }
 
+// Item foto yang sedang / gagal dimuat oleh stageFile. Dipisah dari
+// StagedPhoto agar tetap kompatibel dengan draft store & flow submit.
+type PendingPhoto = { id: string; status: "loading" | "error"; name: string; error?: string; file?: File };
+
+// Grid tile foto dengan indikator status per foto (loading / sukses / gagal).
+// Dipakai oleh ItemCard maupun RequestForm supaya perilaku UI konsisten.
+function PhotoTileGrid({
+  photos, pending, justOk, onEdit, onRemove, onRetry, onDismiss, onClearAll,
+}: {
+  photos: StagedPhotoT[];
+  pending: PendingPhoto[];
+  justOk: Set<Blob>;
+  onEdit: (i: number) => void;
+  onRemove: (i: number) => void;
+  onRetry: (id: string) => void;
+  onDismiss: (id: string) => void;
+  onClearAll: () => void;
+}) {
+  const total = photos.length + pending.length;
+  if (total === 0) return null;
+  const loadingCount = pending.filter((p) => p.status === "loading").length;
+  const errorCount = pending.filter((p) => p.status === "error").length;
+  return (
+    <div className="mt-3 space-y-2">
+      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+        <span aria-live="polite">
+          {photos.length} foto siap
+          {loadingCount > 0 ? ` · ${loadingCount} memuat…` : ""}
+          {errorCount > 0 ? ` · ${errorCount} gagal` : ""}
+        </span>
+        <button
+          type="button"
+          onClick={onClearAll}
+          className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10"
+        >
+          Hapus semua
+        </button>
+      </div>
+      <div className="grid grid-cols-3 gap-1.5">
+        {photos.map((p, i) => {
+          const ok = justOk.has(p.blob);
+          return (
+            <div key={`ok-${i}`} className={`group relative aspect-square overflow-hidden rounded-md border bg-muted transition ${ok ? "ring-2 ring-emerald-500" : ""}`}>
+              <img src={p.dataUrl} alt="" className="h-full w-full object-cover" />
+              {ok && (
+                <div className="pointer-events-none absolute right-1 top-1 rounded-full bg-emerald-500 p-0.5 text-white shadow" aria-label="Foto siap">
+                  <CheckCircle2 className="h-3 w-3" />
+                </div>
+              )}
+              <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
+                <button type="button" onClick={() => onEdit(i)} className="rounded bg-black/50 px-1.5 py-0.5">Edit</button>
+                <button type="button" onClick={() => onRemove(i)} className="rounded bg-destructive/80 px-1.5 py-0.5">Hapus</button>
+              </div>
+            </div>
+          );
+        })}
+        {pending.map((p) => (
+          <div
+            key={`pend-${p.id}`}
+            className={`relative flex aspect-square flex-col items-center justify-center gap-1 overflow-hidden rounded-md border p-1.5 text-center text-[10px] ${
+              p.status === "loading"
+                ? "border-primary/40 bg-primary/5 text-primary"
+                : "border-destructive/50 bg-destructive/10 text-destructive"
+            }`}
+            role="status"
+            aria-live="polite"
+          >
+            {p.status === "loading" ? (
+              <>
+                <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                <div className="line-clamp-2 break-all text-[9px] opacity-80">{p.name}</div>
+                <div className="text-[9px] font-medium">Memuat…</div>
+              </>
+            ) : (
+              <>
+                <AlertCircle className="h-5 w-5" aria-hidden />
+                <div className="line-clamp-2 break-all text-[9px] font-medium">{p.name}</div>
+                <div className="line-clamp-2 text-[9px] opacity-80">{p.error || "Gagal membaca foto"}</div>
+                <div className="mt-0.5 flex items-center gap-1">
+                  {p.file && (
+                    <button
+                      type="button"
+                      onClick={() => onRetry(p.id)}
+                      className="inline-flex h-5 items-center gap-0.5 rounded bg-destructive/80 px-1.5 text-[9px] font-medium text-white"
+                    >
+                      <RefreshCw className="h-2.5 w-2.5" /> Coba lagi
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => onDismiss(p.id)}
+                    aria-label="Buang foto gagal"
+                    className="inline-flex h-5 w-5 items-center justify-center rounded bg-background/80 text-foreground"
+                  >
+                    <XIcon className="h-2.5 w-2.5" />
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 // Indikator status sinkron realtime di header halaman pegawai.
 // connected: channel SUBSCRIBED dan data ≤ 30 dtk.
 // lag: channel SUBSCRIBED tapi data 30–90 dtk lalu (heartbeat masih jalan).
