@@ -1,10 +1,11 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { PackagePlus, Search, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { displayUnit } from "@/lib/unit-label";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
+import { useOnDebtTx } from "@/lib/debt-tx-event";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
@@ -24,35 +25,36 @@ export function ReadyRequestSection() {
   const gridClass = layoutGridClass(layout);
   const compact = layout === "compact";
 
-  useEffect(() => {
-    void (async () => {
-      const [tRes, tiRes, wRes, pRes] = await Promise.all([
-        sb.from("request_titles").select("id,name").order("position").order("created_at"),
-        sb.from("request_title_items").select("id,title_id,warehouse_item_id,target_grams,unit_label,position").order("position"),
-        supabase.from("warehouse_items").select("id,name"),
-        sb.from("request_preparations").select("id,title_id"),
-      ]);
-      const titles = (tRes.data ?? []) as Array<{ id: string; name: string }>;
-      const items = (tiRes.data ?? []) as Array<{ title_id: string; warehouse_item_id: string; target_grams: number; unit_label: string }>;
-      const wis = (wRes.data ?? []) as Array<{ id: string; name: string }>;
-      const preps = (pRes.data ?? []) as Array<{ title_id: string }>;
-      const wMap = new Map(wis.map((w) => [w.id, w.name]));
-      const out: Row[] = titles.map((t) => {
-        const tItems = items.filter((i) => i.title_id === t.id);
-        return {
-          id: t.id,
-          name: t.name,
-          items_summary: tItems.map((i) => {
-            const name = wMap.get(i.warehouse_item_id);
-            return `${name ?? "?"} ${i.target_grams}${displayUnit(name, i.unit_label)}`;
-          }).join(" · "),
-          product_count: tItems.length,
-          prep_count: preps.filter((p) => p.title_id === t.id).length,
-        };
-      });
-      setRows(out);
-    })();
+  const load = useCallback(async () => {
+    const [tRes, tiRes, wRes, pRes] = await Promise.all([
+      sb.from("request_titles").select("id,name").order("position").order("created_at"),
+      sb.from("request_title_items").select("id,title_id,warehouse_item_id,target_grams,unit_label,position").order("position"),
+      supabase.from("warehouse_items").select("id,name"),
+      sb.from("request_preparations").select("id,title_id"),
+    ]);
+    const titles = (tRes.data ?? []) as Array<{ id: string; name: string }>;
+    const items = (tiRes.data ?? []) as Array<{ title_id: string; warehouse_item_id: string; target_grams: number; unit_label: string }>;
+    const wis = (wRes.data ?? []) as Array<{ id: string; name: string }>;
+    const preps = (pRes.data ?? []) as Array<{ title_id: string }>;
+    const wMap = new Map(wis.map((w) => [w.id, w.name]));
+    const out: Row[] = titles.map((t) => {
+      const tItems = items.filter((i) => i.title_id === t.id);
+      return {
+        id: t.id,
+        name: t.name,
+        items_summary: tItems.map((i) => {
+          const name = wMap.get(i.warehouse_item_id);
+          return `${name ?? "?"} ${i.target_grams}${displayUnit(name, i.unit_label)}`;
+        }).join(" · "),
+        product_count: tItems.length,
+        prep_count: preps.filter((p) => p.title_id === t.id).length,
+      };
+    });
+    setRows(out);
   }, []);
+
+  useEffect(() => { void load(); }, [load]);
+  useOnDebtTx(useCallback(() => { void load(); }, [load]));
 
   const filtered = useMemo(() => {
     if (!rows) return null;
