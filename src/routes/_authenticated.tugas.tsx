@@ -477,7 +477,7 @@ function TugasPage() {
           variants={effectiveVariants}
           onVariantsChanged={load}
           onClose={() => setOpenCreate(false)}
-          onCreated={(info) => { setOpenCreate(false); setCreatedInfo(info); void load(); }}
+          onCreated={(info) => { clearCreateDraft(); setOpenCreate(false); setCreatedInfo(info); void load(); }}
         />
       )}
       {createdInfo && <ShareDialog info={createdInfo} onClose={() => setCreatedInfo(null)} />}
