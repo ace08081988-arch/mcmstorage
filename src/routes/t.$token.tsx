@@ -1634,14 +1634,23 @@ function SubmissionThumb({ path }: { path: string | null }) {
 // StagedPhoto agar tetap kompatibel dengan draft store & flow submit.
 type PendingPhoto = { id: string; status: "loading" | "error"; name: string; error?: string; file?: File };
 
+// Status upload per-foto saat submit. `idle` = belum antre, `uploading` =
+// sedang diunggah, `done` = sukses, `error` = gagal dengan pesan.
+export type PhotoUploadStatus =
+  | { status: "idle" }
+  | { status: "uploading" }
+  | { status: "done" }
+  | { status: "error"; error: string };
+
 // Grid tile foto dengan indikator status per foto (loading / sukses / gagal).
 // Dipakai oleh ItemCard maupun RequestForm supaya perilaku UI konsisten.
 function PhotoTileGrid({
-  photos, pending, justOk, onEdit, onRemove, onRetry, onDismiss, onClearAll,
+  photos, pending, justOk, uploads, onEdit, onRemove, onRetry, onDismiss, onClearAll,
 }: {
   photos: StagedPhotoT[];
   pending: PendingPhoto[];
   justOk: Set<Blob>;
+  uploads?: PhotoUploadStatus[];
   onEdit: (i: number) => void;
   onRemove: (i: number) => void;
   onRetry: (id: string) => void;
@@ -1652,6 +1661,10 @@ function PhotoTileGrid({
   if (total === 0) return null;
   const loadingCount = pending.filter((p) => p.status === "loading").length;
   const errorCount = pending.filter((p) => p.status === "error").length;
+  const uploadingCount = uploads?.filter((u) => u.status === "uploading").length ?? 0;
+  const uploadDoneCount = uploads?.filter((u) => u.status === "done").length ?? 0;
+  const uploadErrCount = uploads?.filter((u) => u.status === "error").length ?? 0;
+  const isUploading = uploads !== undefined && uploads.some((u) => u.status !== "idle");
   return (
     <div className="mt-3 space-y-2">
       <div className="flex items-center justify-between text-[11px] text-muted-foreground">
@@ -1659,10 +1672,14 @@ function PhotoTileGrid({
           {photos.length} foto siap
           {loadingCount > 0 ? ` · ${loadingCount} memuat…` : ""}
           {errorCount > 0 ? ` · ${errorCount} gagal` : ""}
+          {isUploading ? ` · ${uploadDoneCount}/${photos.length} terunggah` : ""}
+          {uploadingCount > 0 ? " · mengunggah…" : ""}
+          {uploadErrCount > 0 ? ` · ${uploadErrCount} gagal unggah` : ""}
         </span>
         <button
           type="button"
           onClick={onClearAll}
+          disabled={isUploading}
           className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10"
         >
           Hapus semua
@@ -1671,18 +1688,58 @@ function PhotoTileGrid({
       <div className="grid grid-cols-3 gap-1.5">
         {photos.map((p, i) => {
           const ok = justOk.has(p.blob);
+          const up = uploads?.[i]?.status ?? "idle";
+          const upErr = uploads?.[i]?.status === "error" ? (uploads[i] as { error: string }).error : undefined;
           return (
-            <div key={`ok-${i}`} className={`group relative aspect-square overflow-hidden rounded-md border bg-muted transition ${ok ? "ring-2 ring-emerald-500" : ""}`}>
+            <div
+              key={`ok-${i}`}
+              className={`group relative aspect-square overflow-hidden rounded-md border bg-muted transition ${
+                up === "error" ? "ring-2 ring-destructive" :
+                up === "uploading" ? "ring-2 ring-primary" :
+                up === "done" ? "ring-2 ring-emerald-500" :
+                ok ? "ring-2 ring-emerald-500" : ""
+              }`}
+            >
               <img src={p.dataUrl} alt="" className="h-full w-full object-cover" />
-              {ok && (
+              {up === "uploading" && (
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/55 text-white"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <Loader2 className="h-5 w-5 animate-spin" aria-hidden />
+                  <div className="text-[10px] font-medium">Mengunggah…</div>
+                </div>
+              )}
+              {up === "done" && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-emerald-500/25">
+                  <div className="rounded-full bg-emerald-500 p-1 text-white shadow" aria-label="Foto terunggah">
+                    <CheckCircle2 className="h-4 w-4" />
+                  </div>
+                </div>
+              )}
+              {up === "error" && (
+                <div
+                  className="absolute inset-0 flex flex-col items-center justify-center gap-0.5 bg-destructive/85 p-1 text-center text-white"
+                  role="status"
+                  aria-live="polite"
+                >
+                  <AlertCircle className="h-5 w-5" aria-hidden />
+                  <div className="text-[10px] font-semibold">Gagal unggah</div>
+                  <div className="line-clamp-2 text-[9px] opacity-90">{upErr}</div>
+                </div>
+              )}
+              {ok && up === "idle" && (
                 <div className="pointer-events-none absolute right-1 top-1 rounded-full bg-emerald-500 p-0.5 text-white shadow" aria-label="Foto siap">
                   <CheckCircle2 className="h-3 w-3" />
                 </div>
               )}
-              <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
-                <button type="button" onClick={() => onEdit(i)} className="rounded bg-black/50 px-1.5 py-0.5">Edit</button>
-                <button type="button" onClick={() => onRemove(i)} className="rounded bg-destructive/80 px-1.5 py-0.5">Hapus</button>
-              </div>
+              {up !== "uploading" && (
+                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
+                  <button type="button" onClick={() => onEdit(i)} disabled={isUploading} className="rounded bg-black/50 px-1.5 py-0.5 disabled:opacity-50">Edit</button>
+                  <button type="button" onClick={() => onRemove(i)} disabled={isUploading} className="rounded bg-destructive/80 px-1.5 py-0.5 disabled:opacity-50">Hapus</button>
+                </div>
+              )}
             </div>
           );
         })}
