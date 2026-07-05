@@ -1530,12 +1530,19 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       const chatShots: { id: string; file: File; caption?: string }[] = [];
       let attemptedPaths = 0;
       const thumbUrls: string[] = [];
+      const MAX_CHAT_SLOTS = 10;
+      let foldersIncluded = 0;
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
           ...(s.photo_path ? [s.photo_path] : []),
         ])).filter(Boolean);
         if (paths.length === 0) continue;
+        // Atomik per folder: jangan mulai folder baru bila akan memotong
+        // sebelum semua foto terkirim. Folder pertama tetap disertakan
+        // utuh (bahkan bila > MAX_CHAT_SLOTS).
+        if (foldersIncluded > 0 && chatShots.length + paths.length > MAX_CHAT_SLOTS) break;
+        const folderStart = chatShots.length;
         for (let pi = 0; pi < paths.length; pi++) {
           const p = paths[pi];
           attemptedPaths++;
@@ -1546,9 +1553,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             chatShots.push({ id: `${s.id}:${pi}`, file: f });
             if (thumbUrls.length < 4) thumbUrls.push(url);
           }
-          if (chatShots.length >= 10) break;
         }
-        if (chatShots.length >= 10) break;
+        if (chatShots.length > folderStart) foldersIncluded++;
       }
       const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
       const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
