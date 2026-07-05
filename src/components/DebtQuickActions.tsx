@@ -992,10 +992,94 @@ export function DebtQuickActions({
             className="h-9 w-full rounded-md border bg-background px-2 text-right font-mono text-sm"
             disabled={reverting}
           />
+          {(() => {
+            const preview = computeEditPreview();
+            if (!preview) return null;
+            if (!preview.valid) {
+              return (
+                <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-800 dark:text-amber-200">
+                  {preview.reason}
+                </div>
+              );
+            }
+            const deltaColor =
+              preview.deltaSaldo === 0
+                ? "text-muted-foreground"
+                : preview.deltaSaldo > 0
+                  ? (lastTx && lastTx.kind === "piutang" ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300")
+                  : "text-red-700 dark:text-red-300";
+            const deltaSign = preview.deltaSaldo > 0 ? "+" : preview.deltaSaldo < 0 ? "−" : "";
+            return (
+              <div className="rounded-md border bg-muted/30 p-2 text-[11px] space-y-1">
+                {preview.kind === "amount" ? (
+                  <>
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Nominal</span>
+                      <span className="font-mono">{rupiah(preview.prevAmount)} → <b className="text-foreground">{rupiah(preview.nextAmount)}</b></span>
+                    </div>
+                    {preview.paidAfter > 0 && (
+                      <div className="flex items-center justify-between">
+                        <span className="text-muted-foreground">Pembayaran tercatat</span>
+                        <span className="font-mono">{rupiah(preview.paidAfter)}</span>
+                      </div>
+                    )}
+                    <div className="flex items-center justify-between">
+                      <span className="text-muted-foreground">Sisa tagihan ini</span>
+                      <span className="font-mono">{rupiah(preview.sisaBefore)} → <b className={preview.sisaAfter === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}>{rupiah(preview.sisaAfter)}{preview.sisaAfter === 0 ? " · lunas" : ""}</b></span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between font-semibold text-foreground">
+                      <span>Alokasi ulang (terlama dulu)</span>
+                      <span className="font-mono">{preview.lines.length} tagihan</span>
+                    </div>
+                    {preview.lines.length === 0 ? (
+                      <div className="text-muted-foreground">Tidak ada tagihan terbuka setelah pembayaran lama dibalik.</div>
+                    ) : (
+                      <ol className="space-y-0.5">
+                        {preview.lines.map((ln, i) => (
+                          <li key={ln.id} className="flex items-center justify-between gap-2">
+                            <span className="min-w-0 truncate text-muted-foreground">
+                              {i + 1}. {formatDate(ln.created_at)}
+                              <span className="ml-1 font-mono">· sisa {rupiah(ln.sisaBefore)}</span>
+                            </span>
+                            <span className="shrink-0 text-right font-mono">
+                              − {rupiah(ln.take)}
+                              <span className={"ml-1 " + (ln.sisaAfter === 0 ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                                → {rupiah(ln.sisaAfter)}{ln.sisaAfter === 0 ? " · lunas" : ""}
+                              </span>
+                            </span>
+                          </li>
+                        ))}
+                      </ol>
+                    )}
+                    <div className="flex items-center justify-between border-t pt-1">
+                      <span className="text-muted-foreground">Terpakai</span>
+                      <span className="font-mono font-semibold">{rupiah(preview.prevApplied)} → <b className="text-foreground">{rupiah(preview.applied)}</b></span>
+                    </div>
+                    {preview.leftover > 0 && (
+                      <div className="flex items-center justify-between text-amber-700 dark:text-amber-300">
+                        <span>Sisa input tidak terpakai</span>
+                        <span className="font-mono">{rupiah(preview.leftover)}</span>
+                      </div>
+                    )}
+                  </>
+                )}
+                <div className="flex items-center justify-between border-t pt-1">
+                  <span className="text-muted-foreground">Saldo {lastTx && lastTx.kind === "piutang" ? "piutang" : "hutang"}</span>
+                  <span className="font-mono">
+                    {rupiah(saldo)} → <b className="text-foreground">{rupiah(Math.max(0, preview.newSaldo))}</b>
+                    <span className={"ml-1 " + deltaColor}>({deltaSign}{rupiah(Math.abs(preview.deltaSaldo))})</span>
+                  </span>
+                </div>
+              </div>
+            );
+          })()}
           <AlertDialogFooter>
             <AlertDialogCancel disabled={reverting}>Batal</AlertDialogCancel>
             <AlertDialogAction
-              disabled={reverting}
+              disabled={reverting || !(computeEditPreview()?.valid)}
               onClick={async (e) => {
                 e.preventDefault();
                 editConfirmedRef.current = true;
