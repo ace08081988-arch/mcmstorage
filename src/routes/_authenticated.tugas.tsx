@@ -51,7 +51,23 @@ function TugasPage() {
   const [warehouse, setWarehouse] = useState<WItem[]>([]);
   const [variants, setVariants] = useState<Variant[]>([]);
   const [catVariants, setCatVariants] = useState<CatVariant[]>([]);
-  const [openCreate, setOpenCreate] = useState(false);
+  const [openCreate, setOpenCreate] = useState<boolean>(() => {
+    if (typeof window === "undefined") return false;
+    try {
+      return window.sessionStorage.getItem(CREATE_OPEN_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  // Persist openCreate agar reload tak sengaja (chunk error, auto-lock,
+  // rebuild preview) tidak menutup dialog di tengah kerja.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      if (openCreate) window.sessionStorage.setItem(CREATE_OPEN_KEY, "1");
+      else window.sessionStorage.removeItem(CREATE_OPEN_KEY);
+    } catch { /* ignore */ }
+  }, [openCreate]);
   const [openTask, setOpenTask] = useState<Task | null>(null);
   const [createdInfo, setCreatedInfo] = useState<{ token: string; pin: string; title: string } | null>(null);
   const [openVariantsHub, setOpenVariantsHub] = useState(false);
