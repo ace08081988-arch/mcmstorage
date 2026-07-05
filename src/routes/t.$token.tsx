@@ -1620,6 +1620,30 @@ function ItemCard({
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
   const [expanded, setExpanded] = useState(false);
+  // Antrian foto galeri yang akan dibuka di PhotoEditor satu per satu.
+  const editQueueRef = useRef<number[]>([]);
+  const photosRef = useRef<StagedPhoto[]>([]);
+  useEffect(() => {
+    photosRef.current = photos;
+  }, [photos]);
+  function openEditForIdx(i: number) {
+    const p = photosRef.current[i];
+    if (!p) return;
+    setEditingIdx(i);
+    setEditorSrc(p.dataUrl);
+    setEditorOpen(true);
+  }
+  function advanceEditQueue() {
+    const q = editQueueRef.current;
+    if (q.length === 0) {
+      setEditingIdx(null);
+      setEditorOpen(false);
+      return;
+    }
+    const nextIdx = q.shift()!;
+    // Tunggu 1 tick supaya setPhotos yang barusan sudah menyebar ke photosRef.
+    setTimeout(() => openEditForIdx(nextIdx), 0);
+  }
   // Status kirim per-item yang ditampilkan jelas di header kartu:
   // idle (belum pernah tekan Kirim), sending, success, failed.
   const [sendStatus, setSendStatus] = useState<
