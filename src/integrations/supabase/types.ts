@@ -2065,6 +2065,11 @@ export type Database = {
           photo_path: string | null
           photo_paths: string[]
           prep_task_item_id: string | null
+          sold_at: string | null
+          sold_customer_id: string | null
+          sold_party_name: string | null
+          sold_payment_method: string | null
+          sold_total: number | null
           title_id: string
           user_id: string
           via_task_id: string | null
@@ -2080,6 +2085,11 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           prep_task_item_id?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_party_name?: string | null
+          sold_payment_method?: string | null
+          sold_total?: number | null
           title_id: string
           user_id: string
           via_task_id?: string | null
@@ -2095,11 +2105,23 @@ export type Database = {
           photo_path?: string | null
           photo_paths?: string[]
           prep_task_item_id?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_party_name?: string | null
+          sold_payment_method?: string | null
+          sold_total?: number | null
           title_id?: string
           user_id?: string
           via_task_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "request_preparations_sold_customer_id_fkey"
+            columns: ["sold_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "request_preparations_title_id_fkey"
             columns: ["title_id"]
@@ -3431,6 +3453,17 @@ export type Database = {
           to_user: string
           was_existing: boolean
         }[]
+      }
+      send_request_prep_to_customer: {
+        Args: {
+          _customer_id: string
+          _note: string
+          _party_name: string
+          _payment_method: string
+          _prep_id: string
+          _total_amount: number
+        }
+        Returns: string
       }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
