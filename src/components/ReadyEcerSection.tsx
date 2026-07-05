@@ -1422,7 +1422,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         if (r0.status === "shared" || r0.status === "fallback") {
           clearIdem(idemKey);
           setIdem(idemKey, "done", undefined, waFingerprint, waSummary);
-          markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
+          // Pindah ke Riwayat terkirim SATU entri per folder yang benar-benar
+          // ikut (includedShots), bukan `take` mentah — supaya folder yang
+          // dilewati batas 10 foto tidak salah-tandai sebagai terkirim.
+          markSent(includedShots.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
           res = { status: "shared" };
         } else if (r0.status === "cancelled") {
           throw new Error("__cancelled__");
@@ -1442,7 +1445,8 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           const r0 = await callShare();
           notifyShareResult(r0);
           if (r0.status === "shared" || r0.status === "fallback") {
-            markSent(take.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
+            // Idem: hanya folder yang benar-benar ikut yang pindah ke Riwayat.
+            markSent(includedShots.map((s) => s.id), { channel: "wa", mapsUrl: firstLocation, status: "success", idemKey });
             appendSendLog(idemKey, { kind: "step", label: r0.status === "shared" ? "WA dibagikan (Web Share / native)" : "WA dibuka via fallback wa.me" });
             appendSendLog(idemKey, { kind: "outcome", label: "Selesai" });
             return { status: "shared" as const, error: undefined as string | undefined };
