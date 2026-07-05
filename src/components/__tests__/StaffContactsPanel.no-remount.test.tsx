@@ -129,6 +129,22 @@ describe("StaffContactsPanel — no remount on parent re-render", () => {
   });
 });
 
+describe("StaffContactsPanel — refresh manual", () => {
+  it("tombol refresh memaksa muat ulang meski cache masih fresh", async () => {
+    mount(<StaffContactsPanel uid="u1" />);
+    await flush();
+    const before = selectCalls;
+
+    const refreshBtn = document.querySelector('[aria-label="Muat ulang kontak pegawai"]') as HTMLButtonElement;
+    expect(refreshBtn).not.toBeNull();
+    act(() => refreshBtn.click());
+    await flush();
+
+    // Refresh manual harus memaksa satu select tambahan, meski cache masih fresh.
+    expect(selectCalls).toBe(before + 1);
+  });
+});
+
 describe("Sumber `_authenticated.tugas.tsx` — memakai pola fix", () => {
   const src = readFileSync(
     resolve(process.cwd(), "src/routes/_authenticated.tugas.tsx"),

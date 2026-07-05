@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, MessageCircle, Copy, Users, Search, X } from "lucide-react";
+import { Plus, Trash2, MessageCircle, Copy, Users, Search, X, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
@@ -43,22 +43,28 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
   const [phone, setPhone] = useState("");
   const [pinChatMcm, setPinChatMcm] = useState("");
   const [busy, setBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   // Search: `query` = input mentah (responsif), `debounced` = versi yang
   // dipakai filter (delay 200ms) supaya render list tidak dihitung ulang
   // tiap keystroke pada koleksi besar.
   const [query, setQuery] = useState("");
   const [debounced, setDebounced] = useState("");
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (force = false) => {
     if (!uid) return;
     const cached = contactsCache.get(uid);
-    const fresh = cached && Date.now() - cached.ts < CACHE_TTL_MS;
-    if (fresh) return; // masih fresh → skip network sepenuhnya.
-    const { data, error } = await table().select("*").order("created_at", { ascending: false });
-    if (error) { toast.error(error.message); return; }
-    const next = (data ?? []) as Contact[];
-    contactsCache.set(uid, { rows: next, ts: Date.now() });
-    setRows(next);
+    const fresh = !force && cached && Date.now() - cached.ts < CACHE_TTL_MS;
+    if (fresh) return; // masih fresh dan bukan refresh manual → skip network.
+    try {
+      setRefreshing(true);
+      const { data, error } = await table().select("*").order("created_at", { ascending: false });
+      if (error) { toast.error(error.message); return; }
+      const next = (data ?? []) as Contact[];
+      contactsCache.set(uid, { rows: next, ts: Date.now() });
+      setRows(next);
+    } finally {
+      setRefreshing(false);
+    }
   }, [uid]);
   useEffect(() => { void load(); }, [load]);
 
@@ -136,12 +142,23 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
       <div className="flex items-center gap-2">
         <Users className="h-4 w-4" />
         <div className="text-sm font-semibold">Kontak Pegawai</div>
-        <button
-          onClick={() => setOpen((v) => !v)}
-          className="ml-auto inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs"
-        >
-          <Plus className="h-3.5 w-3.5" /> {open ? "Batal" : "Tambah"}
-        </button>
+        <div className="ml-auto flex items-center gap-1.5">
+          <button
+            onClick={() => { invalidateCache(); void load(true); }}
+            disabled={refreshing}
+            title="Muat ulang data"
+            aria-label="Muat ulang kontak pegawai"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-md border disabled:opacity-50"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          </button>
+          <button
+            onClick={() => setOpen((v) => !v)}
+            className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-xs"
+          >
+            <Plus className="h-3.5 w-3.5" /> {open ? "Batal" : "Tambah"}
+          </button>
+        </div>
       </div>
 
       {open && (
