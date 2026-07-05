@@ -1181,6 +1181,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
     error?: string;
   };
   const [shareDiag, setShareDiag] = useState<ShareDiag | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
   const resolvePhotoUrl = async (path: string | null | undefined, expiresIn?: number) => {
     if (!path) return null;
     // Worker submissions menyimpan foto di bucket `prep-photos`; siapkan-sendiri di `ecer-photos`.
@@ -1292,6 +1293,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
           ) : <span />}
           <div className="flex gap-0.5">
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onShare}><Share2 className="h-3 w-3" /></Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditOpen(true)} title="Edit penyiapan"><Edit3 className="h-3 w-3" /></Button>
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDelete}><Trash2 className="h-3 w-3 text-destructive" /></Button>
           </div>
         </div>
@@ -1324,7 +1326,145 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
           </div>
         )}
       </div>
+      {editOpen && (
+        <PrepEditDialog
+          prep={prep}
+          title={title}
+          itemName={itemName}
+          onClose={() => setEditOpen(false)}
+          onSaved={() => {
+            setEditOpen(false);
+            onChanged();
+            onTitleUpdated();
+          }}
+        />
+      )}
     </div>
+  );
+}
+
+function PrepEditDialog({
+  prep, title, itemName, onClose, onSaved,
+}: {
+  prep: EcerPreparation;
+  title: EcerTitle;
+  itemName?: string;
+  onClose: () => void;
+  onSaved: () => void;
+}) {
+  const [actual, setActual] = useState(String(prep.actual_grams));
+  const [locUrl, setLocUrl] = useState(prep.location_url ?? "");
+  const [note, setNote] = useState(prep.note ?? "");
+  const [gps, setGps] = useState<{ lat: number; lng: number } | null>(
+    prep.gps_lat != null && prep.gps_lng != null ? { lat: Number(prep.gps_lat), lng: Number(prep.gps_lng) } : null,
+  );
+  const [locBusy, setLocBusy] = useState(false);
+  const [busy, setBusy] = useState(false);
+
+  async function takeLocation() {
+    setLocBusy(true);
+    const id = toast.loading("Mengambil lokasi…");
+    try {
+      const { getCurrentLocation } = await import("@/lib/get-location");
+      const { lat, lng } = await getCurrentLocation();
+      setGps({ lat, lng });
+      setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
+      toast.success("Lokasi terisi", { id });
+    } catch (e) {
+      const { toGeoError } = await import("@/lib/get-location");
+      const err = toGeoError(e);
+      toast.error(err.message, { id, description: err.hint });
+    } finally {
+      setLocBusy(false);
+    }
+  }
+
+  async function save() {
+    const grams = Number(String(actual).replace(",", "."));
+    if (!Number.isFinite(grams) || grams <= 0) {
+      toast.error("Berat aktual tidak valid");
+      return;
+    }
+    if (locUrl.trim() && !/^https:\/\//i.test(locUrl.trim())) {
+      toast.error("Link lokasi harus diawali https://");
+      return;
+    }
+    if (locUrl.length > 2048) {
+      toast.error("Link lokasi terlalu panjang (maks 2048 karakter)");
+      return;
+    }
+    setBusy(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.from as any)("ecer_preparations")
+        .update({
+          actual_grams: grams,
+          location_url: locUrl.trim() || null,
+          gps_lat: gps?.lat ?? null,
+          gps_lng: gps?.lng ?? null,
+          note: note.trim() || null,
+        })
+        .eq("id", prep.id);
+      if (error) throw error;
+      toast.success("Penyiapan diperbarui");
+      onSaved();
+    } catch (e) {
+      toast.error("Gagal: " + (e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open onOpenChange={(o) => { if (!o) onClose(); }}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Edit penyiapan</DialogTitle>
+          <DialogDescription>{title.name}</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div>
+            <Label className="text-xs">
+              Berat aktual ({displayUnit(itemName, title.unit_label)})
+            </Label>
+            <Input inputMode="decimal" value={actual} onChange={(e) => setActual(e.target.value)} />
+            <div className="mt-1 text-[11px] text-muted-foreground">
+              Selisih dengan nilai sebelumnya akan menyesuaikan stok gudang otomatis.
+            </div>
+          </div>
+          <div>
+            <Label className="text-xs">Link lokasi (GPS)</Label>
+            <div className="flex gap-2">
+              <Input
+                value={locUrl}
+                onChange={(e) => setLocUrl(e.target.value)}
+                placeholder="Tempel link Google Maps atau tekan GPS"
+              />
+              <Button variant="outline" onClick={() => void takeLocation()} disabled={locBusy || busy}>
+                {locBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <MapPin className="h-4 w-4" />} GPS
+              </Button>
+            </div>
+            {gps && (
+              <div className="mt-1 text-[11px] text-muted-foreground">
+                ✓ Koordinat: {gps.lat.toFixed(5)}, {gps.lng.toFixed(5)}
+              </div>
+            )}
+          </div>
+          <div>
+            <Label className="text-xs">Keterangan</Label>
+            <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
+          </div>
+        </div>
+        <DialogFooter>
+          <div className="flex w-full justify-end gap-2">
+            <Button variant="ghost" onClick={onClose} disabled={busy}>Batal</Button>
+            <Button onClick={() => void save()} disabled={busy}>
+              {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 
