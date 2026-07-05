@@ -1,9 +1,10 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { PackagePlus, MapPin, Image as ImageIcon } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
+import { useOnDebtTx } from "@/lib/debt-tx-event";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
@@ -30,17 +31,18 @@ export function ReadySelfPrepSection() {
   const gridClass = layoutGridClass(layout);
   const compact = layout === "compact";
 
-  useEffect(() => {
-    void (async () => {
-      const { data } = await sb
-        .from("self_prep_items")
-        .select("id,title,note,photo_path,photo_paths,location_url,created_at")
-        .eq("status", "ready")
-        .order("created_at", { ascending: false })
-        .limit(12);
-      setRows((data ?? []) as Row[]);
-    })();
+  const load = useCallback(async () => {
+    const { data } = await sb
+      .from("self_prep_items")
+      .select("id,title,note,photo_path,photo_paths,location_url,created_at")
+      .eq("status", "ready")
+      .order("created_at", { ascending: false })
+      .limit(12);
+    setRows((data ?? []) as Row[]);
   }, []);
+
+  useEffect(() => { void load(); }, [load]);
+  useOnDebtTx(useCallback(() => { void load(); }, [load]));
 
   return (
     <section className="space-y-2">
