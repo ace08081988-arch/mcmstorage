@@ -333,6 +333,107 @@ export function DebtQuickActions({
     return { lines, applied: amount - left, leftover: left };
   }
 
+  type EditPreview =
+    | { valid: false; reason: string }
+    | {
+        valid: true;
+        kind: "amount";
+        prevAmount: number;
+        nextAmount: number;
+        paidAfter: number;
+        sisaBefore: number;
+        sisaAfter: number;
+        deltaSaldo: number;
+        newSaldo: number;
+      }
+    | {
+        valid: true;
+        kind: "reallocate";
+        lines: Array<{ id: string; created_at: string; take: number; sisaBefore: number; sisaAfter: number }>;
+        applied: number;
+        leftover: number;
+        prevApplied: number;
+        deltaSaldo: number;
+        newSaldo: number;
+      };
+
+  function computeEditPreview(): EditPreview | null {
+    if (!lastTx) return null;
+    const raw = editAmountRaw.replace(/\D+/g, "");
+    const next = Number(raw);
+    if (!raw || !Number.isFinite(next) || next <= 0) {
+      return { valid: false, reason: "Masukkan nominal baru (Rp)." };
+    }
+    if (next === lastTx.amount) {
+      return { valid: false, reason: "Nominal sama dengan sebelumnya." };
+    }
+    if ("paymentIds" in lastTx) {
+      const paidByDebt = new Map<string, number>();
+      for (const p of data?.payments ?? []) {
+        if (lastTx.paymentIds.includes(p.id)) continue;
+        paidByDebt.set(p.debt_id, (paidByDebt.get(p.debt_id) ?? 0) + Number(p.amount));
+      }
+      const openNow: Array<{ id: string; sisa: number; created_at: string }> = [];
+      for (const row of data?.debts ?? []) {
+        const sisa = Math.max(0, Number(row.amount) - (paidByDebt.get(row.id) ?? 0));
+        if (sisa > 0) openNow.push({ id: row.id, sisa, created_at: row.created_at });
+      }
+      openNow.sort((a, b) => (a.created_at < b.created_at ? -1 : 1));
+      const totalOpenBefore = openNow.reduce((s, d) => s + d.sisa, 0);
+      let left = next;
+      const lines: EditPreview extends { lines: infer L } ? L : never = [] as never;
+      const linesArr: Array<{ id: string; created_at: string; take: number; sisaBefore: number; sisaAfter: number }> = lines as never;
+      for (const d of openNow) {
+        if (left <= 0) break;
+        const take = Math.min(left, d.sisa);
+        linesArr.push({ id: d.id, created_at: d.created_at, take, sisaBefore: d.sisa, sisaAfter: d.sisa - take });
+        left -= take;
+      }
+      const applied = next - left;
+      const newSaldo = totalOpenBefore - applied;
+      const deltaSaldo = newSaldo - saldo;
+      return {
+        valid: true,
+        kind: "reallocate",
+        lines: linesArr,
+        applied,
+        leftover: left,
+        prevApplied: lastTx.amount,
+        newSaldo,
+        deltaSaldo,
+      };
+    }
+    // add / cash
+    const debtRow = (data?.debts ?? []).find((d) => d.id === lastTx.debtId);
+    const currentAmount = Number(debtRow?.amount ?? lastTx.amount);
+    const otherPaymentsSum = (data?.payments ?? [])
+      .filter((p) => p.debt_id === lastTx.debtId && (lastTx.wasCash ? p.id !== lastTx.paymentId : true))
+      .reduce((s, p) => s + Number(p.amount), 0);
+    const paidAfter = lastTx.wasCash ? next + otherPaymentsSum : otherPaymentsSum;
+    if (next < otherPaymentsSum) {
+      return {
+        valid: false,
+        reason: `Tidak boleh di bawah pembayaran lain yang sudah tercatat (${rupiah(otherPaymentsSum)}) untuk tagihan ini.`,
+      };
+    }
+    const sisaBefore = Math.max(0, currentAmount - (lastTx.wasCash ? currentAmount : 0) - otherPaymentsSum);
+    // wasCash: sisaBefore = 0 (lunas). non-cash: sisaBefore = currentAmount - otherPayments.
+    const sisaAfter = Math.max(0, next - paidAfter);
+    const deltaSaldo = sisaAfter - sisaBefore;
+    const newSaldo = saldo + deltaSaldo;
+    return {
+      valid: true,
+      kind: "amount",
+      prevAmount: lastTx.amount,
+      nextAmount: next,
+      paidAfter,
+      sisaBefore,
+      sisaAfter,
+      deltaSaldo,
+      newSaldo,
+    };
+  }
+
   async function addDebt(opts?: { markPaid?: boolean; label?: "add" | "cash" }): Promise<{ ok: boolean; error?: string }> {
     if (!uid || !data?.party || !hasAmount) {
       if (!hasAmount) toast.error("Isi jumlah dulu.");
