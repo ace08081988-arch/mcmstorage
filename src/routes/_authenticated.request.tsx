@@ -16,15 +16,19 @@ import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, PackagePlus, Trash2,
   Loader2, ChevronLeft, Package, FlaskConical, Copy, ExternalLink,
   AlertTriangle, RotateCw, Send, MessageCircle, Download, FileText, History,
+  CheckCircle2, Wallet, HandCoins,
 } from "lucide-react";
 import {
   requestSignedUrl, uploadRequestPhoto, deleteRequestPhoto,
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
-import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
+import { shareToWhatsApp, notifyShareResult, urlToFile } from "@/lib/share-wa";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { fetchAddressBook, upsertManualEntry, normalizePhone, type AddressBookRow } from "@/lib/address-book";
 import { useNavigate } from "@tanstack/react-router";
+import { rupiah } from "@/lib/stock-format";
+
+type CustomerRow = { id: string; name: string; contact: string | null };
 
 export const Route = createFileRoute("/_authenticated/request")({
   head: () => ({ meta: [{ title: "Penyiapan Request · MCM Storage" }] }),
@@ -1054,6 +1058,13 @@ function TitleDetailView({
   const [prepItems, setPrepItems] = useState<Array<{ id: string; preparation_id: string; warehouse_item_id: string; actual_grams: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
+
+  useEffect(() => {
+    void supabase.from("customers").select("id,name,contact").order("name").then(({ data }) => {
+      setCustomers(((data ?? []) as CustomerRow[]));
+    });
+  }, []);
 
   async function load() {
     setLoading(true);
@@ -1072,12 +1083,19 @@ function TitleDetailView({
   useEffect(() => { void load(); }, [title.id]);
 
   async function handleDelete(p: RequestPreparation) {
-    if (!confirm("Hapus penyiapan ini? Stok akan dikembalikan.")) return;
+    const wasSold = !!p.sold_at;
+    const msg = wasSold
+      ? "Hapus catatan penyiapan ini? Penjualan & piutang yang sudah tercatat TIDAK ikut terhapus."
+      : "Hapus penyiapan ini? Stok akan dikembalikan.";
+    if (!confirm(msg)) return;
     try {
       await deleteRequestPhoto(p.photo_path);
+      // Legacy photos di photo_paths[] juga dibersihkan.
+      const extra = (p.photo_paths ?? []).filter((x) => x && x !== p.photo_path);
+      for (const pp of extra) await deleteRequestPhoto(pp);
       const { error } = await sb.from("request_preparations").delete().eq("id", p.id);
       if (error) throw error;
-      toast.success("Penyiapan dihapus, stok dikembalikan");
+      toast.success(wasSold ? "Penyiapan dihapus" : "Penyiapan dihapus, stok dikembalikan");
       onChanged(); void load();
     } catch (e) { toast.error("Gagal: " + (e as Error).message); }
   }
@@ -1133,7 +1151,10 @@ function TitleDetailView({
               items={prepItems.filter((pi) => pi.preparation_id === p.id)}
               warehouseItems={warehouseItems}
               titleItems={titleItems}
+              titleName={title.name}
+              customers={customers}
               onDelete={() => handleDelete(p)}
+              onSent={() => { onChanged(); void load(); }}
             />
           ))}
         </div>
@@ -1152,37 +1173,31 @@ function TitleDetailView({
 }
 
 function PrepCard({
-  index, prep, items, warehouseItems, titleItems, onDelete,
+  index, prep, items, warehouseItems, titleItems, titleName, customers, onDelete, onSent,
 }: {
   index: number;
   prep: RequestPreparation;
   items: Array<{ id: string; warehouse_item_id: string; actual_grams: number }>;
   warehouseItems: WarehouseItem[];
   titleItems: RequestTitleItem[];
+  titleName: string;
+  customers: CustomerRow[];
   onDelete: () => void;
+  onSent: () => void;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
-  useEffect(() => { requestSignedUrl(prep.photo_path, 60 * 60).then(setPhoto); }, [prep.photo_path]);
+  const [sendOpen, setSendOpen] = useState(false);
+  // Kumpulkan semua path foto (photo_path lama + photo_paths[] baru), dedup.
+  const photoPaths = useMemo(() => {
+    const all = [prep.photo_path, ...(prep.photo_paths ?? [])].filter((x): x is string => !!x);
+    return Array.from(new Set(all));
+  }, [prep.photo_path, prep.photo_paths]);
+  useEffect(() => { requestSignedUrl(photoPaths[0] ?? null, 60 * 60).then(setPhoto); }, [photoPaths]);
+  const sold = !!prep.sold_at;
   const unitFor = (wid: string) => {
     const w = warehouseItems.find((x) => x.id === wid);
     const ti = titleItems.find((t) => t.warehouse_item_id === wid);
     return displayUnit(w?.name, ti?.unit_label ?? w?.base_unit ?? "g");
-  };
-  const sendWA = () => {
-    const lines: string[] = [];
-    lines.push(`*Paket #${index}*`);
-    if (items.length > 0) {
-      lines.push("Isi:");
-      items.forEach((it) => {
-        const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
-        lines.push(`• ${w?.name ?? "?"} ${it.actual_grams} ${unitFor(it.warehouse_item_id)}`);
-      });
-    }
-    if (prep.note) { lines.push(""); lines.push(`Catatan: ${prep.note}`); }
-    if (prep.location_url) { lines.push(""); lines.push(`Lokasi: ${prep.location_url}`); }
-    lines.push("");
-    lines.push(`Disiapkan: ${new Date(prep.created_at).toLocaleString("id-ID")}`);
-    void shareToWhatsApp({ text: lines.join("\n"), title: `Paket #${index}` }).then(notifyShareResult);
   };
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
@@ -1191,14 +1206,20 @@ function PrepCard({
           Paket #{index} · {prep.created_by}
         </div>
         <div className="flex items-center gap-1">
-          <button
-            onClick={sendWA}
-            className="rounded-md border border-[#25D366]/40 bg-[#25D366]/15 p-1 text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
-            aria-label="Kirim via MCM"
-            title="Kirim ringkasan via MCM"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-          </button>
+          {!sold ? (
+            <button
+              onClick={() => setSendOpen(true)}
+              className="inline-flex items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-2 py-1 text-[10px] font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+              aria-label="Kirim ke pelanggan"
+              title="Kirim foto + tagihan ke pelanggan (potong stok & catat piutang bila hutang)"
+            >
+              <Send className="h-3 w-3" /> Kirim
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="h-3 w-3" /> Terkirim
+            </span>
+          )}
           <button
             onClick={onDelete}
             className="rounded-md border border-destructive/40 bg-destructive/10 p-1 text-destructive hover:bg-destructive/20"
@@ -1215,6 +1236,18 @@ function PrepCard({
         <div className="flex aspect-square w-full items-center justify-center bg-muted text-xs text-muted-foreground">No photo</div>
       )}
       <div className="space-y-1.5 p-3 text-[11px]">
+        {sold && (
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-[11px] text-emerald-800 dark:text-emerald-200 space-y-0.5">
+            <div className="flex items-center gap-1 font-semibold">
+              {prep.sold_payment_method === "hutang" ? <HandCoins className="h-3 w-3" /> : <Wallet className="h-3 w-3" />}
+              {prep.sold_payment_method === "hutang" ? "Piutang" : "Lunas"} · {rupiah(Number(prep.sold_total ?? 0))}
+            </div>
+            <div className="text-emerald-900/80 dark:text-emerald-100/80">
+              ke <b>{prep.sold_party_name ?? "-"}</b>
+              {prep.sold_at && <> · {new Date(prep.sold_at).toLocaleString("id-ID")}</>}
+            </div>
+          </div>
+        )}
         <div className="flex flex-wrap gap-1">
           {items.map((it) => {
             const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
@@ -1224,6 +1257,9 @@ function PrepCard({
               </span>
             );
           })}
+          {sold && items.length === 0 && (
+            <span className="text-[10px] italic text-muted-foreground">Item sudah dikonversi ke penjualan</span>
+          )}
         </div>
         {prep.location_url && (
           <a href={prep.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
@@ -1233,7 +1269,312 @@ function PrepCard({
         {prep.note && <div className="text-muted-foreground">{prep.note}</div>}
         <div className="text-muted-foreground">{new Date(prep.created_at).toLocaleString("id-ID")}</div>
       </div>
+
+      <SendPrepToCustomerDialog
+        open={sendOpen}
+        onClose={() => setSendOpen(false)}
+        prep={prep}
+        items={items}
+        warehouseItems={warehouseItems}
+        titleItems={titleItems}
+        titleName={titleName}
+        customers={customers}
+        photoPaths={photoPaths}
+        unitFor={unitFor}
+        onSent={() => { setSendOpen(false); onSent(); }}
+      />
     </div>
+  );
+}
+
+// -----------------------------------------------------------------------
+// SendPrepToCustomerDialog
+// Konversi 1 penyiapan request → penjualan + (opsional) piutang, lampirkan
+// SEMUA foto ke pesan WhatsApp. Stok gudang aman: RPC atomik menghapus
+// request_preparation_items (mengembalikan stok) lalu INSERT sales
+// (memotong stok lagi). Bila metode = hutang, otomatis catat piutang di
+// tabel debts terhubung ke customer_id.
+// -----------------------------------------------------------------------
+function SendPrepToCustomerDialog({
+  open, onClose, prep, items, warehouseItems, titleItems, titleName,
+  customers, photoPaths, unitFor, onSent,
+}: {
+  open: boolean;
+  onClose: () => void;
+  prep: RequestPreparation;
+  items: Array<{ id: string; warehouse_item_id: string; actual_grams: number }>;
+  warehouseItems: WarehouseItem[];
+  titleItems: RequestTitleItem[];
+  titleName: string;
+  customers: CustomerRow[];
+  photoPaths: string[];
+  unitFor: (wid: string) => string;
+  onSent: () => void;
+}) {
+  const [mode, setMode] = useState<"link" | "manual">("link");
+  const [customerId, setCustomerId] = useState<string>("");
+  const [manualName, setManualName] = useState("");
+  const [totalStr, setTotalStr] = useState("");
+  const [payMethod, setPayMethod] = useState<"kas" | "hutang">("kas");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  // Reset saat dialog dibuka kembali.
+  useEffect(() => {
+    if (open) {
+      setMode(customers.length > 0 ? "link" : "manual");
+      setCustomerId(customers[0]?.id ?? "");
+      setManualName("");
+      setTotalStr("");
+      setPayMethod("kas");
+      setNote(prep.note ?? "");
+    }
+  }, [open, customers, prep.note]);
+
+  const totalAmount = useMemo(() => {
+    const n = Number(totalStr.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  }, [totalStr]);
+
+  const resolvedParty = useMemo(() => {
+    if (mode === "link") {
+      const c = customers.find((x) => x.id === customerId);
+      return { id: c?.id ?? null, name: c?.name ?? "", contact: c?.contact ?? null };
+    }
+    return { id: null as string | null, name: manualName.trim(), contact: null as string | null };
+  }, [mode, customerId, customers, manualName]);
+
+  const totalQty = useMemo(() => items.reduce((s, it) => s + Number(it.actual_grams || 0), 0), [items]);
+  const canSend = !!resolvedParty.name && totalAmount >= 0 && items.length > 0 && !busy;
+
+  function buildCaption(): string {
+    const lines: string[] = [];
+    lines.push(`*${titleName}*`);
+    lines.push("");
+    if (items.length > 0) {
+      lines.push("Isi paket:");
+      items.forEach((it) => {
+        const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
+        lines.push(`• ${w?.name ?? "?"} ${it.actual_grams}${unitFor(it.warehouse_item_id)}`);
+      });
+      lines.push("");
+    }
+    lines.push(`Total: *${rupiah(totalAmount)}*`);
+    lines.push(payMethod === "hutang" ? "Metode: *Hutang* (akan dicatat sebagai piutang)" : "Metode: *Lunas*");
+    if (resolvedParty.name) lines.push(`Untuk: ${resolvedParty.name}`);
+    if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
+    if (prep.location_url) {
+      lines.push("");
+      lines.push(`📍 Lokasi ambil:`);
+      lines.push(prep.location_url);
+    }
+    lines.push("");
+    lines.push("Terima kasih 🙏");
+    return lines.join("\n");
+  }
+
+  async function fetchPhotoFiles(): Promise<File[]> {
+    const files: File[] = [];
+    for (let i = 0; i < photoPaths.length; i++) {
+      const url = await requestSignedUrl(photoPaths[i], 60 * 10);
+      if (!url) continue;
+      const f = await urlToFile(url, `${(titleName || "paket").replace(/\W+/g, "-")}-${i + 1}.jpg`);
+      if (f) files.push(f);
+    }
+    return files;
+  }
+
+  async function handleSend() {
+    if (!canSend) return;
+    if (!resolvedParty.name) { toast.error("Pilih atau isi nama pelanggan"); return; }
+    if (totalAmount <= 0) {
+      if (!confirm("Total belum diisi (Rp 0). Lanjutkan tanpa mencatat penjualan?")) return;
+    }
+    setBusy(true);
+    try {
+      // 1) RPC atomik: hapus prep items (kembalikan stok) + catat sales + piutang.
+      const { error: rpcErr } = await sb.rpc("send_request_prep_to_customer", {
+        _prep_id: prep.id,
+        _customer_id: resolvedParty.id,
+        _party_name: resolvedParty.name,
+        _total_amount: totalAmount,
+        _payment_method: payMethod,
+        _note: note.trim() || null,
+      });
+      if (rpcErr) throw rpcErr;
+
+      // 2) Kirim WA dengan foto asli terlampir (bukan cuma link/teks).
+      const files = await fetchPhotoFiles();
+      const text = buildCaption();
+      const phone = normalizePhone(resolvedParty.contact) ?? undefined;
+      const res = await shareToWhatsApp({
+        text,
+        title: titleName,
+        files,
+        // Jika ada foto, jangan set phone → biar share sheet muncul & foto ikut.
+        phone: files.length === 0 ? phone : undefined,
+      });
+      notifyShareResult(res);
+
+      toast.success(
+        payMethod === "hutang"
+          ? "Terkirim — penjualan & piutang tercatat"
+          : "Terkirim — penjualan tercatat, stok gudang tersinkron",
+      );
+      onSent();
+    } catch (e) {
+      const msg = (e as { message?: string })?.message ?? String(e);
+      toast.error("Gagal kirim: " + msg);
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
+      <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Send className="h-4 w-4 text-primary" /> Kirim ke pelanggan
+          </DialogTitle>
+          <DialogDescription>
+            Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 text-xs">
+          {/* Ringkasan item */}
+          <div className="rounded-md border bg-muted/30 p-2">
+            <div className="mb-1 font-semibold">{titleName}</div>
+            <div className="flex flex-wrap gap-1">
+              {items.map((it) => {
+                const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
+                return (
+                  <span key={it.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                    {w?.name ?? "?"} {it.actual_grams}{unitFor(it.warehouse_item_id)}
+                  </span>
+                );
+              })}
+            </div>
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              {photoPaths.length > 0
+                ? `${photoPaths.length} foto akan dilampirkan`
+                : "Tidak ada foto pada paket ini"}
+              {totalQty > 0 && ` · total qty ${totalQty}`}
+            </div>
+          </div>
+
+          {/* Pelanggan */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px]">Pelanggan</Label>
+            <div className="flex gap-1 text-[10px]">
+              <button
+                type="button"
+                onClick={() => setMode("link")}
+                disabled={customers.length === 0}
+                className={`flex-1 rounded-md border px-2 py-1 ${mode === "link" ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"} ${customers.length === 0 ? "opacity-40" : ""}`}
+              >
+                Dari buku alamat
+              </button>
+              <button
+                type="button"
+                onClick={() => setMode("manual")}
+                className={`flex-1 rounded-md border px-2 py-1 ${mode === "manual" ? "border-primary bg-primary/10 text-primary" : "hover:bg-accent"}`}
+              >
+                Ketik nama
+              </button>
+            </div>
+            {mode === "link" ? (
+              customers.length === 0 ? (
+                <div className="text-[10px] text-muted-foreground">
+                  Belum ada pelanggan tersimpan. Pilih "Ketik nama" atau tambah di menu Hutang-Piutang.
+                </div>
+              ) : (
+                <select
+                  value={customerId}
+                  onChange={(e) => setCustomerId(e.target.value)}
+                  className="h-9 w-full rounded-md border bg-card px-2 text-xs"
+                >
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}{c.contact ? ` · ${c.contact}` : ""}
+                    </option>
+                  ))}
+                </select>
+              )
+            ) : (
+              <Input
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                placeholder="Nama pelanggan"
+                className="h-9 text-xs"
+              />
+            )}
+          </div>
+
+          {/* Total */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px]">Total harga (Rp)</Label>
+            <Input
+              value={totalStr}
+              onChange={(e) => setTotalStr(e.target.value)}
+              placeholder="Contoh: 25000"
+              inputMode="numeric"
+              className="h-9 tabular-nums text-xs"
+            />
+            {totalAmount > 0 && (
+              <div className="text-[10px] text-muted-foreground">= {rupiah(totalAmount)}</div>
+            )}
+          </div>
+
+          {/* Metode bayar */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px]">Metode bayar</Label>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setPayMethod("kas")}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "kas" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <Wallet className="h-3.5 w-3.5" /> Lunas (kas)
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayMethod("hutang")}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "hutang" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <HandCoins className="h-3.5 w-3.5" /> Hutang (piutang)
+              </button>
+            </div>
+            {payMethod === "hutang" && (
+              <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-1.5 text-[10px] text-amber-800 dark:text-amber-200">
+                Akan otomatis dicatat sebagai piutang di menu Hutang-Piutang atas nama <b>{resolvedParty.name || "-"}</b>.
+              </div>
+            )}
+          </div>
+
+          {/* Catatan */}
+          <div className="space-y-1.5">
+            <Label className="text-[11px]">Catatan (opsional)</Label>
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              className="text-xs"
+              placeholder="Mis. antar sore, titip di warung, dsb."
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="gap-2">
+          <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
+          <Button size="sm" onClick={handleSend} disabled={!canSend}>
+            {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
+            {payMethod === "hutang" ? "Kirim & catat piutang" : "Kirim & catat penjualan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }
 

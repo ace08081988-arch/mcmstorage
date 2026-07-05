@@ -38,6 +38,12 @@ export type RequestPreparation = {
   created_by: string;
   prep_task_item_id: string | null;
   created_at: string;
+  photo_paths?: string[] | null;
+  sold_at?: string | null;
+  sold_customer_id?: string | null;
+  sold_party_name?: string | null;
+  sold_total?: number | null;
+  sold_payment_method?: string | null;
 };
 
 export type RequestPreparationItem = {
