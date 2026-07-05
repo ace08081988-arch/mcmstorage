@@ -2222,10 +2222,10 @@ function RequestForm({
             setPhotos((prev) => {
               if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
                 const next = prev.slice();
-                next[editingIdx] = { blob, dataUrl };
+                next[editingIdx] = buildStagedPhoto(dataUrl, blob);
                 return next;
               }
-              return [...prev, { blob, dataUrl }];
+              return [...prev, buildStagedPhoto(dataUrl, blob)];
             });
             setEditingIdx(null);
             setEditorOpen(false);
