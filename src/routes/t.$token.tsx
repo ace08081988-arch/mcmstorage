@@ -1547,28 +1547,48 @@ function PublicPrepPage() {
                 {groups.map((g) => {
                   const totalReq = g.entries.reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
                   const doneCount = g.entries.filter((e) => (e.it.submissions?.length ?? 0) > 0).length;
+                  const totalCount = g.entries.length;
+                  const pct = totalCount > 0 ? Math.round((doneCount / totalCount) * 100) : 0;
+                  const doneReq = g.entries
+                    .filter((e) => (e.it.submissions?.length ?? 0) > 0)
+                    .reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
+                  const allDone = doneCount === totalCount && totalCount > 0;
                   const unit = displayUnit(g.entries[0].it.name, g.entries[0].it.unit_label);
                   return (
                     <section key={g.key} className="space-y-2">
-                      <div className="sticky top-0 z-[1] -mx-1 flex flex-wrap items-center justify-between gap-1.5 rounded-md border bg-background/95 px-2 py-1.5 backdrop-blur">
-                        <div className="min-w-0">
-                          <div className="truncate text-[12px] font-semibold">{g.label}</div>
-                          {g.category && (
-                            <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{g.category}</div>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                            {g.entries.length} paket
-                          </span>
-                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-                            {totalReq} {unit}
-                          </span>
-                          {doneCount > 0 && (
-                            <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
-                              {doneCount}/{g.entries.length} siap
+                      <div className="sticky top-0 z-[1] -mx-1 rounded-md border bg-background/95 px-2 py-1.5 backdrop-blur">
+                        <div className="flex items-center justify-between gap-2">
+                          <div className="min-w-0">
+                            <div className="truncate text-[12px] font-semibold">{g.label}</div>
+                            {g.category && (
+                              <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{g.category}</div>
+                            )}
+                          </div>
+                          <div className="flex shrink-0 items-baseline gap-1 tabular-nums">
+                            <span className={`text-[13px] font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>
+                              {doneCount}/{totalCount}
                             </span>
-                          )}
+                            <span className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+                              paket
+                            </span>
+                            <span className={`ml-1 rounded-md px-1.5 py-0.5 text-[10px] font-semibold tabular-nums ${allDone ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300" : "bg-primary/10 text-primary"}`}>
+                              {pct}%
+                            </span>
+                          </div>
+                        </div>
+                        <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                          <div
+                            className={`h-full rounded-full transition-[width] duration-300 ease-out ${allDone ? "bg-emerald-500" : "bg-primary"}`}
+                            style={{ width: `${pct}%` }}
+                            aria-hidden
+                          />
+                        </div>
+                        <div className="mt-1 flex items-center justify-between gap-2 text-[10px] tabular-nums text-muted-foreground">
+                          <span>
+                            <span className="font-medium text-foreground">{doneReq}</span>
+                            <span> / {totalReq} {unit}</span>
+                          </span>
+                          <span>{totalCount - doneCount} tersisa</span>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 sm:gap-3">
