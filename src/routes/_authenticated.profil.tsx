@@ -43,6 +43,7 @@ import { formatCurrency, formatDate } from "@/lib/format";
 import { PushNotificationSettings } from "@/components/chat/PushNotificationSettings";
 import { OrgNameSettings } from "@/components/OrgNameSettings";
 import { UpgradeToStorageCard } from "@/components/UpgradeToStorageCard";
+import { AccessStatusCard } from "@/components/AccessStatusCard";
 import { DownloadChatApkShortcut } from "@/components/DownloadChatApkShortcut";
 import { CopyChatApkLinksButton } from "@/components/CopyChatApkLinksButton";
 import { Link } from "@tanstack/react-router";
@@ -478,6 +479,8 @@ function ProfilPage() {
       <OrgNameSettings />
 
       <Separator />
+
+      <AccessStatusCard />
 
       <UpgradeToStorageCard />
 
