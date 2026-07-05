@@ -202,8 +202,25 @@ export function DebtQuickActions({
     | { kind: "pay"; amount: number }
     | { kind: "lunas"; amount: number };
   const [pending, setPending] = useState<PendingAction | null>(null);
+  const pendingConfirmedRef = useRef(false);
+  const undoConfirmedRef = useRef(false);
+  const editConfirmedRef = useRef(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
+  const log = useDebtActionLog();
   const parsed = Number(amountRaw.replace(/\D+/g, ""));
   const hasAmount = Number.isFinite(parsed) && parsed > 0;
+
+  function logAction(kind: DebtActionKind, status: DebtActionStatus, amount: number, extra?: { prevAmount?: number; note?: string }) {
+    appendDebtAction({
+      kind,
+      status,
+      amount,
+      prevAmount: extra?.prevAmount,
+      note: extra?.note,
+      balanceKind: (data?.kind ?? "piutang") as "piutang" | "hutang",
+      party: data?.party?.name ?? peerName ?? "Lawan",
+    });
+  }
 
   if (!uid) return null;
   if (q.isLoading) {
