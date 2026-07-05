@@ -373,7 +373,7 @@ function PembaruanPage() {
               onPointerDown={onPressStart("selection")}
               onClick={() => scrollToSection(s.id)}
               className={
-                `rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${PRESS_CHIP} ` +
+                `rounded-full px-3 py-1.5 text-xs font-medium transition-[background-color,color,transform] duration-300 ease-out ${PRESS_CHIP} ` +
                 (active
                   ? "bg-primary/15 text-primary"
                   : "bg-muted text-muted-foreground hover:bg-muted/80")
