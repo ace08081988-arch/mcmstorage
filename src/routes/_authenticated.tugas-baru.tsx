@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl } from "@/lib/prep";
-import { buildTugasBaruWaMessage } from "@/lib/tugas-share";
+import { buildTugasBaruWaMessage, validateTugasBaruWaMessage } from "@/lib/tugas-share";
 import { copyText, shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck, ArrowLeft, Info, Check } from "lucide-react";
 import { ShieldAlert } from "lucide-react";
