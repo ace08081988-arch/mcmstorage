@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
 import {
@@ -140,6 +140,58 @@ function initials(text: string): string {
 
 function PembaruanPage() {
   const { full: orgName, short: orgShort, logo, brand } = useOrgName();
+
+  // ==== Scrollspy state untuk highlight section aktif ====
+  // Section yang dipantau: Status → Saluran → Temukan.
+  // IntersectionObserver dengan root = <main> (scroll container internal)
+  // sehingga deteksi mengikuti scroll dalam halaman, bukan viewport global.
+  const sectionIds = ["status", "saluran", "temukan"] as const;
+  type SectionId = (typeof sectionIds)[number];
+  const [activeSection, setActiveSection] = useState<SectionId>("status");
+  const mainRef = useRef<HTMLElement | null>(null);
+  // Saat pengguna mengetuk chip, kita "kunci" section aktif sebentar supaya
+  // observer tidak langsung menimpanya sebelum scrollIntoView selesai.
+  const lockUntilRef = useRef<number>(0);
+
+  useEffect(() => {
+    const root = mainRef.current;
+    if (!root) return;
+    const targets = sectionIds
+      .map((id) => document.getElementById(`pembaruan-sec-${id}`))
+      .filter((el): el is HTMLElement => Boolean(el));
+    if (targets.length === 0) return;
+
+    // rootMargin negatif di atas ~= header offset (56px) supaya section
+    // dianggap aktif hanya saat judulnya benar-benar terlihat di bawah header.
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (Date.now() < lockUntilRef.current) return;
+        // Ambil entry yang paling banyak terlihat.
+        const visible = entries
+          .filter((e) => e.isIntersecting)
+          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
+        if (visible.length === 0) return;
+        const id = visible[0].target.id.replace("pembaruan-sec-", "") as SectionId;
+        setActiveSection((prev) => (prev === id ? prev : id));
+      },
+      {
+        root,
+        rootMargin: "-56px 0px -55% 0px",
+        threshold: [0, 0.25, 0.5, 0.75, 1],
+      },
+    );
+    for (const el of targets) observer.observe(el);
+    return () => observer.disconnect();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const scrollToSection = useCallback((id: SectionId) => {
+    const el = document.getElementById(`pembaruan-sec-${id}`);
+    if (!el) return;
+    lockUntilRef.current = Date.now() + 600;
+    setActiveSection(id);
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, []);
 
   const fetchRecent = useServerFn(getRecentNotifications);
   const { data } = useInfiniteQuery({
@@ -296,9 +348,51 @@ function PembaruanPage() {
         </DropdownMenu>
       </header>
 
-      <main id="pembaruan-main" tabIndex={-1} className="flex-1 overflow-y-auto pb-4 outline-none">
+      {/*
+       * Chip nav: highlight biru mengikuti section yang sedang terlihat.
+       * Sticky di dalam <main> supaya ikut header tapi tetap terlihat saat
+       * scroll.
+       */}
+      <nav
+        aria-label="Bagian di halaman Pembaruan"
+        className="flex shrink-0 gap-2 border-b bg-background/95 px-4 pb-2 backdrop-blur"
+      >
+        {(
+          [
+            { id: "status", label: "Status" },
+            { id: "saluran", label: "Saluran" },
+            { id: "temukan", label: "Temukan" },
+          ] as { id: SectionId; label: string }[]
+        ).map((s) => {
+          const active = activeSection === s.id;
+          return (
+            <button
+              key={s.id}
+              type="button"
+              aria-current={active ? "true" : undefined}
+              onPointerDown={onPressStart("selection")}
+              onClick={() => scrollToSection(s.id)}
+              className={
+                `rounded-full px-3 py-1.5 text-xs font-medium transition-colors ${PRESS_CHIP} ` +
+                (active
+                  ? "bg-primary/15 text-primary"
+                  : "bg-muted text-muted-foreground hover:bg-muted/80")
+              }
+            >
+              {s.label}
+            </button>
+          );
+        })}
+      </nav>
+
+      <main
+        id="pembaruan-main"
+        ref={mainRef}
+        tabIndex={-1}
+        className="flex-1 overflow-y-auto pb-4 outline-none"
+      >
       {/* Status */}
-      <section className="px-4" aria-labelledby="pembaruan-status-h">
+      <section id="pembaruan-sec-status" className="scroll-mt-4 px-4" aria-labelledby="pembaruan-status-h">
         <h2 id="pembaruan-status-h" className="mb-2 text-lg font-semibold">
           Status
         </h2>
@@ -358,7 +452,7 @@ function PembaruanPage() {
       </section>
 
       {/* Saluran */}
-      <section className="mt-2 px-4" aria-labelledby="pembaruan-saluran-h">
+      <section id="pembaruan-sec-saluran" className="mt-2 scroll-mt-4 px-4" aria-labelledby="pembaruan-saluran-h">
         <div className="mb-2 flex items-center justify-between">
           <h2 id="pembaruan-saluran-h" className="text-lg font-semibold">
             Saluran
@@ -460,7 +554,7 @@ function PembaruanPage() {
       </section>
 
       {/* Temukan saluran untuk diikuti */}
-      <section className="mt-6 px-4" aria-labelledby="pembaruan-temukan-h">
+      <section id="pembaruan-sec-temukan" className="mt-6 scroll-mt-4 px-4" aria-labelledby="pembaruan-temukan-h">
         <h2 id="pembaruan-temukan-h" className="mb-3 text-sm text-muted-foreground">
           Temukan saluran untuk diikuti
         </h2>

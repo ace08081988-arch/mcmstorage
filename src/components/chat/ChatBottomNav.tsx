@@ -1,5 +1,6 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { MessageCircle, Phone, Bell, LayoutGrid } from "lucide-react";
+import { useMemo } from "react";
 import { useUnreadTotal } from "@/lib/chat";
 
 type Item = {
@@ -15,6 +16,8 @@ type Item = {
  */
 export function ChatBottomNav() {
   const unread = useUnreadTotal();
+  // Ambil pathname saja lewat selector; scroll / hash / state lain tidak
+  // memicu re-render, sehingga highlight tidak "berkedip" saat konten digulir.
   const path = useRouterState({ select: (s) => s.location.pathname });
   const items: Item[] = [
     { to: "/chat", label: "Chat", Icon: MessageCircle, badge: unread },
@@ -22,14 +25,24 @@ export function ChatBottomNav() {
     { to: "/pembaruan", label: "Pembaruan", Icon: Bell },
     { to: "/fitur", label: "Fitur", Icon: LayoutGrid },
   ];
+  // Hitung item aktif sekali per perubahan path. Menghindari kondisi di mana
+  // `startsWith` mem-match prefix yang tumpang-tindih (mis. "/panggilan"
+  // vs "/panggilan-baru"): kita cocokkan persis atau segmen `${to}/`.
+  const activeTo = useMemo(() => {
+    const match = items.find(
+      (it) => path === it.to || path.startsWith(`${it.to}/`),
+    );
+    return match?.to;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [path]);
   return (
     <nav
       aria-label="Navigasi utama chat"
-      className="sticky bottom-0 z-20 mt-auto flex items-stretch justify-around border-t bg-background/95 backdrop-blur px-1 pt-1"
+      className="sticky bottom-0 z-20 mt-auto flex shrink-0 items-stretch justify-around border-t bg-background/95 backdrop-blur px-1 pt-1"
       style={{ paddingBottom: "max(env(safe-area-inset-bottom), 0.25rem)" }}
     >
       {items.map(({ to, label, Icon, badge }) => {
-        const active = path === to || path.startsWith(`${to}/`);
+        const active = activeTo === to;
         return (
           <Link
             key={to}
