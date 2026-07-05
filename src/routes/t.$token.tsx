@@ -57,6 +57,13 @@ import {
   Layers,
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
 import {
