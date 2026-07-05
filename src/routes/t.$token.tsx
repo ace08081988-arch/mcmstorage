@@ -5,6 +5,7 @@ import { PhotoEditor } from "@/components/PhotoEditor";
 import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepSubmissionRow, type PrepTaskRow } from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
+import { stageFile, type StagedPhoto as StagedPhotoT } from "@/lib/prep-file-staging";
 import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff, Inbox } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
@@ -23,7 +24,7 @@ export const Route = createFileRoute("/t/$token")({
   component: PublicPrepPage,
 });
 
-type StagedPhoto = { dataUrl: string; blob: Blob };
+type StagedPhoto = StagedPhotoT;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
@@ -1312,23 +1313,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
   function pickCamera() { cameraRef.current?.click(); }
   function pickGallery() { galleryRef.current?.click(); }
 
-  async function fileToStaged(f: File): Promise<StagedPhoto> {
-    // Pakai object URL agar preview <img> & PhotoEditor tampil instan tanpa
-    // memblokir memory besar (FileReader.readAsDataURL bisa gagal senyap di
-    // sebagian Android WebView untuk foto besar/HEIC).
-    try {
-      const dataUrl = URL.createObjectURL(f);
-      return { dataUrl, blob: f };
-    } catch {
-      const dataUrl = await new Promise<string>((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(String(r.result));
-        r.onerror = () => rej(r.error ?? new Error("Tidak bisa membaca foto"));
-        r.readAsDataURL(f);
-      });
-      return { dataUrl, blob: f };
-    }
-  }
+  const fileToStaged = stageFile;
   function triggerAutoGps() {
     if (!gps && !locUrl && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -1740,20 +1725,7 @@ function RequestForm({
       );
     }
   }
-  async function fileToStaged(f: File): Promise<StagedPhoto> {
-    try {
-      const dataUrl = URL.createObjectURL(f);
-      return { dataUrl, blob: f };
-    } catch {
-      const dataUrl = await new Promise<string>((res, rej) => {
-        const r = new FileReader();
-        r.onload = () => res(String(r.result));
-        r.onerror = () => rej(r.error ?? new Error("Tidak bisa membaca foto"));
-        r.readAsDataURL(f);
-      });
-      return { dataUrl, blob: f };
-    }
-  }
+  const fileToStaged = stageFile;
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
