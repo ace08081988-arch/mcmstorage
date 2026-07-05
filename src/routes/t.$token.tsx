@@ -17,6 +17,7 @@ import {
   formatFileSize,
   type StagedPhoto as StagedPhotoT,
 } from "@/lib/prep-file-staging";
+import { mergeStagedPhotos } from "@/lib/prep-photo-merge";
 import {
   saveDraftPhotos,
   loadDraftPhotos,
