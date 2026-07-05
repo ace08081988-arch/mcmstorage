@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { emitDebtTx } from "@/lib/debt-tx-event";
+import { assertDebtSource } from "@/lib/debt-source";
 import {
   appendDebtAction,
   useDebtActionLog,
