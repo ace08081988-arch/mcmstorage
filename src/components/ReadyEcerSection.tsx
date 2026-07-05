@@ -30,6 +30,7 @@ import { ChatSharePreviewDialog, type ChatSharePreviewData, type ChatShareLiveSt
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, History, Undo2 } from "lucide-react";
+import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
 import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
@@ -421,6 +422,8 @@ export function ReadyEcerSection() {
   const [bulkConfirm, setBulkConfirm] = useState<null | "delete">(null);
   const [bulkPickChat, setBulkPickChat] = useState(false);
   const [bulkBusy, setBulkBusy] = useState<null | "wa" | "chat" | "delete">(null);
+  const [layout, setLayout] = useLayoutMode("readyEcer", "grid");
+  const ecerGridClass = layoutGridClass(layout);
   // Reset pilihan jika tab/view berganti.
   useEffect(() => {
     setSelectedIds(new Set());
@@ -487,6 +490,9 @@ export function ReadyEcerSection() {
         <Link to="/ecer" search={{ item: undefined, title: undefined, highlight: undefined }} className="inline-flex items-center gap-0.5 text-[11px] font-medium text-primary hover:underline">
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
+      </div>
+      <div className="flex justify-end">
+        <LayoutModeToggle mode={layout} onChange={setLayout} />
       </div>
 
       {rows && rows.length > 0 && (
@@ -717,7 +723,7 @@ export function ReadyEcerSection() {
       </AlertDialog>
 
       {rows === null ? (
-        <div className="grid grid-cols-2 gap-2" aria-busy="true" aria-label="Memuat produk eceran">
+        <div className={ecerGridClass} aria-busy="true" aria-label="Memuat produk eceran">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-1 rounded-md border bg-card px-3 py-2.5">
               <div className="flex items-center gap-1.5">
@@ -758,9 +764,9 @@ export function ReadyEcerSection() {
           )}
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-2">
+        <div className={ecerGridClass}>
           {visible.length === 0 ? (
-            <div className="col-span-2 flex flex-col items-center gap-1 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground">
+            <div className="col-span-full flex flex-col items-center gap-1 rounded-md border border-dashed bg-card/50 p-5 text-center text-[11px] text-muted-foreground">
               {view === "sent" ? (
                 <>
                   <History className="h-4 w-4" />
