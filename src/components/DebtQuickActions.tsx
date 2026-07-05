@@ -663,6 +663,72 @@ export function DebtQuickActions({
           </button>
         </div>
       )}
+      <div className="mt-2 rounded-md border bg-background/50">
+        <button
+          type="button"
+          onClick={() => setHistoryOpen((v) => !v)}
+          aria-expanded={historyOpen}
+          className="flex w-full items-center gap-1.5 px-2 py-1.5 text-[11px] font-semibold hover:bg-accent"
+        >
+          <ScrollText className="h-3 w-3 text-muted-foreground" />
+          <span>Riwayat aksi</span>
+          <span className="rounded bg-muted px-1.5 py-0.5 text-[10px] font-mono text-muted-foreground">{log.length}</span>
+          <ChevronDown className={"ml-auto h-3 w-3 text-muted-foreground transition-transform " + (historyOpen ? "rotate-180" : "")} />
+        </button>
+        {historyOpen && (
+          <div className="border-t">
+            {log.length === 0 ? (
+              <div className="px-2 py-2 text-[11px] text-muted-foreground">
+                Belum ada aksi tercatat. Setiap tekanan Harga Jual / Beli / Tunai / Bayar / Lunas akan muncul di sini.
+              </div>
+            ) : (
+              <>
+                <ol className="max-h-48 overflow-y-auto divide-y text-[11px]">
+                  {log.map((e) => {
+                    const statusColor =
+                      e.status === "confirmed"
+                        ? "text-emerald-700 dark:text-emerald-300"
+                        : e.status === "failed"
+                          ? "text-red-700 dark:text-red-300"
+                          : "text-muted-foreground";
+                    const statusLabel =
+                      e.status === "confirmed" ? "OK" : e.status === "failed" ? "Gagal" : "Batal";
+                    return (
+                      <li key={e.id} className="flex items-center gap-2 px-2 py-1.5">
+                        <span className="font-mono text-[10px] text-muted-foreground shrink-0 w-14">
+                          {new Date(e.at).toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+                        </span>
+                        <span className="min-w-0 flex-1 truncate">
+                          <b>{actionLabel(e.kind, e.balanceKind)}</b>
+                          <span className="ml-1 font-mono">
+                            {e.kind === "edit" && e.prevAmount !== undefined
+                              ? `${rupiah(e.prevAmount)} → ${rupiah(e.amount)}`
+                              : rupiah(e.amount)}
+                          </span>
+                          <span className="ml-1 text-muted-foreground">· {e.party}</span>
+                        </span>
+                        <span className={"shrink-0 font-semibold " + statusColor}>{statusLabel}</span>
+                      </li>
+                    );
+                  })}
+                </ol>
+                <div className="flex items-center justify-between border-t px-2 py-1 text-[10px] text-muted-foreground">
+                  <span>Tersimpan lokal di perangkat ini (maks. 50 entri).</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (window.confirm("Hapus semua riwayat aksi lokal?")) clearDebtActionLog();
+                    }}
+                    className="inline-flex items-center gap-1 rounded px-1.5 py-0.5 font-semibold text-red-700 hover:bg-red-500/10 dark:text-red-300"
+                  >
+                    <Trash2 className="h-3 w-3" /> Hapus riwayat
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
+        )}
+      </div>
       <AlertDialog open={undoOpen} onOpenChange={(o) => {
         if (reverting) return;
         if (!o && undoOpen && !undoConfirmedRef.current && lastTx) {
