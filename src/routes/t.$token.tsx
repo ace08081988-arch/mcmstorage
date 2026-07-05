@@ -1730,46 +1730,51 @@ function PublicPrepPage() {
                           </span>
                         </div>
                       </div>
-                      {!collapsed && (
-                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                        {sortedEntries.map(({ it, idx }) => (
-                          <WorkerSectionBoundary
-                            key={it.id}
-                            renderFallback={(error) => (
-                              <div className="col-span-2 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-                                <div className="flex items-start gap-2">
-                                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                                  <div className="min-w-0">
-                                    <div className="font-semibold">Item #{idx + 1} gagal ditampilkan</div>
-                                    <div className="mt-1 text-xs leading-relaxed opacity-90">
-                                      PIN sudah benar dan tugas berhasil dibuka, tetapi ada data item yang tidak
-                                      valid. Item lain tetap bisa dibuka.
+                      <div
+                        className="grid overflow-hidden transition-[grid-template-rows] duration-200 ease-out"
+                        style={{ gridTemplateRows: collapsed ? "0fr" : "1fr" }}
+                      >
+                        <div className="min-h-0 overflow-hidden">
+                          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                            {sortedEntries.map(({ it, idx }) => (
+                              <WorkerSectionBoundary
+                                key={it.id}
+                                renderFallback={(error) => (
+                                  <div className="col-span-2 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                                    <div className="flex items-start gap-2">
+                                      <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                                      <div className="min-w-0">
+                                        <div className="font-semibold">Item #{idx + 1} gagal ditampilkan</div>
+                                        <div className="mt-1 text-xs leading-relaxed opacity-90">
+                                          PIN sudah benar dan tugas berhasil dibuka, tetapi ada data item yang tidak
+                                          valid. Item lain tetap bisa dibuka.
+                                        </div>
+                                        <details className="mt-2 text-[11px]">
+                                          <summary className="cursor-pointer">Detail teknis</summary>
+                                          <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 font-mono">
+                                            {error.message}
+                                          </pre>
+                                        </details>
+                                      </div>
                                     </div>
-                                    <details className="mt-2 text-[11px]">
-                                      <summary className="cursor-pointer">Detail teknis</summary>
-                                      <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 font-mono">
-                                        {error.message}
-                                      </pre>
-                                    </details>
                                   </div>
-                                </div>
-                              </div>
-                            )}
-                          >
-                            <ItemCard
-                              index={idx + 1}
-                              item={it}
-                              token={token}
-                              pin={pinRef.current}
-                              isStale={!!staleItemIds[it.id]}
-                              onAcknowledgeStale={() => clearStale(it.id)}
-                              onSubmitted={handleItemSubmitted}
-                              autoOpen={autoOpen.id === it.id ? autoOpen.tick : 0}
-                            />
-                          </WorkerSectionBoundary>
-                        ))}
+                                )}
+                              >
+                                <ItemCard
+                                  index={idx + 1}
+                                  item={it}
+                                  token={token}
+                                  pin={pinRef.current}
+                                  isStale={!!staleItemIds[it.id]}
+                                  onAcknowledgeStale={() => clearStale(it.id)}
+                                  onSubmitted={handleItemSubmitted}
+                                  autoOpen={autoOpen.id === it.id ? autoOpen.tick : 0}
+                                />
+                              </WorkerSectionBoundary>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      )}
                     </section>
                   );
                 })}
