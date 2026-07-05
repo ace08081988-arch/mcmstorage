@@ -122,6 +122,9 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
     expect(res.blob.type).toBe("image/jpeg");
     expect((res.blob as File).name).toBe("IMG_0001.jpg");
     expect(res.dataUrl).toBe("blob:mock/image/jpeg");
+    expect(res.originalFormat).toBe("HEIC");
+    expect(res.format).toBe("JPEG");
+    expect(res.converted).toBe(true);
   });
 
   it("mengkonversi HEIC berdasar ekstensi walau MIME kosong (share dari WhatsApp/iOS)", async () => {
