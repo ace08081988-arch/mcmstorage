@@ -747,6 +747,38 @@ function PublicPrepPage() {
     await fetchTask(pinRef.current);
   }
 
+  /**
+   * Dipanggil ItemCard setelah submit sukses. Selain refresh data,
+   * kartu yang baru saja selesai akan auto-collapse dan kartu berikutnya
+   * di varian yang sama akan auto-open + di-scroll ke tengah layar,
+   * supaya pegawai tidak perlu manual tutup-buka setiap paket.
+   */
+  function handleItemSubmitted(justDoneId: string) {
+    const stripSuffix = (s: string) =>
+      s.replace(/\s*[\(\[]\s*\d+\s*[\/／of-]\s*\d+\s*[\)\]]\s*$/i, "")
+       .replace(/\s*#\s*\d+\s*$/i, "")
+       .trim();
+    const cur = itemsRef.current;
+    const done = cur.find((i) => i.id === justDoneId);
+    let nextId: string | null = null;
+    if (done) {
+      const baseKey = `${stripSuffix(done.name) || done.name}::${done.category ?? ""}`;
+      const isPending = (it: PrepItemRow) => (it.submissions?.length ?? 0) === 0;
+      const sameVariant = (it: PrepItemRow) =>
+        `${stripSuffix(it.name) || it.name}::${it.category ?? ""}` === baseKey;
+      const justIdx = cur.findIndex((i) => i.id === justDoneId);
+      // Prioritas: item berikutnya di varian sama (index > justIdx),
+      // lalu item lain di varian sama, lalu item pending mana saja.
+      const nextInVariantAfter =
+        cur.find((it, idx) => it.id !== justDoneId && sameVariant(it) && isPending(it) && idx > justIdx) ??
+        cur.find((it) => it.id !== justDoneId && sameVariant(it) && isPending(it));
+      const anyPending = nextInVariantAfter ?? cur.find((it) => it.id !== justDoneId && isPending(it));
+      nextId = anyPending?.id ?? null;
+    }
+    setAutoOpen((prev) => ({ id: nextId, tick: prev.tick + 1 }));
+    void refresh();
+  }
+
   // Refresh ringan untuk dipanggil oleh realtime / heartbeat / visibilitychange.
   // Bedanya: bila PIN telah diubah admin atau tugas ditutup, langsung pindah
   // ke layar yang sesuai tanpa menghapus state percobaan.
