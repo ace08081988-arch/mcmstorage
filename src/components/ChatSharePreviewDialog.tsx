@@ -22,6 +22,8 @@ export type ChatSharePreviewData = {
   totalPhotos: number;
   /** Foto yang tidak bisa diunduh dari storage (gagal ditambahkan). */
   missingPhotos: number;
+  /** Label per foto yang gagal dibaca (folder · foto #index) — untuk peringatan detail. */
+  failedPhotoLabels?: string[];
   mapsUrl: string | null;
 };
 
