@@ -2374,6 +2374,16 @@ function PhotoTileGrid({
               <RefreshCw className="h-3 w-3" /> Coba lagi {uploadErrCount} foto gagal
             </button>
           )}
+          {onMerge && photos.length >= 2 && !isUploading && (
+            <button
+              type="button"
+              onClick={onMerge}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 text-[10px] font-medium text-primary hover:bg-primary/10"
+              title="Gabungkan semua foto menjadi satu"
+            >
+              <Layers className="h-3 w-3" /> Gabung foto
+            </button>
+          )}
           <button
             type="button"
             onClick={onClearAll}
