@@ -792,6 +792,45 @@ function TugasBaruForm() {
             </Field>
           </div>
           <TaskQrCode url={created.url} pin={created.pin} title={created.title} />
+          <Field label="Preview pesan WhatsApp">
+            <details className="group rounded-md border bg-muted/40 open:bg-muted/60">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-2 px-3 py-2 text-xs font-medium">
+                <span className="text-muted-foreground">
+                  Klik untuk lihat/salin — pastikan instruksi <em>foto tiap barang</em> &amp; <em>link Google Maps</em> ada.
+                </span>
+                <span className="text-[10px] uppercase tracking-wide text-muted-foreground group-open:hidden">Buka</span>
+                <span className="hidden text-[10px] uppercase tracking-wide text-muted-foreground group-open:inline">Tutup</span>
+              </summary>
+              <div className="border-t px-3 py-2">
+                <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded bg-background/60 p-2 text-[12px] leading-snug">
+{buildTugasBaruWaMessage({
+  title: created.title,
+  pin: created.pin,
+  url: created.url,
+  itemsCount: rows.filter((r) => r.name.trim().length > 0).length,
+})}
+                </pre>
+                <div className="mt-2 flex flex-wrap justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      copyText(
+                        buildTugasBaruWaMessage({
+                          title: created.title,
+                          pin: created.pin,
+                          url: created.url,
+                          itemsCount: rows.filter((r) => r.name.trim().length > 0).length,
+                        }),
+                      )
+                    }
+                    className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                  >
+                    <Copy className="h-3.5 w-3.5" /> Salin teks
+                  </button>
+                </div>
+              </div>
+            </details>
+          </Field>
           <Field label="Kirim via MCM (opsional)">
             <div className="flex items-center gap-2">
               <input
