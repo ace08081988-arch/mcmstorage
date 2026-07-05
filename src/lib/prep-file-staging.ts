@@ -7,7 +7,14 @@
 // tersedia (mis. jsdom lama / test env) — dengan `onerror` yang MENOLAK
 // promise, sehingga tidak ada lagi kasus "foto hilang senyap" karena promise
 // menggantung selamanya.
-export type StagedPhoto = { dataUrl: string; blob: Blob };
+export type StagedPhoto = {
+  dataUrl: string;
+  blob: Blob;
+  format: string;          // format final yang akan di-upload (JPEG, PNG, WEBP, dsb)
+  size: number;            // ukuran blob final dalam bytes
+  originalFormat?: string; // format asli sebelum konversi/kompresi (bila berbeda)
+  converted?: boolean;     // true bila format asli berubah (mis. HEIC → JPEG)
+};
 
 import { compressImage } from "./prep-image-compress";
 
