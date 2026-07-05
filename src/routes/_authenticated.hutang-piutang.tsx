@@ -1109,7 +1109,7 @@ function AddDebtDialog({
       amount: amt,
       due_date: due || null,
       note: note.trim() || null,
-      source: "manual",
+      source: assertDebtSource("manual"),
     });
     setSaving(false);
     if (error) {

@@ -446,7 +446,7 @@ export function DebtQuickActions({
         kind,
         party_name: partyLabel,
         amount: parsed,
-        source: "manual",
+        source: assertDebtSource("manual"),
         note:
           opts?.markPaid
             ? kind === "piutang"
