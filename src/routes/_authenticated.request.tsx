@@ -22,7 +22,7 @@ import {
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
-import { publicTaskUrl } from "@/lib/prep";
+import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { fetchAddressBook, upsertManualEntry, normalizePhone, type AddressBookRow } from "@/lib/address-book";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -60,6 +60,7 @@ function RequestPage() {
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
+  const [sendLinkTitle, setSendLinkTitle] = useState<RequestTitle | null>(null);
 
   function diagnose(code?: string, status?: number, msg?: string): string {
     if (status === 0 || /Failed to fetch|NetworkError/i.test(msg ?? "")) return "Jaringan terputus — periksa koneksi internet.";
