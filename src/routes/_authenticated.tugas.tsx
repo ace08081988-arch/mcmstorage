@@ -314,7 +314,7 @@ function TugasPage() {
       {mode === "self" ? (
         <SiapkanSendiriSection uid={uid} />
       ) : (
-        {ViaPegawaiBlock()}
+        ViaPegawaiBlock()
       )}
     </div>
   );
