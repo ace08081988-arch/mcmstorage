@@ -1603,7 +1603,8 @@ function PublicPrepPage() {
                               pin={pinRef.current}
                               isStale={!!staleItemIds[it.id]}
                               onAcknowledgeStale={() => clearStale(it.id)}
-                              onSubmitted={refresh}
+                              onSubmitted={handleItemSubmitted}
+                              autoOpen={autoOpen.id === it.id ? autoOpen.tick : 0}
                             />
                           </WorkerSectionBoundary>
                         ))}
