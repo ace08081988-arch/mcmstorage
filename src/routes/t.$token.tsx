@@ -427,6 +427,11 @@ function PublicPrepPage() {
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
   const [syncTick, setSyncTick] = useState(0); // memicu re-render label "x dtk lalu"
   const [resyncing, setResyncing] = useState(false);
+  // Status "reload versi baru sedang ditahan" dari build-cache-buster.
+  const [deferredReload, setDeferredReload] = useState<DeferredReloadState>({
+    pending: false, reason: null, serverBuildId: null, since: null,
+  });
+  useEffect(() => subscribeDeferredReload(setDeferredReload), []);
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
   const activeWorkerOpsRef = useRef(0);
   const lastKeepAliveAtRef = useRef(0);
