@@ -76,6 +76,27 @@ function PosKasirPage() {
   const [strukTransaksi, setStrukTransaksi] = useState<PosKasirTransaksi | null>(null);
   const [waNomor, setWaNomor] = useState<string>("");
   const [waLokasi, setWaLokasi] = useState<string>("");
+  const [gpsBusy, setGpsBusy] = useState<boolean>(false);
+
+  const ambilLokasiGps = () => {
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      alert("GPS tidak tersedia di perangkat ini");
+      return;
+    }
+    setGpsBusy(true);
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords;
+        setWaLokasi(`https://www.google.com/maps?q=${latitude},${longitude}`);
+        setGpsBusy(false);
+      },
+      (err) => {
+        setGpsBusy(false);
+        alert("Gagal ambil GPS: " + err.message);
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 30000 },
+    );
+  };
   const [ambangStok, setAmbangStok] = useState<number>(() => {
     if (typeof window === "undefined") return AMBANG_DEFAULT;
     const raw = localStorage.getItem(AMBANG_STORAGE_KEY);
