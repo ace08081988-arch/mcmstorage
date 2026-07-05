@@ -3,13 +3,49 @@ import { createClient } from "@supabase/supabase-js";
 import { createHash } from "crypto";
 import { z } from "zod";
 
-// Alert threshold: N event dgn (kind, code, token_hash) yg sama dalam window seconds.
-const ALERT_COUNT = 5;
-const ALERT_WINDOW_SEC = 300;
-// Cooldown deduplikasi: selama window ini, error yang sama tidak membuat alert baru.
-// Bila ada alert terbuka (belum di-ack) untuk key yang sama, kita hanya menaikkan
-// count/severity-nya, bukan membuat baris baru — jadi admin tidak dispam.
-const ALERT_COOLDOWN_SEC = 1800; // 30 menit
+// Alert threshold & cooldown dapat dikonfigurasi lewat env vars agar owner
+// bisa menyesuaikan sensitivitas tanpa mengubah kode. Nilai default aman
+// untuk produksi. Env vars dibaca di dalam handler (bukan module scope)
+// supaya perubahan tercermin tanpa cold-start baru untuk instansi yang
+// sama & selalu diverifikasi ulang tiap request.
+//
+// Env yang didukung:
+//   PORTAL_ERROR_ALERT_COUNT           – jumlah event untuk trigger alert (default 5)
+//   PORTAL_ERROR_ALERT_WINDOW_SECONDS  – jendela deteksi berulang, detik (default 300)
+//   PORTAL_ERROR_ALERT_WINDOW_MINUTES  – alias menit (dipakai bila _SECONDS kosong)
+//   PORTAL_ERROR_ALERT_COOLDOWN_SECONDS – cooldown dedup, detik (default 1800)
+//   PORTAL_ERROR_ALERT_COOLDOWN_MINUTES – alias menit (mis. "30")
+
+const DEFAULT_ALERT_COUNT = 5;
+const DEFAULT_ALERT_WINDOW_SEC = 300;
+const DEFAULT_ALERT_COOLDOWN_SEC = 1800;
+
+function readPositiveInt(name: string, fallback: number, min = 1, max = 86400): number {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n <= 0) return fallback;
+  return Math.min(max, Math.max(min, Math.floor(n)));
+}
+
+export function readAlertConfig(): {
+  count: number;
+  windowSec: number;
+  cooldownSec: number;
+} {
+  const count = readPositiveInt("PORTAL_ERROR_ALERT_COUNT", DEFAULT_ALERT_COUNT, 1, 10_000);
+  const windowSec = process.env.PORTAL_ERROR_ALERT_WINDOW_SECONDS
+    ? readPositiveInt("PORTAL_ERROR_ALERT_WINDOW_SECONDS", DEFAULT_ALERT_WINDOW_SEC)
+    : process.env.PORTAL_ERROR_ALERT_WINDOW_MINUTES
+      ? readPositiveInt("PORTAL_ERROR_ALERT_WINDOW_MINUTES", Math.round(DEFAULT_ALERT_WINDOW_SEC / 60), 1, 1440) * 60
+      : DEFAULT_ALERT_WINDOW_SEC;
+  const cooldownSec = process.env.PORTAL_ERROR_ALERT_COOLDOWN_SECONDS
+    ? readPositiveInt("PORTAL_ERROR_ALERT_COOLDOWN_SECONDS", DEFAULT_ALERT_COOLDOWN_SEC)
+    : process.env.PORTAL_ERROR_ALERT_COOLDOWN_MINUTES
+      ? readPositiveInt("PORTAL_ERROR_ALERT_COOLDOWN_MINUTES", Math.round(DEFAULT_ALERT_COOLDOWN_SEC / 60), 1, 1440) * 60
+      : DEFAULT_ALERT_COOLDOWN_SEC;
+  return { count, windowSec, cooldownSec };
+}
 
 const PayloadSchema = z.object({
   kind: z.string().min(1).max(40),
@@ -96,6 +132,7 @@ export const Route = createFileRoute("/api/public/hooks/log-portal-error")({
         }
 
         const tokenHash = sha256(rawToken);
+        const { count: ALERT_COUNT, windowSec: ALERT_WINDOW_SEC, cooldownSec: ALERT_COOLDOWN_SEC } = readAlertConfig();
         const ipHash = sha256(clientIp(request));
         const ua = (request.headers.get("user-agent") ?? "").slice(0, 200);
 
