@@ -1278,6 +1278,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
         `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
         ...lines,
+        ...(firstLocationFresh ? [``, `📍 Lokasi: ${firstLocationFresh}`] : []),
       ].join("\n");
       const freshFingerprint = payloadFingerprint({
         channel: "wa",
