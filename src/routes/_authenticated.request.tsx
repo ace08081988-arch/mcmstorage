@@ -567,46 +567,58 @@ function SendPrepLinkDialog({
   const [session, setSession] = useState<{ url: string; pin: string; token: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [workerName, setWorkerName] = useState("");
-  const createdRef = useRef(false);
+  const [nameError, setNameError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!open) { setSession(null); setError(null); setBusy(false); setWorkerName(""); createdRef.current = false; return; }
-    if (createdRef.current || !title) return;
-    createdRef.current = true;
-    void (async () => {
-      setBusy(true);
-      setError(null);
-      try {
-        const pin = genPin();
-        const token = genShareToken();
-        const noteLines: string[] = [];
-        noteLines.push(`Siapkan paket untuk judul "${title.name}".`);
-        if (title.note) noteLines.push(title.note);
-        if (titleItems.length > 0) {
-          noteLines.push("");
-          noteLines.push("Target isi paket:");
-          for (const i of titleItems) {
-            const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
-            noteLines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
-          }
+    if (!open) { setSession(null); setError(null); setBusy(false); setWorkerName(""); setNameError(null); }
+  }, [open]);
+
+  function validateWorkerName(name: string): string | null {
+    const trimmed = name.trim();
+    if (!trimmed) return "Nama pegawai wajib diisi agar pesan bisa dibuat.";
+    if (trimmed.length < 2) return "Nama pegawai minimal 2 karakter.";
+    if (trimmed.length > 40) return "Nama pegawai maksimal 40 karakter.";
+    if (!/^[\p{L}\p{M}\s'.-]+$/u.test(trimmed)) return "Nama pegawai hanya boleh huruf, spasi, titik, apostrof, atau tanda hubung.";
+    return null;
+  }
+
+  async function createSession() {
+    if (!title) return;
+    const err = validateWorkerName(workerName);
+    setNameError(err);
+    if (err) return;
+    setBusy(true);
+    setError(null);
+    try {
+      const pin = genPin();
+      const token = genShareToken();
+      const noteLines: string[] = [];
+      noteLines.push(`Siapkan paket untuk judul "${title.name}".`);
+      if (title.note) noteLines.push(title.note);
+      if (titleItems.length > 0) {
+        noteLines.push("");
+        noteLines.push("Target isi paket:");
+        for (const i of titleItems) {
+          const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
+          noteLines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
         }
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const { error: rpcErr } = await (supabase.rpc as any)("prep_create_task", {
-          _title: `Request: ${title.name}`,
-          _note: noteLines.join("\n"),
-          _pin: pin,
-          _share_token: token,
-          _items: [],
-        });
-        if (rpcErr) throw rpcErr;
-        setSession({ url: publicTaskUrl(token, pin), pin, token });
-      } catch (e) {
-        setError((e as Error).message || "Gagal membuat link tugas");
-      } finally {
-        setBusy(false);
       }
-    })();
-  }, [open, title, titleItems, warehouseItems]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: rpcErr } = await (supabase.rpc as any)("prep_create_task", {
+        _title: `Request: ${title.name}`,
+        _note: noteLines.join("\n"),
+        _pin: pin,
+        _share_token: token,
+        _items: [],
+      });
+      if (rpcErr) throw rpcErr;
+      setSession({ url: publicTaskUrl(token, pin), pin, token });
+    } catch (e) {
+      setError((e as Error).message || "Gagal membuat link tugas");
+    } finally {
+      setBusy(false);
+    }
+  }
 
   const waMessage = useMemo(() => {
     if (!session || !title) return "";
@@ -631,6 +643,11 @@ function SendPrepLinkDialog({
     lines.push("Buka link, masukkan PIN, lalu isi berat aktual + foto + lokasi. Terima kasih!");
     return lines.join("\n");
   }, [session, title, titleItems, warehouseItems, workerName]);
+
+  const canPrepare = useMemo(() => {
+    if (!session || !title) return false;
+    return validateWorkerName(workerName) === null;
+  }, [session, title, workerName]);
 
   async function copyLinkPin() {
     if (!session) return;
@@ -843,7 +860,7 @@ function SendPrepLinkDialog({
               <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Gagal membuat link</div>
               <div className="mt-1 break-words">{error}</div>
             </div>
-            <Button variant="outline" size="sm" className="w-full" onClick={() => { createdRef.current = false; setError(null); setSession(null); }}>
+            <Button variant="outline" size="sm" className="w-full" onClick={() => { setError(null); setSession(null); }}>
               <RotateCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
             </Button>
           </div>
@@ -868,14 +885,21 @@ function SendPrepLinkDialog({
               </div>
             </div>
             <div>
-              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Nama pegawai (opsional)</Label>
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Nama pegawai</Label>
               <Input
                 value={workerName}
                 onChange={(e) => setWorkerName(e.target.value)}
+                onBlur={() => setNameError(validateWorkerName(workerName))}
                 placeholder="mis. Budi"
                 maxLength={40}
                 className="h-8"
               />
+              {nameError && (
+                <div className="mt-1.5 flex items-start gap-1 text-[11px] text-destructive">
+                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span>{nameError}</span>
+                </div>
+              )}
             </div>
             <div>
               <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Pratinjau pesan WhatsApp</Label>
@@ -888,18 +912,19 @@ function SendPrepLinkDialog({
               />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" onClick={copyMessage}>
+              <Button variant="outline" size="sm" onClick={copyMessage} disabled={!canPrepare}>
                 <Copy className="mr-1 h-3.5 w-3.5" /> Salin pesan
               </Button>
               <Button
                 size="sm"
                 onClick={sendWA}
+                disabled={!canPrepare}
                 className="bg-[#25D366] text-white hover:bg-[#20b959]"
               >
                 <Send className="mr-1 h-3.5 w-3.5" /> Kirim via WhatsApp
               </Button>
             </div>
-            <Button variant="ghost" size="sm" className="w-full" onClick={copyLinkPin}>
+            <Button variant="ghost" size="sm" className="w-full" onClick={copyLinkPin} disabled={!canPrepare}>
               <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link + PIN saja
             </Button>
             <div className="grid grid-cols-2 gap-2">
@@ -916,7 +941,40 @@ function SendPrepLinkDialog({
               </a>
             </Button>
           </div>
-        ) : null}
+        ) : (
+          <div className="space-y-3 py-1">
+            <div>
+              <Label htmlFor="worker-name" className="text-[10px] uppercase tracking-wide text-muted-foreground">
+                Nama pegawai <span className="text-destructive">*</span>
+              </Label>
+              <Input
+                id="worker-name"
+                value={workerName}
+                onChange={(e) => { setWorkerName(e.target.value); if (nameError) setNameError(validateWorkerName(e.target.value)); }}
+                onBlur={() => setNameError(validateWorkerName(workerName))}
+                placeholder="mis. Budi"
+                maxLength={40}
+                className="h-8"
+                autoComplete="off"
+              />
+              {nameError ? (
+                <div className="mt-1.5 flex items-start gap-1 text-[11px] text-destructive">
+                  <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                  <span>{nameError}</span>
+                </div>
+              ) : (
+                <div className="mt-1.5 text-[11px] text-muted-foreground">Wajib diisi sebelum link & PIN dibuat.</div>
+              )}
+            </div>
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+              <b>Langkah:</b> masukkan nama pegawai yang akan mengerjakan, lalu tekan <b>Buat link & PIN</b>. Setelah itu baru bisa menyalin atau mengunduh pesan.
+            </div>
+            <Button className="w-full" onClick={() => void createSession()} disabled={busy}>
+              {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <Send className="mr-1 h-4 w-4" />}
+              Buat link & PIN
+            </Button>
+          </div>
+        )}
 
         <DialogFooter>
           <Button variant="ghost" size="sm" onClick={onClose}>Tutup</Button>
