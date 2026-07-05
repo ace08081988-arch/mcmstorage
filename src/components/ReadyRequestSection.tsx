@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { PackagePlus, Search, X } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { displayUnit } from "@/lib/unit-label";
+import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
@@ -19,6 +20,9 @@ type Row = {
 export function ReadyRequestSection() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [query, setQuery] = useState("");
+  const [layout, setLayout] = useLayoutMode("readyRequest", "list");
+  const gridClass = layoutGridClass(layout);
+  const compact = layout === "compact";
 
   useEffect(() => {
     void (async () => {
@@ -63,7 +67,10 @@ export function ReadyRequestSection() {
         <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
           Paket Request Siap Kirim
         </p>
-        <Link to="/request" search={{ title: undefined, highlight: undefined }} className="text-[11px] font-medium text-primary hover:underline">Kelola →</Link>
+        <div className="flex items-center gap-2">
+          <LayoutModeToggle mode={layout} onChange={setLayout} />
+          <Link to="/request" search={{ title: undefined, highlight: undefined }} className="text-[11px] font-medium text-primary hover:underline">Kelola →</Link>
+        </div>
       </div>
 
       {rows && rows.length > 0 && (
@@ -84,7 +91,7 @@ export function ReadyRequestSection() {
       )}
 
       {rows === null ? (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" aria-busy="true" aria-label="Memuat paket request">
+        <div className={gridClass} aria-busy="true" aria-label="Memuat paket request">
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="flex flex-col gap-1.5 rounded-md border bg-card p-2.5">
               <div className="flex items-center justify-between">
@@ -114,13 +121,16 @@ export function ReadyRequestSection() {
           <span>Tidak ada hasil untuk pencarian itu.</span>
         </div>
       ) : (
-        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+        <div className={gridClass}>
           {(filtered ?? []).map((r) => (
             <Link
               key={r.id}
               to="/request"
               search={{ title: undefined, highlight: r.id }}
-              className="flex flex-col gap-0.5 rounded-md border bg-card p-2.5 hover:border-primary/40 hover:bg-accent"
+              className={
+                "flex flex-col gap-0.5 rounded-md border bg-card hover:border-primary/40 hover:bg-accent " +
+                (compact ? "px-2.5 py-1.5" : "p-2.5")
+              }
             >
               <div className="flex items-center justify-between">
                 <span className="truncate text-xs font-semibold">{r.name}</span>
@@ -128,9 +138,11 @@ export function ReadyRequestSection() {
                   {r.prep_count} paket
                 </span>
               </div>
-              <span className="line-clamp-2 text-[11px] text-muted-foreground">
-                {r.items_summary || `${r.product_count} produk`}
-              </span>
+              {!compact && (
+                <span className="line-clamp-2 text-[11px] text-muted-foreground">
+                  {r.items_summary || `${r.product_count} produk`}
+                </span>
+              )}
             </Link>
           ))}
         </div>
