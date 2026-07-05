@@ -1695,7 +1695,7 @@ function PublicPrepPage() {
                       </div>
                       {!collapsed && (
                       <div className="grid grid-cols-2 gap-2 sm:gap-3">
-                        {g.entries.map(({ it, idx }) => (
+                        {sortedEntries.map(({ it, idx }) => (
                           <WorkerSectionBoundary
                             key={it.id}
                             renderFallback={(error) => (
