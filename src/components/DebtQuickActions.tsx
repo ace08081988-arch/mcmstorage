@@ -326,10 +326,10 @@ export function DebtQuickActions({
     return { lines, applied: amount - left, leftover: left };
   }
 
-  async function addDebt(opts?: { markPaid?: boolean; label?: "add" | "cash" }) {
+  async function addDebt(opts?: { markPaid?: boolean; label?: "add" | "cash" }): Promise<{ ok: boolean; error?: string }> {
     if (!uid || !data?.party || !hasAmount) {
       if (!hasAmount) toast.error("Isi jumlah dulu.");
-      return;
+      return { ok: false, error: !hasAmount ? "Jumlah kosong" : "Data tidak lengkap" };
     }
     const busyKey = opts?.label ?? "add";
     setBusy(busyKey);
@@ -402,8 +402,11 @@ export function DebtQuickActions({
         partyId: data.party.id,
         at: Date.now(),
       });
+      return { ok: true };
     } catch (e) {
-      toast.error((e as { message?: string })?.message ?? "Gagal mencatat.");
+      const msg = (e as { message?: string })?.message ?? "Gagal mencatat.";
+      toast.error(msg);
+      return { ok: false, error: msg };
     } finally {
       setBusy(null);
     }
@@ -487,8 +490,8 @@ export function DebtQuickActions({
     }
   }
 
-  async function allocatePayment(amount: number, label: "pay" | "lunas") {
-    if (!uid || amount <= 0) return;
+  async function allocatePayment(amount: number, label: "pay" | "lunas"): Promise<{ ok: boolean; error?: string; applied?: number }> {
+    if (!uid || amount <= 0) return { ok: false, error: "Jumlah tidak valid" };
     setBusy(label);
     try {
       let left = amount;
@@ -514,7 +517,7 @@ export function DebtQuickActions({
       }
       if (rows.length === 0) {
         toast.error("Tidak ada saldo untuk dibayar.");
-        return;
+        return { ok: false, error: "Tidak ada saldo untuk dibayar" };
       }
       const { error } = await supabase.from("debt_payments").insert(rows);
       if (error) throw error;
@@ -526,8 +529,11 @@ export function DebtQuickActions({
       );
       setAmountRaw("");
       await qc.invalidateQueries({ queryKey });
+      return { ok: true, applied };
     } catch (e) {
-      toast.error((e as { message?: string })?.message ?? "Gagal mencatat pembayaran.");
+      const msg = (e as { message?: string })?.message ?? "Gagal mencatat pembayaran.";
+      toast.error(msg);
+      return { ok: false, error: msg };
     } finally {
       setBusy(null);
     }
