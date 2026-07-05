@@ -1747,6 +1747,20 @@ function RequestForm({
   const [busy, setBusy] = useState(false);
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
+  const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
+
+  async function pickCamera() {
+    const state = await queryCameraPermission();
+    if (state === "denied") {
+      toast.error(permissionToastMessage("camera", "denied"), {
+        action: { label: "Panduan", onClick: () => setHelpKind("camera") },
+      });
+      setHelpKind("camera");
+      return;
+    }
+    cameraRef.current?.click();
+  }
+  function pickGallery() { galleryRef.current?.click(); }
 
   function triggerAutoGps() {
     if (!gps && !locUrl && navigator.geolocation) {
