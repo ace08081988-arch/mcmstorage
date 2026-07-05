@@ -154,6 +154,66 @@ function normalizePrepTask(value: unknown): PrepTaskRow | null {
   };
 }
 
+type NativeCameraStatus = "fallback" | "cancelled";
+
+async function cameraPhotoToFile(
+  photo: { webPath?: string; format?: string },
+  prefix: string,
+): Promise<File | null> {
+  if (!photo.webPath) return null;
+  const response = await fetch(photo.webPath);
+  const blob = await response.blob();
+  const rawExt = (photo.format || blob.type.split("/")[1] || "jpg").toLowerCase();
+  const ext = rawExt === "jpeg" ? "jpg" : rawExt.replace(/[^a-z0-9]/g, "") || "jpg";
+  const mime = blob.type || (ext === "jpg" ? "image/jpeg" : `image/${ext}`);
+  return new File([blob], `${prefix}-${Date.now()}.${ext}`, { type: mime });
+}
+
+async function captureNativeCameraPhoto(): Promise<File | NativeCameraStatus> {
+  if (typeof window === "undefined") return "fallback";
+  const { Capacitor } = await import("@capacitor/core");
+  if (!Capacitor.isNativePlatform()) return "fallback";
+  try {
+    const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
+    const photo = await Camera.getPhoto({
+      source: CameraSource.Camera,
+      resultType: CameraResultType.Uri,
+      quality: 82,
+      correctOrientation: true,
+      allowEditing: false,
+      saveToGallery: false,
+    });
+    return (await cameraPhotoToFile(photo, "pegawai-kamera")) ?? "cancelled";
+  } catch (err) {
+    const msg = (err as Error).message?.toLowerCase?.() ?? "";
+    if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("batal")) {
+      return "cancelled";
+    }
+    throw err;
+  }
+}
+
+async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
+  if (typeof window === "undefined") return "fallback";
+  const { Capacitor } = await import("@capacitor/core");
+  if (!Capacitor.isNativePlatform()) return "fallback";
+  try {
+    const { Camera } = await import("@capacitor/camera");
+    const result = await Camera.pickImages({ quality: 82, limit: 20 });
+    const photos = Array.isArray(result.photos) ? result.photos : [];
+    const files = await Promise.all(
+      photos.map((photo) => cameraPhotoToFile(photo, "pegawai-galeri")),
+    );
+    return files.filter((file): file is File => !!file);
+  } catch (err) {
+    const msg = (err as Error).message?.toLowerCase?.() ?? "";
+    if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("batal")) {
+      return "cancelled";
+    }
+    throw err;
+  }
+}
+
 class WorkerSectionBoundary extends Component<
   {
     children: ReactNode;
