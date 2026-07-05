@@ -1301,6 +1301,8 @@ function PublicPrepPage() {
 
 function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubmitted }: { item: PrepItemRow; index: number; token: string; pin: string; isStale?: boolean; onAcknowledgeStale?: () => void; onSubmitted: () => void }) {
   const [photos, setPhotos] = useState<StagedPhoto[]>([]);
+  const [pending, setPending] = useState<PendingPhoto[]>([]);
+  const [justOk, setJustOk] = useState<Set<Blob>>(new Set());
   const [editingIdx, setEditingIdx] = useState<number | null>(null);
   const [editorOpen, setEditorOpen] = useState(false);
   const [editorSrc, setEditorSrc] = useState<string | null>(null);
@@ -1355,7 +1357,6 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
     galleryRef.current?.click();
   }
 
-  const fileToStaged = stageFile;
   function triggerAutoGps() {
     if (!gps && !locUrl && navigator.geolocation) {
       navigator.geolocation.getCurrentPosition(
@@ -1369,34 +1370,57 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       );
     }
   }
+  function markSuccess(blob: Blob) {
+    setJustOk((s) => { const n = new Set(s); n.add(blob); return n; });
+    setTimeout(() => setJustOk((s) => { const n = new Set(s); n.delete(blob); return n; }), 1500);
+  }
+  async function stageOne(f: File, openEditor: boolean): Promise<StagedPhoto | null> {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setPending((p) => [...p, { id, status: "loading", name: f.name || "foto", file: f }]);
+    try {
+      const staged = await stageFile(f);
+      setPending((p) => p.filter((x) => x.id !== id));
+      setPhotos((prev) => {
+        if (openEditor) setEditingIdx(prev.length);
+        return [...prev, staged];
+      });
+      markSuccess(staged.blob);
+      if (openEditor) { setEditorSrc(staged.dataUrl); setEditorOpen(true); }
+      triggerAutoGps();
+      return staged;
+    } catch (err) {
+      const msg = (err as Error).message || "Gagal membaca foto";
+      setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "error", error: msg } : x)));
+      toast.error("Gagal memuat foto: " + msg);
+      return null;
+    }
+  }
+  async function retryPending(id: string) {
+    const entry = pending.find((x) => x.id === id);
+    if (!entry?.file) return;
+    setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)));
+    try {
+      const staged = await stageFile(entry.file);
+      setPending((p) => p.filter((x) => x.id !== id));
+      setPhotos((prev) => [...prev, staged]);
+      markSuccess(staged.blob);
+    } catch (err) {
+      const msg = (err as Error).message || "Gagal membaca foto";
+      setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "error", error: msg } : x)));
+    }
+  }
+  function dismissPending(id: string) {
+    setPending((p) => p.filter((x) => x.id !== id));
+  }
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
-    try {
-      const staged = await fileToStaged(f);
-      // Tampilkan langsung di grid + buka editor untuk anotasi opsional.
-      // Kalau editor gagal memuat (HEIC/dsb), foto tetap ada di grid.
-      setPhotos((prev) => {
-        setEditingIdx(prev.length);
-        return [...prev, staged];
-      });
-      setEditorSrc(staged.dataUrl);
-      setEditorOpen(true);
-      triggerAutoGps();
-    } catch (err) {
-      toast.error("Gagal memuat foto: " + (err as Error).message);
-    }
+    await stageOne(f, true);
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []); e.target.value = "";
     if (files.length === 0) return;
-    try {
-      const staged = await Promise.all(files.map((f) => fileToStaged(f)));
-      setPhotos((prev) => [...prev, ...staged]);
-      triggerAutoGps();
-    } catch (err) {
-      toast.error("Gagal memuat foto: " + (err as Error).message);
-    }
+    await Promise.all(files.map((f) => stageOne(f, false)));
   }
 
   function takeLocation() {
