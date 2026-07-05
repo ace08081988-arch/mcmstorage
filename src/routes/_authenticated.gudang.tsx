@@ -12,7 +12,7 @@ import {
   Wallet,
   History,
 } from "lucide-react";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { StatusBadge } from "@/components/StatusBadge";
 import { buildMailto, isValidEmail } from "@/lib/mailto";
 import { supabase } from "@/integrations/supabase/client";

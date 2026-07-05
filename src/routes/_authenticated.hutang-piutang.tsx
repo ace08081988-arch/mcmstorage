@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { friendlyError } from "@/lib/friendly-error";
+import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";

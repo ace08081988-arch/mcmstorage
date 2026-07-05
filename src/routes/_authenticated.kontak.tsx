@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { sendTestPushToContact, sendTestPushToAllContacts } from "@/lib/push.functions";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";

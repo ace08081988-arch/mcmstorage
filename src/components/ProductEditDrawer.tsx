@@ -8,7 +8,7 @@ import {
   DrawerFooter,
 } from "@/components/ui/drawer";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 

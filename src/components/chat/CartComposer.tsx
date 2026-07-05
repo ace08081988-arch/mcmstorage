@@ -10,7 +10,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogTrigger,
 } from "@/components/ui/dialog";
 import { encodeCard, type CartCard } from "@/lib/chat-cards";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import type { Json } from "@/integrations/supabase/types";
 
 type Line = { name: string; qty: string; price: string };

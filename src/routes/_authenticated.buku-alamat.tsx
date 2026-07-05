@@ -35,7 +35,7 @@ import {
   validateInviteCode,
   type InviteProfile,
 } from "@/lib/invite";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { useStartDm } from "@/lib/chat";

@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
+import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";

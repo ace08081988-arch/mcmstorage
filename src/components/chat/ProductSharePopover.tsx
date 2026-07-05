@@ -10,7 +10,7 @@ import {
 import { fmtBase } from "@/lib/stock-format";
 import { urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
-import { friendlyError } from "@/lib/friendly-error";
+import { friendlyError, notifyError } from "@/lib/friendly-error";
 
 /**
  * Popover di sebelah tombol "Kirim" pada composer chat.

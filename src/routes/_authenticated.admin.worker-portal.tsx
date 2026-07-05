@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { z } from "zod";
 import { Loader2, RotateCcw, Save, ShieldCheck, ArrowLeft, FlaskConical, CheckCircle2, AlertTriangle, ExternalLink, Copy } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
