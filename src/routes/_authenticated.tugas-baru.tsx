@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { genPin, genShareToken, publicTaskUrl } from "@/lib/prep";
-import { buildTugasBaruWaMessage } from "@/lib/tugas-share";
+import { buildTugasBaruWaMessage, validateTugasBaruWaMessage } from "@/lib/tugas-share";
 import { copyText, shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Plus, Trash2, Copy, MessageCircle, ExternalLink, RefreshCw, ShieldCheck, ArrowLeft, Info, Check } from "lucide-react";
 import { ShieldAlert } from "lucide-react";
@@ -692,12 +692,30 @@ function TugasBaruForm() {
     // Pesan dibangun via fungsi murni yang diuji di
     // src/lib/tugas-share.test.ts — invariant "foto tiap barang" dan
     // "link Google Maps" dipertahankan lewat test, bukan komentar.
+    const items = rows
+      .filter((r) => r.name.trim().length > 0)
+      .map((r) => ({ name: r.name.trim(), qty: Number(r.qty) || null, unit: r.unit.trim() || null }));
     const text = buildTugasBaruWaMessage({
       title: created.title,
       pin: created.pin,
       url: created.url,
-      itemsCount: rows.filter((r) => r.name.trim().length > 0).length,
+      items,
     });
+    // Validasi pra-kirim: pastikan setiap item punya baris foto & instruksi
+    // maps sebelum tugas dibagikan. Jika ada yang hilang, blokir kirim dan
+    // beri tahu admin persis apa yang bermasalah supaya bisa diperbaiki.
+    const v = validateTugasBaruWaMessage(text, {
+      title: created.title,
+      pin: created.pin,
+      url: created.url,
+      items,
+    });
+    if (!v.ok) {
+      toast.error("Pesan WA belum lengkap", {
+        description: v.issues.join(" · "),
+      });
+      return;
+    }
     const res = await shareToWhatsApp({ title: created.title, text, url: created.url, phone: cleaned || undefined });
     notifyShareResult(res);
   }
@@ -802,32 +820,55 @@ function TugasBaruForm() {
                 <span className="hidden text-[10px] uppercase tracking-wide text-muted-foreground group-open:inline">Tutup</span>
               </summary>
               <div className="border-t px-3 py-2">
-                <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded bg-background/60 p-2 text-[12px] leading-snug">
-{buildTugasBaruWaMessage({
-  title: created.title,
-  pin: created.pin,
-  url: created.url,
-  itemsCount: rows.filter((r) => r.name.trim().length > 0).length,
-})}
-                </pre>
-                <div className="mt-2 flex flex-wrap justify-end gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      copyText(
-                        buildTugasBaruWaMessage({
-                          title: created.title,
-                          pin: created.pin,
-                          url: created.url,
-                          itemsCount: rows.filter((r) => r.name.trim().length > 0).length,
-                        }),
-                      )
-                    }
-                    className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
-                  >
-                    <Copy className="h-3.5 w-3.5" /> Salin teks
-                  </button>
-                </div>
+                {(() => {
+                  const previewItems = rows
+                    .filter((r) => r.name.trim().length > 0)
+                    .map((r) => ({ name: r.name.trim(), qty: Number(r.qty) || null, unit: r.unit.trim() || null }));
+                  const previewText = buildTugasBaruWaMessage({
+                    title: created.title,
+                    pin: created.pin,
+                    url: created.url,
+                    items: previewItems,
+                  });
+                  const previewCheck = validateTugasBaruWaMessage(previewText, {
+                    title: created.title,
+                    pin: created.pin,
+                    url: created.url,
+                    items: previewItems,
+                  });
+                  return (
+                    <>
+                      {previewCheck.ok ? (
+                        <div className="mb-2 flex items-center gap-1.5 rounded-md border border-emerald-300/60 bg-emerald-50 px-2 py-1 text-[11px] font-medium text-emerald-800">
+                          <Check className="h-3.5 w-3.5" /> Pesan lengkap — {previewItems.length} barang siap difoto &amp; instruksi maps ada.
+                        </div>
+                      ) : (
+                        <div className="mb-2 rounded-md border border-destructive/50 bg-destructive/5 px-2 py-1 text-[11px] text-destructive">
+                          <div className="flex items-center gap-1.5 font-semibold">
+                            <ShieldAlert className="h-3.5 w-3.5" /> Pesan belum lolos validasi
+                          </div>
+                          <ul className="mt-0.5 list-disc pl-4">
+                            {previewCheck.issues.map((it) => (
+                              <li key={it}>{it}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+                      <pre className="max-h-64 overflow-auto whitespace-pre-wrap break-words rounded bg-background/60 p-2 text-[12px] leading-snug">
+{previewText}
+                      </pre>
+                      <div className="mt-2 flex flex-wrap justify-end gap-2">
+                        <button
+                          type="button"
+                          onClick={() => copyText(previewText)}
+                          className="inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+                        >
+                          <Copy className="h-3.5 w-3.5" /> Salin teks
+                        </button>
+                      </div>
+                    </>
+                  );
+                })()}
               </div>
             </details>
           </Field>

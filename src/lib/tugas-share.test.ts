@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildTugasBaruWaMessage } from "./tugas-share";
+import { buildTugasBaruWaMessage, validateTugasBaruWaMessage } from "./tugas-share";
 import { publicTaskUrl } from "./prep";
 
 describe("buildTugasBaruWaMessage", () => {
@@ -47,5 +47,84 @@ describe("buildTugasBaruWaMessage", () => {
     for (let i = 1; i < idx.length; i++) {
       expect(idx[i]).toBeGreaterThan(idx[i - 1]);
     }
+  });
+});
+
+describe("buildTugasBaruWaMessage dengan daftar items", () => {
+  const base = {
+    title: "Tugas siapkan barang",
+    pin: "962886",
+    url: "https://mcmstorage.biz/t/abcdefgh1234",
+  } as const;
+
+  it("menampilkan baris Foto per item dengan qty & unit", () => {
+    const msg = buildTugasBaruWaMessage({
+      ...base,
+      items: [
+        { name: "Beras Premium", qty: 5, unit: "kg" },
+        { name: "Gula Pasir", qty: 2, unit: "kg" },
+      ],
+    });
+    expect(msg).toMatch(/Foto: Beras Premium — 5 kg/);
+    expect(msg).toMatch(/Foto: Gula Pasir — 2 kg/);
+    expect(msg).toContain("(2 barang)");
+  });
+
+  it("mengabaikan item kosong", () => {
+    const msg = buildTugasBaruWaMessage({
+      ...base,
+      items: [{ name: "Beras", qty: 1, unit: "kg" }, { name: "  ", qty: 1, unit: "" }],
+    });
+    expect(msg).toContain("(1 barang)");
+    expect(msg).toMatch(/Foto: Beras/);
+  });
+});
+
+describe("validateTugasBaruWaMessage", () => {
+  const base = {
+    title: "Tugas siapkan barang",
+    pin: "962886",
+    url: "https://mcmstorage.biz/t/abcdefgh1234",
+  } as const;
+
+  it("meloloskan pesan lengkap dengan daftar item", () => {
+    const items = [
+      { name: "Beras Premium", qty: 5, unit: "kg" },
+      { name: "Gula Pasir", qty: 2, unit: "kg" },
+    ];
+    const msg = buildTugasBaruWaMessage({ ...base, items });
+    const res = validateTugasBaruWaMessage(msg, { ...base, items });
+    expect(res.ok).toBe(true);
+    expect(res.issues).toEqual([]);
+  });
+
+  it("menandai instruksi foto yang hilang", () => {
+    const msg = buildTugasBaruWaMessage(base).replace(/\*Foto\* setiap barang[^\n]*/i, "(dihapus)");
+    const res = validateTugasBaruWaMessage(msg, base);
+    expect(res.ok).toBe(false);
+    expect(res.issues.join(" ")).toMatch(/foto/i);
+  });
+
+  it("menandai instruksi link Google Maps yang hilang", () => {
+    const msg = buildTugasBaruWaMessage(base).replace(/link Google Maps[^\n]*/i, "(dihapus)");
+    const res = validateTugasBaruWaMessage(msg, base);
+    expect(res.ok).toBe(false);
+    expect(res.issues.join(" ")).toMatch(/Google Maps/i);
+  });
+
+  it("menandai barang yang tidak muncul di baris foto", () => {
+    // Bangun pesan tanpa items → daftar per-item tidak ada, tapi validator
+    // diminta memeriksa item "Beras" → harus mengeluh.
+    const msg = buildTugasBaruWaMessage(base);
+    const res = validateTugasBaruWaMessage(msg, { ...base, items: [{ name: "Beras" }] });
+    expect(res.ok).toBe(false);
+    expect(res.issues.join(" ")).toMatch(/Beras/);
+  });
+
+  it("menandai judul/PIN/URL yang hilang", () => {
+    const msg = "pesan kosong tanpa apa-apa";
+    const res = validateTugasBaruWaMessage(msg, base);
+    expect(res.ok).toBe(false);
+    expect(res.issues.length).toBeGreaterThanOrEqual(3);
   });
 });
