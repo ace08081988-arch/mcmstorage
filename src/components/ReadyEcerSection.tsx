@@ -1008,12 +1008,14 @@ function fmtAgo(ts: number, now = Date.now()): string {
   return `${day} hari lalu`;
 }
 
-function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
+function SendStatusBadge({ status, error, view, lastSentAt, sentCount, onResend, resendLabel }: {
   status: "idle" | "sending" | "success" | "failed" | "cancelled";
   error: string | null;
   view: "active" | "sent";
   lastSentAt: number | null;
   sentCount: number;
+  onResend?: () => void;
+  resendLabel?: string;
 }) {
   const stop = (e: React.MouseEvent) => { e.preventDefault(); e.stopPropagation(); };
   if (status === "sending") {
@@ -1025,6 +1027,7 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
   }
   if (status === "failed") {
     return (
+      <span className="inline-flex items-center gap-1">
       <Popover>
         <PopoverTrigger asChild>
           <button type="button" onClick={stop} className="inline-flex w-fit items-center gap-1 rounded-full bg-destructive/10 px-1.5 py-0.5 text-[11px] font-semibold text-destructive">
@@ -1034,9 +1037,30 @@ function SendStatusBadge({ status, error, view, lastSentAt, sentCount }: {
         <PopoverContent align="start" className="w-64 space-y-1 p-2.5 text-[11px]" onClick={stop}>
           <div className="font-semibold text-foreground">Gagal kirim via MCM</div>
           <p className="text-muted-foreground break-words">{error || "Penyebab tidak diketahui."}</p>
-          <p className="text-muted-foreground">Tekan tombol MCM lagi untuk mencoba ulang.</p>
+          {onResend ? (
+            <button
+              type="button"
+              onClick={(e) => { stop(e); onResend(); }}
+              className="mt-1 inline-flex w-full items-center justify-center gap-1 rounded-md bg-primary px-2 py-1 text-[11px] font-semibold text-primary-foreground hover:bg-primary/90"
+            >
+              <RefreshCw className="h-3 w-3" /> {resendLabel || "Kirim ulang"}
+            </button>
+          ) : (
+            <p className="text-muted-foreground">Tekan tombol MCM lagi untuk mencoba ulang.</p>
+          )}
         </PopoverContent>
       </Popover>
+      {onResend && (
+        <button
+          type="button"
+          onClick={(e) => { stop(e); onResend(); }}
+          className="inline-flex items-center gap-1 rounded-full bg-primary/10 px-1.5 py-0.5 text-[11px] font-semibold text-primary hover:bg-primary/20"
+          title={resendLabel || "Kirim ulang"}
+        >
+          <RefreshCw className="h-2.5 w-2.5" /> Kirim ulang
+        </button>
+      )}
+      </span>
     );
   }
   if (status === "cancelled") {
