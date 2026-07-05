@@ -10,7 +10,7 @@ import {
 import { fmtBase } from "@/lib/stock-format";
 import { urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
-import { friendlyError } from "@/lib/friendly-error";
+import { friendlyError, notifyError } from "@/lib/friendly-error";
 
 /**
  * Popover di sebelah tombol "Kirim" pada composer chat.
@@ -91,7 +91,7 @@ export function ProductSharePopover({
     ]);
     setLoading(false);
     if (readyRes.error) {
-      toast.error(friendlyError(readyRes.error));
+      notifyError(readyRes.error);
       return;
     }
     const mappedReady: Row[] = ((readyRes.data ?? []) as unknown as ReadyRow[]).map((r) => ({

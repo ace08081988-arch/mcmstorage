@@ -8,7 +8,7 @@ import {
   DrawerFooter,
 } from "@/components/ui/drawer";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 
@@ -106,7 +106,7 @@ export function ProductEditDrawer(props: Props) {
         patch({ lokasi: `https://www.google.com/maps?q=${latitude},${longitude}` });
         toast.success("Lokasi diperbarui", { id: tId });
       },
-      (err) => toast.error("Gagal: " + friendlyError(err), { id: tId }),
+      (err) => notifyError(err, { prefix: "Gagal: " }),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   };

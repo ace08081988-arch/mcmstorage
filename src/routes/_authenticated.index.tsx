@@ -2,7 +2,7 @@ import { createFileRoute, redirect } from "@tanstack/react-router";
 import { isChatOnly } from "@/lib/app-mode";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { useNavigate, Link } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
 import { isAutoLockEnabled, setAutoLockEnabled, AUTO_LOCK_EVENT } from "@/lib/auto-lock";
@@ -376,16 +376,7 @@ function Index() {
         .eq("user_id", uid)
         .maybeSingle();
       if (error) {
-        toast.error("Gagal memuat data: " + friendlyError(error), {
-          action: {
-            label: "Lihat detail",
-            onClick: () =>
-              navigate({
-                to: "/error",
-                search: { kind: "data", title: "Gagal memuat data", message: (error as any).message, code: (error as any).code, from: "/" },
-              }),
-          },
-        });
+        notifyError(error, { prefix: "Gagal memuat data: " });
       } else {
         const loadedItems = Array.isArray(data?.items) ? (data!.items as unknown as Produk[]) : [];
         const loadedCats = Array.isArray(data?.categories) ? (data!.categories as unknown as string[]) : [];
@@ -410,7 +401,7 @@ function Index() {
       const { error } = await supabase
         .from("user_storage")
         .upsert({ user_id: uid, items: items as any, categories: categories as any });
-      if (error && !cancelled) toast.error("Gagal menyimpan: " + friendlyError(error));
+      if (error && !cancelled) notifyError(error, { prefix: "Gagal menyimpan: " });
     }, 600);
     return () => {
       cancelled = true;
@@ -458,7 +449,7 @@ function Index() {
           toast.success("Lokasi otomatis terisi", { id: tId });
         },
         (err) => {
-          toast.error("Gagal ambil lokasi: " + friendlyError(err), { id: tId });
+          notifyError(err, { prefix: "Gagal ambil lokasi: " });
         },
         { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
       );
@@ -1414,7 +1405,7 @@ function Index() {
                               toast.success("Lokasi diperbarui", { id: tId });
                             },
                             (err) =>
-                              toast.error("Gagal: " + friendlyError(err), { id: tId }),
+                              notifyError(err, { prefix: "Gagal: " }),
                             { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
                           );
                         }}

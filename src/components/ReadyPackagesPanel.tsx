@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { logStorageError } from "@/lib/storage-log";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { fmtBase, fmtItemQty } from "@/lib/stock-format";
@@ -93,7 +93,7 @@ export function ReadyPackagesPanel({
       .eq("warehouse_item_id", item.id)
       .order("created_at", { ascending: false });
     setLoading(false);
-    if (error) { toast.error(friendlyError(error)); return; }
+    if (error) { notifyError(error); return; }
     setPkgs((data ?? []) as Pkg[]);
   }
 
@@ -355,7 +355,7 @@ function PackageCard({
           sent_to_name: targetName || null,
           sent_to_phone: targetPhone || null,
         }).eq("id", pkg.id);
-        if (error) toast.error(friendlyError(error));
+        if (error) notifyError(error);
         else { toast.success("Tersimpan di riwayat"); onChanged(); }
       } else if (choice === "delete") {
         // Permanently delete (foto + row). Stock stays deducted because we mark sent first.
@@ -365,13 +365,13 @@ function PackageCard({
           sent_to_name: targetName || null,
           sent_to_phone: targetPhone || null,
         }).eq("id", pkg.id);
-        if (e1) { toast.error(friendlyError(e1)); return; }
+        if (e1) { notifyError(e1); return; }
         if (pkg.photo_path) {
           const { error: rmErr } = await supabase.storage.from("ready-packages").remove([pkg.photo_path]);
           logStorageError({ bucket: "ready-packages", op: "remove", path: pkg.photo_path, source: "doShare.delete" }, rmErr);
         }
         const { error: e2 } = await supabase.from("ready_packages").delete().eq("id", pkg.id);
-        if (e2) { toast.error(friendlyError(e2)); return; }
+        if (e2) { notifyError(e2); return; }
         toast.success("Paket dihapus");
         onChanged();
       }
@@ -392,7 +392,7 @@ function PackageCard({
       logStorageError({ bucket: "ready-packages", op: "remove", path: pkg.photo_path, source: "deleteReady" }, rmErr);
     }
     const { error } = await supabase.from("ready_packages").delete().eq("id", pkg.id);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else { toast.success("Paket dihapus, stok dikembalikan"); onChanged(); }
   }
 
@@ -407,7 +407,7 @@ function PackageCard({
       logStorageError({ bucket: "ready-packages", op: "remove", path: pkg.photo_path, source: "deleteHistory" }, rmErr);
     }
     const { error } = await supabase.from("ready_packages").delete().eq("id", pkg.id);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else { toast.success("Riwayat dihapus"); onChanged(); }
   }
 
@@ -423,7 +423,7 @@ function PackageCard({
     const patch: { status: Pkg["status"]; sent_at?: string } = { status: next };
     if (next !== "ready" && !pkg.sent_at) patch.sent_at = new Date().toISOString();
     const { error } = await supabase.from("ready_packages").update(patch).eq("id", pkg.id);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else { toast.success(`Status diubah: ${STATUS_LABEL[next]}`); onChanged(); }
   }
 
@@ -673,7 +673,7 @@ function PackageForm({
     setUploadingPhoto(false);
     if (error) {
       logStorageError({ bucket: "ready-packages", op: "upload", path, source: "ReadyPackagesPanel.uploadPhoto" }, error);
-      toast.error("Gagal upload: " + friendlyError(error));
+      notifyError(error, { prefix: "Gagal upload: " });
       return;
     }
     setPhotoPath(path);
@@ -703,7 +703,7 @@ function PackageForm({
         setLocationUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
         toast.success("Lokasi diambil", { id: tId });
       },
-      (err) => toast.error("Gagal: " + friendlyError(err), { id: tId }),
+      (err) => notifyError(err, { prefix: "Gagal: " }),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 },
     );
   }
@@ -741,7 +741,7 @@ function PackageForm({
         const { error: rmErr } = await supabase.storage.from("ready-packages").remove([photoPath]);
         logStorageError({ bucket: "ready-packages", op: "remove", path: photoPath, source: "save.cleanup" }, rmErr);
       }
-      toast.error(friendlyError(error)); return;
+      notifyError(error); return;
     }
     toast.success("Paket dibuat, stok dikurangi");
     onCreated();

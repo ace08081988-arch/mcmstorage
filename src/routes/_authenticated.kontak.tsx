@@ -5,7 +5,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useServerFn } from "@tanstack/react-start";
 import { sendTestPushToContact, sendTestPushToAllContacts } from "@/lib/push.functions";
-import { friendlyError } from "@/lib/friendly-error";
+import { notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { Button } from "@/components/ui/button";
@@ -100,7 +100,7 @@ function KontakPage() {
       if (!conversationId) throw new Error("Tidak menerima ID percakapan");
       navigate({ to: "/chat/$conversationId", params: { conversationId } });
     } catch (e) {
-      toast.error(friendlyError(e));
+      notifyError(e);
     } finally {
       setChatting(null);
     }
@@ -118,9 +118,9 @@ function KontakPage() {
         .select("id,name,contact,account_user_id")
         .order("name"),
     ]);
-    if (c.error) toast.error(friendlyError(c.error));
+    if (c.error) notifyError(c.error);
     else setCustomers((c.data ?? []) as Row[]);
-    if (s.error) toast.error(friendlyError(s.error));
+    if (s.error) notifyError(s.error);
     else setSuppliers((s.data ?? []) as Row[]);
     setLoading(false);
   };
@@ -138,7 +138,7 @@ function KontakPage() {
       .from(table)
       .update({ account_user_id: null })
       .in("id", row.ids);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else {
       toast.success("Tautan akun dilepas");
       void refresh();
@@ -160,7 +160,7 @@ function KontakPage() {
     ) return;
     const table = kind === "customer" ? "customers" : "suppliers";
     const { error } = await supabase.from(table).delete().in("id", row.ids);
-    if (error) toast.error(friendlyError(error));
+    if (error) notifyError(error);
     else {
       toast.success(`${label[0].toUpperCase() + label.slice(1)} dihapus`);
       void refresh();
@@ -181,7 +181,7 @@ function KontakPage() {
       if (res.sent > 0) toast.success(res.message);
       else toast.warning(res.message);
     } catch (e: any) {
-      toast.error(friendlyError(e));
+      notifyError(e);
     } finally {
       setTesting(null);
     }
@@ -199,7 +199,7 @@ function KontakPage() {
       if (res.sent > 0) toast.success(res.message);
       else toast.warning(res.message);
     } catch (e: any) {
-      toast.error(friendlyError(e));
+      notifyError(e);
     } finally {
       setTestingAll(false);
     }
@@ -428,7 +428,7 @@ function LinkAccountDialog({
         _q: q || "",
       });
       if (error) {
-        toast.error(friendlyError(error));
+        notifyError(error);
         return;
       }
       setResults(
@@ -450,7 +450,7 @@ function LinkAccountDialog({
       .eq("id", target.row.id);
     setBusy(false);
     if (error) {
-      toast.error(friendlyError(error));
+      notifyError(error);
       return;
     }
     // Refresh chat contact list so the + DM dialog finds the newly linked

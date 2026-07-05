@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { friendlyError } from "@/lib/friendly-error";
+import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
@@ -311,7 +311,7 @@ function AuthPage() {
     });
     setLoading(false);
     if (error) {
-      toast.error(friendlyError(error));
+      notifyError(error);
       return;
     }
     toast.success("Tautan reset dikirim ke email");
@@ -331,7 +331,7 @@ function AuthPage() {
     });
     setLoading(false);
     if (error) {
-      toast.error(friendlyError(error));
+      notifyError(error);
       return;
     }
     toast.success("Email verifikasi dikirim ulang. Cek inbox Anda.");
@@ -345,7 +345,7 @@ function AuthPage() {
     });
     if (result.error) {
       setLoading(false);
-      toast.error(friendlyError(result.error));
+      notifyError(result.error);
       return;
     }
     if (result.redirected) return;
@@ -361,7 +361,7 @@ function AuthPage() {
     });
     if (result.error) {
       setLoading(false);
-      toast.error(friendlyError(result.error));
+      notifyError(result.error);
       return;
     }
     if (result.redirected) return;
