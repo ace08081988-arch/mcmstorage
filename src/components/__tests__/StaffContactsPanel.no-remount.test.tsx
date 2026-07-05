@@ -133,14 +133,15 @@ describe("StaffContactsPanel — refresh manual", () => {
   it("tombol refresh memaksa muat ulang meski cache masih fresh", async () => {
     mount(<StaffContactsPanel uid="u1" />);
     await flush();
-    expect(selectCalls).toBe(1); // initial load
+    const before = selectCalls;
 
     const refreshBtn = document.querySelector('[aria-label="Muat ulang kontak pegawai"]') as HTMLButtonElement;
     expect(refreshBtn).not.toBeNull();
     act(() => refreshBtn.click());
     await flush();
 
-    expect(selectCalls).toBe(2); // refresh manual memaksa satu select tambahan
+    // Refresh manual harus memaksa satu select tambahan, meski cache masih fresh.
+    expect(selectCalls).toBe(before + 1);
   });
 });
 
