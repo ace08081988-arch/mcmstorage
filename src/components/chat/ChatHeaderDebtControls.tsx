@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
+import { assertDebtSource } from "@/lib/debt-source";
 
 type Kind = "hutang" | "piutang";
 
