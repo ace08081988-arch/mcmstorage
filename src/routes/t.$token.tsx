@@ -222,6 +222,19 @@ async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
   }
 }
 
+function isObjectUrl(url: string | null | undefined): boolean {
+  return typeof url === "string" && url.startsWith("blob:");
+}
+
+function revokePhotoPreview(photo: StagedPhoto | null | undefined) {
+  if (!photo || !isObjectUrl(photo.dataUrl) || typeof URL === "undefined") return;
+  try {
+    URL.revokeObjectURL(photo.dataUrl);
+  } catch {
+    /* noop */
+  }
+}
+
 class WorkerSectionBoundary extends Component<
   {
     children: ReactNode;
@@ -411,15 +424,32 @@ function PublicPrepPage() {
   const [resyncing, setResyncing] = useState(false);
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
   const activeWorkerOpsRef = useRef(0);
+  const lastKeepAliveAtRef = useRef(0);
   const setWorkerOperationActive = useCallback((active: boolean) => {
     activeWorkerOpsRef.current = Math.max(0, activeWorkerOpsRef.current + (active ? 1 : -1));
   }, []);
   const keepWorkerSessionAlive = useCallback(() => {
+    const now = Date.now();
+    if (now - lastKeepAliveAtRef.current < 30_000) return;
     const currentPin = pinRef.current;
     if (!currentPin || !authedRef.current) return;
+    lastKeepAliveAtRef.current = now;
     writeSession(currentPin);
   }, []);
   const isWorkerOperationActive = () => activeWorkerOpsRef.current > 0;
+
+  useEffect(() => {
+    if (!authed) return;
+    const onActivity = () => keepWorkerSessionAlive();
+    window.addEventListener("pointerdown", onActivity, { passive: true });
+    window.addEventListener("keydown", onActivity);
+    window.addEventListener("input", onActivity, true);
+    return () => {
+      window.removeEventListener("pointerdown", onActivity);
+      window.removeEventListener("keydown", onActivity);
+      window.removeEventListener("input", onActivity, true);
+    };
+  }, [authed, keepWorkerSessionAlive]);
 
   // Paksa muat ulang data sekarang juga (dipakai tombol "Resync sekarang").
   async function manualResync() {
@@ -2060,6 +2090,9 @@ function ItemCard({
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);
+  useEffect(() => () => {
+    photosRef.current.forEach(revokePhotoPreview);
+  }, []);
   function openEditForIdx(i: number) {
     const p = photosRef.current[i];
     if (!p) return;
@@ -2635,12 +2668,16 @@ function ItemCard({
             setEditorSrc(photos[i].dataUrl);
             setEditorOpen(true);
           }}
-          onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
+          onRemove={(i) => setPhotos((prev) => {
+            revokePhotoPreview(prev[i]);
+            return prev.filter((_, j) => j !== i);
+          })}
           onRetry={(id) => {
             void retryPending(id);
           }}
           onDismiss={dismissPending}
           onClearAll={() => {
+            photos.forEach(revokePhotoPreview);
             setPhotos([]);
             setPending([]);
           }}
@@ -2659,6 +2696,7 @@ function ItemCard({
             if (photos.length < 2) return;
             try {
               const merged = await mergeStagedPhotos(photos);
+              photos.forEach(revokePhotoPreview);
               setPhotos([merged]);
               // Buka editor langsung supaya bisa tambah teks / panah.
               editQueueRef.current = [];
@@ -2793,6 +2831,7 @@ function ItemCard({
               setPhotos((prev) => {
                 if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
                   const next = prev.slice();
+                  revokePhotoPreview(next[editingIdx]);
                   next[editingIdx] = buildStagedPhoto(dataUrl, blob);
                   return next;
                 }
@@ -3340,6 +3379,9 @@ function RequestForm({
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);
+  useEffect(() => () => {
+    photosRef.current.forEach(revokePhotoPreview);
+  }, []);
   function openEditForIdx(i: number) {
     const p = photosRef.current[i];
     if (!p) return;
@@ -3676,12 +3718,16 @@ function RequestForm({
           setEditorSrc(photos[i].dataUrl);
           setEditorOpen(true);
         }}
-        onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
+        onRemove={(i) => setPhotos((prev) => {
+          revokePhotoPreview(prev[i]);
+          return prev.filter((_, j) => j !== i);
+        })}
         onRetry={(id) => {
           void retryPending(id);
         }}
         onDismiss={dismissPending}
         onClearAll={() => {
+          photos.forEach(revokePhotoPreview);
           setPhotos([]);
           setPending([]);
         }}
@@ -3698,6 +3744,7 @@ function RequestForm({
           if (photos.length < 2) return;
           try {
             const merged = await mergeStagedPhotos(photos);
+            photos.forEach(revokePhotoPreview);
             setPhotos([merged]);
             editQueueRef.current = [];
             setTimeout(() => openEditForIdx(0), 0);
@@ -3842,6 +3889,7 @@ function RequestForm({
             setPhotos((prev) => {
               if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
                 const next = prev.slice();
+                revokePhotoPreview(next[editingIdx]);
                 next[editingIdx] = buildStagedPhoto(dataUrl, blob);
                 return next;
               }
