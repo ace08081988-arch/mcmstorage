@@ -1544,6 +1544,26 @@ function PublicPrepPage() {
             });
             return (
               <div className="space-y-4">
+                <div className="-mb-2 flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const next: Record<string, boolean> = {};
+                      groups.forEach((g) => { next[g.key] = true; });
+                      setCollapsedGroups(next);
+                    }}
+                    className="rounded-md border bg-background px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted"
+                  >
+                    Tutup semua
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setCollapsedGroups({})}
+                    className="rounded-md border bg-background px-2 py-1 text-[11px] text-muted-foreground hover:bg-muted"
+                  >
+                    Buka semua
+                  </button>
+                </div>
                 {groups.map((g) => {
                   const totalReq = g.entries.reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
                   const doneCount = g.entries.filter((e) => (e.it.submissions?.length ?? 0) > 0).length;
@@ -1554,12 +1574,22 @@ function PublicPrepPage() {
                     .reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
                   const allDone = doneCount === totalCount && totalCount > 0;
                   const unit = displayUnit(g.entries[0].it.name, g.entries[0].it.unit_label);
+                  const collapsed = !!collapsedGroups[g.key];
                   return (
                     <section key={g.key} className="space-y-2">
                       <div className="sticky top-0 z-[1] -mx-1 rounded-md border bg-background/95 px-2 py-1.5 backdrop-blur">
-                        <div className="flex items-center justify-between gap-2">
+                        <button
+                          type="button"
+                          onClick={() => setCollapsedGroups((prev) => ({ ...prev, [g.key]: !prev[g.key] }))}
+                          aria-expanded={!collapsed}
+                          aria-label={collapsed ? `Buka ${g.label}` : `Tutup ${g.label}`}
+                          className="flex w-full items-center justify-between gap-2 text-left"
+                        >
                           <div className="min-w-0">
-                            <div className="truncate text-[12px] font-semibold">{g.label}</div>
+                            <div className="flex items-center gap-1 truncate text-[12px] font-semibold">
+                              <ChevronDown className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${collapsed ? "-rotate-90" : ""}`} aria-hidden />
+                              <span className="truncate">{g.label}</span>
+                            </div>
                             {g.category && (
                               <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{g.category}</div>
                             )}
@@ -1575,7 +1605,7 @@ function PublicPrepPage() {
                               {pct}%
                             </span>
                           </div>
-                        </div>
+                        </button>
                         <div className="mt-1.5 h-1.5 w-full overflow-hidden rounded-full bg-muted">
                           <div
                             className={`h-full rounded-full transition-[width] duration-300 ease-out ${allDone ? "bg-emerald-500" : "bg-primary"}`}
@@ -1602,6 +1632,7 @@ function PublicPrepPage() {
                           </span>
                         </div>
                       </div>
+                      {!collapsed && (
                       <div className="grid grid-cols-2 gap-2 sm:gap-3">
                         {g.entries.map(({ it, idx }) => (
                           <WorkerSectionBoundary
@@ -1640,6 +1671,7 @@ function PublicPrepPage() {
                           </WorkerSectionBoundary>
                         ))}
                       </div>
+                      )}
                     </section>
                   );
                 })}
