@@ -5,7 +5,7 @@
  * daftar area yang diblokir/dibuka RLS beserta alasan penolakan yang
  * jelas — bukan sekadar toast "tidak memiliki akses" saat gagal.
  */
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ShieldCheck,
   Lock,
@@ -16,6 +16,7 @@ import {
   Info,
   ChevronDown,
   ArrowRight,
+  RadioTower,
 } from "lucide-react";
 
 import { supabase } from "@/integrations/supabase/client";
@@ -135,6 +136,9 @@ export function AccessStatusCard() {
   const [emailConfirmed, setEmailConfirmed] = useState<boolean>(false);
   const [email, setEmail] = useState<string | null>(null);
   const [openArea, setOpenArea] = useState<AreaKey | null>(null);
+  const [liveSince, setLiveSince] = useState<Date | null>(null);
+  const [justChanged, setJustChanged] = useState(false);
+  const uidRef = useRef<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -148,6 +152,7 @@ export function AccessStatusCard() {
         if (alive) setLoading(false);
         return;
       }
+      uidRef.current = uid;
       const { data } = await supabase
         .from("profiles")
         .select("chat_only")
@@ -163,6 +168,60 @@ export function AccessStatusCard() {
       alive = false;
     };
   }, []);
+
+  // Realtime: dengarkan UPDATE pada baris profiles milik user sendiri
+  // (RLS SELECT policy `auth.uid() = id` sudah membatasi payload realtime
+  // ke baris ini saja). Saat `chat_only` berubah, kartu langsung mengikuti
+  // tanpa perlu refresh halaman. Juga ikuti event auth USER_UPDATED bila
+  // email dikonfirmasi selagi halaman terbuka.
+  useEffect(() => {
+    if (!uidRef.current) return;
+    const uid = uidRef.current;
+    const channel = supabase
+      .channel(`profile-access:${uid}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "profiles",
+          filter: `id=eq.${uid}`,
+        },
+        (payload) => {
+          const next = (payload.new as { chat_only?: boolean | null }).chat_only;
+          setChatOnly((prev) => {
+            const nextVal = Boolean(next);
+            if (prev !== nextVal) setJustChanged(true);
+            return nextVal;
+          });
+          setLiveSince(new Date());
+        },
+      )
+      .subscribe((status) => {
+        if (status === "SUBSCRIBED") setLiveSince((prev) => prev ?? new Date());
+      });
+
+    const { data: authSub } = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === "USER_UPDATED" || event === "SIGNED_IN") {
+        const confirmed = Boolean(
+          session?.user?.email_confirmed_at ?? session?.user?.confirmed_at,
+        );
+        setEmailConfirmed(confirmed);
+      }
+    });
+
+    return () => {
+      supabase.removeChannel(channel);
+      authSub.subscription.unsubscribe();
+    };
+  }, [loading]);
+
+  // Bersihkan indikator "baru berubah" setelah beberapa detik.
+  useEffect(() => {
+    if (!justChanged) return;
+    const t = setTimeout(() => setJustChanged(false), 4000);
+    return () => clearTimeout(t);
+  }, [justChanged]);
 
   const isStorage = chatOnly === false;
   const modeLabel = loading
@@ -204,10 +263,20 @@ export function AccessStatusCard() {
           <CardTitle id="access-status-title" className="text-base">
             Status izin akun
           </CardTitle>
+          {liveSince && (
+            <span
+              className="ml-1 inline-flex items-center gap-1 text-[10px] text-emerald-600 dark:text-emerald-400"
+              data-testid="access-status-live"
+              title={`Realtime aktif sejak ${liveSince.toLocaleTimeString()}`}
+            >
+              <RadioTower className="h-3 w-3" aria-hidden="true" />
+              Live
+            </span>
+          )}
           <Badge
             data-testid="access-mode-badge"
             variant={isStorage ? "default" : "secondary"}
-            className="ml-auto"
+            className={`ml-auto transition-colors ${justChanged ? "ring-2 ring-emerald-400/70" : ""}`}
           >
             {loading ? "…" : isStorage ? "Storage" : "Chat-only"}
           </Badge>
@@ -219,6 +288,19 @@ export function AccessStatusCard() {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
+        {justChanged && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="flex items-start gap-2 rounded-md border border-emerald-500/40 bg-emerald-500/10 p-2.5 text-[12px] text-emerald-800 dark:text-emerald-200"
+            data-testid="access-status-changed-banner"
+          >
+            <CheckCircle2 className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+            <div>
+              Status izin baru saja diperbarui — kartu ini sinkron otomatis tanpa refresh.
+            </div>
+          </div>
+        )}
         {loading ? (
           <div className="space-y-2">
             <Skeleton className="h-4 w-1/2" />
