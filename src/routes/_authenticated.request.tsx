@@ -566,10 +566,11 @@ function SendPrepLinkDialog({
   const [busy, setBusy] = useState(false);
   const [session, setSession] = useState<{ url: string; pin: string; token: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [workerName, setWorkerName] = useState("");
   const createdRef = useRef(false);
 
   useEffect(() => {
-    if (!open) { setSession(null); setError(null); setBusy(false); createdRef.current = false; return; }
+    if (!open) { setSession(null); setError(null); setBusy(false); setWorkerName(""); createdRef.current = false; return; }
     if (createdRef.current || !title) return;
     createdRef.current = true;
     void (async () => {
@@ -607,28 +608,45 @@ function SendPrepLinkDialog({
     })();
   }, [open, title, titleItems, warehouseItems]);
 
-  function copyAll() {
-    if (!session) return;
-    void navigator.clipboard.writeText(`Tugas: Request ${title?.name ?? ""}\nLink: ${session.url}\nPIN: ${session.pin}`);
-    toast.success("Link + PIN disalin");
-  }
-
-  function sendWA() {
-    if (!session || !title) return;
+  const waMessage = useMemo(() => {
+    if (!session || !title) return "";
+    const nm = workerName.trim();
+    const greet = nm ? `Halo ${nm}, tolong bantu siapkan Request berikut ya 🙏` : `Halo, tolong bantu siapkan Request berikut ya 🙏`;
     const lines: string[] = [];
-    lines.push(`*Tolong siapkan Request — ${title.name}*`);
+    lines.push(greet);
+    lines.push("");
+    lines.push(`*Judul Request:* ${title.name}`);
     if (titleItems.length > 0) {
       lines.push("");
-      lines.push("Isi paket:");
+      lines.push("*Isi paket:*");
       for (const i of titleItems) {
         const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
         lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
       }
     }
     lines.push("");
-    lines.push(`Buka tugas: ${session.url}`);
-    lines.push(`PIN: ${session.pin}`);
-    void shareToWhatsApp({ text: lines.join("\n"), title: `Request ${title.name}`, url: session.url }).then(notifyShareResult);
+    lines.push(`🔗 Link tugas: ${session.url}`);
+    lines.push(`🔑 PIN: ${session.pin}`);
+    lines.push("");
+    lines.push("Buka link, masukkan PIN, lalu isi berat aktual + foto + lokasi. Terima kasih!");
+    return lines.join("\n");
+  }, [session, title, titleItems, warehouseItems, workerName]);
+
+  function copyLinkPin() {
+    if (!session) return;
+    void navigator.clipboard.writeText(`Tugas: Request ${title?.name ?? ""}\nLink: ${session.url}\nPIN: ${session.pin}`);
+    toast.success("Link + PIN disalin");
+  }
+
+  function copyMessage() {
+    if (!waMessage) return;
+    void navigator.clipboard.writeText(waMessage);
+    toast.success("Pesan disalin — tempel di WhatsApp");
+  }
+
+  function sendWA() {
+    if (!session || !title || !waMessage) return;
+    void shareToWhatsApp({ text: waMessage, title: `Request ${title.name}`, url: session.url }).then(notifyShareResult);
   }
 
   const qrUrl = session ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(session.url)}` : "";
