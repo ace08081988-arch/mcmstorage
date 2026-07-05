@@ -79,6 +79,13 @@ export const Route = createFileRoute("/t/$token")({
 
 type StagedPhoto = StagedPhotoT;
 
+type VariantGroup = {
+  key: string;
+  label: string;
+  category: string | null;
+  entries: Array<{ it: PrepItemRow; idx: number }>;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === "object" && !Array.isArray(value);
 }
