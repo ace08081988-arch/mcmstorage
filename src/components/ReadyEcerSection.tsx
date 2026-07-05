@@ -1445,6 +1445,44 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     }
   }
 
+  function openWAPreview(e: React.MouseEvent) {
+    e.preventDefault();
+    e.stopPropagation();
+    if (sending) return;
+    if (shots.length === 0) {
+      toast.info("Belum ada kiriman pegawai untuk judul ini.");
+      return;
+    }
+    const canonicalShots = [...shots].sort((a, b) => a.id.localeCompare(b.id));
+    const take = canonicalShots.slice(0, 6);
+    const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+    const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
+    const text = [
+      `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
+      `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
+      ...lines,
+      ...(firstLocation ? [``, `📍 Lokasi: ${firstLocation}`] : []),
+    ].join("\n");
+    let photoCount = 0;
+    for (const s of take) {
+      const paths = new Set<string>([
+        ...((s.photo_paths ?? []) as string[]),
+        ...(s.photo_path ? [s.photo_path] : []),
+      ]);
+      photoCount += Array.from(paths).filter(Boolean).length;
+    }
+    setWaPreviewText(text);
+    setWaPreviewLocation(firstLocation);
+    setWaPreviewPhotoCount(Math.min(photoCount, 10));
+    setWaPreviewOpen(true);
+  }
+
+  async function confirmSendWA() {
+    setWaPreviewOpen(false);
+    const fake = { preventDefault() {}, stopPropagation() {} } as unknown as React.MouseEvent;
+    try { await sendWA(fake); } catch { /* dilaporkan di kartu */ }
+  }
+
   function undoSent(e: React.MouseEvent) {
     e.preventDefault();
     e.stopPropagation();
