@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { uploadPrepPhoto } from "./prep";
 
+type StorageClientArg = Parameters<typeof uploadPrepPhoto>[4];
+
 // -----------------------------------------------------------------------
 // Fake storage client (interface = Pick<supabase, "storage">).
 // Menyimpan panggilan .upload() untuk assertion.
@@ -28,7 +30,7 @@ function makeStorage(err: unknown = null) {
         };
       },
     },
-  };
+  } as unknown as StorageClientArg;
   return { client, calls };
 }
 
