@@ -1583,12 +1583,23 @@ function PublicPrepPage() {
                             aria-hidden
                           />
                         </div>
-                        <div className="mt-1 flex items-center justify-between gap-2 text-[10px] tabular-nums text-muted-foreground">
-                          <span>
-                            <span className="font-medium text-foreground">{doneReq}</span>
-                            <span> / {totalReq} {unit}</span>
+                        <div className="mt-1 flex flex-wrap items-center justify-between gap-x-3 gap-y-0.5 text-[10px] tabular-nums text-muted-foreground">
+                          <span className="inline-flex items-baseline gap-1">
+                            <span className="uppercase tracking-wide">Siap</span>
+                            <span className={`font-semibold ${allDone ? "text-emerald-600 dark:text-emerald-400" : "text-foreground"}`}>{doneReq}</span>
+                            <span>{unit}</span>
                           </span>
-                          <span>{totalCount - doneCount} tersisa</span>
+                          <span className="inline-flex items-baseline gap-1">
+                            <span className="uppercase tracking-wide">Diminta</span>
+                            <span className="font-semibold text-foreground">{totalReq}</span>
+                            <span>{unit}</span>
+                          </span>
+                          <span className="inline-flex items-baseline gap-1">
+                            <span className="uppercase tracking-wide">Sisa</span>
+                            <span className="font-semibold text-foreground">{Math.max(0, totalReq - doneReq)}</span>
+                            <span>{unit}</span>
+                            <span className="ml-1">· {totalCount - doneCount} paket</span>
+                          </span>
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-2 sm:gap-3">
