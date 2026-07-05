@@ -1613,6 +1613,14 @@ function ItemCard({
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
   const [expanded, setExpanded] = useState(false);
+  // Status kirim per-item yang ditampilkan jelas di header kartu:
+  // idle (belum pernah tekan Kirim), sending, success, failed.
+  const [sendStatus, setSendStatus] = useState<
+    | { kind: "idle" }
+    | { kind: "sending"; phase: "upload" | "submit" }
+    | { kind: "success"; at: number; count: number }
+    | { kind: "failed"; error: string }
+  >({ kind: "idle" });
 
   useEffect(() => {
     signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned);
@@ -1778,19 +1786,23 @@ function ItemCard({
     }
     if (photos.length === 0) {
       toast.error("Wajib lampirkan foto bukti timbangan/barang");
+      setSendStatus({ kind: "failed", error: "Belum ada foto bukti" });
       return;
     }
     if (locUrl) {
       if (locUrl.length > 2048) {
         toast.error("URL lokasi terlalu panjang");
+        setSendStatus({ kind: "failed", error: "URL lokasi terlalu panjang" });
         return;
       }
       if (!/^https:\/\//i.test(locUrl)) {
         toast.error("URL lokasi harus diawali https://");
+        setSendStatus({ kind: "failed", error: "URL lokasi harus diawali https://" });
         return;
       }
     }
     setBusy(true);
+    setSendStatus({ kind: "sending", phase: "upload" });
     // Preserve status "done" (dengan path yang sudah terunggah) dari
     // attempt sebelumnya, supaya klik "Coba lagi" hanya mengulang foto yang
     // gagal — sama sekali tidak menghitung ulang kuota storage untuk foto
@@ -1834,9 +1846,14 @@ function ItemCard({
         toast.error(
           `${failed} foto gagal unggah. Tekan "Coba lagi" pada foto yang gagal — foto yang sudah sukses tidak akan diulang.`,
         );
+        setSendStatus({
+          kind: "failed",
+          error: `${failed} foto gagal unggah`,
+        });
         setBusy(false);
         return;
       }
+      setSendStatus({ kind: "sending", phase: "submit" });
       const uploaded = state.map((u) =>
         u.status === "done" ? u.path : "",
       );
@@ -1883,6 +1900,7 @@ function ItemCard({
       toast.success(
         `Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${displayUnit(item.name, item.unit_label)}`,
       );
+      setSendStatus({ kind: "success", at: Date.now(), count: uploaded.length });
       setPhotos([]);
       setLocUrl("");
       setGps(null);
@@ -1891,7 +1909,9 @@ function ItemCard({
       void clearDraftPhotos(draftKey);
       onSubmitted();
     } catch (e) {
-      toast.error("Gagal kirim: " + (e as Error).message);
+      const msg = (e as Error).message || "Gagal kirim";
+      toast.error("Gagal kirim: " + msg);
+      setSendStatus({ kind: "failed", error: msg });
     } finally {
       setBusy(false);
     }
