@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Wallet, CheckCircle2, HandCoins, Banknote } from "lucide-react";
+import { Loader2, Plus, Wallet, CheckCircle2, HandCoins, Banknote, Undo2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
@@ -174,6 +174,19 @@ export function DebtQuickActions({
 
   const [amountRaw, setAmountRaw] = useState("");
   const [busy, setBusy] = useState<null | "add" | "pay" | "lunas" | "cash">(null);
+  type LastTx = {
+    debtId: string;
+    paymentId: string | null;
+    amount: number;
+    kind: Kind;
+    wasCash: boolean;
+    label: "add" | "cash";
+  };
+  const [lastTx, setLastTx] = useState<LastTx | null>(null);
+  const [editOpen, setEditOpen] = useState(false);
+  const [editAmountRaw, setEditAmountRaw] = useState("");
+  const [undoOpen, setUndoOpen] = useState(false);
+  const [reverting, setReverting] = useState(false);
   type PendingAction =
     | { kind: "add" }
     | { kind: "cash" }
@@ -287,21 +300,24 @@ export function DebtQuickActions({
         .select("id")
         .single();
       if (error) throw error;
+      const newDebtId = (inserted as { id?: string } | null)?.id ?? null;
+      let newPaymentId: string | null = null;
       // Bila "Tunai", langsung catat pembayaran penuh sehingga tagihan
       // baru saldo = 0 dan tetap tersimpan sebagai jejak transaksi tunai.
-      if (opts?.markPaid && inserted && (inserted as { id?: string }).id) {
+      if (opts?.markPaid && newDebtId) {
         const today = new Date().toISOString().slice(0, 10);
-        const { error: payErr } = await supabase.from("debt_payments").insert({
+        const { data: payIns, error: payErr } = await supabase.from("debt_payments").insert({
           user_id: uid,
-          debt_id: (inserted as { id: string }).id,
+          debt_id: newDebtId,
           amount: parsed,
           paid_at: today,
           note:
             kind === "piutang"
               ? "Jual tunai — otomatis lunas"
               : "Beli tunai — otomatis lunas",
-        });
+        }).select("id").single();
         if (payErr) throw payErr;
+        newPaymentId = (payIns as { id?: string } | null)?.id ?? null;
         toast.success(
           `${kind === "piutang" ? "Jual tunai" : "Beli tunai"} ${rupiah(parsed)} tercatat (lunas).`,
         );
@@ -310,12 +326,86 @@ export function DebtQuickActions({
           `${kind === "piutang" ? "Harga jual" : "Harga beli"} ${rupiah(parsed)} tercatat sebagai ${kindLabel.toLowerCase()}.`,
         );
       }
+      if (newDebtId) {
+        setLastTx({
+          debtId: newDebtId,
+          paymentId: newPaymentId,
+          amount: parsed,
+          kind,
+          wasCash: !!opts?.markPaid,
+          label: busyKey,
+        });
+      }
       setAmountRaw("");
       await qc.invalidateQueries({ queryKey });
     } catch (e) {
       toast.error((e as { message?: string })?.message ?? "Gagal mencatat.");
     } finally {
       setBusy(null);
+    }
+  }
+
+  async function revertLastTx() {
+    if (!lastTx || !uid) return;
+    setReverting(true);
+    try {
+      if (lastTx.paymentId) {
+        const { error: pe } = await supabase
+          .from("debt_payments")
+          .delete()
+          .eq("id", lastTx.paymentId);
+        if (pe) throw pe;
+      }
+      // Hapus juga pembayaran lain yang mungkin tersangkut agar saldo bersih.
+      await supabase.from("debt_payments").delete().eq("debt_id", lastTx.debtId);
+      const { error } = await supabase.from("debts").delete().eq("id", lastTx.debtId);
+      if (error) throw error;
+      toast.success(
+        `${lastTx.wasCash ? "Transaksi tunai" : lastTx.kind === "piutang" ? "Piutang" : "Hutang"} ${rupiah(lastTx.amount)} dibatalkan. Saldo dibalik.`,
+      );
+      setLastTx(null);
+      setUndoOpen(false);
+      await qc.invalidateQueries({ queryKey });
+    } catch (e) {
+      toast.error((e as { message?: string })?.message ?? "Gagal membatalkan transaksi.");
+    } finally {
+      setReverting(false);
+    }
+  }
+
+  async function saveEditLastTx() {
+    if (!lastTx || !uid) return;
+    const next = Number(editAmountRaw.replace(/\D+/g, ""));
+    if (!Number.isFinite(next) || next <= 0) {
+      toast.error("Jumlah baru tidak valid.");
+      return;
+    }
+    if (next === lastTx.amount) {
+      setEditOpen(false);
+      return;
+    }
+    setReverting(true);
+    try {
+      const { error } = await supabase
+        .from("debts")
+        .update({ amount: next })
+        .eq("id", lastTx.debtId);
+      if (error) throw error;
+      if (lastTx.wasCash && lastTx.paymentId) {
+        const { error: pe } = await supabase
+          .from("debt_payments")
+          .update({ amount: next })
+          .eq("id", lastTx.paymentId);
+        if (pe) throw pe;
+      }
+      toast.success(`Nominal diubah ke ${rupiah(next)}. Saldo disesuaikan.`);
+      setLastTx({ ...lastTx, amount: next });
+      setEditOpen(false);
+      await qc.invalidateQueries({ queryKey });
+    } catch (e) {
+      toast.error((e as { message?: string })?.message ?? "Gagal mengubah nominal.");
+    } finally {
+      setReverting(false);
     }
   }
 
@@ -460,6 +550,86 @@ export function DebtQuickActions({
       <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
         Tersinkron ke Hutang & Piutang MCM Storage. <b>Harga Jual</b> = tambah piutang, <b>Tunai</b> = jual langsung lunas, <b>Bayar/Lunas</b> = pelunasan piutang yang ada (dialokasi ke tagihan paling lama).
       </p>
+      {lastTx && (
+        <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md border border-dashed bg-background/60 px-2 py-1.5 text-[11px]">
+          <span className="text-muted-foreground">Transaksi terakhir:</span>
+          <span className="font-semibold text-foreground">
+            {lastTx.wasCash
+              ? lastTx.kind === "piutang" ? "Jual tunai" : "Beli tunai"
+              : lastTx.kind === "piutang" ? "Harga jual" : "Harga beli"}
+            {" "}· {rupiah(lastTx.amount)}
+          </span>
+          <button
+            type="button"
+            onClick={() => { setEditAmountRaw(String(lastTx.amount)); setEditOpen(true); }}
+            disabled={reverting}
+            className="ml-auto inline-flex h-6 items-center gap-1 rounded border bg-background px-1.5 font-semibold hover:bg-accent disabled:opacity-50"
+            title="Ubah nominal transaksi terakhir"
+          >
+            <Pencil className="h-3 w-3" /> Edit
+          </button>
+          <button
+            type="button"
+            onClick={() => setUndoOpen(true)}
+            disabled={reverting}
+            className="inline-flex h-6 items-center gap-1 rounded border border-red-500/50 bg-red-500/10 px-1.5 font-semibold text-red-700 hover:bg-red-500/20 disabled:opacity-50 dark:text-red-300"
+            title="Batalkan & balik saldo"
+          >
+            {reverting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Undo2 className="h-3 w-3" />} Urungkan
+          </button>
+        </div>
+      )}
+      <AlertDialog open={undoOpen} onOpenChange={(o) => { if (!reverting) setUndoOpen(o); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Batalkan transaksi terakhir?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {lastTx
+                ? `Menghapus catatan ${lastTx.wasCash ? "tunai" : (lastTx.kind === "piutang" ? "piutang" : "hutang")} ${rupiah(lastTx.amount)} atas ${partyLabel}. Saldo dikembalikan ke sebelum transaksi ini.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reverting}>Tidak</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={reverting}
+              className="bg-red-600 hover:bg-red-700 text-white"
+              onClick={async (e) => { e.preventDefault(); await revertLastTx(); }}
+            >
+              Ya, batalkan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      <AlertDialog open={editOpen} onOpenChange={(o) => { if (!reverting) setEditOpen(o); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Ubah nominal transaksi terakhir</AlertDialogTitle>
+            <AlertDialogDescription>
+              {lastTx
+                ? `Sebelumnya ${rupiah(lastTx.amount)}. Masukkan nominal baru — saldo ${lastTx.kind === "piutang" ? "piutang" : "hutang"} otomatis disesuaikan${lastTx.wasCash ? " (pembayaran tunai ikut diperbarui)" : ""}.`
+                : ""}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <input
+            value={editAmountRaw}
+            onChange={(e) => setEditAmountRaw(e.target.value.replace(/[^\d]/g, ""))}
+            inputMode="numeric"
+            placeholder="Nominal baru (Rp)"
+            className="h-9 w-full rounded-md border bg-background px-2 text-right font-mono text-sm"
+            disabled={reverting}
+          />
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={reverting}>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={reverting}
+              onClick={async (e) => { e.preventDefault(); await saveEditLastTx(); }}
+            >
+              Simpan perubahan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       <AlertDialog open={pending !== null} onOpenChange={(o) => { if (!o) setPending(null); }}>
         <AlertDialogContent>
           {pending && (
