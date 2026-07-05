@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
-import { Plus, Trash2, MessageCircle, Copy, Users, Search, X } from "lucide-react";
+import { Plus, Trash2, MessageCircle, Copy, Users, Search, X, RefreshCw } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
