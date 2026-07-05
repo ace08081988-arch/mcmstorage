@@ -3416,20 +3416,59 @@ function RequestForm({
         </button>
       </div>
 
-      <div className="flex gap-2">
-        <input
-          value={locUrl}
-          onChange={(e) => setLocUrl(e.target.value)}
-          placeholder="Link Google Maps (opsional)"
-          className="h-10 flex-1 rounded-lg border bg-background px-3 text-xs"
-        />
-        <button
-          onClick={takeLocation}
-          className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
-        >
-          <MapPin className="h-4 w-4" /> GPS
-        </button>
-      </div>
+      {(() => {
+        const m = locUrl.match(/(-?\d+(?:\.\d+)?)[,\s]+(-?\d+(?:\.\d+)?)/);
+        const lat = m ? parseFloat(m[1]) : null;
+        const lng = m ? parseFloat(m[2]) : null;
+        const valid =
+          lat !== null && lng !== null &&
+          Number.isFinite(lat) && Number.isFinite(lng) &&
+          Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+        return (
+          <div className="flex items-stretch gap-2">
+            <div className="flex flex-1 flex-col gap-2">
+              <input
+                value={locUrl}
+                onChange={(e) => setLocUrl(e.target.value)}
+                placeholder="Link Google Maps (opsional)"
+                className="h-10 w-full rounded-lg border bg-background px-3 text-xs"
+              />
+              <button
+                onClick={takeLocation}
+                type="button"
+                className="inline-flex h-10 w-full items-center justify-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+              >
+                <MapPin className="h-4 w-4" /> GPS
+              </button>
+            </div>
+            {valid ? (
+              <a
+                href={`https://www.google.com/maps?q=${lat},${lng}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Buka lokasi di Google Maps"
+                className="relative block h-[88px] w-[88px] shrink-0 overflow-hidden rounded-lg border bg-muted"
+              >
+                <iframe
+                  title="Pratinjau lokasi"
+                  src={`https://maps.google.com/maps?q=${lat},${lng}&z=15&output=embed`}
+                  className="pointer-events-none absolute inset-0 h-full w-full border-0"
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                />
+                <span className="absolute inset-x-0 bottom-0 truncate bg-background/80 px-1 py-0.5 text-center text-[9px] font-medium tabular-nums text-foreground backdrop-blur">
+                  {lat.toFixed(4)}, {lng.toFixed(4)}
+                </span>
+              </a>
+            ) : (
+              <div className="flex h-[88px] w-[88px] shrink-0 flex-col items-center justify-center rounded-lg border border-dashed bg-muted/40 px-1 text-center text-[10px] text-muted-foreground">
+                <MapPin className="mb-0.5 h-4 w-4 opacity-60" />
+                <span className="leading-tight">Belum ada titik</span>
+              </div>
+            )}
+          </div>
+        );
+      })()}
       <input
         value={note}
         onChange={(e) => setNote(e.target.value)}
