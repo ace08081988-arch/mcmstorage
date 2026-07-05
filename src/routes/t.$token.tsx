@@ -1713,13 +1713,13 @@ function PublicPrepPage() {
                 <div className="font-semibold">Versi baru menunggu — refresh ditahan</div>
                 <div className="opacity-90">
                   {deferredReload.reason === "worker-portal"
-                    ? "Halaman ini tidak akan me-refresh sendiri selama Anda masih di portal pegawai — supaya draft foto & sesi PIN tidak hilang."
+                    ? "Portal pegawai aktif: halaman tidak akan me-refresh sendiri agar draft foto & sesi PIN tetap aman."
                     : deferredReload.reason === "app-busy"
-                      ? "Sedang proses foto/edit/unggah. Refresh akan berjalan otomatis begitu selesai."
-                      : "Anda sedang mengetik. Refresh akan berjalan otomatis setelah selesai."}
+                      ? "Aplikasi sedang sibuk (foto / edit / unggah): refresh akan berjalan otomatis setelah proses selesai."
+                      : "Anda sedang mengetik: refresh akan berjalan otomatis setelah selesai."}
                   {deferredReload.since && (
                     <span className="ml-1 opacity-70">
-                      · ditahan {Math.max(1, Math.round((Date.now() - deferredReload.since) / 1000))} dtk
+                      · ditahan {Math.max(0, Math.round((Date.now() - deferredReload.since) / 1000))} dtk
                     </span>
                   )}
                 </div>
