@@ -1293,6 +1293,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
           ) : <span />}
           <div className="flex gap-0.5">
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onShare}><Share2 className="h-3 w-3" /></Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditOpen(true)} title="Edit penyiapan"><Edit3 className="h-3 w-3" /></Button>
             <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDelete}><Trash2 className="h-3 w-3 text-destructive" /></Button>
           </div>
         </div>
