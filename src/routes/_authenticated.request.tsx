@@ -22,7 +22,7 @@ import {
   type RequestTitle, type RequestTitleItem, type RequestPreparation,
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
-import { publicTaskUrl } from "@/lib/prep";
+import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { fetchAddressBook, upsertManualEntry, normalizePhone, type AddressBookRow } from "@/lib/address-book";
 import { useNavigate } from "@tanstack/react-router";
 
@@ -60,6 +60,7 @@ function RequestPage() {
   const [creatingTitle, setCreatingTitle] = useState(false);
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
+  const [sendLinkTitle, setSendLinkTitle] = useState<RequestTitle | null>(null);
 
   function diagnose(code?: string, status?: number, msg?: string): string {
     if (status === 0 || /Failed to fetch|NetworkError/i.test(msg ?? "")) return "Jaringan terputus — periksa koneksi internet.";
@@ -290,6 +291,17 @@ function RequestPage() {
                   <div
                     role="button"
                     tabIndex={0}
+                    onClick={(e) => { e.stopPropagation(); setSendLinkTitle(t); }}
+                    onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); setSendLinkTitle(t); } }}
+                    className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 py-0.5 text-[10px] text-primary hover:bg-primary/20"
+                    aria-label="Kirim link ke pegawai"
+                    title="Buat link + PIN untuk pegawai yang menyiapkan"
+                  >
+                    <Send className="h-3 w-3" /> Kirim link ke pegawai
+                  </div>
+                  <div
+                    role="button"
+                    tabIndex={0}
                     onClick={(e) => { e.stopPropagation(); void deleteTitle(); }}
                     onKeyDown={(e) => { if (e.key === "Enter") { e.stopPropagation(); void deleteTitle(); } }}
                     className="inline-flex cursor-pointer items-center gap-1 rounded-md border border-destructive/40 bg-destructive/10 px-2 py-0.5 text-[10px] text-destructive hover:bg-destructive/20"
@@ -318,6 +330,13 @@ function RequestPage() {
         titles={titles}
         titleItemsCount={titleItems.length}
         onClose={() => setTestOpen(false)}
+      />
+
+      <SendPrepLinkDialog
+        title={sendLinkTitle}
+        titleItems={sendLinkTitle ? titleItems.filter((i) => i.title_id === sendLinkTitle.id) : []}
+        warehouseItems={items}
+        onClose={() => setSendLinkTitle(null)}
       />
     </div>
   );
@@ -527,6 +546,165 @@ function TitleEditorDialog({
               {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null} Simpan
             </Button>
           </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+// ------------------------------------------------------------------
+// Kirim link ke pegawai (real task, bukan uji coba)
+// ------------------------------------------------------------------
+function SendPrepLinkDialog({
+  title, titleItems, warehouseItems, onClose,
+}: {
+  title: RequestTitle | null;
+  titleItems: RequestTitleItem[];
+  warehouseItems: WarehouseItem[];
+  onClose: () => void;
+}) {
+  const open = !!title;
+  const [busy, setBusy] = useState(false);
+  const [session, setSession] = useState<{ url: string; pin: string; token: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const createdRef = useRef(false);
+
+  useEffect(() => {
+    if (!open) { setSession(null); setError(null); setBusy(false); createdRef.current = false; return; }
+    if (createdRef.current || !title) return;
+    createdRef.current = true;
+    void (async () => {
+      setBusy(true);
+      setError(null);
+      try {
+        const pin = genPin();
+        const token = genShareToken();
+        const noteLines: string[] = [];
+        noteLines.push(`Siapkan paket untuk judul "${title.name}".`);
+        if (title.note) noteLines.push(title.note);
+        if (titleItems.length > 0) {
+          noteLines.push("");
+          noteLines.push("Target isi paket:");
+          for (const i of titleItems) {
+            const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
+            noteLines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
+          }
+        }
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { error: rpcErr } = await (supabase.rpc as any)("prep_create_task", {
+          _title: `Request: ${title.name}`,
+          _note: noteLines.join("\n"),
+          _pin: pin,
+          _share_token: token,
+          _items: [],
+        });
+        if (rpcErr) throw rpcErr;
+        setSession({ url: publicTaskUrl(token, pin), pin, token });
+      } catch (e) {
+        setError((e as Error).message || "Gagal membuat link tugas");
+      } finally {
+        setBusy(false);
+      }
+    })();
+  }, [open, title, titleItems, warehouseItems]);
+
+  function copyAll() {
+    if (!session) return;
+    void navigator.clipboard.writeText(`Tugas: Request ${title?.name ?? ""}\nLink: ${session.url}\nPIN: ${session.pin}`);
+    toast.success("Link + PIN disalin");
+  }
+
+  function sendWA() {
+    if (!session || !title) return;
+    const lines: string[] = [];
+    lines.push(`*Tolong siapkan Request — ${title.name}*`);
+    if (titleItems.length > 0) {
+      lines.push("");
+      lines.push("Isi paket:");
+      for (const i of titleItems) {
+        const w = warehouseItems.find((wi) => wi.id === i.warehouse_item_id);
+        lines.push(`• ${w?.name ?? "?"} ${i.target_grams}${displayUnit(w?.name, i.unit_label)}`);
+      }
+    }
+    lines.push("");
+    lines.push(`Buka tugas: ${session.url}`);
+    lines.push(`PIN: ${session.pin}`);
+    void shareToWhatsApp({ text: lines.join("\n"), title: `Request ${title.name}`, url: session.url }).then(notifyShareResult);
+  }
+
+  const qrUrl = session ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(session.url)}` : "";
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Send className="h-4 w-4 text-primary" /> Kirim link ke pegawai
+          </DialogTitle>
+          <DialogDescription>
+            Buat tautan + PIN agar pegawai bisa membuka form Penyiapan Request untuk <b>{title?.name}</b> langsung dari HP-nya.
+          </DialogDescription>
+        </DialogHeader>
+
+        {busy && !session ? (
+          <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Membuat link…
+          </div>
+        ) : error ? (
+          <div className="space-y-2">
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+              <div className="flex items-center gap-1 font-semibold"><AlertTriangle className="h-3.5 w-3.5" /> Gagal membuat link</div>
+              <div className="mt-1 break-words">{error}</div>
+            </div>
+            <Button variant="outline" size="sm" className="w-full" onClick={() => { createdRef.current = false; setError(null); setSession(null); }}>
+              <RotateCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
+            </Button>
+          </div>
+        ) : session ? (
+          <div className="space-y-3">
+            <div className="flex justify-center rounded-lg border bg-white p-3">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src={qrUrl} alt="QR tugas pegawai" width={200} height={200} />
+            </div>
+            <div className="space-y-1.5">
+              <div>
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link</Label>
+                <div className="break-all rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono">
+                  {session.url}
+                </div>
+              </div>
+              <div>
+                <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">PIN</Label>
+                <div className="rounded-md border bg-muted/30 px-2 py-1.5 text-center text-lg font-bold tracking-[0.4em] tabular-nums">
+                  {session.pin}
+                </div>
+              </div>
+            </div>
+            <div className="rounded-md border border-primary/30 bg-primary/5 p-2.5 text-[11px] leading-relaxed text-muted-foreground">
+              Kirim link + PIN ke pegawai lewat WhatsApp atau salin manual. Pegawai buka link, masukkan PIN, lalu isi paket + foto + lokasi.
+              Stok akan otomatis berkurang saat pegawai mengirim.
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={copyAll}>
+                <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link+PIN
+              </Button>
+              <Button
+                size="sm"
+                onClick={sendWA}
+                className="bg-[#25D366] text-white hover:bg-[#20b959]"
+              >
+                <Send className="mr-1 h-3.5 w-3.5" /> Kirim via WhatsApp
+              </Button>
+            </div>
+            <Button variant="ghost" size="sm" asChild className="w-full">
+              <a href={session.url} target="_blank" rel="noreferrer">
+                <ExternalLink className="mr-1 h-3.5 w-3.5" /> Buka di tab baru untuk cek
+              </a>
+            </Button>
+          </div>
+        ) : null}
+
+        <DialogFooter>
+          <Button variant="ghost" size="sm" onClick={onClose}>Tutup</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
