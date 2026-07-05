@@ -381,6 +381,31 @@ function TitleEditorDialog({
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }>>([]);
   const [busy, setBusy] = useState(false);
   const [negErrors, setNegErrors] = useState<Record<number, string>>({});
+  const [contacts, setContacts] = useState<AddressBookRow[]>([]);
+  const [nameOpen, setNameOpen] = useState(false);
+  const [nameActive, setNameActive] = useState(0);
+
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    void fetchAddressBook()
+      .then((rows) => { if (!cancelled) setContacts(rows); })
+      .catch(() => { /* diam — combobox opsional, input tetap jalan */ });
+    return () => { cancelled = true; };
+  }, [open]);
+
+  const nameSuggestions = useMemo(() => {
+    const q = name.trim().toLowerCase();
+    if (!q) return [] as AddressBookRow[];
+    const exact = contacts.some((c) => c.name.trim().toLowerCase() === q);
+    const filtered = contacts
+      .filter((c) => c.name.toLowerCase().includes(q))
+      .slice(0, 6);
+    // Simpan flag `exact` via ref lokal — dipakai untuk menyembunyikan opsi
+    // "Pakai … sebagai nama baru" saat sudah ada kontak persis sama.
+    (filtered as AddressBookRow[] & { __exact?: boolean }).__exact = exact;
+    return filtered;
+  }, [name, contacts]);
 
   function sanitizeQty(idx: number, raw: string): string {
     if (raw === "" || raw === "-") {
@@ -498,7 +523,63 @@ function TitleEditorDialog({
         <div className="space-y-3">
           <div>
             <Label>Nama judul</Label>
-            <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="cth. Paket Bu Ani" />
+            <div className="relative">
+              <Input
+                value={name}
+                onChange={(e) => { setName(e.target.value); setNameOpen(true); setNameActive(0); }}
+                onFocus={() => setNameOpen(true)}
+                onBlur={() => { window.setTimeout(() => setNameOpen(false), 120); }}
+                onKeyDown={(e) => {
+                  if (!nameOpen || nameSuggestions.length === 0) return;
+                  if (e.key === "ArrowDown") { e.preventDefault(); setNameActive((i) => Math.min(i + 1, nameSuggestions.length - 1)); }
+                  else if (e.key === "ArrowUp") { e.preventDefault(); setNameActive((i) => Math.max(i - 1, 0)); }
+                  else if (e.key === "Enter") {
+                    const pick = nameSuggestions[nameActive];
+                    if (pick) { e.preventDefault(); setName(pick.name); setNameOpen(false); }
+                  } else if (e.key === "Escape") { setNameOpen(false); }
+                }}
+                placeholder="cth. Paket Bu Ani"
+                aria-autocomplete="list"
+                aria-expanded={nameOpen && nameSuggestions.length > 0}
+                aria-controls="judul-name-suggestions"
+              />
+              {nameOpen && nameSuggestions.length > 0 && (
+                <ul
+                  id="judul-name-suggestions"
+                  role="listbox"
+                  className="absolute z-50 mt-1 w-full overflow-hidden rounded-md border bg-popover text-popover-foreground shadow-md"
+                >
+                  {nameSuggestions.map((c, i) => (
+                    <li key={c.id} role="option" aria-selected={i === nameActive}>
+                      <button
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); setName(c.name); setNameOpen(false); }}
+                        onMouseEnter={() => setNameActive(i)}
+                        className={`flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm ${i === nameActive ? "bg-accent text-accent-foreground" : ""}`}
+                      >
+                        <span aria-hidden>👤</span>
+                        <span className="min-w-0 flex-1 truncate">{c.name}</span>
+                        {c.phone ? (
+                          <span className="shrink-0 text-[11px] text-muted-foreground">{c.phone}</span>
+                        ) : null}
+                      </button>
+                    </li>
+                  ))}
+                  {!(nameSuggestions as AddressBookRow[] & { __exact?: boolean }).__exact && (
+                    <li role="option" aria-selected={false} className="border-t">
+                      <button
+                        type="button"
+                        onMouseDown={(e) => { e.preventDefault(); setNameOpen(false); }}
+                        className="flex w-full items-center gap-2 px-2 py-1.5 text-left text-sm text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        <span className="truncate">Pakai “{name.trim()}” sebagai nama baru</span>
+                      </button>
+                    </li>
+                  )}
+                </ul>
+              )}
+            </div>
           </div>
           <div>
             <Label>Catatan (opsional)</Label>
