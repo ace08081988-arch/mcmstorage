@@ -9,9 +9,15 @@ export async function reportPortalError(input: {
   kind: string;
   code?: string | null;
   status?: string | null;
-  token?: string | null;
+  /**
+   * Wajib: share_token dari URL portal (mis. `/t/:token`). Server
+   * memverifikasi token cocok dengan `prep_tasks` aktif; tanpa itu
+   * endpoint menolak dengan 401 dan event tidak dicatat.
+   */
+  token: string;
   route?: string | null;
 }): Promise<string | null> {
+  if (!input.token) return null;
   try {
     const res = await fetch("/api/public/hooks/log-portal-error", {
       method: "POST",
@@ -20,7 +26,7 @@ export async function reportPortalError(input: {
         kind: input.kind,
         code: input.code ?? null,
         status: input.status ?? null,
-        token: input.token ?? null,
+        token: input.token,
         route:
           input.route ??
           (typeof window !== "undefined" ? window.location.pathname : null),
