@@ -697,13 +697,29 @@ function SendPrepLinkDialog({
                 </div>
               </div>
             </div>
-            <div className="rounded-md border border-primary/30 bg-primary/5 p-2.5 text-[11px] leading-relaxed text-muted-foreground">
-              Kirim link + PIN ke pegawai lewat WhatsApp atau salin manual. Pegawai buka link, masukkan PIN, lalu isi paket + foto + lokasi.
-              Stok akan otomatis berkurang saat pegawai mengirim.
+            <div>
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Nama pegawai (opsional)</Label>
+              <Input
+                value={workerName}
+                onChange={(e) => setWorkerName(e.target.value)}
+                placeholder="mis. Budi"
+                maxLength={40}
+                className="h-8"
+              />
+            </div>
+            <div>
+              <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Pratinjau pesan WhatsApp</Label>
+              <Textarea
+                readOnly
+                value={waMessage}
+                rows={8}
+                className="mt-1 resize-none text-[11px] leading-relaxed font-mono"
+                onFocus={(e) => e.currentTarget.select()}
+              />
             </div>
             <div className="grid grid-cols-2 gap-2">
-              <Button variant="outline" size="sm" onClick={copyAll}>
-                <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link+PIN
+              <Button variant="outline" size="sm" onClick={copyMessage}>
+                <Copy className="mr-1 h-3.5 w-3.5" /> Salin pesan
               </Button>
               <Button
                 size="sm"
@@ -713,6 +729,9 @@ function SendPrepLinkDialog({
                 <Send className="mr-1 h-3.5 w-3.5" /> Kirim via WhatsApp
               </Button>
             </div>
+            <Button variant="ghost" size="sm" className="w-full" onClick={copyLinkPin}>
+              <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link + PIN saja
+            </Button>
             <Button variant="ghost" size="sm" asChild className="w-full">
               <a href={session.url} target="_blank" rel="noreferrer">
                 <ExternalLink className="mr-1 h-3.5 w-3.5" /> Buka di tab baru untuk cek
