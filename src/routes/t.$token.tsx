@@ -1722,7 +1722,7 @@ function PublicPrepPage() {
                       : "Anda sedang mengetik: refresh akan berjalan otomatis setelah selesai."}
                   {deferredReload.since && (
                     <span className="ml-1 opacity-70">
-                      · ditahan {Math.max(0, Math.round((Date.now() - deferredReload.since) / 1000))} dtk
+                      · ditahan {deferredTick} dtk
                     </span>
                   )}
                 </div>
