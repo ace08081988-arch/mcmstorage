@@ -1637,7 +1637,13 @@ function ItemCard({
         if (cancelled) return;
         if (blobs.length > 0) {
           const staged = await Promise.all(blobs.map((b) => stageFile(b)));
-          if (!cancelled) setPhotos(staged);
+          if (!cancelled) {
+            setPhotos(staged);
+            // Buka sekali saat draft tersimpan dimuat, supaya user langsung
+            // lihat foto yang belum sempat terkirim. Setelah itu, expand
+            // sepenuhnya dikontrol tap user — tidak akan buka-tutup sendiri.
+            setExpanded(true);
+          }
         }
       } catch {
         /* abaikan draft rusak */
@@ -1919,18 +1925,6 @@ function ItemCard({
 
   const isDone = (item.submissions?.length ?? 0) > 0;
   const hasDraft = photos.length > 0 || pending.length > 0;
-  // Auto-expand kalau ada draft foto, item baru diubah admin, atau sedang /
-  // habis dicoba kirim — supaya status berhasil / gagal langsung terlihat.
-  useEffect(() => {
-    if (
-      hasDraft ||
-      isStale ||
-      sendStatus.kind === "sending" ||
-      sendStatus.kind === "failed"
-    ) {
-      setExpanded(true);
-    }
-  }, [hasDraft, isStale, sendStatus.kind]);
   return (
     <div
       className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}
