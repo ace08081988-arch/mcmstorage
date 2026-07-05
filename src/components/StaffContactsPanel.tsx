@@ -4,6 +4,7 @@ import { Plus, Trash2, MessageCircle, Copy, Users, Search, X, RefreshCw } from "
 import { supabase } from "@/integrations/supabase/client";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Contact = {
   id: string;
@@ -32,6 +33,20 @@ function normalizePhone(input: string): string {
   let s = input.replace(/\D/g, "");
   if (s.startsWith("0")) s = "62" + s.slice(1);
   return s;
+}
+
+function SkeletonRow() {
+  return (
+    <div className="flex items-center gap-2 rounded-md border bg-background/50 p-2">
+      <div className="min-w-0 flex-1 space-y-1.5">
+        <Skeleton className="h-4 w-2/3" />
+        <Skeleton className="h-3 w-1/2" />
+      </div>
+      <Skeleton className="h-8 w-8 rounded-md" />
+      <Skeleton className="h-8 w-8 rounded-md" />
+      <Skeleton className="h-8 w-8 rounded-md" />
+    </div>
+  );
 }
 
 export function StaffContactsPanel({ uid }: { uid: string | null }) {
@@ -210,7 +225,18 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
       )}
 
       <div className="mt-3 space-y-2">
-        {rows.length === 0 ? (
+        {refreshing && rows.length > 0 && (
+          <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full w-1/3 animate-[shimmer_1.2s_infinite] bg-primary/60" />
+          </div>
+        )}
+        {refreshing && rows.length === 0 ? (
+          <>
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
+          </>
+        ) : rows.length === 0 ? (
           <div className="rounded-md border border-dashed p-3 text-center text-[11px] text-muted-foreground">
             Belum ada kontak pegawai. Tambah dulu agar mudah kirim link tugas via WA.
           </div>
