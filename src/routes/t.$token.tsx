@@ -2274,6 +2274,15 @@ function PhotoTileGrid({
                   <AlertCircle className="h-5 w-5" aria-hidden />
                   <div className="text-[10px] font-semibold">Gagal unggah</div>
                   <div className="line-clamp-2 text-[9px] opacity-90">{upErr}</div>
+                  {onRetryUpload && !isUploading && (
+                    <button
+                      type="button"
+                      onClick={() => onRetryUpload(i)}
+                      className="mt-0.5 inline-flex h-5 items-center gap-0.5 rounded bg-white/90 px-1.5 text-[9px] font-semibold text-destructive"
+                    >
+                      <RefreshCw className="h-2.5 w-2.5" /> Coba lagi
+                    </button>
+                  )}
                 </div>
               )}
               {ok && up === "idle" && (
