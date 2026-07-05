@@ -1751,6 +1751,45 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   async function confirmChatSend(opts?: { force?: boolean }) {
     const ctx = chatPreview;
     if (!ctx || chatSending) return;
+    // Gerbang validasi: recompute folder atomik & jumlah foto dari `shots`
+    // saat ini menggunakan logika yang sama dengan prepareChat. Bila hasilnya
+    // berbeda dari snapshot pratinjau (ctx.markIds / ctx.chatShots), batalkan
+    // agar pratinjau tidak pernah menyesatkan pesan yang benar-benar terkirim.
+    {
+      const takeNow = shots.slice(0, 6);
+      const MAX_CHAT_SLOTS = 10;
+      const includedNowIds: string[] = [];
+      let photosNow = 0;
+      let foldersIncluded = 0;
+      for (const s of takeNow) {
+        const paths = Array.from(new Set([
+          ...((s.photo_paths ?? []) as string[]),
+          ...(s.photo_path ? [s.photo_path] : []),
+        ])).filter(Boolean);
+        if (paths.length === 0) continue;
+        if (foldersIncluded > 0 && photosNow + paths.length > MAX_CHAT_SLOTS) break;
+        photosNow += paths.length;
+        foldersIncluded++;
+        includedNowIds.push(s.id);
+      }
+      const expectedIds = [...ctx.markIds].sort();
+      const actualIds = [...includedNowIds].sort();
+      const idsMatch =
+        actualIds.length === expectedIds.length &&
+        actualIds.every((id, i) => id === expectedIds[i]);
+      // ctx.chatShots.length adalah jumlah foto yang benar-benar berhasil di-fetch;
+      // jumlah *paths* saat pratinjau = photosNow saat itu. Bandingkan dengan
+      // `photosNow` hasil recompute untuk mendeteksi perubahan sumber.
+      const countMatch = photosNow === ctx.chatShots.length + (ctx.preview.missingPhotos ?? 0);
+      if (!idsMatch || !countMatch) {
+        toast.warning(
+          `Kiriman berubah sejak pratinjau (folder ${expectedIds.length}→${actualIds.length}, foto ${ctx.chatShots.length + (ctx.preview.missingPhotos ?? 0)}→${photosNow}). Buka pratinjau ulang.`,
+        );
+        setChatPreviewOpen(false);
+        setChatPreview(null);
+        return;
+      }
+    }
     // Jika operator menekan "Kirim ulang (paksa)" pada banner duplikat, bersihkan
     // record lama agar withIdempotency tidak men-skip eksekusi.
     if (opts?.force) {
