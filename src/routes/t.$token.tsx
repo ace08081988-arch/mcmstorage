@@ -1961,14 +1961,23 @@ function ItemCard({
             #{index}
           </div>
           <div className="flex items-center gap-1.5">
-            {isDone ? (
+            {sendStatus.kind === "sending" ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-semibold text-primary">
+                <Loader2 className="h-3 w-3 animate-spin" aria-hidden="true" />
+                {sendStatus.phase === "upload" ? "Mengunggah…" : "Mengirim…"}
+              </span>
+            ) : sendStatus.kind === "failed" && !isDone ? (
+              <span className="inline-flex items-center gap-1 rounded-md bg-destructive/10 px-1.5 py-0.5 text-[10px] font-semibold text-destructive">
+                <AlertCircle className="h-3 w-3" aria-hidden="true" /> Gagal
+              </span>
+            ) : isDone || sendStatus.kind === "success" ? (
               <StatusBadge size="xs" variant="siap">
-                <CheckCircle2 className="mr-1 h-3 w-3" /> Selesai
+                <CheckCircle2 className="mr-1 h-3 w-3" /> Berhasil
               </StatusBadge>
             ) : hasDraft ? (
-              <StatusBadge size="xs" variant="menunggu">
-                Draft {photos.length + pending.length}
-              </StatusBadge>
+              <span className="inline-flex items-center gap-1 rounded-md bg-amber-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+                <Clock className="h-3 w-3" aria-hidden="true" /> Menunggu {photos.length + pending.length}
+              </span>
             ) : (
               <StatusBadge size="xs" variant="menunggu">Belum</StatusBadge>
             )}
