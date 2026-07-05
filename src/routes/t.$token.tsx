@@ -2768,7 +2768,6 @@ function RequestForm({
         setBusy(false);
         return;
       }
-      setUploads(photos.map(() => ({ status: "idle" as const })));
       const state: PhotoUploadStatus[] =
         uploads.length === photos.length
           ? uploads.map((u) => (u.status === "done" ? u : { status: "idle" as const }))
