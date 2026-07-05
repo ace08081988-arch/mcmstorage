@@ -491,6 +491,9 @@ export function ReadyEcerSection() {
           Buka semua <ChevronRight className="h-3 w-3" />
         </Link>
       </div>
+      <div className="flex justify-end">
+        <LayoutModeToggle mode={layout} onChange={setLayout} />
+      </div>
 
       {rows && rows.length > 0 && (
         <div className="flex gap-1.5">
