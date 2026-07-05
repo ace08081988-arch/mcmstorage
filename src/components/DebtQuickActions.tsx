@@ -337,24 +337,47 @@ export function DebtQuickActions({
         </span>
       </div>
 
-      <div className="mt-2 flex items-center gap-1.5">
+      <div className="mt-2 flex flex-wrap items-center gap-1.5">
         <input
           value={amountRaw}
           onChange={(e) => setAmountRaw(e.target.value.replace(/[^\d]/g, ""))}
           inputMode="numeric"
-          placeholder="Jumlah (Rp)"
-          className="h-8 min-w-0 flex-1 rounded-md border bg-background px-2 text-right font-mono text-xs"
+          placeholder={kind === "piutang" ? "Harga jual (Rp)" : "Harga beli (Rp)"}
+          className="h-8 min-w-0 flex-1 basis-full rounded-md border bg-background px-2 text-right font-mono text-xs sm:basis-auto"
           disabled={busy !== null}
         />
         <button
           type="button"
-          onClick={() => void addDebt()}
+          onClick={() => void addDebt({ label: "add" })}
           disabled={busy !== null || !hasAmount}
-          className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] font-semibold hover:bg-accent disabled:opacity-50"
-          title={`Tambah ${kindLabel.toLowerCase()} baru sebesar jumlah di kiri`}
+          className={
+            "inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] font-semibold disabled:opacity-50 " +
+            (kind === "piutang"
+              ? "border-emerald-500/60 bg-emerald-500/10 text-emerald-800 hover:bg-emerald-500/20 dark:text-emerald-200"
+              : "border-amber-500/60 bg-amber-500/10 text-amber-800 hover:bg-amber-500/20 dark:text-amber-200")
+          }
+          title={
+            kind === "piutang"
+              ? "Catat harga jual sebagai piutang baru (pelanggan belum bayar)"
+              : "Catat harga beli sebagai hutang baru (belum dibayar)"
+          }
         >
           {busy === "add" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Plus className="h-3 w-3" />}
-          {kindLabel}
+          {kind === "piutang" ? "Harga Jual" : "Harga Beli"}
+        </button>
+        <button
+          type="button"
+          onClick={() => void addDebt({ markPaid: true, label: "cash" })}
+          disabled={busy !== null || !hasAmount}
+          className="inline-flex h-8 items-center gap-1 rounded-md border bg-background px-2 text-[11px] font-semibold hover:bg-accent disabled:opacity-50"
+          title={
+            kind === "piutang"
+              ? "Catat jual tunai — langsung lunas, tidak menambah piutang"
+              : "Catat beli tunai — langsung lunas, tidak menambah hutang"
+          }
+        >
+          {busy === "cash" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Banknote className="h-3 w-3" />}
+          Tunai
         </button>
         <button
           type="button"
@@ -378,7 +401,7 @@ export function DebtQuickActions({
         </button>
       </div>
       <p className="mt-1.5 text-[10px] leading-snug text-muted-foreground">
-        Tersinkron ke Hutang & Piutang MCM Storage. Pembayaran dialokasikan otomatis ke tagihan paling lama.
+        Tersinkron ke Hutang & Piutang MCM Storage. <b>Harga Jual</b> = tambah piutang, <b>Tunai</b> = jual langsung lunas, <b>Bayar/Lunas</b> = pelunasan piutang yang ada (dialokasi ke tagihan paling lama).
       </p>
     </div>
   );
