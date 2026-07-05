@@ -1058,6 +1058,13 @@ function TitleDetailView({
   const [prepItems, setPrepItems] = useState<Array<{ id: string; preparation_id: string; warehouse_item_id: string; actual_grams: number }>>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [customers, setCustomers] = useState<CustomerRow[]>([]);
+
+  useEffect(() => {
+    void supabase.from("customers").select("id,name,contact").order("name").then(({ data }) => {
+      setCustomers(((data ?? []) as CustomerRow[]));
+    });
+  }, []);
 
   async function load() {
     setLoading(true);
@@ -1076,12 +1083,19 @@ function TitleDetailView({
   useEffect(() => { void load(); }, [title.id]);
 
   async function handleDelete(p: RequestPreparation) {
-    if (!confirm("Hapus penyiapan ini? Stok akan dikembalikan.")) return;
+    const wasSold = !!p.sold_at;
+    const msg = wasSold
+      ? "Hapus catatan penyiapan ini? Penjualan & piutang yang sudah tercatat TIDAK ikut terhapus."
+      : "Hapus penyiapan ini? Stok akan dikembalikan.";
+    if (!confirm(msg)) return;
     try {
       await deleteRequestPhoto(p.photo_path);
+      // Legacy photos di photo_paths[] juga dibersihkan.
+      const extra = (p.photo_paths ?? []).filter((x) => x && x !== p.photo_path);
+      for (const pp of extra) await deleteRequestPhoto(pp);
       const { error } = await sb.from("request_preparations").delete().eq("id", p.id);
       if (error) throw error;
-      toast.success("Penyiapan dihapus, stok dikembalikan");
+      toast.success(wasSold ? "Penyiapan dihapus" : "Penyiapan dihapus, stok dikembalikan");
       onChanged(); void load();
     } catch (e) { toast.error("Gagal: " + (e as Error).message); }
   }
