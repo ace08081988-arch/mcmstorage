@@ -1406,7 +1406,7 @@ function SendPrepToCustomerDialog({
       // 2) Kirim WA dengan foto asli terlampir (bukan cuma link/teks).
       const files = await fetchPhotoFiles();
       const text = buildCaption();
-      const phone = resolvedParty.contact ? normalizePhone(resolvedParty.contact).digits : undefined;
+      const phone = normalizePhone(resolvedParty.contact) ?? undefined;
       const res = await shareToWhatsApp({
         text,
         title: titleName,
