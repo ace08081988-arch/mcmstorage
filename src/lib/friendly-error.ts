@@ -5,6 +5,78 @@
 import { toast } from "sonner";
 
 /**
+ * Telemetri lokal untuk melacak sumber penolakan akses.
+ * Menyimpan ring-buffer di `localStorage` (`mcm:access-denied-log`, maks 50 entri)
+ * dan mengeluarkan event terstruktur ke `console.info` sehingga bisa dipanen
+ * dari devtools / remote log. Juga menembakkan `CustomEvent('mcm:access-denied')`
+ * pada `window` supaya kolektor telemetri (mis. Sentry) bisa mendengarkan.
+ */
+const ACCESS_DENIED_LOG_KEY = "mcm:access-denied-log";
+const ACCESS_DENIED_LOG_MAX = 50;
+
+export type AccessDeniedTelemetry = {
+  ts: string;
+  phase: "toast-shown" | "action-clicked";
+  code?: string;
+  status?: number;
+  message?: string;
+  path?: string;
+  prefix?: string;
+};
+
+function readAccessDeniedLog(): AccessDeniedTelemetry[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = window.localStorage.getItem(ACCESS_DENIED_LOG_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? (parsed as AccessDeniedTelemetry[]) : [];
+  } catch {
+    return [];
+  }
+}
+
+function appendAccessDeniedLog(entry: AccessDeniedTelemetry): void {
+  if (typeof window === "undefined") return;
+  try {
+    const next = [...readAccessDeniedLog(), entry].slice(-ACCESS_DENIED_LOG_MAX);
+    window.localStorage.setItem(ACCESS_DENIED_LOG_KEY, JSON.stringify(next));
+  } catch {
+    /* quota / private mode — abaikan */
+  }
+}
+
+/** Ambil buffer telemetri (paling lama → paling baru). Aman dipanggil di tes. */
+export function getAccessDeniedLog(): AccessDeniedTelemetry[] {
+  return readAccessDeniedLog();
+}
+
+/** Kosongkan buffer telemetri. */
+export function clearAccessDeniedLog(): void {
+  if (typeof window === "undefined") return;
+  try { window.localStorage.removeItem(ACCESS_DENIED_LOG_KEY); } catch { /* noop */ }
+}
+
+function emitAccessDenied(entry: AccessDeniedTelemetry): void {
+  try { console.info("[access-denied]", entry); } catch { /* noop */ }
+  appendAccessDeniedLog(entry);
+  if (typeof window !== "undefined" && typeof CustomEvent === "function") {
+    try {
+      window.dispatchEvent(new CustomEvent("mcm:access-denied", { detail: entry }));
+    } catch { /* noop */ }
+  }
+}
+
+function extractErrorFields(err: unknown): Pick<AccessDeniedTelemetry, "code" | "status" | "message"> {
+  const e = (err ?? {}) as { code?: string; status?: number; message?: string };
+  return {
+    code: e.code,
+    status: e.status,
+    message: e.message ? String(e.message).slice(0, 300) : undefined,
+  };
+}
+
+/**
  * True saat error berasal dari policy RLS / Postgres yang menolak akses
  * (kode 42501) atau PostgREST 301 (JWT tidak mengizinkan). Toast untuk
  * kasus ini seharusnya menampilkan tombol menuju halaman pengaturan akses
@@ -112,12 +184,29 @@ export function notifyError(
 ): string | number {
   const msg = (opts.prefix ?? "") + friendlyError(err, opts.fallback);
   if (isAccessDeniedError(err)) {
+    const errorFields = extractErrorFields(err);
+    const path =
+      typeof window !== "undefined" ? window.location.pathname + window.location.search : undefined;
+    emitAccessDenied({
+      ts: new Date().toISOString(),
+      phase: "toast-shown",
+      ...errorFields,
+      path,
+      prefix: opts.prefix,
+    });
     return toast.error(msg, {
       description:
         "Akun Anda mungkin masih MCM Chat saja. Buka Profil untuk upgrade ke MCM Storage.",
       action: {
         label: "Perbaiki Akses",
         onClick: () => {
+          emitAccessDenied({
+            ts: new Date().toISOString(),
+            phase: "action-clicked",
+            ...errorFields,
+            path,
+            prefix: opts.prefix,
+          });
           if (typeof window !== "undefined") {
             window.location.assign("/profil");
           }
