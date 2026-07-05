@@ -2067,8 +2067,36 @@ function ItemCard({
 
   const isDone = (item.submissions?.length ?? 0) > 0;
   const hasDraft = photos.length > 0 || pending.length > 0;
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const doneCollapseRef = useRef(false);
+  // Auto-collapse setelah item ini beralih ke status "sudah terkirim".
+  // Beri jeda singkat supaya user sempat melihat toast/success banner.
+  useEffect(() => {
+    if (!isDone) { doneCollapseRef.current = false; return; }
+    if (doneCollapseRef.current) return;
+    doneCollapseRef.current = true;
+    const t = setTimeout(() => setExpanded(false), 900);
+    return () => clearTimeout(t);
+  }, [isDone]);
+  // Auto-open bila parent minta (mis. paket ini adalah "berikutnya" setelah
+  // paket lain di varian sama baru saja selesai). Trigger memakai tick agar
+  // efek jalan tiap kali parent mengaktifkan lagi.
+  useEffect(() => {
+    if (!autoOpen) return;
+    setExpanded(true);
+    // Tunggu satu frame supaya konten sudah render, baru scroll ke tengah.
+    const rafId = requestAnimationFrame(() => {
+      try {
+        cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } catch {
+        cardRef.current?.scrollIntoView();
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [autoOpen]);
   return (
     <div
+      ref={cardRef}
       className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}
     >
       {isStale && (
