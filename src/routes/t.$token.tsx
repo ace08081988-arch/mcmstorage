@@ -1789,12 +1789,21 @@ function ItemCard({
       }
     }
     setBusy(true);
-    // Reset & inisialisasi status upload per foto.
-    setUploads(photos.map(() => ({ status: "idle" as const })));
+    // Preserve status "done" (dengan path yang sudah terunggah) dari
+    // attempt sebelumnya, supaya klik "Coba lagi" hanya mengulang foto yang
+    // gagal — sama sekali tidak menghitung ulang kuota storage untuk foto
+    // yang sudah sukses.
+    const state: PhotoUploadStatus[] =
+      uploads.length === photos.length
+        ? uploads.map((u) => (u.status === "done" ? u : { status: "idle" as const }))
+        : photos.map(() => ({ status: "idle" as const }));
+    setUploads(state);
     try {
-      const uploaded: string[] = [];
+      // Upload hanya index yang belum "done".
       for (let i = 0; i < photos.length; i++) {
-        setUploads((prev) => prev.map((u, j) => (j === i ? { status: "uploading" } : u)));
+        if (state[i].status === "done") continue;
+        state[i] = { status: "uploading" };
+        setUploads(state.slice());
         let uploadedPath: string | null = null;
         try {
           uploadedPath = await uploadPrepPhoto(
@@ -1806,21 +1815,29 @@ function ItemCard({
           );
         } catch (uerr) {
           const msg = (uerr as Error).message || "Gagal mengunggah";
-          setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
-          toast.error(`Foto ${i + 1} gagal unggah: ${msg}`);
-          setBusy(false);
-          return;
+          state[i] = { status: "error", error: msg };
+          setUploads(state.slice());
+          continue;
         }
         if (!uploadedPath) {
-          const msg = "Server menolak upload";
-          setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
-          toast.error(`Foto ${i + 1} gagal unggah: ${msg}`);
-          setBusy(false);
-          return;
+          state[i] = { status: "error", error: "Server menolak upload" };
+          setUploads(state.slice());
+          continue;
         }
-        setUploads((prev) => prev.map((u, j) => (j === i ? { status: "done" } : u)));
-        uploaded.push(uploadedPath);
+        state[i] = { status: "done", path: uploadedPath };
+        setUploads(state.slice());
       }
+      const failed = state.filter((u) => u.status === "error").length;
+      if (failed > 0) {
+        toast.error(
+          `${failed} foto gagal unggah. Tekan "Coba lagi" pada foto yang gagal — foto yang sudah sukses tidak akan diulang.`,
+        );
+        setBusy(false);
+        return;
+      }
+      const uploaded = state.map((u) =>
+        u.status === "done" ? u.path : "",
+      );
       const args = {
         _token: token,
         _pin: pin,
@@ -1969,6 +1986,17 @@ function ItemCard({
           onClearAll={() => {
             setPhotos([]);
             setPending([]);
+          }}
+          onRetryUpload={(i) => {
+            // Tandai foto ini idle supaya submit() mengulang HANYA foto
+            // ini; foto lain yang sudah "done" tetap dipertahankan.
+            setUploads((prev) =>
+              prev.map((u, j) => (j === i ? { status: "idle" } : u)),
+            );
+            void submit();
+          }}
+          onRetryAllUploads={() => {
+            void submit();
           }}
         />
         <div className="mt-3 grid grid-cols-2 gap-2">
@@ -2131,7 +2159,7 @@ type PendingPhoto = {
 export type PhotoUploadStatus =
   | { status: "idle" }
   | { status: "uploading" }
-  | { status: "done" }
+  | { status: "done"; path: string }
   | { status: "error"; error: string };
 
 // Grid tile foto dengan indikator status per foto (loading / sukses / gagal).
@@ -2146,6 +2174,8 @@ function PhotoTileGrid({
   onRetry,
   onDismiss,
   onClearAll,
+  onRetryUpload,
+  onRetryAllUploads,
 }: {
   photos: StagedPhotoT[];
   pending: PendingPhoto[];
@@ -2156,6 +2186,8 @@ function PhotoTileGrid({
   onRetry: (id: string) => void;
   onDismiss: (id: string) => void;
   onClearAll: () => void;
+  onRetryUpload?: (i: number) => void;
+  onRetryAllUploads?: () => void;
 }) {
   const total = photos.length + pending.length;
   if (total === 0) return null;
@@ -2167,7 +2199,7 @@ function PhotoTileGrid({
   const isUploading = uploads !== undefined && uploads.some((u) => u.status !== "idle");
   return (
     <div className="mt-3 space-y-2">
-      <div className="flex items-center justify-between text-[11px] text-muted-foreground">
+      <div className="flex flex-wrap items-center justify-between gap-2 text-[11px] text-muted-foreground">
         <span aria-live="polite">
           {photos.length} foto siap
           {loadingCount > 0 ? ` · ${loadingCount} memuat…` : ""}
@@ -2176,14 +2208,25 @@ function PhotoTileGrid({
           {uploadingCount > 0 ? " · mengunggah…" : ""}
           {uploadErrCount > 0 ? ` · ${uploadErrCount} gagal unggah` : ""}
         </span>
-        <button
-          type="button"
-          onClick={onClearAll}
-          disabled={isUploading}
-          className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10"
-        >
-          Hapus semua
-        </button>
+        <div className="flex items-center gap-1.5">
+          {uploadErrCount > 0 && !isUploading && onRetryAllUploads && (
+            <button
+              type="button"
+              onClick={onRetryAllUploads}
+              className="inline-flex h-7 items-center gap-1 rounded-md border border-primary/40 bg-primary/5 px-2 text-[10px] font-medium text-primary hover:bg-primary/10"
+            >
+              <RefreshCw className="h-3 w-3" /> Coba lagi {uploadErrCount} foto gagal
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={onClearAll}
+            disabled={isUploading}
+            className="inline-flex h-7 items-center gap-1 rounded-md border border-destructive/40 px-2 text-[10px] text-destructive hover:bg-destructive/10"
+          >
+            Hapus semua
+          </button>
+        </div>
       </div>
       <div className="grid grid-cols-3 gap-1.5">
         {photos.map((p, i) => {
@@ -2242,6 +2285,15 @@ function PhotoTileGrid({
                   <AlertCircle className="h-5 w-5" aria-hidden />
                   <div className="text-[10px] font-semibold">Gagal unggah</div>
                   <div className="line-clamp-2 text-[9px] opacity-90">{upErr}</div>
+                  {onRetryUpload && !isUploading && (
+                    <button
+                      type="button"
+                      onClick={() => onRetryUpload(i)}
+                      className="mt-0.5 inline-flex h-5 items-center gap-0.5 rounded bg-white/90 px-1.5 text-[9px] font-semibold text-destructive"
+                    >
+                      <RefreshCw className="h-2.5 w-2.5" /> Coba lagi
+                    </button>
+                  )}
                 </div>
               )}
               {ok && up === "idle" && (
@@ -2716,10 +2768,15 @@ function RequestForm({
         setBusy(false);
         return;
       }
-      setUploads(photos.map(() => ({ status: "idle" as const })));
-      const uploaded: string[] = [];
+      const state: PhotoUploadStatus[] =
+        uploads.length === photos.length
+          ? uploads.map((u) => (u.status === "done" ? u : { status: "idle" as const }))
+          : photos.map(() => ({ status: "idle" as const }));
+      setUploads(state);
       for (let i = 0; i < photos.length; i++) {
-        setUploads((prev) => prev.map((u, j) => (j === i ? { status: "uploading" } : u)));
+        if (state[i].status === "done") continue;
+        state[i] = { status: "uploading" };
+        setUploads(state.slice());
         let uploadedPath: string | null = null;
         try {
           uploadedPath = await uploadRequestPhotoViaToken(
@@ -2731,17 +2788,27 @@ function RequestForm({
           );
         } catch (uerr) {
           const msg = (uerr as Error).message || "Gagal mengunggah";
-          setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
-          throw new Error(`Foto ${i + 1} gagal unggah: ${msg}`);
+          state[i] = { status: "error", error: msg };
+          setUploads(state.slice());
+          continue;
         }
         if (!uploadedPath) {
-          const msg = "Server menolak upload";
-          setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
-          throw new Error(`Foto ${i + 1} gagal unggah: ${msg}`);
+          state[i] = { status: "error", error: "Server menolak upload" };
+          setUploads(state.slice());
+          continue;
         }
-        setUploads((prev) => prev.map((u, j) => (j === i ? { status: "done" } : u)));
-        uploaded.push(uploadedPath);
+        state[i] = { status: "done", path: uploadedPath };
+        setUploads(state.slice());
       }
+      const failed = state.filter((u) => u.status === "error").length;
+      if (failed > 0) {
+        toast.error(
+          `${failed} foto gagal unggah. Tekan "Coba lagi" pada foto yang gagal — foto yang sudah sukses tidak akan diulang.`,
+        );
+        setBusy(false);
+        return;
+      }
+      const uploaded = state.map((u) => (u.status === "done" ? u.path : ""));
       const itemsPayload = validRows.map((r) => ({
         warehouse_item_id: r.warehouse_item_id,
         actual_grams: Number(r.actual_grams),
@@ -2822,6 +2889,15 @@ function RequestForm({
         onClearAll={() => {
           setPhotos([]);
           setPending([]);
+        }}
+        onRetryUpload={(i) => {
+          setUploads((prev) =>
+            prev.map((u, j) => (j === i ? { status: "idle" } : u)),
+          );
+          void submit();
+        }}
+        onRetryAllUploads={() => {
+          void submit();
         }}
       />
       <div className="grid grid-cols-2 gap-2">
