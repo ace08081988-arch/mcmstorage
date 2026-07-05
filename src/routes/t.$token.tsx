@@ -1313,8 +1313,21 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
   function pickGallery() { galleryRef.current?.click(); }
 
   async function fileToStaged(f: File): Promise<StagedPhoto> {
-    const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
-    return { dataUrl, blob: f };
+    // Pakai object URL agar preview <img> & PhotoEditor tampil instan tanpa
+    // memblokir memory besar (FileReader.readAsDataURL bisa gagal senyap di
+    // sebagian Android WebView untuk foto besar/HEIC).
+    try {
+      const dataUrl = URL.createObjectURL(f);
+      return { dataUrl, blob: f };
+    } catch {
+      const dataUrl = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result));
+        r.onerror = () => rej(r.error ?? new Error("Tidak bisa membaca foto"));
+        r.readAsDataURL(f);
+      });
+      return { dataUrl, blob: f };
+    }
   }
   function triggerAutoGps() {
     if (!gps && !locUrl && navigator.geolocation) {
@@ -1332,18 +1345,31 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
-    const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
-    setEditingIdx(null); // append after edit
-    setEditorSrc(dataUrl);
-    setEditorOpen(true);
-    triggerAutoGps();
+    try {
+      const staged = await fileToStaged(f);
+      // Tampilkan langsung di grid + buka editor untuk anotasi opsional.
+      // Kalau editor gagal memuat (HEIC/dsb), foto tetap ada di grid.
+      setPhotos((prev) => {
+        setEditingIdx(prev.length);
+        return [...prev, staged];
+      });
+      setEditorSrc(staged.dataUrl);
+      setEditorOpen(true);
+      triggerAutoGps();
+    } catch (err) {
+      toast.error("Gagal memuat foto: " + (err as Error).message);
+    }
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []); e.target.value = "";
     if (files.length === 0) return;
-    const staged = await Promise.all(files.map((f) => fileToStaged(f)));
-    setPhotos((prev) => [...prev, ...staged]);
-    triggerAutoGps();
+    try {
+      const staged = await Promise.all(files.map((f) => fileToStaged(f)));
+      setPhotos((prev) => [...prev, ...staged]);
+      triggerAutoGps();
+    } catch (err) {
+      toast.error("Gagal memuat foto: " + (err as Error).message);
+    }
   }
 
   function takeLocation() {
@@ -1715,23 +1741,45 @@ function RequestForm({
     }
   }
   async function fileToStaged(f: File): Promise<StagedPhoto> {
-    const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
-    return { dataUrl, blob: f };
+    try {
+      const dataUrl = URL.createObjectURL(f);
+      return { dataUrl, blob: f };
+    } catch {
+      const dataUrl = await new Promise<string>((res, rej) => {
+        const r = new FileReader();
+        r.onload = () => res(String(r.result));
+        r.onerror = () => rej(r.error ?? new Error("Tidak bisa membaca foto"));
+        r.readAsDataURL(f);
+      });
+      return { dataUrl, blob: f };
+    }
   }
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
     const f = e.target.files?.[0]; e.target.value = "";
     if (!f) return;
-    const dataUrl = await new Promise<string>((res) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.readAsDataURL(f); });
-    setEditingIdx(null);
-    setEditorSrc(dataUrl); setEditorOpen(true);
-    triggerAutoGps();
+    try {
+      const staged = await fileToStaged(f);
+      setPhotos((prev) => {
+        setEditingIdx(prev.length);
+        return [...prev, staged];
+      });
+      setEditorSrc(staged.dataUrl);
+      setEditorOpen(true);
+      triggerAutoGps();
+    } catch (err) {
+      toast.error("Gagal memuat foto: " + (err as Error).message);
+    }
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []); e.target.value = "";
     if (files.length === 0) return;
-    const staged = await Promise.all(files.map((f) => fileToStaged(f)));
-    setPhotos((prev) => [...prev, ...staged]);
-    triggerAutoGps();
+    try {
+      const staged = await Promise.all(files.map((f) => fileToStaged(f)));
+      setPhotos((prev) => [...prev, ...staged]);
+      triggerAutoGps();
+    } catch (err) {
+      toast.error("Gagal memuat foto: " + (err as Error).message);
+    }
   }
 
   function takeLocation() {
