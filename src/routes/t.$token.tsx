@@ -1608,7 +1608,10 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       </div>
 
       <button disabled={busy} onClick={submit} className="mt-3 inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50">
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />} Kirim
+        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+        {busy && uploads.some((u) => u.status !== "idle")
+          ? `Mengunggah ${uploads.filter((u) => u.status === "done").length}/${photos.length}…`
+          : "Kirim"}
       </button>
 
       {item.submissions.length > 0 && (
