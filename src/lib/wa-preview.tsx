@@ -87,10 +87,7 @@ export function confirmWaShare(input: {
   // Tampilkan pratinjau saat klik ganda terdeteksi, meski user pernah meminta "jangan
   // tampilkan lagi" — operator perlu lihat peringatan duplikat & tombol force.
   const dupActive = !!input.duplicate && input.duplicate.status !== "failed";
-  // Bila peer terdeteksi, tetap tampilkan pratinjau agar tombol Hutang/Bayar/Lunas
-  // bisa diakses meski user pernah mencentang "Jangan tampilkan lagi".
-  const hasPeer = !!(input.peer && (input.peer.phone || input.peer.accountUserId));
-  if (getWaSkipPreview() && !dupActive && !hasPeer) return Promise.resolve({ ok: true, text: input.text });
+  if (getWaSkipPreview() && !dupActive) return Promise.resolve({ ok: true, text: input.text });
   return new Promise((resolve) => {
     const req: Request = { ...input, resolve };
     if (openRequest) openRequest(req);
