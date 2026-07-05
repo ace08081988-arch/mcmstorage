@@ -65,7 +65,7 @@ export function ChatBottomNav() {
                 (active ? "bg-primary/15 scale-100" : "bg-transparent scale-95")
               }
             >
-              <Icon className="h-5 w-5" aria-hidden="true" focusable="false" />
+              <Icon className="h-5 w-5" />
               {badge && badge > 0 ? (
                 <span
                   className="absolute right-[calc(50%-1.75rem)] top-0.5 inline-flex min-w-[16px] items-center justify-center rounded-full bg-rose-500 px-1 text-[10px] font-semibold text-white"
