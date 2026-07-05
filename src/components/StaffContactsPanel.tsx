@@ -4,6 +4,7 @@ import { Plus, Trash2, MessageCircle, Copy, Users, Search, X, RefreshCw } from "
 import { supabase } from "@/integrations/supabase/client";
 import { buildWhatsAppUrl } from "@/lib/share-wa";
 import { confirm as confirmDialog } from "@/lib/confirm";
+import { Skeleton } from "@/components/ui/skeleton";
 
 type Contact = {
   id: string;
