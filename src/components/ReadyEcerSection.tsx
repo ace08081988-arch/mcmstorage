@@ -1262,20 +1262,36 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     setSendStatus("sending");
     setSendError(null);
     try {
-      // Bangun daftar slot foto (max 10). Pertahankan slot yang gagal agar bisa di-retry
-      // dari pratinjau tanpa mengulang seluruh alur kirim.
+      // Bangun daftar slot foto secara ATOMIK per folder kiriman: setiap shot
+      // (satu folder kiriman pegawai) dikirim utuh — semua foto di folder itu
+      // ikut, atau folder tsb tidak ikut sama sekali. Ini menjaga janji
+      // "1 folder = 1 kiriman", walau operator menandai beberapa foto atau
+      // slicing 10 memotong di tengah folder. Pertahankan slot yang gagal
+      // agar bisa di-retry dari pratinjau tanpa mengulang alur kirim.
       type Slot = { path: string; name: string; source: typeof take[number]["source"] };
-      const allSlots: Slot[] = [];
+      const folderSlots: Slot[][] = [];
       for (const s of take) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
           ...(s.photo_path ? [s.photo_path] : []),
         ])).filter(Boolean).sort();
-        for (let pi = 0; pi < paths.length; pi++) {
-          allSlots.push({ path: paths[pi], name: `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`, source: s.source });
-        }
+        if (paths.length === 0) continue;
+        const group: Slot[] = paths.map((p, pi) => ({
+          path: p,
+          name: `${r.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`,
+          source: s.source,
+        }));
+        folderSlots.push(group);
       }
-      const freshSlots = allSlots.slice(0, 10);
+      const MAX_SLOTS = 10;
+      const freshSlots: Slot[] = [];
+      for (const g of folderSlots) {
+        // Selalu sertakan folder pertama secara utuh, bahkan bila jumlah foto
+        // > MAX_SLOTS — supaya kiriman tidak terpotong di tengah folder.
+        if (freshSlots.length === 0) { freshSlots.push(...g); continue; }
+        if (freshSlots.length + g.length > MAX_SLOTS) break;
+        freshSlots.push(...g);
+      }
       const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const firstLocationFresh = take.find((s) => s.location_url)?.location_url ?? null;
       const freshText = [
