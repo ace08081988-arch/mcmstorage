@@ -290,6 +290,10 @@ function PublicPrepPage() {
   useEffect(() => {
     itemsRef.current = items;
   }, [items]);
+  // ID item yang di-auto-open oleh flow "selesai satu, buka berikutnya di varian sama".
+  // Nilai bertambah tiap trigger (nanoid-ish) supaya efek di ItemCard bisa bereaksi
+  // meski id target sama dengan sebelumnya.
+  const [autoOpen, setAutoOpen] = useState<{ id: string | null; tick: number }>({ id: null, tick: 0 });
   // Status koneksi realtime: 'connecting' saat awal, 'connected' setelah SUBSCRIBED,
   // 'error' bila channel gagal/terputus. lastSyncAt diisi setiap silentRefresh sukses.
   const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
@@ -741,6 +745,38 @@ function PublicPrepPage() {
   async function refresh() {
     if (!pinRef.current) return;
     await fetchTask(pinRef.current);
+  }
+
+  /**
+   * Dipanggil ItemCard setelah submit sukses. Selain refresh data,
+   * kartu yang baru saja selesai akan auto-collapse dan kartu berikutnya
+   * di varian yang sama akan auto-open + di-scroll ke tengah layar,
+   * supaya pegawai tidak perlu manual tutup-buka setiap paket.
+   */
+  function handleItemSubmitted(justDoneId: string) {
+    const stripSuffix = (s: string) =>
+      s.replace(/\s*[\(\[]\s*\d+\s*[\/／of-]\s*\d+\s*[\)\]]\s*$/i, "")
+       .replace(/\s*#\s*\d+\s*$/i, "")
+       .trim();
+    const cur = itemsRef.current;
+    const done = cur.find((i) => i.id === justDoneId);
+    let nextId: string | null = null;
+    if (done) {
+      const baseKey = `${stripSuffix(done.name) || done.name}::${done.category ?? ""}`;
+      const isPending = (it: PrepItemRow) => (it.submissions?.length ?? 0) === 0;
+      const sameVariant = (it: PrepItemRow) =>
+        `${stripSuffix(it.name) || it.name}::${it.category ?? ""}` === baseKey;
+      const justIdx = cur.findIndex((i) => i.id === justDoneId);
+      // Prioritas: item berikutnya di varian sama (index > justIdx),
+      // lalu item lain di varian sama, lalu item pending mana saja.
+      const nextInVariantAfter =
+        cur.find((it, idx) => it.id !== justDoneId && sameVariant(it) && isPending(it) && idx > justIdx) ??
+        cur.find((it) => it.id !== justDoneId && sameVariant(it) && isPending(it));
+      const anyPending = nextInVariantAfter ?? cur.find((it) => it.id !== justDoneId && isPending(it));
+      nextId = anyPending?.id ?? null;
+    }
+    setAutoOpen((prev) => ({ id: nextId, tick: prev.tick + 1 }));
+    void refresh();
   }
 
   // Refresh ringan untuk dipanggil oleh realtime / heartbeat / visibilitychange.
@@ -1567,7 +1603,8 @@ function PublicPrepPage() {
                               pin={pinRef.current}
                               isStale={!!staleItemIds[it.id]}
                               onAcknowledgeStale={() => clearStale(it.id)}
-                              onSubmitted={refresh}
+                              onSubmitted={handleItemSubmitted}
+                              autoOpen={autoOpen.id === it.id ? autoOpen.tick : 0}
                             />
                           </WorkerSectionBoundary>
                         ))}
@@ -1655,6 +1692,7 @@ function ItemCard({
   isStale,
   onAcknowledgeStale,
   onSubmitted,
+  autoOpen,
 }: {
   item: PrepItemRow;
   index: number;
@@ -1662,7 +1700,9 @@ function ItemCard({
   pin: string;
   isStale?: boolean;
   onAcknowledgeStale?: () => void;
-  onSubmitted: () => void;
+  onSubmitted: (justDoneId: string) => void;
+  /** Berubah (tick > 0) ketika parent minta kartu ini otomatis terbuka. */
+  autoOpen?: number;
 }) {
   const [photos, setPhotos] = useState<StagedPhoto[]>([]);
   const [pending, setPending] = useState<PendingPhoto[]>([]);
@@ -1992,7 +2032,7 @@ function ItemCard({
       if (!res?.ok) {
         if (res?.error === "item_changed") {
           toast.error("Item baru saja diubah admin. Periksa kembali sebelum kirim.");
-          onSubmitted(); // muat ulang dari server
+          onSubmitted(item.id); // muat ulang dari server
           return;
         }
         const msg =
@@ -2015,7 +2055,7 @@ function ItemCard({
       setNote("");
       setUploads([]);
       void clearDraftPhotos(draftKey);
-      onSubmitted();
+      onSubmitted(item.id);
     } catch (e) {
       const msg = (e as Error).message || "Gagal kirim";
       toast.error("Gagal kirim: " + msg);
@@ -2027,8 +2067,36 @@ function ItemCard({
 
   const isDone = (item.submissions?.length ?? 0) > 0;
   const hasDraft = photos.length > 0 || pending.length > 0;
+  const cardRef = useRef<HTMLDivElement | null>(null);
+  const doneCollapseRef = useRef(false);
+  // Auto-collapse setelah item ini beralih ke status "sudah terkirim".
+  // Beri jeda singkat supaya user sempat melihat toast/success banner.
+  useEffect(() => {
+    if (!isDone) { doneCollapseRef.current = false; return; }
+    if (doneCollapseRef.current) return;
+    doneCollapseRef.current = true;
+    const t = setTimeout(() => setExpanded(false), 900);
+    return () => clearTimeout(t);
+  }, [isDone]);
+  // Auto-open bila parent minta (mis. paket ini adalah "berikutnya" setelah
+  // paket lain di varian sama baru saja selesai). Trigger memakai tick agar
+  // efek jalan tiap kali parent mengaktifkan lagi.
+  useEffect(() => {
+    if (!autoOpen) return;
+    setExpanded(true);
+    // Tunggu satu frame supaya konten sudah render, baru scroll ke tengah.
+    const rafId = requestAnimationFrame(() => {
+      try {
+        cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+      } catch {
+        cardRef.current?.scrollIntoView();
+      }
+    });
+    return () => cancelAnimationFrame(rafId);
+  }, [autoOpen]);
   return (
     <div
+      ref={cardRef}
       className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}
     >
       {isStale && (
