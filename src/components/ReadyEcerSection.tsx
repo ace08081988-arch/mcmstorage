@@ -1235,6 +1235,14 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   const [waPreviewFolders, setWaPreviewFolders] = useState<
     Array<{ label: string; count: number; included: boolean }>
   >([]);
+  // Snapshot ekspektasi (folder ids + jumlah foto) yang dihitung saat pratinjau
+  // dibuka. Dipakai sebagai gerbang validasi tepat sebelum kirim WA agar
+  // pratinjau dan pesan yang benar-benar terkirim TIDAK PERNAH beda —
+  // bila `shots` berubah antara klik "Pratinjau" dan "Kirim WA", alur kirim
+  // dibatalkan dan operator diminta membuka pratinjau ulang.
+  const [waPreviewExpected, setWaPreviewExpected] = useState<
+    { folderIds: string[]; photoCount: number } | null
+  >(null);
   // Ingat kanal terakhir yang dipakai untuk kirim, supaya tombol "Kirim ulang"
   // di badge Gagal bisa memicu alur yang sama tanpa harus menandai ulang.
   const [lastSendChannel, setLastSendChannel] = useState<"wa" | "chat" | null>(null);
@@ -1264,7 +1272,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   const extra = Math.max(0, shots.length - thumbs.length);
   const unit = r.product_name.trim().toLowerCase() === "gs" ? "botol" : r.unit_label;
 
-  async function sendWA(e: React.MouseEvent) {
+  async function sendWA(
+    e: React.MouseEvent,
+    expected?: { folderIds: string[]; photoCount: number } | null,
+  ) {
     e.preventDefault();
     e.stopPropagation();
     if (sending) return;
@@ -1332,6 +1343,26 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       // foto di pesan WA konsisten dengan lampiran.
       const folderName = (s: typeof take[number]) =>
         s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
+      // Gerbang validasi: bila pratinjau menyertakan snapshot ekspektasi,
+      // pastikan folder yang benar-benar akan terkirim (id + jumlah foto)
+      // SAMA PERSIS dengan yang ditampilkan di pratinjau. Kalau tidak,
+      // batalkan sebelum share sheet terbuka dan minta operator membuka
+      // pratinjau ulang — mencegah mismatch pratinjau vs pesan terkirim.
+      if (expected) {
+        const actualIds = [...includedShots.map((s) => s.id)].sort();
+        const idsMatch =
+          actualIds.length === expected.folderIds.length &&
+          actualIds.every((id, i) => id === expected.folderIds[i]);
+        const countMatch = freshSlots.length === expected.photoCount;
+        if (!idsMatch || !countMatch) {
+          toast.warning(
+            `Kiriman berubah sejak pratinjau (folder ${expected.folderIds.length}→${actualIds.length}, foto ${expected.photoCount}→${freshSlots.length}). Buka pratinjau ulang.`,
+          );
+          setSending(false);
+          setSendStatus("idle");
+          return;
+        }
+      }
       const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const firstLocationFresh = includedShots.find((s) => s.location_url)?.location_url ?? null;
       const omitted = shots.length - includedShots.length;
@@ -1558,13 +1589,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     setWaPreviewLocation(firstLocation);
     setWaPreviewPhotoCount(photoCount);
     setWaPreviewFolders(folderSummary);
+    setWaPreviewExpected({
+      folderIds: [...includedShots.map((s) => s.id)].sort(),
+      photoCount,
+    });
     setWaPreviewOpen(true);
   }
 
   async function confirmSendWA() {
+    const expected = waPreviewExpected;
     setWaPreviewOpen(false);
     const fake = { preventDefault() {}, stopPropagation() {} } as unknown as React.MouseEvent;
-    try { await sendWA(fake); } catch { /* dilaporkan di kartu */ }
+    try { await sendWA(fake, expected); } catch { /* dilaporkan di kartu */ }
   }
 
   function undoSent(e: React.MouseEvent) {
@@ -1715,6 +1751,45 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   async function confirmChatSend(opts?: { force?: boolean }) {
     const ctx = chatPreview;
     if (!ctx || chatSending) return;
+    // Gerbang validasi: recompute folder atomik & jumlah foto dari `shots`
+    // saat ini menggunakan logika yang sama dengan prepareChat. Bila hasilnya
+    // berbeda dari snapshot pratinjau (ctx.markIds / ctx.chatShots), batalkan
+    // agar pratinjau tidak pernah menyesatkan pesan yang benar-benar terkirim.
+    {
+      const takeNow = shots.slice(0, 6);
+      const MAX_CHAT_SLOTS = 10;
+      const includedNowIds: string[] = [];
+      let photosNow = 0;
+      let foldersIncluded = 0;
+      for (const s of takeNow) {
+        const paths = Array.from(new Set([
+          ...((s.photo_paths ?? []) as string[]),
+          ...(s.photo_path ? [s.photo_path] : []),
+        ])).filter(Boolean);
+        if (paths.length === 0) continue;
+        if (foldersIncluded > 0 && photosNow + paths.length > MAX_CHAT_SLOTS) break;
+        photosNow += paths.length;
+        foldersIncluded++;
+        includedNowIds.push(s.id);
+      }
+      const expectedIds = [...ctx.markIds].sort();
+      const actualIds = [...includedNowIds].sort();
+      const idsMatch =
+        actualIds.length === expectedIds.length &&
+        actualIds.every((id, i) => id === expectedIds[i]);
+      // ctx.chatShots.length adalah jumlah foto yang benar-benar berhasil di-fetch;
+      // jumlah *paths* saat pratinjau = photosNow saat itu. Bandingkan dengan
+      // `photosNow` hasil recompute untuk mendeteksi perubahan sumber.
+      const countMatch = photosNow === ctx.chatShots.length + (ctx.preview.missingPhotos ?? 0);
+      if (!idsMatch || !countMatch) {
+        toast.warning(
+          `Kiriman berubah sejak pratinjau (folder ${expectedIds.length}→${actualIds.length}, foto ${ctx.chatShots.length + (ctx.preview.missingPhotos ?? 0)}→${photosNow}). Buka pratinjau ulang.`,
+        );
+        setChatPreviewOpen(false);
+        setChatPreview(null);
+        return;
+      }
+    }
     // Jika operator menekan "Kirim ulang (paksa)" pada banner duplikat, bersihkan
     // record lama agar withIdempotency tidak men-skip eksekusi.
     if (opts?.force) {
