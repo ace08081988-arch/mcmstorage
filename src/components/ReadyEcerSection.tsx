@@ -2060,6 +2060,14 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               Periksa isi teks sebelum dikirim. {waPreviewPhotoCount > 0 ? `${waPreviewPhotoCount} foto akan dilampirkan.` : "Tidak ada foto yang bisa dilampirkan."}
             </AlertDialogDescription>
           </AlertDialogHeader>
+          <div className="rounded-md border border-primary/20 bg-primary/5 p-2.5">
+            <div className="flex items-center justify-between text-[12px] font-semibold">
+              <span className="text-foreground">Ringkasan payload</span>
+              <span className="text-primary">
+                {waPreviewFolders.filter((f) => f.included).length} kiriman · {waPreviewPhotoCount} foto terlampir
+              </span>
+            </div>
+          </div>
           {waPreviewFolders.length > 0 && (
             <div className="rounded-md border bg-background p-2">
               <div className="mb-1 flex items-center justify-between text-[11px] font-semibold">
