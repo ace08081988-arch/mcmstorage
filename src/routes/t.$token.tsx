@@ -559,8 +559,10 @@ function PublicPrepPage() {
     }, 50);
   }
   function reloginNow() {
-    goBackToPin();
-    focusPinInput();
+    runWhenIdle(() => {
+      goBackToPin();
+      focusPinInput();
+    });
   }
   // Pembatasan percobaan di sisi klien: maksimal MAX_ATTEMPTS PIN salah
   // berturut-turut sebelum input PIN dikunci selama LOCK_SECONDS.
