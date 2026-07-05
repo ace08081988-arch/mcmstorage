@@ -1,10 +1,18 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Loader2, Plus, Wallet, CheckCircle2, HandCoins, Banknote, Undo2, Pencil } from "lucide-react";
+import { Loader2, Plus, Wallet, CheckCircle2, HandCoins, Banknote, Undo2, Pencil, ScrollText, ChevronDown, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
 import { emitDebtTx } from "@/lib/debt-tx-event";
+import {
+  appendDebtAction,
+  useDebtActionLog,
+  clearDebtActionLog,
+  actionLabel,
+  type DebtActionKind,
+  type DebtActionStatus,
+} from "@/lib/debt-action-log";
 import {
   AlertDialog,
   AlertDialogAction,
