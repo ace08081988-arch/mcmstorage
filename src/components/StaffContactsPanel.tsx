@@ -225,7 +225,18 @@ export function StaffContactsPanel({ uid }: { uid: string | null }) {
       )}
 
       <div className="mt-3 space-y-2">
-        {rows.length === 0 ? (
+        {refreshing && rows.length > 0 && (
+          <div className="h-1 w-full overflow-hidden rounded-full bg-muted">
+            <div className="h-full w-1/3 animate-[shimmer_1.2s_infinite] bg-primary/60" />
+          </div>
+        )}
+        {refreshing && rows.length === 0 ? (
+          <>
+            <SkeletonRow />
+            <SkeletonRow />
+            <SkeletonRow />
+          </>
+        ) : rows.length === 0 ? (
           <div className="rounded-md border border-dashed p-3 text-center text-[11px] text-muted-foreground">
             Belum ada kontak pegawai. Tambah dulu agar mudah kirim link tugas via WA.
           </div>
