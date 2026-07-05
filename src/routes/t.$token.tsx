@@ -1463,6 +1463,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       }
       toast.success(`Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${displayUnit(item.name, item.unit_label)}`);
       setPhotos([]); setLocUrl(""); setGps(null); setNote("");
+      void clearDraftPhotos(draftKey);
       onSubmitted();
     } catch (e) {
       toast.error("Gagal kirim: " + (e as Error).message);
