@@ -894,6 +894,14 @@ function SendPrepLinkDialog({
             <Button variant="ghost" size="sm" className="w-full" onClick={copyLinkPin}>
               <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link + PIN saja
             </Button>
+            <div className="grid grid-cols-2 gap-2">
+              <Button variant="outline" size="sm" onClick={() => void downloadPng()}>
+                <Download className="mr-1 h-3.5 w-3.5" /> Unduh PNG
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => void downloadPdf()}>
+                <FileText className="mr-1 h-3.5 w-3.5" /> Unduh PDF
+              </Button>
+            </div>
             <Button variant="ghost" size="sm" asChild className="w-full">
               <a href={session.url} target="_blank" rel="noreferrer">
                 <ExternalLink className="mr-1 h-3.5 w-3.5" /> Buka di tab baru untuk cek
