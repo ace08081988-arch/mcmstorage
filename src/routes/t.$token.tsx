@@ -1637,7 +1637,13 @@ function ItemCard({
         if (cancelled) return;
         if (blobs.length > 0) {
           const staged = await Promise.all(blobs.map((b) => stageFile(b)));
-          if (!cancelled) setPhotos(staged);
+          if (!cancelled) {
+            setPhotos(staged);
+            // Buka sekali saat draft tersimpan dimuat, supaya user langsung
+            // lihat foto yang belum sempat terkirim. Setelah itu, expand
+            // sepenuhnya dikontrol tap user — tidak akan buka-tutup sendiri.
+            setExpanded(true);
+          }
         }
       } catch {
         /* abaikan draft rusak */
