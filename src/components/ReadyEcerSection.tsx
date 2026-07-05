@@ -1248,6 +1248,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
       toast.info("Belum ada kiriman pegawai untuk judul ini.");
       return;
     }
+    setLastSendChannel("wa");
     // Urutan kanonik: sort by id (naik) sebelum slice — sehingga urutan
     // shots di UI (yang bisa berubah karena pegawai baru menyerobot masuk
     // atau resort submitted_at) tidak mempengaruhi identitas idempotency
