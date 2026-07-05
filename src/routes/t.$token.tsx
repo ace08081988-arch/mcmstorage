@@ -1938,7 +1938,20 @@ function ItemCard({
           </div>
         </div>
 
-        <PhotoTileGrid
+        {isDone && !isStale ? (
+          <div className="mt-3 rounded-lg border border-emerald-500/40 bg-emerald-500/5 p-3 text-[11px] leading-relaxed text-emerald-700 dark:text-emerald-300">
+            <div className="flex items-center gap-1.5 font-semibold">
+              <CheckCircle2 className="h-3.5 w-3.5" />
+              Sudah terkirim
+            </div>
+            <div className="mt-1 text-emerald-700/80 dark:text-emerald-300/80">
+              Foto & link sudah masuk folder <b>{item.name}</b>. Kolom
+              penyiapan disembunyikan supaya tidak dikirim dua kali.
+            </div>
+          </div>
+        ) : (
+          <>
+            <PhotoTileGrid
           photos={photos}
           pending={pending}
           justOk={justOk}
@@ -2050,6 +2063,8 @@ function ItemCard({
             ? `Mengunggah ${uploads.filter((u) => u.status === "done").length}/${photos.length}…`
             : "Kirim"}
         </button>
+          </>
+        )}
 
         {item.submissions.length > 0 && (
           <div className="mt-3 border-t pt-2">
