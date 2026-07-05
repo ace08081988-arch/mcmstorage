@@ -2098,11 +2098,25 @@ function RequestForm({
     setBusy(true);
     try {
       if (!ownerUserId) { toast.error("Sesi belum siap, coba muat ulang"); setBusy(false); return; }
+      setUploads(photos.map(() => ({ status: "idle" as const })));
       const uploaded: string[] = [];
       for (let i = 0; i < photos.length; i++) {
-        const p = await uploadRequestPhotoViaToken(ownerUserId, token, photos[i].blob, "jpg", publicSupabase);
-        if (!p) throw new Error(`Upload foto ${i + 1} gagal`);
-        uploaded.push(p);
+        setUploads((prev) => prev.map((u, j) => (j === i ? { status: "uploading" } : u)));
+        let uploadedPath: string | null = null;
+        try {
+          uploadedPath = await uploadRequestPhotoViaToken(ownerUserId, token, photos[i].blob, "jpg", publicSupabase);
+        } catch (uerr) {
+          const msg = (uerr as Error).message || "Gagal mengunggah";
+          setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
+          throw new Error(`Foto ${i + 1} gagal unggah: ${msg}`);
+        }
+        if (!uploadedPath) {
+          const msg = "Server menolak upload";
+          setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
+          throw new Error(`Foto ${i + 1} gagal unggah: ${msg}`);
+        }
+        setUploads((prev) => prev.map((u, j) => (j === i ? { status: "done" } : u)));
+        uploaded.push(uploadedPath);
       }
       const itemsPayload = validRows.map((r) => ({
         warehouse_item_id: r.warehouse_item_id,
@@ -2122,7 +2136,7 @@ function RequestForm({
       const res = data as { ok: boolean; error?: string };
       if (!res?.ok) throw new Error(res?.error || "submit_failed");
       toast.success(`Paket request terkirim (${uploaded.length} foto), stok dikurangi`);
-      setPhotos([]);
+      setPhotos([]); setUploads([]);
       void clearDraftPhotos(draftKey);
       onDone();
     } catch (e) {
