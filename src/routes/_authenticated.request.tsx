@@ -1173,37 +1173,31 @@ function TitleDetailView({
 }
 
 function PrepCard({
-  index, prep, items, warehouseItems, titleItems, onDelete,
+  index, prep, items, warehouseItems, titleItems, titleName, customers, onDelete, onSent,
 }: {
   index: number;
   prep: RequestPreparation;
   items: Array<{ id: string; warehouse_item_id: string; actual_grams: number }>;
   warehouseItems: WarehouseItem[];
   titleItems: RequestTitleItem[];
+  titleName: string;
+  customers: CustomerRow[];
   onDelete: () => void;
+  onSent: () => void;
 }) {
   const [photo, setPhoto] = useState<string | null>(null);
-  useEffect(() => { requestSignedUrl(prep.photo_path, 60 * 60).then(setPhoto); }, [prep.photo_path]);
+  const [sendOpen, setSendOpen] = useState(false);
+  // Kumpulkan semua path foto (photo_path lama + photo_paths[] baru), dedup.
+  const photoPaths = useMemo(() => {
+    const all = [prep.photo_path, ...(prep.photo_paths ?? [])].filter((x): x is string => !!x);
+    return Array.from(new Set(all));
+  }, [prep.photo_path, prep.photo_paths]);
+  useEffect(() => { requestSignedUrl(photoPaths[0] ?? null, 60 * 60).then(setPhoto); }, [photoPaths]);
+  const sold = !!prep.sold_at;
   const unitFor = (wid: string) => {
     const w = warehouseItems.find((x) => x.id === wid);
     const ti = titleItems.find((t) => t.warehouse_item_id === wid);
     return displayUnit(w?.name, ti?.unit_label ?? w?.base_unit ?? "g");
-  };
-  const sendWA = () => {
-    const lines: string[] = [];
-    lines.push(`*Paket #${index}*`);
-    if (items.length > 0) {
-      lines.push("Isi:");
-      items.forEach((it) => {
-        const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
-        lines.push(`• ${w?.name ?? "?"} ${it.actual_grams} ${unitFor(it.warehouse_item_id)}`);
-      });
-    }
-    if (prep.note) { lines.push(""); lines.push(`Catatan: ${prep.note}`); }
-    if (prep.location_url) { lines.push(""); lines.push(`Lokasi: ${prep.location_url}`); }
-    lines.push("");
-    lines.push(`Disiapkan: ${new Date(prep.created_at).toLocaleString("id-ID")}`);
-    void shareToWhatsApp({ text: lines.join("\n"), title: `Paket #${index}` }).then(notifyShareResult);
   };
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
@@ -1212,14 +1206,20 @@ function PrepCard({
           Paket #{index} · {prep.created_by}
         </div>
         <div className="flex items-center gap-1">
-          <button
-            onClick={sendWA}
-            className="rounded-md border border-[#25D366]/40 bg-[#25D366]/15 p-1 text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
-            aria-label="Kirim via MCM"
-            title="Kirim ringkasan via MCM"
-          >
-            <MessageCircle className="h-3.5 w-3.5" />
-          </button>
+          {!sold ? (
+            <button
+              onClick={() => setSendOpen(true)}
+              className="inline-flex items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/15 px-2 py-1 text-[10px] font-semibold text-[#0b6b3a] hover:bg-[#25D366]/25 dark:text-[#7ee2a8]"
+              aria-label="Kirim ke pelanggan"
+              title="Kirim foto + tagihan ke pelanggan (potong stok & catat piutang bila hutang)"
+            >
+              <Send className="h-3 w-3" /> Kirim
+            </button>
+          ) : (
+            <span className="inline-flex items-center gap-1 rounded-md border border-emerald-500/40 bg-emerald-500/10 px-2 py-1 text-[10px] font-semibold text-emerald-700 dark:text-emerald-300">
+              <CheckCircle2 className="h-3 w-3" /> Terkirim
+            </span>
+          )}
           <button
             onClick={onDelete}
             className="rounded-md border border-destructive/40 bg-destructive/10 p-1 text-destructive hover:bg-destructive/20"
@@ -1236,6 +1236,18 @@ function PrepCard({
         <div className="flex aspect-square w-full items-center justify-center bg-muted text-xs text-muted-foreground">No photo</div>
       )}
       <div className="space-y-1.5 p-3 text-[11px]">
+        {sold && (
+          <div className="rounded-md border border-emerald-500/30 bg-emerald-500/5 p-2 text-[11px] text-emerald-800 dark:text-emerald-200 space-y-0.5">
+            <div className="flex items-center gap-1 font-semibold">
+              {prep.sold_payment_method === "hutang" ? <HandCoins className="h-3 w-3" /> : <Wallet className="h-3 w-3" />}
+              {prep.sold_payment_method === "hutang" ? "Piutang" : "Lunas"} · {rupiah(Number(prep.sold_total ?? 0))}
+            </div>
+            <div className="text-emerald-900/80 dark:text-emerald-100/80">
+              ke <b>{prep.sold_party_name ?? "-"}</b>
+              {prep.sold_at && <> · {new Date(prep.sold_at).toLocaleString("id-ID")}</>}
+            </div>
+          </div>
+        )}
         <div className="flex flex-wrap gap-1">
           {items.map((it) => {
             const w = warehouseItems.find((x) => x.id === it.warehouse_item_id);
@@ -1245,6 +1257,9 @@ function PrepCard({
               </span>
             );
           })}
+          {sold && items.length === 0 && (
+            <span className="text-[10px] italic text-muted-foreground">Item sudah dikonversi ke penjualan</span>
+          )}
         </div>
         {prep.location_url && (
           <a href={prep.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-1 text-primary hover:underline">
@@ -1254,6 +1269,20 @@ function PrepCard({
         {prep.note && <div className="text-muted-foreground">{prep.note}</div>}
         <div className="text-muted-foreground">{new Date(prep.created_at).toLocaleString("id-ID")}</div>
       </div>
+
+      <SendPrepToCustomerDialog
+        open={sendOpen}
+        onClose={() => setSendOpen(false)}
+        prep={prep}
+        items={items}
+        warehouseItems={warehouseItems}
+        titleItems={titleItems}
+        titleName={titleName}
+        customers={customers}
+        photoPaths={photoPaths}
+        unitFor={unitFor}
+        onSent={() => { setSendOpen(false); onSent(); }}
+      />
     </div>
   );
 }
