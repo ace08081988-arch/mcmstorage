@@ -1877,6 +1877,36 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      <AlertDialog open={waPreviewOpen} onOpenChange={setWaPreviewOpen}>
+        <AlertDialogContent onClick={(e) => e.stopPropagation()} className="max-w-md">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Pratinjau pesan WhatsApp</AlertDialogTitle>
+            <AlertDialogDescription>
+              Periksa isi teks sebelum dikirim. {waPreviewPhotoCount > 0 ? `${waPreviewPhotoCount} foto akan dilampirkan.` : "Tidak ada foto yang bisa dilampirkan."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/40 p-3">
+            <pre className="whitespace-pre-wrap break-words font-sans text-[12px] leading-relaxed text-foreground">{waPreviewText}</pre>
+            {waPreviewLocation && (
+              <a
+                href={waPreviewLocation}
+                target="_blank"
+                rel="noreferrer"
+                className="mt-2 inline-flex items-center gap-1 text-[11px] font-medium text-primary underline underline-offset-2"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MapPin className="h-3 w-3" /> Buka lokasi di peta
+              </a>
+            )}
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={confirmSendWA} className="bg-[#25D366] text-white hover:bg-[#1ebe57]">
+              <MessageCircle className="mr-1 h-3.5 w-3.5" /> Kirim WA
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {selectMode && (
         <button
           type="button"
