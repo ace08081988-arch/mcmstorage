@@ -424,7 +424,7 @@ export function DebtQuickActions({
     const tx = lastTx;
     setReverting(true);
     try {
-      if (tx.label === "pay" || tx.label === "lunas") {
+      if ("paymentIds" in tx) {
         if (tx.paymentIds.length > 0) {
           const { error: pe } = await supabase
             .from("debt_payments")
@@ -482,7 +482,7 @@ export function DebtQuickActions({
     }
     setReverting(true);
     try {
-      if (tx.label === "pay" || tx.label === "lunas") {
+      if ("paymentIds" in tx) {
         // Balik dulu payment lama, lalu alokasi ulang dengan nominal baru.
         if (tx.paymentIds.length > 0) {
           const { error: pe } = await supabase
