@@ -1478,25 +1478,38 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     }
     const canonicalShots = [...shots].sort((a, b) => a.id.localeCompare(b.id));
     const take = canonicalShots.slice(0, 6);
-    const lines = take.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-    const firstLocation = take.find((s) => s.location_url)?.location_url ?? null;
-    const text = [
-      `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
-      `${shots.length} kiriman pegawai${extra > 0 ? ` (mengirim ${take.length})` : ""}:`,
-      ...lines,
-      ...(firstLocation ? [``, `📍 Lokasi: ${firstLocation}`] : []),
-    ].join("\n");
-    let photoCount = 0;
+    // Cerminkan logika atomik-per-folder yang sama dengan sendWA agar
+    // hitungan "kiriman" & daftar item di pratinjau selalu = yang benar-
+    // benar akan terkirim.
+    const MAX_SLOTS = 10;
+    const folderGroups: Array<{ shot: typeof take[number]; count: number }> = [];
     for (const s of take) {
       const paths = new Set<string>([
         ...((s.photo_paths ?? []) as string[]),
         ...(s.photo_path ? [s.photo_path] : []),
       ]);
-      photoCount += Array.from(paths).filter(Boolean).length;
+      const n = Array.from(paths).filter(Boolean).length;
+      if (n > 0) folderGroups.push({ shot: s, count: n });
     }
+    const includedShots: typeof take = [];
+    let photoCount = 0;
+    for (const g of folderGroups) {
+      if (photoCount === 0) { photoCount += g.count; includedShots.push(g.shot); continue; }
+      if (photoCount + g.count > MAX_SLOTS) break;
+      photoCount += g.count; includedShots.push(g.shot);
+    }
+    const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+    const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
+    const omitted = shots.length - includedShots.length;
+    const text = [
+      `*${r.name}* (${r.product_name} · ${r.target_grams} ${unit})`,
+      `${shots.length} kiriman pegawai${omitted > 0 ? ` (mengirim ${includedShots.length})` : ""} · ${photoCount} foto terlampir:`,
+      ...lines,
+      ...(firstLocation ? [``, `📍 Lokasi: ${firstLocation}`] : []),
+    ].join("\n");
     setWaPreviewText(text);
     setWaPreviewLocation(firstLocation);
-    setWaPreviewPhotoCount(Math.min(photoCount, 10));
+    setWaPreviewPhotoCount(photoCount);
     setWaPreviewOpen(true);
   }
 
