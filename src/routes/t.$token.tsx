@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
+import { Component, useCallback, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { toast } from "sonner";
 import { PhotoEditor } from "@/components/PhotoEditor";
 import {
@@ -152,6 +152,87 @@ function normalizePrepTask(value: unknown): PrepTaskRow | null {
       new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
     ),
   };
+}
+
+type NativeCameraStatus = "fallback" | "cancelled";
+
+async function cameraPhotoToFile(
+  photo: { webPath?: string; format?: string },
+  prefix: string,
+): Promise<File | null> {
+  if (!photo.webPath) return null;
+  const response = await fetch(photo.webPath);
+  const blob = await response.blob();
+  const rawExt = (photo.format || blob.type.split("/")[1] || "jpg").toLowerCase();
+  const ext = rawExt === "jpeg" ? "jpg" : rawExt.replace(/[^a-z0-9]/g, "") || "jpg";
+  const mime = blob.type || (ext === "jpg" ? "image/jpeg" : `image/${ext}`);
+  return new File([blob], `${prefix}-${Date.now()}.${ext}`, { type: mime });
+}
+
+async function captureNativeCameraPhoto(): Promise<File | NativeCameraStatus> {
+  if (typeof window === "undefined") return "fallback";
+  const { Capacitor } = await import("@capacitor/core");
+  if (!Capacitor.isNativePlatform()) return "fallback";
+  try {
+    const { Camera, CameraResultType, CameraSource } = await import("@capacitor/camera");
+    const photo = await Camera.getPhoto({
+      source: CameraSource.Camera,
+      resultType: CameraResultType.Uri,
+      quality: 82,
+      width: 2048,
+      height: 2048,
+      correctOrientation: true,
+      allowEditing: false,
+      saveToGallery: false,
+    });
+    return (await cameraPhotoToFile(photo, "pegawai-kamera")) ?? "cancelled";
+  } catch (err) {
+    const msg = (err as Error).message?.toLowerCase?.() ?? "";
+    if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("batal")) {
+      return "cancelled";
+    }
+    throw err;
+  }
+}
+
+async function pickNativeGalleryPhotos(): Promise<File[] | NativeCameraStatus> {
+  if (typeof window === "undefined") return "fallback";
+  const { Capacitor } = await import("@capacitor/core");
+  if (!Capacitor.isNativePlatform()) return "fallback";
+  try {
+    const { Camera } = await import("@capacitor/camera");
+    const result = await Camera.pickImages({
+      quality: 82,
+      width: 2048,
+      height: 2048,
+      correctOrientation: true,
+      limit: 20,
+    });
+    const photos = Array.isArray(result.photos) ? result.photos : [];
+    const files = await Promise.all(
+      photos.map((photo) => cameraPhotoToFile(photo, "pegawai-galeri")),
+    );
+    return files.filter((file): file is File => !!file);
+  } catch (err) {
+    const msg = (err as Error).message?.toLowerCase?.() ?? "";
+    if (msg.includes("cancel") || msg.includes("dismiss") || msg.includes("batal")) {
+      return "cancelled";
+    }
+    throw err;
+  }
+}
+
+function isObjectUrl(url: string | null | undefined): boolean {
+  return typeof url === "string" && url.startsWith("blob:");
+}
+
+function revokePhotoPreview(photo: StagedPhoto | null | undefined) {
+  if (!photo || !isObjectUrl(photo.dataUrl) || typeof URL === "undefined") return;
+  try {
+    URL.revokeObjectURL(photo.dataUrl);
+  } catch {
+    /* noop */
+  }
 }
 
 class WorkerSectionBoundary extends Component<
@@ -342,10 +423,41 @@ function PublicPrepPage() {
   const [syncTick, setSyncTick] = useState(0); // memicu re-render label "x dtk lalu"
   const [resyncing, setResyncing] = useState(false);
   const autoResyncRef = useRef<{ lastAt: number; failCount: number }>({ lastAt: 0, failCount: 0 });
+  const activeWorkerOpsRef = useRef(0);
+  const lastKeepAliveAtRef = useRef(0);
+  const setWorkerOperationActive = useCallback((active: boolean) => {
+    activeWorkerOpsRef.current = Math.max(0, activeWorkerOpsRef.current + (active ? 1 : -1));
+  }, []);
+  const keepWorkerSessionAlive = useCallback(() => {
+    const now = Date.now();
+    if (now - lastKeepAliveAtRef.current < 30_000) return;
+    const currentPin = pinRef.current;
+    if (!currentPin || !authedRef.current) return;
+    lastKeepAliveAtRef.current = now;
+    writeSession(currentPin);
+  }, []);
+  const isWorkerOperationActive = () => activeWorkerOpsRef.current > 0;
+
+  useEffect(() => {
+    if (!authed) return;
+    const onActivity = () => keepWorkerSessionAlive();
+    window.addEventListener("pointerdown", onActivity, { passive: true });
+    window.addEventListener("keydown", onActivity);
+    window.addEventListener("input", onActivity, true);
+    return () => {
+      window.removeEventListener("pointerdown", onActivity);
+      window.removeEventListener("keydown", onActivity);
+      window.removeEventListener("input", onActivity, true);
+    };
+  }, [authed, keepWorkerSessionAlive]);
 
   // Paksa muat ulang data sekarang juga (dipakai tombol "Resync sekarang").
   async function manualResync() {
     if (resyncing) return;
+    if (isWorkerOperationActive()) {
+      toast.info("Selesaikan foto/editor dulu, lalu resync lagi.");
+      return;
+    }
     setResyncing(true);
     const toastId = toast.loading("Menyinkronkan ulang…");
     try {
@@ -825,6 +937,7 @@ function PublicPrepPage() {
   // ke layar yang sesuai tanpa menghapus state percobaan.
   async function silentRefresh() {
     if (!pinRef.current || !authed) return;
+    if (isWorkerOperationActive()) return;
     let data: unknown = null;
     try {
       const r = await publicSupabase.rpc("prep_get_task", { _token: token, _pin: pinRef.current });
@@ -1286,6 +1399,7 @@ function PublicPrepPage() {
               className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
             />
             <button
+              type="button"
               disabled={
                 pin.length < 4 ||
                 loading ||
@@ -1769,6 +1883,8 @@ function PublicPrepPage() {
                                   onAcknowledgeStale={() => clearStale(it.id)}
                                   onSubmitted={handleItemSubmitted}
                                   autoOpen={autoOpen.id === it.id ? autoOpen.tick : 0}
+                                  onActivityChange={setWorkerOperationActive}
+                                  onKeepAlive={keepWorkerSessionAlive}
                                 />
                               </WorkerSectionBoundary>
                             ))}
@@ -1913,7 +2029,12 @@ function PublicPrepPage() {
             </div>
           )}
         >
-          <RequestSection token={token} pin={pinRef.current} />
+          <RequestSection
+            token={token}
+            pin={pinRef.current}
+            onActivityChange={setWorkerOperationActive}
+            onKeepAlive={keepWorkerSessionAlive}
+          />
         </WorkerSectionBoundary>
 
         <div className="mt-6 text-center text-[10px] text-muted-foreground">
@@ -1933,6 +2054,8 @@ function ItemCard({
   onAcknowledgeStale,
   onSubmitted,
   autoOpen,
+  onActivityChange,
+  onKeepAlive,
 }: {
   item: PrepItemRow;
   index: number;
@@ -1943,6 +2066,8 @@ function ItemCard({
   onSubmitted: (justDoneId: string) => void;
   /** Berubah (tick > 0) ketika parent minta kartu ini otomatis terbuka. */
   autoOpen?: number;
+  onActivityChange: (active: boolean) => void;
+  onKeepAlive: () => void;
 }) {
   const [photos, setPhotos] = useState<StagedPhoto[]>([]);
   const [pending, setPending] = useState<PendingPhoto[]>([]);
@@ -1966,6 +2091,9 @@ function ItemCard({
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);
+  useEffect(() => () => {
+    photosRef.current.forEach(revokePhotoPreview);
+  }, []);
   function openEditForIdx(i: number) {
     const p = photosRef.current[i];
     if (!p) return;
@@ -1992,6 +2120,24 @@ function ItemCard({
     | { kind: "success"; at: number; count: number }
     | { kind: "failed"; error: string }
   >({ kind: "idle" });
+
+  useEffect(() => {
+    if (!editorOpen) return;
+    onKeepAlive();
+    onActivityChange(true);
+    return () => onActivityChange(false);
+  }, [editorOpen, onActivityChange, onKeepAlive]);
+
+  async function withPhotoActivity<T>(fn: () => Promise<T>): Promise<T> {
+    onKeepAlive();
+    onActivityChange(true);
+    try {
+      return await fn();
+    } finally {
+      onKeepAlive();
+      onActivityChange(false);
+    }
+  }
 
   useEffect(() => {
     signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned);
@@ -2035,6 +2181,19 @@ function ItemCard({
   }, [photos, draftKey]);
 
   async function pickCamera() {
+    onKeepAlive();
+    try {
+      const nativePhoto = await captureNativeCameraPhoto();
+      if (nativePhoto === "cancelled") return;
+      if (nativePhoto !== "fallback") {
+        await stageOne(nativePhoto, true);
+        return;
+      }
+    } catch (err) {
+      toast.error("Kamera native gagal, membuka kamera browser…", {
+        description: (err as Error).message || undefined,
+      });
+    }
     const state = await queryCameraPermission();
     if (state === "denied") {
       toast.error(permissionToastMessage("camera", "denied"), {
@@ -2045,7 +2204,20 @@ function ItemCard({
     }
     cameraRef.current?.click();
   }
-  function pickGallery() {
+  async function pickGallery() {
+    onKeepAlive();
+    try {
+      const nativePhotos = await pickNativeGalleryPhotos();
+      if (nativePhotos === "cancelled") return;
+      if (nativePhotos !== "fallback") {
+        await stageGalleryFiles(nativePhotos);
+        return;
+      }
+    } catch (err) {
+      toast.error("Galeri native gagal, membuka galeri browser…", {
+        description: (err as Error).message || undefined,
+      });
+    }
     // Web tidak menyediakan Permissions API khusus untuk galeri; tetap
     // buka file picker, kalau kosong user bisa klik panduan di bawah.
     galleryRef.current?.click();
@@ -2083,28 +2255,30 @@ function ItemCard({
     );
   }
   async function stageOne(f: File, openEditor: boolean): Promise<StagedPhoto | null> {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setPending((p) => [...p, { id, status: "loading", name: f.name || "foto", file: f }]);
-    try {
-      const staged = await stageFile(f);
-      setPending((p) => p.filter((x) => x.id !== id));
-      setPhotos((prev) => {
-        if (openEditor) setEditingIdx(prev.length);
-        return [...prev, staged];
-      });
-      markSuccess(staged.blob);
-      if (openEditor) {
-        setEditorSrc(staged.dataUrl);
-        setEditorOpen(true);
+    return withPhotoActivity(async () => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      setPending((p) => [...p, { id, status: "loading", name: f.name || "foto", file: f }]);
+      try {
+        const staged = await stageFile(f);
+        setPending((p) => p.filter((x) => x.id !== id));
+        setPhotos((prev) => {
+          if (openEditor) setEditingIdx(prev.length);
+          return [...prev, staged];
+        });
+        markSuccess(staged.blob);
+        if (openEditor) {
+          setEditorSrc(staged.dataUrl);
+          setEditorOpen(true);
+        }
+        triggerAutoGps();
+        return staged;
+      } catch (err) {
+        const msg = (err as Error).message || "Gagal membaca foto";
+        setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "error", error: msg } : x)));
+        toast.error("Gagal memuat foto: " + msg);
+        return null;
       }
-      triggerAutoGps();
-      return staged;
-    } catch (err) {
-      const msg = (err as Error).message || "Gagal membaca foto";
-      setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "error", error: msg } : x)));
-      toast.error("Gagal memuat foto: " + msg);
-      return null;
-    }
+    });
   }
   async function retryPending(id: string) {
     const entry = pending.find((x) => x.id === id);
@@ -2113,7 +2287,7 @@ function ItemCard({
       p.map((x) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)),
     );
     try {
-      const staged = await stageFile(entry.file);
+      const staged = await withPhotoActivity(() => stageFile(entry.file!));
       setPending((p) => p.filter((x) => x.id !== id));
       setPhotos((prev) => [...prev, staged]);
       markSuccess(staged.blob);
@@ -2134,6 +2308,10 @@ function ItemCard({
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
+    if (files.length === 0) return;
+    await stageGalleryFiles(files);
+  }
+  async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
     const results = await Promise.all(files.map((f) => stageOne(f, false)));
     const okCount = results.filter(Boolean).length;
@@ -2189,6 +2367,8 @@ function ItemCard({
         return;
       }
     }
+    onKeepAlive();
+    onActivityChange(true);
     setBusy(true);
     setSendStatus({ kind: "sending", phase: "upload" });
     // Preserve status "done" (dengan path yang sudah terunggah) dari
@@ -2302,6 +2482,8 @@ function ItemCard({
       setSendStatus({ kind: "failed", error: msg });
     } finally {
       setBusy(false);
+      onKeepAlive();
+      onActivityChange(false);
     }
   }
 
@@ -2487,12 +2669,16 @@ function ItemCard({
             setEditorSrc(photos[i].dataUrl);
             setEditorOpen(true);
           }}
-          onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
+          onRemove={(i) => setPhotos((prev) => {
+            revokePhotoPreview(prev[i]);
+            return prev.filter((_, j) => j !== i);
+          })}
           onRetry={(id) => {
             void retryPending(id);
           }}
           onDismiss={dismissPending}
           onClearAll={() => {
+            photos.forEach(revokePhotoPreview);
             setPhotos([]);
             setPending([]);
           }}
@@ -2511,6 +2697,7 @@ function ItemCard({
             if (photos.length < 2) return;
             try {
               const merged = await mergeStagedPhotos(photos);
+              photos.forEach(revokePhotoPreview);
               setPhotos([merged]);
               // Buka editor langsung supaya bisa tambah teks / panah.
               editQueueRef.current = [];
@@ -2522,12 +2709,14 @@ function ItemCard({
         />
         <div className="mt-3 grid grid-cols-2 gap-2">
           <button
+            type="button"
             onClick={pickCamera}
             className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"
           >
             <Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}
           </button>
           <button
+            type="button"
             onClick={pickGallery}
             className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"
           >
@@ -2588,6 +2777,7 @@ function ItemCard({
               className="h-10 flex-1 rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
             />
             <button
+              type="button"
               onClick={takeLocation}
               className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium transition hover:bg-muted"
             >
@@ -2603,6 +2793,7 @@ function ItemCard({
         </div>
 
         <button
+          type="button"
           disabled={busy}
           onClick={submit}
           className="mt-3 inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
@@ -2641,11 +2832,13 @@ function ItemCard({
               setPhotos((prev) => {
                 if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
                   const next = prev.slice();
+                  revokePhotoPreview(next[editingIdx]);
                   next[editingIdx] = buildStagedPhoto(dataUrl, blob);
                   return next;
                 }
                 return [...prev, buildStagedPhoto(dataUrl, blob)];
               });
+              onKeepAlive();
               // Lanjut ke foto berikutnya dalam antrian galeri (kalau ada),
               // atau tutup editor.
               advanceEditQueue();
@@ -3025,7 +3218,17 @@ function normalizeRequestTitles(value: unknown): RequestTitleDTO[] {
   });
 }
 
-function RequestSection({ token, pin }: { token: string; pin: string }) {
+function RequestSection({
+  token,
+  pin,
+  onActivityChange,
+  onKeepAlive,
+}: {
+  token: string;
+  pin: string;
+  onActivityChange: (active: boolean) => void;
+  onKeepAlive: () => void;
+}) {
   const [titles, setTitles] = useState<RequestTitleDTO[] | null>(null);
   const [ownerUserId, setOwnerUserId] = useState<string | null>(null);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -3068,6 +3271,7 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
           return (
             <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
               <button
+                type="button"
                 onClick={() => setOpenId(openId === t.id ? null : t.id)}
                 className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/40"
               >
@@ -3097,6 +3301,8 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
                       setOpenId(null);
                       void load();
                     }}
+                    onActivityChange={onActivityChange}
+                    onKeepAlive={onKeepAlive}
                   />
                 </div>
               )}
@@ -3114,12 +3320,16 @@ function RequestForm({
   pin,
   ownerUserId,
   onDone,
+  onActivityChange,
+  onKeepAlive,
 }: {
   title: RequestTitleDTO;
   token: string;
   pin: string;
   ownerUserId: string | null;
   onDone: () => void;
+  onActivityChange: (active: boolean) => void;
+  onKeepAlive: () => void;
 }) {
   const [rows, setRows] = useState(
     title.items.map((i) => ({
@@ -3144,6 +3354,24 @@ function RequestForm({
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
 
+  useEffect(() => {
+    if (!editorOpen) return;
+    onKeepAlive();
+    onActivityChange(true);
+    return () => onActivityChange(false);
+  }, [editorOpen, onActivityChange, onKeepAlive]);
+
+  async function withPhotoActivity<T>(fn: () => Promise<T>): Promise<T> {
+    onKeepAlive();
+    onActivityChange(true);
+    try {
+      return await fn();
+    } finally {
+      onKeepAlive();
+      onActivityChange(false);
+    }
+  }
+
   // Draft foto persisten untuk paket request.
   const draftKey = requestDraftKey(token, title.id);
   // Antrian foto galeri yang dibuka di PhotoEditor satu per satu.
@@ -3152,6 +3380,9 @@ function RequestForm({
   useEffect(() => {
     photosRef.current = photos;
   }, [photos]);
+  useEffect(() => () => {
+    photosRef.current.forEach(revokePhotoPreview);
+  }, []);
   function openEditForIdx(i: number) {
     const p = photosRef.current[i];
     if (!p) return;
@@ -3199,6 +3430,19 @@ function RequestForm({
   }, [photos, draftKey]);
 
   async function pickCamera() {
+    onKeepAlive();
+    try {
+      const nativePhoto = await captureNativeCameraPhoto();
+      if (nativePhoto === "cancelled") return;
+      if (nativePhoto !== "fallback") {
+        await stageOne(nativePhoto, true);
+        return;
+      }
+    } catch (err) {
+      toast.error("Kamera native gagal, membuka kamera browser…", {
+        description: (err as Error).message || undefined,
+      });
+    }
     const state = await queryCameraPermission();
     if (state === "denied") {
       toast.error(permissionToastMessage("camera", "denied"), {
@@ -3209,7 +3453,20 @@ function RequestForm({
     }
     cameraRef.current?.click();
   }
-  function pickGallery() {
+  async function pickGallery() {
+    onKeepAlive();
+    try {
+      const nativePhotos = await pickNativeGalleryPhotos();
+      if (nativePhotos === "cancelled") return;
+      if (nativePhotos !== "fallback") {
+        await stageGalleryFiles(nativePhotos);
+        return;
+      }
+    } catch (err) {
+      toast.error("Galeri native gagal, membuka galeri browser…", {
+        description: (err as Error).message || undefined,
+      });
+    }
     galleryRef.current?.click();
   }
 
@@ -3242,28 +3499,30 @@ function RequestForm({
     );
   }
   async function stageOne(f: File, openEditor: boolean): Promise<StagedPhoto | null> {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setPending((p) => [...p, { id, status: "loading", name: f.name || "foto", file: f }]);
-    try {
-      const staged = await stageFile(f);
-      setPending((p) => p.filter((x) => x.id !== id));
-      setPhotos((prev) => {
-        if (openEditor) setEditingIdx(prev.length);
-        return [...prev, staged];
-      });
-      markSuccess(staged.blob);
-      if (openEditor) {
-        setEditorSrc(staged.dataUrl);
-        setEditorOpen(true);
+    return withPhotoActivity(async () => {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+      setPending((p) => [...p, { id, status: "loading", name: f.name || "foto", file: f }]);
+      try {
+        const staged = await stageFile(f);
+        setPending((p) => p.filter((x) => x.id !== id));
+        setPhotos((prev) => {
+          if (openEditor) setEditingIdx(prev.length);
+          return [...prev, staged];
+        });
+        markSuccess(staged.blob);
+        if (openEditor) {
+          setEditorSrc(staged.dataUrl);
+          setEditorOpen(true);
+        }
+        triggerAutoGps();
+        return staged;
+      } catch (err) {
+        const msg = (err as Error).message || "Gagal membaca foto";
+        setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "error", error: msg } : x)));
+        toast.error("Gagal memuat foto: " + msg);
+        return null;
       }
-      triggerAutoGps();
-      return staged;
-    } catch (err) {
-      const msg = (err as Error).message || "Gagal membaca foto";
-      setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "error", error: msg } : x)));
-      toast.error("Gagal memuat foto: " + msg);
-      return null;
-    }
+    });
   }
   async function retryPending(id: string) {
     const entry = pending.find((x) => x.id === id);
@@ -3272,7 +3531,7 @@ function RequestForm({
       p.map((x) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)),
     );
     try {
-      const staged = await stageFile(entry.file);
+      const staged = await withPhotoActivity(() => stageFile(entry.file!));
       setPending((p) => p.filter((x) => x.id !== id));
       setPhotos((prev) => [...prev, staged]);
       markSuccess(staged.blob);
@@ -3293,6 +3552,10 @@ function RequestForm({
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
     const files = Array.from(e.target.files ?? []);
     e.target.value = "";
+    if (files.length === 0) return;
+    await stageGalleryFiles(files);
+  }
+  async function stageGalleryFiles(files: File[]) {
     if (files.length === 0) return;
     const results = await Promise.all(files.map((f) => stageOne(f, false)));
     const okCount = results.filter(Boolean).length;
@@ -3332,6 +3595,8 @@ function RequestForm({
       toast.error("Minimal 1 item dengan jumlah > 0");
       return;
     }
+    onKeepAlive();
+    onActivityChange(true);
     setBusy(true);
     try {
       if (!ownerUserId) {
@@ -3411,6 +3676,8 @@ function RequestForm({
       toast.error("Gagal: " + (e as Error).message);
     } finally {
       setBusy(false);
+      onKeepAlive();
+      onActivityChange(false);
     }
   }
 
@@ -3452,12 +3719,16 @@ function RequestForm({
           setEditorSrc(photos[i].dataUrl);
           setEditorOpen(true);
         }}
-        onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
+        onRemove={(i) => setPhotos((prev) => {
+          revokePhotoPreview(prev[i]);
+          return prev.filter((_, j) => j !== i);
+        })}
         onRetry={(id) => {
           void retryPending(id);
         }}
         onDismiss={dismissPending}
         onClearAll={() => {
+          photos.forEach(revokePhotoPreview);
           setPhotos([]);
           setPending([]);
         }}
@@ -3474,6 +3745,7 @@ function RequestForm({
           if (photos.length < 2) return;
           try {
             const merged = await mergeStagedPhotos(photos);
+            photos.forEach(revokePhotoPreview);
             setPhotos([merged]);
             editQueueRef.current = [];
             setTimeout(() => openEditForIdx(0), 0);
@@ -3484,12 +3756,14 @@ function RequestForm({
       />
       <div className="grid grid-cols-2 gap-2">
         <button
+          type="button"
           onClick={pickCamera}
           className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"
         >
           <Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}
         </button>
         <button
+          type="button"
           onClick={pickGallery}
           className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"
         >
@@ -3593,6 +3867,7 @@ function RequestForm({
       />
 
       <button
+        type="button"
         disabled={busy}
         onClick={submit}
         className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
@@ -3615,11 +3890,13 @@ function RequestForm({
             setPhotos((prev) => {
               if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
                 const next = prev.slice();
+                revokePhotoPreview(next[editingIdx]);
                 next[editingIdx] = buildStagedPhoto(dataUrl, blob);
                 return next;
               }
               return [...prev, buildStagedPhoto(dataUrl, blob)];
             });
+            onKeepAlive();
             advanceEditQueue();
           }}
         />
