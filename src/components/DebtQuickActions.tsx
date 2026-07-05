@@ -580,6 +580,16 @@ export function DebtQuickActions({
       setEditOpen(false);
       return;
     }
+    // Validasi guard: cegah saldo negatif / tidak konsisten.
+    if (!("paymentIds" in tx)) {
+      const otherPaymentsSum = (data?.payments ?? [])
+        .filter((p) => p.debt_id === tx.debtId && (tx.wasCash ? p.id !== tx.paymentId : true))
+        .reduce((s, p) => s + Number(p.amount), 0);
+      if (next < otherPaymentsSum) {
+        toast.error(`Nominal baru < pembayaran tercatat (${rupiah(otherPaymentsSum)}).`);
+        return;
+      }
+    }
     setReverting(true);
     try {
       if ("paymentIds" in tx) {
