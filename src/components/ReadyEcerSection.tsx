@@ -1203,6 +1203,10 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
   type SendStatus = "idle" | "sending" | "success" | "failed" | "cancelled";
   const [sendStatus, setSendStatus] = useState<SendStatus>("idle");
   const [sendError, setSendError] = useState<string | null>(null);
+  const [waPreviewOpen, setWaPreviewOpen] = useState(false);
+  const [waPreviewText, setWaPreviewText] = useState("");
+  const [waPreviewLocation, setWaPreviewLocation] = useState<string | null>(null);
+  const [waPreviewPhotoCount, setWaPreviewPhotoCount] = useState(0);
   const [pickChatOpen, setPickChatOpen] = useState(false);
   const [chatSending, setChatSending] = useState(false);
   const [chatPreparing, setChatPreparing] = useState(false);
