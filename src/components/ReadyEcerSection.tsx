@@ -1536,12 +1536,14 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     }
     // Ringkasan folder untuk pratinjau: tandai mana yang ikut / tidak.
     const includedIds = new Set(includedShots.map((s) => s.id));
+    const folderName = (s: typeof take[number]) =>
+      s.source === "self" ? "Siapkan sendiri" : (s.item_name || r.name || `Kiriman ${s.id.slice(0, 6)}`);
     const folderSummary = folderGroups.map((g, i) => ({
-      label: `Folder ${i + 1} · ${new Date(g.shot.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`,
+      label: `Folder ${i + 1}: ${folderName(g.shot)} · ${new Date(g.shot.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`,
       count: g.count,
       included: includedIds.has(g.shot.id),
     }));
-    const lines = includedShots.map((s) => `• ${r.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+    const lines = includedShots.map((s) => `• ${folderName(s)} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
     const firstLocation = includedShots.find((s) => s.location_url)?.location_url ?? null;
     const omitted = shots.length - includedShots.length;
     const text = [
