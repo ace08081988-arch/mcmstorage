@@ -6,6 +6,7 @@ import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepSubmissionRow, t
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
 import { stageFile, type StagedPhoto as StagedPhotoT } from "@/lib/prep-file-staging";
+import { saveDraftPhotos, loadDraftPhotos, clearDraftPhotos, itemDraftKey, requestDraftKey } from "@/lib/prep-draft-store";
 import { queryCameraPermission, permissionToastMessage, type MediaKind } from "@/lib/media-permission";
 import { PermissionHelpDialog } from "@/components/prep/PermissionHelpDialog";
 import { HelpCircle } from "lucide-react";
