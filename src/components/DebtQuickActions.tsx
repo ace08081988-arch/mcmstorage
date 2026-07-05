@@ -722,9 +722,11 @@ export function DebtQuickActions({
         <div className="mt-2 flex flex-wrap items-center gap-1.5 rounded-md border border-dashed bg-background/60 px-2 py-1.5 text-[11px]">
           <span className="text-muted-foreground">Transaksi terakhir:</span>
           <span className="font-semibold text-foreground">
-            {lastTx.wasCash
-              ? lastTx.kind === "piutang" ? "Jual tunai" : "Beli tunai"
-              : lastTx.kind === "piutang" ? "Harga jual" : "Harga beli"}
+            {"paymentIds" in lastTx
+              ? (lastTx.label === "lunas" ? "Lunas" : "Bayar")
+              : lastTx.wasCash
+                ? (lastTx.kind === "piutang" ? "Jual tunai" : "Beli tunai")
+                : (lastTx.kind === "piutang" ? "Harga jual" : "Harga beli")}
             {" "}· {rupiah(lastTx.amount)}
           </span>
           <button
@@ -826,7 +828,9 @@ export function DebtQuickActions({
             <AlertDialogTitle>Batalkan transaksi terakhir?</AlertDialogTitle>
             <AlertDialogDescription>
               {lastTx
-                ? `Menghapus catatan ${lastTx.wasCash ? "tunai" : (lastTx.kind === "piutang" ? "piutang" : "hutang")} ${rupiah(lastTx.amount)} atas ${partyLabel}. Saldo dikembalikan ke sebelum transaksi ini.`
+                ? ("paymentIds" in lastTx
+                    ? `Menghapus pembayaran ${rupiah(lastTx.amount)} atas ${partyLabel}. Saldo ${lastTx.kind === "piutang" ? "piutang" : "hutang"} akan bertambah kembali.`
+                    : `Menghapus catatan ${lastTx.wasCash ? "tunai" : (lastTx.kind === "piutang" ? "piutang" : "hutang")} ${rupiah(lastTx.amount)} atas ${partyLabel}. Saldo dikembalikan ke sebelum transaksi ini.`)
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
@@ -864,7 +868,9 @@ export function DebtQuickActions({
             <AlertDialogTitle>Ubah nominal transaksi terakhir</AlertDialogTitle>
             <AlertDialogDescription>
               {lastTx
-                ? `Sebelumnya ${rupiah(lastTx.amount)}. Masukkan nominal baru — saldo ${lastTx.kind === "piutang" ? "piutang" : "hutang"} otomatis disesuaikan${lastTx.wasCash ? " (pembayaran tunai ikut diperbarui)" : ""}.`
+                ? ("paymentIds" in lastTx
+                    ? `Sebelumnya membayar ${rupiah(lastTx.amount)}. Masukkan nominal baru — pembayaran lama dibalik dan dialokasi ulang ke tagihan terlama dulu.`
+                    : `Sebelumnya ${rupiah(lastTx.amount)}. Masukkan nominal baru — saldo ${lastTx.kind === "piutang" ? "piutang" : "hutang"} otomatis disesuaikan${lastTx.wasCash ? " (pembayaran tunai ikut diperbarui)" : ""}.`)
                 : ""}
             </AlertDialogDescription>
           </AlertDialogHeader>
