@@ -2,19 +2,65 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Component, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
 import { toast } from "sonner";
 import { PhotoEditor } from "@/components/PhotoEditor";
-import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepSubmissionRow, type PrepTaskRow } from "@/lib/prep";
+import {
+  signedUrl,
+  uploadPrepPhoto,
+  type PrepItemRow,
+  type PrepSubmissionRow,
+  type PrepTaskRow,
+} from "@/lib/prep";
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
-import { stageFile, type StagedPhoto as StagedPhotoT } from "@/lib/prep-file-staging";
-import { saveDraftPhotos, loadDraftPhotos, clearDraftPhotos, itemDraftKey, requestDraftKey } from "@/lib/prep-draft-store";
-import { queryCameraPermission, permissionToastMessage, type MediaKind } from "@/lib/media-permission";
+import {
+  stageFile,
+  buildStagedPhoto,
+  formatFileSize,
+  type StagedPhoto as StagedPhotoT,
+} from "@/lib/prep-file-staging";
+import {
+  saveDraftPhotos,
+  loadDraftPhotos,
+  clearDraftPhotos,
+  itemDraftKey,
+  requestDraftKey,
+} from "@/lib/prep-draft-store";
+import {
+  queryCameraPermission,
+  permissionToastMessage,
+  type MediaKind,
+} from "@/lib/media-permission";
 import { PermissionHelpDialog } from "@/components/prep/PermissionHelpDialog";
 import { HelpCircle } from "lucide-react";
-import { MapPin, Camera, Image as ImageIcon, Edit3, Send, Loader2, Lock, ShieldCheck, Clock, CheckCircle2, Package, MessageCircle, ArrowLeft, AlertTriangle, RefreshCw, Wifi, WifiOff, Inbox, AlertCircle, X as XIcon } from "lucide-react";
+import {
+  MapPin,
+  Camera,
+  Image as ImageIcon,
+  Edit3,
+  Send,
+  Loader2,
+  Lock,
+  ShieldCheck,
+  Clock,
+  CheckCircle2,
+  Package,
+  MessageCircle,
+  ArrowLeft,
+  AlertTriangle,
+  RefreshCw,
+  Wifi,
+  WifiOff,
+  Inbox,
+  AlertCircle,
+  X as XIcon,
+} from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { displayUnit } from "@/lib/unit-label";
-import { getWorkerPortalConfig, fetchAndApplyWorkerPortalConfig, applyPreviewOverrideFromHash } from "@/lib/worker-portal-config";
+import {
+  getWorkerPortalConfig,
+  fetchAndApplyWorkerPortalConfig,
+  applyPreviewOverrideFromHash,
+} from "@/lib/worker-portal-config";
 import { StatusBadge } from "@/components/StatusBadge";
 import { reportPortalError } from "@/lib/portal-error-report";
 
@@ -83,16 +129,24 @@ function normalizePrepTask(value: unknown): PrepTaskRow | null {
     title: stringOrFallback(value.title, "Tugas siapkan barang"),
     note: stringOrNull(value.note),
     status: stringOrFallback(value.status, "active"),
-    expires_at: stringOrFallback(value.expires_at, new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
+    expires_at: stringOrFallback(
+      value.expires_at,
+      new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    ),
   };
 }
 
-class WorkerSectionBoundary extends Component<{
-  children: ReactNode;
-  renderFallback: (error: Error) => ReactNode;
-}, { error: Error | null }> {
+class WorkerSectionBoundary extends Component<
+  {
+    children: ReactNode;
+    renderFallback: (error: Error) => ReactNode;
+  },
+  { error: Error | null }
+> {
   state: { error: Error | null } = { error: null };
-  static getDerivedStateFromError(error: Error): { error: Error } { return { error }; }
+  static getDerivedStateFromError(error: Error): { error: Error } {
+    return { error };
+  }
   componentDidCatch(error: Error, info: ErrorInfo) {
     // Jangan biarkan 1 kartu / paket request meruntuhkan seluruh portal pegawai
     // dan memantulkan user kembali ke layar PIN.
@@ -115,7 +169,9 @@ function PublicPrepPage() {
   const [items, setItems] = useState<PrepItemRow[]>([]);
   const pinRef = useRef("");
   const autoTriedRef = useRef(false);
-  const [closedReason, setClosedReason] = useState<null | "pin_changed" | "not_found" | "expired" | "closed">(null);
+  const [closedReason, setClosedReason] = useState<
+    null | "pin_changed" | "not_found" | "expired" | "closed"
+  >(null);
   // Konfigurasi runtime (TTL sesi, retry, ambang stale). Dibaca via
   // useRef agar tidak bikin re-render saat dipakai dari callback dan
   // tidak berubah di tengah lifecycle satu mount. Override bisa via
@@ -138,7 +194,9 @@ function PublicPrepPage() {
       cfgRef.current = next;
       setCfgTick((t) => t + 1);
     });
-    return () => { alive = false; };
+    return () => {
+      alive = false;
+    };
   }, []);
   void cfgTick;
   // Persistensi sesi pegawai (PIN + flag authed) di sessionStorage.
@@ -153,13 +211,19 @@ function PublicPrepPage() {
   // per-tab — jadi countdown sesi butuh BroadcastChannel.
   const bcRef = useRef<BroadcastChannel | null>(null);
   const authedRef = useRef(false);
-  useEffect(() => { authedRef.current = authed; }, [authed]);
+  useEffect(() => {
+    authedRef.current = authed;
+  }, [authed]);
   type PortalMsg =
     | { type: "session"; pin: string; ts: number }
     | { type: "session-clear" }
     | { type: "attempts"; attempts: number; lockedUntil: number | null };
   function broadcast(msg: PortalMsg) {
-    try { bcRef.current?.postMessage(msg); } catch { /* noop */ }
+    try {
+      bcRef.current?.postMessage(msg);
+    } catch {
+      /* noop */
+    }
   }
   function readSession(): { pin: string; ts: number } | null {
     if (typeof window === "undefined") return null;
@@ -173,18 +237,24 @@ function PublicPrepPage() {
         return null;
       }
       return { pin: parsed.pin, ts: parsed.ts };
-    } catch { return null; }
+    } catch {
+      return null;
+    }
   }
   function writeSession(pin: string) {
     if (typeof window === "undefined") return;
     const ts = Date.now();
-    try { window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, ts })); } catch {}
+    try {
+      window.sessionStorage.setItem(SESSION_KEY, JSON.stringify({ pin, ts }));
+    } catch {}
     setSessionStartedAt(ts);
     broadcast({ type: "session", pin, ts });
   }
   function clearSession() {
     if (typeof window === "undefined") return;
-    try { window.sessionStorage.removeItem(SESSION_KEY); } catch {}
+    try {
+      window.sessionStorage.removeItem(SESSION_KEY);
+    } catch {}
     setSessionStartedAt(null);
     broadcast({ type: "session-clear" });
   }
@@ -214,7 +284,9 @@ function PublicPrepPage() {
   }>(null);
   const [staleItemIds, setStaleItemIds] = useState<Record<string, true>>({});
   const itemsRef = useRef<PrepItemRow[]>([]);
-  useEffect(() => { itemsRef.current = items; }, [items]);
+  useEffect(() => {
+    itemsRef.current = items;
+  }, [items]);
   // Status koneksi realtime: 'connecting' saat awal, 'connected' setelah SUBSCRIBED,
   // 'error' bila channel gagal/terputus. lastSyncAt diisi setiap silentRefresh sukses.
   const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
@@ -279,7 +351,11 @@ function PublicPrepPage() {
   const pinInputRef = useRef<HTMLInputElement | null>(null);
   function focusPinInput() {
     setTimeout(() => {
-      try { pinInputRef.current?.focus(); } catch { /* noop */ }
+      try {
+        pinInputRef.current?.focus();
+      } catch {
+        /* noop */
+      }
     }, 50);
   }
   function reloginNow() {
@@ -306,7 +382,8 @@ function PublicPrepPage() {
       const parsed = JSON.parse(raw) as AttemptState;
       return {
         attempts: Number(parsed.attempts) || 0,
-        lockedUntil: parsed.lockedUntil && parsed.lockedUntil > Date.now() ? parsed.lockedUntil : null,
+        lockedUntil:
+          parsed.lockedUntil && parsed.lockedUntil > Date.now() ? parsed.lockedUntil : null,
       };
     } catch {
       return { attempts: 0, lockedUntil: null };
@@ -317,7 +394,9 @@ function PublicPrepPage() {
     try {
       if (!state.attempts && !state.lockedUntil) window.localStorage.removeItem(STORAGE_KEY);
       else window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    } catch { /* ignore quota */ }
+    } catch {
+      /* ignore quota */
+    }
     broadcast({ type: "attempts", attempts: state.attempts, lockedUntil: state.lockedUntil });
   }
   // Reset total: state in-memory + localStorage benar-benar dibersihkan.
@@ -331,7 +410,9 @@ function PublicPrepPage() {
         window.localStorage.removeItem(STORAGE_KEY);
         // jaga-jaga jika ada key lama dari versi sebelumnya
         window.sessionStorage.removeItem(STORAGE_KEY);
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
     }
   }
 
@@ -339,7 +420,7 @@ function PublicPrepPage() {
     const s = readAttemptState();
     setAttempts(s.attempts);
     if (s.lockedUntil) setLockedUntil(s.lockedUntil);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Sinkronkan antar-tab: jika tab lain berhasil verifikasi PIN dan
@@ -357,14 +438,16 @@ function PublicPrepPage() {
       try {
         const parsed = JSON.parse(e.newValue) as AttemptState;
         setAttempts(Number(parsed.attempts) || 0);
-        const until = parsed.lockedUntil && parsed.lockedUntil > Date.now() ? parsed.lockedUntil : null;
+        const until =
+          parsed.lockedUntil && parsed.lockedUntil > Date.now() ? parsed.lockedUntil : null;
         setLockedUntil(until);
+      } catch {
+        /* ignore corrupt payload */
       }
-      catch { /* ignore corrupt payload */ }
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // BroadcastChannel: sinkron sesi (countdown PIN) dan status lock antar-tab.
@@ -403,10 +486,14 @@ function PublicPrepPage() {
       }
     };
     return () => {
-      try { bc.close(); } catch { /* noop */ }
+      try {
+        bc.close();
+      } catch {
+        /* noop */
+      }
       if (bcRef.current === bc) bcRef.current = null;
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   useEffect(() => {
@@ -423,7 +510,7 @@ function PublicPrepPage() {
       }
     }, 1000);
     return () => clearInterval(id);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [lockedUntil]);
 
   const lockedSecondsLeft = lockedUntil ? Math.max(0, Math.ceil((lockedUntil - now) / 1000)) : 0;
@@ -473,7 +560,15 @@ function PublicPrepPage() {
       toast.error(msg);
       return false;
     }
-    const res = data as { ok: boolean; error?: string; retry_after?: number; expires_at?: string; status?: string; task?: unknown; items?: unknown };
+    const res = data as {
+      ok: boolean;
+      error?: string;
+      retry_after?: number;
+      expires_at?: string;
+      status?: string;
+      task?: unknown;
+      items?: unknown;
+    };
     if (!res?.ok) {
       if (res?.error === "rate_limited") {
         const secs = Math.max(1, res.retry_after ?? 600);
@@ -483,7 +578,12 @@ function PublicPrepPage() {
         const mins = Math.floor(secs / 60);
         const remain = mins >= 1 ? `${mins} menit ${secs % 60} detik` : `${secs} detik`;
         const msg = `Akses terkunci oleh server. Coba lagi dalam ${remain}.`;
-        setLastError({ kind: "rate_limited", message: msg, code: "rate_limited", detail: `retry_after: ${secs} detik` });
+        setLastError({
+          kind: "rate_limited",
+          message: msg,
+          code: "rate_limited",
+          detail: `retry_after: ${secs} detik`,
+        });
         toast.error(msg);
       } else {
         if (res?.error === "bad_pin") {
@@ -514,24 +614,37 @@ function PublicPrepPage() {
           setLastError({ kind: "expired", message: msg, detail, code: "expired" });
           toast.error(msg);
         } else if (res?.error === "closed") {
-          const msg = res.status === "cancelled"
-            ? "Tugas ini sudah dibatalkan pemilik."
-            : "Tugas ini sudah ditutup pemilik (sudah selesai).";
-          setLastError({ kind: "closed", message: msg, code: "closed", detail: res.status ? `Status: ${res.status}` : undefined });
+          const msg =
+            res.status === "cancelled"
+              ? "Tugas ini sudah dibatalkan pemilik."
+              : "Tugas ini sudah ditutup pemilik (sudah selesai).";
+          setLastError({
+            kind: "closed",
+            message: msg,
+            code: "closed",
+            detail: res.status ? `Status: ${res.status}` : undefined,
+          });
           toast.error(msg);
         } else if (res?.error === "not_found") {
-          const msg = "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik.";
+          const msg =
+            "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik.";
           setLastError({ kind: "not_found", message: msg, code: "not_found" });
           toast.error(msg);
         } else {
           const code = res?.error || "unknown";
-          const msg = "Tugas tidak bisa dibuka karena gangguan sesaat. Coba beberapa saat lagi, atau tunjukkan kode referensi di bawah ke pemilik.";
+          const msg =
+            "Tugas tidak bisa dibuka karena gangguan sesaat. Coba beberapa saat lagi, atau tunjukkan kode referensi di bawah ke pemilik.";
           setLastError({
             kind: "not_found",
             message: msg,
             code,
           });
-          void reportPortalError({ kind: "unknown", code, status: res?.status ?? null, token }).then((ref) => {
+          void reportPortalError({
+            kind: "unknown",
+            code,
+            status: res?.status ?? null,
+            token,
+          }).then((ref) => {
             if (ref) setLastError((prev) => (prev ? { ...prev, ref } : prev));
           });
           toast.error(msg);
@@ -542,13 +655,19 @@ function PublicPrepPage() {
     // PIN valid (ok=true) tapi payload task hilang → tampilkan detail diagnostik
     const normalizedTask = normalizePrepTask(res.task);
     if (!normalizedTask) {
-      const msg = "PIN benar, tetapi data tugas belum bisa dimuat. Coba lagi, atau tunjukkan kode referensi di bawah ke pemilik.";
+      const msg =
+        "PIN benar, tetapi data tugas belum bisa dimuat. Coba lagi, atau tunjukkan kode referensi di bawah ke pemilik.";
       setLastError({
         kind: "no_task",
         message: msg,
         code: "missing_task",
       });
-      void reportPortalError({ kind: "missing_task", code: "missing_task", status: res?.status ?? null, token }).then((ref) => {
+      void reportPortalError({
+        kind: "missing_task",
+        code: "missing_task",
+        status: res?.status ?? null,
+        token,
+      }).then((ref) => {
         if (ref) setLastError((prev) => (prev ? { ...prev, ref } : prev));
       });
       toast.error(msg);
@@ -563,7 +682,9 @@ function PublicPrepPage() {
     // PIN benar → reset penuh, termasuk localStorage, sehingga refresh
     // browser tidak membawa sisa percobaan/lock.
     resetAttemptsFully();
-    setTask(normalizedTask); setItems(normalizedItems); pinRef.current = p;
+    setTask(normalizedTask);
+    setItems(normalizedItems);
+    pinRef.current = p;
     // Simpan PIN ke sessionStorage agar WebView yang di-recreate (mis. setelah
     // user buka kamera/galeri) bisa auto-rehydrate ke layar tugas.
     writeSession(p);
@@ -581,7 +702,11 @@ function PublicPrepPage() {
     toast.success("Masuk pegawai berhasil", { duration: 1500 });
     // Pastikan posisi scroll kembali ke atas halaman tugas.
     if (typeof window !== "undefined") {
-      try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch {
+        window.scrollTo(0, 0);
+      }
     }
     return true;
   }
@@ -596,7 +721,11 @@ function PublicPrepPage() {
     pinRef.current = "";
     clearSession();
     if (typeof window !== "undefined") {
-      try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch { window.scrollTo(0, 0); }
+      try {
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      } catch {
+        window.scrollTo(0, 0);
+      }
     }
   }
 
@@ -680,7 +809,9 @@ function PublicPrepPage() {
   function clearStale(itemId: string) {
     setStaleItemIds((s) => {
       if (!s[itemId]) return s;
-      const copy = { ...s }; delete copy[itemId]; return copy;
+      const copy = { ...s };
+      delete copy[itemId];
+      return copy;
     });
   }
 
@@ -690,12 +821,17 @@ function PublicPrepPage() {
     setRtStatus("connecting");
     const ch = publicSupabase
       .channel(`prep:${token}`, { config: { broadcast: { self: false } } })
-      .on("broadcast", { event: "change" }, () => { void silentRefresh(); })
+      .on("broadcast", { event: "change" }, () => {
+        void silentRefresh();
+      })
       .subscribe((status) => {
         if (status === "SUBSCRIBED") setRtStatus("connected");
-        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED") setRtStatus("error");
+        else if (status === "CHANNEL_ERROR" || status === "TIMED_OUT" || status === "CLOSED")
+          setRtStatus("error");
       });
-    const onVis = () => { if (document.visibilityState === "visible") void silentRefresh(); };
+    const onVis = () => {
+      if (document.visibilityState === "visible") void silentRefresh();
+    };
     document.addEventListener("visibilitychange", onVis);
     const hb = window.setInterval(() => {
       if (document.visibilityState === "visible") void silentRefresh();
@@ -731,7 +867,9 @@ function PublicPrepPage() {
       try {
         const { pathname, search } = window.location;
         window.history.replaceState(null, "", `${pathname}${search}`);
-      } catch { /* noop */ }
+      } catch {
+        /* noop */
+      }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -749,7 +887,14 @@ function PublicPrepPage() {
         setPeekStatus({ state: "network", message: error.message });
         return;
       }
-      const res = data as { ok: boolean; error?: string; retry_after?: number; expires_at?: string; status?: string; title?: string };
+      const res = data as {
+        ok: boolean;
+        error?: string;
+        retry_after?: number;
+        expires_at?: string;
+        status?: string;
+        title?: string;
+      };
       if (res?.ok) {
         setPeekStatus({ state: "ok", title: res.title, expiresAt: res.expires_at ?? null });
         return;
@@ -760,13 +905,27 @@ function PublicPrepPage() {
         setLockedUntil(Date.now() + secs * 1000);
         return;
       }
-      if (res?.error === "expired") { setPeekStatus({ state: "expired", expiresAt: res.expires_at ?? null }); return; }
-      if (res?.error === "closed") { setPeekStatus({ state: "closed", status: res.status ?? null }); return; }
-      if (res?.error === "not_found") { setPeekStatus({ state: "not_found" }); return; }
-      setPeekStatus({ state: "network", message: `Kode tidak dikenal: ${res?.error ?? "unknown"}` });
+      if (res?.error === "expired") {
+        setPeekStatus({ state: "expired", expiresAt: res.expires_at ?? null });
+        return;
+      }
+      if (res?.error === "closed") {
+        setPeekStatus({ state: "closed", status: res.status ?? null });
+        return;
+      }
+      if (res?.error === "not_found") {
+        setPeekStatus({ state: "not_found" });
+        return;
+      }
+      setPeekStatus({
+        state: "network",
+        message: `Kode tidak dikenal: ${res?.error ?? "unknown"}`,
+      });
     }
     void check();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
@@ -788,9 +947,7 @@ function PublicPrepPage() {
                   <div className="truncate text-sm font-semibold leading-snug sm:text-base">
                     Masuk pegawai berhasil
                   </div>
-                  <div className="truncate text-xs opacity-80 sm:text-sm">
-                    Memuat daftar tugas…
-                  </div>
+                  <div className="truncate text-xs opacity-80 sm:text-sm">Memuat daftar tugas…</div>
                 </div>
               </div>
             </div>
@@ -803,27 +960,50 @@ function PublicPrepPage() {
             <div className="text-xs text-muted-foreground">Portal Tugas Pegawai</div>
           </div>
           <div className="w-full rounded-2xl border bg-card p-6 shadow-lg shadow-black/5">
-            <div className="mb-1 flex items-center gap-2 text-base font-semibold"><Lock className="h-4 w-4 text-primary" /> Verifikasi PIN</div>
-            <p className="mb-5 text-xs leading-relaxed text-muted-foreground">Masukkan PIN dari pemilik untuk membuka daftar barang yang harus disiapkan.</p>
+            <div className="mb-1 flex items-center gap-2 text-base font-semibold">
+              <Lock className="h-4 w-4 text-primary" /> Verifikasi PIN
+            </div>
+            <p className="mb-5 text-xs leading-relaxed text-muted-foreground">
+              Masukkan PIN dari pemilik untuk membuka daftar barang yang harus disiapkan.
+            </p>
             {peekStatus.state === "checking" && (
-              <div className="mb-3 flex items-center gap-2 rounded-md border border-muted bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground" role="status" aria-live="polite">
+              <div
+                className="mb-3 flex items-center gap-2 rounded-md border border-muted bg-muted/30 px-3 py-2 text-[11px] text-muted-foreground"
+                role="status"
+                aria-live="polite"
+              >
                 <Loader2 className="h-3.5 w-3.5 animate-spin" /> Memeriksa status link tugas…
               </div>
             )}
             {peekStatus.state === "ok" && (
-              <div className="mb-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-[11px] text-emerald-700 dark:text-emerald-400" role="status">
+              <div
+                className="mb-3 rounded-md border border-emerald-500/40 bg-emerald-500/5 px-3 py-2 text-[11px] text-emerald-700 dark:text-emerald-400"
+                role="status"
+              >
                 <div className="flex items-start gap-2">
                   <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 shrink-0" />
                   <div className="min-w-0">
-                    <div className="font-semibold truncate">Link tugas valid{peekStatus.title ? ` · ${peekStatus.title}` : ""}</div>
+                    <div className="font-semibold truncate">
+                      Link tugas valid{peekStatus.title ? ` · ${peekStatus.title}` : ""}
+                    </div>
                     {peekStatus.expiresAt && (
-                      <div className="opacity-80">Berlaku sampai {new Date(peekStatus.expiresAt).toLocaleString("id-ID", { dateStyle: "medium", timeStyle: "short" })}</div>
+                      <div className="opacity-80">
+                        Berlaku sampai{" "}
+                        {new Date(peekStatus.expiresAt).toLocaleString("id-ID", {
+                          dateStyle: "medium",
+                          timeStyle: "short",
+                        })}
+                      </div>
                     )}
                   </div>
                 </div>
               </div>
             )}
-            {(peekStatus.state === "not_found" || peekStatus.state === "expired" || peekStatus.state === "closed" || peekStatus.state === "rate_limited" || peekStatus.state === "network") && (
+            {(peekStatus.state === "not_found" ||
+              peekStatus.state === "expired" ||
+              peekStatus.state === "closed" ||
+              peekStatus.state === "rate_limited" ||
+              peekStatus.state === "network") && (
               <div
                 className={
                   "mb-3 rounded-md border px-3 py-2 text-[11px] leading-relaxed " +
@@ -839,7 +1019,9 @@ function PublicPrepPage() {
                     {peekStatus.state === "not_found" && (
                       <>
                         <div className="font-semibold">Link tugas tidak ditemukan</div>
-                        <div className="mt-0.5 opacity-90">Pastikan URL tidak terpotong, atau minta pemilik mengirim link baru.</div>
+                        <div className="mt-0.5 opacity-90">
+                          Pastikan URL tidak terpotong, atau minta pemilik mengirim link baru.
+                        </div>
                       </>
                     )}
                     {peekStatus.state === "expired" && (
@@ -856,7 +1038,9 @@ function PublicPrepPage() {
                     {peekStatus.state === "closed" && (
                       <>
                         <div className="font-semibold">
-                          {peekStatus.status === "cancelled" ? "Tugas dibatalkan pemilik" : "Tugas sudah ditutup"}
+                          {peekStatus.status === "cancelled"
+                            ? "Tugas dibatalkan pemilik"
+                            : "Tugas sudah ditutup"}
                         </div>
                         <div className="mt-0.5 opacity-90">
                           {peekStatus.status === "cancelled"
@@ -869,7 +1053,9 @@ function PublicPrepPage() {
                       <>
                         <div className="font-semibold">Akses sementara dikunci</div>
                         <div className="mt-0.5 opacity-90">
-                          Terlalu banyak PIN salah. Coba lagi dalam {Math.floor(peekStatus.retryAfter / 60)} menit {peekStatus.retryAfter % 60} detik.
+                          Terlalu banyak PIN salah. Coba lagi dalam{" "}
+                          {Math.floor(peekStatus.retryAfter / 60)} menit{" "}
+                          {peekStatus.retryAfter % 60} detik.
                         </div>
                       </>
                     )}
@@ -889,7 +1075,9 @@ function PublicPrepPage() {
                   "mb-3 rounded-md border px-3 py-2 text-[11px] leading-relaxed " +
                   (lastError.kind === "bad_pin"
                     ? "border-destructive/40 bg-destructive/5 text-destructive"
-                    : lastError.kind === "expired" || lastError.kind === "closed" || lastError.kind === "not_found"
+                    : lastError.kind === "expired" ||
+                        lastError.kind === "closed" ||
+                        lastError.kind === "not_found"
                       ? "border-amber-500/40 bg-amber-500/5 text-amber-700 dark:text-amber-400"
                       : "border-destructive/40 bg-destructive/5 text-destructive")
                 }
@@ -935,7 +1123,9 @@ function PublicPrepPage() {
                 }
               >
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Sisa percobaan</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Sisa percobaan
+                  </div>
                   <div
                     className={
                       "mt-0.5 text-xl font-bold tabular-nums " +
@@ -947,11 +1137,16 @@ function PublicPrepPage() {
                     }
                   >
                     {attemptsLeft}
-                    <span className="text-xs font-normal text-muted-foreground"> / {MAX_ATTEMPTS}</span>
+                    <span className="text-xs font-normal text-muted-foreground">
+                      {" "}
+                      / {MAX_ATTEMPTS}
+                    </span>
                   </div>
                 </div>
                 <div>
-                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Tunggu</div>
+                  <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                    Tunggu
+                  </div>
                   <div
                     className={
                       "mt-0.5 text-xl font-bold tabular-nums " +
@@ -966,17 +1161,25 @@ function PublicPrepPage() {
               </div>
             )}
             {sessionJustExpired && !isLocked && (
-              <div className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-300" role="alert">
+              <div
+                className="mb-4 rounded-lg border border-amber-500/40 bg-amber-500/10 p-3 text-amber-800 dark:text-amber-300"
+                role="alert"
+              >
                 <div className="flex items-start gap-2">
                   <Clock className="mt-0.5 h-4 w-4 shrink-0" />
                   <div className="min-w-0 flex-1">
                     <div className="text-xs font-semibold">Sesi PIN sudah berakhir</div>
-                    <div className="mt-0.5 text-[11px] opacity-90">Masukkan PIN lagi untuk melanjutkan tugas yang tadi.</div>
+                    <div className="mt-0.5 text-[11px] opacity-90">
+                      Masukkan PIN lagi untuk melanjutkan tugas yang tadi.
+                    </div>
                   </div>
                 </div>
                 <button
                   type="button"
-                  onClick={() => { setSessionJustExpired(false); focusPinInput(); }}
+                  onClick={() => {
+                    setSessionJustExpired(false);
+                    focusPinInput();
+                  }}
                   className="mt-2 inline-flex h-9 w-full items-center justify-center gap-2 rounded-lg bg-amber-600 text-xs font-semibold text-white shadow-sm transition hover:bg-amber-700"
                 >
                   <Lock className="h-4 w-4" /> Re-login sekarang
@@ -985,16 +1188,30 @@ function PublicPrepPage() {
             )}
             <input
               ref={pinInputRef}
-              inputMode="numeric" maxLength={8} value={pin}
+              inputMode="numeric"
+              maxLength={8}
+              value={pin}
               onChange={(e) => {
                 setPin(e.target.value.replace(/\D/g, ""));
                 if (lastError?.kind === "bad_pin") setLastError(null);
                 if (sessionJustExpired) setSessionJustExpired(false);
               }}
-              placeholder="••••••" disabled={isLocked}
-              className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60" />
-            <button disabled={pin.length < 4 || loading || isLocked || peekStatus.state === "not_found" || peekStatus.state === "expired" || peekStatus.state === "closed"} onClick={() => fetchTask(pin)}
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50">
+              placeholder="••••••"
+              disabled={isLocked}
+              className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
+            />
+            <button
+              disabled={
+                pin.length < 4 ||
+                loading ||
+                isLocked ||
+                peekStatus.state === "not_found" ||
+                peekStatus.state === "expired" ||
+                peekStatus.state === "closed"
+              }
+              onClick={() => fetchTask(pin)}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+            >
               {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
               {isLocked ? `Terkunci ${lockedClock} lagi` : "Buka Tugas"}
             </button>
@@ -1018,7 +1235,8 @@ function PublicPrepPage() {
               <div className="mt-3 rounded-md border border-amber-500/40 bg-amber-500/5 px-3 py-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
                 <div className="font-semibold">Silakan coba lagi</div>
                 <div className="mt-0.5 opacity-90">
-                  Sisa percobaan: <b>{attemptsLeft}</b> dari {MAX_ATTEMPTS}. Setelah {MAX_ATTEMPTS} kali salah, input akan dikunci {LOCK_SECONDS} detik.
+                  Sisa percobaan: <b>{attemptsLeft}</b> dari {MAX_ATTEMPTS}. Setelah {MAX_ATTEMPTS}{" "}
+                  kali salah, input akan dikunci {LOCK_SECONDS} detik.
                 </div>
               </div>
             )}
@@ -1026,7 +1244,8 @@ function PublicPrepPage() {
               <button
                 type="button"
                 onClick={async () => {
-                  const pageUrl = typeof window !== "undefined" ? window.location.href.split("#")[0] : "";
+                  const pageUrl =
+                    typeof window !== "undefined" ? window.location.href.split("#")[0] : "";
                   const text = [
                     "Halo, saya pegawai untuk tugas penyiapan barang.",
                     isLocked
@@ -1036,7 +1255,11 @@ function PublicPrepPage() {
                     "",
                     `Link tugas: ${pageUrl}`,
                   ].join("\n");
-                  const res = await shareToWhatsApp({ text, title: "Minta PIN baru", url: pageUrl });
+                  const res = await shareToWhatsApp({
+                    text,
+                    title: "Minta PIN baru",
+                    url: pageUrl,
+                  });
                   notifyShareResult(res);
                 }}
                 className="mt-3 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border border-[#25D366]/40 bg-[#25D366]/10 px-3 text-xs font-semibold text-[#128C7E] transition hover:bg-[#25D366]/20 dark:text-[#25D366]"
@@ -1046,7 +1269,8 @@ function PublicPrepPage() {
             )}
             {(isLocked || attempts > 0) && (
               <p className="mt-2 text-center text-[10px] leading-relaxed text-muted-foreground">
-                Tombol ini hanya membuka MCM dengan pesan siap kirim — pembatasan percobaan tetap berlaku sampai hitungan mundur selesai.
+                Tombol ini hanya membuka MCM dengan pesan siap kirim — pembatasan percobaan tetap
+                berlaku sampai hitungan mundur selesai.
               </p>
             )}
             <div className="mt-4 flex items-center justify-center gap-1.5 text-[10px] text-muted-foreground">
@@ -1065,17 +1289,26 @@ function PublicPrepPage() {
 
   // Tugas ditutup / PIN diubah pemilik → layar khusus
   if (closedReason) {
-    const copy = closedReason === "pin_changed"
-      ? { title: "PIN diperbarui pemilik",
-          body: "PIN tugas baru saja diubah. Silakan minta PIN terbaru ke pemilik lalu masukkan kembali." }
-      : closedReason === "expired"
-      ? { title: "Tugas sudah kedaluwarsa",
-          body: "Masa berlaku link tugas sudah habis. Minta pemilik mengirim link / PIN baru." }
-      : closedReason === "closed"
-      ? { title: "Tugas sudah ditutup pemilik",
-          body: "Tugas ini telah ditandai selesai atau dibatalkan oleh pemilik. Hubungi pemilik bila masih perlu mengisi." }
-      : { title: "Tugas tidak ditemukan",
-          body: "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik." };
+    const copy =
+      closedReason === "pin_changed"
+        ? {
+            title: "PIN diperbarui pemilik",
+            body: "PIN tugas baru saja diubah. Silakan minta PIN terbaru ke pemilik lalu masukkan kembali.",
+          }
+        : closedReason === "expired"
+          ? {
+              title: "Tugas sudah kedaluwarsa",
+              body: "Masa berlaku link tugas sudah habis. Minta pemilik mengirim link / PIN baru.",
+            }
+          : closedReason === "closed"
+            ? {
+                title: "Tugas sudah ditutup pemilik",
+                body: "Tugas ini telah ditandai selesai atau dibatalkan oleh pemilik. Hubungi pemilik bila masih perlu mengisi.",
+              }
+            : {
+                title: "Tugas tidak ditemukan",
+                body: "Link tugas tidak ditemukan. Pastikan link tidak terpotong atau minta link baru ke pemilik.",
+              };
     return (
       <div className="min-h-screen bg-gradient-to-b from-muted/40 to-background">
         <div className="mx-auto flex min-h-screen max-w-sm flex-col items-center justify-center px-4 py-8">
@@ -1087,7 +1320,10 @@ function PublicPrepPage() {
             <p className="mt-1 text-xs leading-relaxed text-muted-foreground">{copy.body}</p>
             <button
               type="button"
-              onClick={() => { setClosedReason(null); goBackToPin(); }}
+              onClick={() => {
+                setClosedReason(null);
+                goBackToPin();
+              }}
               className="mt-4 inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-semibold transition hover:bg-muted"
             >
               <ArrowLeft className="h-4 w-4" /> Kembali ke halaman PIN
@@ -1111,14 +1347,18 @@ function PublicPrepPage() {
             <ArrowLeft className="h-4 w-4" />
           </button>
           <div className="min-w-0 flex-1">
-            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">MCM Storage</div>
+            <div className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+              MCM Storage
+            </div>
             <div className="truncate text-sm font-semibold">Tugas Penyiapan Barang</div>
           </div>
           <SyncBadge
             status={rtStatus}
             lastSyncAt={lastSyncAt}
             tick={syncTick}
-            onRefresh={() => { void manualResync(); }}
+            onRefresh={() => {
+              void manualResync();
+            }}
           />
         </div>
         {sessionExpiresAt && (
@@ -1165,40 +1405,75 @@ function PublicPrepPage() {
         <div className="mb-4 overflow-hidden rounded-2xl border bg-card shadow-sm">
           <div className="border-b bg-gradient-to-r from-primary/5 to-transparent px-4 py-3">
             <div className="text-base font-semibold leading-tight">{task?.title}</div>
-            {task?.note && <div className="mt-1 text-xs leading-relaxed text-muted-foreground whitespace-pre-wrap">{task.note}</div>}
+            {task?.note && (
+              <div className="mt-1 text-xs leading-relaxed text-muted-foreground whitespace-pre-wrap">
+                {task.note}
+              </div>
+            )}
           </div>
           <div className="grid grid-cols-2 divide-x text-center">
             <div className="px-3 py-2.5">
-              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Progres</div>
-              <div className="mt-0.5 text-sm font-semibold tabular-nums">{completedItems} / {totalItems}</div>
+              <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                Progres
+              </div>
+              <div className="mt-0.5 text-sm font-semibold tabular-nums">
+                {completedItems} / {totalItems}
+              </div>
             </div>
             <div className="flex items-center justify-center gap-1.5 px-3 py-2.5">
               <Clock className="h-3.5 w-3.5 text-muted-foreground" />
               <div className="text-left">
-                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Kedaluwarsa</div>
-                <div className="text-[11px] font-medium tabular-nums">{task ? new Date(task.expires_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" }) : ""}</div>
+                <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                  Kedaluwarsa
+                </div>
+                <div className="text-[11px] font-medium tabular-nums">
+                  {task
+                    ? new Date(task.expires_at).toLocaleString("id-ID", {
+                        dateStyle: "short",
+                        timeStyle: "short",
+                      })
+                    : ""}
+                </div>
               </div>
             </div>
           </div>
           <div className="h-1.5 w-full bg-muted">
-            <div className="h-full bg-primary transition-all" style={{ width: `${progressPct}%` }} />
+            <div
+              className="h-full bg-primary transition-all"
+              style={{ width: `${progressPct}%` }}
+            />
           </div>
           <div className="flex items-center justify-between gap-2 border-t bg-muted/20 px-3 py-2">
             <div className="text-[10px] text-muted-foreground">
-              {lastSyncAt
-                ? <>Diperbarui {Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000))} dtk lalu<span className="hidden sm:inline"> · {new Date(lastSyncAt).toLocaleTimeString("id-ID")}</span></>
-                : "Belum ada pembaruan"}
-              <span className="ml-1 hidden text-[9px] opacity-60 sm:inline">(otomatis tiap 15 dtk)</span>
+              {lastSyncAt ? (
+                <>
+                  Diperbarui {Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000))} dtk lalu
+                  <span className="hidden sm:inline">
+                    {" "}
+                    · {new Date(lastSyncAt).toLocaleTimeString("id-ID")}
+                  </span>
+                </>
+              ) : (
+                "Belum ada pembaruan"
+              )}
+              <span className="ml-1 hidden text-[9px] opacity-60 sm:inline">
+                (otomatis tiap 15 dtk)
+              </span>
             </div>
             <button
               type="button"
-              onClick={() => { void manualResync(); }}
+              onClick={() => {
+                void manualResync();
+              }}
               disabled={resyncing}
               className="inline-flex h-7 items-center gap-1 rounded-md border bg-background px-2 text-[10px] font-semibold transition hover:bg-muted disabled:opacity-60"
             >
-              {resyncing
-                ? <Loader2 className="h-3 w-3 animate-spin" />
-                : <RefreshCw className="h-3 w-3" />} Resync sekarang
+              {resyncing ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <RefreshCw className="h-3 w-3" />
+              )}{" "}
+              Resync sekarang
             </button>
           </div>
         </div>
@@ -1214,7 +1489,8 @@ function PublicPrepPage() {
                     <div className="min-w-0">
                       <div className="font-semibold">Item #{idx + 1} gagal ditampilkan</div>
                       <div className="mt-1 text-xs leading-relaxed opacity-90">
-                        PIN sudah benar dan tugas berhasil dibuka, tetapi ada data item yang tidak valid. Item lain tetap bisa dibuka.
+                        PIN sudah benar dan tugas berhasil dibuka, tetapi ada data item yang tidak
+                        valid. Item lain tetap bisa dibuka.
                       </div>
                       <details className="mt-2 text-[11px]">
                         <summary className="cursor-pointer">Detail teknis</summary>
@@ -1238,8 +1514,8 @@ function PublicPrepPage() {
               />
             </WorkerSectionBoundary>
           ))}
-          {items.length === 0 && (
-            loading ? (
+          {items.length === 0 &&
+            (loading ? (
               <div className="space-y-3" aria-busy="true" aria-label="Memuat daftar tugas">
                 {Array.from({ length: 3 }).map((_, i) => (
                   <div key={i} className="space-y-3 rounded-xl border bg-card p-4">
@@ -1262,11 +1538,12 @@ function PublicPrepPage() {
                 </div>
                 <div className="space-y-1">
                   <p className="font-medium text-foreground">Belum ada item tugas</p>
-                  <p className="text-xs">Admin belum menambahkan item ke tugas ini. Coba muat ulang sebentar lagi.</p>
+                  <p className="text-xs">
+                    Admin belum menambahkan item ke tugas ini. Coba muat ulang sebentar lagi.
+                  </p>
                 </div>
               </div>
-            )
-          )}
+            ))}
         </div>
 
         <WorkerSectionBoundary
@@ -1277,7 +1554,8 @@ function PublicPrepPage() {
                 <div className="min-w-0">
                   <div className="font-semibold">Paket request gagal ditampilkan</div>
                   <div className="mt-1 text-xs leading-relaxed opacity-90">
-                    Daftar tugas utama tetap bisa dipakai. Detail error disiapkan agar masalah data paket bisa diperbaiki.
+                    Daftar tugas utama tetap bisa dipakai. Detail error disiapkan agar masalah data
+                    paket bisa diperbaiki.
                   </div>
                   <details className="mt-2 text-[11px]">
                     <summary className="cursor-pointer">Detail teknis</summary>
@@ -1293,13 +1571,31 @@ function PublicPrepPage() {
           <RequestSection token={token} pin={pinRef.current} />
         </WorkerSectionBoundary>
 
-        <div className="mt-6 text-center text-[10px] text-muted-foreground">Tetap aman · Jangan bagikan PIN ke siapa pun</div>
+        <div className="mt-6 text-center text-[10px] text-muted-foreground">
+          Tetap aman · Jangan bagikan PIN ke siapa pun
+        </div>
       </div>
     </div>
   );
 }
 
-function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubmitted }: { item: PrepItemRow; index: number; token: string; pin: string; isStale?: boolean; onAcknowledgeStale?: () => void; onSubmitted: () => void }) {
+function ItemCard({
+  item,
+  index,
+  token,
+  pin,
+  isStale,
+  onAcknowledgeStale,
+  onSubmitted,
+}: {
+  item: PrepItemRow;
+  index: number;
+  token: string;
+  pin: string;
+  isStale?: boolean;
+  onAcknowledgeStale?: () => void;
+  onSubmitted: () => void;
+}) {
   const [photos, setPhotos] = useState<StagedPhoto[]>([]);
   const [pending, setPending] = useState<PendingPhoto[]>([]);
   const [justOk, setJustOk] = useState<Set<Blob>>(new Set());
@@ -1316,7 +1612,9 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
 
-  useEffect(() => { signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned); }, [item.ref_photo_path]);
+  useEffect(() => {
+    signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned);
+  }, [item.ref_photo_path]);
 
   // Draft foto persisten: bertahan lintas refresh & pindah tab.
   const draftKey = itemDraftKey(token, item.id);
@@ -1331,14 +1629,22 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
           const staged = await Promise.all(blobs.map((b) => stageFile(b)));
           if (!cancelled) setPhotos(staged);
         }
-      } catch { /* abaikan draft rusak */ }
-      finally { draftLoadedRef.current = true; }
+      } catch {
+        /* abaikan draft rusak */
+      } finally {
+        draftLoadedRef.current = true;
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [draftKey]);
   useEffect(() => {
     if (!draftLoadedRef.current) return;
-    void saveDraftPhotos(draftKey, photos.map((p) => p.blob));
+    void saveDraftPhotos(
+      draftKey,
+      photos.map((p) => p.blob),
+    );
   }, [photos, draftKey]);
 
   async function pickCamera() {
@@ -1366,14 +1672,28 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
           setGps({ lat: latitude, lng: longitude });
           setLocUrl(`https://www.google.com/maps?q=${latitude},${longitude}`);
         },
-        () => { /* abaikan */ },
-        { enableHighAccuracy: true, timeout: 10000 }
+        () => {
+          /* abaikan */
+        },
+        { enableHighAccuracy: true, timeout: 10000 },
       );
     }
   }
   function markSuccess(blob: Blob) {
-    setJustOk((s) => { const n = new Set(s); n.add(blob); return n; });
-    setTimeout(() => setJustOk((s) => { const n = new Set(s); n.delete(blob); return n; }), 1500);
+    setJustOk((s) => {
+      const n = new Set(s);
+      n.add(blob);
+      return n;
+    });
+    setTimeout(
+      () =>
+        setJustOk((s) => {
+          const n = new Set(s);
+          n.delete(blob);
+          return n;
+        }),
+      1500,
+    );
   }
   async function stageOne(f: File, openEditor: boolean): Promise<StagedPhoto | null> {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1386,7 +1706,10 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
         return [...prev, staged];
       });
       markSuccess(staged.blob);
-      if (openEditor) { setEditorSrc(staged.dataUrl); setEditorOpen(true); }
+      if (openEditor) {
+        setEditorSrc(staged.dataUrl);
+        setEditorOpen(true);
+      }
       triggerAutoGps();
       return staged;
     } catch (err) {
@@ -1399,7 +1722,9 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
   async function retryPending(id: string) {
     const entry = pending.find((x) => x.id === id);
     if (!entry?.file) return;
-    setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)));
+    setPending((p) =>
+      p.map((x) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)),
+    );
     try {
       const staged = await stageFile(entry.file);
       setPending((p) => p.filter((x) => x.id !== id));
@@ -1414,18 +1739,23 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
     setPending((p) => p.filter((x) => x.id !== id));
   }
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]; e.target.value = "";
+    const f = e.target.files?.[0];
+    e.target.value = "";
     if (!f) return;
     await stageOne(f, true);
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []); e.target.value = "";
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
     if (files.length === 0) return;
     await Promise.all(files.map((f) => stageOne(f, false)));
   }
 
   function takeLocation() {
-    if (!navigator.geolocation) { toast.error("GPS tidak tersedia"); return; }
+    if (!navigator.geolocation) {
+      toast.error("GPS tidak tersedia");
+      return;
+    }
     const id = toast.loading("Mengambil lokasi…");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -1435,7 +1765,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
         toast.success("Lokasi terisi", { id });
       },
       (err) => toast.error("Gagal: " + err.message, { id }),
-      { enableHighAccuracy: true, timeout: 10000 }
+      { enableHighAccuracy: true, timeout: 10000 },
     );
   }
 
@@ -1449,8 +1779,14 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       return;
     }
     if (locUrl) {
-      if (locUrl.length > 2048) { toast.error("URL lokasi terlalu panjang"); return; }
-      if (!/^https:\/\//i.test(locUrl)) { toast.error("URL lokasi harus diawali https://"); return; }
+      if (locUrl.length > 2048) {
+        toast.error("URL lokasi terlalu panjang");
+        return;
+      }
+      if (!/^https:\/\//i.test(locUrl)) {
+        toast.error("URL lokasi harus diawali https://");
+        return;
+      }
     }
     setBusy(true);
     // Reset & inisialisasi status upload per foto.
@@ -1461,7 +1797,13 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
         setUploads((prev) => prev.map((u, j) => (j === i ? { status: "uploading" } : u)));
         let uploadedPath: string | null = null;
         try {
-          uploadedPath = await uploadPrepPhoto(token, item.id, photos[i].blob, "jpg", publicSupabase);
+          uploadedPath = await uploadPrepPhoto(
+            token,
+            item.id,
+            photos[i].blob,
+            "jpg",
+            publicSupabase,
+          );
         } catch (uerr) {
           const msg = (uerr as Error).message || "Gagal mengunggah";
           setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
@@ -1480,43 +1822,67 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
         uploaded.push(uploadedPath);
       }
       const args = {
-        _token: token, _pin: pin, _task_item_id: item.id,
-        _photo_path: uploaded[0], _photo_paths: uploaded,
+        _token: token,
+        _pin: pin,
+        _task_item_id: item.id,
+        _photo_path: uploaded[0],
+        _photo_paths: uploaded,
         _location_url: locUrl || null,
-        _gps_lat: gps?.lat ?? null, _gps_lng: gps?.lng ?? null,
-        _note: note || null, _qty_reported: null,
+        _gps_lat: gps?.lat ?? null,
+        _gps_lng: gps?.lng ?? null,
+        _note: note || null,
+        _qty_reported: null,
         _expected_updated_at: item.updated_at ?? null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (publicSupabase.rpc as any)("prep_submit", args);
       if (error) throw error;
-      const res = data as { ok: boolean; error?: string; available?: number; requested?: number; deducted?: number; current_updated_at?: string };
+      const res = data as {
+        ok: boolean;
+        error?: string;
+        available?: number;
+        requested?: number;
+        deducted?: number;
+        current_updated_at?: string;
+      };
       if (!res?.ok) {
         if (res?.error === "item_changed") {
           toast.error("Item baru saja diubah admin. Periksa kembali sebelum kirim.");
           onSubmitted(); // muat ulang dari server
           return;
         }
-        const msg = res?.error === "insufficient_stock"
-          ? `Stok gudang tidak cukup (tersedia ${res.available}, diminta ${res.requested})`
-          : res?.error === "item_not_found"
-          ? "Barang tidak ditemukan di gudang"
-          : res?.error === "bad_pin" ? "PIN salah"
-          : (res?.error || "submit_failed");
+        const msg =
+          res?.error === "insufficient_stock"
+            ? `Stok gudang tidak cukup (tersedia ${res.available}, diminta ${res.requested})`
+            : res?.error === "item_not_found"
+              ? "Barang tidak ditemukan di gudang"
+              : res?.error === "bad_pin"
+                ? "PIN salah"
+                : res?.error || "submit_failed";
         throw new Error(msg);
       }
-      toast.success(`Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${displayUnit(item.name, item.unit_label)}`);
-      setPhotos([]); setLocUrl(""); setGps(null); setNote(""); setUploads([]);
+      toast.success(
+        `Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${displayUnit(item.name, item.unit_label)}`,
+      );
+      setPhotos([]);
+      setLocUrl("");
+      setGps(null);
+      setNote("");
+      setUploads([]);
       void clearDraftPhotos(draftKey);
       onSubmitted();
     } catch (e) {
       toast.error("Gagal kirim: " + (e as Error).message);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }
 
   const isDone = (item.submissions?.length ?? 0) > 0;
   return (
-    <div className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}>
+    <div
+      className={`overflow-hidden rounded-2xl border bg-card shadow-sm transition ${isStale ? "border-amber-500/60 ring-1 ring-amber-500/30" : isDone ? "border-emerald-500/30" : ""}`}
+    >
       {isStale && (
         <div className="flex items-start gap-2 border-b border-amber-500/30 bg-amber-500/10 px-3 py-2 text-[11px] leading-relaxed text-amber-800 dark:text-amber-300">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -1533,115 +1899,194 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
         </div>
       )}
       <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">Item #{index}</div>
+        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+          Item #{index}
+        </div>
         {isDone ? (
           <StatusBadge size="xs" variant="siap">
             <CheckCircle2 className="mr-1 h-3 w-3" /> Selesai
           </StatusBadge>
         ) : (
-          <StatusBadge size="xs" variant="menunggu">Belum dikirim</StatusBadge>
+          <StatusBadge size="xs" variant="menunggu">
+            Belum dikirim
+          </StatusBadge>
         )}
       </div>
       <div className="p-3">
-      <div className="flex items-start gap-3">
-        {refSigned ? (
-          <img src={refSigned} alt="" className="h-16 w-16 rounded-lg border object-cover" />
-        ) : (
-          <div className="flex h-16 w-16 items-center justify-center rounded-lg border bg-muted text-[10px] text-muted-foreground">No img</div>
-        )}
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-semibold leading-tight">{item.name}</div>
-          <div className="text-[11px] text-muted-foreground">{item.category ?? "—"}</div>
-          <div className="mt-1.5 flex flex-wrap gap-1.5">
-            <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">Target {item.qty_requested} {displayUnit(item.name, item.unit_label)}</span>
-            <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">Disiapkan {item.qty_prepared ?? 0}</span>
-          </div>
-          {item.note && <div className="mt-1 text-[11px] text-muted-foreground">Catatan: {item.note}</div>}
-        </div>
-      </div>
-
-      <PhotoTileGrid
-        photos={photos}
-        pending={pending}
-        justOk={justOk}
-        uploads={uploads}
-        onEdit={(i) => { setEditingIdx(i); setEditorSrc(photos[i].dataUrl); setEditorOpen(true); }}
-        onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
-        onRetry={(id) => { void retryPending(id); }}
-        onDismiss={dismissPending}
-        onClearAll={() => { setPhotos([]); setPending([]); }}
-      />
-      <div className="mt-3 grid grid-cols-2 gap-2">
-        <button onClick={pickCamera} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"><Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}</button>
-        <button onClick={pickGallery} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"><ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}</button>
-      </div>
-      <p className="mt-1 text-[10px] text-muted-foreground">Bisa pilih beberapa foto sekaligus dari galeri.</p>
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onCameraFile} />
-      <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={onGalleryFiles} />
-      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
-        <button
-          type="button"
-          onClick={() => setHelpKind("camera")}
-          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-        >
-          <HelpCircle className="h-3 w-3" /> Kamera tidak bisa dibuka?
-        </button>
-        <button
-          type="button"
-          onClick={() => setHelpKind("gallery")}
-          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
-        >
-          <HelpCircle className="h-3 w-3" /> Galeri tidak muncul?
-        </button>
-      </div>
-
-      <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
-        Siapkan <b>{item.qty_requested} {displayUnit(item.name, item.unit_label)}</b> sesuai instruksi pemilik. Setelah foto + lokasi terkirim, stok gudang otomatis berkurang sebanyak itu — Anda tidak perlu mengisi angka apa pun.
-      </div>
-
-      <div className="mt-3 grid grid-cols-1 gap-2">
-        <div className="flex gap-2">
-          <input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="Link Google Maps (opsional)" className="h-10 flex-1 rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
-          <button onClick={takeLocation} className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium transition hover:bg-muted"><MapPin className="h-4 w-4" /> GPS</button>
-        </div>
-        <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" className="h-10 w-full rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20" />
-      </div>
-
-      <button disabled={busy} onClick={submit} className="mt-3 inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50">
-        {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-        {busy && uploads.some((u) => u.status !== "idle")
-          ? `Mengunggah ${uploads.filter((u) => u.status === "done").length}/${photos.length}…`
-          : "Kirim"}
-      </button>
-
-      {item.submissions.length > 0 && (
-        <div className="mt-3 border-t pt-2">
-          <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">Sudah terkirim ({item.submissions.length})</div>
-          <div className="flex gap-1 overflow-x-auto">
-            {item.submissions.map((s) => <SubmissionThumb key={s.id} path={s.photo_path} />)}
+        <div className="flex items-start gap-3">
+          {refSigned ? (
+            <img src={refSigned} alt="" className="h-16 w-16 rounded-lg border object-cover" />
+          ) : (
+            <div className="flex h-16 w-16 items-center justify-center rounded-lg border bg-muted text-[10px] text-muted-foreground">
+              No img
+            </div>
+          )}
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-semibold leading-tight">{item.name}</div>
+            <div className="text-[11px] text-muted-foreground">{item.category ?? "—"}</div>
+            <div className="mt-1.5 flex flex-wrap gap-1.5">
+              <span className="inline-flex items-center rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                Target {item.qty_requested} {displayUnit(item.name, item.unit_label)}
+              </span>
+              <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                Disiapkan {item.qty_prepared ?? 0}
+              </span>
+            </div>
+            {item.note && (
+              <div className="mt-1 text-[11px] text-muted-foreground">Catatan: {item.note}</div>
+            )}
           </div>
         </div>
-      )}
 
-      {editorOpen && editorSrc && (
-        <PhotoEditor
-          src={editorSrc}
-          onCancel={() => setEditorOpen(false)}
-          onSave={(blob, dataUrl) => {
-            setPhotos((prev) => {
-              if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
-                const next = prev.slice();
-                next[editingIdx] = { blob, dataUrl };
-                return next;
-              }
-              return [...prev, { blob, dataUrl }];
-            });
-            setEditingIdx(null);
-            setEditorOpen(false);
+        <PhotoTileGrid
+          photos={photos}
+          pending={pending}
+          justOk={justOk}
+          uploads={uploads}
+          onEdit={(i) => {
+            setEditingIdx(i);
+            setEditorSrc(photos[i].dataUrl);
+            setEditorOpen(true);
+          }}
+          onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
+          onRetry={(id) => {
+            void retryPending(id);
+          }}
+          onDismiss={dismissPending}
+          onClearAll={() => {
+            setPhotos([]);
+            setPending([]);
           }}
         />
-      )}
-      <PermissionHelpDialog open={helpKind !== null} kind={helpKind ?? "camera"} onClose={() => setHelpKind(null)} />
+        <div className="mt-3 grid grid-cols-2 gap-2">
+          <button
+            onClick={pickCamera}
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"
+          >
+            <Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}
+          </button>
+          <button
+            onClick={pickGallery}
+            className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium transition hover:bg-muted"
+          >
+            <ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}
+          </button>
+        </div>
+        <p className="mt-1 text-[10px] text-muted-foreground">
+          Bisa pilih beberapa foto sekaligus dari galeri.
+        </p>
+        <input
+          ref={cameraRef}
+          type="file"
+          accept="image/*"
+          capture="environment"
+          className="hidden"
+          onChange={onCameraFile}
+        />
+        <input
+          ref={galleryRef}
+          type="file"
+          accept="image/*"
+          multiple
+          className="hidden"
+          onChange={onGalleryFiles}
+        />
+        <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
+          <button
+            type="button"
+            onClick={() => setHelpKind("camera")}
+            className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            <HelpCircle className="h-3 w-3" /> Kamera tidak bisa dibuka?
+          </button>
+          <button
+            type="button"
+            onClick={() => setHelpKind("gallery")}
+            className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+          >
+            <HelpCircle className="h-3 w-3" /> Galeri tidak muncul?
+          </button>
+        </div>
+
+        <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+          Siapkan{" "}
+          <b>
+            {item.qty_requested} {displayUnit(item.name, item.unit_label)}
+          </b>{" "}
+          sesuai instruksi pemilik. Setelah foto + lokasi terkirim, stok gudang otomatis berkurang
+          sebanyak itu — Anda tidak perlu mengisi angka apa pun.
+        </div>
+
+        <div className="mt-3 grid grid-cols-1 gap-2">
+          <div className="flex gap-2">
+            <input
+              value={locUrl}
+              onChange={(e) => setLocUrl(e.target.value)}
+              placeholder="Link Google Maps (opsional)"
+              className="h-10 flex-1 rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            <button
+              onClick={takeLocation}
+              className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium transition hover:bg-muted"
+            >
+              <MapPin className="h-4 w-4" /> GPS
+            </button>
+          </div>
+          <input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Catatan (opsional)"
+            className="h-10 w-full rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+
+        <button
+          disabled={busy}
+          onClick={submit}
+          className="mt-3 inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+        >
+          {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+          {busy && uploads.some((u) => u.status !== "idle")
+            ? `Mengunggah ${uploads.filter((u) => u.status === "done").length}/${photos.length}…`
+            : "Kirim"}
+        </button>
+
+        {item.submissions.length > 0 && (
+          <div className="mt-3 border-t pt-2">
+            <div className="mb-1.5 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
+              Sudah terkirim ({item.submissions.length})
+            </div>
+            <div className="flex gap-1 overflow-x-auto">
+              {item.submissions.map((s) => (
+                <SubmissionThumb key={s.id} path={s.photo_path} />
+              ))}
+            </div>
+          </div>
+        )}
+
+        {editorOpen && editorSrc && (
+          <PhotoEditor
+            src={editorSrc}
+            onCancel={() => setEditorOpen(false)}
+            onSave={(blob, dataUrl) => {
+              setPhotos((prev) => {
+                if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
+                  const next = prev.slice();
+                  next[editingIdx] = buildStagedPhoto(dataUrl, blob);
+                  return next;
+                }
+                return [...prev, buildStagedPhoto(dataUrl, blob)];
+              });
+              setEditingIdx(null);
+              setEditorOpen(false);
+            }}
+          />
+        )}
+        <PermissionHelpDialog
+          open={helpKind !== null}
+          kind={helpKind ?? "camera"}
+          onClose={() => setHelpKind(null)}
+        />
       </div>
     </div>
   );
@@ -1649,14 +2094,22 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
 
 function SubmissionThumb({ path }: { path: string | null }) {
   const [url, setUrl] = useState<string | null>(null);
-  useEffect(() => { signedUrl(path, 60 * 60, publicSupabase).then(setUrl); }, [path]);
+  useEffect(() => {
+    signedUrl(path, 60 * 60, publicSupabase).then(setUrl);
+  }, [path]);
   if (!url) return <div className="h-12 w-12 shrink-0 rounded border bg-muted" />;
   return <img src={url} alt="" className="h-12 w-12 shrink-0 rounded border object-cover" />;
 }
 
 // Item foto yang sedang / gagal dimuat oleh stageFile. Dipisah dari
 // StagedPhoto agar tetap kompatibel dengan draft store & flow submit.
-type PendingPhoto = { id: string; status: "loading" | "error"; name: string; error?: string; file?: File };
+type PendingPhoto = {
+  id: string;
+  status: "loading" | "error";
+  name: string;
+  error?: string;
+  file?: File;
+};
 
 // Status upload per-foto saat submit. `idle` = belum antre, `uploading` =
 // sedang diunggah, `done` = sukses, `error` = gagal dengan pesan.
@@ -1669,7 +2122,15 @@ export type PhotoUploadStatus =
 // Grid tile foto dengan indikator status per foto (loading / sukses / gagal).
 // Dipakai oleh ItemCard maupun RequestForm supaya perilaku UI konsisten.
 function PhotoTileGrid({
-  photos, pending, justOk, uploads, onEdit, onRemove, onRetry, onDismiss, onClearAll,
+  photos,
+  pending,
+  justOk,
+  uploads,
+  onEdit,
+  onRemove,
+  onRetry,
+  onDismiss,
+  onClearAll,
 }: {
   photos: StagedPhotoT[];
   pending: PendingPhoto[];
@@ -1713,18 +2174,30 @@ function PhotoTileGrid({
         {photos.map((p, i) => {
           const ok = justOk.has(p.blob);
           const up = uploads?.[i]?.status ?? "idle";
-          const upErr = uploads?.[i]?.status === "error" ? (uploads[i] as { error: string }).error : undefined;
+          const upErr =
+            uploads?.[i]?.status === "error" ? (uploads[i] as { error: string }).error : undefined;
           return (
             <div
               key={`ok-${i}`}
               className={`group relative aspect-square overflow-hidden rounded-md border bg-muted transition ${
-                up === "error" ? "ring-2 ring-destructive" :
-                up === "uploading" ? "ring-2 ring-primary" :
-                up === "done" ? "ring-2 ring-emerald-500" :
-                ok ? "ring-2 ring-emerald-500" : ""
+                up === "error"
+                  ? "ring-2 ring-destructive"
+                  : up === "uploading"
+                    ? "ring-2 ring-primary"
+                    : up === "done"
+                      ? "ring-2 ring-emerald-500"
+                      : ok
+                        ? "ring-2 ring-emerald-500"
+                        : ""
               }`}
             >
               <img src={p.dataUrl} alt="" className="h-full w-full object-cover" />
+              <div className="absolute left-1 top-1 z-10 rounded bg-black/55 px-1 py-0.5 text-[9px] font-medium text-white shadow">
+                {p.originalFormat && p.originalFormat !== p.format
+                  ? `${p.originalFormat} → ${p.format}`
+                  : p.format}{" "}
+                · {formatFileSize(p.size)}
+              </div>
               {up === "uploading" && (
                 <div
                   className="absolute inset-0 flex flex-col items-center justify-center gap-1 bg-black/55 text-white"
@@ -1737,7 +2210,10 @@ function PhotoTileGrid({
               )}
               {up === "done" && (
                 <div className="pointer-events-none absolute inset-0 flex items-center justify-center bg-emerald-500/25">
-                  <div className="rounded-full bg-emerald-500 p-1 text-white shadow" aria-label="Foto terunggah">
+                  <div
+                    className="rounded-full bg-emerald-500 p-1 text-white shadow"
+                    aria-label="Foto terunggah"
+                  >
                     <CheckCircle2 className="h-4 w-4" />
                   </div>
                 </div>
@@ -1754,14 +2230,31 @@ function PhotoTileGrid({
                 </div>
               )}
               {ok && up === "idle" && (
-                <div className="pointer-events-none absolute right-1 top-1 rounded-full bg-emerald-500 p-0.5 text-white shadow" aria-label="Foto siap">
+                <div
+                  className="pointer-events-none absolute right-1 top-1 rounded-full bg-emerald-500 p-0.5 text-white shadow"
+                  aria-label="Foto siap"
+                >
                   <CheckCircle2 className="h-3 w-3" />
                 </div>
               )}
               {up !== "uploading" && (
                 <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
-                  <button type="button" onClick={() => onEdit(i)} disabled={isUploading} className="rounded bg-black/50 px-1.5 py-0.5 disabled:opacity-50">Edit</button>
-                  <button type="button" onClick={() => onRemove(i)} disabled={isUploading} className="rounded bg-destructive/80 px-1.5 py-0.5 disabled:opacity-50">Hapus</button>
+                  <button
+                    type="button"
+                    onClick={() => onEdit(i)}
+                    disabled={isUploading}
+                    className="rounded bg-black/50 px-1.5 py-0.5 disabled:opacity-50"
+                  >
+                    Edit
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => onRemove(i)}
+                    disabled={isUploading}
+                    className="rounded bg-destructive/80 px-1.5 py-0.5 disabled:opacity-50"
+                  >
+                    Hapus
+                  </button>
                 </div>
               )}
             </div>
@@ -1788,7 +2281,9 @@ function PhotoTileGrid({
               <>
                 <AlertCircle className="h-5 w-5" aria-hidden />
                 <div className="line-clamp-2 break-all text-[9px] font-medium">{p.name}</div>
-                <div className="line-clamp-2 text-[9px] opacity-80">{p.error || "Gagal membaca foto"}</div>
+                <div className="line-clamp-2 text-[9px] opacity-80">
+                  {p.error || "Gagal membaca foto"}
+                </div>
                 <div className="mt-0.5 flex items-center gap-1">
                   {p.file && (
                     <button
@@ -1822,8 +2317,16 @@ function PhotoTileGrid({
 // lag: channel SUBSCRIBED tapi data 30–90 dtk lalu (heartbeat masih jalan).
 // stale: data > 90 dtk lalu atau channel error/terputus.
 function SyncBadge({
-  status, lastSyncAt, tick, onRefresh,
-}: { status: "connecting" | "connected" | "error"; lastSyncAt: number | null; tick: number; onRefresh: () => void }) {
+  status,
+  lastSyncAt,
+  tick,
+  onRefresh,
+}: {
+  status: "connecting" | "connected" | "error";
+  lastSyncAt: number | null;
+  tick: number;
+  onRefresh: () => void;
+}) {
   void tick; // memaksa re-render tiap detak
   const ageSec = lastSyncAt ? Math.max(0, Math.round((Date.now() - lastSyncAt) / 1000)) : null;
   let kind: "connecting" | "connected" | "lag" | "stale";
@@ -1834,10 +2337,30 @@ function SyncBadge({
   else kind = "connected";
 
   const map = {
-    connecting: { cls: "bg-muted text-muted-foreground ring-border", label: "Menyambung…", Icon: Loader2, spin: true },
-    connected:  { cls: "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-400", label: "Sinkron", Icon: Wifi, spin: false },
-    lag:        { cls: "bg-amber-500/10 text-amber-700 ring-amber-500/30 dark:text-amber-400", label: ageSec != null ? `Tertunda ${ageSec}d` : "Tertunda", Icon: Wifi, spin: false },
-    stale:      { cls: "bg-rose-500/10 text-rose-700 ring-rose-500/30 dark:text-rose-400", label: "Tidak sinkron", Icon: WifiOff, spin: false },
+    connecting: {
+      cls: "bg-muted text-muted-foreground ring-border",
+      label: "Menyambung…",
+      Icon: Loader2,
+      spin: true,
+    },
+    connected: {
+      cls: "bg-emerald-500/10 text-emerald-700 ring-emerald-500/20 dark:text-emerald-400",
+      label: "Sinkron",
+      Icon: Wifi,
+      spin: false,
+    },
+    lag: {
+      cls: "bg-amber-500/10 text-amber-700 ring-amber-500/30 dark:text-amber-400",
+      label: ageSec != null ? `Tertunda ${ageSec}d` : "Tertunda",
+      Icon: Wifi,
+      spin: false,
+    },
+    stale: {
+      cls: "bg-rose-500/10 text-rose-700 ring-rose-500/30 dark:text-rose-400",
+      label: "Tidak sinkron",
+      Icon: WifiOff,
+      spin: false,
+    },
   }[kind];
 
   const title = lastSyncAt
@@ -1902,15 +2425,23 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
 
   async function load() {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (publicSupabase.rpc as any)("request_list_titles_via_task", { _token: token, _pin: pin });
-    if (error) { toast.error("Gagal muat request: " + error.message); return; }
+    const { data, error } = await (publicSupabase.rpc as any)("request_list_titles_via_task", {
+      _token: token,
+      _pin: pin,
+    });
+    if (error) {
+      toast.error("Gagal muat request: " + error.message);
+      return;
+    }
     const res = data as { ok: boolean; titles?: unknown; owner_user_id?: unknown };
     if (res?.ok) {
       setTitles(normalizeRequestTitles(res.titles));
       setOwnerUserId(stringOrNull(res.owner_user_id));
     } else setTitles([]);
   }
-  useEffect(() => { void load(); }, [token, pin]);
+  useEffect(() => {
+    void load();
+  }, [token, pin]);
 
   if (!titles) return null;
   if (titles.length === 0) return null;
@@ -1920,42 +2451,69 @@ function RequestSection({ token, pin }: { token: string; pin: string }) {
       <div className="mb-2 flex items-center gap-2">
         <Package className="h-4 w-4 text-primary" />
         <div className="text-sm font-semibold">Paket Request</div>
-        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">{titles.length}</span>
+        <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+          {titles.length}
+        </span>
       </div>
       <div className="space-y-2">
         {titles.map((t) => {
           const requestItems = Array.isArray(t.items) ? t.items : [];
           return (
-          <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
-            <button
-              onClick={() => setOpenId(openId === t.id ? null : t.id)}
-              className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/40"
-            >
-              <div className="min-w-0 flex-1">
-                <div className="truncate text-sm font-semibold">{t.name}</div>
-                <div className="truncate text-[11px] text-muted-foreground">
-                  {requestItems.map((i) => `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`).join(" · ") || "Tidak ada item"}
+            <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
+              <button
+                onClick={() => setOpenId(openId === t.id ? null : t.id)}
+                className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/40"
+              >
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-sm font-semibold">{t.name}</div>
+                  <div className="truncate text-[11px] text-muted-foreground">
+                    {requestItems
+                      .map(
+                        (i) =>
+                          `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`,
+                      )
+                      .join(" · ") || "Tidak ada item"}
+                  </div>
                 </div>
-              </div>
-              <span className="ml-2 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
-                {openId === t.id ? "Tutup" : "Siapkan"}
-              </span>
-            </button>
-            {openId === t.id && (
-              <div className="border-t bg-muted/20 p-3">
-                <RequestForm title={t} token={token} pin={pin} ownerUserId={ownerUserId} onDone={() => { setOpenId(null); void load(); }} />
-              </div>
-            )}
-          </div>
-        );})}
+                <span className="ml-2 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
+                  {openId === t.id ? "Tutup" : "Siapkan"}
+                </span>
+              </button>
+              {openId === t.id && (
+                <div className="border-t bg-muted/20 p-3">
+                  <RequestForm
+                    title={t}
+                    token={token}
+                    pin={pin}
+                    ownerUserId={ownerUserId}
+                    onDone={() => {
+                      setOpenId(null);
+                      void load();
+                    }}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
       </div>
     </div>
   );
 }
 
 function RequestForm({
-  title, token, pin, ownerUserId, onDone,
-}: { title: RequestTitleDTO; token: string; pin: string; ownerUserId: string | null; onDone: () => void }) {
+  title,
+  token,
+  pin,
+  ownerUserId,
+  onDone,
+}: {
+  title: RequestTitleDTO;
+  token: string;
+  pin: string;
+  ownerUserId: string | null;
+  onDone: () => void;
+}) {
   const [rows, setRows] = useState(
     title.items.map((i) => ({
       warehouse_item_id: i.warehouse_item_id,
@@ -1992,14 +2550,22 @@ function RequestForm({
           const staged = await Promise.all(blobs.map((b) => stageFile(b)));
           if (!cancelled) setPhotos(staged);
         }
-      } catch { /* abaikan */ }
-      finally { draftLoadedRef.current = true; }
+      } catch {
+        /* abaikan */
+      } finally {
+        draftLoadedRef.current = true;
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [draftKey]);
   useEffect(() => {
     if (!draftLoadedRef.current) return;
-    void saveDraftPhotos(draftKey, photos.map((p) => p.blob));
+    void saveDraftPhotos(
+      draftKey,
+      photos.map((p) => p.blob),
+    );
   }, [photos, draftKey]);
 
   async function pickCamera() {
@@ -2013,7 +2579,9 @@ function RequestForm({
     }
     cameraRef.current?.click();
   }
-  function pickGallery() { galleryRef.current?.click(); }
+  function pickGallery() {
+    galleryRef.current?.click();
+  }
 
   function triggerAutoGps() {
     if (!gps && !locUrl && navigator.geolocation) {
@@ -2028,8 +2596,20 @@ function RequestForm({
     }
   }
   function markSuccess(blob: Blob) {
-    setJustOk((s) => { const n = new Set(s); n.add(blob); return n; });
-    setTimeout(() => setJustOk((s) => { const n = new Set(s); n.delete(blob); return n; }), 1500);
+    setJustOk((s) => {
+      const n = new Set(s);
+      n.add(blob);
+      return n;
+    });
+    setTimeout(
+      () =>
+        setJustOk((s) => {
+          const n = new Set(s);
+          n.delete(blob);
+          return n;
+        }),
+      1500,
+    );
   }
   async function stageOne(f: File, openEditor: boolean): Promise<StagedPhoto | null> {
     const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -2042,7 +2622,10 @@ function RequestForm({
         return [...prev, staged];
       });
       markSuccess(staged.blob);
-      if (openEditor) { setEditorSrc(staged.dataUrl); setEditorOpen(true); }
+      if (openEditor) {
+        setEditorSrc(staged.dataUrl);
+        setEditorOpen(true);
+      }
       triggerAutoGps();
       return staged;
     } catch (err) {
@@ -2055,7 +2638,9 @@ function RequestForm({
   async function retryPending(id: string) {
     const entry = pending.find((x) => x.id === id);
     if (!entry?.file) return;
-    setPending((p) => p.map((x) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)));
+    setPending((p) =>
+      p.map((x) => (x.id === id ? { ...x, status: "loading", error: undefined } : x)),
+    );
     try {
       const staged = await stageFile(entry.file);
       setPending((p) => p.filter((x) => x.id !== id));
@@ -2070,18 +2655,23 @@ function RequestForm({
     setPending((p) => p.filter((x) => x.id !== id));
   }
   async function onCameraFile(e: React.ChangeEvent<HTMLInputElement>) {
-    const f = e.target.files?.[0]; e.target.value = "";
+    const f = e.target.files?.[0];
+    e.target.value = "";
     if (!f) return;
     await stageOne(f, true);
   }
   async function onGalleryFiles(e: React.ChangeEvent<HTMLInputElement>) {
-    const files = Array.from(e.target.files ?? []); e.target.value = "";
+    const files = Array.from(e.target.files ?? []);
+    e.target.value = "";
     if (files.length === 0) return;
     await Promise.all(files.map((f) => stageOne(f, false)));
   }
 
   function takeLocation() {
-    if (!navigator.geolocation) { toast.error("GPS tidak tersedia"); return; }
+    if (!navigator.geolocation) {
+      toast.error("GPS tidak tersedia");
+      return;
+    }
     const id = toast.loading("Mengambil lokasi…");
     navigator.geolocation.getCurrentPosition(
       (pos) => {
@@ -2095,19 +2685,35 @@ function RequestForm({
   }
 
   async function submit() {
-    if (photos.length === 0) { toast.error("Wajib lampirkan foto bukti"); return; }
+    if (photos.length === 0) {
+      toast.error("Wajib lampirkan foto bukti");
+      return;
+    }
     const validRows = rows.filter((r) => Number(r.actual_grams) > 0);
-    if (validRows.length === 0) { toast.error("Minimal 1 item dengan jumlah > 0"); return; }
+    if (validRows.length === 0) {
+      toast.error("Minimal 1 item dengan jumlah > 0");
+      return;
+    }
     setBusy(true);
     try {
-      if (!ownerUserId) { toast.error("Sesi belum siap, coba muat ulang"); setBusy(false); return; }
+      if (!ownerUserId) {
+        toast.error("Sesi belum siap, coba muat ulang");
+        setBusy(false);
+        return;
+      }
       setUploads(photos.map(() => ({ status: "idle" as const })));
       const uploaded: string[] = [];
       for (let i = 0; i < photos.length; i++) {
         setUploads((prev) => prev.map((u, j) => (j === i ? { status: "uploading" } : u)));
         let uploadedPath: string | null = null;
         try {
-          uploadedPath = await uploadRequestPhotoViaToken(ownerUserId, token, photos[i].blob, "jpg", publicSupabase);
+          uploadedPath = await uploadRequestPhotoViaToken(
+            ownerUserId,
+            token,
+            photos[i].blob,
+            "jpg",
+            publicSupabase,
+          );
         } catch (uerr) {
           const msg = (uerr as Error).message || "Gagal mengunggah";
           setUploads((prev) => prev.map((u, j) => (j === i ? { status: "error", error: msg } : u)));
@@ -2126,12 +2732,17 @@ function RequestForm({
         actual_grams: Number(r.actual_grams),
       }));
       const args = {
-        _token: token, _pin: pin, _title_id: title.id,
+        _token: token,
+        _pin: pin,
+        _title_id: title.id,
         _items: itemsPayload,
-        _photo_path: uploaded[0], _photo_paths: uploaded,
+        _photo_path: uploaded[0],
+        _photo_paths: uploaded,
         _location_url: locUrl || null,
-        _gps_lat: gps?.lat ?? null, _gps_lng: gps?.lng ?? null,
-        _note: note || null, _prep_task_item_id: null,
+        _gps_lat: gps?.lat ?? null,
+        _gps_lng: gps?.lng ?? null,
+        _note: note || null,
+        _prep_task_item_id: null,
       };
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data, error } = await (publicSupabase.rpc as any)("request_submit_via_task", args);
@@ -2139,12 +2750,15 @@ function RequestForm({
       const res = data as { ok: boolean; error?: string };
       if (!res?.ok) throw new Error(res?.error || "submit_failed");
       toast.success(`Paket request terkirim (${uploaded.length} foto), stok dikurangi`);
-      setPhotos([]); setUploads([]);
+      setPhotos([]);
+      setUploads([]);
       void clearDraftPhotos(draftKey);
       onDone();
     } catch (e) {
       toast.error("Gagal: " + (e as Error).message);
-    } finally { setBusy(false); }
+    } finally {
+      setBusy(false);
+    }
   }
 
   return (
@@ -2156,12 +2770,21 @@ function RequestForm({
               {r.product_name ?? "?"}
             </div>
             <input
-              type="number" inputMode="decimal" step="any" min="0"
+              type="number"
+              inputMode="decimal"
+              step="any"
+              min="0"
               value={r.actual_grams}
-              onChange={(e) => setRows((rs) => rs.map((x, i) => i === idx ? { ...x, actual_grams: e.target.value } : x))}
+              onChange={(e) =>
+                setRows((rs) =>
+                  rs.map((x, i) => (i === idx ? { ...x, actual_grams: e.target.value } : x)),
+                )
+              }
               className="col-span-3 h-9 rounded-md border bg-background px-2 text-xs"
             />
-            <div className="col-span-1 flex items-center text-[10px] text-muted-foreground">{displayUnit(r.product_name, r.unit_label)}</div>
+            <div className="col-span-1 flex items-center text-[10px] text-muted-foreground">
+              {displayUnit(r.product_name, r.unit_label)}
+            </div>
           </div>
         ))}
       </div>
@@ -2171,19 +2794,54 @@ function RequestForm({
         pending={pending}
         justOk={justOk}
         uploads={uploads}
-        onEdit={(i) => { setEditingIdx(i); setEditorSrc(photos[i].dataUrl); setEditorOpen(true); }}
+        onEdit={(i) => {
+          setEditingIdx(i);
+          setEditorSrc(photos[i].dataUrl);
+          setEditorOpen(true);
+        }}
         onRemove={(i) => setPhotos((prev) => prev.filter((_, j) => j !== i))}
-        onRetry={(id) => { void retryPending(id); }}
+        onRetry={(id) => {
+          void retryPending(id);
+        }}
         onDismiss={dismissPending}
-        onClearAll={() => { setPhotos([]); setPending([]); }}
+        onClearAll={() => {
+          setPhotos([]);
+          setPending([]);
+        }}
       />
       <div className="grid grid-cols-2 gap-2">
-        <button onClick={pickCamera} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}</button>
-        <button onClick={pickGallery} className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"><ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}</button>
+        <button
+          onClick={pickCamera}
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"
+        >
+          <Camera className="h-4 w-4" /> {photos.length ? "Tambah Kamera" : "Kamera"}
+        </button>
+        <button
+          onClick={pickGallery}
+          className="inline-flex h-11 items-center justify-center gap-1.5 rounded-lg border bg-background text-xs font-medium hover:bg-muted"
+        >
+          <ImageIcon className="h-4 w-4" /> {photos.length ? "Tambah Galeri" : "Galeri"}
+        </button>
       </div>
-      <p className="-mt-1 text-[10px] text-muted-foreground">Bisa pilih beberapa foto sekaligus dari galeri.</p>
-      <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onCameraFile} />
-      <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={onGalleryFiles} />
+      <p className="-mt-1 text-[10px] text-muted-foreground">
+        Bisa pilih beberapa foto sekaligus dari galeri.
+      </p>
+      <input
+        ref={cameraRef}
+        type="file"
+        accept="image/*"
+        capture="environment"
+        className="hidden"
+        onChange={onCameraFile}
+      />
+      <input
+        ref={galleryRef}
+        type="file"
+        accept="image/*"
+        multiple
+        className="hidden"
+        onChange={onGalleryFiles}
+      />
       <div className="-mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
         <button
           type="button"
@@ -2202,12 +2860,31 @@ function RequestForm({
       </div>
 
       <div className="flex gap-2">
-        <input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="Link Google Maps (opsional)" className="h-10 flex-1 rounded-lg border bg-background px-3 text-xs" />
-        <button onClick={takeLocation} className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"><MapPin className="h-4 w-4" /> GPS</button>
+        <input
+          value={locUrl}
+          onChange={(e) => setLocUrl(e.target.value)}
+          placeholder="Link Google Maps (opsional)"
+          className="h-10 flex-1 rounded-lg border bg-background px-3 text-xs"
+        />
+        <button
+          onClick={takeLocation}
+          className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+        >
+          <MapPin className="h-4 w-4" /> GPS
+        </button>
       </div>
-      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" className="h-10 w-full rounded-lg border bg-background px-3 text-xs" />
+      <input
+        value={note}
+        onChange={(e) => setNote(e.target.value)}
+        placeholder="Catatan (opsional)"
+        className="h-10 w-full rounded-lg border bg-background px-3 text-xs"
+      />
 
-      <button disabled={busy} onClick={submit} className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50">
+      <button
+        disabled={busy}
+        onClick={submit}
+        className="inline-flex h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-primary text-sm font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
+      >
         {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
         {busy && uploads.some((u) => u.status !== "idle")
           ? `Mengunggah ${uploads.filter((u) => u.status === "done").length}/${photos.length}…`
@@ -2222,17 +2899,21 @@ function RequestForm({
             setPhotos((prev) => {
               if (editingIdx !== null && editingIdx >= 0 && editingIdx < prev.length) {
                 const next = prev.slice();
-                next[editingIdx] = { blob, dataUrl };
+                next[editingIdx] = buildStagedPhoto(dataUrl, blob);
                 return next;
               }
-              return [...prev, { blob, dataUrl }];
+              return [...prev, buildStagedPhoto(dataUrl, blob)];
             });
             setEditingIdx(null);
             setEditorOpen(false);
           }}
         />
       )}
-      <PermissionHelpDialog open={helpKind !== null} kind={helpKind ?? "camera"} onClose={() => setHelpKind(null)} />
+      <PermissionHelpDialog
+        open={helpKind !== null}
+        kind={helpKind ?? "camera"}
+        onClose={() => setHelpKind(null)}
+      />
     </div>
   );
 }

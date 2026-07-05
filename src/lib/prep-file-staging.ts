@@ -7,7 +7,14 @@
 // tersedia (mis. jsdom lama / test env) — dengan `onerror` yang MENOLAK
 // promise, sehingga tidak ada lagi kasus "foto hilang senyap" karena promise
 // menggantung selamanya.
-export type StagedPhoto = { dataUrl: string; blob: Blob };
+export type StagedPhoto = {
+  dataUrl: string;
+  blob: Blob;
+  format: string; // format final yang akan di-upload (JPEG, PNG, WEBP, dsb)
+  size: number; // ukuran blob final dalam bytes
+  originalFormat?: string; // format asli sebelum konversi/kompresi (bila berbeda)
+  converted?: boolean; // true bila format asli berubah (mis. HEIC → JPEG)
+};
 
 import { compressImage } from "./prep-image-compress";
 
@@ -17,12 +24,22 @@ import { compressImage } from "./prep-image-compress";
 // dinamis agar tidak menambah bundle awal).
 export function isHeic(file: File | Blob): boolean {
   const t = (file.type || "").toLowerCase();
-  if (t === "image/heic" || t === "image/heif" || t === "image/heic-sequence" || t === "image/heif-sequence") return true;
+  if (
+    t === "image/heic" ||
+    t === "image/heif" ||
+    t === "image/heic-sequence" ||
+    t === "image/heif-sequence"
+  )
+    return true;
   const name = (file as File).name?.toLowerCase?.() ?? "";
   return /\.(heic|heif)$/.test(name);
 }
 
-type Heic2AnyFn = (opts: { blob: Blob; toType?: string; quality?: number }) => Promise<Blob | Blob[]>;
+type Heic2AnyFn = (opts: {
+  blob: Blob;
+  toType?: string;
+  quality?: number;
+}) => Promise<Blob | Blob[]>;
 
 export async function convertHeicToJpeg(file: File | Blob): Promise<File> {
   const mod = (await import("heic2any")) as unknown as { default: Heic2AnyFn };
@@ -33,7 +50,41 @@ export async function convertHeicToJpeg(file: File | Blob): Promise<File> {
   return new File([jpegBlob], `${baseName}.jpg`, { type: "image/jpeg" });
 }
 
+export function formatFileSize(bytes: number): string {
+  if (bytes === 0 || !Number.isFinite(bytes)) return "0 B";
+  const k = 1024;
+  const sizes = ["B", "KB", "MB", "GB"];
+  const i = Math.max(0, Math.min(sizes.length - 1, Math.floor(Math.log(bytes) / Math.log(k))));
+  return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
+export function formatLabel(file: Blob): string {
+  const t = (file.type || "").toLowerCase();
+  if (
+    t === "image/heic" ||
+    t === "image/heif" ||
+    t === "image/heic-sequence" ||
+    t === "image/heif-sequence"
+  )
+    return "HEIC";
+  if (t === "image/jpeg") return "JPEG";
+  if (t === "image/png") return "PNG";
+  if (t === "image/webp") return "WEBP";
+  if (t === "image/gif") return "GIF";
+  if (t === "image/svg+xml") return "SVG";
+  const name = (file as File).name?.toLowerCase?.() ?? "";
+  const ext = name.split(".").pop() || "";
+  if (/^(heic|heif)$/.test(ext)) return "HEIC";
+  if (ext) return ext.toUpperCase();
+  return t.replace("image/", "").toUpperCase() || "FOTO";
+}
+
+export function buildStagedPhoto(dataUrl: string, blob: Blob): StagedPhoto {
+  return { dataUrl, blob, format: formatLabel(blob), size: blob.size };
+}
+
 export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
+  const originalFormat = formatLabel(file);
   // 1) Jika HEIC/HEIF, konversi ke JPEG dulu supaya bisa dirender di <img>
   //    dan PhotoEditor di semua browser (khususnya foto dari iPhone).
   let f: File | Blob = file;
@@ -63,6 +114,8 @@ export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
   } catch {
     // biarkan f apa adanya
   }
+  const finalFormat = formatLabel(f);
+  const converted = originalFormat !== finalFormat;
   const g = globalThis as unknown as {
     URL?: { createObjectURL?: (b: Blob) => string };
     FileReader?: typeof FileReader;
@@ -71,7 +124,14 @@ export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
     try {
       const dataUrl = g.URL.createObjectURL(f);
       if (typeof dataUrl === "string" && dataUrl.length > 0) {
-        return { dataUrl, blob: f };
+        return {
+          dataUrl,
+          blob: f,
+          format: finalFormat,
+          size: f.size,
+          originalFormat: converted ? originalFormat : undefined,
+          converted,
+        };
       }
     } catch {
       // lanjut ke fallback FileReader
@@ -87,5 +147,12 @@ export async function stageFile(file: File | Blob): Promise<StagedPhoto> {
     r.readAsDataURL(f);
   });
   if (!dataUrl) throw new Error("Foto kosong / rusak");
-  return { dataUrl, blob: f };
+  return {
+    dataUrl,
+    blob: f,
+    format: finalFormat,
+    size: f.size,
+    originalFormat: converted ? originalFormat : undefined,
+    converted,
+  };
 }
