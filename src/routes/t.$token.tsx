@@ -334,6 +334,7 @@ function PublicPrepPage() {
   useEffect(() => {
     try { window.localStorage.setItem(sortStorageKey, sortMode); } catch {}
   }, [sortMode, sortStorageKey]);
+  const [selectedGroup, setSelectedGroup] = useState<VariantGroup | null>(null);
   // Status koneksi realtime: 'connecting' saat awal, 'connected' setelah SUBSCRIBED,
   // 'error' bila channel gagal/terputus. lastSyncAt diisi setiap silentRefresh sukses.
   const [rtStatus, setRtStatus] = useState<"connecting" | "connected" | "error">("connecting");
