@@ -1566,13 +1566,18 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
     setWaPreviewLocation(firstLocation);
     setWaPreviewPhotoCount(photoCount);
     setWaPreviewFolders(folderSummary);
+    setWaPreviewExpected({
+      folderIds: [...includedShots.map((s) => s.id)].sort(),
+      photoCount,
+    });
     setWaPreviewOpen(true);
   }
 
   async function confirmSendWA() {
+    const expected = waPreviewExpected;
     setWaPreviewOpen(false);
     const fake = { preventDefault() {}, stopPropagation() {} } as unknown as React.MouseEvent;
-    try { await sendWA(fake); } catch { /* dilaporkan di kartu */ }
+    try { await sendWA(fake, expected); } catch { /* dilaporkan di kartu */ }
   }
 
   function undoSent(e: React.MouseEvent) {
