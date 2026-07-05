@@ -1695,6 +1695,32 @@ function PublicPrepPage() {
             )}
           </div>
         )}
+        {deferredReload.pending && (
+          <div
+            role="status"
+            aria-live="polite"
+            className="mx-auto max-w-2xl px-4 pb-2"
+          >
+            <div className="flex items-start gap-2 rounded-lg border border-amber-500/40 bg-amber-500/10 px-3 py-2 text-[11px] leading-snug text-amber-800 dark:text-amber-200">
+              <RefreshCcw className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-pulse" />
+              <div className="min-w-0 flex-1">
+                <div className="font-semibold">Versi baru menunggu — refresh ditahan</div>
+                <div className="opacity-90">
+                  {deferredReload.reason === "worker-portal"
+                    ? "Halaman ini tidak akan me-refresh sendiri selama Anda masih di portal pegawai — supaya draft foto & sesi PIN tidak hilang."
+                    : deferredReload.reason === "app-busy"
+                      ? "Sedang proses foto/edit/unggah. Refresh akan berjalan otomatis begitu selesai."
+                      : "Anda sedang mengetik. Refresh akan berjalan otomatis setelah selesai."}
+                  {deferredReload.since && (
+                    <span className="ml-1 opacity-70">
+                      · ditahan {Math.max(1, Math.round((Date.now() - deferredReload.since) / 1000))} dtk
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </header>
 
       <div className="mx-auto max-w-2xl px-3 pt-4">
