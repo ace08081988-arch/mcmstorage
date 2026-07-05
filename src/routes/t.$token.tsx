@@ -676,37 +676,42 @@ function PublicPrepPage() {
     }
     const normalizedItems = normalizePrepItems(res.items);
     setLastError(null);
-    // Defensif: pastikan tidak ada layar "tugas ditutup" yang tersisa dari
-    // silentRefresh sebelumnya, agar setelah authed=true tidak langsung
-    // melompat balik ke screen closedReason.
-    setClosedReason(null);
-    // PIN benar → reset penuh, termasuk localStorage, sehingga refresh
-    // browser tidak membawa sisa percobaan/lock.
-    resetAttemptsFully();
+    // Selalu update payload tugas + items (dipakai oleh refresh() setelah
+    // submit juga, bukan hanya saat login pertama).
     setTask(normalizedTask);
     setItems(normalizedItems);
     pinRef.current = p;
-    // Simpan PIN ke sessionStorage agar WebView yang di-recreate (mis. setelah
-    // user buka kamera/galeri) bisa auto-rehydrate ke layar tugas.
-    writeSession(p);
-    // eslint-disable-next-line no-console
-    console.log("[t.$token] PIN ok", {
-      taskId: normalizedTask.id,
-      itemsCount: normalizedItems.length,
-      status: normalizedTask.status,
-    });
-    // Langsung pindah ke layar tugas — flash sukses bisa terlihat sebagai
-    // "balik ke awal" kalau user menyentuh layar dalam jendela 1.2 dtk.
-    // Tampilkan konfirmasi via toast saja.
-    setAuthed(true);
-    setSuccessFlash(false);
-    toast.success("Masuk pegawai berhasil", { duration: 1500 });
-    // Pastikan posisi scroll kembali ke atas halaman tugas.
-    if (typeof window !== "undefined") {
-      try {
-        window.scrollTo({ top: 0, behavior: "smooth" });
-      } catch {
-        window.scrollTo(0, 0);
+    // Efek "login": HANYA saat transisi belum-authed → authed. Kalau sudah
+    // authed (mis. dipanggil oleh refresh() setelah submit foto), jangan
+    // ulang toast/scroll/reset — itulah yang bikin layar terasa "mulai
+    // ulang" setiap kali habis upload.
+    if (!authed) {
+      // Defensif: pastikan tidak ada layar "tugas ditutup" yang tersisa dari
+      // silentRefresh sebelumnya, agar setelah authed=true tidak langsung
+      // melompat balik ke screen closedReason.
+      setClosedReason(null);
+      // PIN benar → reset penuh, termasuk localStorage, sehingga refresh
+      // browser tidak membawa sisa percobaan/lock.
+      resetAttemptsFully();
+      // Simpan PIN ke sessionStorage agar WebView yang di-recreate (mis. setelah
+      // user buka kamera/galeri) bisa auto-rehydrate ke layar tugas.
+      writeSession(p);
+      // eslint-disable-next-line no-console
+      console.log("[t.$token] PIN ok", {
+        taskId: normalizedTask.id,
+        itemsCount: normalizedItems.length,
+        status: normalizedTask.status,
+      });
+      setAuthed(true);
+      setSuccessFlash(false);
+      toast.success("Masuk pegawai berhasil", { duration: 1500 });
+      // Pastikan posisi scroll kembali ke atas halaman tugas.
+      if (typeof window !== "undefined") {
+        try {
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        } catch {
+          window.scrollTo(0, 0);
+        }
       }
     }
     return true;
