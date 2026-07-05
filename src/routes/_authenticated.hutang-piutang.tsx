@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { StatusBadge } from "@/components/StatusBadge";
+import { assertDebtSource } from "@/lib/debt-source";
 import {
   Dialog,
   DialogContent,
@@ -1109,7 +1110,7 @@ function AddDebtDialog({
       amount: amt,
       due_date: due || null,
       note: note.trim() || null,
-      source: "manual",
+      source: assertDebtSource("manual"),
     });
     setSaving(false);
     if (error) {

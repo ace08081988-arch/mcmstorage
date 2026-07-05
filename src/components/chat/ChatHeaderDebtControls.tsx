@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { rupiah } from "@/lib/stock-format";
+import { assertDebtSource } from "@/lib/debt-source";
 
 type Kind = "hutang" | "piutang";
 
@@ -361,7 +362,11 @@ async function applyDelta({
         kind,
         party_name: partyName,
         amount: delta,
-        source: "chat",
+        // Sumber "manual" — satu-satunya nilai valid untuk entri dari UI chat
+        // menurut constraint `debts_source_check`. Jangan ubah tanpa
+        // memperluas allowlist di `src/lib/debt-source.ts` DAN migrasi
+        // constraint database.
+        source: assertDebtSource("manual"),
       };
       if (kind === "hutang") insert.supplier_id = partyId;
       else insert.customer_id = partyId;
