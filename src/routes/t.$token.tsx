@@ -1486,43 +1486,101 @@ function PublicPrepPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-2 sm:gap-3">
-          {items.map((it, idx) => (
-            <WorkerSectionBoundary
-              key={it.id}
-              renderFallback={(error) => (
-                <div className="col-span-2 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
-                  <div className="flex items-start gap-2">
-                    <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
-                    <div className="min-w-0">
-                      <div className="font-semibold">Item #{idx + 1} gagal ditampilkan</div>
-                      <div className="mt-1 text-xs leading-relaxed opacity-90">
-                        PIN sudah benar dan tugas berhasil dibuka, tetapi ada data item yang tidak
-                        valid. Item lain tetap bisa dibuka.
+        {items.length > 0 ? (
+          (() => {
+            // Kelompokkan per varian berdasar nama tanpa suffix "(n/m)" / "#n".
+            const stripSuffix = (s: string) =>
+              s.replace(/\s*[\(\[]\s*\d+\s*[\/／of-]\s*\d+\s*[\)\]]\s*$/i, "")
+               .replace(/\s*#\s*\d+\s*$/i, "")
+               .trim();
+            const groups: Array<{ key: string; label: string; category: string | null; entries: Array<{ it: typeof items[number]; idx: number }> }> = [];
+            const map = new Map<string, number>();
+            items.forEach((it, idx) => {
+              const base = stripSuffix(it.name) || it.name;
+              const key = `${base}::${it.category ?? ""}`;
+              let gi = map.get(key);
+              if (gi === undefined) {
+                gi = groups.length;
+                map.set(key, gi);
+                groups.push({ key, label: base, category: it.category ?? null, entries: [] });
+              }
+              groups[gi].entries.push({ it, idx });
+            });
+            return (
+              <div className="space-y-4">
+                {groups.map((g) => {
+                  const totalReq = g.entries.reduce((s, e) => s + (Number(e.it.qty_requested) || 0), 0);
+                  const doneCount = g.entries.filter((e) => (e.it.submissions?.length ?? 0) > 0).length;
+                  const unit = displayUnit(g.entries[0].it.name, g.entries[0].it.unit_label);
+                  return (
+                    <section key={g.key} className="space-y-2">
+                      <div className="sticky top-0 z-[1] -mx-1 flex flex-wrap items-center justify-between gap-1.5 rounded-md border bg-background/95 px-2 py-1.5 backdrop-blur">
+                        <div className="min-w-0">
+                          <div className="truncate text-[12px] font-semibold">{g.label}</div>
+                          {g.category && (
+                            <div className="truncate text-[10px] uppercase tracking-wide text-muted-foreground">{g.category}</div>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <span className="rounded-md bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                            {g.entries.length} paket
+                          </span>
+                          <span className="rounded-md bg-muted px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
+                            {totalReq} {unit}
+                          </span>
+                          {doneCount > 0 && (
+                            <span className="rounded-md bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700 dark:text-emerald-300">
+                              {doneCount}/{g.entries.length} siap
+                            </span>
+                          )}
+                        </div>
                       </div>
-                      <details className="mt-2 text-[11px]">
-                        <summary className="cursor-pointer">Detail teknis</summary>
-                        <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 font-mono">
-                          {error.message}
-                        </pre>
-                      </details>
-                    </div>
-                  </div>
-                </div>
-              )}
-            >
-              <ItemCard
-                index={idx + 1}
-                item={it}
-                token={token}
-                pin={pinRef.current}
-                isStale={!!staleItemIds[it.id]}
-                onAcknowledgeStale={() => clearStale(it.id)}
-                onSubmitted={refresh}
-              />
-            </WorkerSectionBoundary>
-          ))}
-          {items.length === 0 &&
+                      <div className="grid grid-cols-2 gap-2 sm:gap-3">
+                        {g.entries.map(({ it, idx }) => (
+                          <WorkerSectionBoundary
+                            key={it.id}
+                            renderFallback={(error) => (
+                              <div className="col-span-2 rounded-xl border border-destructive/40 bg-destructive/5 p-4 text-sm text-destructive">
+                                <div className="flex items-start gap-2">
+                                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                                  <div className="min-w-0">
+                                    <div className="font-semibold">Item #{idx + 1} gagal ditampilkan</div>
+                                    <div className="mt-1 text-xs leading-relaxed opacity-90">
+                                      PIN sudah benar dan tugas berhasil dibuka, tetapi ada data item yang tidak
+                                      valid. Item lain tetap bisa dibuka.
+                                    </div>
+                                    <details className="mt-2 text-[11px]">
+                                      <summary className="cursor-pointer">Detail teknis</summary>
+                                      <pre className="mt-1 max-h-32 overflow-auto whitespace-pre-wrap break-all rounded bg-background/70 p-2 font-mono">
+                                        {error.message}
+                                      </pre>
+                                    </details>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          >
+                            <ItemCard
+                              index={idx + 1}
+                              item={it}
+                              token={token}
+                              pin={pinRef.current}
+                              isStale={!!staleItemIds[it.id]}
+                              onAcknowledgeStale={() => clearStale(it.id)}
+                              onSubmitted={refresh}
+                            />
+                          </WorkerSectionBoundary>
+                        ))}
+                      </div>
+                    </section>
+                  );
+                })}
+              </div>
+            );
+          })()
+        ) : (
+          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+            {
             (loading ? (
               <div className="col-span-2 space-y-3" aria-busy="true" aria-label="Memuat daftar tugas">
                 {Array.from({ length: 3 }).map((_, i) => (
@@ -1551,8 +1609,10 @@ function PublicPrepPage() {
                   </p>
                 </div>
               </div>
-            ))}
-        </div>
+            ))
+            }
+          </div>
+        )}
 
         <WorkerSectionBoundary
           renderFallback={(error) => (
