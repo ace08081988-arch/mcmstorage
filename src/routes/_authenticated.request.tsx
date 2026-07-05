@@ -61,6 +61,7 @@ function RequestPage() {
   const [editingTitle, setEditingTitle] = useState<RequestTitle | null>(null);
   const [testOpen, setTestOpen] = useState(false);
   const [sendLinkTitle, setSendLinkTitle] = useState<RequestTitle | null>(null);
+  const [historyTitle, setHistoryTitle] = useState<RequestTitle | "all" | null>(null);
 
   function diagnose(code?: string, status?: number, msg?: string): string {
     if (status === 0 || /Failed to fetch|NetworkError/i.test(msg ?? "")) return "Jaringan terputus — periksa koneksi internet.";
