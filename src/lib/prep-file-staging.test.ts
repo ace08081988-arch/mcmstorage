@@ -176,13 +176,13 @@ describe("stageFile — pemilihan foto kamera & galeri di halaman pegawai", () =
   });
 
   it("HEIC gagal dikonversi (heic2any melempar) → pesan panduan iPhone", async () => {
-    const { convertHeicToJpeg } = await import("./prep-file-staging");
-    vi.spyOn({ convertHeicToJpeg }, "convertHeicToJpeg").mockRejectedValue(
+    vi.spyOn(staging, "convertHeicToJpeg").mockRejectedValue(
       new Error("libheif not available"),
     );
     g.URL = { createObjectURL: () => "blob:mock/heic" };
     const heic = new File(["heic-bytes"], "IMG_0003.heic", { type: "image/heic" });
-    await expect(stageFile(heic)).rejects.toThrow(/Paling Kompatibel|HEIC/i);
+    await expect(staging.stageFile(heic)).rejects.toThrow(/Paling Kompatibel|HEIC/i);
+    vi.restoreAllMocks();
   });
 
   // ────────────────────────────────────────────────────────────────
