@@ -1399,6 +1399,7 @@ function PublicPrepPage() {
               className="mb-3 h-14 w-full rounded-lg border bg-background px-3 text-center text-2xl tracking-[0.6em] tabular-nums text-foreground shadow-inner placeholder:text-muted-foreground/70 focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-60"
             />
             <button
+              type="button"
               disabled={
                 pin.length < 4 ||
                 loading ||
