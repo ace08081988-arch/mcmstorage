@@ -6,6 +6,7 @@ import { signedUrl, uploadPrepPhoto, type PrepItemRow, type PrepSubmissionRow, t
 import { uploadRequestPhotoViaToken } from "@/lib/request";
 import { publicSupabase } from "@/lib/public-supabase";
 import { stageFile, type StagedPhoto as StagedPhotoT } from "@/lib/prep-file-staging";
+import { saveDraftPhotos, loadDraftPhotos, clearDraftPhotos, itemDraftKey, requestDraftKey } from "@/lib/prep-draft-store";
 import { queryCameraPermission, permissionToastMessage, type MediaKind } from "@/lib/media-permission";
 import { PermissionHelpDialog } from "@/components/prep/PermissionHelpDialog";
 import { HelpCircle } from "lucide-react";
@@ -1314,6 +1315,29 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
 
   useEffect(() => { signedUrl(item.ref_photo_path, 60 * 60 * 24 * 7, publicSupabase).then(setRefSigned); }, [item.ref_photo_path]);
 
+  // Draft foto persisten: bertahan lintas refresh & pindah tab.
+  const draftKey = itemDraftKey(token, item.id);
+  const draftLoadedRef = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const blobs = await loadDraftPhotos(draftKey);
+        if (cancelled) return;
+        if (blobs.length > 0) {
+          const staged = await Promise.all(blobs.map((b) => stageFile(b)));
+          if (!cancelled) setPhotos(staged);
+        }
+      } catch { /* abaikan draft rusak */ }
+      finally { draftLoadedRef.current = true; }
+    })();
+    return () => { cancelled = true; };
+  }, [draftKey]);
+  useEffect(() => {
+    if (!draftLoadedRef.current) return;
+    void saveDraftPhotos(draftKey, photos.map((p) => p.blob));
+  }, [photos, draftKey]);
+
   async function pickCamera() {
     const state = await queryCameraPermission();
     if (state === "denied") {
@@ -1439,6 +1463,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       }
       toast.success(`Terkirim ${uploaded.length} foto. Stok gudang dikurangi ${res.deducted ?? item.qty_requested} ${displayUnit(item.name, item.unit_label)}`);
       setPhotos([]); setLocUrl(""); setGps(null); setNote("");
+      void clearDraftPhotos(draftKey);
       onSubmitted();
     } catch (e) {
       toast.error("Gagal kirim: " + (e as Error).message);
@@ -1749,6 +1774,29 @@ function RequestForm({
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
 
+  // Draft foto persisten untuk paket request.
+  const draftKey = requestDraftKey(token, title.id);
+  const draftLoadedRef = useRef(false);
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const blobs = await loadDraftPhotos(draftKey);
+        if (cancelled) return;
+        if (blobs.length > 0) {
+          const staged = await Promise.all(blobs.map((b) => stageFile(b)));
+          if (!cancelled) setPhotos(staged);
+        }
+      } catch { /* abaikan */ }
+      finally { draftLoadedRef.current = true; }
+    })();
+    return () => { cancelled = true; };
+  }, [draftKey]);
+  useEffect(() => {
+    if (!draftLoadedRef.current) return;
+    void saveDraftPhotos(draftKey, photos.map((p) => p.blob));
+  }, [photos, draftKey]);
+
   async function pickCamera() {
     const state = await queryCameraPermission();
     if (state === "denied") {
@@ -1848,6 +1896,8 @@ function RequestForm({
       const res = data as { ok: boolean; error?: string };
       if (!res?.ok) throw new Error(res?.error || "submit_failed");
       toast.success(`Paket request terkirim (${uploaded.length} foto), stok dikurangi`);
+      setPhotos([]);
+      void clearDraftPhotos(draftKey);
       onDone();
     } catch (e) {
       toast.error("Gagal: " + (e as Error).message);
