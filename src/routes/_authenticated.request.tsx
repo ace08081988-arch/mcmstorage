@@ -1702,10 +1702,14 @@ function WorkerTestDialog({
     } finally { setBusy(false); }
   }
 
-  function copyAll() {
+  async function copyAll() {
     if (!session) return;
-    void navigator.clipboard.writeText(`Link: ${session.url}\nPIN: ${session.pin}`);
-    toast.success("Disalin");
+    try {
+      await navigator.clipboard.writeText(`Link: ${session.url}\nPIN: ${session.pin}`);
+      toast.success("Link + PIN disalin", { description: "Sekarang bisa kirim ulang ke pegawai." });
+    } catch (e) {
+      toast.error("Gagal menyalin", { description: (e as Error)?.message ?? "Periksa izin clipboard." });
+    }
   }
 
   async function cancelSession() {
