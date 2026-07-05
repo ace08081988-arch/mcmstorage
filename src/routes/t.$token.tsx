@@ -1517,6 +1517,22 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
       <p className="mt-1 text-[10px] text-muted-foreground">Bisa pilih beberapa foto sekaligus dari galeri.</p>
       <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onCameraFile} />
       <input ref={galleryRef} type="file" accept="image/*" multiple className="hidden" onChange={onGalleryFiles} />
+      <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-[10px]">
+        <button
+          type="button"
+          onClick={() => setHelpKind("camera")}
+          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <HelpCircle className="h-3 w-3" /> Kamera tidak bisa dibuka?
+        </button>
+        <button
+          type="button"
+          onClick={() => setHelpKind("gallery")}
+          className="inline-flex items-center gap-1 text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <HelpCircle className="h-3 w-3" /> Galeri tidak muncul?
+        </button>
+      </div>
 
       <div className="mt-3 rounded-lg border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
         Siapkan <b>{item.qty_requested} {displayUnit(item.name, item.unit_label)}</b> sesuai instruksi pemilik. Setelah foto + lokasi terkirim, stok gudang otomatis berkurang sebanyak itu — Anda tidak perlu mengisi angka apa pun.
@@ -1561,6 +1577,7 @@ function ItemCard({ item, index, token, pin, isStale, onAcknowledgeStale, onSubm
           }}
         />
       )}
+      <PermissionHelpDialog open={helpKind !== null} kind={helpKind ?? "camera"} onClose={() => setHelpKind(null)} />
       </div>
     </div>
   );
