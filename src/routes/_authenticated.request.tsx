@@ -353,6 +353,11 @@ function RequestPage() {
         warehouseItems={items}
         onClose={() => setSendLinkTitle(null)}
       />
+
+      <DeliveryHistoryDialog
+        target={historyTitle}
+        onClose={() => setHistoryTitle(null)}
+      />
     </div>
   );
 }
