@@ -49,7 +49,7 @@ export function ChatBottomNav() {
             to={to}
             aria-current={active ? "page" : undefined}
             className={
-              "relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[11px] leading-snug transition " +
+              "relative flex flex-1 flex-col items-center gap-0.5 rounded-lg px-2 py-1.5 text-[11px] leading-snug transition-colors duration-300 ease-out " +
               (active
                 ? "text-primary"
                 : "text-muted-foreground hover:text-foreground")
@@ -57,8 +57,8 @@ export function ChatBottomNav() {
           >
             <span
               className={
-                "grid h-7 w-14 place-items-center rounded-full transition " +
-                (active ? "bg-primary/15" : "")
+                "grid h-7 w-14 place-items-center rounded-full transition-[background-color,transform] duration-300 ease-out " +
+                (active ? "bg-primary/15 scale-100" : "bg-transparent scale-95")
               }
             >
               <Icon className="h-5 w-5" />
