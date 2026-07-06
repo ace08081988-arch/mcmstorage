@@ -1502,7 +1502,7 @@ function PrepSections({
   titleName: string;
   customers: CustomerRow[];
   onDelete: (p: RequestPreparation) => void;
-  onChanged: () => void;
+  onChanged: () => Promise<{ ok: boolean; error?: string }> | void;
 }) {
   const [showHistory, setShowHistory] = useState(true);
   const [layout, setLayout] = useLayoutMode("requestPrep", "grid");
@@ -1528,15 +1528,28 @@ function PrepSections({
       return;
     }
     const fallback = setTimeout(() => {
-      // Kalau sampai timeout belum muncul, minta user refresh manual.
-      toast.message("Sudah dikirim", {
+      // Kalau sampai timeout belum muncul di daftar Riwayat, refetch mungkin
+      // gagal atau backend belum menandai sold_at — jangan biarkan grid
+      // menipu, tampilkan toast error + tombol coba ulang.
+      toast.error("Gagal memindahkan ke Riwayat Terkirim", {
         description:
-          "Kartu belum berpindah otomatis. Tarik ke bawah / muat ulang untuk melihat di Riwayat Terkirim.",
+          "Data di grid mungkin belum sinkron. Klik Muat Ulang untuk mengambil data terbaru dari server.",
+        duration: 12000,
+        action: {
+          label: "Muat Ulang",
+          onClick: () => {
+            void Promise.resolve(onChanged()).then((res) => {
+              if (res && res.ok === false) {
+                toast.error("Muat ulang gagal: " + (res.error ?? "unknown"));
+              }
+            });
+          },
+        },
       });
       setAwaitingSentId(null);
     }, 8000);
     return () => clearTimeout(fallback);
-  }, [awaitingSentId, sent]);
+  }, [awaitingSentId, sent, onChanged]);
 
   // Fase 2: gulir ke kartu dan tampilkan cincin highlight. Coba beberapa kali
   // karena section Riwayat perlu 1–2 frame untuk expand + kartu perlu mount.
@@ -1591,7 +1604,20 @@ function PrepSections({
       onSent={() => {
         setShowHistory(true);
         setAwaitingSentId(p.id);
-        onChanged();
+        // Refetch dan tangkap error supaya UI tidak menipu.
+        void Promise.resolve(onChanged()).then((res) => {
+          if (res && res.ok === false) {
+            toast.error("Gagal muat ulang daftar", {
+              description: (res.error ?? "unknown") + " — coba tekan tombol Muat Ulang.",
+              duration: 10000,
+              action: {
+                label: "Coba Lagi",
+                onClick: () => { void onChanged(); },
+              },
+            });
+            setAwaitingSentId(null);
+          }
+        });
       }}
     />
     </div>
