@@ -1498,29 +1498,59 @@ function PrepSections({
   const sent = preps.filter((p) => !!p.sold_at);
   const total = preps.length;
   const [justSentId, setJustSentId] = useState<string | null>(null);
+  const [awaitingSentId, setAwaitingSentId] = useState<string | null>(null);
   const sentRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const historyHeaderRef = useRef<HTMLDivElement | null>(null);
 
+  // Fase 1: menunggu kartu yang barusan dikirim muncul di daftar Riwayat
+  // setelah refetch. Kadang shareToWhatsApp membuka share sheet native yang
+  // menjeda tab, jadi refetch bisa terlambat — kita polling sampai muncul,
+  // maksimal ~8 detik, lalu lanjut ke fase highlight/scroll.
+  useEffect(() => {
+    if (!awaitingSentId) return;
+    const found = sent.some((p) => p.id === awaitingSentId);
+    if (found) {
+      setJustSentId(awaitingSentId);
+      setAwaitingSentId(null);
+      return;
+    }
+    const fallback = setTimeout(() => {
+      // Kalau sampai timeout belum muncul, minta user refresh manual.
+      toast.message("Sudah dikirim", {
+        description:
+          "Kartu belum berpindah otomatis. Tarik ke bawah / muat ulang untuk melihat di Riwayat Terkirim.",
+      });
+      setAwaitingSentId(null);
+    }, 8000);
+    return () => clearTimeout(fallback);
+  }, [awaitingSentId, sent]);
+
+  // Fase 2: gulir ke kartu dan tampilkan cincin highlight. Coba beberapa kali
+  // karena section Riwayat perlu 1–2 frame untuk expand + kartu perlu mount.
   useEffect(() => {
     if (!justSentId) return;
-    // Cari kartu yang barusan terkirim di daftar Riwayat. Kalau sudah pindah,
-    // gulir ke sana + kilat highlight; kalau belum (refetch masih jalan),
-    // biarkan efek ini terpanggil ulang saat `sent` berubah.
-    const isInSent = sent.some((p) => p.id === justSentId);
-    if (!isInSent) return;
     setShowHistory(true);
-    const scroll = () => {
+    let cancelled = false;
+    let attempts = 0;
+    const trigger = () => {
+      if (cancelled) return;
+      attempts += 1;
       const el = sentRefs.current.get(justSentId) ?? historyHeaderRef.current;
-      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+        toast.success("Dipindahkan ke Riwayat Terkirim");
+        return;
+      }
+      if (attempts < 8) setTimeout(trigger, 150);
     };
-    // Beri satu frame supaya section Riwayat sempat expand sebelum di-scroll.
-    const raf = requestAnimationFrame(() => setTimeout(scroll, 60));
-    const clear = setTimeout(() => setJustSentId(null), 2400);
+    const raf = requestAnimationFrame(() => setTimeout(trigger, 80));
+    const clear = setTimeout(() => setJustSentId(null), 5000);
     return () => {
+      cancelled = true;
       cancelAnimationFrame(raf);
       clearTimeout(clear);
     };
-  }, [justSentId, sent]);
+  }, [justSentId]);
 
   const renderCard = (p: RequestPreparation, idx: number, listLen: number, inSent: boolean) => (
     <div
@@ -1547,7 +1577,7 @@ function PrepSections({
       onDelete={() => onDelete(p)}
       onSent={() => {
         setShowHistory(true);
-        setJustSentId(p.id);
+        setAwaitingSentId(p.id);
         onChanged();
       }}
     />
