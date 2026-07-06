@@ -1515,6 +1515,14 @@ function SendPrepToCustomerDialog({
   unitFor: (wid: string) => string;
   onSent: () => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sections: ScrollSection[] = [
+    { id: "send-sec-ringkasan", label: "Ringkasan paket" },
+    { id: "send-sec-pelanggan", label: "Pelanggan" },
+    { id: "send-sec-harga", label: "Total harga" },
+    { id: "send-sec-bayar", label: "Metode bayar" },
+    { id: "send-sec-catatan", label: "Catatan" },
+  ];
   const [mode, setMode] = useState<"link" | "manual">("link");
   const [customerId, setCustomerId] = useState<string>("");
   const [manualName, setManualName] = useState("");
@@ -1636,7 +1644,7 @@ function SendPrepToCustomerDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
-      <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
+      <DialogContent ref={scrollRef} className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Send className="h-4 w-4 text-primary" /> Kirim ke pelanggan
