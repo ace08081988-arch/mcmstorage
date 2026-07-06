@@ -1792,14 +1792,16 @@ function PrepCard({
               <CheckCircle2 className="h-3 w-3" /> Terkirim
             </span>
           )}
-          <button
-            onClick={onDelete}
-            className="rounded-md border border-destructive/40 bg-destructive/10 p-1 text-destructive hover:bg-destructive/20"
-            aria-label="Hapus penyiapan"
-            title="Hapus penyiapan"
-          >
-            <Trash2 className="h-3.5 w-3.5" />
-          </button>
+          {!sold && (
+            <button
+              onClick={onDelete}
+              className="rounded-md border border-destructive/40 bg-destructive/10 p-1 text-destructive hover:bg-destructive/20"
+              aria-label="Hapus penyiapan"
+              title="Hapus penyiapan"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </button>
+          )}
         </div>
       </div>
       {photo ? (
