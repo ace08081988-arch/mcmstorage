@@ -11,11 +11,11 @@ describe("shortenUrlForToast", () => {
   });
 
   it("tidak memotong bila panjang <= 56 setelah skema dibuang", () => {
-    const url = "https://example.com/" + "a".repeat(36); // stripped length = 56
+    const url = "https://example.com/" + "a".repeat(44); // stripped length = 56
     const out = shortenUrlForToast(url);
     expect(out.length).toBe(56);
     expect(out).not.toContain("…");
-    expect(out).toBe("example.com/" + "a".repeat(36));
+    expect(out).toBe("example.com/" + "a".repeat(44));
   });
 
   it("memotong di tengah dengan ellipsis bila > 56", () => {
