@@ -24,6 +24,8 @@ import {
 } from "@/lib/request";
 import { shareToWhatsApp, notifyShareResult, urlToFile } from "@/lib/share-wa";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
+import { signedUrl as prepSignedUrl } from "@/lib/prep";
+import { ecerSignedUrl } from "@/lib/ecer";
 import { fetchAddressBook, upsertManualEntry, normalizePhone, type AddressBookRow } from "@/lib/address-book";
 import { useNavigate } from "@tanstack/react-router";
 import { rupiah } from "@/lib/stock-format";
@@ -70,6 +72,58 @@ function RequestPage() {
   const [testOpen, setTestOpen] = useState(false);
   const [sendLinkTitle, setSendLinkTitle] = useState<RequestTitle | null>(null);
   const [historyTitle, setHistoryTitle] = useState<RequestTitle | "all" | null>(null);
+
+  // Kiriman pegawai yang task_item-nya belum terlink ke folder ecer manapun.
+  // Aturan produk: "kalau produk gak ada di label, tersimpan di request order."
+  type UnroutedRow = {
+    id: string;
+    task_item_id: string;
+    photo_path: string | null;
+    photo_paths: string[] | null;
+    submitted_at: string;
+    warehouse_item_id: string | null;
+    warehouse_item_name: string | null;
+    name_snapshot: string | null;
+    qty_requested: number | null;
+    unit_label: string | null;
+    location_url: string | null;
+    thumb_url?: string | null;
+  };
+  const [unrouted, setUnrouted] = useState<UnroutedRow[]>([]);
+  const [unroutedOpen, setUnroutedOpen] = useState(false);
+
+  async function loadUnrouted() {
+    try {
+      const { data, error } = await sb
+        .from("prep_submissions_unrouted")
+        .select("id,task_item_id,photo_path,photo_paths,submitted_at,warehouse_item_id,warehouse_item_name,name_snapshot,qty_requested,unit_label,location_url")
+        .order("submitted_at", { ascending: false })
+        .limit(60);
+      if (error) throw error;
+      const rows = (data ?? []) as UnroutedRow[];
+      // Resolve thumbnail URLs (best effort — 60 min TTL).
+      await Promise.all(rows.map(async (r) => {
+        if (!r.photo_path) return;
+        const a = await prepSignedUrl(r.photo_path, 3600);
+        r.thumb_url = a ?? (await ecerSignedUrl(r.photo_path, 3600));
+      }));
+      setUnrouted(rows);
+    } catch (e) {
+      // Non-fatal: kartu tetap hilang senyap kalau view tak tersedia.
+      // eslint-disable-next-line no-console
+      console.warn("loadUnrouted:", (e as Error).message);
+      setUnrouted([]);
+    }
+  }
+
+  useEffect(() => { void loadUnrouted(); }, []);
+  useEffect(() => {
+    const ch = supabase.channel("request_unrouted")
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => void loadUnrouted())
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items" }, () => void loadUnrouted())
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, []);
 
   function diagnose(code?: string, status?: number, msg?: string): string {
     if (status === 0 || /Failed to fetch|NetworkError/i.test(msg ?? "")) return "Jaringan terputus — periksa koneksi internet.";
@@ -223,6 +277,93 @@ function RequestPage() {
           <Plus className="mr-1 h-4 w-4" /> Judul Request Baru
         </Button>
       </div>
+
+      {unrouted.length > 0 && (
+        <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between gap-2 text-base">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                <AlertTriangle className="h-4 w-4" />
+                Kiriman tanpa folder ecer
+                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium">
+                  {unrouted.length}
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs"
+                onClick={() => setUnroutedOpen((v) => !v)}
+              >
+                {unroutedOpen ? "Sembunyikan" : "Lihat"}
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          {unroutedOpen && (
+            <CardContent className="space-y-2">
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Kiriman pegawai untuk produk yang <b>belum memiliki folder ecer yang cocok</b> (produk tidak punya judul,
+                atau jumlah/satuan task tidak persis sama dengan judul ecer manapun).
+                Buka folder ecer produk terkait dan sesuaikan judulnya, atau perbaiki jumlah/satuan di halaman Tugas Baru
+                agar kiriman berikutnya otomatis masuk folder yang benar.
+              </p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {unrouted.map((r) => {
+                  const label = r.warehouse_item_name || r.name_snapshot || "(tanpa nama)";
+                  const qty = r.qty_requested != null
+                    ? `${r.qty_requested}${r.unit_label ? ` ${r.unit_label}` : ""}`
+                    : "";
+                  const when = new Date(r.submitted_at).toLocaleString("id-ID", {
+                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+                  });
+                  return (
+                    <div
+                      key={r.id}
+                      className="flex items-center gap-2 rounded-lg border bg-card p-2"
+                    >
+                      {r.thumb_url ? (
+                        <a
+                          href={r.thumb_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0"
+                        >
+                          <img
+                            src={r.thumb_url}
+                            alt={`Kiriman ${label}`}
+                            className="h-14 w-14 rounded-md object-cover"
+                            loading="lazy"
+                          />
+                        </a>
+                      ) : (
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md border bg-muted">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1 text-xs">
+                        <div className="truncate font-medium">{label}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {qty || "—"} · {when}
+                        </div>
+                        {r.location_url && (
+                          <a
+                            href={r.location_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                          >
+                            <MapPin className="h-3 w-3" /> Lokasi
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
 
       {titles.length === 0 ? (
         <div className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">

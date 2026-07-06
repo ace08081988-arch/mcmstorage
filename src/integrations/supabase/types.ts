@@ -3107,7 +3107,50 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      prep_submissions_unrouted: {
+        Row: {
+          gps_lat: number | null
+          gps_lng: number | null
+          id: string | null
+          location_url: string | null
+          name_snapshot: string | null
+          note: string | null
+          owner_user_id: string | null
+          photo_path: string | null
+          photo_paths: string[] | null
+          qty_reported: number | null
+          qty_requested: number | null
+          submitted_at: string | null
+          task_id: string | null
+          task_item_id: string | null
+          unit_label: string | null
+          warehouse_item_id: string | null
+          warehouse_item_name: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "prep_submissions_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "prep_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_submissions_task_item_id_fkey"
+            columns: ["task_item_id"]
+            isOneToOne: false
+            referencedRelation: "prep_task_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "prep_task_items_warehouse_item_id_fkey"
+            columns: ["warehouse_item_id"]
+            isOneToOne: false
+            referencedRelation: "warehouse_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       add_contact_by_invite_code: {
@@ -3314,6 +3357,7 @@ export type Database = {
         Returns: number
       }
       normalize_phone: { Args: { _p: string }; Returns: string }
+      normalize_unit_label: { Args: { _u: string }; Returns: string }
       prep_create_task: {
         Args: {
           _items: Json
