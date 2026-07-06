@@ -2616,7 +2616,9 @@ function ItemCard({
               ? "Barang tidak ditemukan di gudang"
               : res?.error === "bad_pin"
                 ? "PIN salah"
-                : res?.error || "submit_failed";
+                : res?.error === "task_exhausted"
+                  ? "Link ini sudah dipakai untuk 1 paket. Minta link + PIN baru ke admin."
+                  : res?.error || "submit_failed";
         throw new Error(msg);
       }
       toast.success(
