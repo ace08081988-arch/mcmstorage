@@ -47,6 +47,67 @@ export function readAlertConfig(): {
   return { count, windowSec, cooldownSec };
 }
 
+/**
+ * Keputusan dedup alert (pure function untuk memudahkan unit test).
+ *
+ * Input: alert terakhir untuk kombinasi (kind, code) dan konfigurasi.
+ * Output:
+ *   - `insert`: buat alert baru.
+ *   - `merge` : alert masih terbuka, bump `count`/`severity`.
+ *   - `suppress`: dalam cooldown atau tidak perlu perubahan.
+ */
+export type AlertDecision =
+  | { action: "insert"; count: number; severity: "warning" | "critical" }
+  | {
+      action: "merge";
+      id: string;
+      count: number;
+      severity: "warning" | "critical";
+    }
+  | { action: "suppress"; reason: "cooldown" | "no_change" };
+
+export function decideAlertAction(input: {
+  existing: {
+    id: string;
+    count: number | null;
+    severity: string;
+    created_at: string;
+    acknowledged_at: string | null;
+  } | null;
+  nowCount: number;
+  alertCount: number;
+  cooldownSec: number;
+  now?: Date;
+}): AlertDecision {
+  const { existing, nowCount, alertCount, cooldownSec } = input;
+  const now = input.now ?? new Date();
+  const nextSeverity: "warning" | "critical" =
+    nowCount >= alertCount * 3 ? "critical" : "warning";
+  const cooldownStart = new Date(now.getTime() - cooldownSec * 1000);
+
+  if (existing && existing.acknowledged_at === null) {
+    const mergedCount = Math.max(existing.count ?? 0, nowCount);
+    const mergedSeverity: "warning" | "critical" =
+      existing.severity === "critical" || nextSeverity === "critical"
+        ? "critical"
+        : "warning";
+    if (mergedCount === (existing.count ?? 0) && mergedSeverity === existing.severity) {
+      return { action: "suppress", reason: "no_change" };
+    }
+    return {
+      action: "merge",
+      id: existing.id,
+      count: mergedCount,
+      severity: mergedSeverity,
+    };
+  }
+  if (existing && new Date(existing.created_at).getTime() >= cooldownStart.getTime()) {
+    // Sudah di-ack tapi masih dalam cooldown → suppress lintas token.
+    return { action: "suppress", reason: "cooldown" };
+  }
+  return { action: "insert", count: nowCount, severity: nextSeverity };
+}
+
 const PayloadSchema = z.object({
   kind: z.string().min(1).max(40),
   code: z.string().max(80).optional().nullable(),
