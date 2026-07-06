@@ -34,7 +34,7 @@ import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScr
 import { DialogSaveStatus, useSaveStatus, useSaveStatusToast, confirmDiscardIfDirty } from "@/components/DialogSaveStatus";
 import { Field } from "@/components/DialogField";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
-import { filterActivePreps, filterSentPreps } from "@/lib/prep-active-selector";
+import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -1408,7 +1408,10 @@ function TitleDetailView({
   useEffect(() => { void load(); }, [title.id]);
 
   async function handleDelete(p: RequestPreparation) {
-    const wasSold = !!p.sold_at;
+    // `isSentPrep` = SSOT untuk "sudah masuk Riwayat Terkirim". Jangan
+    // pernah tulis `!!p.sold_at` di call site — konsistensi definisi
+    // "sent" dijaga di satu tempat saja.
+    const wasSold = isSentPrep(p);
     const msg = wasSold
       ? "Hapus catatan penyiapan ini? Penjualan & piutang yang sudah tercatat TIDAK ikut terhapus."
       : "Hapus penyiapan ini? Stok akan dikembalikan.";
@@ -1639,7 +1642,9 @@ function PrepSections({
     // mengubah status (hapus / kirim ulang) diblokir di sumber, bukan hanya
     // disembunyikan di UI. Ini jaring pengaman kalau suatu saat ada tombol
     // yang lolos render, keyboard shortcut, atau state stale.
-    const isReadOnly = inSent || !!p.sold_at;
+    // Read-only kalau kartu berada di panel Riwayat Terkirim ATAU prep
+    // itu sendiri sudah `sent` (selector-based).
+    const isReadOnly = inSent || isSentPrep(p);
     const guardedDelete = () => {
       if (isReadOnly) {
         const t = buildReadOnlyToast("delete", p);
@@ -1866,7 +1871,7 @@ function PrepCard({
     return Array.from(new Set(all));
   }, [prep.photo_path, prep.photo_paths]);
   useEffect(() => { requestSignedUrl(photoPaths[0] ?? null, 60 * 60).then(setPhoto); }, [photoPaths]);
-  const sold = !!prep.sold_at;
+  const sold = isSentPrep(prep);
   const unitFor = (wid: string) => {
     const w = warehouseItems.find((x) => x.id === wid);
     const ti = titleItems.find((t) => t.warehouse_item_id === wid);
