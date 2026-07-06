@@ -19,6 +19,10 @@ export const Route = createFileRoute("/lovable/visual/delivery-history")({
   }),
   validateSearch: (s: Record<string, unknown>) => ({
     theme: s.theme === "dark" ? "dark" : "light",
+    scale:
+      typeof s.scale === "string" || typeof s.scale === "number"
+        ? Number(s.scale)
+        : 1,
   }),
   component: Harness,
 });
@@ -73,17 +77,22 @@ const ROWS: Row[] = [
 ];
 
 function Harness() {
-  const { theme } = Route.useSearch();
+  const { theme, scale } = Route.useSearch();
   useEffect(() => {
     const root = document.documentElement;
     const had = root.classList.contains("dark");
     if (theme === "dark") root.classList.add("dark");
     else root.classList.remove("dark");
+    const prevScale = root.style.getPropertyValue("--app-font-scale");
+    const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+    root.style.setProperty("--app-font-scale", String(safeScale));
     return () => {
       if (had) root.classList.add("dark");
       else root.classList.remove("dark");
+      if (prevScale) root.style.setProperty("--app-font-scale", prevScale);
+      else root.style.removeProperty("--app-font-scale");
     };
-  }, [theme]);
+  }, [theme, scale]);
   const headerLabel = "PaketRequestDenganJudulSangatPanjangTanpaSpasiUntukMengujiTruncateDiHeaderDialogMobile";
   return (
     <div className="min-h-dvh bg-background p-3" data-visual-root data-theme={theme}>
