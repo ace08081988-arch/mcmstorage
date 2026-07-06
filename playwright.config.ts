@@ -86,6 +86,15 @@ export default defineConfig({
       use: { ...devices["iPhone 14"], viewport: { width: 390, height: 844 } },
     },
     {
+      // Audit tap-target: setiap <Button> di harness
+      // /lovable/visual/tap-targets harus ≥44px + gap ≥8px pada
+      // breakpoint HP (Pixel 5, 411×893). Snapshot PNG dipakai untuk
+      // menjaring regresi padding/gap yang lolos threshold numerik.
+      name: "tap-targets",
+      testMatch: /tap-targets\.public\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // E2E fungsional portal pegawai (bukan visual regression).
       // Memakai mobile viewport karena pegawai mengakses lewat HP/APK.
       name: "worker-portal-e2e",
