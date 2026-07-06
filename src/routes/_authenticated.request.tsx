@@ -2458,8 +2458,11 @@ function WorkerTestDialog({
               Stok produk akan benar-benar berkurang. Tekan <b>"Batalkan sesi uji coba"</b> untuk mengembalikan stok &amp; menghapus paket uji.
             </div>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
-              <Button variant="outline" size="sm" onClick={copyAll}>
-                <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link+PIN
+              <Button variant="outline" size="sm" onClick={copyAll} disabled={copying} aria-busy={copying}>
+                {copying
+                  ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  : <Copy className="mr-1 h-3.5 w-3.5" />}
+                Salin Link+PIN
               </Button>
               <Button size="sm" asChild>
                 <a href={session.url} target="_blank" rel="noreferrer">
