@@ -1547,16 +1547,21 @@ function SendPrepToCustomerDialog({
   const [payMethod, setPayMethod] = useState<"kas" | "hutang">("kas");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [initialSnap, setInitialSnap] = useState<{ mode: "link" | "manual"; customerId: string; manualName: string; totalStr: string; payMethod: "kas" | "hutang"; note: string }>({ mode: "link", customerId: "", manualName: "", totalStr: "", payMethod: "kas", note: "" });
 
   // Reset saat dialog dibuka kembali.
   useEffect(() => {
     if (open) {
-      setMode(customers.length > 0 ? "link" : "manual");
-      setCustomerId(customers[0]?.id ?? "");
+      const nextMode: "link" | "manual" = customers.length > 0 ? "link" : "manual";
+      const nextCustomer = customers[0]?.id ?? "";
+      const nextNote = prep.note ?? "";
+      setMode(nextMode);
+      setCustomerId(nextCustomer);
       setManualName("");
       setTotalStr("");
       setPayMethod("kas");
-      setNote(prep.note ?? "");
+      setNote(nextNote);
+      setInitialSnap({ mode: nextMode, customerId: nextCustomer, manualName: "", totalStr: "", payMethod: "kas", note: nextNote });
     }
   }, [open, customers, prep.note]);
 
