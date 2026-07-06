@@ -1,5 +1,6 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { Check, CircleDot, Loader2 } from "lucide-react";
+import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 
 export type SaveStatus = "clean" | "dirty" | "saving";
@@ -19,6 +20,57 @@ export function useSaveStatus<T>(current: T, initial: T, busy: boolean): SaveSta
       return "dirty";
     }
   }, [current, initial, busy]);
+}
+
+/**
+ * Terjemahkan transisi status simpan menjadi toast otomatis:
+ *
+ *   saving → clean  ⇒ toast.success(opts.successMessage ?? "Tersimpan")
+ *   saving → dirty  ⇒ toast.error(opts.errorMessage ?? "Perubahan gagal disimpan")
+ *
+ * Transisi lain (clean↔dirty saat user mengetik, saving pertama kali)
+ * di-abaikan. Cocok dipasang sekali di komponen dialog supaya handler
+ * `save()` cukup mengeset state error tanpa memanggil `toast.error`
+ * sendiri — sumber kebenaran toast = badge status.
+ *
+ * `errorMessage` dibaca dengan `useRef` supaya perubahan pesan yang
+ * di-set di dalam blok `catch` tepat sebelum `setBusy(false)` terlihat
+ * saat effect transisi berjalan (React membatch update state).
+ *
+ * `enabled=false` mematikan hook — berguna kalau dialog tertentu
+ * masih mau memakai toast handler-level sendiri.
+ */
+export function useSaveStatusToast(
+  status: SaveStatus,
+  opts?: {
+    successMessage?: string;
+    errorMessage?: string | null;
+    enabled?: boolean;
+  },
+): void {
+  const prevRef = useRef<SaveStatus>(status);
+  // Baca pesan via ref supaya nilai terbaru terbaca saat transisi
+  // (setState errorMessage + setBusy(false) sering ter-batch).
+  const successMsg = opts?.successMessage ?? "Tersimpan";
+  const errorMsg = opts?.errorMessage;
+  const successRef = useRef(successMsg);
+  const errorRef = useRef<string | null | undefined>(errorMsg);
+  successRef.current = successMsg;
+  errorRef.current = errorMsg;
+
+  const enabled = opts?.enabled !== false;
+
+  useEffect(() => {
+    const prev = prevRef.current;
+    prevRef.current = status;
+    if (!enabled) return;
+    if (prev !== "saving") return;
+    if (status === "clean") {
+      toast.success(successRef.current);
+    } else if (status === "dirty") {
+      toast.error(errorRef.current || "Perubahan gagal disimpan");
+    }
+  }, [status, enabled]);
 }
 
 const STYLES: Record<SaveStatus, { label: string; icon: React.ReactNode; wrap: string }> = {
