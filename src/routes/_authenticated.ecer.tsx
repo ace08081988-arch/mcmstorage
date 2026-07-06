@@ -1542,6 +1542,24 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               📍 {previewReq.locationUrl}
             </a>
           ) : null}
+          {(() => {
+            if (!previewReq || previewReq.paths.length === 0) return null;
+            const remaining = previewReq.paths.length - Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length;
+            if (remaining > 0) return null;
+            return (
+              <div className="rounded-md border border-destructive/30 bg-destructive/5 p-2.5">
+                <div className="flex items-start gap-2 text-xs text-destructive">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <div className="font-semibold">Tidak ada foto yang tersisa untuk dikirim</div>
+                    <div className="mt-0.5 leading-snug text-muted-foreground">
+                      Semua foto telah dikecualikan. Sertakan setidaknya satu foto atau ketuk Reset untuk mengirim semua.
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })()}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => finishPreview(false)}>Batal</Button>
             <Button
@@ -1549,8 +1567,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               disabled={
                 !!previewReq &&
                 previewReq.paths.length > 0 &&
-                previewReq.paths.slice(0, 12).every((p) => excludedPaths.has(p)) &&
-                previewReq.paths.length <= 12
+                previewReq.paths.length - Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length === 0
               }
               className="bg-emerald-600 hover:bg-emerald-700"
             >
