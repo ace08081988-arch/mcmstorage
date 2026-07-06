@@ -726,7 +726,7 @@ function HutangPiutangPage() {
                               size="sm"
                               variant="secondary"
                               className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
-                              onClick={() => void sendReminderWA(d)}
+                              onClick={() => setReminderFor(d)}
                               title="Kirim pengingat via MCM"
                             >
                               Tagih via MCM
