@@ -1703,8 +1703,7 @@ function SendPrepToCustomerDialog({
           </div>
 
           {/* Pelanggan */}
-          <div id="send-sec-pelanggan" className="space-y-1.5">
-            <Label className="text-[11px]">Pelanggan</Label>
+          <Field id="send-sec-pelanggan" label="Pelanggan" size="compact">
             <div className="flex gap-1 text-[10px]">
               <button
                 type="button"
@@ -1748,11 +1747,15 @@ function SendPrepToCustomerDialog({
                 className="h-9 text-xs"
               />
             )}
-          </div>
+          </Field>
 
           {/* Total */}
-          <div id="send-sec-harga" className="space-y-1.5">
-            <Label className="text-[11px]">Total harga (Rp)</Label>
+          <Field
+            id="send-sec-harga"
+            label="Total harga (Rp)"
+            size="compact"
+            hint={totalAmount > 0 ? `= ${rupiah(totalAmount)}` : undefined}
+          >
             <Input
               value={totalStr}
               onChange={(e) => setTotalStr(e.target.value)}
@@ -1760,14 +1763,10 @@ function SendPrepToCustomerDialog({
               inputMode="numeric"
               className="h-9 tabular-nums text-xs"
             />
-            {totalAmount > 0 && (
-              <div className="text-[10px] text-muted-foreground">= {rupiah(totalAmount)}</div>
-            )}
-          </div>
+          </Field>
 
           {/* Metode bayar */}
-          <div id="send-sec-bayar" className="space-y-1.5">
-            <Label className="text-[11px]">Metode bayar</Label>
+          <Field id="send-sec-bayar" label="Metode bayar" size="compact">
             <div className="flex gap-1">
               <button
                 type="button"
@@ -1789,11 +1788,10 @@ function SendPrepToCustomerDialog({
                 Akan otomatis dicatat sebagai piutang di menu Hutang-Piutang atas nama <b>{resolvedParty.name || "-"}</b>.
               </div>
             )}
-          </div>
+          </Field>
 
           {/* Catatan */}
-          <div id="send-sec-catatan" className="space-y-1.5">
-            <Label className="text-[11px]">Catatan (opsional)</Label>
+          <Field id="send-sec-catatan" label="Catatan (opsional)" size="compact">
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -1801,7 +1799,7 @@ function SendPrepToCustomerDialog({
               className="text-xs"
               placeholder="Mis. antar sore, titip di warung, dsb."
             />
-          </div>
+          </Field>
         </div>
 
         <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-col">
