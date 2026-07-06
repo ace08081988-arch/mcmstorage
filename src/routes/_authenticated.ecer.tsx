@@ -36,7 +36,7 @@ import { copyUrlWithToast } from "@/lib/copy-url-toast";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
-import { filterActivePreps, filterSentPreps } from "@/lib/prep-active-selector";
+import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -2279,7 +2279,7 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
   onChanged: () => void; onTitleUpdated: () => void;
   selectionMode?: boolean; selected?: boolean; onToggleSelect?: () => void;
 }) {
-  const sold = !!prep.sold_at;
+  const sold = isSentPrep(prep);
   const readOnly = sold;
   const [url, setUrl] = useState<string | null>(null);
   type ShareDiag = {
