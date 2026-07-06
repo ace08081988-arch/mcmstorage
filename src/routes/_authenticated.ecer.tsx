@@ -1165,7 +1165,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const totalPaths = Math.min(sendShots.flatMap((s) => shotPaths(s)).length, 12);
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:`,
+        `${shots.length} kiriman pegawai${shots.length > take ? ` (mengirim ${take})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:`,
         ...lines,
         ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
       ].join("\n");
