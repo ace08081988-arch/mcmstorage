@@ -1263,15 +1263,39 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         const f = await urlToFile(url, `${title.name}-${s.id.slice(0, 6)}-${i + 1}.jpg`);
         if (f) chatShots.push({ id: `${s.id}:${i}`, file: f });
       }
+      // Hitung foto yang benar-benar dikonfirmasi backend via onProgress.
+      // Ini yang dipakai untuk validasi ringkasan vs status backend setelah
+      // proses kirim selesai.
+      let confirmedPhotos = 0;
+      const claimedPhotos = chatShots.length;
+      const excludedCount = shotPaths(s).length - paths.length;
       const result = await shareToChat({
         conversationId,
-        caption: shotCaption(s, { sentCount: chatShots.length, excludedCount: shotPaths(s).length - paths.length }),
+        caption: shotCaption(s, { sentCount: claimedPhotos, excludedCount }),
         locationUrl: s.location_url,
         shots: chatShots,
+        onProgress: (p) => {
+          if (p.type === "photo" && p.status === "ok") confirmedPhotos++;
+        },
       });
       toast.dismiss(tid);
       if (result.status === "shared") {
-        toast.success(`Terkirim ke ${convTitle} (${result.messageCount} pesan).`);
+        if (confirmedPhotos < claimedPhotos) {
+          // Ringkasan di caption mengklaim `claimedPhotos`, tapi backend hanya
+          // mengonfirmasi `confirmedPhotos`. Beri tahu pengguna agar bisa
+          // menindaklanjuti foto yang tidak terkirim.
+          toast.warning(
+            `Ringkasan tidak cocok: caption menyebut ${claimedPhotos} foto, tapi ${confirmedPhotos} yang terkonfirmasi terkirim.`,
+            {
+              description: `${claimedPhotos - confirmedPhotos} foto gagal diunggah ke ${convTitle}. Ulangi kirim untuk foto yang tersisa.`,
+              duration: 10000,
+            },
+          );
+        } else {
+          toast.success(
+            `Terkirim ke ${convTitle} — ${confirmedPhotos} foto terkonfirmasi (${result.messageCount} pesan).`,
+          );
+        }
       } else {
         toast.error(`Gagal mengirim: ${result.error}`);
       }
