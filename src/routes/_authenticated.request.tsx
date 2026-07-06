@@ -2182,7 +2182,7 @@ function PrepEditorDialog({
           })()}
 
           {photo ? (
-            <div>
+            <div id="prep-sec-foto">
               <img src={photo.dataUrl} alt="" className="w-full rounded-lg border object-cover" />
               <div className="mt-1 flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => { setEditorSrc(photo.dataUrl); setEditorOpen(true); }}>
@@ -2192,7 +2192,7 @@ function PrepEditorDialog({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-10">
+            <div id="prep-sec-foto" className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-10">
               <Button variant="outline" onClick={() => cameraRef.current?.click()}>
                 <Camera className="mr-1 h-4 w-4" /> Kamera
               </Button>
@@ -2204,7 +2204,7 @@ function PrepEditorDialog({
           <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
           <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
 
-          <div className="flex gap-2">
+          <div id="prep-sec-lokasi" className="flex gap-2">
             <Input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="Link Google Maps (opsional)" className="flex-1" />
             <Button variant="outline" onClick={takeLocation}>
               <MapPin className="mr-1 h-4 w-4" /> GPS
@@ -2212,7 +2212,7 @@ function PrepEditorDialog({
           </div>
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" />
 
-          <div className="space-y-2">
+          <div id="prep-sec-tujuan" className="space-y-2">
             <Label className="text-xs">Tujuan (Chat MCM / Nomor WA)</Label>
             {/* Nama penerima — dipakai untuk auto-save ke buku alamat */}
             <Input
