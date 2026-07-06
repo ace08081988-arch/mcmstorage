@@ -159,4 +159,113 @@ test.describe("Ready badges — konsistensi selector pasca Tandai/Batalkan", () 
     await expect(page.getByTestId("badge-active-request-r-C")).toHaveText("0");
     await expect(page.getByTestId("badge-sent-request-r-C")).toHaveText("0");
   });
+
+  test("Tandai→Batalkan berulang cepat pada prep yang sama kembali ke baseline", async ({ page }) => {
+    // Regresi guard: klik cepat mark/cancel/mark/cancel di prep tunggal
+    // (rp1) harus meninggalkan badge Aktif/Terkirim persis seperti awal —
+    // tidak ada drift akibat race antara update state & re-check helper.
+    const baselineActive = Number(
+      await page.getByTestId("badge-active-request-r-A").textContent(),
+    );
+    const baselineSent = Number(
+      await page.getByTestId("badge-sent-request-r-A").textContent(),
+    );
+
+    // 4 siklus mark→cancel back-to-back tanpa jeda buatan; assertion
+    // toHaveText di setiap langkah menggantikan waitFor manual dan
+    // memaksa re-check helper selesai sebelum aksi berikutnya.
+    for (let i = 0; i < 4; i++) {
+      await page.getByTestId("mark-sent-rp1").click();
+      await expect(page.getByTestId("badge-active-request-r-A")).toHaveText(
+        String(baselineActive - 1),
+      );
+      await expect(page.getByTestId("badge-sent-request-r-A")).toHaveText(
+        String(baselineSent + 1),
+      );
+      await page.getByTestId("cancel-sent-rp1").click();
+      await expect(page.getByTestId("badge-active-request-r-A")).toHaveText(
+        String(baselineActive),
+      );
+      await expect(page.getByTestId("badge-sent-request-r-A")).toHaveText(
+        String(baselineSent),
+      );
+    }
+
+    // Setelah semua siklus, kedua surface WAJIB match oracle penuh.
+    await assertConsistent(page);
+    await expect(page.getByTestId("mark-sent-rp1")).toBeEnabled();
+    await expect(page.getByTestId("cancel-sent-rp1")).toBeDisabled();
+  });
+
+  test("Tandai berurutan pada banyak prep dalam satu title menjumlah dengan benar", async ({ page }) => {
+    // rp1 & rp2 sama-sama di title r-A dan aktif. Tandai keduanya secara
+    // berurutan tanpa jeda; badge Aktif harus turun 2 & Terkirim naik 2
+    // TANPA kehilangan salah satu update (regresi bila re-check helper
+    // dipicu setelah state kedua sudah tertulis tapi hanya membaca satu).
+    const beforeActive = Number(
+      await page.getByTestId("badge-active-request-r-A").textContent(),
+    );
+    const beforeSent = Number(
+      await page.getByTestId("badge-sent-request-r-A").textContent(),
+    );
+    expect(beforeActive).toBeGreaterThanOrEqual(2);
+
+    await page.getByTestId("mark-sent-rp1").click();
+    await page.getByTestId("mark-sent-rp2").click();
+
+    await expect(page.getByTestId("badge-active-request-r-A")).toHaveText(
+      String(beforeActive - 2),
+    );
+    await expect(page.getByTestId("badge-sent-request-r-A")).toHaveText(
+      String(beforeSent + 2),
+    );
+    await assertConsistent(page);
+
+    // Batalkan keduanya kembali — badge harus balik ke baseline.
+    await page.getByTestId("cancel-sent-rp1").click();
+    await page.getByTestId("cancel-sent-rp2").click();
+
+    await expect(page.getByTestId("badge-active-request-r-A")).toHaveText(
+      String(beforeActive),
+    );
+    await expect(page.getByTestId("badge-sent-request-r-A")).toHaveText(
+      String(beforeSent),
+    );
+    await assertConsistent(page);
+  });
+
+  test("Tandai cepat lintas title + lintas surface tidak mencampur hitungan", async ({ page }) => {
+    // rp1 (r-A/request), rp4 (r-B/request), ep1 (e-X/ecer), ep4 (e-Y/ecer)
+    // — 4 prep aktif di 4 title berbeda pada 2 surface. Tandai berurutan
+    // cepat; setiap title HARUS turun tepat 1 Aktif & naik 1 Terkirim,
+    // dan tidak ada kebocoran silang (mis. rp1 memengaruhi r-B).
+    const snap = async () => {
+      const preps = [
+        ...(await readOracle(page, "request")),
+        ...(await readOracle(page, "ecer")),
+      ];
+      return computeExpected(preps);
+    };
+    const before = await snap();
+
+    await page.getByTestId("mark-sent-rp1").click();
+    await page.getByTestId("mark-sent-rp4").click();
+    await page.getByTestId("mark-sent-ep1").click();
+    await page.getByTestId("mark-sent-ep4").click();
+
+    // Assert per title: yang di-Tandai turun 1/+1, yang lain unchanged.
+    const touched = new Set(["r-A", "r-B", "e-X", "e-Y"]);
+    const after = await snap();
+    for (const [id, prev] of before) {
+      const now = after.get(id) ?? { active: 0, sent: 0 };
+      if (touched.has(id)) {
+        expect(now.active, `active ${id}`).toBe(prev.active - 1);
+        expect(now.sent, `sent ${id}`).toBe(prev.sent + 1);
+      } else {
+        expect(now.active, `active ${id}`).toBe(prev.active);
+        expect(now.sent, `sent ${id}`).toBe(prev.sent);
+      }
+    }
+    await assertConsistent(page);
+  });
 });
