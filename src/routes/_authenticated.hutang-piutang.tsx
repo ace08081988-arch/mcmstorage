@@ -72,6 +72,22 @@ type Party = { id: string; name: string; contact?: string | null };
 const rupiah = (n: number) =>
   "Rp " + Math.round(n).toLocaleString("id-ID");
 
+/**
+ * Baris status pembayaran untuk disisipkan di setiap pesan WA/chat sebagai
+ * verifikasi ringkas. `LUNAS` bila sisa = 0, `BAYAR SEBAGIAN` bila sudah
+ * ada pembayaran namun belum habis, `BELUM BAYAR` bila belum ada pembayaran.
+ * Persentase dibulatkan agar mudah dibaca lawan bicara.
+ */
+function debtStatusLine(total: number, paid: number): string {
+  const t = Math.max(0, Math.round(total));
+  const p = Math.max(0, Math.min(t, Math.round(paid)));
+  const sisa = Math.max(0, t - p);
+  const pct = t > 0 ? Math.round((p / t) * 100) : 0;
+  if (sisa === 0 && t > 0) return `✅ *LUNAS* — ${rupiah(t)} sudah dibayar penuh`;
+  if (p > 0) return `💰 *BAYAR SEBAGIAN* — ${rupiah(p)} dari ${rupiah(t)} (${pct}%) · sisa *${rupiah(sisa)}*`;
+  return `⚠️ *BELUM BAYAR* — ${rupiah(t)} belum ada pembayaran`;
+}
+
 function HutangPiutangPage() {
   const [uid, setUid] = useState<string | null>(null);
   const [tab, setTab] = useState<"hutang" | "piutang" | "laporan">("hutang");
