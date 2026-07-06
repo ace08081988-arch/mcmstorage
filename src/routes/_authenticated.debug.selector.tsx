@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, ChevronLeft, Search } from "lucide-react";
+import { RefreshCw, ChevronLeft, Search, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -126,6 +126,19 @@ function DebugSelectorPage() {
 
   useEffect(() => { void load(); }, [load]);
 
+  // Auto re-check saat tab debug kembali fokus (mis. setelah user selesai
+  // Tandai/Batalkan Terkirim di tab request/ecer yang dibuka via shortcut).
+  // Tidak perlu tombol manual lagi — angka menyesuaikan otomatis.
+  useEffect(() => {
+    const onFocus = () => { if (document.visibilityState === "visible") void load(); };
+    document.addEventListener("visibilitychange", onFocus);
+    window.addEventListener("focus", onFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", onFocus);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [load]);
+
   const requestRows = useMemo(() => (data ? buildRows(data.request) : []), [data]);
   const ecerRows = useMemo(() => (data ? buildRows(data.ecer) : []), [data]);
 
@@ -170,6 +183,11 @@ function DebugSelectorPage() {
           <code className="rounded bg-muted px-1">filterSentPreps</code>. Angka di sini
           adalah patokan; kalau badge di layar lain berbeda, badge-nya yang salah.
         </p>
+        <p className="text-[11px] text-muted-foreground">
+          Tombol <span className="font-medium">Buka</span> pada tiap baris membuka halaman
+          domain di tab baru dengan judul terkait sudah terfilter — pakai untuk
+          Tandai/Batalkan Terkirim. Saat kembali ke tab ini, angka dimuat ulang otomatis.
+        </p>
         {lastLoadedAt && (
           <p className="text-[11px] text-muted-foreground">
             Terakhir dimuat: {new Date(lastLoadedAt).toLocaleTimeString("id-ID")}
@@ -199,6 +217,7 @@ function DebugSelectorPage() {
 
       <DomainSection
         label="Request"
+        domain="request"
         rows={requestFiltered}
         totalPreps={data?.request.preps.length ?? 0}
         totalActive={data ? countActivePreps(data.request.preps) : 0}
@@ -209,6 +228,7 @@ function DebugSelectorPage() {
 
       <DomainSection
         label="Ecer"
+        domain="ecer"
         rows={ecerFiltered}
         totalPreps={data?.ecer.preps.length ?? 0}
         totalActive={data ? countActivePreps(data.ecer.preps) : 0}
@@ -222,17 +242,23 @@ function DebugSelectorPage() {
 
 function DomainSection({
   label,
+  domain,
   rows,
   totalPreps,
   totalActive,
   totalSent,
 }: {
   label: string;
+  domain: Domain;
   rows: Row[];
   totalPreps: number;
   totalActive: number;
   totalSent: number;
 }) {
+  // Shortcut: buka halaman domain terkait di tab baru dengan title terpilih
+  // + highlight aktif. Setelah user Tandai/Batalkan Terkirim di sana lalu
+  // kembali ke tab debug, angka otomatis di-refetch (visibilitychange).
+  const domainPath = domain === "request" ? "/request" : "/ecer";
   return (
     <section className="space-y-2">
       <div className="flex items-baseline justify-between">
@@ -256,6 +282,7 @@ function DomainSection({
                 <th className="px-2 py-1.5 text-right">Aktif</th>
                 <th className="px-2 py-1.5 text-right">Terkirim</th>
                 <th className="px-2 py-1.5 text-right">Total</th>
+                <th className="px-2 py-1.5 text-right">Aksi</th>
               </tr>
             </thead>
             <tbody>
@@ -275,6 +302,18 @@ function DomainSection({
                   </td>
                   <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">
                     {r.total}
+                  </td>
+                  <td className="px-2 py-1.5 text-right">
+                    <Link
+                      to={domainPath}
+                      search={{ title: r.title_id, highlight: r.title_id }}
+                      target="_blank"
+                      rel="noopener"
+                      className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
+                      title="Buka di tab baru untuk Tandai/Batalkan Terkirim. Angka di sini otomatis dimuat ulang saat kembali."
+                    >
+                      Buka <ExternalLink className="h-3 w-3" />
+                    </Link>
                   </td>
                 </tr>
               ))}
