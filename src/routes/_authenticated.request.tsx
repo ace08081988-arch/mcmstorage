@@ -389,6 +389,7 @@ function TitleEditorDialog({
   const [note, setNote] = useState("");
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }>>([]);
   const [busy, setBusy] = useState(false);
+  const [initialSnap, setInitialSnap] = useState<{ name: string; note: string; rows: Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }> }>({ name: "", note: "", rows: [] });
   const [negErrors, setNegErrors] = useState<Record<number, string>>({});
   const [contacts, setContacts] = useState<AddressBookRow[]>([]);
   const [nameOpen, setNameOpen] = useState(false);
@@ -438,9 +439,9 @@ function TitleEditorDialog({
 
   useEffect(() => {
     if (!open) return;
-    setName(existing?.name ?? "");
-    setNote(existing?.note ?? "");
-    setRows(
+    const nextName = existing?.name ?? "";
+    const nextNote = existing?.note ?? "";
+    const nextRows =
       existingItems.length > 0
         ? existingItems.map((i) => ({
             warehouse_item_id: i.warehouse_item_id,
@@ -448,8 +449,11 @@ function TitleEditorDialog({
             unit_label: i.unit_label,
             note: i.note ?? "",
           }))
-        : [{ warehouse_item_id: "", target_grams: "1", unit_label: "gram", note: "" }],
-    );
+        : [{ warehouse_item_id: "", target_grams: "1", unit_label: "gram", note: "" }];
+    setName(nextName);
+    setNote(nextNote);
+    setRows(nextRows);
+    setInitialSnap({ name: nextName, note: nextNote, rows: nextRows });
   }, [open, existing, existingItems]);
 
   function addRow() {
