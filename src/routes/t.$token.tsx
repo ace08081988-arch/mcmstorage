@@ -2221,7 +2221,11 @@ function ItemCard({
   // Antrian foto galeri yang akan dibuka di PhotoEditor satu per satu.
   const editQueueRef = useRef<number[]>([]);
   const photosRef = useRef<StagedPhoto[]>([]);
-  useEffect(() => {
+  // useLayoutEffect: sinkronisasi ref harus terjadi sinkron setelah commit,
+  // SEBELUM setTimeout(0) callback macrotask. Kalau pakai useEffect biasa,
+  // sesekali PhotoEditor tidak muncul karena `photosRef.current` masih
+  // stale saat `openEditForIdx` dipanggil via setTimeout.
+  useLayoutEffect(() => {
     photosRef.current = photos;
   }, [photos]);
   useEffect(() => () => {
@@ -2229,7 +2233,20 @@ function ItemCard({
   }, []);
   function openEditForIdx(i: number) {
     const p = photosRef.current[i];
-    if (!p) return;
+    if (!p) {
+      // Fallback: kalau ref belum sempat ter-update (race pasca await
+      // async yang memanggil setPhotos di frame yang sama), coba lagi
+      // di microtask berikutnya sekali. Kalau masih kosong, diamkan —
+      // artinya photo memang tidak ada.
+      queueMicrotask(() => {
+        const retry = photosRef.current[i];
+        if (!retry) return;
+        setEditingIdx(i);
+        setEditorSrc(retry.dataUrl);
+        setEditorOpen(true);
+      });
+      return;
+    }
     setEditingIdx(i);
     setEditorSrc(p.dataUrl);
     setEditorOpen(true);
