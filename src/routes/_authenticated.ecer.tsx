@@ -605,6 +605,14 @@ function DetailHero({
     else toast.error("Gagal menyalin link — salin manual", { description: url });
   };
 
+  const [qrOpen, setQrOpen] = useState(false);
+  // URL untuk QR dihitung saat render supaya `window.location.origin` selalu
+  // mengikuti host aktif (preview / mcmstorage.biz / lovable.app).
+  const prepPermalink =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/tugas-baru?title_id=${encodeURIComponent(title.id)}`
+      : `/tugas-baru?title_id=${encodeURIComponent(title.id)}`;
+
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       {/* Brand strip */}
