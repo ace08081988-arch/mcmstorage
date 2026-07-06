@@ -30,6 +30,7 @@ import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
+import { shortenUrlForToast } from "@/lib/shorten-url-for-toast";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
 
