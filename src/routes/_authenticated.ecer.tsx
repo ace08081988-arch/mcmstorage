@@ -959,14 +959,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     confirmText: string;
     paths: string[];
     locationUrl?: string | null;
-    resolve: (v: boolean) => void;
+    resolve: (v: { ok: boolean; excluded: Set<string> }) => void;
   };
   const [previewReq, setPreviewReq] = useState<PreviewReq | null>(null);
   const [previewUrls, setPreviewUrls] = useState<string[] | null>(null);
+  const [excludedPaths, setExcludedPaths] = useState<Set<string>>(new Set());
   useEffect(() => {
-    if (!previewReq) { setPreviewUrls(null); return; }
+    if (!previewReq) { setPreviewUrls(null); setExcludedPaths(new Set()); return; }
     let cancelled = false;
     setPreviewUrls(null);
+    setExcludedPaths(new Set());
     (async () => {
       const capped = previewReq.paths.slice(0, 12);
       const urls = await Promise.all(capped.map((p) => resolvePrepUrl(p, 600).catch(() => null)));
@@ -974,13 +976,23 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     })();
     return () => { cancelled = true; };
   }, [previewReq]);
-  function confirmWithPreview(opts: Omit<PreviewReq, "resolve">): Promise<boolean> {
-    return new Promise<boolean>((resolve) => setPreviewReq({ ...opts, resolve }));
+  function confirmWithPreview(
+    opts: Omit<PreviewReq, "resolve">,
+  ): Promise<{ ok: boolean; excluded: Set<string> }> {
+    return new Promise((resolve) => setPreviewReq({ ...opts, resolve }));
   }
-  function finishPreview(v: boolean) {
+  function finishPreview(ok: boolean) {
     const r = previewReq;
+    const excluded = ok ? new Set(excludedPaths) : new Set<string>();
     setPreviewReq(null);
-    r?.resolve(v);
+    r?.resolve({ ok, excluded });
+  }
+  function togglePathExcluded(p: string) {
+    setExcludedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(p)) next.delete(p); else next.add(p);
+      return next;
+    });
   }
 
   const targetUnit = normUnitStr(title.unit_label);
