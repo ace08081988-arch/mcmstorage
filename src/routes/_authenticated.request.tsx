@@ -1652,11 +1652,12 @@ function SendPrepToCustomerDialog({
           <DialogDescription>
             Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui.
           </DialogDescription>
+          <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
 
         <div className="space-y-3 text-xs">
           {/* Ringkasan item */}
-          <div className="rounded-md border bg-muted/30 p-2">
+          <div id="send-sec-ringkasan" className="rounded-md border bg-muted/30 p-2">
             <div className="mb-1 font-semibold">{titleName}</div>
             <div className="flex flex-wrap gap-1">
               {items.map((it) => {
@@ -1677,7 +1678,7 @@ function SendPrepToCustomerDialog({
           </div>
 
           {/* Pelanggan */}
-          <div className="space-y-1.5">
+          <div id="send-sec-pelanggan" className="space-y-1.5">
             <Label className="text-[11px]">Pelanggan</Label>
             <div className="flex gap-1 text-[10px]">
               <button
@@ -1725,7 +1726,7 @@ function SendPrepToCustomerDialog({
           </div>
 
           {/* Total */}
-          <div className="space-y-1.5">
+          <div id="send-sec-harga" className="space-y-1.5">
             <Label className="text-[11px]">Total harga (Rp)</Label>
             <Input
               value={totalStr}
@@ -1740,7 +1741,7 @@ function SendPrepToCustomerDialog({
           </div>
 
           {/* Metode bayar */}
-          <div className="space-y-1.5">
+          <div id="send-sec-bayar" className="space-y-1.5">
             <Label className="text-[11px]">Metode bayar</Label>
             <div className="flex gap-1">
               <button
@@ -1766,7 +1767,7 @@ function SendPrepToCustomerDialog({
           </div>
 
           {/* Catatan */}
-          <div className="space-y-1.5">
+          <div id="send-sec-catatan" className="space-y-1.5">
             <Label className="text-[11px]">Catatan (opsional)</Label>
             <Textarea
               value={note}
