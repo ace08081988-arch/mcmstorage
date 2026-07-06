@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,12 @@ import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { useOrgName } from "@/lib/org-name";
-import { TurnstileWidget, TURNSTILE_SITE_KEY } from "@/components/TurnstileWidget";
+import {
+  TurnstileWidget,
+  TURNSTILE_SITE_KEY,
+  type TurnstileWidgetHandle,
+} from "@/components/TurnstileWidget";
+import { explainTurnstileError } from "@/components/turnstile-error";
 import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
 
