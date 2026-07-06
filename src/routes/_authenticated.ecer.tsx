@@ -1015,11 +1015,17 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     confirmText: string;
     paths: string[];
     locationUrl?: string | null;
+    /** Mapping foto→lokasi per kiriman. Bila diberikan, pratinjau lokasi
+     *  dihitung live: hanya kiriman yang masih punya minimal 1 foto tersisa
+     *  (tidak dikecualikan) yang lokasinya dianggap ikut terkirim. */
+    shotLocations?: Array<{ paths: string[]; locationUrl: string | null }>;
     persistKey?: string;
     /** Membangun caption/pesan persis seperti yang akan dikirim
      *  berdasar jumlah foto yang tersisa (paths.length - excluded).
+     *  `effectiveLocationUrl` sudah dihitung dari exclusion agar caption
+     *  konsisten dengan preview lokasi.
      *  Dipakai untuk menampilkan preview live di dialog konfirmasi. */
-    buildCaption?: (remaining: number) => string;
+    buildCaption?: (remaining: number, effectiveLocationUrl: string | null) => string;
     /** Label pendek untuk header preview caption ("WhatsApp" / "MCM Chat"). */
     captionLabel?: string;
     resolve: (v: { ok: boolean; excluded: Set<string> }) => void;
@@ -1096,15 +1102,32 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     const excludedInPaths = Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length;
     return previewReq.paths.length - excludedInPaths;
   }, [previewReq, excludedPaths]);
+  // Lokasi yang benar-benar akan terkirim, dihitung live dari
+  // shotLocations + excludedPaths. Bila salah satu kiriman masih memiliki
+  // paling sedikit satu foto tidak dikecualikan, lokasi kiriman pertama
+  // seperti itu dipakai sebagai `📍` di caption. Fallback ke locationUrl
+  // statis bila shotLocations tidak diberikan.
+  const effectiveLocationUrl = useMemo<string | null>(() => {
+    if (!previewReq) return null;
+    if (previewReq.shotLocations && previewReq.shotLocations.length > 0) {
+      for (const sl of previewReq.shotLocations) {
+        if (!sl.locationUrl) continue;
+        const anyLeft = sl.paths.some((p) => !excludedPaths.has(p));
+        if (anyLeft) return sl.locationUrl;
+      }
+      return null;
+    }
+    return previewReq.locationUrl ?? null;
+  }, [previewReq, excludedPaths]);
   const previewCaption = useMemo(() => {
     if (!previewReq?.buildCaption) return null;
     if (previewReq.paths.length > 0 && previewRemaining === 0) return null;
     try {
-      return previewReq.buildCaption(previewRemaining);
+      return previewReq.buildCaption(previewRemaining, effectiveLocationUrl);
     } catch {
       return null;
     }
-  }, [previewReq, previewRemaining]);
+  }, [previewReq, previewRemaining, effectiveLocationUrl]);
 
   const targetUnit = normUnitStr(title.unit_label);
   const targetGrams = Number(title.target_grams) || 0;
@@ -1199,19 +1222,22 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const previewShots = shots.slice(0, take);
       const allPaths = previewShots.flatMap((s) => shotPaths(s)).slice(0, 12);
       previewTotal = allPaths.length;
-      const firstLoc = previewShots.find((s) => s.location_url)?.location_url ?? null;
+      const shotLocations = previewShots.map((s) => ({
+        paths: shotPaths(s),
+        locationUrl: s.location_url ?? null,
+      }));
       // Builder caption bulk WA — persis mirror teks yang dibangun setelah
       // konfirmasi di bawah. `files.length` disimulasikan dengan
       // min(remaining, 10) karena WA share dibatasi 10 lampiran.
       const bulkLines = previewShots.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const buildBulkCaption = (remaining: number) => {
+      const buildBulkCaption = (remaining: number, effLoc: string | null) => {
         const simulatedFiles = Math.min(remaining, 10);
         const excludedCount = previewTotal - remaining;
         return [
           `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
           `${shots.length} kiriman pegawai${shots.length > take ? ` (mengirim ${take})` : ""} · ${simulatedFiles} foto terkirim${excludedCount > 0 ? ` · ${excludedCount} dari ${previewTotal} dikecualikan` : ""}:`,
           ...bulkLines,
-          ...(firstLoc ? [`📍 ${firstLoc}`] : []),
+          ...(effLoc ? [`📍 ${effLoc}`] : []),
         ].join("\n");
       };
       const res = await confirmWithPreview({
@@ -1219,7 +1245,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${take} folder · ${allPaths.length} foto (maks 10 terlampir)\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
         confirmText: "Kirim WA",
         paths: allPaths,
-        locationUrl: firstLoc,
+        shotLocations,
         persistKey: `title:${title.id}`,
         buildCaption: buildBulkCaption,
         captionLabel: "WhatsApp",
@@ -1268,14 +1294,21 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       }
       if (files.length === 0) toast.warning("Foto pegawai tidak bisa diunduh.");
       const lines = sendShots.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLoc = sendShots.find((s) => s.location_url);
+      // Lokasi efektif: kiriman pertama yang punya lokasi DAN masih memiliki
+      // paling sedikit satu foto tidak dikecualikan. Konsisten dengan
+      // pratinjau live di dialog konfirmasi.
+      const firstLocShot = sendShots.find((s) => {
+        if (!s.location_url) return false;
+        const ps = shotPaths(s);
+        return ps.some((p) => !excludedSet.has(p));
+      });
       const excludedCount = excludedSet.size;
       const totalPaths = previewTotal;
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
         `${shots.length} kiriman pegawai${shots.length > take ? ` (mengirim ${take})` : ""} · ${files.length} foto terkirim${excludedCount > 0 ? ` · ${excludedCount} dari ${totalPaths} dikecualikan` : ""}:`,
         ...lines,
-        ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
+        ...(firstLocShot ? [`📍 ${firstLocShot.location_url}`] : []),
       ].join("\n");
       const res = await shareToWhatsApp({ text, title: title.name, files });
       notifyShareResult(res);
@@ -1664,14 +1697,17 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               ) : null}
             </div>
           ) : null}
-          {previewReq?.locationUrl ? (
+          {effectiveLocationUrl ? (
             (() => {
-              const url = previewReq.locationUrl;
+              const url = effectiveLocationUrl;
               const desc = describeLocationUrl(url);
               return (
                 <div className="rounded-md border bg-muted/30 p-2">
                   <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground">
-                    <span>Lokasi — akan dilampirkan sebagai baris terakhir caption</span>
+                    <span>
+                      <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
+                      Lokasi — akan dilampirkan sebagai baris terakhir caption
+                    </span>
                     {desc.kind ? (
                       <span className="rounded bg-background/70 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
                         {desc.kind}
@@ -1699,6 +1735,11 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                 </div>
               );
             })()
+          ) : previewReq?.shotLocations && previewReq.shotLocations.some((s) => s.locationUrl) ? (
+            <div className="rounded-md border border-dashed border-muted-foreground/30 bg-muted/20 p-2 text-[11px] text-muted-foreground">
+              <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/50" aria-hidden />
+              Lokasi tidak akan dilampirkan — semua foto dari kiriman yang punya lokasi telah dikecualikan.
+            </div>
           ) : null}
           {(() => {
             if (!previewReq || previewReq.paths.length === 0) return null;
