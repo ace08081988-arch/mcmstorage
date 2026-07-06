@@ -1348,15 +1348,67 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           setChatPickShot(null);
           if (!target) return;
           const paths = shotPaths(target);
-          void confirm({
+          void confirmWithPreview({
             title: `Kirim folder ke ${displayTitle}?`,
-            description: `Percakapan: *${displayTitle}*\nJudul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${target.location_url ? `\n📍 Lokasi: ${target.location_url}` : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+            description: `Percakapan: *${displayTitle}*\nJudul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${target.location_url ? "" : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
             confirmText: "Kirim Chat",
+            paths,
+            locationUrl: target.location_url,
           }).then((ok) => {
             if (ok) void sendShotChat(target, conversationId, displayTitle);
           });
         }}
       />
+      <Dialog open={!!previewReq} onOpenChange={(o) => { if (!o) finishPreview(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{previewReq?.title}</DialogTitle>
+            {previewReq?.description ? (
+              <DialogDescription className="whitespace-pre-line">
+                {previewReq.description}
+              </DialogDescription>
+            ) : null}
+          </DialogHeader>
+          {previewReq && previewReq.paths.length > 0 ? (
+            <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/30 p-2">
+              <div className="grid grid-cols-3 gap-1.5">
+                {(previewUrls ?? new Array(Math.min(previewReq.paths.length, 12)).fill(null)).map((u, i) => (
+                  <div key={i} className="relative aspect-square overflow-hidden rounded bg-muted">
+                    {u ? (
+                      <img src={u} alt={`Foto ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
+                        {previewUrls ? "×" : "…"}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {previewReq.paths.length > 12 ? (
+                <div className="mt-1.5 text-center text-[11px] text-muted-foreground">
+                  +{previewReq.paths.length - 12} foto lain tidak ditampilkan
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {previewReq?.locationUrl ? (
+            <a
+              href={previewReq.locationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block truncate rounded-md border bg-muted/30 px-2 py-1.5 text-xs text-primary underline"
+            >
+              📍 {previewReq.locationUrl}
+            </a>
+          ) : null}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => finishPreview(false)}>Batal</Button>
+            <Button onClick={() => finishPreview(true)} className="bg-emerald-600 hover:bg-emerald-700">
+              {previewReq?.confirmText ?? "Kirim"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
