@@ -943,6 +943,62 @@ function normUnitStr(u: string | null | undefined) {
   return (u ?? "").trim().toLowerCase();
 }
 
+/**
+ * Parse a location URL (usually Google Maps) into a human-readable label
+ * plus a short kind badge, so the confirm-dialog preview can show what the
+ * `📍` line will look like before sending.
+ *
+ * Handles:
+ *  - google.com/maps?q=lat,lng           → "Koordinat: -6.20, 106.80"
+ *  - google.com/maps?q=Nama+Tempat        → "Nama Tempat"
+ *  - google.com/maps/place/Nama/…         → "Nama"
+ *  - google.com/maps/@lat,lng,zoom        → "Koordinat: -6.20, 106.80"
+ *  - maps.app.goo.gl / short links        → null label (URL only)
+ */
+function describeLocationUrl(raw: string): { label: string | null; kind: string | null } {
+  const url = (raw ?? "").trim();
+  if (!url) return { label: null, kind: null };
+  let u: URL;
+  try { u = new URL(url); } catch { return { label: null, kind: null }; }
+  const host = u.hostname.toLowerCase();
+  const decode = (s: string) => {
+    try { return decodeURIComponent(s.replace(/\+/g, " ")).trim(); } catch { return s.trim(); }
+  };
+  const coordRe = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/;
+  const fmtCoord = (lat: string, lng: string) => {
+    const la = Number(lat), ln = Number(lng);
+    if (!Number.isFinite(la) || !Number.isFinite(ln)) return null;
+    return `Koordinat: ${la.toFixed(5)}, ${ln.toFixed(5)}`;
+  };
+  // ?q= parameter
+  const q = u.searchParams.get("q") ?? u.searchParams.get("query");
+  if (q) {
+    const m = q.match(coordRe);
+    if (m) {
+      const c = fmtCoord(m[1], m[2]);
+      if (c) return { label: c, kind: "GPS" };
+    }
+    const name = decode(q);
+    if (name) return { label: name, kind: "Nama tempat" };
+  }
+  // /maps/place/Nama/…
+  const placeMatch = u.pathname.match(/\/maps\/place\/([^/]+)/i);
+  if (placeMatch?.[1]) {
+    return { label: decode(placeMatch[1]), kind: "Nama tempat" };
+  }
+  // /maps/@lat,lng,zoom
+  const atMatch = u.pathname.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (atMatch) {
+    const c = fmtCoord(atMatch[1], atMatch[2]);
+    if (c) return { label: c, kind: "GPS" };
+  }
+  // Short-link hosts — can't resolve without network
+  if (/(^|\.)maps\.app\.goo\.gl$/.test(host) || /(^|\.)goo\.gl$/.test(host)) {
+    return { label: null, kind: "Short link" };
+  }
+  return { label: null, kind: null };
+}
+
 function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName: string }) {
   const [shots, setShots] = useState<WorkerShot[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1605,14 +1661,40 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             </div>
           ) : null}
           {previewReq?.locationUrl ? (
-            <a
-              href={previewReq.locationUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block truncate rounded-md border bg-muted/30 px-2 py-1.5 text-xs text-primary underline"
-            >
-              📍 {previewReq.locationUrl}
-            </a>
+            (() => {
+              const url = previewReq.locationUrl;
+              const desc = describeLocationUrl(url);
+              return (
+                <div className="rounded-md border bg-muted/30 p-2">
+                  <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground">
+                    <span>Lokasi — akan dilampirkan sebagai baris terakhir caption</span>
+                    {desc.kind ? (
+                      <span className="rounded bg-background/70 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+                        {desc.kind}
+                      </span>
+                    ) : null}
+                  </div>
+                  {desc.label ? (
+                    <div className="mb-1 text-xs font-semibold text-foreground">
+                      📍 {desc.label}
+                    </div>
+                  ) : null}
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block truncate text-[11px] text-primary underline"
+                    title={url}
+                  >
+                    {url}
+                  </a>
+                  <div className="mt-1 rounded bg-background/70 p-1.5 text-[11px] leading-relaxed text-foreground">
+                    <span className="mr-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Format kirim:</span>
+                    <span className="break-all">📍 {url}</span>
+                  </div>
+                </div>
+              );
+            })()
           ) : null}
           {(() => {
             if (!previewReq || previewReq.paths.length === 0) return null;
