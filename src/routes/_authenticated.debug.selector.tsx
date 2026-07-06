@@ -394,6 +394,7 @@ function DomainSection({
                     <div className="flex items-center justify-end gap-1">
                       <button
                         type="button"
+                        data-testid={`debug-mark-${domain}-${r.title_id}`}
                         disabled={busy || r.active <= 0}
                         onClick={() => void onQuickAction(domain, r.title_id, "mark")}
                         className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-40 dark:text-emerald-300"
@@ -403,6 +404,7 @@ function DomainSection({
                       </button>
                       <button
                         type="button"
+                        data-testid={`debug-cancel-${domain}-${r.title_id}`}
                         disabled={busy || r.sent <= 0}
                         onClick={() => void onQuickAction(domain, r.title_id, "cancel")}
                         className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] text-amber-700 hover:bg-amber-500/10 disabled:opacity-40 dark:text-amber-300"
@@ -415,6 +417,7 @@ function DomainSection({
                       search={{ title: r.title_id, highlight: r.title_id }}
                       target="_blank"
                       rel="noopener"
+                        data-testid={`debug-open-${domain}-${r.title_id}`}
                       className="inline-flex items-center gap-1 rounded border px-1.5 py-0.5 text-[10px] text-muted-foreground hover:bg-muted hover:text-foreground"
                       title="Buka di tab baru untuk Tandai/Batalkan Terkirim. Angka di sini otomatis dimuat ulang saat kembali."
                     >
