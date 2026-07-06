@@ -615,7 +615,7 @@ function DetailHero({
   // Tooltip pratinjau URL yang akan disalin. Native `title=` bekerja di
   // desktop (hover) dan mobile (long-press) tanpa perlu TooltipProvider,
   // supaya admin bisa memastikan link yang benar sebelum menekan.
-  const copyLinkTooltip = `Salin permalink Penyiapan pegawai:\n${prepPermalink}`;
+  const copyLinkTooltip = `Salin permalink Penyiapan pegawai (Shift+L):\n${prepPermalink}`;
 
   // Shortcut keyboard: Shift + L saat halaman folder ecer terbuka menyalin
   // permalink Penyiapan pegawai tanpa harus menyentuh tombol. Aktif hanya
