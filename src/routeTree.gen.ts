@@ -43,6 +43,7 @@ import { Route as AuthenticatedPengaturanPenyimpananRouteImport } from './routes
 import { Route as AuthenticatedPengaturanOauthGoogleRouteImport } from './routes/_authenticated.pengaturan-oauth-google'
 import { Route as AuthenticatedPengaturanKunciRouteImport } from './routes/_authenticated.pengaturan-kunci'
 import { Route as AuthenticatedPengaturanIntegrasiSosialRouteImport } from './routes/_authenticated.pengaturan-integrasi-sosial'
+import { Route as AuthenticatedPengaturanDomainRouteImport } from './routes/_authenticated.pengaturan-domain'
 import { Route as AuthenticatedPengaturanBahasaRouteImport } from './routes/_authenticated.pengaturan-bahasa'
 import { Route as AuthenticatedPengaturanAppModeRouteImport } from './routes/_authenticated.pengaturan-app-mode'
 import { Route as AuthenticatedPengaturanApkRouteImport } from './routes/_authenticated.pengaturan-apk'
@@ -282,6 +283,12 @@ const AuthenticatedPengaturanIntegrasiSosialRoute =
   AuthenticatedPengaturanIntegrasiSosialRouteImport.update({
     id: '/pengaturan-integrasi-sosial',
     path: '/pengaturan-integrasi-sosial',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedPengaturanDomainRoute =
+  AuthenticatedPengaturanDomainRouteImport.update({
+    id: '/pengaturan-domain',
+    path: '/pengaturan-domain',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedPengaturanBahasaRoute =
@@ -671,6 +678,7 @@ export interface FileRoutesByFullPath {
   '/pengaturan-apk': typeof AuthenticatedPengaturanApkRoute
   '/pengaturan-app-mode': typeof AuthenticatedPengaturanAppModeRoute
   '/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
+  '/pengaturan-domain': typeof AuthenticatedPengaturanDomainRoute
   '/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
@@ -765,6 +773,7 @@ export interface FileRoutesByTo {
   '/pengaturan-apk': typeof AuthenticatedPengaturanApkRoute
   '/pengaturan-app-mode': typeof AuthenticatedPengaturanAppModeRoute
   '/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
+  '/pengaturan-domain': typeof AuthenticatedPengaturanDomainRoute
   '/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
@@ -864,6 +873,7 @@ export interface FileRoutesById {
   '/_authenticated/pengaturan-apk': typeof AuthenticatedPengaturanApkRoute
   '/_authenticated/pengaturan-app-mode': typeof AuthenticatedPengaturanAppModeRoute
   '/_authenticated/pengaturan-bahasa': typeof AuthenticatedPengaturanBahasaRoute
+  '/_authenticated/pengaturan-domain': typeof AuthenticatedPengaturanDomainRoute
   '/_authenticated/pengaturan-integrasi-sosial': typeof AuthenticatedPengaturanIntegrasiSosialRoute
   '/_authenticated/pengaturan-kunci': typeof AuthenticatedPengaturanKunciRoute
   '/_authenticated/pengaturan-oauth-google': typeof AuthenticatedPengaturanOauthGoogleRoute
@@ -964,6 +974,7 @@ export interface FileRouteTypes {
     | '/pengaturan-apk'
     | '/pengaturan-app-mode'
     | '/pengaturan-bahasa'
+    | '/pengaturan-domain'
     | '/pengaturan-integrasi-sosial'
     | '/pengaturan-kunci'
     | '/pengaturan-oauth-google'
@@ -1058,6 +1069,7 @@ export interface FileRouteTypes {
     | '/pengaturan-apk'
     | '/pengaturan-app-mode'
     | '/pengaturan-bahasa'
+    | '/pengaturan-domain'
     | '/pengaturan-integrasi-sosial'
     | '/pengaturan-kunci'
     | '/pengaturan-oauth-google'
@@ -1156,6 +1168,7 @@ export interface FileRouteTypes {
     | '/_authenticated/pengaturan-apk'
     | '/_authenticated/pengaturan-app-mode'
     | '/_authenticated/pengaturan-bahasa'
+    | '/_authenticated/pengaturan-domain'
     | '/_authenticated/pengaturan-integrasi-sosial'
     | '/_authenticated/pengaturan-kunci'
     | '/_authenticated/pengaturan-oauth-google'
@@ -1499,6 +1512,13 @@ declare module '@tanstack/react-router' {
       path: '/pengaturan-integrasi-sosial'
       fullPath: '/pengaturan-integrasi-sosial'
       preLoaderRoute: typeof AuthenticatedPengaturanIntegrasiSosialRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/pengaturan-domain': {
+      id: '/_authenticated/pengaturan-domain'
+      path: '/pengaturan-domain'
+      fullPath: '/pengaturan-domain'
+      preLoaderRoute: typeof AuthenticatedPengaturanDomainRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/pengaturan-bahasa': {
@@ -2015,6 +2035,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPengaturanApkRoute: typeof AuthenticatedPengaturanApkRoute
   AuthenticatedPengaturanAppModeRoute: typeof AuthenticatedPengaturanAppModeRoute
   AuthenticatedPengaturanBahasaRoute: typeof AuthenticatedPengaturanBahasaRoute
+  AuthenticatedPengaturanDomainRoute: typeof AuthenticatedPengaturanDomainRoute
   AuthenticatedPengaturanIntegrasiSosialRoute: typeof AuthenticatedPengaturanIntegrasiSosialRoute
   AuthenticatedPengaturanKunciRoute: typeof AuthenticatedPengaturanKunciRoute
   AuthenticatedPengaturanOauthGoogleRoute: typeof AuthenticatedPengaturanOauthGoogleRoute
@@ -2068,6 +2089,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPengaturanApkRoute: AuthenticatedPengaturanApkRoute,
   AuthenticatedPengaturanAppModeRoute: AuthenticatedPengaturanAppModeRoute,
   AuthenticatedPengaturanBahasaRoute: AuthenticatedPengaturanBahasaRoute,
+  AuthenticatedPengaturanDomainRoute: AuthenticatedPengaturanDomainRoute,
   AuthenticatedPengaturanIntegrasiSosialRoute:
     AuthenticatedPengaturanIntegrasiSosialRoute,
   AuthenticatedPengaturanKunciRoute: AuthenticatedPengaturanKunciRoute,
@@ -2175,13 +2197,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

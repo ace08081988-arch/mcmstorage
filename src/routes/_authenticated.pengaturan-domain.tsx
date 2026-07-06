@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -90,7 +90,7 @@ function statusFor(check: RecordCheck): CheckStatus {
   return "fail";
 }
 
-const STATUS_STYLES: Record<CheckStatus, { badge: string; label: string; icon: JSX.Element }> = {
+const STATUS_STYLES: Record<CheckStatus, { badge: string; label: string; icon: ReactNode }> = {
   idle: {
     badge: "bg-muted text-muted-foreground",
     label: "Belum dicek",
