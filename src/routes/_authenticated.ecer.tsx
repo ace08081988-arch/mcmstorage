@@ -1238,6 +1238,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       paths: allPaths,
       locationUrl: s.location_url,
       persistKey: `shot:${s.id}`,
+      buildCaption: (remaining) =>
+        shotCaption(s, { sentCount: remaining, excludedCount: allPaths.length - remaining }),
+      captionLabel: "WhatsApp",
     });
     if (!res.ok) return;
     const paths = allPaths.filter((p) => !res.excluded.has(p));
