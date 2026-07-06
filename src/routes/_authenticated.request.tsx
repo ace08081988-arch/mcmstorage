@@ -1633,7 +1633,44 @@ function PrepSections({
     };
   }, [justSentId]);
 
-  const renderCard = (p: RequestPreparation, idx: number, listLen: number, inSent: boolean) => (
+  const renderCard = (p: RequestPreparation, idx: number, listLen: number, inSent: boolean) => {
+    // Kartu di Riwayat Terkirim WAJIB read-only: semua handler yang bisa
+    // mengubah status (hapus / kirim ulang) diblokir di sumber, bukan hanya
+    // disembunyikan di UI. Ini jaring pengaman kalau suatu saat ada tombol
+    // yang lolos render, keyboard shortcut, atau state stale.
+    const isReadOnly = inSent || !!p.sold_at;
+    const guardedDelete = () => {
+      if (isReadOnly) {
+        toast.error("Paket sudah di Riwayat Terkirim — tidak bisa diubah.");
+        return;
+      }
+      onDelete(p);
+    };
+    const guardedSent = () => {
+      if (isReadOnly) {
+        toast.error("Paket sudah di Riwayat Terkirim — tidak bisa dikirim ulang.");
+        return;
+      }
+      setShowHistory(true);
+      setAwaitingSentId(p.id);
+      setSyncError(null);
+      void Promise.resolve(onChanged()).then((res) => {
+        if (res && res.ok === false) {
+          const msg = res.error ?? "unknown";
+          toast.error("Gagal muat ulang daftar", {
+            description: msg + " — coba tekan tombol Muat Ulang.",
+            duration: 10000,
+            action: { label: "Coba Lagi", onClick: () => { void reloadNow(); } },
+          });
+          setSyncError(
+            "Gagal memuat ulang daftar setelah pengiriman: " + msg +
+            ". Grid mungkin belum menampilkan status terbaru.",
+          );
+          setAwaitingSentId(null);
+        }
+      });
+    };
+    return (
     <div
       key={p.id}
       ref={(node) => {
@@ -1641,11 +1678,13 @@ function PrepSections({
         if (node) sentRefs.current.set(p.id, node);
         else sentRefs.current.delete(p.id);
       }}
-      className={
+      className={[
         inSent && justSentId === p.id
           ? "rounded-xl ring-2 ring-emerald-500 ring-offset-2 ring-offset-background transition"
-          : undefined
-      }
+          : "",
+        isReadOnly ? "group/readonly" : "",
+      ].filter(Boolean).join(" ") || undefined}
+      aria-readonly={isReadOnly || undefined}
     >
     <PrepCard
       index={listLen - idx}
@@ -1655,34 +1694,12 @@ function PrepSections({
       titleItems={titleItems}
       titleName={titleName}
       customers={customers}
-      onDelete={() => onDelete(p)}
-      onSent={() => {
-        setShowHistory(true);
-        setAwaitingSentId(p.id);
-        setSyncError(null);
-        // Refetch dan tangkap error supaya UI tidak menipu.
-        void Promise.resolve(onChanged()).then((res) => {
-          if (res && res.ok === false) {
-            const msg = res.error ?? "unknown";
-            toast.error("Gagal muat ulang daftar", {
-              description: msg + " — coba tekan tombol Muat Ulang.",
-              duration: 10000,
-              action: {
-                label: "Coba Lagi",
-                onClick: () => { void reloadNow(); },
-              },
-            });
-            setSyncError(
-              "Gagal memuat ulang daftar setelah pengiriman: " + msg +
-              ". Grid mungkin belum menampilkan status terbaru.",
-            );
-            setAwaitingSentId(null);
-          }
-        });
-      }}
+      onDelete={guardedDelete}
+      onSent={guardedSent}
     />
     </div>
-  );
+    );
+  };
   return (
     <div className="space-y-4">
       {(syncError || (awaitingSentId && !reloading)) && (
