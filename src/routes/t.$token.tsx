@@ -3425,6 +3425,7 @@ type RequestTitleDTO = {
   id: string;
   name: string;
   note: string | null;
+  submitted_count: number;
   items: Array<{
     id: string;
     warehouse_item_id: string;
@@ -3443,6 +3444,7 @@ function normalizeRequestTitles(value: unknown): RequestTitleDTO[] {
       id: stringOrFallback(t.id, `request-title-${titleIdx}`),
       name: stringOrFallback(t.name, "Paket request"),
       note: stringOrNull(t.note),
+      submitted_count: numberOrFallback(t.submitted_count),
       items: rawItems.filter(isRecord).map((i, itemIdx) => ({
         id: stringOrFallback(i.id, `request-item-${titleIdx}-${itemIdx}`),
         warehouse_item_id: stringOrFallback(i.warehouse_item_id, ""),
