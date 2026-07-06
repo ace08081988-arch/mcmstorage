@@ -659,11 +659,18 @@ function TitleEditorDialog({
           </div>
         </div>
         <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2.5 border-t bg-background px-6 py-3 sm:flex-row sm:justify-between sm:gap-2">
+          <div className="flex w-full items-center justify-center sm:hidden">
+            <DialogSaveStatus status={saveStatus} compact />
+          </div>
           {existing ? (
             <Button variant="ghost" size="sm" className="min-h-11 text-destructive sm:min-h-9" onClick={deleteTitle} disabled={busy}>
               <Trash2 className="mr-1 h-3.5 w-3.5" /> Hapus
             </Button>
-          ) : <span className="hidden sm:block" />}
+          ) : (
+            <span className="hidden sm:flex sm:items-center">
+              <DialogSaveStatus status={saveStatus} compact />
+            </span>
+          )}
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
             <Button size="sm" onClick={save} disabled={busy}>
