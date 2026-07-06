@@ -1259,7 +1259,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       }
       const result = await shareToChat({
         conversationId,
-        caption: shotCaption(s),
+        caption: shotCaption(s, { sentCount: chatShots.length, excludedCount: shotPaths(s).length - paths.length }),
         locationUrl: s.location_url,
         shots: chatShots,
       });
