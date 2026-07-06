@@ -968,12 +968,62 @@ function DetailHero({
         <Dialog open={qrOpen} onOpenChange={setQrOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="truncate">QR Penyiapan pegawai — {title.name}</DialogTitle>
+              <DialogTitle className="truncate">QR portal pegawai — {title.name}</DialogTitle>
               <DialogDescription>
-                Pindai dengan HP admin lain untuk membuka halaman Penyiapan pegawai yang sudah terisi otomatis untuk judul ini.
+                Pegawai memindai QR ini untuk membuka portal penyiapan (bukan aplikasi admin).
+                PIN baru dibuat setiap kali dialog dibuka atau tombol <b>Buat ulang</b> ditekan.
               </DialogDescription>
             </DialogHeader>
-            <TaskQrCode url={prepPermalink} title={`Penyiapan ${title.name}`} />
+            {workerBusy && !workerSession ? (
+              <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Membuat sesi pegawai…
+              </div>
+            ) : workerErr ? (
+              <div className="space-y-2">
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                  <div className="flex items-center gap-1 font-semibold">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Gagal membuat sesi
+                  </div>
+                  <div className="mt-1 break-words">{workerErr}</div>
+                </div>
+                <Button variant="outline" size="sm" className="w-full" onClick={() => void mintWorkerSession()}>
+                  <RotateCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
+                </Button>
+              </div>
+            ) : workerSession ? (
+              <div className="space-y-3">
+                <TaskQrCode url={workerSession.url} pin={workerSession.pin} title={`Penyiapan ${title.name}`} />
+                <div>
+                  <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link pegawai</Label>
+                  <div className="break-all rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono">
+                    {workerSession.url}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={workerBusy}
+                    onClick={async () => {
+                      const res = await copyText(workerSession.url);
+                      if (res.ok) toast.success("Link pegawai disalin", { description: shortenUrlForToast(workerSession.url) });
+                      else toast.error("Gagal menyalin — salin manual", { description: workerSession.url });
+                    }}
+                  >
+                    <Link2 className="mr-1 h-3.5 w-3.5" /> Salin link
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    disabled={workerBusy}
+                    onClick={() => void mintWorkerSession()}
+                  >
+                    <RefreshCw className={`mr-1 h-3.5 w-3.5 ${workerBusy ? "animate-spin" : ""}`} /> Buat ulang (PIN baru)
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </DialogContent>
         </Dialog>
       )}
