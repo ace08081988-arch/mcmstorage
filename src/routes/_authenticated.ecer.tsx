@@ -492,6 +492,10 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
   const [unit, setUnit] = useState<"g" | "gram">((existing?.unit_label as "g" | "gram") ?? "gram");
   const [note, setNote] = useState(existing?.note ?? "");
   const [busy, setBusy] = useState(false);
+  // Ikut mode layout tersimpan (key `readyEcer`) — di mode `compact`
+  // pasangan input menumpuk penuh, selebihnya responsif 1→2 kolom.
+  const [layout] = useLayoutMode("readyEcer", "grid");
+  const pairClass = layoutFieldPairClass(layout);
 
   async function save() {
     if (!name.trim()) { toast.error("Nama wajib diisi"); return; }
@@ -534,7 +538,7 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
               inputMode="text"
             />
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className={pairClass}>
             <div>
               <Label className="text-xs">Target berat</Label>
               <Input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} />
