@@ -71,6 +71,7 @@ import { Route as AuthenticatedAuditRouteImport } from './routes/_authenticated.
 import { Route as AuthenticatedAdminDenialLogRouteImport } from './routes/_authenticated.admin-denial-log'
 import { Route as AuthenticatedChatIndexRouteImport } from './routes/_authenticated.chat.index'
 import { Route as LovableVisualVoiceNotePlayerRouteImport } from './routes/lovable.visual.voice-note-player'
+import { Route as LovableVisualTapTargetsRouteImport } from './routes/lovable.visual.tap-targets'
 import { Route as LovableVisualProdukListRouteImport } from './routes/lovable.visual.produk-list'
 import { Route as LovableVisualPressScopeRouteImport } from './routes/lovable.visual.press-scope'
 import { Route as LovableVisualPressAuditRouteImport } from './routes/lovable.visual.press-audit'
@@ -437,6 +438,11 @@ const LovableVisualVoiceNotePlayerRoute =
     path: '/lovable/visual/voice-note-player',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualTapTargetsRoute = LovableVisualTapTargetsRouteImport.update({
+  id: '/lovable/visual/tap-targets',
+  path: '/lovable/visual/tap-targets',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LovableVisualProdukListRoute = LovableVisualProdukListRouteImport.update({
   id: '/lovable/visual/produk-list',
   path: '/lovable/visual/produk-list',
@@ -731,6 +737,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/press-audit': typeof LovableVisualPressAuditRoute
   '/lovable/visual/press-scope': typeof LovableVisualPressScopeRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
+  '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/chat/': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -827,6 +834,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/press-audit': typeof LovableVisualPressAuditRoute
   '/lovable/visual/press-scope': typeof LovableVisualPressScopeRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
+  '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/chat': typeof AuthenticatedChatIndexRoute
   '/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -927,6 +935,7 @@ export interface FileRoutesById {
   '/lovable/visual/press-audit': typeof LovableVisualPressAuditRoute
   '/lovable/visual/press-scope': typeof LovableVisualPressScopeRoute
   '/lovable/visual/produk-list': typeof LovableVisualProdukListRoute
+  '/lovable/visual/tap-targets': typeof LovableVisualTapTargetsRoute
   '/lovable/visual/voice-note-player': typeof LovableVisualVoiceNotePlayerRoute
   '/_authenticated/chat/': typeof AuthenticatedChatIndexRoute
   '/_authenticated/gudang/pesanan/$id': typeof AuthenticatedGudangPesananIdRouteWithChildren
@@ -1027,6 +1036,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/press-audit'
     | '/lovable/visual/press-scope'
     | '/lovable/visual/produk-list'
+    | '/lovable/visual/tap-targets'
     | '/lovable/visual/voice-note-player'
     | '/chat/'
     | '/gudang/pesanan/$id'
@@ -1123,6 +1133,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/press-audit'
     | '/lovable/visual/press-scope'
     | '/lovable/visual/produk-list'
+    | '/lovable/visual/tap-targets'
     | '/lovable/visual/voice-note-player'
     | '/chat'
     | '/gudang/pesanan/$id'
@@ -1222,6 +1233,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/press-audit'
     | '/lovable/visual/press-scope'
     | '/lovable/visual/produk-list'
+    | '/lovable/visual/tap-targets'
     | '/lovable/visual/voice-note-player'
     | '/_authenticated/chat/'
     | '/_authenticated/gudang/pesanan/$id'
@@ -1267,6 +1279,7 @@ export interface RootRouteChildren {
   LovableVisualPressAuditRoute: typeof LovableVisualPressAuditRoute
   LovableVisualPressScopeRoute: typeof LovableVisualPressScopeRoute
   LovableVisualProdukListRoute: typeof LovableVisualProdukListRoute
+  LovableVisualTapTargetsRoute: typeof LovableVisualTapTargetsRoute
   LovableVisualVoiceNotePlayerRoute: typeof LovableVisualVoiceNotePlayerRoute
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
   ApiPublicHooksLogPortalErrorRoute: typeof ApiPublicHooksLogPortalErrorRoute
@@ -1708,6 +1721,13 @@ declare module '@tanstack/react-router' {
       path: '/lovable/visual/voice-note-player'
       fullPath: '/lovable/visual/voice-note-player'
       preLoaderRoute: typeof LovableVisualVoiceNotePlayerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/visual/tap-targets': {
+      id: '/lovable/visual/tap-targets'
+      path: '/lovable/visual/tap-targets'
+      fullPath: '/lovable/visual/tap-targets'
+      preLoaderRoute: typeof LovableVisualTapTargetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/lovable/visual/produk-list': {
@@ -2188,6 +2208,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualPressAuditRoute: LovableVisualPressAuditRoute,
   LovableVisualPressScopeRoute: LovableVisualPressScopeRoute,
   LovableVisualProdukListRoute: LovableVisualProdukListRoute,
+  LovableVisualTapTargetsRoute: LovableVisualTapTargetsRoute,
   LovableVisualVoiceNotePlayerRoute: LovableVisualVoiceNotePlayerRoute,
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
   ApiPublicHooksLogPortalErrorRoute: ApiPublicHooksLogPortalErrorRoute,
