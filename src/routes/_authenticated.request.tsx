@@ -2486,15 +2486,14 @@ function WorkerTestDialog({
 
         {!session ? (
           <div className="space-y-3">
-            <div>
-              <Label className="text-xs">PIN uji coba (opsional, min 4 digit)</Label>
+            <Field label="PIN uji coba (opsional, min 4 digit)" size="xs">
               <Input
                 inputMode="numeric" maxLength={8}
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
                 placeholder="Kosongkan untuk acak"
               />
-            </div>
+            </Field>
             <div className="rounded-md border bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
               Pastikan sudah ada minimal 1 Judul Request dengan beberapa produk. Saat ini: <b>{titles.length} judul</b>.
             </div>
