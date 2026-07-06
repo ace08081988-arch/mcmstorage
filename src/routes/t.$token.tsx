@@ -2219,6 +2219,9 @@ function ItemCard({
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [manualCoordOpen, setManualCoordOpen] = useState(false);
+  const [manualLat, setManualLat] = useState("");
+  const [manualLng, setManualLng] = useState("");
   // Antrian foto galeri yang akan dibuka di PhotoEditor satu per satu.
   const editQueueRef = useRef<number[]>([]);
   const photosRef = useRef<StagedPhoto[]>([]);
