@@ -1261,6 +1261,8 @@ function PrepSections({
   onChanged: () => void;
 }) {
   const [showHistory, setShowHistory] = useState(true);
+  const [layout, setLayout] = useLayoutMode("requestPrep", "grid");
+  const gridClass = layoutGridClass(layout);
   const active = preps.filter((p) => !p.sold_at);
   const sent = preps.filter((p) => !!p.sold_at);
   const total = preps.length;
@@ -1285,13 +1287,14 @@ function PrepSections({
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
             Siap Kirim <span className="text-foreground/70">({active.length})</span>
           </p>
+          <LayoutModeToggle mode={layout} onChange={setLayout} />
         </div>
         {active.length === 0 ? (
           <div className="rounded-xl border border-dashed bg-card p-4 text-center text-[11px] text-muted-foreground">
             Tidak ada penyiapan yang menunggu dikirim.
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <div className={gridClass}>
             {active.map((p, idx) => renderCard(p, idx, total))}
           </div>
         )}
@@ -1311,7 +1314,7 @@ function PrepSections({
             <span className="text-[10px]">{showHistory ? "Sembunyikan" : "Tampilkan"}</span>
           </button>
           {showHistory && (
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className={gridClass}>
               {sent.map((p, idx) => renderCard(p, idx, sent.length))}
             </div>
           )}
