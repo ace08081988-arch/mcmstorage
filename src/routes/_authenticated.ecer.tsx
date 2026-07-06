@@ -616,6 +616,12 @@ function DetailHero({
   // desktop (hover) dan mobile (long-press) tanpa perlu TooltipProvider,
   // supaya admin bisa memastikan link yang benar sebelum menekan.
   const copyLinkTooltip = `Salin permalink Penyiapan pegawai (Shift+L):\n${prepPermalink}`;
+  // Label a11y untuk tombol Salin link. Screen reader membaca aria-label
+  // apa adanya, jadi kita ejakan pintasan supaya jelas ("Shift L" bukan
+  // "Shift plus L"). `aria-keyshortcuts` mengikuti spec WAI-ARIA sehingga
+  // AT modern juga bisa mengumumkannya lewat kanal pintasan terpisah.
+  const copyLinkAriaLabel =
+    "Salin permalink Penyiapan pegawai untuk judul ini — pintasan Shift L";
   const navigate = useNavigate();
 
   // Shortcut keyboard: Shift + L saat halaman folder ecer terbuka menyalin
@@ -792,7 +798,8 @@ function DetailHero({
               type="button"
               onClick={onCopyPrepLink}
               title={copyLinkTooltip}
-              aria-label="Salin link Penyiapan pegawai"
+              aria-label={copyLinkAriaLabel}
+              aria-keyshortcuts="Shift+L"
               className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
               <Link2 className="h-5 w-5" aria-hidden />
@@ -854,6 +861,8 @@ function DetailHero({
               variant="outline"
               onClick={onCopyPrepLink}
               title={copyLinkTooltip}
+              aria-label={copyLinkAriaLabel}
+              aria-keyshortcuts="Shift+L"
               className="hidden sm:inline-flex"
             >
               <Link2 className="h-4 w-4" /> Salin link
