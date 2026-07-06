@@ -1399,17 +1399,56 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           </DialogHeader>
           {previewReq && previewReq.paths.length > 0 ? (
             <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/30 p-2">
+              <div className="mb-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>
+                  Ketuk foto untuk mengecualikan · {Math.min(previewReq.paths.length, 12) - Array.from(excludedPaths).filter((p) => previewReq.paths.slice(0, 12).includes(p)).length}
+                  /{Math.min(previewReq.paths.length, 12)} dipilih
+                </span>
+                {excludedPaths.size > 0 ? (
+                  <button
+                    type="button"
+                    className="text-primary underline"
+                    onClick={() => setExcludedPaths(new Set())}
+                  >
+                    Reset
+                  </button>
+                ) : null}
+              </div>
               <div className="grid grid-cols-3 gap-1.5">
                 {(previewUrls ?? new Array(Math.min(previewReq.paths.length, 12)).fill(null)).map((u, i) => (
-                  <div key={i} className="relative aspect-square overflow-hidden rounded bg-muted">
-                    {u ? (
-                      <img src={u} alt={`Foto ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
-                        {previewUrls ? "×" : "…"}
-                      </div>
-                    )}
-                  </div>
+                  (() => {
+                    const p = previewReq.paths[i];
+                    const excluded = excludedPaths.has(p);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => togglePathExcluded(p)}
+                        aria-pressed={!excluded}
+                        aria-label={excluded ? `Sertakan foto ${i + 1}` : `Kecualikan foto ${i + 1}`}
+                        className={`group relative aspect-square overflow-hidden rounded bg-muted ring-1 transition ${excluded ? "ring-destructive" : "ring-transparent hover:ring-primary/40"}`}
+                      >
+                        {u ? (
+                          <img
+                            src={u}
+                            alt={`Foto ${i + 1}`}
+                            loading="lazy"
+                            className={`h-full w-full object-cover transition ${excluded ? "opacity-30 grayscale" : ""}`}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
+                            {previewUrls ? "×" : "…"}
+                          </div>
+                        )}
+                        <span
+                          className={`absolute right-1 top-1 grid h-5 w-5 place-content-center rounded-full text-[10px] font-bold shadow ${excluded ? "bg-destructive text-destructive-foreground" : "bg-background/90 text-foreground"}`}
+                          aria-hidden
+                        >
+                          {excluded ? "×" : "✓"}
+                        </span>
+                      </button>
+                    );
+                  })()
                 ))}
               </div>
               {previewReq.paths.length > 12 ? (
@@ -1431,7 +1470,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           ) : null}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => finishPreview(false)}>Batal</Button>
-            <Button onClick={() => finishPreview(true)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button
+              onClick={() => finishPreview(true)}
+              disabled={
+                !!previewReq &&
+                previewReq.paths.length > 0 &&
+                previewReq.paths.slice(0, 12).every((p) => excludedPaths.has(p)) &&
+                previewReq.paths.length <= 12
+              }
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
               {previewReq?.confirmText ?? "Kirim"}
             </Button>
           </DialogFooter>
