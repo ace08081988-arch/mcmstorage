@@ -1004,6 +1004,8 @@ function SendPrepLinkDialog({
       void logDelivery("download_pdf");
     } catch (e) {
       toast.error("Gagal unduh PDF: " + ((e as Error).message ?? String(e)));
+    } finally {
+      setPending(null);
     }
   }
 
