@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { Component, useCallback, useEffect, useRef, useState, type ErrorInfo, type ReactNode } from "react";
+import { useLayoutEffect } from "react";
 import { toast } from "sonner";
 import { PhotoEditor } from "@/components/PhotoEditor";
 import {
@@ -2220,7 +2221,11 @@ function ItemCard({
   // Antrian foto galeri yang akan dibuka di PhotoEditor satu per satu.
   const editQueueRef = useRef<number[]>([]);
   const photosRef = useRef<StagedPhoto[]>([]);
-  useEffect(() => {
+  // useLayoutEffect: sinkronisasi ref harus terjadi sinkron setelah commit,
+  // SEBELUM setTimeout(0) callback macrotask. Kalau pakai useEffect biasa,
+  // sesekali PhotoEditor tidak muncul karena `photosRef.current` masih
+  // stale saat `openEditForIdx` dipanggil via setTimeout.
+  useLayoutEffect(() => {
     photosRef.current = photos;
   }, [photos]);
   useEffect(() => () => {
@@ -2228,7 +2233,20 @@ function ItemCard({
   }, []);
   function openEditForIdx(i: number) {
     const p = photosRef.current[i];
-    if (!p) return;
+    if (!p) {
+      // Fallback: kalau ref belum sempat ter-update (race pasca await
+      // async yang memanggil setPhotos di frame yang sama), coba lagi
+      // di microtask berikutnya sekali. Kalau masih kosong, diamkan —
+      // artinya photo memang tidak ada.
+      queueMicrotask(() => {
+        const retry = photosRef.current[i];
+        if (!retry) return;
+        setEditingIdx(i);
+        setEditorSrc(retry.dataUrl);
+        setEditorOpen(true);
+      });
+      return;
+    }
     setEditingIdx(i);
     setEditorSrc(p.dataUrl);
     setEditorOpen(true);
@@ -2622,15 +2640,23 @@ function ItemCard({
   const isDone = (item.submissions?.length ?? 0) > 0;
   const hasDraft = photos.length > 0 || pending.length > 0;
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const doneCollapseRef = useRef(false);
-  // Auto-collapse setelah item ini beralih ke status "sudah terkirim".
-  // Beri jeda singkat supaya user sempat melihat toast/success banner.
+  // Auto-collapse HANYA sekali per mount, dan hanya pada transisi asli
+  // "belum → sudah". silentRefresh berkala kadang mengembalikan blip
+  // (submissions kosong sesaat lalu terisi lagi); tanpa guard ini panel
+  // yang baru dibuka user akan tertutup sendiri setiap kali blip
+  // membalik status false→true.
+  const prevIsDoneRef = useRef<boolean | null>(null);
+  const hasAutoCollapsedRef = useRef(false);
   useEffect(() => {
-    if (!isDone) { doneCollapseRef.current = false; return; }
-    if (doneCollapseRef.current) return;
-    doneCollapseRef.current = true;
-    const t = setTimeout(() => setExpanded(false), 900);
-    return () => clearTimeout(t);
+    const prev = prevIsDoneRef.current;
+    prevIsDoneRef.current = isDone;
+    if (hasAutoCollapsedRef.current) return;
+    if (prev === false && isDone === true) {
+      hasAutoCollapsedRef.current = true;
+      const t = setTimeout(() => setExpanded(false), 900);
+      return () => clearTimeout(t);
+    }
+    return undefined;
   }, [isDone]);
   // Auto-open bila parent minta (mis. paket ini adalah "berikutnya" setelah
   // paket lain di varian sama baru saja selesai). Trigger memakai tick agar
@@ -3509,7 +3535,9 @@ function RequestForm({
   // Antrian foto galeri yang dibuka di PhotoEditor satu per satu.
   const editQueueRef = useRef<number[]>([]);
   const photosRef = useRef<StagedPhoto[]>([]);
-  useEffect(() => {
+  // Sama seperti di ItemCard: sinkron pakai useLayoutEffect supaya
+  // photosRef selalu segar sebelum setTimeout(0) → openEditForIdx.
+  useLayoutEffect(() => {
     photosRef.current = photos;
   }, [photos]);
   useEffect(() => () => {
@@ -3517,7 +3545,16 @@ function RequestForm({
   }, []);
   function openEditForIdx(i: number) {
     const p = photosRef.current[i];
-    if (!p) return;
+    if (!p) {
+      queueMicrotask(() => {
+        const retry = photosRef.current[i];
+        if (!retry) return;
+        setEditingIdx(i);
+        setEditorSrc(retry.dataUrl);
+        setEditorOpen(true);
+      });
+      return;
+    }
     setEditingIdx(i);
     setEditorSrc(p.dataUrl);
     setEditorOpen(true);
