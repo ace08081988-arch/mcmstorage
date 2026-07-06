@@ -221,12 +221,16 @@ describe("ReadyEcerSection — struktur sumber mengunci badge ke selector", () =
     expect(src).toMatch(/\{r\.prep_count\}\s*kotak siap/);
   });
 
-  it("query ecer_preparations tetap difilter sold_at IS NULL di server", () => {
+  it("query ecer_preparations tetap difilter aktif di server via helper", () => {
     // Sabuk kedua: server-side filter tidak boleh dilepas — kalau lepas,
     // countActiveByTitle di klien tetap benar, tapi payload jaringan
-    // membengkak & badge lain bisa ikut miring.
+    // membengkak & badge lain bisa ikut miring. Filter WAJIB via
+    // `withActivePrepsFilter` supaya semantiknya tunggal.
     const ecerBlock = src.match(/ecer_preparations[\s\S]{0,600}/);
     expect(ecerBlock, "blok query ecer_preparations ada").toBeTruthy();
-    expect(ecerBlock![0]).toMatch(/\.is\(\s*["']sold_at["']\s*,\s*null\s*\)/);
+    expect(ecerBlock![0]).toMatch(/withActivePrepsFilter\(/);
+    // Literal .is("sold_at", null) tidak boleh muncul lagi di file —
+    // dijaga juga oleh ESLint no-restricted-syntax.
+    expect(src).not.toMatch(/\.is\(\s*["']sold_at["']\s*,\s*null\s*\)/);
   });
 });
