@@ -749,6 +749,18 @@ function DetailHero({
               <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Salin link</span>
             </button>
           )}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={() => setQrOpen(true)}
+              title="Tampilkan QR permalink Penyiapan pegawai"
+              aria-label="Tampilkan QR permalink Penyiapan pegawai"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+            >
+              <QrCode className="h-5 w-5" aria-hidden />
+              <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">QR</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={onAdd}
@@ -797,11 +809,35 @@ function DetailHero({
               <Link2 className="h-4 w-4" /> Salin link
             </Button>
           )}
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setQrOpen(true)}
+              title="Tampilkan QR permalink Penyiapan pegawai"
+              className="hidden sm:inline-flex"
+            >
+              <QrCode className="h-4 w-4" /> QR
+            </Button>
+          )}
           <Button size="sm" onClick={onAdd} className="hidden bg-emerald-600 hover:bg-emerald-700 sm:inline-flex">
             <Plus className="h-4 w-4" /> Penyiapan
           </Button>
         </div>
       </div>
+      {isAdmin && (
+        <Dialog open={qrOpen} onOpenChange={setQrOpen}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle className="truncate">QR Penyiapan pegawai — {title.name}</DialogTitle>
+              <DialogDescription>
+                Pindai dengan HP admin lain untuk membuka halaman Penyiapan pegawai yang sudah terisi otomatis untuk judul ini.
+              </DialogDescription>
+            </DialogHeader>
+            <TaskQrCode url={prepPermalink} title={`Penyiapan ${title.name}`} />
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   );
 }
