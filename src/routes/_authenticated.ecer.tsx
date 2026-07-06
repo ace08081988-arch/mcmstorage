@@ -1436,6 +1436,29 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                 {previewReq.description}
               </DialogDescription>
             ) : null}
+            {previewReq && previewReq.paths.length > 0 ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {(() => {
+                  const total = previewReq.paths.length;
+                  const excluded = Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length;
+                  const willSend = total - excluded;
+                  return (
+                    <>
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                        <span className="tabular-nums">{willSend} / {total}</span>
+                        <span className="ml-1 text-[10px] text-muted-foreground">foto akan dikirim</span>
+                      </span>
+                      {excluded > 0 ? (
+                        <span className="inline-flex items-center rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">
+                          <span className="tabular-nums">{excluded}</span>
+                          <span className="ml-1 text-[10px]">dikecualikan</span>
+                        </span>
+                      ) : null}
+                    </>
+                  );
+                })()}
+              </div>
+            ) : null}
           </DialogHeader>
           {previewReq && previewReq.paths.length > 0 ? (
             <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/30 p-2">
