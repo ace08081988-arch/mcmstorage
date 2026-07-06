@@ -959,14 +959,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     confirmText: string;
     paths: string[];
     locationUrl?: string | null;
-    resolve: (v: boolean) => void;
+    resolve: (v: { ok: boolean; excluded: Set<string> }) => void;
   };
   const [previewReq, setPreviewReq] = useState<PreviewReq | null>(null);
   const [previewUrls, setPreviewUrls] = useState<string[] | null>(null);
+  const [excludedPaths, setExcludedPaths] = useState<Set<string>>(new Set());
   useEffect(() => {
-    if (!previewReq) { setPreviewUrls(null); return; }
+    if (!previewReq) { setPreviewUrls(null); setExcludedPaths(new Set()); return; }
     let cancelled = false;
     setPreviewUrls(null);
+    setExcludedPaths(new Set());
     (async () => {
       const capped = previewReq.paths.slice(0, 12);
       const urls = await Promise.all(capped.map((p) => resolvePrepUrl(p, 600).catch(() => null)));
@@ -974,13 +976,23 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     })();
     return () => { cancelled = true; };
   }, [previewReq]);
-  function confirmWithPreview(opts: Omit<PreviewReq, "resolve">): Promise<boolean> {
-    return new Promise<boolean>((resolve) => setPreviewReq({ ...opts, resolve }));
+  function confirmWithPreview(
+    opts: Omit<PreviewReq, "resolve">,
+  ): Promise<{ ok: boolean; excluded: Set<string> }> {
+    return new Promise((resolve) => setPreviewReq({ ...opts, resolve }));
   }
-  function finishPreview(v: boolean) {
+  function finishPreview(ok: boolean) {
     const r = previewReq;
+    const excluded = ok ? new Set(excludedPaths) : new Set<string>();
     setPreviewReq(null);
-    r?.resolve(v);
+    r?.resolve({ ok, excluded });
+  }
+  function togglePathExcluded(p: string) {
+    setExcludedPaths((prev) => {
+      const next = new Set(prev);
+      if (next.has(p)) next.delete(p); else next.add(p);
+      return next;
+    });
   }
 
   const targetUnit = normUnitStr(title.unit_label);
@@ -1060,6 +1072,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     if (sending) return;
     const take = Math.min(shots.length, 6);
     let ok: boolean;
+    let excludedSet: Set<string> = new Set();
     if (shots.length === 0) {
       ok = await confirm({
         title: "Kirim perintah penyiapan?",
@@ -1070,13 +1083,15 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const previewShots = shots.slice(0, take);
       const allPaths = previewShots.flatMap((s) => shotPaths(s)).slice(0, 12);
       const firstLoc = previewShots.find((s) => s.location_url)?.location_url ?? null;
-      ok = await confirmWithPreview({
+      const res = await confirmWithPreview({
         title: `Kirim ${take} kiriman via WhatsApp?`,
         description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${take} folder · ${allPaths.length} foto (maks 10 terlampir)\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
         confirmText: "Kirim WA",
         paths: allPaths,
         locationUrl: firstLoc,
       });
+      ok = res.ok;
+      excludedSet = res.excluded;
     }
     if (!ok) return;
     setSending(true);
@@ -1103,7 +1118,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
           ...(s.photo_path ? [s.photo_path] : []),
-        ])).filter(Boolean);
+        ])).filter(Boolean).filter((p) => !excludedSet.has(p));
         for (let pi = 0; pi < paths.length; pi++) {
           const url = await resolvePrepUrl(paths[pi], 600);
           if (!url) continue;
@@ -1153,15 +1168,17 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
 
   async function sendShotWA(s: WorkerShot) {
     if (waSendingId) return;
-    const paths = shotPaths(s);
-    const ok = await confirmWithPreview({
+    const allPaths = shotPaths(s);
+    const res = await confirmWithPreview({
       title: "Kirim folder via WhatsApp?",
-      description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${s.location_url ? "" : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+      description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${allPaths.length} foto${s.location_url ? "" : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
       confirmText: "Kirim WA",
-      paths,
+      paths: allPaths,
       locationUrl: s.location_url,
     });
-    if (!ok) return;
+    if (!res.ok) return;
+    const paths = allPaths.filter((p) => !res.excluded.has(p));
+    if (paths.length === 0) { toast.warning("Semua foto dikecualikan. Batal kirim."); return; }
     setWaSendingId(s.id);
     try {
       const files: File[] = [];
@@ -1174,8 +1191,8 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       if (files.length === 0) {
         toast.warning("Foto tidak bisa diunduh untuk dilampirkan.");
       }
-      const res = await shareToWhatsApp({ text: shotCaption(s), title: title.name, files });
-      notifyShareResult(res);
+      const waRes = await shareToWhatsApp({ text: shotCaption(s), title: title.name, files });
+      notifyShareResult(waRes);
     } catch (err) {
       toast.error(`Gagal kirim WA: ${(err as Error).message}`);
     } finally {
@@ -1183,12 +1200,17 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     }
   }
 
-  async function sendShotChat(s: WorkerShot, conversationId: string, convTitle: string) {
+  async function sendShotChat(
+    s: WorkerShot,
+    conversationId: string,
+    convTitle: string,
+    excluded: Set<string> = new Set(),
+  ) {
     if (chatSendingId) return;
     setChatSendingId(s.id);
     const tid = toast.loading(`Mengirim ke ${convTitle}…`);
     try {
-      const paths = shotPaths(s);
+      const paths = shotPaths(s).filter((p) => !excluded.has(p));
       const chatShots: { id: string; file: File }[] = [];
       for (let i = 0; i < paths.length; i++) {
         const url = await resolvePrepUrl(paths[i], 600);
@@ -1354,8 +1376,14 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             confirmText: "Kirim Chat",
             paths,
             locationUrl: target.location_url,
-          }).then((ok) => {
-            if (ok) void sendShotChat(target, conversationId, displayTitle);
+          }).then((res) => {
+            if (!res.ok) return;
+            const remaining = paths.filter((p) => !res.excluded.has(p));
+            if (remaining.length === 0) {
+              toast.warning("Semua foto dikecualikan. Batal kirim.");
+              return;
+            }
+            void sendShotChat(target, conversationId, displayTitle, res.excluded);
           });
         }}
       />
@@ -1371,17 +1399,56 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           </DialogHeader>
           {previewReq && previewReq.paths.length > 0 ? (
             <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/30 p-2">
+              <div className="mb-1.5 flex items-center justify-between text-[11px] text-muted-foreground">
+                <span>
+                  Ketuk foto untuk mengecualikan · {Math.min(previewReq.paths.length, 12) - Array.from(excludedPaths).filter((p) => previewReq.paths.slice(0, 12).includes(p)).length}
+                  /{Math.min(previewReq.paths.length, 12)} dipilih
+                </span>
+                {excludedPaths.size > 0 ? (
+                  <button
+                    type="button"
+                    className="text-primary underline"
+                    onClick={() => setExcludedPaths(new Set())}
+                  >
+                    Reset
+                  </button>
+                ) : null}
+              </div>
               <div className="grid grid-cols-3 gap-1.5">
                 {(previewUrls ?? new Array(Math.min(previewReq.paths.length, 12)).fill(null)).map((u, i) => (
-                  <div key={i} className="relative aspect-square overflow-hidden rounded bg-muted">
-                    {u ? (
-                      <img src={u} alt={`Foto ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
-                        {previewUrls ? "×" : "…"}
-                      </div>
-                    )}
-                  </div>
+                  (() => {
+                    const p = previewReq.paths[i];
+                    const excluded = excludedPaths.has(p);
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => togglePathExcluded(p)}
+                        aria-pressed={!excluded}
+                        aria-label={excluded ? `Sertakan foto ${i + 1}` : `Kecualikan foto ${i + 1}`}
+                        className={`group relative aspect-square overflow-hidden rounded bg-muted ring-1 transition ${excluded ? "ring-destructive" : "ring-transparent hover:ring-primary/40"}`}
+                      >
+                        {u ? (
+                          <img
+                            src={u}
+                            alt={`Foto ${i + 1}`}
+                            loading="lazy"
+                            className={`h-full w-full object-cover transition ${excluded ? "opacity-30 grayscale" : ""}`}
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
+                            {previewUrls ? "×" : "…"}
+                          </div>
+                        )}
+                        <span
+                          className={`absolute right-1 top-1 grid h-5 w-5 place-content-center rounded-full text-[10px] font-bold shadow ${excluded ? "bg-destructive text-destructive-foreground" : "bg-background/90 text-foreground"}`}
+                          aria-hidden
+                        >
+                          {excluded ? "×" : "✓"}
+                        </span>
+                      </button>
+                    );
+                  })()
                 ))}
               </div>
               {previewReq.paths.length > 12 ? (
@@ -1403,7 +1470,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           ) : null}
           <DialogFooter className="gap-2">
             <Button variant="outline" onClick={() => finishPreview(false)}>Batal</Button>
-            <Button onClick={() => finishPreview(true)} className="bg-emerald-600 hover:bg-emerald-700">
+            <Button
+              onClick={() => finishPreview(true)}
+              disabled={
+                !!previewReq &&
+                previewReq.paths.length > 0 &&
+                previewReq.paths.slice(0, 12).every((p) => excludedPaths.has(p)) &&
+                previewReq.paths.length <= 12
+              }
+              className="bg-emerald-600 hover:bg-emerald-700"
+            >
               {previewReq?.confirmText ?? "Kirim"}
             </Button>
           </DialogFooter>
