@@ -2337,7 +2337,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
           {view === "sent" && (
             <SentDetailList shots={shots} details={sentDetails} />
           )}
-          <div className="flex items-center gap-1.5">
+          <div className="flex flex-wrap items-center gap-1.5">
             {thumbs.slice(1, 4).map((s) => (
               <div key={s.id} className="relative h-7 w-7 shrink-0 overflow-hidden rounded border border-card bg-muted ring-1 ring-border">
                 {s.thumb_url ? (
@@ -2350,12 +2350,13 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 +{extra}
               </div>
             )}
+            <div className="ml-auto flex w-full items-center justify-end gap-1.5 sm:w-auto">
             <button
               type="button"
               onClick={openWAPreview}
               disabled={sending}
               aria-label="Kirim via MCM"
-              className="ml-auto inline-flex h-7 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
+              className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
             >
               <MessageCircle className="h-3 w-3" />
               {sending ? "…" : view === "sent" ? "Kirim ulang" : "WA"}
@@ -2366,7 +2367,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               disabled={chatSending || chatPreparing}
               aria-label="Kirim via Chat aplikasi"
               title="Kirim ke percakapan dalam aplikasi"
-              className="inline-flex h-7 items-center justify-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+              className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
             >
               {(chatSending || chatPreparing) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
               {chatPreparing ? "Siap…" : "Chat"}
@@ -2376,11 +2377,12 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
                 type="button"
                 onClick={undoSent}
                 aria-label="Kembalikan ke aktif"
-                className="inline-flex h-7 items-center justify-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-muted-foreground hover:bg-accent"
+                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md border bg-card px-2 text-[11px] font-semibold text-muted-foreground hover:bg-accent"
               >
                 <Undo2 className="h-3 w-3" /> Aktif
               </button>
             )}
+            </div>
           </div>
           </>
         )}
