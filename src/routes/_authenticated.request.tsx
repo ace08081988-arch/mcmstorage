@@ -541,8 +541,7 @@ function TitleEditorDialog({
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
         <div className="space-y-3">
-          <div id="title-sec-nama">
-            <Label>Nama judul</Label>
+          <Field id="title-sec-nama" label="Nama judul">
             <div className="relative">
               <Input
                 value={name}
@@ -600,11 +599,10 @@ function TitleEditorDialog({
                 </ul>
               )}
             </div>
-          </div>
-          <div id="title-sec-catatan">
-            <Label>Catatan (opsional)</Label>
+          </Field>
+          <Field id="title-sec-catatan" label="Catatan (opsional)">
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
-          </div>
+          </Field>
           <div id="title-sec-produk">
             <div className="mb-1 flex items-center justify-between">
               <Label>Produk dalam paket</Label>
