@@ -1687,14 +1687,17 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               ) : null}
             </div>
           ) : null}
-          {previewReq?.locationUrl ? (
+          {effectiveLocationUrl ? (
             (() => {
-              const url = previewReq.locationUrl;
+              const url = effectiveLocationUrl;
               const desc = describeLocationUrl(url);
               return (
                 <div className="rounded-md border bg-muted/30 p-2">
                   <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground">
-                    <span>Lokasi — akan dilampirkan sebagai baris terakhir caption</span>
+                    <span>
+                      <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
+                      Lokasi — akan dilampirkan sebagai baris terakhir caption
+                    </span>
                     {desc.kind ? (
                       <span className="rounded bg-background/70 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
                         {desc.kind}
@@ -1722,6 +1725,11 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                 </div>
               );
             })()
+          ) : previewReq?.shotLocations && previewReq.shotLocations.some((s) => s.locationUrl) ? (
+            <div className="rounded-md border border-dashed border-muted-foreground/30 bg-muted/20 p-2 text-[11px] text-muted-foreground">
+              <span className="mr-1 inline-block h-1.5 w-1.5 rounded-full bg-muted-foreground/50" aria-hidden />
+              Lokasi tidak akan dilampirkan — semua foto dari kiriman yang punya lokasi telah dikecualikan.
+            </div>
           ) : null}
           {(() => {
             if (!previewReq || previewReq.paths.length === 0) return null;
