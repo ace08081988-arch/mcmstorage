@@ -41,6 +41,7 @@ import { HelpCircle } from "lucide-react";
 import {
   MapPin,
   Camera,
+  ClipboardPaste,
   Image as ImageIcon,
   Edit3,
   Send,
