@@ -26,7 +26,10 @@ const buttonVariants = cva(
           "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 active:bg-secondary/70",
         ghost: "hover:bg-accent hover:text-accent-foreground active:bg-accent/80",
-        link: "text-primary underline-offset-4 hover:underline active:scale-100 active:brightness-100",
+        // `link` di-render inline seperti teks, jadi floor tap-target
+        // 44px yang kita pasang di base akan merusak alur baris. Reset
+        // ke `min-h-0` supaya `link` tetap sebesar teks aslinya.
+        link: "text-primary underline-offset-4 hover:underline active:scale-100 active:brightness-100 min-h-0",
       },
       size: {
         default: "h-9 px-4 py-2",
