@@ -27,7 +27,7 @@ import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
-import { publicTaskUrl } from "@/lib/prep";
+import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
 import { useIsAdmin } from "@/hooks/use-is-admin";
@@ -625,12 +625,73 @@ function DetailHero({
   };
 
   const [qrOpen, setQrOpen] = useState(false);
-  // URL untuk QR dihitung saat render supaya `window.location.origin` selalu
-  // mengikuti host aktif (preview / mcmstorage.biz / lovable.app).
+  // Permalink admin (untuk Salin link Shift+L). QR di dialog di bawah
+  // TIDAK memakai URL ini — QR harus membuka portal pegawai (bukan aplikasi
+  // admin), lengkap dengan PIN baru tiap kali dibuka.
   const prepPermalink =
     typeof window !== "undefined"
       ? `${window.location.origin}/tugas-baru?title_id=${encodeURIComponent(title.id)}`
       : `/tugas-baru?title_id=${encodeURIComponent(title.id)}`;
+
+  // Sesi worker portal untuk QR: setiap kali dialog dibuka kita mint task
+  // baru (share_token + PIN baru) yang sudah prefill item-nya ke judul ini
+  // — supaya foto pegawai otomatis masuk folder ecer yang benar (trigger
+  // prep_task_items_resolve_ecer_title mengunci ecer_title_id dari
+  // (warehouse_item_id, qty, unit)).
+  const [workerSession, setWorkerSession] = useState<{ url: string; pin: string; token: string } | null>(null);
+  const [workerBusy, setWorkerBusy] = useState(false);
+  const [workerErr, setWorkerErr] = useState<string | null>(null);
+
+  const mintWorkerSession = async () => {
+    setWorkerBusy(true);
+    setWorkerErr(null);
+    try {
+      const pin = genPin();
+      const token = genShareToken();
+      const unitLabel = title.unit_label ?? null;
+      const targetGrams = Number(title.target_grams) || 0;
+      const payload = title.warehouse_item_id
+        ? [{
+            name: `${item.name} — ${title.name}`,
+            category: null,
+            qty_requested: targetGrams,
+            unit_label: unitLabel,
+            ref_photo_path: null,
+            warehouse_item_id: title.warehouse_item_id,
+            ecer_title_id: title.id,
+          }]
+        : [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: rpcErr } = await (supabase.rpc as any)("prep_create_task", {
+        _title: `Ecer: ${title.name}`,
+        _note: `Penyiapan ${item.name} — ${title.name} (${targetGrams} ${unitLabel ?? ""}). Foto masuk folder ecer otomatis.`,
+        _pin: pin,
+        _share_token: token,
+        _items: payload,
+      });
+      if (rpcErr) throw rpcErr;
+      setWorkerSession({ url: publicTaskUrl(token, pin), pin, token });
+    } catch (e) {
+      setWorkerErr((e as Error).message || "Gagal membuat sesi pegawai");
+      setWorkerSession(null);
+    } finally {
+      setWorkerBusy(false);
+    }
+  };
+
+  // Setiap kali dialog dibuka: mint sesi baru (PIN baru). Saat ditutup:
+  // kosongkan sesi supaya buka lagi = generate ulang.
+  useEffect(() => {
+    if (!qrOpen) {
+      setWorkerSession(null);
+      setWorkerErr(null);
+      return;
+    }
+    void mintWorkerSession();
+    // Sengaja tidak memasukkan mintWorkerSession ke deps (stable-enough,
+    // hanya bergantung title.id yang tidak berubah selama komponen mount).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrOpen]);
   // Tooltip pratinjau URL yang akan disalin. Native `title=` bekerja di
   // desktop (hover) dan mobile (long-press) tanpa perlu TooltipProvider,
   // supaya admin bisa memastikan link yang benar sebelum menekan.
@@ -907,12 +968,62 @@ function DetailHero({
         <Dialog open={qrOpen} onOpenChange={setQrOpen}>
           <DialogContent className="sm:max-w-md">
             <DialogHeader>
-              <DialogTitle className="truncate">QR Penyiapan pegawai — {title.name}</DialogTitle>
+              <DialogTitle className="truncate">QR portal pegawai — {title.name}</DialogTitle>
               <DialogDescription>
-                Pindai dengan HP admin lain untuk membuka halaman Penyiapan pegawai yang sudah terisi otomatis untuk judul ini.
+                Pegawai memindai QR ini untuk membuka portal penyiapan (bukan aplikasi admin).
+                PIN baru dibuat setiap kali dialog dibuka atau tombol <b>Buat ulang</b> ditekan.
               </DialogDescription>
             </DialogHeader>
-            <TaskQrCode url={prepPermalink} title={`Penyiapan ${title.name}`} />
+            {workerBusy && !workerSession ? (
+              <div className="flex items-center justify-center gap-2 py-8 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" /> Membuat sesi pegawai…
+              </div>
+            ) : workerErr ? (
+              <div className="space-y-2">
+                <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-xs text-destructive">
+                  <div className="flex items-center gap-1 font-semibold">
+                    <AlertTriangle className="h-3.5 w-3.5" /> Gagal membuat sesi
+                  </div>
+                  <div className="mt-1 break-words">{workerErr}</div>
+                </div>
+                <Button variant="outline" size="sm" className="w-full" onClick={() => void mintWorkerSession()}>
+                  <RotateCw className="mr-1 h-3.5 w-3.5" /> Coba lagi
+                </Button>
+              </div>
+            ) : workerSession ? (
+              <div className="space-y-3">
+                <TaskQrCode url={workerSession.url} pin={workerSession.pin} title={`Penyiapan ${title.name}`} />
+                <div>
+                  <Label className="text-[10px] uppercase tracking-wide text-muted-foreground">Link pegawai</Label>
+                  <div className="break-all rounded-md border bg-muted/30 px-2 py-1.5 text-[11px] font-mono">
+                    {workerSession.url}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="flex-1"
+                    disabled={workerBusy}
+                    onClick={async () => {
+                      const res = await copyText(workerSession.url);
+                      if (res.ok) toast.success("Link pegawai disalin", { description: shortenUrlForToast(workerSession.url) });
+                      else toast.error("Gagal menyalin — salin manual", { description: workerSession.url });
+                    }}
+                  >
+                    <Link2 className="mr-1 h-3.5 w-3.5" /> Salin link
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="flex-1"
+                    disabled={workerBusy}
+                    onClick={() => void mintWorkerSession()}
+                  >
+                    <RefreshCw className={`mr-1 h-3.5 w-3.5 ${workerBusy ? "animate-spin" : ""}`} /> Buat ulang (PIN baru)
+                  </Button>
+                </div>
+              </div>
+            ) : null}
           </DialogContent>
         </Dialog>
       )}
