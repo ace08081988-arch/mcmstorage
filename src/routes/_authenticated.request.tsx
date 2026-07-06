@@ -2127,7 +2127,7 @@ function PrepEditorDialog({
       }
       onSaved(); onClose();
     } catch (e) {
-      toast.error("Gagal: " + (e as Error).message);
+      setPrepError("Gagal: " + (e as Error).message);
     } finally { setBusy(false); }
   }
 
@@ -2136,6 +2136,10 @@ function PrepEditorDialog({
     { rows: initialRows, ...initialFieldsSnap },
     busy,
   );
+  useSaveStatusToast(prepStatus, {
+    successMessage: "Penyiapan tersimpan",
+    errorMessage: prepError,
+  });
 
   return (
     <>
