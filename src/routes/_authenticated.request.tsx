@@ -28,6 +28,7 @@ import { fetchAddressBook, upsertManualEntry, normalizePhone, type AddressBookRo
 import { useNavigate } from "@tanstack/react-router";
 import { rupiah } from "@/lib/stock-format";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
+import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScrollProgress";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -377,6 +378,12 @@ function TitleEditorDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sections: ScrollSection[] = [
+    { id: "title-sec-nama", label: "Nama judul" },
+    { id: "title-sec-catatan", label: "Catatan" },
+    { id: "title-sec-produk", label: "Produk dalam paket" },
+  ];
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }>>([]);
@@ -516,13 +523,14 @@ function TitleEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <DialogContent ref={scrollRef} className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
           <DialogTitle>{existing ? "Edit Judul Request" : "Judul Request Baru"}</DialogTitle>
           <DialogDescription>Tambahkan beberapa produk dalam 1 paket. Saat penyiapan, stok semua produk akan otomatis berkurang.</DialogDescription>
+          <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
         <div className="space-y-3">
-          <div>
+          <div id="title-sec-nama">
             <Label>Nama judul</Label>
             <div className="relative">
               <Input
@@ -582,11 +590,11 @@ function TitleEditorDialog({
               )}
             </div>
           </div>
-          <div>
+          <div id="title-sec-catatan">
             <Label>Catatan (opsional)</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
           </div>
-          <div>
+          <div id="title-sec-produk">
             <div className="mb-1 flex items-center justify-between">
               <Label>Produk dalam paket</Label>
               <Button type="button" size="sm" variant="outline" onClick={addRow}>
@@ -1507,6 +1515,14 @@ function SendPrepToCustomerDialog({
   unitFor: (wid: string) => string;
   onSent: () => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sections: ScrollSection[] = [
+    { id: "send-sec-ringkasan", label: "Ringkasan paket" },
+    { id: "send-sec-pelanggan", label: "Pelanggan" },
+    { id: "send-sec-harga", label: "Total harga" },
+    { id: "send-sec-bayar", label: "Metode bayar" },
+    { id: "send-sec-catatan", label: "Catatan" },
+  ];
   const [mode, setMode] = useState<"link" | "manual">("link");
   const [customerId, setCustomerId] = useState<string>("");
   const [manualName, setManualName] = useState("");
@@ -1628,7 +1644,7 @@ function SendPrepToCustomerDialog({
 
   return (
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
-      <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
+      <DialogContent ref={scrollRef} className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
           <DialogTitle className="flex items-center gap-2 text-base">
             <Send className="h-4 w-4 text-primary" /> Kirim ke pelanggan
@@ -1636,11 +1652,12 @@ function SendPrepToCustomerDialog({
           <DialogDescription>
             Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui.
           </DialogDescription>
+          <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
 
         <div className="space-y-3 text-xs">
           {/* Ringkasan item */}
-          <div className="rounded-md border bg-muted/30 p-2">
+          <div id="send-sec-ringkasan" className="rounded-md border bg-muted/30 p-2">
             <div className="mb-1 font-semibold">{titleName}</div>
             <div className="flex flex-wrap gap-1">
               {items.map((it) => {
@@ -1661,7 +1678,7 @@ function SendPrepToCustomerDialog({
           </div>
 
           {/* Pelanggan */}
-          <div className="space-y-1.5">
+          <div id="send-sec-pelanggan" className="space-y-1.5">
             <Label className="text-[11px]">Pelanggan</Label>
             <div className="flex gap-1 text-[10px]">
               <button
@@ -1709,7 +1726,7 @@ function SendPrepToCustomerDialog({
           </div>
 
           {/* Total */}
-          <div className="space-y-1.5">
+          <div id="send-sec-harga" className="space-y-1.5">
             <Label className="text-[11px]">Total harga (Rp)</Label>
             <Input
               value={totalStr}
@@ -1724,7 +1741,7 @@ function SendPrepToCustomerDialog({
           </div>
 
           {/* Metode bayar */}
-          <div className="space-y-1.5">
+          <div id="send-sec-bayar" className="space-y-1.5">
             <Label className="text-[11px]">Metode bayar</Label>
             <div className="flex gap-1">
               <button
@@ -1750,7 +1767,7 @@ function SendPrepToCustomerDialog({
           </div>
 
           {/* Catatan */}
-          <div className="space-y-1.5">
+          <div id="send-sec-catatan" className="space-y-1.5">
             <Label className="text-[11px]">Catatan (opsional)</Label>
             <Textarea
               value={note}
@@ -1784,6 +1801,13 @@ function PrepEditorDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sections: ScrollSection[] = [
+    { id: "prep-sec-produk", label: "Produk & jumlah aktual" },
+    { id: "prep-sec-foto", label: "Foto bukti" },
+    { id: "prep-sec-lokasi", label: "Lokasi & catatan" },
+    { id: "prep-sec-tujuan", label: "Tujuan pengiriman" },
+  ];
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; actual_grams: string }>>([]);
   const [initialRows, setInitialRows] = useState<Array<{ warehouse_item_id: string; actual_grams: string }>>([]);
   const [photo, setPhoto] = useState<{ blob: Blob; dataUrl: string } | null>(null);
@@ -2060,6 +2084,7 @@ function PrepEditorDialog({
     <>
     <Dialog open={open} onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
       <DialogContent
+        ref={scrollRef}
         className="max-h-[90vh] max-w-md overflow-y-auto"
         onInteractOutside={(event) => {
           if (editorOpen) event.preventDefault();
@@ -2068,9 +2093,10 @@ function PrepEditorDialog({
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
           <DialogTitle>Penyiapan Baru — {title.name}</DialogTitle>
           <DialogDescription>Atur jumlah aktual tiap produk, lampirkan 1 foto bukti + lokasi.</DialogDescription>
+          <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
         <div className="space-y-3">
-          <div>
+          <div id="prep-sec-produk">
             <Label>Produk &amp; jumlah aktual</Label>
             <div className="space-y-1.5">
               {rows.map((r, idx) => {
@@ -2165,7 +2191,7 @@ function PrepEditorDialog({
           })()}
 
           {photo ? (
-            <div>
+            <div id="prep-sec-foto">
               <img src={photo.dataUrl} alt="" className="w-full rounded-lg border object-cover" />
               <div className="mt-1 flex gap-2">
                 <Button size="sm" variant="outline" onClick={() => { setEditorSrc(photo.dataUrl); setEditorOpen(true); }}>
@@ -2175,7 +2201,7 @@ function PrepEditorDialog({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-10">
+            <div id="prep-sec-foto" className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-10">
               <Button variant="outline" onClick={() => cameraRef.current?.click()}>
                 <Camera className="mr-1 h-4 w-4" /> Kamera
               </Button>
@@ -2187,7 +2213,7 @@ function PrepEditorDialog({
           <input ref={cameraRef} type="file" accept="image/*" capture="environment" className="hidden" onChange={onFile} />
           <input ref={galleryRef} type="file" accept="image/*" className="hidden" onChange={onFile} />
 
-          <div className="flex gap-2">
+          <div id="prep-sec-lokasi" className="flex gap-2">
             <Input value={locUrl} onChange={(e) => setLocUrl(e.target.value)} placeholder="Link Google Maps (opsional)" className="flex-1" />
             <Button variant="outline" onClick={takeLocation}>
               <MapPin className="mr-1 h-4 w-4" /> GPS
@@ -2195,7 +2221,7 @@ function PrepEditorDialog({
           </div>
           <Input value={note} onChange={(e) => setNote(e.target.value)} placeholder="Catatan (opsional)" />
 
-          <div className="space-y-2">
+          <div id="prep-sec-tujuan" className="space-y-2">
             <Label className="text-xs">Tujuan (Chat MCM / Nomor WA)</Label>
             {/* Nama penerima — dipakai untuk auto-save ke buku alamat */}
             <Input
