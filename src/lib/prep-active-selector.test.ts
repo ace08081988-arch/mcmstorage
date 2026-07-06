@@ -9,6 +9,7 @@ import {
   countActivePreps,
   countActiveByTitle,
   withActivePrepsFilter,
+  __resetPrepActiveMemoForTest,
 } from "./prep-active-selector";
 
 /**
