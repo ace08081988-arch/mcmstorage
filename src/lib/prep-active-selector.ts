@@ -35,10 +35,10 @@ export function isSentPrep(p: PrepLike): boolean {
 // tidak ada kebocoran memori. Cache PER-fungsi supaya invalidasi salah
 // satu turunan tidak menyapu yang lain (mis. filter jarang dipanggil vs
 // countActiveByTitle yang dipanggil tiap render).
-const activeArrayCache = new WeakMap<object, readonly PrepLike[]>();
-const sentArrayCache = new WeakMap<object, readonly PrepLike[]>();
-const activeCountCache = new WeakMap<object, number>();
-const activeByTitleCache = new WeakMap<object, Map<string, number>>();
+let activeArrayCache = new WeakMap<object, readonly PrepLike[]>();
+let sentArrayCache = new WeakMap<object, readonly PrepLike[]>();
+let activeCountCache = new WeakMap<object, number>();
+let activeByTitleCache = new WeakMap<object, Map<string, number>>();
 
 /** Sub-array prep yang masih aktif (badge angka & grid utama pakai ini). */
 export function filterActivePreps<T extends PrepLike>(preps: readonly T[]): T[] {
@@ -95,38 +95,10 @@ export function countActiveByTitle<T extends PrepLike & { title_id?: string | nu
  * array masih hidup (dilepas otomatis oleh WeakMap saat GC).
  */
 export function __resetPrepActiveMemoForTest(): void {
-  // WeakMap tidak punya .clear() → buat baru lewat trick: gunakan
-  // reassign via any-cast supaya module-level const tetap sama untuk
-  // consumer (nilai internal-nya yang di-reset).
-  //
-  // Karena WeakMap tidak bisa diclear tanpa reassign, kita expose
-  // reset dengan menimpa via Object.assign fields.
-  //
-  // Implementasi: iterate tidak mungkin (WeakMap non-enumerable),
-  // jadi kita ganti referensi lewat cast.
-  const g = globalThis as unknown as Record<string, unknown>;
-  g.__prep_active_memo_reset_marker__ = (g.__prep_active_memo_reset_marker__ as number ?? 0) + 1;
-  // Reset dengan reassign properti pada modul: gunakan trick swap.
-  // Karena `const` — tidak bisa reassign. Solusi: buang isinya via
-  // rekonstruksi. Karena WeakMap tak bisa dienumerasi, cukup buang
-  // referensi dengan menciptakan WeakMap baru dan menukarnya lewat
-  // prototype swap:
-  const swap = (m: WeakMap<object, unknown>) => {
-    // Ganti implementasi get/set/has agar berperilaku seperti kosong.
-    const fresh = new WeakMap<object, unknown>();
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (m as any).get = fresh.get.bind(fresh);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (m as any).set = fresh.set.bind(fresh);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (m as any).has = fresh.has.bind(fresh);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    (m as any).delete = fresh.delete.bind(fresh);
-  };
-  swap(activeArrayCache as unknown as WeakMap<object, unknown>);
-  swap(sentArrayCache as unknown as WeakMap<object, unknown>);
-  swap(activeCountCache as unknown as WeakMap<object, unknown>);
-  swap(activeByTitleCache as unknown as WeakMap<object, unknown>);
+  activeArrayCache = new WeakMap();
+  sentArrayCache = new WeakMap();
+  activeCountCache = new WeakMap();
+  activeByTitleCache = new WeakMap();
 }
 
 /**
