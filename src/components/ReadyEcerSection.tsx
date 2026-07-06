@@ -278,10 +278,12 @@ export function ReadyEcerSection() {
           else {
             const gId = titleByWidGrams.get(`${wid}|${g}`)?.[0];
             if (gId) { titleId = gId; matchKind = "fallback_grams"; }
-            else {
-              const wId = titleByWid.get(wid)?.[0];
-              if (wId) { titleId = wId; matchKind = "fallback_wid"; }
-            }
+            // Sengaja TIDAK fallback ke wid-only: kiriman pegawai yang
+            // ukuran/unit-nya tidak cocok dengan judul manapun harus jatuh
+            // ke panel Request, bukan menempel di judul acak (mis. SPR 0.2g
+            // ketika perintah pegawai sebenarnya 1 gram). Aturan ini
+            // menyelaraskan perintah pegawai dengan panel Ecer: cocok = tempel;
+            // tidak cocok = biarkan panel Request yang menangani.
           }
         }
         if (!titleId) continue; // require warehouse match — name-only is unreliable
