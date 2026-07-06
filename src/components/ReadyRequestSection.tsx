@@ -30,12 +30,15 @@ export function ReadyRequestSection() {
       sb.from("request_titles").select("id,name").order("position").order("created_at"),
       sb.from("request_title_items").select("id,title_id,warehouse_item_id,target_grams,unit_label,position").order("position"),
       supabase.from("warehouse_items").select("id,name"),
-      sb.from("request_preparations").select("id,title_id"),
+      // Hanya hitung paket yang BELUM masuk Riwayat Terkirim, supaya angka
+      // "N paket" di kartu benar-benar mencerminkan pekerjaan yang tersisa
+      // dan tidak menyarankan aksi pada paket yang sudah selesai.
+      sb.from("request_preparations").select("id,title_id,sold_at").is("sold_at", null),
     ]);
     const titles = (tRes.data ?? []) as Array<{ id: string; name: string }>;
     const items = (tiRes.data ?? []) as Array<{ title_id: string; warehouse_item_id: string; target_grams: number; unit_label: string }>;
     const wis = (wRes.data ?? []) as Array<{ id: string; name: string }>;
-    const preps = (pRes.data ?? []) as Array<{ title_id: string }>;
+    const preps = (pRes.data ?? []) as Array<{ title_id: string; sold_at: string | null }>;
     const wMap = new Map(wis.map((w) => [w.id, w.name]));
     const out: Row[] = titles.map((t) => {
       const tItems = items.filter((i) => i.title_id === t.id);
@@ -47,7 +50,7 @@ export function ReadyRequestSection() {
           return `${name ?? "?"} ${i.target_grams}${displayUnit(name, i.unit_label)}`;
         }).join(" · "),
         product_count: tItems.length,
-        prep_count: preps.filter((p) => p.title_id === t.id).length,
+        prep_count: preps.filter((p) => p.title_id === t.id && !p.sold_at).length,
       };
     });
     setRows(out);
