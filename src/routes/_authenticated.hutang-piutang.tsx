@@ -104,6 +104,7 @@ function HutangPiutangPage() {
     customerId?: string | null;
   } | null>(null);
   const [payFor, setPayFor] = useState<Debt | null>(null);
+  const [reminderFor, setReminderFor] = useState<Debt | null>(null);
   const [editFor, setEditFor] = useState<Debt | null>(null);
   const [period, setPeriod] = useState<"all" | "week" | "month" | "custom">("all");
   const [customFrom, setCustomFrom] = useState<string>("");
