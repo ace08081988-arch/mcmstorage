@@ -37,26 +37,35 @@ test.describe("DeliveryHistoryDialog — truncate/badge/chip", () => {
       await prep(page, theme);
       const dialog = page.locator("[data-visual-dialog]");
 
-      // Assert: tidak ada anak dialog yang melebihi lebar kontainer.
+      // 1. Dokumen tidak boleh punya horizontal scroll.
+      const doc = await page.evaluate(() => ({
+        sw: document.documentElement.scrollWidth,
+        cw: document.documentElement.clientWidth,
+      }));
+      expect(doc.sw, `dokumen overflow horizontal (${theme})`).toBeLessThanOrEqual(doc.cw + 1);
+
+      // 2. Kartu riwayat & chip tidak boleh melebihi bounding box container-nya
+      //    (getBoundingClientRect — bukan scrollWidth, agar truncate tidak
+      //     terdeteksi sebagai overflow palsu).
       const overflows = await dialog.evaluate((root) => {
-        const bad: { tag: string; cls: string; sw: number; cw: number }[] = [];
-        const all = root.querySelectorAll<HTMLElement>("*");
-        all.forEach((el) => {
-          // Sengaja izinkan container yang scrollable (max-h-[60vh]).
-          const style = getComputedStyle(el);
-          if (style.overflowY === "auto" || style.overflowY === "scroll") return;
-          if (el.scrollWidth - el.clientWidth > 1) {
+        const parentRect = root.getBoundingClientRect();
+        const bad: { sel: string; right: number; parentRight: number }[] = [];
+        const targets = root.querySelectorAll<HTMLElement>(
+          "[data-history-card], [data-history-card] .flex.flex-wrap > span",
+        );
+        targets.forEach((el) => {
+          const r = el.getBoundingClientRect();
+          if (r.right - parentRect.right > 1) {
             bad.push({
-              tag: el.tagName.toLowerCase(),
-              cls: el.className.toString().slice(0, 120),
-              sw: el.scrollWidth,
-              cw: el.clientWidth,
+              sel: el.getAttribute("data-history-card") !== null ? "card" : "chip",
+              right: r.right,
+              parentRight: parentRect.right,
             });
           }
         });
         return bad;
       });
-      expect(overflows, `overflow di tema ${theme}: ${JSON.stringify(overflows)}`).toEqual([]);
+      expect(overflows, `kartu/chip melebihi dialog (${theme}): ${JSON.stringify(overflows)}`).toEqual([]);
 
       await expect(dialog).toHaveScreenshot(`delivery-history-${theme}.png`);
     });
