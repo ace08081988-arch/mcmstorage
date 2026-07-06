@@ -114,6 +114,17 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
     },
     {
+      // E2E regresi 6 Juli 2026: panel ItemCard yang dibuka manual tidak
+      // boleh auto-kolaps saat `silentRefresh` berkala mengembalikan data
+      // sama, dan PhotoEditor harus konsisten terbuka untuk tiap foto
+      // saat user memilih beberapa foto dari galeri (queue urut).
+      // Mobile viewport (Pixel 5, 411x893) karena pegawai akses via APK.
+      name: "worker-portal-panel-photoedit-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /worker-portal-panel-photoedit\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // E2E multi-tab: simulasi N tab same-origin menulis SYNC_KEY
       // bersamaan & verifikasi coalescing scheduler hanya melakukan 1
       // apply per jendela. Pakai desktop viewport karena uji ini tidak
