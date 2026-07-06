@@ -1418,7 +1418,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               toast.warning("Semua foto dikecualikan. Batal kirim.");
               return;
             }
-            void sendShotChat(target, conversationId, displayTitle, res.excluded);
+            void sendShotChat(target, conversationId, displayTitle, remaining);
           });
         }}
       />
