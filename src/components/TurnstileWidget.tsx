@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
 
 // Type minimal untuk global turnstile API.
 type TurnstileGlobal = {
@@ -55,13 +55,35 @@ export type TurnstileWidgetProps = {
   onError?: (code: string) => void;
 };
 
+export type TurnstileWidgetHandle = {
+  /** Reset widget: buang token lama & tampilkan challenge baru. */
+  reset: () => void;
+};
+
 /**
  * Widget Cloudflare Turnstile. Memanggil onToken(token) saat verifikasi
  * sukses, dan onToken(null) saat token kedaluwarsa / gagal.
  */
-export function TurnstileWidget({ siteKey, onToken, onError }: TurnstileWidgetProps) {
+export const TurnstileWidget = forwardRef<TurnstileWidgetHandle, TurnstileWidgetProps>(
+  function TurnstileWidget({ siteKey, onToken, onError }, ref) {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
+
+  useImperativeHandle(
+    ref,
+    () => ({
+      reset: () => {
+        try {
+          if (widgetIdRef.current && window.turnstile) {
+            window.turnstile.reset(widgetIdRef.current);
+          }
+        } catch {
+          /* ignore */
+        }
+      },
+    }),
+    [],
+  );
 
   useEffect(() => {
     let cancelled = false;
@@ -96,7 +118,7 @@ export function TurnstileWidget({ siteKey, onToken, onError }: TurnstileWidgetPr
   }, [siteKey, onToken, onError]);
 
   return <div ref={hostRef} className="flex justify-center" />;
-}
+});
 
 /**
  * Site key publik untuk Turnstile. Boleh berada di kode klien (memang publik).
