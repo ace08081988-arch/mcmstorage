@@ -29,6 +29,8 @@ import { Button } from "@/components/ui/button";
 import {
   countActiveByTitle,
   filterSentPreps,
+  isActivePrep,
+  isSentPrep,
 } from "@/lib/prep-active-selector";
 
 export const Route = createFileRoute(
@@ -80,7 +82,7 @@ function useSurface(seed: Prep[]) {
 
   const activeByTitle = useMemo(() => countActiveByTitle(preps), [preps]);
   const sentByTitle = useMemo(() => {
-    // SSOT untuk "sent" — jangan tulis `!!p.sold_at` di luar helper.
+    // SSOT untuk "sent" — jangan tulis literal predikat sold_at di luar helper.
     const m = new Map<string, number>();
     for (const p of filterSentPreps(preps)) {
       if (!p.title_id) continue;
@@ -92,7 +94,7 @@ function useSurface(seed: Prep[]) {
   function markSent(id: string) {
     setPreps((prev) =>
       prev.map((p) =>
-        p.id === id && !p.sold_at
+        p.id === id && isActivePrep(p)
           ? { ...p, sold_at: new Date().toISOString() }
           : p,
       ),
@@ -164,7 +166,7 @@ function Surface({
             data-prep-row={p.id}
           >
             <span className="font-mono text-muted-foreground">
-              {p.id} · {p.title_id} · {p.sold_at ? "sent" : "active"}
+              {p.id} · {p.title_id} · {isSentPrep(p) ? "sent" : "active"}
             </span>
             <span className="flex gap-1">
               <Button
@@ -172,7 +174,7 @@ function Surface({
                 variant="outline"
                 className="h-6 px-1.5 text-[10px]"
                 data-testid={`mark-sent-${p.id}`}
-                disabled={!!p.sold_at}
+                disabled={isSentPrep(p)}
                 onClick={() => markSent(p.id)}
               >
                 Tandai
@@ -182,7 +184,7 @@ function Surface({
                 variant="outline"
                 className="h-6 px-1.5 text-[10px]"
                 data-testid={`cancel-sent-${p.id}`}
-                disabled={!p.sold_at}
+                disabled={!isSentPrep(p)}
                 onClick={() => cancelSent(p.id)}
               >
                 Batalkan
