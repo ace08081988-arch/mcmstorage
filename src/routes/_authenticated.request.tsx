@@ -2006,10 +2006,11 @@ function SendPrepToCustomerDialog({
   const [customerId, setCustomerId] = useState<string>("");
   const [manualName, setManualName] = useState("");
   const [totalStr, setTotalStr] = useState("");
-  const [payMethod, setPayMethod] = useState<"kas" | "hutang">("kas");
+  const [payMethod, setPayMethod] = useState<"kas" | "hutang" | "partial">("kas");
+  const [paidStr, setPaidStr] = useState("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
-  const [initialSnap, setInitialSnap] = useState<{ mode: "link" | "manual"; customerId: string; manualName: string; totalStr: string; payMethod: "kas" | "hutang"; note: string }>({ mode: "link", customerId: "", manualName: "", totalStr: "", payMethod: "kas", note: "" });
+  const [initialSnap, setInitialSnap] = useState<{ mode: "link" | "manual"; customerId: string; manualName: string; totalStr: string; payMethod: "kas" | "hutang" | "partial"; paidStr: string; note: string }>({ mode: "link", customerId: "", manualName: "", totalStr: "", payMethod: "kas", paidStr: "", note: "" });
   // Dibaca `useSaveStatusToast` saat saving → dirty (gagal kirim).
   const [sendError, setSendError] = useState<string | null>(null);
 
@@ -2024,8 +2025,9 @@ function SendPrepToCustomerDialog({
       setManualName("");
       setTotalStr("");
       setPayMethod("kas");
+      setPaidStr("");
       setNote(nextNote);
-      setInitialSnap({ mode: nextMode, customerId: nextCustomer, manualName: "", totalStr: "", payMethod: "kas", note: nextNote });
+      setInitialSnap({ mode: nextMode, customerId: nextCustomer, manualName: "", totalStr: "", payMethod: "kas", paidStr: "", note: nextNote });
     }
   }, [open, customers, prep.note]);
 
@@ -2033,6 +2035,13 @@ function SendPrepToCustomerDialog({
     const n = Number(totalStr.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
     return Number.isFinite(n) ? n : 0;
   }, [totalStr]);
+
+  const paidAmount = useMemo(() => {
+    const n = Number(paidStr.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  }, [paidStr]);
+  const remaining = Math.max(0, totalAmount - paidAmount);
+  const partialValid = payMethod !== "partial" || (paidAmount > 0 && paidAmount < totalAmount);
 
   const resolvedParty = useMemo(() => {
     if (mode === "link") {
@@ -2043,8 +2052,8 @@ function SendPrepToCustomerDialog({
   }, [mode, customerId, customers, manualName]);
 
   const totalQty = useMemo(() => items.reduce((s, it) => s + Number(it.actual_grams || 0), 0), [items]);
-  const canSend = !!resolvedParty.name && totalAmount >= 0 && items.length > 0 && !busy;
-  const sendStatus = useSaveStatus({ mode, customerId, manualName, totalStr, payMethod, note }, initialSnap, busy);
+  const canSend = !!resolvedParty.name && totalAmount >= 0 && items.length > 0 && !busy && partialValid;
+  const sendStatus = useSaveStatus({ mode, customerId, manualName, totalStr, payMethod, paidStr, note }, initialSnap, busy);
   useSaveStatusToast(sendStatus, {
     successMessage: "Terkirim",
     errorMessage: sendError,
@@ -2063,7 +2072,13 @@ function SendPrepToCustomerDialog({
       lines.push("");
     }
     lines.push(`Total: *${rupiah(totalAmount)}*`);
-    lines.push(payMethod === "hutang" ? "Metode: *Hutang* (akan dicatat sebagai piutang)" : "Metode: *Lunas*");
+    if (payMethod === "hutang") {
+      lines.push("Metode: *Hutang* (akan dicatat sebagai piutang)");
+    } else if (payMethod === "partial") {
+      lines.push(`Metode: *Bayar sebagian* — Dibayar ${rupiah(paidAmount)}, sisa ${rupiah(remaining)} jadi piutang`);
+    } else {
+      lines.push("Metode: *Lunas*");
+    }
     if (resolvedParty.name) lines.push(`Untuk: ${resolvedParty.name}`);
     if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
     if (prep.location_url) {
@@ -2104,6 +2119,7 @@ function SendPrepToCustomerDialog({
         _total_amount: totalAmount,
         _payment_method: payMethod,
         _note: note.trim() || null,
+        _paid_amount: payMethod === "partial" ? paidAmount : null,
       });
       if (rpcErr) throw rpcErr;
 
@@ -2123,7 +2139,9 @@ function SendPrepToCustomerDialog({
       toast.success(
         payMethod === "hutang"
           ? "Terkirim — penjualan & piutang tercatat"
-          : "Terkirim — penjualan tercatat, stok gudang tersinkron",
+          : payMethod === "partial"
+            ? `Terkirim — dibayar ${rupiah(paidAmount)}, sisa ${rupiah(remaining)} jadi piutang`
+            : "Terkirim — penjualan tercatat, stok gudang tersinkron",
       );
       onSent();
     } catch (e) {
@@ -2252,7 +2270,33 @@ function SendPrepToCustomerDialog({
               >
                 <HandCoins className="h-3.5 w-3.5" /> Hutang (piutang)
               </button>
+              <button
+                type="button"
+                onClick={() => setPayMethod("partial")}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "partial" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <HandCoins className="h-3.5 w-3.5" /> Bayar sebagian
+              </button>
             </div>
+            {payMethod === "partial" && (
+              <div className="mt-2 space-y-1">
+                <label className="text-[11px] text-muted-foreground">Dibayar sekarang (Rp)</label>
+                <Input
+                  value={paidStr}
+                  onChange={(e) => setPaidStr(e.target.value)}
+                  placeholder="Contoh: 10000"
+                  inputMode="numeric"
+                  className="h-9 tabular-nums text-xs"
+                />
+                <div className="text-[10px] text-muted-foreground">
+                  {paidAmount > 0 && totalAmount > 0
+                    ? paidAmount >= totalAmount
+                      ? <span className="text-destructive">Dibayar tidak boleh ≥ total. Pilih Lunas.</span>
+                      : <>Sisa {rupiah(remaining)} akan dicatat sebagai piutang atas <b>{resolvedParty.name || "-"}</b>.</>
+                    : "Isi jumlah yang dibayar sekarang; sisanya masuk piutang."}
+                </div>
+              </div>
+            )}
             {payMethod === "hutang" && (
               <div className="rounded-md border border-amber-500/40 bg-amber-500/10 p-1.5 text-[10px] text-amber-800 dark:text-amber-200">
                 Akan otomatis dicatat sebagai piutang di menu Hutang-Piutang atas nama <b>{resolvedParty.name || "-"}</b>.
@@ -2280,7 +2324,11 @@ function SendPrepToCustomerDialog({
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
             <Button size="sm" onClick={handleSend} disabled={!canSend}>
               {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
-              {payMethod === "hutang" ? "Kirim & catat piutang" : "Kirim & catat penjualan"}
+              {payMethod === "hutang"
+                ? "Kirim & catat piutang"
+                : payMethod === "partial"
+                  ? "Kirim & catat sebagian piutang"
+                  : "Kirim & catat penjualan"}
             </Button>
           </div>
         </DialogFooter>

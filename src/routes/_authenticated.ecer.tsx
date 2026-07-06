@@ -16,7 +16,7 @@ import {
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
   Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw, Link2, QrCode,
-  Calendar, Clock, Hash, CheckCircle2, Boxes, Send,
+  Calendar, Clock, Hash, CheckCircle2, Boxes, Send, Wallet, HandCoins,
 } from "lucide-react";
 import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
@@ -29,6 +29,7 @@ import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
+import { rupiah } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
 import { shortenUrlForToast } from "@/lib/shorten-url-for-toast";
 import { copyUrlWithToast } from "@/lib/copy-url-toast";
@@ -1053,6 +1054,16 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
   const [loadError, setLoadError] = useState<{ message: string; code?: string; hint?: string } | null>(null);
+  const [selectionMode, setSelectionMode] = useState(false);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [sendOpen, setSendOpen] = useState(false);
+  const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
+
+  useEffect(() => {
+    void supabase.from("customers").select("id,name,contact").order("name").then(({ data }) => {
+      setCustomers((data ?? []) as Array<{ id: string; name: string; contact: string | null }>);
+    });
+  }, []);
 
   async function load() {
     setLoading(true);
@@ -1085,6 +1096,23 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     return () => { void supabase.removeChannel(ch); };
   }, [title.id]);
 
+  const active = useMemo(() => preps.filter((p) => !p.sold_at), [preps]);
+  const sent = useMemo(() => preps.filter((p) => !!p.sold_at), [preps]);
+  const selectedPreps = useMemo(() => active.filter((p) => selected.has(p.id)), [active, selected]);
+
+  function toggleSelect(id: string) {
+    setSelected((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id); else next.add(id);
+      return next;
+    });
+  }
+
+  function exitSelection() {
+    setSelectionMode(false);
+    setSelected(new Set());
+  }
+
   return (
     <div className="ecer-detail mx-auto max-w-4xl space-y-4 p-3 sm:p-5">
       <div className="flex items-center gap-2">
@@ -1093,7 +1121,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
       <DetailHero
         item={item}
         title={title}
-        preps={preps}
+        preps={active}
         onAdd={() => setAdding(true)}
         onCreateTitle={onCreateTitle}
         onCreateProduct={onCreateProduct}
@@ -1108,15 +1136,31 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
       />
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
-            <Boxes className="h-4 w-4 text-primary" /> Daftar penyiapan
-            <span
-              className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
-              title={`${preps.length} penyiapan`}
-            >
-              {preps.length}
-            </span>
-          </CardTitle>
+          <div className="flex items-center justify-between gap-2">
+            <CardTitle className="flex items-center gap-1.5 text-sm leading-snug">
+              <Boxes className="h-4 w-4 text-primary" /> Daftar penyiapan
+              <span
+                className="inline-flex h-5 shrink-0 items-center whitespace-nowrap rounded-full bg-muted px-2 text-[11px] font-medium leading-none text-muted-foreground tabular-nums"
+                title={`${active.length} penyiapan aktif`}
+              >
+                {active.length}
+              </span>
+            </CardTitle>
+            {active.length > 0 && (
+              selectionMode ? (
+                <div className="flex items-center gap-1">
+                  <Button size="sm" variant="outline" onClick={exitSelection}>Batal</Button>
+                  <Button size="sm" onClick={() => setSendOpen(true)} disabled={selectedPreps.length === 0}>
+                    <Send className="mr-1 h-3.5 w-3.5" /> Kirim ke pembeli ({selectedPreps.length})
+                  </Button>
+                </div>
+              ) : (
+                <Button size="sm" variant="outline" onClick={() => setSelectionMode(true)}>
+                  <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Pilih
+                </Button>
+              )
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -1155,7 +1199,7 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                 </div>
               </div>
             </div>
-          ) : preps.length === 0 ? (
+          ) : active.length === 0 && sent.length === 0 ? (
             <div className="rounded-md border border-dashed bg-muted/20 px-4 py-8 text-center">
               <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
                 <Boxes className="h-6 w-6 text-primary" />
@@ -1172,11 +1216,53 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {preps.map((p, idx) => (
-                <PrepBox key={p.id} prep={p} index={preps.length - idx} title={title} itemName={item.name} onChanged={load} onTitleUpdated={onTitleUpdated} />
-              ))}
-            </div>
+            <>
+              {active.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                  {active.map((p, idx) => (
+                    <PrepBox
+                      key={p.id}
+                      prep={p}
+                      index={active.length - idx}
+                      title={title}
+                      itemName={item.name}
+                      onChanged={load}
+                      onTitleUpdated={onTitleUpdated}
+                      selectionMode={selectionMode}
+                      selected={selected.has(p.id)}
+                      onToggleSelect={() => toggleSelect(p.id)}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-md border border-dashed bg-muted/20 px-4 py-4 text-center text-xs text-muted-foreground">
+                  Semua penyiapan sudah dikirim ke pembeli. Tambah yang baru untuk mengisi lagi.
+                </div>
+              )}
+              {sent.length > 0 && (
+                <div className="mt-5 border-t pt-3">
+                  <div className="mb-2 flex items-center gap-1.5 text-[11px] font-semibold uppercase tracking-wide text-muted-foreground">
+                    <CheckCircle2 className="h-3.5 w-3.5 text-emerald-600" /> Riwayat Terkirim
+                    <span className="rounded-full bg-muted px-1.5 py-0.5 text-[10px] font-medium normal-case text-muted-foreground">
+                      {sent.length}
+                    </span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+                    {sent.map((p, idx) => (
+                      <PrepBox
+                        key={p.id}
+                        prep={p}
+                        index={sent.length - idx}
+                        title={title}
+                        itemName={item.name}
+                        onChanged={load}
+                        onTitleUpdated={onTitleUpdated}
+                      />
+                    ))}
+                  </div>
+                </div>
+              )}
+            </>
           )}
         </CardContent>
       </Card>
@@ -1187,6 +1273,23 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           title={title}
           onClose={() => setAdding(false)}
           onSaved={() => { setAdding(false); void load(); onTitleUpdated(); }}
+        />
+      )}
+
+      {sendOpen && (
+        <SendEcerPrepsDialog
+          open={sendOpen}
+          preps={selectedPreps}
+          title={title}
+          itemName={item.name}
+          customers={customers}
+          onClose={() => setSendOpen(false)}
+          onSent={() => {
+            setSendOpen(false);
+            exitSelection();
+            void load();
+            onTitleUpdated();
+          }}
         />
       )}
 
@@ -2169,9 +2272,13 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   );
 }
 
-function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
-  prep: EcerPreparation; index: number; title: EcerTitle; itemName?: string; onChanged: () => void; onTitleUpdated: () => void;
+function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, selectionMode, selected, onToggleSelect }: {
+  prep: EcerPreparation; index: number; title: EcerTitle; itemName?: string;
+  onChanged: () => void; onTitleUpdated: () => void;
+  selectionMode?: boolean; selected?: boolean; onToggleSelect?: () => void;
 }) {
+  const sold = !!prep.sold_at;
+  const readOnly = sold;
   const [url, setUrl] = useState<string | null>(null);
   type ShareDiag = {
     when: string;
@@ -2261,6 +2368,10 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
   }
 
   async function onDelete() {
+    if (readOnly) {
+      toast.error("Paket sudah di Riwayat Terkirim — tidak bisa diubah.");
+      return;
+    }
     const ok = typeof window !== "undefined" && window.confirm(
       `Hapus penyiapan ini? Stok produk akan dikembalikan sebanyak ${prep.actual_grams} ${displayUnit(itemName, title.unit_label)}.`
     );
@@ -2274,7 +2385,11 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
   }
 
   return (
-    <div className="overflow-hidden rounded-lg border bg-card">
+    <div
+      aria-readonly={readOnly || undefined}
+      onClick={selectionMode && !readOnly ? (e) => { e.stopPropagation(); onToggleSelect?.(); } : undefined}
+      className={`overflow-hidden rounded-lg border bg-card ${selectionMode && !readOnly ? "cursor-pointer" : ""} ${selected ? "ring-2 ring-primary" : ""} ${readOnly ? "opacity-90" : ""}`}
+    >
       <div className="relative aspect-square w-full bg-muted">
         {url ? <img src={url} alt="" className="h-full w-full object-cover" /> : (
           <div className="flex h-full w-full items-center justify-center text-[11px] leading-snug text-muted-foreground">No foto</div>
@@ -2283,10 +2398,30 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
         {prep.created_by === "worker" && (
           <div className="absolute right-1 top-1 rounded bg-blue-500/90 px-1.5 py-0.5 text-[11px] leading-snug font-medium text-white">Pegawai</div>
         )}
+        {sold && (
+          <div className="absolute inset-x-1 bottom-1 rounded bg-emerald-600/90 px-1.5 py-0.5 text-[10px] leading-snug font-semibold text-white">
+            Terkirim{prep.sold_party_name ? ` · ${prep.sold_party_name}` : ""}
+          </div>
+        )}
+        {selectionMode && !readOnly && (
+          <div className={`absolute right-1 bottom-1 flex h-6 w-6 items-center justify-center rounded-full border-2 ${selected ? "border-primary bg-primary text-primary-foreground" : "border-white/80 bg-black/40 text-white"}`}>
+            {selected ? <CheckCircle2 className="h-4 w-4" /> : null}
+          </div>
+        )}
       </div>
       <div className="space-y-1 p-2">
         <div className="text-xs font-semibold">{prep.actual_grams} {displayUnit(itemName, title.unit_label)}</div>
         {prep.note && <div className="line-clamp-2 text-[11px] leading-snug text-muted-foreground">{prep.note}</div>}
+        {sold && (
+          <div className="rounded-md border border-emerald-500/40 bg-emerald-500/10 px-1.5 py-1 text-[10px] leading-snug text-emerald-800 dark:text-emerald-200">
+            {prep.sold_payment_method === "hutang"
+              ? <>Piutang · {rupiah(Number(prep.sold_total ?? 0))}</>
+              : prep.sold_payment_method === "partial"
+                ? <>Bayar sebagian · {rupiah(Number(prep.sold_paid_amount ?? 0))} / {rupiah(Number(prep.sold_total ?? 0))}</>
+                : <>Lunas · {rupiah(Number(prep.sold_total ?? 0))}</>}
+            {prep.sold_at && <> · {new Date(prep.sold_at).toLocaleString("id-ID", { dateStyle: "short", timeStyle: "short" })}</>}
+          </div>
+        )}
         <div className="flex items-center justify-between gap-1 pt-1">
           {prep.location_url ? (
             <a href={prep.location_url} target="_blank" rel="noreferrer"
@@ -2295,9 +2430,13 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated }: {
             </a>
           ) : <span />}
           <div className="flex gap-0.5">
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onShare}><Share2 className="h-3 w-3" /></Button>
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={() => setEditOpen(true)} title="Edit penyiapan"><Edit3 className="h-3 w-3" /></Button>
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={onDelete}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); void onShare(); }}><Share2 className="h-3 w-3" /></Button>
+            {!readOnly && (
+              <>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="Edit penyiapan"><Edit3 className="h-3 w-3" /></Button>
+                <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>
+              </>
+            )}
           </div>
         </div>
         <div className="text-[11px] leading-snug text-muted-foreground">
@@ -3287,6 +3426,297 @@ function NewProductDialog({ onClose, onCreated }: {
           <Button onClick={save} disabled={busy}>
             {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Simpan & buat judul
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---- Send ecer preps batch to customer ----
+function SendEcerPrepsDialog({
+  open, onClose, preps, title, itemName, customers, onSent,
+}: {
+  open: boolean;
+  onClose: () => void;
+  preps: EcerPreparation[];
+  title: EcerTitle;
+  itemName?: string;
+  customers: Array<{ id: string; name: string; contact: string | null }>;
+  onSent: () => void;
+}) {
+  const [mode, setMode] = useState<"link" | "manual">(customers.length > 0 ? "link" : "manual");
+  const [customerId, setCustomerId] = useState<string>(customers[0]?.id ?? "");
+  const [manualName, setManualName] = useState("");
+  const [totalStr, setTotalStr] = useState("");
+  const [payMethod, setPayMethod] = useState<"kas" | "hutang" | "partial">("kas");
+  const [paidStr, setPaidStr] = useState("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+    setMode(customers.length > 0 ? "link" : "manual");
+    setCustomerId(customers[0]?.id ?? "");
+    setManualName("");
+    setTotalStr("");
+    setPayMethod("kas");
+    setPaidStr("");
+    setNote("");
+  }, [open, customers]);
+
+  const totalAmount = useMemo(() => {
+    const n = Number(totalStr.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  }, [totalStr]);
+  const paidAmount = useMemo(() => {
+    const n = Number(paidStr.replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", "."));
+    return Number.isFinite(n) ? n : 0;
+  }, [paidStr]);
+  const remaining = Math.max(0, totalAmount - paidAmount);
+  const partialValid = payMethod !== "partial" || (paidAmount > 0 && paidAmount < totalAmount);
+
+  const party = useMemo(() => {
+    if (mode === "link") {
+      const c = customers.find((x) => x.id === customerId);
+      return { id: c?.id ?? null, name: c?.name ?? "", contact: c?.contact ?? null };
+    }
+    return { id: null as string | null, name: manualName.trim(), contact: null as string | null };
+  }, [mode, customerId, manualName, customers]);
+
+  const canSend = !!party.name && totalAmount > 0 && preps.length > 0 && !busy && partialValid;
+
+  async function resolvePhotoUrl(prep: EcerPreparation) {
+    if (!prep.photo_path) return null;
+    const primary = prep.created_by === "worker" ? prepSignedUrl : ecerSignedUrl;
+    const secondary = prep.created_by === "worker" ? ecerSignedUrl : prepSignedUrl;
+    const a = await primary(prep.photo_path, 600);
+    if (a) return a;
+    return await secondary(prep.photo_path, 600);
+  }
+
+  function buildCaption(): string {
+    const lines: string[] = [];
+    lines.push(`*${title.name}*`);
+    lines.push("");
+    lines.push(`Isi paket (${preps.length} kotak):`);
+    preps.forEach((p, i) => {
+      lines.push(`• #${i + 1} — ${p.actual_grams} ${displayUnit(itemName, title.unit_label)}`);
+    });
+    lines.push("");
+    lines.push(`Total: *${rupiah(totalAmount)}*`);
+    if (payMethod === "hutang") {
+      lines.push("Metode: *Hutang* (piutang)");
+    } else if (payMethod === "partial") {
+      lines.push(`Metode: *Bayar sebagian* — Dibayar ${rupiah(paidAmount)}, sisa ${rupiah(remaining)} piutang`);
+    } else {
+      lines.push("Metode: *Lunas*");
+    }
+    if (party.name) lines.push(`Untuk: ${party.name}`);
+    if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
+    lines.push("");
+    lines.push("Terima kasih 🙏");
+    return lines.join("\n");
+  }
+
+  async function handleSend() {
+    if (!canSend) return;
+    if (!party.name) { toast.error("Pilih atau isi nama pelanggan"); return; }
+    if (payMethod === "partial" && !partialValid) { toast.error("Jumlah dibayar harus > 0 dan < total"); return; }
+    setBusy(true);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: rpcErr } = await (supabase as any).rpc("send_ecer_preps_to_customer", {
+        _prep_ids: preps.map((p) => p.id),
+        _customer_id: party.id,
+        _party_name: party.name,
+        _total_amount: totalAmount,
+        _paid_amount: payMethod === "partial" ? paidAmount : null,
+        _payment_method: payMethod,
+        _note: note.trim() || null,
+      });
+      if (rpcErr) throw rpcErr;
+
+      // WA: kirim caption + semua foto
+      const files: File[] = [];
+      for (const p of preps) {
+        const signed = await resolvePhotoUrl(p);
+        if (!signed) continue;
+        const f = await urlToFile(signed, `${(title.name || "ecer").replace(/\W+/g, "-")}-${p.id.slice(0, 6)}.jpg`);
+        if (f) files.push(f);
+      }
+      const res = await shareToWhatsApp({ text: buildCaption(), title: title.name, files });
+      notifyShareResult(res);
+
+      toast.success(
+        payMethod === "hutang"
+          ? "Terkirim — penjualan & piutang tercatat"
+          : payMethod === "partial"
+            ? `Terkirim — dibayar ${rupiah(paidAmount)}, sisa ${rupiah(remaining)} jadi piutang`
+            : "Terkirim — penjualan tercatat",
+      );
+      onSent();
+    } catch (e) {
+      toast.error("Gagal kirim: " + ((e as { message?: string })?.message ?? String(e)));
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const totalQty = preps.reduce((s, p) => s + Number(p.actual_grams || 0), 0);
+
+  return (
+    <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
+      <DialogContent className="sm:max-w-md max-h-[92vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2 text-base">
+            <Send className="h-4 w-4 text-primary" /> Kirim ke pembeli
+          </DialogTitle>
+          <DialogDescription>
+            {preps.length} kotak dari <b>{title.name}</b> · total {totalQty} {displayUnit(itemName, title.unit_label)}. Stok & piutang otomatis diperbarui.
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-3 text-xs">
+          <div className="rounded-md border bg-muted/30 p-2">
+            <div className="mb-1 font-semibold">{preps.length} kotak dipilih</div>
+            <div className="flex flex-wrap gap-1">
+              {preps.map((p, i) => (
+                <span key={p.id} className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
+                  #{i + 1} · {p.actual_grams}{displayUnit(itemName, title.unit_label)}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-medium">Pelanggan</label>
+            <div className="mb-1 flex gap-1 text-[10px]">
+              <button
+                type="button"
+                onClick={() => setMode("link")}
+                className={`flex-1 rounded-md border px-2 py-1 ${mode === "link" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >Dari kontak</button>
+              <button
+                type="button"
+                onClick={() => setMode("manual")}
+                className={`flex-1 rounded-md border px-2 py-1 ${mode === "manual" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >Manual</button>
+            </div>
+            {mode === "link" ? (
+              customers.length === 0 ? (
+                <div className="rounded-md border border-dashed p-2 text-[11px] text-muted-foreground">
+                  Belum ada pelanggan. Gunakan mode Manual atau tambahkan pelanggan dulu.
+                </div>
+              ) : (
+                <select
+                  value={customerId}
+                  onChange={(e) => setCustomerId(e.target.value)}
+                  className="h-9 w-full rounded-md border bg-card px-2 text-xs"
+                >
+                  {customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.name}{c.contact ? ` · ${c.contact}` : ""}
+                    </option>
+                  ))}
+                </select>
+              )
+            ) : (
+              <Input
+                value={manualName}
+                onChange={(e) => setManualName(e.target.value)}
+                placeholder="Nama pelanggan"
+                className="h-9 text-xs"
+              />
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-medium">Total harga (Rp)</label>
+            <Input
+              value={totalStr}
+              onChange={(e) => setTotalStr(e.target.value)}
+              placeholder="Contoh: 25000"
+              inputMode="numeric"
+              className="h-9 tabular-nums text-xs"
+            />
+            {totalAmount > 0 && <div className="mt-1 text-[10px] text-muted-foreground">= {rupiah(totalAmount)}</div>}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-medium">Metode bayar</label>
+            <div className="flex gap-1">
+              <button
+                type="button"
+                onClick={() => setPayMethod("kas")}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "kas" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <Wallet className="h-3.5 w-3.5" /> Lunas
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayMethod("hutang")}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "hutang" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <HandCoins className="h-3.5 w-3.5" /> Hutang
+              </button>
+              <button
+                type="button"
+                onClick={() => setPayMethod("partial")}
+                className={`flex flex-1 items-center justify-center gap-1 rounded-md border px-2 py-1.5 text-xs ${payMethod === "partial" ? "border-primary bg-primary/10 text-primary font-semibold" : "hover:bg-accent"}`}
+              >
+                <HandCoins className="h-3.5 w-3.5" /> Sebagian
+              </button>
+            </div>
+            {payMethod === "partial" && (
+              <div className="mt-2 space-y-1">
+                <label className="text-[11px] text-muted-foreground">Dibayar sekarang (Rp)</label>
+                <Input
+                  value={paidStr}
+                  onChange={(e) => setPaidStr(e.target.value)}
+                  placeholder="Contoh: 10000"
+                  inputMode="numeric"
+                  className="h-9 tabular-nums text-xs"
+                />
+                <div className="text-[10px] text-muted-foreground">
+                  {paidAmount > 0 && totalAmount > 0
+                    ? paidAmount >= totalAmount
+                      ? <span className="text-destructive">Dibayar tidak boleh ≥ total. Pilih Lunas.</span>
+                      : <>Sisa {rupiah(remaining)} akan dicatat sebagai piutang atas <b>{party.name || "-"}</b>.</>
+                    : "Isi jumlah yang dibayar sekarang; sisanya masuk piutang."}
+                </div>
+              </div>
+            )}
+            {payMethod === "hutang" && (
+              <div className="mt-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-1.5 text-[10px] text-amber-800 dark:text-amber-200">
+                Seluruh total dicatat sebagai piutang atas <b>{party.name || "-"}</b>.
+              </div>
+            )}
+          </div>
+
+          <div>
+            <label className="mb-1 block text-[11px] font-medium">Catatan (opsional)</label>
+            <Textarea
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              rows={2}
+              className="text-xs"
+              placeholder="Mis. antar sore, titip di warung, dsb."
+            />
+          </div>
+        </div>
+
+        <DialogFooter className="flex-col gap-2 sm:flex-col">
+          <div className="grid w-full grid-cols-1 gap-2 sm:grid-cols-2">
+            <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
+            <Button size="sm" onClick={handleSend} disabled={!canSend}>
+              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
+              {payMethod === "hutang"
+                ? "Kirim & catat piutang"
+                : payMethod === "partial"
+                  ? "Kirim & catat sebagian piutang"
+                  : "Kirim & catat penjualan"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
