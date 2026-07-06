@@ -3513,48 +3513,47 @@ function RequestSection({
           const isDone = (t.submitted_count ?? 0) > 0;
           return (
             <div key={t.id} className="overflow-hidden rounded-xl border bg-card shadow-sm">
-              <button
-                type="button"
-                onClick={() => {
-                  if (isDone) {
-                    toast.info("Paket ini sudah dikirim", {
-                      description: "Paket yang sudah ditandai Selesai tidak bisa diedit lagi.",
-                    });
-                    return;
-                  }
-                  setOpenId(openId === t.id ? null : t.id);
-                }}
-                aria-disabled={isDone}
-                className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/40"
-              >
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <div className="truncate text-sm font-semibold">{t.name}</div>
-                    {isDone && (
+              {isDone ? (
+                <div className="flex w-full items-center justify-between px-3 py-2 text-left opacity-75">
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-1.5">
+                      <div className="truncate text-sm font-semibold">{t.name}</div>
                       <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/15 px-1.5 py-0.5 text-[10px] font-semibold text-emerald-600 ring-1 ring-emerald-500/30 dark:text-emerald-400">
                         <CheckCircle2 className="h-3 w-3" /> Selesai
                       </span>
-                    )}
-                  </div>
-                  <div className="truncate text-[11px] text-muted-foreground">
-                    {requestItems
-                      .map(
-                        (i) =>
-                          `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`,
-                      )
-                      .join(" · ") || "Tidak ada item"}
+                    </div>
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      {requestItems
+                        .map(
+                          (i) =>
+                            `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`,
+                        )
+                        .join(" · ") || "Tidak ada item"}
+                    </div>
                   </div>
                 </div>
-                <span
-                  className={
-                    isDone
-                      ? "ml-2 rounded-md bg-muted px-2 py-1 text-[10px] font-semibold text-muted-foreground"
-                      : "ml-2 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground"
-                  }
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => setOpenId(openId === t.id ? null : t.id)}
+                  className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/40"
                 >
-                  {isDone ? "Terkirim" : openId === t.id ? "Tutup" : "Siapkan"}
-                </span>
-              </button>
+                  <div className="min-w-0 flex-1">
+                    <div className="truncate text-sm font-semibold">{t.name}</div>
+                    <div className="truncate text-[11px] text-muted-foreground">
+                      {requestItems
+                        .map(
+                          (i) =>
+                            `${i.product_name ?? "?"} ${i.target_grams}${displayUnit(i.product_name, i.unit_label)}`,
+                        )
+                        .join(" · ") || "Tidak ada item"}
+                    </div>
+                  </div>
+                  <span className="ml-2 rounded-md bg-primary px-2 py-1 text-[10px] font-semibold text-primary-foreground">
+                    {openId === t.id ? "Tutup" : "Siapkan"}
+                  </span>
+                </button>
+              )}
               {openId === t.id && !isDone && (
                 <div className="border-t bg-muted/20 p-3">
                   <RequestForm
