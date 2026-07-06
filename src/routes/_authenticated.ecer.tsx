@@ -1130,12 +1130,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       for (const it of items) {
         const g = Number(it.qty_requested) || 0;
         const u = normUnitStr(it.unit_label);
-        let kind: "strict" | "fallback_grams" | "fallback_wid" = "fallback_wid";
-        if (g === targetGrams && u === targetUnit) kind = "strict";
-        else if (g === targetGrams) kind = "fallback_grams";
+        // Hanya sertakan tugas dengan target_grams sama. Judul dengan gram
+        // berbeda (walau warehouse_item_id sama) harus tampil kosong sampai
+        // pegawai benar-benar disiapkan untuk varian itu.
+        if (g !== targetGrams) continue;
+        const kind: "strict" | "fallback_grams" | "fallback_wid" =
+          u === targetUnit ? "strict" : "fallback_grams";
         matchKindByItem.set(it.id, kind);
       }
       const ids = Array.from(matchKindByItem.keys());
+      if (ids.length === 0) { setShots([]); return; }
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: subs, error: e2 } = await (supabase.from as any)("prep_submissions")
         .select("id,photo_path,photo_paths,location_url,submitted_at,task_item_id")
