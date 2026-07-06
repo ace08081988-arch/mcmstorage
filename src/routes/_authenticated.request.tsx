@@ -30,6 +30,7 @@ import { rupiah } from "@/lib/stock-format";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScrollProgress";
 import { DialogSaveStatus, useSaveStatus } from "@/components/DialogSaveStatus";
+import { Field } from "@/components/DialogField";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
