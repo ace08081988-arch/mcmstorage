@@ -1471,6 +1471,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             paths,
             locationUrl: target.location_url,
             persistKey: `shot:${target.id}`,
+            buildCaption: (remaining) =>
+              shotCaption(target, { sentCount: remaining, excludedCount: paths.length - remaining }),
+            captionLabel: "MCM Chat",
           }).then((res) => {
             if (!res.ok) return;
             const remaining = paths.filter((p) => !res.excluded.has(p));
