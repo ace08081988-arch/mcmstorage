@@ -1509,7 +1509,6 @@ function PrepSections({
   const gridClass = layoutGridClass(layout);
   const active = preps.filter((p) => !p.sold_at);
   const sent = preps.filter((p) => !!p.sold_at);
-  const total = preps.length;
   const [justSentId, setJustSentId] = useState<string | null>(null);
   const [awaitingSentId, setAwaitingSentId] = useState<string | null>(null);
   // Pesan error sinkronisasi yang persisten (tidak hilang seperti toast).
@@ -1767,7 +1766,7 @@ function PrepSections({
           </div>
         ) : (
           <div className={gridClass}>
-            {active.map((p, idx) => renderCard(p, idx, total, false))}
+            {active.map((p, idx) => renderCard(p, idx, active.length, false))}
           </div>
         )}
       </div>
