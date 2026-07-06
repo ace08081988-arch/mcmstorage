@@ -29,6 +29,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { rupiah } from "@/lib/stock-format";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScrollProgress";
+import { DialogSaveStatus, useSaveStatus } from "@/components/DialogSaveStatus";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -388,6 +389,7 @@ function TitleEditorDialog({
   const [note, setNote] = useState("");
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }>>([]);
   const [busy, setBusy] = useState(false);
+  const [initialSnap, setInitialSnap] = useState<{ name: string; note: string; rows: Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }> }>({ name: "", note: "", rows: [] });
   const [negErrors, setNegErrors] = useState<Record<number, string>>({});
   const [contacts, setContacts] = useState<AddressBookRow[]>([]);
   const [nameOpen, setNameOpen] = useState(false);
@@ -437,9 +439,9 @@ function TitleEditorDialog({
 
   useEffect(() => {
     if (!open) return;
-    setName(existing?.name ?? "");
-    setNote(existing?.note ?? "");
-    setRows(
+    const nextName = existing?.name ?? "";
+    const nextNote = existing?.note ?? "";
+    const nextRows =
       existingItems.length > 0
         ? existingItems.map((i) => ({
             warehouse_item_id: i.warehouse_item_id,
@@ -447,8 +449,11 @@ function TitleEditorDialog({
             unit_label: i.unit_label,
             note: i.note ?? "",
           }))
-        : [{ warehouse_item_id: "", target_grams: "1", unit_label: "gram", note: "" }],
-    );
+        : [{ warehouse_item_id: "", target_grams: "1", unit_label: "gram", note: "" }];
+    setName(nextName);
+    setNote(nextNote);
+    setRows(nextRows);
+    setInitialSnap({ name: nextName, note: nextNote, rows: nextRows });
   }, [open, existing, existingItems]);
 
   function addRow() {
@@ -521,11 +526,16 @@ function TitleEditorDialog({
     } finally { setBusy(false); }
   }
 
+  const saveStatus = useSaveStatus({ name, note, rows }, initialSnap, busy);
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent ref={scrollRef} className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
-          <DialogTitle>{existing ? "Edit Judul Request" : "Judul Request Baru"}</DialogTitle>
+          <div className="flex items-start justify-between gap-2">
+            <DialogTitle>{existing ? "Edit Judul Request" : "Judul Request Baru"}</DialogTitle>
+            <DialogSaveStatus status={saveStatus} className="shrink-0" />
+          </div>
           <DialogDescription>Tambahkan beberapa produk dalam 1 paket. Saat penyiapan, stok semua produk akan otomatis berkurang.</DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
@@ -649,11 +659,18 @@ function TitleEditorDialog({
           </div>
         </div>
         <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2.5 border-t bg-background px-6 py-3 sm:flex-row sm:justify-between sm:gap-2">
+          <div className="flex w-full items-center justify-center sm:hidden">
+            <DialogSaveStatus status={saveStatus} compact />
+          </div>
           {existing ? (
             <Button variant="ghost" size="sm" className="min-h-11 text-destructive sm:min-h-9" onClick={deleteTitle} disabled={busy}>
               <Trash2 className="mr-1 h-3.5 w-3.5" /> Hapus
             </Button>
-          ) : <span className="hidden sm:block" />}
+          ) : (
+            <span className="hidden sm:flex sm:items-center">
+              <DialogSaveStatus status={saveStatus} compact />
+            </span>
+          )}
           <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
             <Button size="sm" onClick={save} disabled={busy}>
@@ -1530,16 +1547,21 @@ function SendPrepToCustomerDialog({
   const [payMethod, setPayMethod] = useState<"kas" | "hutang">("kas");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  const [initialSnap, setInitialSnap] = useState<{ mode: "link" | "manual"; customerId: string; manualName: string; totalStr: string; payMethod: "kas" | "hutang"; note: string }>({ mode: "link", customerId: "", manualName: "", totalStr: "", payMethod: "kas", note: "" });
 
   // Reset saat dialog dibuka kembali.
   useEffect(() => {
     if (open) {
-      setMode(customers.length > 0 ? "link" : "manual");
-      setCustomerId(customers[0]?.id ?? "");
+      const nextMode: "link" | "manual" = customers.length > 0 ? "link" : "manual";
+      const nextCustomer = customers[0]?.id ?? "";
+      const nextNote = prep.note ?? "";
+      setMode(nextMode);
+      setCustomerId(nextCustomer);
       setManualName("");
       setTotalStr("");
       setPayMethod("kas");
-      setNote(prep.note ?? "");
+      setNote(nextNote);
+      setInitialSnap({ mode: nextMode, customerId: nextCustomer, manualName: "", totalStr: "", payMethod: "kas", note: nextNote });
     }
   }, [open, customers, prep.note]);
 
@@ -1558,6 +1580,7 @@ function SendPrepToCustomerDialog({
 
   const totalQty = useMemo(() => items.reduce((s, it) => s + Number(it.actual_grams || 0), 0), [items]);
   const canSend = !!resolvedParty.name && totalAmount >= 0 && items.length > 0 && !busy;
+  const sendStatus = useSaveStatus({ mode, customerId, manualName, totalStr, payMethod, note }, initialSnap, busy);
 
   function buildCaption(): string {
     const lines: string[] = [];
@@ -1646,9 +1669,12 @@ function SendPrepToCustomerDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
       <DialogContent ref={scrollRef} className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Send className="h-4 w-4 text-primary" /> Kirim ke pelanggan
-          </DialogTitle>
+          <div className="flex items-start justify-between gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Send className="h-4 w-4 text-primary" /> Kirim ke pelanggan
+            </DialogTitle>
+            <DialogSaveStatus status={sendStatus} className="shrink-0" />
+          </div>
           <DialogDescription>
             Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui.
           </DialogDescription>
@@ -1779,12 +1805,17 @@ function SendPrepToCustomerDialog({
           </div>
         </div>
 
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 grid grid-cols-1 gap-2.5 border-t bg-background px-6 py-3 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
-          <Button size="sm" onClick={handleSend} disabled={!canSend}>
-            {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
-            {payMethod === "hutang" ? "Kirim & catat piutang" : "Kirim & catat penjualan"}
-          </Button>
+        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-col">
+          <div className="flex w-full items-center justify-center">
+            <DialogSaveStatus status={sendStatus} compact />
+          </div>
+          <div className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
+            <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
+            <Button size="sm" onClick={handleSend} disabled={!canSend}>
+              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
+              {payMethod === "hutang" ? "Kirim & catat piutang" : "Kirim & catat penjualan"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -1834,6 +1865,10 @@ function PrepEditorDialog({
   // Nama tujuan (untuk buku alamat) — di-prefill saat memilih kontak,
   // bisa juga diisi manual sebelum submit.
   const [recipientName, setRecipientName] = useState("");
+  // Snapshot awal untuk indikator "Tersimpan / Perubahan belum tersimpan".
+  // photoKey = "" saat belum ada foto, dataUrl saat sudah ada — cukup untuk
+  // deteksi dirty tanpa membandingkan blob besar.
+  const [initialFieldsSnap, setInitialFieldsSnap] = useState<{ photoKey: string; locUrl: string; note: string; waPhone: string; recipientName: string }>({ photoKey: "", locUrl: "", note: "", waPhone: "", recipientName: "" });
 
   function sanitizeActual(idx: number, raw: string): string {
     if (raw === "") {
@@ -1884,6 +1919,7 @@ function PrepEditorDialog({
     setPhoto(null); setLocUrl(""); setGps(null); setNote(""); setWaPhone("");
     setPickedLinkedUserId(null); setPickedName(""); setRecipientName("");
     setShowSuggest(false);
+    setInitialFieldsSnap({ photoKey: "", locUrl: "", note: "", waPhone: "", recipientName: "" });
   }, [open, titleItems]);
 
   // Muat buku alamat saat dialog dibuka — dipakai untuk autocomplete
@@ -2080,6 +2116,12 @@ function PrepEditorDialog({
     } finally { setBusy(false); }
   }
 
+  const prepStatus = useSaveStatus(
+    { rows, photoKey: photo?.dataUrl ?? "", locUrl, note, waPhone, recipientName },
+    { rows: initialRows, ...initialFieldsSnap },
+    busy,
+  );
+
   return (
     <>
     <Dialog open={open} onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
@@ -2091,7 +2133,10 @@ function PrepEditorDialog({
         }}
       >
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
-          <DialogTitle>Penyiapan Baru — {title.name}</DialogTitle>
+          <div className="flex items-start justify-between gap-2">
+            <DialogTitle>Penyiapan Baru — {title.name}</DialogTitle>
+            <DialogSaveStatus status={prepStatus} className="shrink-0" />
+          </div>
           <DialogDescription>Atur jumlah aktual tiap produk, lampirkan 1 foto bukti + lokasi.</DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
@@ -2293,6 +2338,9 @@ function PrepEditorDialog({
           </div>
         </div>
         <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-col">
+          <div className="flex w-full items-center justify-center">
+            <DialogSaveStatus status={prepStatus} compact />
+          </div>
           <Button
             size="sm"
             onClick={() => save({ sendWa: true })}
