@@ -538,7 +538,7 @@ function TitleEditorDialog({
   });
 
   return (
-    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o && confirmDiscardIfDirty(saveStatus)) onClose(); }}>
       <DialogContent ref={scrollRef} className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
           <div className="flex items-start justify-between gap-2">
@@ -1680,7 +1680,7 @@ function SendPrepToCustomerDialog({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
+    <Dialog open={open} onOpenChange={(v) => { if (!v && !busy && confirmDiscardIfDirty(sendStatus)) onClose(); }}>
       <DialogContent ref={scrollRef} className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
           <div className="flex items-start justify-between gap-2">
@@ -2143,7 +2143,7 @@ function PrepEditorDialog({
 
   return (
     <>
-    <Dialog open={open} onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
+    <Dialog open={open} onOpenChange={(o) => { if (!o && !editorOpen && confirmDiscardIfDirty(prepStatus)) onClose(); }}>
       <DialogContent
         ref={scrollRef}
         className="max-h-[90vh] max-w-md overflow-y-auto"
