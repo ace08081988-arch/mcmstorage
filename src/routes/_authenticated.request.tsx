@@ -73,6 +73,58 @@ function RequestPage() {
   const [sendLinkTitle, setSendLinkTitle] = useState<RequestTitle | null>(null);
   const [historyTitle, setHistoryTitle] = useState<RequestTitle | "all" | null>(null);
 
+  // Kiriman pegawai yang task_item-nya belum terlink ke folder ecer manapun.
+  // Aturan produk: "kalau produk gak ada di label, tersimpan di request order."
+  type UnroutedRow = {
+    id: string;
+    task_item_id: string;
+    photo_path: string | null;
+    photo_paths: string[] | null;
+    submitted_at: string;
+    warehouse_item_id: string | null;
+    warehouse_item_name: string | null;
+    name_snapshot: string | null;
+    qty_requested: number | null;
+    unit_label: string | null;
+    location_url: string | null;
+    thumb_url?: string | null;
+  };
+  const [unrouted, setUnrouted] = useState<UnroutedRow[]>([]);
+  const [unroutedOpen, setUnroutedOpen] = useState(false);
+
+  async function loadUnrouted() {
+    try {
+      const { data, error } = await sb
+        .from("prep_submissions_unrouted")
+        .select("id,task_item_id,photo_path,photo_paths,submitted_at,warehouse_item_id,warehouse_item_name,name_snapshot,qty_requested,unit_label,location_url")
+        .order("submitted_at", { ascending: false })
+        .limit(60);
+      if (error) throw error;
+      const rows = (data ?? []) as UnroutedRow[];
+      // Resolve thumbnail URLs (best effort — 60 min TTL).
+      await Promise.all(rows.map(async (r) => {
+        if (!r.photo_path) return;
+        const a = await prepSignedUrl(r.photo_path, 3600);
+        r.thumb_url = a ?? (await ecerSignedUrl(r.photo_path, 3600));
+      }));
+      setUnrouted(rows);
+    } catch (e) {
+      // Non-fatal: kartu tetap hilang senyap kalau view tak tersedia.
+      // eslint-disable-next-line no-console
+      console.warn("loadUnrouted:", (e as Error).message);
+      setUnrouted([]);
+    }
+  }
+
+  useEffect(() => { void loadUnrouted(); }, []);
+  useEffect(() => {
+    const ch = supabase.channel("request_unrouted")
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_submissions" }, () => void loadUnrouted())
+      .on("postgres_changes", { event: "*", schema: "public", table: "prep_task_items" }, () => void loadUnrouted())
+      .subscribe();
+    return () => { void supabase.removeChannel(ch); };
+  }, []);
+
   function diagnose(code?: string, status?: number, msg?: string): string {
     if (status === 0 || /Failed to fetch|NetworkError/i.test(msg ?? "")) return "Jaringan terputus — periksa koneksi internet.";
     if (code === "PGRST301" || /JWT expired/i.test(msg ?? "")) return "Sesi login kedaluwarsa. Muat ulang halaman atau login ulang.";
