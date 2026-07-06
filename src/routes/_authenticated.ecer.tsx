@@ -959,6 +959,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     confirmText: string;
     paths: string[];
     locationUrl?: string | null;
+    persistKey?: string;
     resolve: (v: { ok: boolean; excluded: Set<string> }) => void;
   };
   const [previewReq, setPreviewReq] = useState<PreviewReq | null>(null);
@@ -968,7 +969,20 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     if (!previewReq) { setPreviewUrls(null); setExcludedPaths(new Set()); return; }
     let cancelled = false;
     setPreviewUrls(null);
-    setExcludedPaths(new Set());
+    // Hydrate excluded selection from localStorage per persistKey; prune stale
+    // entries that are no longer part of the current paths list.
+    let hydrated = new Set<string>();
+    if (previewReq.persistKey) {
+      try {
+        const raw = localStorage.getItem(`ecer:excluded:${previewReq.persistKey}`);
+        if (raw) {
+          const arr = JSON.parse(raw) as string[];
+          const valid = new Set(previewReq.paths);
+          hydrated = new Set(arr.filter((p) => valid.has(p)));
+        }
+      } catch { /* ignore */ }
+    }
+    setExcludedPaths(hydrated);
     (async () => {
       const capped = previewReq.paths.slice(0, 12);
       const urls = await Promise.all(capped.map((p) => resolvePrepUrl(p, 600).catch(() => null)));
@@ -984,6 +998,14 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   function finishPreview(ok: boolean) {
     const r = previewReq;
     const excluded = ok ? new Set(excludedPaths) : new Set<string>();
+    // Persist the latest selection so reopening the same folder restores it.
+    if (r?.persistKey) {
+      try {
+        const key = `ecer:excluded:${r.persistKey}`;
+        if (excludedPaths.size === 0) localStorage.removeItem(key);
+        else localStorage.setItem(key, JSON.stringify(Array.from(excludedPaths)));
+      } catch { /* ignore */ }
+    }
     setPreviewReq(null);
     r?.resolve({ ok, excluded });
   }
@@ -991,6 +1013,13 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     setExcludedPaths((prev) => {
       const next = new Set(prev);
       if (next.has(p)) next.delete(p); else next.add(p);
+      if (previewReq?.persistKey) {
+        try {
+          const key = `ecer:excluded:${previewReq.persistKey}`;
+          if (next.size === 0) localStorage.removeItem(key);
+          else localStorage.setItem(key, JSON.stringify(Array.from(next)));
+        } catch { /* ignore */ }
+      }
       return next;
     });
   }
@@ -1089,6 +1118,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         confirmText: "Kirim WA",
         paths: allPaths,
         locationUrl: firstLoc,
+        persistKey: `title:${title.id}`,
       });
       ok = res.ok;
       excludedSet = res.excluded;
@@ -1175,6 +1205,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       confirmText: "Kirim WA",
       paths: allPaths,
       locationUrl: s.location_url,
+      persistKey: `shot:${s.id}`,
     });
     if (!res.ok) return;
     const paths = allPaths.filter((p) => !res.excluded.has(p));
@@ -1376,6 +1407,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             confirmText: "Kirim Chat",
             paths,
             locationUrl: target.location_url,
+            persistKey: `shot:${target.id}`,
           }).then((res) => {
             if (!res.ok) return;
             const remaining = paths.filter((p) => !res.excluded.has(p));
@@ -1408,7 +1440,12 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   <button
                     type="button"
                     className="text-primary underline"
-                    onClick={() => setExcludedPaths(new Set())}
+                    onClick={() => {
+                      setExcludedPaths(new Set());
+                      if (previewReq?.persistKey) {
+                        try { localStorage.removeItem(`ecer:excluded:${previewReq.persistKey}`); } catch { /* ignore */ }
+                      }
+                    }}
                   >
                     Reset
                   </button>
