@@ -1409,8 +1409,8 @@ function TitleDetailView({
 
   async function handleDelete(p: RequestPreparation) {
     // `isSentPrep` = SSOT untuk "sudah masuk Riwayat Terkirim". Jangan
-    // pernah tulis `!!p.sold_at` di call site — konsistensi definisi
-    // "sent" dijaga di satu tempat saja.
+    // pernah tulis literal boolean atas sold_at di call site —
+    // konsistensi definisi "sent" dijaga di satu tempat saja.
     const wasSold = isSentPrep(p);
     const msg = wasSold
       ? "Hapus catatan penyiapan ini? Penjualan & piutang yang sudah tercatat TIDAK ikut terhapus."
