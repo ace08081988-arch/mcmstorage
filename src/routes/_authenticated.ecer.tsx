@@ -1102,6 +1102,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     const take = Math.min(shots.length, 6);
     let ok: boolean;
     let excludedSet: Set<string> = new Set();
+    let previewTotal = 0;
     if (shots.length === 0) {
       ok = await confirm({
         title: "Kirim perintah penyiapan?",
@@ -1111,6 +1112,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     } else {
       const previewShots = shots.slice(0, take);
       const allPaths = previewShots.flatMap((s) => shotPaths(s)).slice(0, 12);
+      previewTotal = allPaths.length;
       const firstLoc = previewShots.find((s) => s.location_url)?.location_url ?? null;
       const res = await confirmWithPreview({
         title: `Kirim ${take} kiriman via WhatsApp?`,
@@ -1122,6 +1124,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       });
       ok = res.ok;
       excludedSet = res.excluded;
+      if (previewTotal > 0 && excludedSet.size >= previewTotal) {
+        toast.warning("Semua foto dikecualikan. Batal kirim.");
+        return;
+      }
     }
     if (!ok) return;
     setSending(true);
@@ -1162,10 +1168,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const lines = sendShots.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const firstLoc = sendShots.find((s) => s.location_url);
       const excludedCount = excludedSet.size;
-      const totalPaths = Math.min(sendShots.flatMap((s) => shotPaths(s)).length, 12);
+      const totalPaths = previewTotal;
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-        `${shots.length} kiriman pegawai${shots.length > take ? ` (mengirim ${take})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:`,
+        `${shots.length} kiriman pegawai${shots.length > take ? ` (mengirim ${take})` : ""} · ${files.length} foto terkirim${excludedCount > 0 ? ` · ${excludedCount} dari ${totalPaths} dikecualikan` : ""}:`,
         ...lines,
         ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
       ].join("\n");
