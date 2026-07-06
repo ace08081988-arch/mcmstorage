@@ -3275,7 +3275,7 @@ function PhotoTileGrid({
                 </div>
               )}
               {up !== "uploading" && (
-                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white opacity-0 transition group-hover:opacity-100">
+                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white">
                   <button
                     type="button"
                     onClick={() => onEdit(i)}
