@@ -640,13 +640,13 @@ function TitleEditorDialog({
             </div>
           </div>
         </div>
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-row justify-between border-t bg-background px-6 py-3 sm:justify-between">
+        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2.5 border-t bg-background px-6 py-3 sm:flex-row sm:justify-between sm:gap-2">
           {existing ? (
-            <Button variant="ghost" size="sm" className="text-destructive" onClick={deleteTitle} disabled={busy}>
+            <Button variant="ghost" size="sm" className="min-h-11 text-destructive sm:min-h-9" onClick={deleteTitle} disabled={busy}>
               <Trash2 className="mr-1 h-3.5 w-3.5" /> Hapus
             </Button>
-          ) : <span />}
-          <div className="flex gap-2">
+          ) : <span className="hidden sm:block" />}
+          <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
             <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
             <Button size="sm" onClick={save} disabled={busy}>
               {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null} Simpan
@@ -1762,7 +1762,7 @@ function SendPrepToCustomerDialog({
           </div>
         </div>
 
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 gap-2 border-t bg-background px-6 py-3">
+        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 grid grid-cols-1 gap-2.5 border-t bg-background px-6 py-3 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
           <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
           <Button size="sm" onClick={handleSend} disabled={!canSend}>
             {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
@@ -2287,9 +2287,9 @@ function PrepEditorDialog({
             {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : <MessageCircle className="mr-1 h-3 w-3" />}
             Simpan &amp; Buka Chat MCM
           </Button>
-          <div className="flex w-full gap-2">
-            <Button variant="outline" size="sm" onClick={onClose} disabled={busy} className="flex-1">Batal</Button>
-            <Button size="sm" onClick={() => save()} disabled={busy} className="flex-1">
+          <div className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
+            <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
+            <Button size="sm" onClick={() => save()} disabled={busy}>
               {busy ? <Loader2 className="mr-1 h-3 w-3 animate-spin" /> : null} Simpan
             </Button>
           </div>
