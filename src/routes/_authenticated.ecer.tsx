@@ -601,8 +601,16 @@ function DetailHero({
     if (typeof window === "undefined") return;
     const url = `${window.location.origin}/tugas-baru?title_id=${encodeURIComponent(title.id)}`;
     const res = await copyText(url);
-    if (res.ok) toast.success("Link Penyiapan pegawai disalin");
-    else toast.error("Gagal menyalin link — salin manual", { description: url });
+    // Pratinjau URL yang benar-benar masuk clipboard: strip protokol supaya
+    // ringkas di layar HP, dan potong tengah pakai ellipsis Unicode jika
+    // lebih panjang dari 56 char sehingga host + akhir query tetap
+    // terlihat (paling informatif untuk verifikasi cepat).
+    const preview = shortenUrlForToast(url);
+    if (res.ok) {
+      toast.success("Link Penyiapan pegawai disalin", { description: preview });
+    } else {
+      toast.error("Gagal menyalin link — salin manual", { description: url });
+    }
   };
 
   const [qrOpen, setQrOpen] = useState(false);
