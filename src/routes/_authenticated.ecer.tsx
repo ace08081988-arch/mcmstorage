@@ -2931,6 +2931,8 @@ function NewProductDialog({ onClose, onCreated }: {
   // Field Isi/kemasan hanya relevan saat isi kemasan bisa berbeda-beda
   // (curah gram / sachet). Untuk botol & pcs, 1 kemasan = 1 unit.
   const showSizeField = packageType === "gram" || packageType === "sachet";
+  const [layout] = useLayoutMode("readyEcer", "grid");
+  const pairClass = layoutFieldPairClass(layout);
 
   async function save() {
     if (!name.trim()) { toast.error("Nama produk wajib diisi"); return; }
@@ -2974,7 +2976,7 @@ function NewProductDialog({ onClose, onCreated }: {
             <Label className="text-xs">Kategori (opsional)</Label>
             <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="mis. Bahan baku" />
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className={pairClass}>
             <div>
               <Label className="text-xs">Jenis kemasan</Label>
               <select
