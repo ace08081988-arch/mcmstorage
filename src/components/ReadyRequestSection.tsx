@@ -139,6 +139,7 @@ export function ReadyRequestSection() {
               key={r.id}
               to="/request"
               search={{ title: undefined, highlight: r.id }}
+              data-testid={`ready-request-card-${r.id}`}
               className={
                 "flex flex-col gap-0.5 rounded-md border bg-card hover:border-primary/40 hover:bg-accent " +
                 (compact ? "px-2.5 py-1.5" : "p-2.5")
@@ -146,7 +147,11 @@ export function ReadyRequestSection() {
             >
               <div className="flex items-center justify-between">
                 <span className="truncate text-xs font-semibold">{r.name}</span>
-                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+              <span
+                data-testid={`ready-request-badge-${r.id}`}
+                data-badge-count={r.prep_count}
+                className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary"
+              >
                   {r.prep_count} paket
                 </span>
               </div>

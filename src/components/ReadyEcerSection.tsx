@@ -2219,6 +2219,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         <Link
           to="/ecer"
           search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+          data-testid={`ready-ecer-card-${r.id}`}
           className="flex flex-col gap-0.5"
         >
           {shots.length === 0 && (
@@ -2309,7 +2310,11 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
             </PopoverContent>
           </Popover>
           <span className="text-[11px] leading-snug">
-            <span className={r.prep_count > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}>
+            <span
+              data-testid={`ready-ecer-badge-${r.id}`}
+              data-badge-count={r.prep_count}
+              className={r.prep_count > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}
+            >
               {r.prep_count} kotak siap
             </span>
           </span>
