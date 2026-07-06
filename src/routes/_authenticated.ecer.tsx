@@ -592,6 +592,18 @@ function DetailHero({
   const fmtTime = (d: Date) => d.toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" }) + " WIB";
   const ref = title.id.replace(/-/g, "").slice(0, 16).toUpperCase();
 
+  // Permalink Penyiapan pegawai untuk judul ini. Dipakai admin untuk
+  // membagikan link prefilled (mis. lewat WhatsApp ke pegawai lain / device
+  // admin) tanpa harus menavigasi manual. Origin diambil dari window agar
+  // otomatis cocok dengan custom domain/preview.
+  const onCopyPrepLink = async () => {
+    if (typeof window === "undefined") return;
+    const url = `${window.location.origin}/tugas-baru?title_id=${encodeURIComponent(title.id)}`;
+    const res = await copyText(url);
+    if (res.ok) toast.success("Link Penyiapan pegawai disalin");
+    else toast.error("Gagal menyalin link — salin manual", { description: url });
+  };
+
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       {/* Brand strip */}
