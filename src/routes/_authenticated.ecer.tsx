@@ -943,6 +943,62 @@ function normUnitStr(u: string | null | undefined) {
   return (u ?? "").trim().toLowerCase();
 }
 
+/**
+ * Parse a location URL (usually Google Maps) into a human-readable label
+ * plus a short kind badge, so the confirm-dialog preview can show what the
+ * `📍` line will look like before sending.
+ *
+ * Handles:
+ *  - google.com/maps?q=lat,lng           → "Koordinat: -6.20, 106.80"
+ *  - google.com/maps?q=Nama+Tempat        → "Nama Tempat"
+ *  - google.com/maps/place/Nama/…         → "Nama"
+ *  - google.com/maps/@lat,lng,zoom        → "Koordinat: -6.20, 106.80"
+ *  - maps.app.goo.gl / short links        → null label (URL only)
+ */
+function describeLocationUrl(raw: string): { label: string | null; kind: string | null } {
+  const url = (raw ?? "").trim();
+  if (!url) return { label: null, kind: null };
+  let u: URL;
+  try { u = new URL(url); } catch { return { label: null, kind: null }; }
+  const host = u.hostname.toLowerCase();
+  const decode = (s: string) => {
+    try { return decodeURIComponent(s.replace(/\+/g, " ")).trim(); } catch { return s.trim(); }
+  };
+  const coordRe = /^\s*(-?\d+(?:\.\d+)?)\s*,\s*(-?\d+(?:\.\d+)?)\s*$/;
+  const fmtCoord = (lat: string, lng: string) => {
+    const la = Number(lat), ln = Number(lng);
+    if (!Number.isFinite(la) || !Number.isFinite(ln)) return null;
+    return `Koordinat: ${la.toFixed(5)}, ${ln.toFixed(5)}`;
+  };
+  // ?q= parameter
+  const q = u.searchParams.get("q") ?? u.searchParams.get("query");
+  if (q) {
+    const m = q.match(coordRe);
+    if (m) {
+      const c = fmtCoord(m[1], m[2]);
+      if (c) return { label: c, kind: "GPS" };
+    }
+    const name = decode(q);
+    if (name) return { label: name, kind: "Nama tempat" };
+  }
+  // /maps/place/Nama/…
+  const placeMatch = u.pathname.match(/\/maps\/place\/([^/]+)/i);
+  if (placeMatch?.[1]) {
+    return { label: decode(placeMatch[1]), kind: "Nama tempat" };
+  }
+  // /maps/@lat,lng,zoom
+  const atMatch = u.pathname.match(/@(-?\d+(?:\.\d+)?),(-?\d+(?:\.\d+)?)/);
+  if (atMatch) {
+    const c = fmtCoord(atMatch[1], atMatch[2]);
+    if (c) return { label: c, kind: "GPS" };
+  }
+  // Short-link hosts — can't resolve without network
+  if (/(^|\.)maps\.app\.goo\.gl$/.test(host) || /(^|\.)goo\.gl$/.test(host)) {
+    return { label: null, kind: "Short link" };
+  }
+  return { label: null, kind: null };
+}
+
 function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName: string }) {
   const [shots, setShots] = useState<WorkerShot[]>([]);
   const [loading, setLoading] = useState(true);
