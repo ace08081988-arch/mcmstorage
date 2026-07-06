@@ -1580,6 +1580,7 @@ function SendPrepToCustomerDialog({
 
   const totalQty = useMemo(() => items.reduce((s, it) => s + Number(it.actual_grams || 0), 0), [items]);
   const canSend = !!resolvedParty.name && totalAmount >= 0 && items.length > 0 && !busy;
+  const sendStatus = useSaveStatus({ mode, customerId, manualName, totalStr, payMethod, note }, initialSnap, busy);
 
   function buildCaption(): string {
     const lines: string[] = [];
