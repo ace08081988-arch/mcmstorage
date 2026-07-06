@@ -1006,6 +1006,22 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Tugas pegawai yang terhubung ke judul ecer ini (lewat
+   * prep_task_items.ecer_title_id). Dipakai agar tombol "Kirim perintah"
+   * membawa link tugas UNIK per judul — bukan pesan generik yang sama
+   * untuk semua judul.
+   */
+  const [linkedTask, setLinkedTask] = useState<{
+    task_id: string;
+    share_token: string;
+    task_title: string | null;
+    item_id: string;
+    qty_requested: number | null;
+    unit_label: string | null;
+    note: string | null;
+    ref_photo_path: string | null;
+  } | null>(null);
   // Per-folder (per-kiriman) send state
   const [waSendingId, setWaSendingId] = useState<string | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
