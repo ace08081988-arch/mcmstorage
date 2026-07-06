@@ -1157,30 +1157,48 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
 
   async function load() {
     setError(null);
-    if (!title.warehouse_item_id) {
+    // Kunci "folder tujuan" untuk kiriman pegawai adalah salah satu dari:
+    //  - prep_task_items.warehouse_item_id == title.warehouse_item_id, atau
+    //  - prep_task_items.ecer_title_id == title.id (fallback saat judul belum
+    //    ditautkan ke warehouse_item — mis. judul lama sebelum kolom itu
+    //    dipakai admin).
+    // Sebelumnya hanya `warehouse_item_id` yang dicocokkan dan bail-out
+    // penuh kalau kolomnya null, sehingga kiriman pegawai bisa "hilang".
+    if (!title.warehouse_item_id && !title.id) {
       setShots([]);
       setLoading(false);
       return;
     }
     try {
+      const orParts: string[] = [];
+      if (title.warehouse_item_id) orParts.push(`warehouse_item_id.eq.${title.warehouse_item_id}`);
+      if (title.id) orParts.push(`ecer_title_id.eq.${title.id}`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: tItems, error: e1 } = await (supabase.from as any)("prep_task_items")
-        .select("id,qty_requested,unit_label")
-        .eq("warehouse_item_id", title.warehouse_item_id);
+        .select("id,qty_requested,unit_label,warehouse_item_id,ecer_title_id")
+        .or(orParts.join(","));
       if (e1) throw new Error(e1.message);
-      const items = (tItems ?? []) as Array<{ id: string; qty_requested: number | null; unit_label: string | null }>;
+      const items = (tItems ?? []) as Array<{
+        id: string;
+        qty_requested: number | null;
+        unit_label: string | null;
+        warehouse_item_id: string | null;
+        ecer_title_id: string | null;
+      }>;
       if (items.length === 0) { setShots([]); return; }
 
       const matchKindByItem = new Map<string, "strict" | "fallback_grams" | "fallback_wid">();
       for (const it of items) {
-        const g = Number(it.qty_requested) || 0;
         const u = normUnitStr(it.unit_label);
-        // Hanya sertakan tugas dengan target_grams sama. Judul dengan gram
-        // berbeda (walau warehouse_item_id sama) harus tampil kosong sampai
-        // pegawai benar-benar disiapkan untuk varian itu.
-        if (g !== targetGrams) continue;
-        const kind: "strict" | "fallback_grams" | "fallback_wid" =
-          u === targetUnit ? "strict" : "fallback_grams";
+        const g = Number(it.qty_requested) || 0;
+        // Semua task_item yang cocok warehouse_item_id/ecer_title_id disertakan
+        // — grammase task hanya menentukan "tingkat kecocokan" untuk badge,
+        // bukan gate. Keputusan produk: folder ecer memuat semua kiriman
+        // produk yang sama, apapun qty task-nya.
+        let kind: "strict" | "fallback_grams" | "fallback_wid";
+        if (u === targetUnit && g === targetGrams) kind = "strict";
+        else if (it.warehouse_item_id && it.warehouse_item_id === title.warehouse_item_id) kind = "fallback_grams";
+        else kind = "fallback_wid";
         matchKindByItem.set(it.id, kind);
       }
       const ids = Array.from(matchKindByItem.keys());
