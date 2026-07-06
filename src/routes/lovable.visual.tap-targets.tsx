@@ -71,9 +71,15 @@ function TapTargetsHarness() {
         <h2 className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
           Baris aksi 2 kolom (Batal / Simpan)
         </h2>
+        {/*
+          Catatan: pola aslinya `[&>*]:min-h-11 sm:[&>*]:min-h-9` bekerja
+          di root font-size 16px, tapi TURUN di bawah 44px saat
+          `--app-font-scale` < 1 (mis. `html.compact` 92% → 40.5px).
+          Gunakan `min-h-[44px]` absolut supaya aman apapun skala teks.
+        */}
         <div
           data-action-row
-          className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9"
+          className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-[44px] sm:[&>*]:min-h-9"
         >
           <Button variant="outline" size="sm" data-tap-target data-tap-target-kind="text">
             Batal
