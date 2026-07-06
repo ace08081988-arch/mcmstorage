@@ -31,6 +31,7 @@ import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
 import { shortenUrlForToast } from "@/lib/shorten-url-for-toast";
+import { copyUrlWithToast } from "@/lib/copy-url-toast";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
 
@@ -604,17 +605,13 @@ function DetailHero({
   const onCopyPrepLink = async () => {
     if (typeof window === "undefined") return;
     const url = `${window.location.origin}/tugas-baru?title_id=${encodeURIComponent(title.id)}`;
-    const res = await copyText(url);
     // Pratinjau URL yang benar-benar masuk clipboard: strip protokol supaya
     // ringkas di layar HP, dan potong tengah pakai ellipsis Unicode jika
     // lebih panjang dari 56 char sehingga host + akhir query tetap
-    // terlihat (paling informatif untuk verifikasi cepat).
-    const preview = shortenUrlForToast(url);
-    if (res.ok) {
-      toast.success("Link Penyiapan pegawai disalin", { description: preview });
-    } else {
-      toast.error("Gagal menyalin link — salin manual", { description: url });
-    }
+    // terlihat (paling informatif untuk verifikasi cepat). Bila clipboard
+    // ditolak, helper menampilkan toast dengan tombol "Salin manual"
+    // (window.prompt) + URL penuh sebagai fallback.
+    await copyUrlWithToast(url, "Link Penyiapan pegawai disalin");
   };
 
   const [qrOpen, setQrOpen] = useState(false);
@@ -999,10 +996,7 @@ function DetailHero({
                     className="flex-1"
                     disabled={workerBusy}
                     onClick={async () => {
-                      const res = await copyText(workerSession.url);
-                      const preview = shortenUrlForToast(workerSession.url);
-                      if (res.ok) toast.success("Link pegawai disalin", { description: preview });
-                      else toast.error("Gagal menyalin — salin manual", { description: preview });
+                      await copyUrlWithToast(workerSession.url, "Link pegawai disalin");
                     }}
                   >
                     <Link2 className="mr-1 h-3.5 w-3.5" /> Salin link
