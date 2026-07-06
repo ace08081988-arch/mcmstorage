@@ -1185,14 +1185,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     ])).filter(Boolean);
   }
 
-  function shotCaption(s: WorkerShot): string {
+  function shotCaption(s: WorkerShot, opts?: { sentCount?: number; excludedCount?: number }): string {
     const stamp = new Date(s.submitted_at).toLocaleString("id-ID", {
       day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
     });
-    const paths = shotPaths(s);
+    const totalPaths = shotPaths(s).length;
+    const excludedCount = opts?.excludedCount ?? 0;
+    const sentCount = opts?.sentCount ?? totalPaths;
     const lines = [
       `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-      `Kiriman pegawai — ${stamp} · ${paths.length} foto`,
+      `Kiriman pegawai — ${stamp} · ${sentCount} foto${excludedCount > 0 ? ` (${excludedCount} dikecualikan)` : ""}`,
     ];
     if (s.location_url) lines.push(`📍 ${s.location_url}`);
     return lines.join("\n");
