@@ -1353,11 +1353,11 @@ function PrepCard({
   };
   return (
     <div className="overflow-hidden rounded-xl border bg-card">
-      <div className="flex items-center justify-between border-b bg-muted/30 px-3 py-1.5">
-        <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+      <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-3 py-1.5">
+        <div className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Paket #{index} · {prep.created_by}
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex shrink-0 items-center gap-1">
           {!sold ? (
             <button
               onClick={() => setSendOpen(true)}
