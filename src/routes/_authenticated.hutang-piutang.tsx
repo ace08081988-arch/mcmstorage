@@ -72,6 +72,22 @@ type Party = { id: string; name: string; contact?: string | null };
 const rupiah = (n: number) =>
   "Rp " + Math.round(n).toLocaleString("id-ID");
 
+/**
+ * Baris status pembayaran untuk disisipkan di setiap pesan WA/chat sebagai
+ * verifikasi ringkas. `LUNAS` bila sisa = 0, `BAYAR SEBAGIAN` bila sudah
+ * ada pembayaran namun belum habis, `BELUM BAYAR` bila belum ada pembayaran.
+ * Persentase dibulatkan agar mudah dibaca lawan bicara.
+ */
+function debtStatusLine(total: number, paid: number): string {
+  const t = Math.max(0, Math.round(total));
+  const p = Math.max(0, Math.min(t, Math.round(paid)));
+  const sisa = Math.max(0, t - p);
+  const pct = t > 0 ? Math.round((p / t) * 100) : 0;
+  if (sisa === 0 && t > 0) return `✅ *LUNAS* — ${rupiah(t)} sudah dibayar penuh`;
+  if (p > 0) return `💰 *BAYAR SEBAGIAN* — ${rupiah(p)} dari ${rupiah(t)} (${pct}%) · sisa *${rupiah(sisa)}*`;
+  return `⚠️ *BELUM BAYAR* — ${rupiah(t)} belum ada pembayaran`;
+}
+
 function HutangPiutangPage() {
   const [uid, setUid] = useState<string | null>(null);
   const [tab, setTab] = useState<"hutang" | "piutang" | "laporan">("hutang");
@@ -255,7 +271,8 @@ function HutangPiutangPage() {
     const body = d.kind === "hutang"
       ? `Ini pengingat hutang saya kepada Anda sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon konfirmasi cara & waktu pelunasannya. Terima kasih.`
       : `Ini pengingat tagihan dari saya sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon segera diselesaikan ya, terima kasih.`;
-    const text = `${greet}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
+    const status = debtStatusLine(Number(d.amount), paid);
+    const text = `${greet}\n\n${status}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
     const res = await shareToWhatsApp({ text, title: d.party_name, phone: partyPhone(d) });
     notifyShareResult(res);
   };
@@ -297,6 +314,7 @@ function HutangPiutangPage() {
         : `Laporan piutang dari ${group.name}`;
     const text = [
       `*${judul}*`,
+      debtStatusLine(total, paid),
       "",
       ...lines,
       "",
@@ -338,9 +356,28 @@ function HutangPiutangPage() {
         `• ${new Date(p.paid_at).toLocaleDateString("id-ID")} · ${d.party_name} · ${arah} ${rupiah(Number(p.amount))}${p.note ? ` — ${p.note}` : ""}`,
       );
     }
+    // Total & terbayar keseluruhan (bukan periode) untuk baris status ringkas
+    // — supaya pembaca tahu posisi utuh hutang/piutang saat pesan diterima.
+    let hutangTotalAll = 0;
+    let piutangTotalAll = 0;
+    for (const d of debts) {
+      if (d.kind === "hutang") hutangTotalAll += Number(d.amount);
+      else piutangTotalAll += Number(d.amount);
+    }
+    let hutangPaidAll = 0;
+    let piutangPaidAll = 0;
+    for (const p of payments) {
+      const d = debtById.get(p.debt_id);
+      if (!d) continue;
+      if (d.kind === "hutang") hutangPaidAll += Number(p.amount);
+      else piutangPaidAll += Number(p.amount);
+    }
     const text = [
       `*Laporan Hutang & Piutang*`,
       `Periode: ${periodLabel}`,
+      "",
+      `Hutang: ${debtStatusLine(hutangTotalAll, hutangPaidAll)}`,
+      `Piutang: ${debtStatusLine(piutangTotalAll, piutangPaidAll)}`,
       "",
       `Sisa hutang: ${rupiah(overall.hutangSisa)}`,
       `Sisa piutang: ${rupiah(overall.piutangSisa)}`,
