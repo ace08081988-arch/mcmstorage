@@ -517,7 +517,7 @@ function TitleEditorDialog({
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
-        <DialogHeader>
+        <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
           <DialogTitle>{existing ? "Edit Judul Request" : "Judul Request Baru"}</DialogTitle>
           <DialogDescription>Tambahkan beberapa produk dalam 1 paket. Saat penyiapan, stok semua produk akan otomatis berkurang.</DialogDescription>
         </DialogHeader>
@@ -640,7 +640,7 @@ function TitleEditorDialog({
             </div>
           </div>
         </div>
-        <DialogFooter className="flex-row justify-between sm:justify-between">
+        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-row justify-between border-t bg-background px-6 py-3 sm:justify-between">
           {existing ? (
             <Button variant="ghost" size="sm" className="text-destructive" onClick={deleteTitle} disabled={busy}>
               <Trash2 className="mr-1 h-3.5 w-3.5" /> Hapus
