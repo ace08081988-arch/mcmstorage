@@ -526,13 +526,15 @@ function TitleEditorDialog({
     } finally { setBusy(false); }
   }
 
+  const saveStatus = useSaveStatus({ name, note, rows }, initialSnap, busy);
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
       <DialogContent ref={scrollRef} className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
           <div className="flex items-start justify-between gap-2">
             <DialogTitle>{existing ? "Edit Judul Request" : "Judul Request Baru"}</DialogTitle>
-            <DialogSaveStatus status={useSaveStatus({ name, note, rows }, initialSnap, busy)} className="shrink-0" />
+            <DialogSaveStatus status={saveStatus} className="shrink-0" />
           </div>
           <DialogDescription>Tambahkan beberapa produk dalam 1 paket. Saat penyiapan, stok semua produk akan otomatis berkurang.</DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
