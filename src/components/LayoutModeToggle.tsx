@@ -35,6 +35,24 @@ export function useLayoutMode(key: string, initial: LayoutMode = "list"): [Layou
     }
   }, [key, mode]);
 
+  // Sinkronisasi antar-tab: dengarkan perubahan localStorage dari tab lain.
+  // Event `storage` hanya di-fire di tab lain (bukan tab yang menulis), jadi
+  // aman untuk langsung setMode tanpa loop.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const storageKey = STORAGE_PREFIX + key;
+    const onStorage = (e: StorageEvent) => {
+      if (e.key !== storageKey || e.storageArea !== window.localStorage) return;
+      if (e.newValue === null) {
+        setMode(initial);
+        return;
+      }
+      if (isMode(e.newValue)) setMode(e.newValue);
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [key, initial]);
+
   return [mode, setMode];
 }
 
