@@ -1,5 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useServerFn } from "@tanstack/react-start";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, Loader2, AlertTriangle, Copy, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { SettingsHeader } from "@/components/settings/SettingsHeader";
+import { checkDomainDns, LOVABLE_IP, TXT_HOST_PREFIX, type DnsCheckResult } from "@/lib/domain-dns.functions";
 
 export const Route = createFileRoute("/_authenticated/pengaturan-domain")({
   head: () => ({
@@ -18,76 +20,28 @@ export const Route = createFileRoute("/_authenticated/pengaturan-domain")({
   component: DomainSettingsPage,
 });
 
-const LOVABLE_IP = "185.158.133.1";
-const TXT_HOST_PREFIX = "_lovable";
+type CheckStatus = "idle" | "checking" | DnsCheckResult["status"];
 
-type CheckStatus = "idle" | "checking" | "ok" | "warn" | "fail";
-
-type RecordCheck = {
-  key: "root-a" | "www-a" | "txt";
+type Row = {
+  key: DnsCheckResult["key"];
   label: string;
-  type: "A" | "TXT";
+  type: DnsCheckResult["type"];
   host: string;
   expectedHint: string;
   status: CheckStatus;
   found: string[];
   note?: string;
+  resolver?: string;
+  checkedAt?: string;
 };
 
-function initialChecks(domain: string): RecordCheck[] {
+function initialRows(domain: string): Row[] {
+  const d = domain || "domain";
   return [
-    {
-      key: "root-a",
-      label: `A · ${domain || "domain"} (@)`,
-      type: "A",
-      host: domain,
-      expectedHint: LOVABLE_IP,
-      status: "idle",
-      found: [],
-    },
-    {
-      key: "www-a",
-      label: `A · www.${domain || "domain"}`,
-      type: "A",
-      host: `www.${domain}`,
-      expectedHint: LOVABLE_IP,
-      status: "idle",
-      found: [],
-    },
-    {
-      key: "txt",
-      label: `TXT · ${TXT_HOST_PREFIX}.${domain || "domain"}`,
-      type: "TXT",
-      host: `${TXT_HOST_PREFIX}.${domain}`,
-      expectedHint: "lovable_verify=…",
-      status: "idle",
-      found: [],
-    },
+    { key: "root-a", label: `A · ${d} (@)`, type: "A", host: domain, expectedHint: LOVABLE_IP, status: "idle", found: [] },
+    { key: "www-a", label: `A · www.${d}`, type: "A", host: `www.${domain}`, expectedHint: LOVABLE_IP, status: "idle", found: [] },
+    { key: "txt", label: `TXT · ${TXT_HOST_PREFIX}.${d}`, type: "TXT", host: `${TXT_HOST_PREFIX}.${domain}`, expectedHint: "lovable_verify=…", status: "idle", found: [] },
   ];
-}
-
-async function queryDns(name: string, type: "A" | "TXT"): Promise<string[]> {
-  const url = `https://cloudflare-dns.com/dns-query?name=${encodeURIComponent(name)}&type=${type}`;
-  const res = await fetch(url, { headers: { accept: "application/dns-json" } });
-  if (!res.ok) throw new Error(`DNS ${res.status}`);
-  const json = (await res.json()) as { Answer?: Array<{ data: string; type: number }> };
-  const wantType = type === "A" ? 1 : 16;
-  return (json.Answer ?? [])
-    .filter((a) => a.type === wantType)
-    .map((a) => (type === "TXT" ? a.data.replace(/^"|"$/g, "") : a.data));
-}
-
-function statusFor(check: RecordCheck): CheckStatus {
-  if (check.status === "checking" || check.status === "idle") return check.status;
-  if (check.type === "A") {
-    if (check.found.includes(LOVABLE_IP)) {
-      return check.found.length === 1 ? "ok" : "warn";
-    }
-    return "fail";
-  }
-  // TXT
-  if (check.found.some((v) => v.toLowerCase().startsWith("lovable_verify="))) return "ok";
-  return "fail";
 }
 
 const STATUS_STYLES: Record<CheckStatus, { badge: string; label: string; icon: ReactNode }> = {
@@ -120,52 +74,66 @@ const STATUS_STYLES: Record<CheckStatus, { badge: string; label: string; icon: R
 
 function DomainSettingsPage() {
   const [domain, setDomain] = useState("mcmstorage.biz");
-  const [checks, setChecks] = useState<RecordCheck[]>(() => initialChecks("mcmstorage.biz"));
+  const rows = useMemo<Row[]>(() => initialRows(domain.trim()), [domain]);
+  const [state, setState] = useState<Record<Row["key"], Row>>(() =>
+    Object.fromEntries(rows.map((r) => [r.key, r])) as Record<Row["key"], Row>,
+  );
+  const invokeCheck = useServerFn(checkDomainDns);
+  const [busy, setBusy] = useState(false);
 
-  useEffect(() => {
-    setChecks(initialChecks(domain.trim()));
-  }, [domain]);
+  // Reset display state when domain changes
+  useMemo(() => {
+    setState(Object.fromEntries(rows.map((r) => [r.key, r])) as Record<Row["key"], Row>);
+  }, [rows]);
 
-  const runCheck = useCallback(async (key: RecordCheck["key"]) => {
-    setChecks((prev) => prev.map((c) => (c.key === key ? { ...c, status: "checking", note: undefined } : c)));
-    const target = checks.find((c) => c.key === key);
-    if (!target || !target.host || target.host.startsWith(".")) return;
-    try {
-      const found = await queryDns(target.host, target.type);
-      setChecks((prev) =>
-        prev.map((c) => {
-          if (c.key !== key) return c;
-          const next: RecordCheck = { ...c, found, status: "ok" };
-          next.status = statusFor(next);
-          if (next.status === "warn" && c.type === "A") {
-            next.note = "Ditemukan IP lain selain Lovable — hapus record ganda.";
-          } else if (next.status === "fail") {
-            next.note =
-              c.type === "A"
-                ? `Tidak menemukan ${LOVABLE_IP}. Tambahkan/perbaiki record A.`
-                : "Tidak menemukan TXT lovable_verify. Tambahkan record TXT dari Lovable.";
-          }
-          return next;
-        }),
-      );
-    } catch (err) {
-      setChecks((prev) =>
-        prev.map((c) =>
-          c.key === key
-            ? { ...c, status: "fail", found: [], note: err instanceof Error ? err.message : "Gagal query DNS" }
-            : c,
-        ),
-      );
-    }
-  }, [checks]);
+  const checks = rows.map((r) => state[r.key] ?? r);
 
   const runAll = useCallback(async () => {
-    if (!domain.trim()) {
+    const d = domain.trim();
+    if (!d) {
       toast.error("Isi nama domain dulu.");
       return;
     }
-    await Promise.all((["root-a", "www-a", "txt"] as const).map((k) => runCheck(k)));
-  }, [domain, runCheck]);
+    setBusy(true);
+    setState((prev) => {
+      const next = { ...prev };
+      for (const r of rows) next[r.key] = { ...(prev[r.key] ?? r), status: "checking", note: undefined };
+      return next;
+    });
+    try {
+      const result = await invokeCheck({ data: { domain: d } });
+      setState((prev) => {
+        const next = { ...prev };
+        for (const c of result.checks) {
+          const base = prev[c.key] ?? rows.find((r) => r.key === c.key)!;
+          next[c.key] = {
+            ...base,
+            status: c.status,
+            found: c.found,
+            note: c.note,
+            resolver: c.resolver,
+            checkedAt: c.checkedAt,
+          };
+        }
+        return next;
+      });
+      const okCount = result.checks.filter((c) => c.status === "ok").length;
+      if (okCount === result.checks.length) toast.success("Semua record OK.");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Validasi DNS gagal";
+      toast.error(msg);
+      setState((prev) => {
+        const next = { ...prev };
+        for (const r of rows) {
+          const base = prev[r.key] ?? r;
+          if (base.status === "checking") next[r.key] = { ...base, status: "fail", note: msg };
+        }
+        return next;
+      });
+    } finally {
+      setBusy(false);
+    }
+  }, [domain, invokeCheck, rows]);
 
   const summary = useMemo(() => {
     const oks = checks.filter((c) => c.status === "ok").length;
@@ -204,8 +172,9 @@ function DomainSettingsPage() {
             />
             <div className="flex items-center justify-between gap-2">
               <span className="text-xs text-muted-foreground">{summary}</span>
-              <Button size="sm" onClick={runAll} disabled={!domain.trim()}>
-                <RefreshCw className="mr-1 h-4 w-4" /> Periksa semua
+              <Button size="sm" onClick={runAll} disabled={!domain.trim() || busy}>
+                {busy ? <Loader2 className="mr-1 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-1 h-4 w-4" />}
+                Periksa semua
               </Button>
             </div>
           </CardContent>
@@ -262,20 +231,11 @@ function DomainSettingsPage() {
                   </ul>
                 ) : null}
                 {c.note ? <p className="text-xs text-muted-foreground">{c.note}</p> : null}
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  onClick={() => runCheck(c.key)}
-                  disabled={!c.host || c.status === "checking"}
-                >
-                  {c.status === "checking" ? (
-                    <Loader2 className="mr-1 h-4 w-4 animate-spin" />
-                  ) : (
-                    <RefreshCw className="mr-1 h-4 w-4" />
-                  )}
-                  Periksa record ini
-                </Button>
+                {c.resolver && c.checkedAt ? (
+                  <p className="text-[10px] text-muted-foreground">
+                    Resolver: {c.resolver} · {new Date(c.checkedAt).toLocaleTimeString()}
+                  </p>
+                ) : null}
               </CardContent>
             </Card>
           );
