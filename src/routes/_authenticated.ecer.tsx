@@ -953,6 +953,35 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   const [waSendingId, setWaSendingId] = useState<string | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
   const [chatPickShot, setChatPickShot] = useState<WorkerShot | null>(null);
+  type PreviewReq = {
+    title: string;
+    description: string;
+    confirmText: string;
+    paths: string[];
+    locationUrl?: string | null;
+    resolve: (v: boolean) => void;
+  };
+  const [previewReq, setPreviewReq] = useState<PreviewReq | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (!previewReq) { setPreviewUrls(null); return; }
+    let cancelled = false;
+    setPreviewUrls(null);
+    (async () => {
+      const capped = previewReq.paths.slice(0, 12);
+      const urls = await Promise.all(capped.map((p) => resolvePrepUrl(p, 600).catch(() => null)));
+      if (!cancelled) setPreviewUrls(urls.map((u) => u ?? ""));
+    })();
+    return () => { cancelled = true; };
+  }, [previewReq]);
+  function confirmWithPreview(opts: Omit<PreviewReq, "resolve">): Promise<boolean> {
+    return new Promise<boolean>((resolve) => setPreviewReq({ ...opts, resolve }));
+  }
+  function finishPreview(v: boolean) {
+    const r = previewReq;
+    setPreviewReq(null);
+    r?.resolve(v);
+  }
 
   const targetUnit = normUnitStr(title.unit_label);
   const targetGrams = Number(title.target_grams) || 0;
@@ -1030,14 +1059,25 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   async function sendWA() {
     if (sending) return;
     const take = Math.min(shots.length, 6);
-    const ok = await confirm({
-      title: shots.length === 0 ? "Kirim perintah penyiapan?" : `Kirim ${take} kiriman via WhatsApp?`,
-      description:
-        shots.length === 0
-          ? `Tidak ada kiriman pegawai. Akan dikirim perintah teks ke pegawai untuk menyiapkan ${title.name} (${title.target_grams} ${displayUnitStr}).`
-          : `Akan mengirim ${take} folder kiriman pegawai untuk *${title.name}*. Pastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
-      confirmText: "Kirim WA",
-    });
+    let ok: boolean;
+    if (shots.length === 0) {
+      ok = await confirm({
+        title: "Kirim perintah penyiapan?",
+        description: `Tidak ada kiriman pegawai. Akan dikirim perintah teks ke pegawai untuk menyiapkan ${title.name} (${title.target_grams} ${displayUnitStr}).`,
+        confirmText: "Kirim WA",
+      });
+    } else {
+      const previewShots = shots.slice(0, take);
+      const allPaths = previewShots.flatMap((s) => shotPaths(s)).slice(0, 12);
+      const firstLoc = previewShots.find((s) => s.location_url)?.location_url ?? null;
+      ok = await confirmWithPreview({
+        title: `Kirim ${take} kiriman via WhatsApp?`,
+        description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${take} folder · ${allPaths.length} foto (maks 10 terlampir)\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+        confirmText: "Kirim WA",
+        paths: allPaths,
+        locationUrl: firstLoc,
+      });
+    }
     if (!ok) return;
     setSending(true);
     try {
@@ -1114,10 +1154,12 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   async function sendShotWA(s: WorkerShot) {
     if (waSendingId) return;
     const paths = shotPaths(s);
-    const ok = await confirm({
+    const ok = await confirmWithPreview({
       title: "Kirim folder via WhatsApp?",
-      description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${s.location_url ? `\n📍 Lokasi: ${s.location_url}` : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+      description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${s.location_url ? "" : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
       confirmText: "Kirim WA",
+      paths,
+      locationUrl: s.location_url,
     });
     if (!ok) return;
     setWaSendingId(s.id);
@@ -1306,15 +1348,67 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           setChatPickShot(null);
           if (!target) return;
           const paths = shotPaths(target);
-          void confirm({
+          void confirmWithPreview({
             title: `Kirim folder ke ${displayTitle}?`,
-            description: `Percakapan: *${displayTitle}*\nJudul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${target.location_url ? `\n📍 Lokasi: ${target.location_url}` : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+            description: `Percakapan: *${displayTitle}*\nJudul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${target.location_url ? "" : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
             confirmText: "Kirim Chat",
+            paths,
+            locationUrl: target.location_url,
           }).then((ok) => {
             if (ok) void sendShotChat(target, conversationId, displayTitle);
           });
         }}
       />
+      <Dialog open={!!previewReq} onOpenChange={(o) => { if (!o) finishPreview(false); }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>{previewReq?.title}</DialogTitle>
+            {previewReq?.description ? (
+              <DialogDescription className="whitespace-pre-line">
+                {previewReq.description}
+              </DialogDescription>
+            ) : null}
+          </DialogHeader>
+          {previewReq && previewReq.paths.length > 0 ? (
+            <div className="max-h-[50vh] overflow-y-auto rounded-md border bg-muted/30 p-2">
+              <div className="grid grid-cols-3 gap-1.5">
+                {(previewUrls ?? new Array(Math.min(previewReq.paths.length, 12)).fill(null)).map((u, i) => (
+                  <div key={i} className="relative aspect-square overflow-hidden rounded bg-muted">
+                    {u ? (
+                      <img src={u} alt={`Foto ${i + 1}`} loading="lazy" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className="flex h-full w-full items-center justify-center text-[10px] text-muted-foreground">
+                        {previewUrls ? "×" : "…"}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+              {previewReq.paths.length > 12 ? (
+                <div className="mt-1.5 text-center text-[11px] text-muted-foreground">
+                  +{previewReq.paths.length - 12} foto lain tidak ditampilkan
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+          {previewReq?.locationUrl ? (
+            <a
+              href={previewReq.locationUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="block truncate rounded-md border bg-muted/30 px-2 py-1.5 text-xs text-primary underline"
+            >
+              📍 {previewReq.locationUrl}
+            </a>
+          ) : null}
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => finishPreview(false)}>Batal</Button>
+            <Button onClick={() => finishPreview(true)} className="bg-emerald-600 hover:bg-emerald-700">
+              {previewReq?.confirmText ?? "Kirim"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 }
