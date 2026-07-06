@@ -1000,8 +1000,9 @@ function DetailHero({
                     disabled={workerBusy}
                     onClick={async () => {
                       const res = await copyText(workerSession.url);
-                      if (res.ok) toast.success("Link pegawai disalin", { description: shortenUrlForToast(workerSession.url) });
-                      else toast.error("Gagal menyalin — salin manual", { description: workerSession.url });
+                      const preview = shortenUrlForToast(workerSession.url);
+                      if (res.ok) toast.success("Link pegawai disalin", { description: preview });
+                      else toast.error("Gagal menyalin — salin manual", { description: preview });
                     }}
                   >
                     <Link2 className="mr-1 h-3.5 w-3.5" /> Salin link
