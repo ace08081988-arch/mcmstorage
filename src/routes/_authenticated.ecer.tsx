@@ -1142,9 +1142,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         notifyShareResult(res);
         return;
       }
-      const take = shots.slice(0, 6);
+      const sendShots = shots.slice(0, take);
       const files: File[] = [];
-      for (const s of take) {
+      for (const s of sendShots) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
           ...(s.photo_path ? [s.photo_path] : []),
@@ -1159,11 +1159,13 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         if (files.length >= 10) break;
       }
       if (files.length === 0) toast.warning("Foto pegawai tidak bisa diunduh.");
-      const lines = take.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLoc = take.find((s) => s.location_url);
+      const lines = sendShots.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const firstLoc = sendShots.find((s) => s.location_url);
+      const excludedCount = excludedSet.size;
+      const totalPaths = Math.min(sendShots.flatMap((s) => shotPaths(s)).length, 12);
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
+        `${shots.length} kiriman pegawai${shots.length > take ? ` (mengirim ${take})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:`,
         ...lines,
         ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
       ].join("\n");
@@ -1183,14 +1185,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     ])).filter(Boolean);
   }
 
-  function shotCaption(s: WorkerShot): string {
+  function shotCaption(s: WorkerShot, opts?: { sentCount?: number; excludedCount?: number }): string {
     const stamp = new Date(s.submitted_at).toLocaleString("id-ID", {
       day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
     });
-    const paths = shotPaths(s);
+    const totalPaths = shotPaths(s).length;
+    const excludedCount = opts?.excludedCount ?? 0;
+    const sentCount = opts?.sentCount ?? totalPaths;
     const lines = [
       `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-      `Kiriman pegawai — ${stamp} · ${paths.length} foto`,
+      `Kiriman pegawai — ${stamp} · ${sentCount} foto${excludedCount > 0 ? ` (${excludedCount} dikecualikan)` : ""}`,
     ];
     if (s.location_url) lines.push(`📍 ${s.location_url}`);
     return lines.join("\n");
@@ -1209,6 +1213,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     });
     if (!res.ok) return;
     const paths = allPaths.filter((p) => !res.excluded.has(p));
+    const excludedCount = allPaths.length - paths.length;
     if (paths.length === 0) { toast.warning("Semua foto dikecualikan. Batal kirim."); return; }
     setWaSendingId(s.id);
     try {
@@ -1222,7 +1227,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       if (files.length === 0) {
         toast.warning("Foto tidak bisa diunduh untuk dilampirkan.");
       }
-      const waRes = await shareToWhatsApp({ text: shotCaption(s), title: title.name, files });
+      const waRes = await shareToWhatsApp({ text: shotCaption(s, { sentCount: files.length, excludedCount }), title: title.name, files });
       notifyShareResult(waRes);
     } catch (err) {
       toast.error(`Gagal kirim WA: ${(err as Error).message}`);
@@ -1254,7 +1259,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       }
       const result = await shareToChat({
         conversationId,
-        caption: shotCaption(s),
+        caption: shotCaption(s, { sentCount: chatShots.length, excludedCount: shotPaths(s).length - paths.length }),
         locationUrl: s.location_url,
         shots: chatShots,
       });
@@ -1430,6 +1435,29 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               <DialogDescription className="whitespace-pre-line">
                 {previewReq.description}
               </DialogDescription>
+            ) : null}
+            {previewReq && previewReq.paths.length > 0 ? (
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                {(() => {
+                  const total = previewReq.paths.length;
+                  const excluded = Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length;
+                  const willSend = total - excluded;
+                  return (
+                    <>
+                      <span className="inline-flex items-center rounded-full bg-primary/10 px-2.5 py-1 text-xs font-medium text-primary">
+                        <span className="tabular-nums">{willSend} / {total}</span>
+                        <span className="ml-1 text-[10px] text-muted-foreground">foto akan dikirim</span>
+                      </span>
+                      {excluded > 0 ? (
+                        <span className="inline-flex items-center rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-medium text-destructive">
+                          <span className="tabular-nums">{excluded}</span>
+                          <span className="ml-1 text-[10px]">dikecualikan</span>
+                        </span>
+                      ) : null}
+                    </>
+                  );
+                })()}
+              </div>
             ) : null}
           </DialogHeader>
           {previewReq && previewReq.paths.length > 0 ? (
