@@ -25,8 +25,14 @@ export async function copyUrlWithToast(url: string, successLabel: string): Promi
       : res.reason === "unsupported"
       ? "Browser tidak mendukung clipboard otomatis"
       : "Gagal menyalin";
-  toast.error(`${reason} — salin manual`, {
-    description: url,
+  // Judul toast: URL ringkas → user langsung tahu link mana yang gagal
+  //   disalin (kalau ada beberapa toast berdempetan).
+  // Deskripsi: URL penuh → siap dipilih & di-copy langsung dari toast di
+  //   desktop; di HP tombol "Salin manual" membuka modal dengan field
+  //   URL + tombol Salin. Alasan (izin/unsupported) disisipkan sebelum
+  //   URL penuh supaya konteks tidak hilang.
+  toast.error(preview, {
+    description: `${reason}. ${url}`,
     duration: 15_000,
     action: {
       label: "Salin manual",
