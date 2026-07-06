@@ -1767,7 +1767,7 @@ function PrepSections({
           </div>
         ) : (
           <div className={gridClass}>
-            {active.map((p, idx) => renderCard(p, idx, total, false))}
+            {active.map((p, idx) => renderCard(p, idx, active.length, false))}
           </div>
         )}
       </div>
