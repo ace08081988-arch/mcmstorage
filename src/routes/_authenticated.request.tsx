@@ -1054,7 +1054,7 @@ function SendPrepLinkDialog({
                 onFocus={(e) => e.currentTarget.select()}
               />
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Button variant="outline" size="sm" onClick={copyMessage} disabled={!canPrepare}>
                 <Copy className="mr-1 h-3.5 w-3.5" /> Salin pesan
               </Button>
@@ -1070,7 +1070,7 @@ function SendPrepLinkDialog({
             <Button variant="ghost" size="sm" className="w-full" onClick={copyLinkPin} disabled={!canPrepare}>
               <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link + PIN saja
             </Button>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Button variant="outline" size="sm" onClick={() => void downloadPng()}>
                 <Download className="mr-1 h-3.5 w-3.5" /> Unduh PNG
               </Button>
@@ -2131,7 +2131,7 @@ function PrepEditorDialog({
               </div>
             </div>
           ) : (
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Button variant="outline" onClick={() => cameraRef.current?.click()}>
                 <Camera className="mr-1 h-4 w-4" /> Kamera
               </Button>
@@ -2409,7 +2409,7 @@ function WorkerTestDialog({
               pilih satu judul, isi gram tiap produk, ambil foto + lokasi, lalu Kirim.
               Stok produk akan benar-benar berkurang. Tekan <b>"Batalkan sesi uji coba"</b> untuk mengembalikan stok &amp; menghapus paket uji.
             </div>
-            <div className="grid grid-cols-2 gap-2">
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
               <Button variant="outline" size="sm" onClick={copyAll}>
                 <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link+PIN
               </Button>
