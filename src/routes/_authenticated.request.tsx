@@ -1853,7 +1853,14 @@ function PrepCard({
     return displayUnit(w?.name, ti?.unit_label ?? w?.base_unit ?? "g");
   };
   return (
-    <div className="overflow-hidden rounded-xl border bg-card">
+    <div
+      className={
+        "overflow-hidden rounded-xl border bg-card" +
+        (sold ? " select-text" : "")
+      }
+      aria-readonly={sold || undefined}
+      data-readonly={sold ? "true" : undefined}
+    >
       <div className="flex items-center justify-between gap-2 border-b bg-muted/30 px-3 py-1.5">
         <div className="min-w-0 truncate text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
           Paket #{index} · {prep.created_by}
@@ -1925,19 +1932,24 @@ function PrepCard({
         <div className="text-muted-foreground">{new Date(prep.created_at).toLocaleString("id-ID")}</div>
       </div>
 
-      <SendPrepToCustomerDialog
-        open={sendOpen}
-        onClose={() => setSendOpen(false)}
-        prep={prep}
-        items={items}
-        warehouseItems={warehouseItems}
-        titleItems={titleItems}
-        titleName={titleName}
-        customers={customers}
-        photoPaths={photoPaths}
-        unitFor={unitFor}
-        onSent={() => { setSendOpen(false); onSent(); }}
-      />
+      {/* Dialog Kirim hanya di-mount untuk paket yang belum terkirim, supaya
+          tidak ada jalur (state stale, race, keyboard shortcut) yang bisa
+          memicu proses kirim/ubah status pada paket Riwayat. */}
+      {!sold && (
+        <SendPrepToCustomerDialog
+          open={sendOpen}
+          onClose={() => setSendOpen(false)}
+          prep={prep}
+          items={items}
+          warehouseItems={warehouseItems}
+          titleItems={titleItems}
+          titleName={titleName}
+          customers={customers}
+          photoPaths={photoPaths}
+          unitFor={unitFor}
+          onSent={() => { setSendOpen(false); onSent(); }}
+        />
+      )}
     </div>
   );
 }
