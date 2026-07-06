@@ -15,13 +15,15 @@ import {
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
   Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, MessageCircle, RefreshCw,
-  Calendar, Clock, Hash, CheckCircle2, Boxes,
+  Calendar, Clock, Hash, CheckCircle2, Boxes, Send,
 } from "lucide-react";
 import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFile } from "@/lib/share-wa";
+import { shareToChat } from "@/lib/share-chat";
+import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
