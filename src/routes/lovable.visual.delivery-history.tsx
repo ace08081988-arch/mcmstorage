@@ -8,6 +8,7 @@
  */
 import { createFileRoute } from "@tanstack/react-router";
 import { History, AlertTriangle } from "lucide-react";
+import { useEffect } from "react";
 
 export const Route = createFileRoute("/lovable/visual/delivery-history")({
   head: () => ({
@@ -15,6 +16,9 @@ export const Route = createFileRoute("/lovable/visual/delivery-history")({
       { title: "Delivery History Audit — MCM" },
       { name: "robots", content: "noindex,nofollow" },
     ],
+  }),
+  validateSearch: (s: Record<string, unknown>) => ({
+    theme: s.theme === "dark" ? "dark" : "light",
   }),
   component: Harness,
 });
@@ -69,11 +73,22 @@ const ROWS: Row[] = [
 ];
 
 function Harness() {
+  const { theme } = Route.useSearch();
+  useEffect(() => {
+    const root = document.documentElement;
+    const had = root.classList.contains("dark");
+    if (theme === "dark") root.classList.add("dark");
+    else root.classList.remove("dark");
+    return () => {
+      if (had) root.classList.add("dark");
+      else root.classList.remove("dark");
+    };
+  }, [theme]);
   const headerLabel = "PaketRequestDenganJudulSangatPanjangTanpaSpasiUntukMengujiTruncateDiHeaderDialogMobile";
   return (
-    <div className="min-h-dvh bg-background p-3">
+    <div className="min-h-dvh bg-background p-3" data-visual-root data-theme={theme}>
       {/* Wadah mock DialogContent: max-w-lg + padding dialog. */}
-      <div className="mx-auto w-full max-w-lg rounded-xl border bg-card p-4 shadow-sm">
+      <div data-visual-dialog className="mx-auto w-full max-w-lg rounded-xl border bg-card p-4 shadow-sm">
         <div className="mb-3">
           <div className="flex items-center gap-2 font-semibold">
             <History className="h-4 w-4 text-primary" /> Riwayat pengiriman link
