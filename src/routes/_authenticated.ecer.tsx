@@ -617,6 +617,33 @@ function DetailHero({
   // supaya admin bisa memastikan link yang benar sebelum menekan.
   const copyLinkTooltip = `Salin permalink Penyiapan pegawai:\n${prepPermalink}`;
 
+  // Shortcut keyboard: Shift + L saat halaman folder ecer terbuka menyalin
+  // permalink Penyiapan pegawai tanpa harus menyentuh tombol. Aktif hanya
+  // untuk admin dan hanya jika fokus tidak sedang di input/textarea/select/
+  // contenteditable — supaya tidak menabrak pengetikan (mis. edit judul).
+  // Modifier lain (Ctrl/Meta/Alt) diblok agar tidak bentrok dengan shortcut
+  // browser (Cmd+L, Ctrl+Shift+L, dst).
+  useEffect(() => {
+    if (!isAdmin) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.defaultPrevented) return;
+      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (!e.shiftKey) return;
+      if (e.key !== "L" && e.key !== "l") return;
+      const t = e.target as HTMLElement | null;
+      const tag = t?.tagName;
+      if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
+      if (t?.isContentEditable) return;
+      e.preventDefault();
+      void onCopyPrepLink();
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+    // onCopyPrepLink stable-enough: hanya bergantung title.id yang tetap
+    // selama komponen mount. Rebind saat admin flag/title berubah.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isAdmin, title.id]);
+
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
       {/* Brand strip */}
