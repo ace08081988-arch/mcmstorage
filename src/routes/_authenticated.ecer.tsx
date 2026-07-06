@@ -794,7 +794,7 @@ function DetailHero({
             <button
               type="button"
               onClick={() => setQrOpen(true)}
-              title="Tampilkan QR permalink Penyiapan pegawai"
+              title="Tampilkan QR permalink Penyiapan pegawai (Shift+Q)"
               aria-label="Tampilkan QR permalink Penyiapan pegawai"
               className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
@@ -855,7 +855,7 @@ function DetailHero({
               size="sm"
               variant="outline"
               onClick={() => setQrOpen(true)}
-              title="Tampilkan QR permalink Penyiapan pegawai"
+              title="Tampilkan QR permalink Penyiapan pegawai (Shift+Q)"
               className="hidden sm:inline-flex"
             >
               <QrCode className="h-4 w-4" /> QR
