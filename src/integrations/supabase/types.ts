@@ -3357,6 +3357,7 @@ export type Database = {
         Returns: number
       }
       normalize_phone: { Args: { _p: string }; Returns: string }
+      normalize_unit_label: { Args: { _u: string }; Returns: string }
       prep_create_task: {
         Args: {
           _items: Json
