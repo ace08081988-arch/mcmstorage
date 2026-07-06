@@ -1805,12 +1805,17 @@ function SendPrepToCustomerDialog({
           </div>
         </div>
 
-        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 grid grid-cols-1 gap-2.5 border-t bg-background px-6 py-3 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
-          <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
-          <Button size="sm" onClick={handleSend} disabled={!canSend}>
-            {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
-            {payMethod === "hutang" ? "Kirim & catat piutang" : "Kirim & catat penjualan"}
-          </Button>
+        <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-col">
+          <div className="flex w-full items-center justify-center">
+            <DialogSaveStatus status={sendStatus} compact />
+          </div>
+          <div className="grid w-full grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
+            <Button variant="outline" size="sm" onClick={onClose} disabled={busy}>Batal</Button>
+            <Button size="sm" onClick={handleSend} disabled={!canSend}>
+              {busy ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" /> : <Send className="mr-1 h-3.5 w-3.5" />}
+              {payMethod === "hutang" ? "Kirim & catat piutang" : "Kirim & catat penjualan"}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
