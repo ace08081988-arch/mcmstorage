@@ -1515,6 +1515,38 @@ function PrepSections({
   const sentRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const historyHeaderRef = useRef<HTMLDivElement | null>(null);
 
+  // Filter Riwayat Terkirim: nama produk + rentang tanggal (sold_at).
+  const [filterQ, setFilterQ] = useState("");
+  const [filterFrom, setFilterFrom] = useState("");
+  const [filterTo, setFilterTo] = useState("");
+  const warehouseNameById = useMemo(() => {
+    const m = new Map<string, string>();
+    for (const w of warehouseItems) m.set(w.id, w.name);
+    return m;
+  }, [warehouseItems]);
+  const filteredSent = useMemo(() => {
+    const q = filterQ.trim().toLowerCase();
+    const fromMs = filterFrom ? new Date(filterFrom + "T00:00:00").getTime() : null;
+    const toMs = filterTo ? new Date(filterTo + "T23:59:59.999").getTime() : null;
+    return sent.filter((p) => {
+      if (fromMs !== null || toMs !== null) {
+        const t = p.sold_at ? new Date(p.sold_at).getTime() : NaN;
+        if (!Number.isFinite(t)) return false;
+        if (fromMs !== null && t < fromMs) return false;
+        if (toMs !== null && t > toMs) return false;
+      }
+      if (!q) return true;
+      if (titleName.toLowerCase().includes(q)) return true;
+      if ((p.sold_party_name ?? "").toLowerCase().includes(q)) return true;
+      const names = prepItems
+        .filter((pi) => pi.preparation_id === p.id)
+        .map((pi) => warehouseNameById.get(pi.warehouse_item_id) ?? "");
+      return names.some((n) => n.toLowerCase().includes(q));
+    });
+  }, [sent, filterQ, filterFrom, filterTo, prepItems, warehouseNameById, titleName]);
+  const hasFilter = !!(filterQ || filterFrom || filterTo);
+  const clearFilter = () => { setFilterQ(""); setFilterFrom(""); setFilterTo(""); };
+
   // Fase 1: menunggu kartu yang barusan dikirim muncul di daftar Riwayat
   // setelah refetch. Kadang shareToWhatsApp membuka share sheet native yang
   // menjeda tab, jadi refetch bisa terlambat — kita polling sampai muncul,
@@ -1656,9 +1688,55 @@ function PrepSections({
             <span className="text-[10px]">{showHistory ? "Sembunyikan" : "Tampilkan"}</span>
           </button>
           {showHistory && (
-            <div className={gridClass}>
-              {sent.map((p, idx) => renderCard(p, idx, sent.length, true))}
-            </div>
+            <>
+              <div className="mb-2 grid gap-2 rounded-md border bg-muted/20 p-2 sm:grid-cols-[1fr_auto_auto_auto]">
+                <Input
+                  value={filterQ}
+                  onChange={(e) => setFilterQ(e.target.value)}
+                  placeholder="Cari nama produk / pelanggan…"
+                  className="h-8 text-xs"
+                  aria-label="Cari nama produk"
+                />
+                <Input
+                  type="date"
+                  value={filterFrom}
+                  onChange={(e) => setFilterFrom(e.target.value)}
+                  className="h-8 text-xs"
+                  aria-label="Dari tanggal"
+                />
+                <Input
+                  type="date"
+                  value={filterTo}
+                  onChange={(e) => setFilterTo(e.target.value)}
+                  className="h-8 text-xs"
+                  aria-label="Sampai tanggal"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs"
+                  onClick={clearFilter}
+                  disabled={!hasFilter}
+                >
+                  Reset
+                </Button>
+              </div>
+              {hasFilter && (
+                <p className="mb-2 text-[11px] text-muted-foreground">
+                  Menampilkan {filteredSent.length} dari {sent.length} paket terkirim.
+                </p>
+              )}
+              {filteredSent.length === 0 ? (
+                <div className="rounded-xl border border-dashed bg-card p-4 text-center text-[11px] text-muted-foreground">
+                  Tidak ada paket terkirim yang cocok dengan filter.
+                </div>
+              ) : (
+                <div className={gridClass}>
+                  {filteredSent.map((p, idx) => renderCard(p, idx, filteredSent.length, true))}
+                </div>
+              )}
+            </>
           )}
         </div>
       )}
