@@ -82,7 +82,7 @@ function useSurface(seed: Prep[]) {
 
   const activeByTitle = useMemo(() => countActiveByTitle(preps), [preps]);
   const sentByTitle = useMemo(() => {
-    // SSOT untuk "sent" — jangan tulis `!!p.sold_at` di luar helper.
+    // SSOT untuk "sent" — jangan tulis literal predikat sold_at di luar helper.
     const m = new Map<string, number>();
     for (const p of filterSentPreps(preps)) {
       if (!p.title_id) continue;
