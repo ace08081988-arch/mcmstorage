@@ -2116,6 +2116,12 @@ function PrepEditorDialog({
     } finally { setBusy(false); }
   }
 
+  const prepStatus = useSaveStatus(
+    { rows, photoKey: photo?.dataUrl ?? "", locUrl, note, waPhone, recipientName },
+    { rows: initialRows, ...initialFieldsSnap },
+    busy,
+  );
+
   return (
     <>
     <Dialog open={open} onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
