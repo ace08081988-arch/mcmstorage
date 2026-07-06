@@ -4135,6 +4135,54 @@ function RequestForm({
           </div>
         );
       })()}
+      <div>
+        <button
+          type="button"
+          onClick={() => setManualCoordOpen((v) => !v)}
+          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <MapPin className="h-3 w-3" /> {manualCoordOpen ? "Tutup" : "Isi koordinat manual"} (bila GPS ditolak)
+        </button>
+        {manualCoordOpen && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            <input
+              inputMode="decimal"
+              value={manualLat}
+              onChange={(e) => setManualLat(e.target.value)}
+              placeholder="Lat (mis. -7.257)"
+              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs"
+            />
+            <input
+              inputMode="decimal"
+              value={manualLng}
+              onChange={(e) => setManualLng(e.target.value)}
+              placeholder="Lng (mis. 112.752)"
+              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const lat = Number.parseFloat(manualLat.replace(",", "."));
+                const lng = Number.parseFloat(manualLng.replace(",", "."));
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                  toast.error("Lat/Lng tidak valid");
+                  return;
+                }
+                if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                  toast.error("Lat harus -90..90, Lng harus -180..180");
+                  return;
+                }
+                setGps({ lat, lng });
+                setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
+                toast.success("Koordinat manual dipakai");
+              }}
+              className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+            >
+              Pakai
+            </button>
+          </div>
+        )}
+      </div>
       <input
         value={note}
         onChange={(e) => setNote(e.target.value)}
