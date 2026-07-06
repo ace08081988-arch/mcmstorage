@@ -18,7 +18,12 @@
 import { test, expect } from "@playwright/test";
 
 const MIN_TAP_PX = 44;
-const MIN_GAP_PX = 8;
+// Ambang gap: 6px (bukan 8px) karena `gap-2` Tailwind = 0.5rem dan
+// root font-size app diskalakan via `--app-font-scale`
+// (mis. `html.compact` = 92% → gap-2 ≈ 7.4px). 6px tetap menangkap
+// pelanggaran nyata (baris tanpa gap / gap 2-4px) tanpa false-positive
+// karena preferensi ukuran teks user.
+const MIN_GAP_PX = 6;
 
 type Measured = {
   index: number;
