@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
-  Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, MessageCircle, RefreshCw,
+  Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw,
   Calendar, Clock, Hash, CheckCircle2, Boxes, Send,
 } from "lucide-react";
 import {
