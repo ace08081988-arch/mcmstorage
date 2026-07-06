@@ -271,7 +271,8 @@ function HutangPiutangPage() {
     const body = d.kind === "hutang"
       ? `Ini pengingat hutang saya kepada Anda sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon konfirmasi cara & waktu pelunasannya. Terima kasih.`
       : `Ini pengingat tagihan dari saya sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon segera diselesaikan ya, terima kasih.`;
-    const text = `${greet}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
+    const status = debtStatusLine(Number(d.amount), paid);
+    const text = `${greet}\n\n${status}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
     const res = await shareToWhatsApp({ text, title: d.party_name, phone: partyPhone(d) });
     notifyShareResult(res);
   };
@@ -313,6 +314,7 @@ function HutangPiutangPage() {
         : `Laporan piutang dari ${group.name}`;
     const text = [
       `*${judul}*`,
+      debtStatusLine(total, paid),
       "",
       ...lines,
       "",
