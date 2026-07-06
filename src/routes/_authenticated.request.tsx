@@ -1497,9 +1497,46 @@ function PrepSections({
   const active = preps.filter((p) => !p.sold_at);
   const sent = preps.filter((p) => !!p.sold_at);
   const total = preps.length;
-  const renderCard = (p: RequestPreparation, idx: number, listLen: number) => (
-    <PrepCard
+  const [justSentId, setJustSentId] = useState<string | null>(null);
+  const sentRefs = useRef<Map<string, HTMLDivElement>>(new Map());
+  const historyHeaderRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    if (!justSentId) return;
+    // Cari kartu yang barusan terkirim di daftar Riwayat. Kalau sudah pindah,
+    // gulir ke sana + kilat highlight; kalau belum (refetch masih jalan),
+    // biarkan efek ini terpanggil ulang saat `sent` berubah.
+    const isInSent = sent.some((p) => p.id === justSentId);
+    if (!isInSent) return;
+    setShowHistory(true);
+    const scroll = () => {
+      const el = sentRefs.current.get(justSentId) ?? historyHeaderRef.current;
+      el?.scrollIntoView({ behavior: "smooth", block: "center" });
+    };
+    // Beri satu frame supaya section Riwayat sempat expand sebelum di-scroll.
+    const raf = requestAnimationFrame(() => setTimeout(scroll, 60));
+    const clear = setTimeout(() => setJustSentId(null), 2400);
+    return () => {
+      cancelAnimationFrame(raf);
+      clearTimeout(clear);
+    };
+  }, [justSentId, sent]);
+
+  const renderCard = (p: RequestPreparation, idx: number, listLen: number, inSent: boolean) => (
+    <div
       key={p.id}
+      ref={(node) => {
+        if (!inSent) return;
+        if (node) sentRefs.current.set(p.id, node);
+        else sentRefs.current.delete(p.id);
+      }}
+      className={
+        inSent && justSentId === p.id
+          ? "rounded-xl ring-2 ring-emerald-500 ring-offset-2 ring-offset-background transition"
+          : undefined
+      }
+    >
+    <PrepCard
       index={listLen - idx}
       prep={p}
       items={prepItems.filter((pi) => pi.preparation_id === p.id)}
@@ -1508,8 +1545,13 @@ function PrepSections({
       titleName={titleName}
       customers={customers}
       onDelete={() => onDelete(p)}
-      onSent={onChanged}
+      onSent={() => {
+        setShowHistory(true);
+        setJustSentId(p.id);
+        onChanged();
+      }}
     />
+    </div>
   );
   return (
     <div className="space-y-4">
@@ -1526,12 +1568,12 @@ function PrepSections({
           </div>
         ) : (
           <div className={gridClass}>
-            {active.map((p, idx) => renderCard(p, idx, total))}
+            {active.map((p, idx) => renderCard(p, idx, total, false))}
           </div>
         )}
       </div>
       {sent.length > 0 && (
-        <div>
+        <div ref={historyHeaderRef}>
           <button
             type="button"
             onClick={() => setShowHistory((v) => !v)}
@@ -1546,7 +1588,7 @@ function PrepSections({
           </button>
           {showHistory && (
             <div className={gridClass}>
-              {sent.map((p, idx) => renderCard(p, idx, sent.length))}
+              {sent.map((p, idx) => renderCard(p, idx, sent.length, true))}
             </div>
           )}
         </div>
