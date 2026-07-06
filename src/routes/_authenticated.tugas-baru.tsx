@@ -554,6 +554,9 @@ function TugasBaruForm() {
   const searchParams = Route.useSearch();
   const prefillTitleId = searchParams.title_id ?? null;
   const prefillConsumedRef = useRef(false);
+  const [prefillInfo, setPrefillInfo] = useState<{
+    name: string; qty: string; unit: string; linkedWid: boolean;
+  } | null>(null);
   useEffect(() => {
     if (prefillConsumedRef.current) return;
     if (!prefillTitleId) return;
@@ -576,6 +579,12 @@ function TugasBaruForm() {
     } : r)));
     verifyWid(key, t.warehouse_item_id);
     setTitle((cur) => cur.trim() ? cur : `Penyiapan ${t.name}`);
+    setPrefillInfo({
+      name: t.name,
+      qty: t.target_grams != null ? String(t.target_grams) : "1",
+      unit: t.unit_label ?? "",
+      linkedWid: !!t.warehouse_item_id,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillTitleId, titles]);
 
