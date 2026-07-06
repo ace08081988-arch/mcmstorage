@@ -616,6 +616,7 @@ function DetailHero({
   // desktop (hover) dan mobile (long-press) tanpa perlu TooltipProvider,
   // supaya admin bisa memastikan link yang benar sebelum menekan.
   const copyLinkTooltip = `Salin permalink Penyiapan pegawai (Shift+L):\n${prepPermalink}`;
+  const navigate = useNavigate();
 
   // Shortcut keyboard: Shift + L saat halaman folder ecer terbuka menyalin
   // permalink Penyiapan pegawai tanpa harus menyentuh tombol. Aktif hanya
@@ -644,6 +645,14 @@ function DetailHero({
       if (e.key === "Q" || e.key === "q") {
         e.preventDefault();
         setQrOpen((v) => !v);
+        return;
+      }
+      // Shift+P: buka halaman Tugas Baru dengan prefill judul saat ini.
+      // Navigasi client-side (bukan window.location) supaya state router
+      // dan cache TanStack Query tetap utuh.
+      if (e.key === "P" || e.key === "p") {
+        e.preventDefault();
+        void navigate({ to: "/tugas-baru", search: { title_id: title.id } });
         return;
       }
     };
