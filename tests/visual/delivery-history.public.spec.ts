@@ -13,9 +13,17 @@ import { test, expect, type Page } from "@playwright/test";
 
 const HARNESS = "/lovable/visual/delivery-history";
 const THEMES = ["light", "dark"] as const;
+const VIEWPORTS = [
+  { name: "411", width: 411, height: 900 },
+  { name: "320", width: 320, height: 700 },
+] as const;
 
-async function prep(page: Page, theme: (typeof THEMES)[number]) {
-  await page.setViewportSize({ width: 411, height: 900 });
+async function prep(
+  page: Page,
+  theme: (typeof THEMES)[number],
+  vp: (typeof VIEWPORTS)[number],
+) {
+  await page.setViewportSize({ width: vp.width, height: vp.height });
   await page.goto(`${HARNESS}?theme=${theme}`, { waitUntil: "networkidle" });
   await page.evaluate(() =>
     (document as unknown as { fonts?: { ready: Promise<void> } }).fonts?.ready,
@@ -32,9 +40,10 @@ async function prep(page: Page, theme: (typeof THEMES)[number]) {
 }
 
 test.describe("DeliveryHistoryDialog — truncate/badge/chip", () => {
-  for (const theme of THEMES) {
-    test(`layout aman (${theme})`, async ({ page }) => {
-      await prep(page, theme);
+  for (const vp of VIEWPORTS) {
+    for (const theme of THEMES) {
+      test(`layout aman (${vp.name} · ${theme})`, async ({ page }) => {
+        await prep(page, theme, vp);
       const dialog = page.locator("[data-visual-dialog]");
 
       // 1. Dokumen tidak boleh punya horizontal scroll.
@@ -42,7 +51,10 @@ test.describe("DeliveryHistoryDialog — truncate/badge/chip", () => {
         sw: document.documentElement.scrollWidth,
         cw: document.documentElement.clientWidth,
       }));
-      expect(doc.sw, `dokumen overflow horizontal (${theme})`).toBeLessThanOrEqual(doc.cw + 1);
+        expect(
+          doc.sw,
+          `dokumen overflow horizontal (${vp.name}/${theme})`,
+        ).toBeLessThanOrEqual(doc.cw + 1);
 
       // 2. Kartu riwayat & chip tidak boleh melebihi bounding box container-nya
       //    (getBoundingClientRect — bukan scrollWidth, agar truncate tidak
@@ -65,9 +77,15 @@ test.describe("DeliveryHistoryDialog — truncate/badge/chip", () => {
         });
         return bad;
       });
-      expect(overflows, `kartu/chip melebihi dialog (${theme}): ${JSON.stringify(overflows)}`).toEqual([]);
+        expect(
+          overflows,
+          `kartu/chip melebihi dialog (${vp.name}/${theme}): ${JSON.stringify(overflows)}`,
+        ).toEqual([]);
 
-      await expect(dialog).toHaveScreenshot(`delivery-history-${theme}.png`);
-    });
+        await expect(dialog).toHaveScreenshot(
+          `delivery-history-${vp.name}-${theme}.png`,
+        );
+      });
+    }
   }
 });
