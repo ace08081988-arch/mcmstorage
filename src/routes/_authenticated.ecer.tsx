@@ -1080,6 +1080,83 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     }
   }
 
+  function shotPaths(s: WorkerShot): string[] {
+    return Array.from(new Set([
+      ...((s.photo_paths ?? []) as string[]),
+      ...(s.photo_path ? [s.photo_path] : []),
+    ])).filter(Boolean);
+  }
+
+  function shotCaption(s: WorkerShot): string {
+    const stamp = new Date(s.submitted_at).toLocaleString("id-ID", {
+      day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+    });
+    const paths = shotPaths(s);
+    const lines = [
+      `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
+      `Kiriman pegawai — ${stamp} · ${paths.length} foto`,
+    ];
+    if (s.location_url) lines.push(`📍 ${s.location_url}`);
+    return lines.join("\n");
+  }
+
+  async function sendShotWA(s: WorkerShot) {
+    if (waSendingId) return;
+    setWaSendingId(s.id);
+    try {
+      const paths = shotPaths(s);
+      const files: File[] = [];
+      for (let pi = 0; pi < paths.length; pi++) {
+        const url = await resolvePrepUrl(paths[pi], 600);
+        if (!url) continue;
+        const f = await urlToFile(url, `${title.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
+        if (f) files.push(f);
+      }
+      if (files.length === 0) {
+        toast.warning("Foto tidak bisa diunduh untuk dilampirkan.");
+      }
+      const res = await shareToWhatsApp({ text: shotCaption(s), title: title.name, files });
+      notifyShareResult(res);
+    } catch (err) {
+      toast.error(`Gagal kirim WA: ${(err as Error).message}`);
+    } finally {
+      setWaSendingId(null);
+    }
+  }
+
+  async function sendShotChat(s: WorkerShot, conversationId: string, convTitle: string) {
+    if (chatSendingId) return;
+    setChatSendingId(s.id);
+    const tid = toast.loading(`Mengirim ke ${convTitle}…`);
+    try {
+      const paths = shotPaths(s);
+      const chatShots: { id: string; file: File }[] = [];
+      for (let i = 0; i < paths.length; i++) {
+        const url = await resolvePrepUrl(paths[i], 600);
+        if (!url) continue;
+        const f = await urlToFile(url, `${title.name}-${s.id.slice(0, 6)}-${i + 1}.jpg`);
+        if (f) chatShots.push({ id: `${s.id}:${i}`, file: f });
+      }
+      const result = await shareToChat({
+        conversationId,
+        caption: shotCaption(s),
+        locationUrl: s.location_url,
+        shots: chatShots,
+      });
+      toast.dismiss(tid);
+      if (result.status === "shared") {
+        toast.success(`Terkirim ke ${convTitle} (${result.messageCount} pesan).`);
+      } else {
+        toast.error(`Gagal mengirim: ${result.error}`);
+      }
+    } catch (e) {
+      toast.dismiss(tid);
+      toast.error((e as Error)?.message || "Gagal mengirim ke MCM Chat.");
+    } finally {
+      setChatSendingId(null);
+    }
+  }
+
   return (
     <Card id={`worker-shots-${title.id}`} className="scroll-mt-20 transition-shadow">
       <CardHeader className="pb-2">
