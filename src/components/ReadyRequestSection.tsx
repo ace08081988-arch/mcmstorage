@@ -146,7 +146,11 @@ export function ReadyRequestSection() {
             >
               <div className="flex items-center justify-between">
                 <span className="truncate text-xs font-semibold">{r.name}</span>
-                <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary">
+              <span
+                data-testid={`ready-request-badge-${r.id}`}
+                data-badge-count={r.prep_count}
+                className="rounded bg-primary/10 px-1.5 py-0.5 text-[11px] font-medium text-primary"
+              >
                   {r.prep_count} paket
                 </span>
               </div>
