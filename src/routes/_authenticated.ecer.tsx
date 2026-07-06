@@ -625,12 +625,73 @@ function DetailHero({
   };
 
   const [qrOpen, setQrOpen] = useState(false);
-  // URL untuk QR dihitung saat render supaya `window.location.origin` selalu
-  // mengikuti host aktif (preview / mcmstorage.biz / lovable.app).
+  // Permalink admin (untuk Salin link Shift+L). QR di dialog di bawah
+  // TIDAK memakai URL ini — QR harus membuka portal pegawai (bukan aplikasi
+  // admin), lengkap dengan PIN baru tiap kali dibuka.
   const prepPermalink =
     typeof window !== "undefined"
       ? `${window.location.origin}/tugas-baru?title_id=${encodeURIComponent(title.id)}`
       : `/tugas-baru?title_id=${encodeURIComponent(title.id)}`;
+
+  // Sesi worker portal untuk QR: setiap kali dialog dibuka kita mint task
+  // baru (share_token + PIN baru) yang sudah prefill item-nya ke judul ini
+  // — supaya foto pegawai otomatis masuk folder ecer yang benar (trigger
+  // prep_task_items_resolve_ecer_title mengunci ecer_title_id dari
+  // (warehouse_item_id, qty, unit)).
+  const [workerSession, setWorkerSession] = useState<{ url: string; pin: string; token: string } | null>(null);
+  const [workerBusy, setWorkerBusy] = useState(false);
+  const [workerErr, setWorkerErr] = useState<string | null>(null);
+
+  const mintWorkerSession = async () => {
+    setWorkerBusy(true);
+    setWorkerErr(null);
+    try {
+      const pin = genPin();
+      const token = genShareToken();
+      const unitLabel = title.unit_label ?? null;
+      const targetGrams = Number(title.target_grams) || 0;
+      const payload = title.warehouse_item_id
+        ? [{
+            name: `${item.name} — ${title.name}`,
+            category: null,
+            qty_requested: targetGrams,
+            unit_label: unitLabel,
+            ref_photo_path: null,
+            warehouse_item_id: title.warehouse_item_id,
+            ecer_title_id: title.id,
+          }]
+        : [];
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error: rpcErr } = await (supabase.rpc as any)("prep_create_task", {
+        _title: `Ecer: ${title.name}`,
+        _note: `Penyiapan ${item.name} — ${title.name} (${targetGrams} ${unitLabel ?? ""}). Foto masuk folder ecer otomatis.`,
+        _pin: pin,
+        _share_token: token,
+        _items: payload,
+      });
+      if (rpcErr) throw rpcErr;
+      setWorkerSession({ url: publicTaskUrl(token, pin), pin, token });
+    } catch (e) {
+      setWorkerErr((e as Error).message || "Gagal membuat sesi pegawai");
+      setWorkerSession(null);
+    } finally {
+      setWorkerBusy(false);
+    }
+  };
+
+  // Setiap kali dialog dibuka: mint sesi baru (PIN baru). Saat ditutup:
+  // kosongkan sesi supaya buka lagi = generate ulang.
+  useEffect(() => {
+    if (!qrOpen) {
+      setWorkerSession(null);
+      setWorkerErr(null);
+      return;
+    }
+    void mintWorkerSession();
+    // Sengaja tidak memasukkan mintWorkerSession ke deps (stable-enough,
+    // hanya bergantung title.id yang tidak berubah selama komponen mount).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [qrOpen]);
   // Tooltip pratinjau URL yang akan disalin. Native `title=` bekerja di
   // desktop (hover) dan mobile (long-press) tanpa perlu TooltipProvider,
   // supaya admin bisa memastikan link yang benar sebelum menekan.
