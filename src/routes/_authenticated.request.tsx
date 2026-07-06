@@ -1555,6 +1555,8 @@ function SendPrepToCustomerDialog({
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
   const [initialSnap, setInitialSnap] = useState<{ mode: "link" | "manual"; customerId: string; manualName: string; totalStr: string; payMethod: "kas" | "hutang"; note: string }>({ mode: "link", customerId: "", manualName: "", totalStr: "", payMethod: "kas", note: "" });
+  // Dibaca `useSaveStatusToast` saat saving → dirty (gagal kirim).
+  const [sendError, setSendError] = useState<string | null>(null);
 
   // Reset saat dialog dibuka kembali.
   useEffect(() => {
@@ -1588,6 +1590,10 @@ function SendPrepToCustomerDialog({
   const totalQty = useMemo(() => items.reduce((s, it) => s + Number(it.actual_grams || 0), 0), [items]);
   const canSend = !!resolvedParty.name && totalAmount >= 0 && items.length > 0 && !busy;
   const sendStatus = useSaveStatus({ mode, customerId, manualName, totalStr, payMethod, note }, initialSnap, busy);
+  useSaveStatusToast(sendStatus, {
+    successMessage: "Terkirim",
+    errorMessage: sendError,
+  });
 
   function buildCaption(): string {
     const lines: string[] = [];
@@ -1632,6 +1638,7 @@ function SendPrepToCustomerDialog({
     if (totalAmount <= 0) {
       if (!confirm("Total belum diisi (Rp 0). Lanjutkan tanpa mencatat penjualan?")) return;
     }
+    setSendError(null);
     setBusy(true);
     try {
       // 1) RPC atomik: hapus prep items (kembalikan stok) + catat sales + piutang.
@@ -1666,7 +1673,7 @@ function SendPrepToCustomerDialog({
       onSent();
     } catch (e) {
       const msg = (e as { message?: string })?.message ?? String(e);
-      toast.error("Gagal kirim: " + msg);
+      setSendError("Gagal kirim: " + msg);
     } finally {
       setBusy(false);
     }
