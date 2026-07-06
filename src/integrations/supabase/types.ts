@@ -807,6 +807,13 @@ export type Database = {
           note: string | null
           photo_path: string | null
           prep_task_item_id: string | null
+          sold_at: string | null
+          sold_customer_id: string | null
+          sold_note: string | null
+          sold_paid_amount: number | null
+          sold_party_name: string | null
+          sold_payment_method: string | null
+          sold_total: number | null
           title_id: string
           user_id: string
           warehouse_item_id: string
@@ -822,6 +829,13 @@ export type Database = {
           note?: string | null
           photo_path?: string | null
           prep_task_item_id?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_note?: string | null
+          sold_paid_amount?: number | null
+          sold_party_name?: string | null
+          sold_payment_method?: string | null
+          sold_total?: number | null
           title_id: string
           user_id: string
           warehouse_item_id: string
@@ -837,6 +851,13 @@ export type Database = {
           note?: string | null
           photo_path?: string | null
           prep_task_item_id?: string | null
+          sold_at?: string | null
+          sold_customer_id?: string | null
+          sold_note?: string | null
+          sold_paid_amount?: number | null
+          sold_party_name?: string | null
+          sold_payment_method?: string | null
+          sold_total?: number | null
           title_id?: string
           user_id?: string
           warehouse_item_id?: string
@@ -847,6 +868,13 @@ export type Database = {
             columns: ["prep_task_item_id"]
             isOneToOne: false
             referencedRelation: "prep_task_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ecer_preparations_sold_customer_id_fkey"
+            columns: ["sold_customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
           {
@@ -2100,6 +2128,7 @@ export type Database = {
           prep_task_item_id: string | null
           sold_at: string | null
           sold_customer_id: string | null
+          sold_paid_amount: number | null
           sold_party_name: string | null
           sold_payment_method: string | null
           sold_total: number | null
@@ -2120,6 +2149,7 @@ export type Database = {
           prep_task_item_id?: string | null
           sold_at?: string | null
           sold_customer_id?: string | null
+          sold_paid_amount?: number | null
           sold_party_name?: string | null
           sold_payment_method?: string | null
           sold_total?: number | null
@@ -2140,6 +2170,7 @@ export type Database = {
           prep_task_item_id?: string | null
           sold_at?: string | null
           sold_customer_id?: string | null
+          sold_paid_amount?: number | null
           sold_party_name?: string | null
           sold_payment_method?: string | null
           sold_total?: number | null
@@ -3531,6 +3562,18 @@ export type Database = {
         Args: { _ids: string[] }
         Returns: number
       }
+      send_ecer_preps_to_customer: {
+        Args: {
+          _customer_id: string
+          _note: string
+          _paid_amount: number
+          _party_name: string
+          _payment_method: string
+          _prep_ids: string[]
+          _total_amount: number
+        }
+        Returns: string[]
+      }
       send_friend_request: {
         Args: { _code: string }
         Returns: {
@@ -3544,17 +3587,30 @@ export type Database = {
           was_existing: boolean
         }[]
       }
-      send_request_prep_to_customer: {
-        Args: {
-          _customer_id: string
-          _note: string
-          _party_name: string
-          _payment_method: string
-          _prep_id: string
-          _total_amount: number
-        }
-        Returns: string
-      }
+      send_request_prep_to_customer:
+        | {
+            Args: {
+              _customer_id: string
+              _note: string
+              _party_name: string
+              _payment_method: string
+              _prep_id: string
+              _total_amount: number
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _customer_id: string
+              _note: string
+              _paid_amount?: number
+              _party_name: string
+              _payment_method: string
+              _prep_id: string
+              _total_amount: number
+            }
+            Returns: string
+          }
       show_limit: { Args: never; Returns: number }
       show_trgm: { Args: { "": string }; Returns: string[] }
       start_dm: { Args: { _partner: string }; Returns: string }
