@@ -1222,19 +1222,22 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const previewShots = shots.slice(0, take);
       const allPaths = previewShots.flatMap((s) => shotPaths(s)).slice(0, 12);
       previewTotal = allPaths.length;
-      const firstLoc = previewShots.find((s) => s.location_url)?.location_url ?? null;
+      const shotLocations = previewShots.map((s) => ({
+        paths: shotPaths(s),
+        locationUrl: s.location_url ?? null,
+      }));
       // Builder caption bulk WA — persis mirror teks yang dibangun setelah
       // konfirmasi di bawah. `files.length` disimulasikan dengan
       // min(remaining, 10) karena WA share dibatasi 10 lampiran.
       const bulkLines = previewShots.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const buildBulkCaption = (remaining: number) => {
+      const buildBulkCaption = (remaining: number, effLoc: string | null) => {
         const simulatedFiles = Math.min(remaining, 10);
         const excludedCount = previewTotal - remaining;
         return [
           `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
           `${shots.length} kiriman pegawai${shots.length > take ? ` (mengirim ${take})` : ""} · ${simulatedFiles} foto terkirim${excludedCount > 0 ? ` · ${excludedCount} dari ${previewTotal} dikecualikan` : ""}:`,
           ...bulkLines,
-          ...(firstLoc ? [`📍 ${firstLoc}`] : []),
+          ...(effLoc ? [`📍 ${effLoc}`] : []),
         ].join("\n");
       };
       const res = await confirmWithPreview({
@@ -1242,7 +1245,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${take} folder · ${allPaths.length} foto (maks 10 terlampir)\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
         confirmText: "Kirim WA",
         paths: allPaths,
-        locationUrl: firstLoc,
+        shotLocations,
         persistKey: `title:${title.id}`,
         buildCaption: buildBulkCaption,
         captionLabel: "WhatsApp",
