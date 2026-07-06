@@ -159,3 +159,75 @@ describe("Call site badge angka pakai selector tunggal", () => {
     expect(src).toContain("filterSentPreps(preps)");
   });
 });
+
+// -----------------------------------------------------------------------
+// Memoization: hasil turunan dipakai ulang selama referensi array sama.
+// -----------------------------------------------------------------------
+import { beforeEach } from "vitest";
+
+describe("Memoization selector — referensi array sebagai kunci cache", () => {
+  beforeEach(() => __resetPrepActiveMemoForTest());
+
+  it("countActiveByTitle: Map identik secara referensi untuk preps yang sama", () => {
+    const preps = [
+      A({ id: "1", title_id: "t1", sold_at: null }),
+      A({ id: "2", title_id: "t1", sold_at: null }),
+      A({ id: "3", title_id: "t2", sold_at: null }),
+    ];
+    const first = countActiveByTitle(preps);
+    const second = countActiveByTitle(preps);
+    // Referensi identik → downstream memo/useEffect tak menganggapnya
+    // berubah → tidak ada re-render berlebih.
+    expect(second).toBe(first);
+  });
+
+  it("filterActivePreps / filterSentPreps stabil per referensi array", () => {
+    const preps = [
+      A({ id: "1", sold_at: null }),
+      A({ id: "2", sold_at: "2026-07-06T09:15:00.000Z" }),
+    ];
+    expect(filterActivePreps(preps)).toBe(filterActivePreps(preps));
+    expect(filterSentPreps(preps)).toBe(filterSentPreps(preps));
+  });
+
+  it("countActivePreps memoized per referensi (bukti cache dipakai)", () => {
+    const preps = [A({ sold_at: null }), A({ sold_at: null }), A({ sold_at: "x" })];
+    const a = countActivePreps(preps);
+    // Mutasi in-place: konsumen selector tidak diijinkan melakukan ini di
+    // produksi (state React selalu bikin array baru), tapi di sini menjadi
+    // sentinel bahwa panggilan kedua BENAR-BENAR hit cache alih-alih
+    // menghitung ulang.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (preps[2] as any).sold_at = null;
+    const b = countActivePreps(preps);
+    expect(a).toBe(2);
+    expect(b).toBe(2);
+  });
+
+  it("array baru (referensi berbeda) → hitung ulang", () => {
+    const p1 = [A({ title_id: "t1", sold_at: null })];
+    const p2 = [
+      A({ title_id: "t1", sold_at: null }),
+      A({ title_id: "t1", sold_at: null }),
+    ];
+    expect(countActiveByTitle(p1).get("t1")).toBe(1);
+    expect(countActiveByTitle(p2).get("t1")).toBe(2);
+  });
+
+  it("cache per-fungsi: countActiveByTitle tidak mengotori cache filter", () => {
+    const preps = [A({ id: "1", sold_at: null }), A({ id: "2", sold_at: "x" })];
+    countActiveByTitle(preps);
+    const active = filterActivePreps(preps);
+    expect(active.map((p) => p.id)).toEqual(["1"]);
+  });
+
+  it("__resetPrepActiveMemoForTest membuang referensi lama", () => {
+    const preps = [A({ title_id: "t1", sold_at: null })];
+    const first = countActiveByTitle(preps);
+    __resetPrepActiveMemoForTest();
+    const afterReset = countActiveByTitle(preps);
+    // Nilai sama, tapi Map baru — bukti cache di-flush.
+    expect(afterReset).not.toBe(first);
+    expect(afterReset.get("t1")).toBe(first.get("t1"));
+  });
+});
