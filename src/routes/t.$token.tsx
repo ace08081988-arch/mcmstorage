@@ -3527,7 +3527,9 @@ function RequestForm({
   // Antrian foto galeri yang dibuka di PhotoEditor satu per satu.
   const editQueueRef = useRef<number[]>([]);
   const photosRef = useRef<StagedPhoto[]>([]);
-  useEffect(() => {
+  // Sama seperti di ItemCard: sinkron pakai useLayoutEffect supaya
+  // photosRef selalu segar sebelum setTimeout(0) → openEditForIdx.
+  useLayoutEffect(() => {
     photosRef.current = photos;
   }, [photos]);
   useEffect(() => () => {
@@ -3535,7 +3537,16 @@ function RequestForm({
   }, []);
   function openEditForIdx(i: number) {
     const p = photosRef.current[i];
-    if (!p) return;
+    if (!p) {
+      queueMicrotask(() => {
+        const retry = photosRef.current[i];
+        if (!retry) return;
+        setEditingIdx(i);
+        setEditorSrc(retry.dataUrl);
+        setEditorOpen(true);
+      });
+      return;
+    }
     setEditingIdx(i);
     setEditorSrc(p.dataUrl);
     setEditorOpen(true);
