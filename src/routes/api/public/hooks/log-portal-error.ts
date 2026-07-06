@@ -222,9 +222,6 @@ export const Route = createFileRoute("/api/public/hooks/log-portal-error")({
 
         if ((count ?? 0) >= ALERT_COUNT) {
           const nowCount = count ?? 0;
-          const nextSeverity = nowCount >= ALERT_COUNT * 3 ? "critical" : "warning";
-          const cooldownIso = new Date(Date.now() - ALERT_COOLDOWN_SEC * 1000).toISOString();
-
           // Dedup key: (kind, code) — cooldown berlaku LINTAS token. Kalau alert
           // untuk kombinasi (kind, code) yang sama sudah pernah dibuat dan masih
           // dalam cooldown, request berikutnya (dari token manapun) di-suppress.
@@ -241,31 +238,28 @@ export const Route = createFileRoute("/api/public/hooks/log-portal-error")({
           const { data: existingRows } = await openQ;
           const existing = existingRows?.[0] ?? null;
 
-          if (existing && existing.acknowledged_at === null) {
-            // Alert masih terbuka → gabungkan (bump count + severity), jangan buat baru.
-            const mergedCount = Math.max(existing.count ?? 0, nowCount);
-            const mergedSeverity =
-              existing.severity === "critical" || nextSeverity === "critical"
-                ? "critical"
-                : "warning";
-            if (mergedCount !== existing.count || mergedSeverity !== existing.severity) {
-              await supabase
-                .from("portal_error_alerts")
-                .update({ count: mergedCount, severity: mergedSeverity })
-                .eq("id", existing.id);
-            }
-          } else if (existing && existing.created_at >= cooldownIso) {
-            // Sudah di-ack tapi masih dalam cooldown → suppress, jangan bikin baru.
-          } else {
+          const decision = decideAlertAction({
+            existing,
+            nowCount,
+            alertCount: ALERT_COUNT,
+            cooldownSec: ALERT_COOLDOWN_SEC,
+          });
+          if (decision.action === "merge") {
+            await supabase
+              .from("portal_error_alerts")
+              .update({ count: decision.count, severity: decision.severity })
+              .eq("id", decision.id);
+          } else if (decision.action === "insert") {
             await supabase.from("portal_error_alerts").insert({
               kind,
               code,
               token_hash: tokenHash,
-              count: nowCount,
+              count: decision.count,
               window_seconds: ALERT_WINDOW_SEC,
-              severity: nextSeverity,
+              severity: decision.severity,
             });
           }
+          // action === "suppress": biarkan, dedup/cooldown menang.
         }
 
         return Response.json({ ok: true, ref });
