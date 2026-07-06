@@ -1,0 +1,287 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { RefreshCw, ChevronLeft, Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import {
+  countActiveByTitle,
+  filterActivePreps,
+  filterSentPreps,
+  countActivePreps,
+} from "@/lib/prep-active-selector";
+
+/**
+ * Halaman debug internal: `/debug/selector`.
+ *
+ * Menampilkan jumlah paket AKTIF vs TERKIRIM per `title_id` untuk kedua
+ * domain (request + ecer) berdasarkan SATU-SATUNYA sumber kebenaran:
+ * helper di `@/lib/prep-active-selector`. Tujuan:
+ *   1. Verifikasi cepat saat data berubah (mis. abis Tandai Terkirim /
+ *      Batalkan Terkirim) apakah angka badge di seluruh app konsisten.
+ *   2. Alat troubleshooting kalau ada laporan "badge tidak sinkron" —
+ *      halaman ini adalah patokan yang harus dicocokkan.
+ *
+ * TIDAK di-index (noindex,nofollow) dan hanya dapat diakses dari dalam
+ * layout `_authenticated`. Tidak mengekspos PII: hanya title id/nama +
+ * angka.
+ */
+export const Route = createFileRoute("/_authenticated/debug/selector")({
+  head: () => ({
+    meta: [
+      { title: "Debug Selector · MCM Storage" },
+      { name: "robots", content: "noindex,nofollow" },
+    ],
+  }),
+  component: DebugSelectorPage,
+});
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const sb = supabase as any;
+
+type Title = { id: string; name: string };
+type Prep = { id: string; title_id: string; sold_at: string | null };
+
+type Row = {
+  title_id: string;
+  name: string;
+  active: number;
+  sent: number;
+  total: number;
+};
+
+type Domain = "request" | "ecer";
+
+type LoadedDomain = {
+  titles: Title[];
+  preps: Prep[];
+};
+
+async function loadDomain(domain: Domain): Promise<LoadedDomain> {
+  const titleTable = domain === "request" ? "request_titles" : "ecer_titles";
+  const prepTable = domain === "request" ? "request_preparations" : "ecer_preparations";
+  const [tRes, pRes] = await Promise.all([
+    sb.from(titleTable).select("id,name"),
+    // Ambil SEMUA prep (aktif + sent) supaya halaman ini bisa membandingkan
+    // hasil selector dengan agregat mentah. Sengaja TIDAK memakai
+    // `withActivePrepsFilter` — tujuan halaman ini adalah audit, bukan badge.
+    sb.from(prepTable).select("id,title_id,sold_at"),
+  ]);
+  return {
+    titles: (tRes.data ?? []) as Title[],
+    preps: (pRes.data ?? []) as Prep[],
+  };
+}
+
+function buildRows(dom: LoadedDomain): Row[] {
+  // Sumber kebenaran: gunakan helper. Bila di masa depan selector berubah
+  // (mis. kolom deleted_at ikut mendefinisikan "aktif"), halaman ini
+  // otomatis ikut. Itulah gunanya SSOT.
+  const activeMap = countActiveByTitle(dom.preps);
+  const titleById = new Map(dom.titles.map((t) => [t.id, t.name]));
+  // Kumpulkan sent count via partisi (referensi array yang sama →
+  // dimemoize oleh selector, murah dipanggil ulang).
+  const sentByTitle = new Map<string, number>();
+  for (const p of filterSentPreps(dom.preps)) {
+    if (!p.title_id) continue;
+    sentByTitle.set(p.title_id, (sentByTitle.get(p.title_id) ?? 0) + 1);
+  }
+  // Union semua title yang muncul di titles atau di preps (yatim).
+  const ids = new Set<string>();
+  for (const t of dom.titles) ids.add(t.id);
+  for (const p of dom.preps) if (p.title_id) ids.add(p.title_id);
+
+  const rows: Row[] = [];
+  for (const id of ids) {
+    const active = activeMap.get(id) ?? 0;
+    const sent = sentByTitle.get(id) ?? 0;
+    rows.push({
+      title_id: id,
+      name: titleById.get(id) ?? "(judul tidak ditemukan / dihapus)",
+      active,
+      sent,
+      total: active + sent,
+    });
+  }
+  rows.sort((a, b) => b.total - a.total || a.name.localeCompare(b.name));
+  return rows;
+}
+
+function DebugSelectorPage() {
+  const [data, setData] = useState<{ request: LoadedDomain; ecer: LoadedDomain } | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [lastLoadedAt, setLastLoadedAt] = useState<number | null>(null);
+  const [query, setQuery] = useState("");
+  const [orphanOnly, setOrphanOnly] = useState(false);
+
+  const load = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [request, ecer] = await Promise.all([loadDomain("request"), loadDomain("ecer")]);
+      setData({ request, ecer });
+      setLastLoadedAt(Date.now());
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => { void load(); }, [load]);
+
+  const requestRows = useMemo(() => (data ? buildRows(data.request) : []), [data]);
+  const ecerRows = useMemo(() => (data ? buildRows(data.ecer) : []), [data]);
+
+  const q = query.trim().toLowerCase();
+  const applyFilter = (rows: Row[]) =>
+    rows.filter((r) => {
+      if (orphanOnly && r.name !== "(judul tidak ditemukan / dihapus)") return false;
+      if (!q) return true;
+      return (
+        r.name.toLowerCase().includes(q) || r.title_id.toLowerCase().includes(q)
+      );
+    });
+
+  const requestFiltered = applyFilter(requestRows);
+  const ecerFiltered = applyFilter(ecerRows);
+
+  return (
+    <div className="mx-auto max-w-4xl space-y-4 p-3 pb-24">
+      <div className="flex items-center justify-between gap-2">
+        <Link
+          to="/"
+          className="inline-flex items-center gap-1 text-xs text-muted-foreground hover:text-foreground"
+        >
+          <ChevronLeft className="h-3.5 w-3.5" /> Beranda
+        </Link>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => void load()}
+          disabled={loading}
+          className="h-8 gap-1"
+        >
+          <RefreshCw className={"h-3.5 w-3.5 " + (loading ? "animate-spin" : "")} />
+          Muat ulang
+        </Button>
+      </div>
+
+      <header className="space-y-1">
+        <h1 className="text-lg font-semibold">Debug Selector — Active vs Sent per title_id</h1>
+        <p className="text-xs text-muted-foreground">
+          Sumber: <code className="rounded bg-muted px-1">countActiveByTitle</code> +{" "}
+          <code className="rounded bg-muted px-1">filterSentPreps</code>. Angka di sini
+          adalah patokan; kalau badge di layar lain berbeda, badge-nya yang salah.
+        </p>
+        {lastLoadedAt && (
+          <p className="text-[11px] text-muted-foreground">
+            Terakhir dimuat: {new Date(lastLoadedAt).toLocaleTimeString("id-ID")}
+          </p>
+        )}
+      </header>
+
+      <div className="flex flex-col gap-2 rounded-md border bg-card p-2 sm:flex-row sm:items-center">
+        <div className="relative flex-1">
+          <Search className="pointer-events-none absolute left-2 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
+          <input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Cari nama judul atau title_id…"
+            className="h-8 w-full rounded-md border bg-background pl-7 pr-2 text-xs"
+          />
+        </div>
+        <label className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+          <input
+            type="checkbox"
+            checked={orphanOnly}
+            onChange={(e) => setOrphanOnly(e.target.checked)}
+          />
+          Hanya prep yatim (judul terhapus)
+        </label>
+      </div>
+
+      <DomainSection
+        label="Request"
+        rows={requestFiltered}
+        totalPreps={data?.request.preps.length ?? 0}
+        totalActive={data ? countActivePreps(data.request.preps) : 0}
+        totalSent={data ? filterActivePreps(data.request.preps).length !== data.request.preps.length
+          ? data.request.preps.length - countActivePreps(data.request.preps)
+          : 0 : 0}
+      />
+
+      <DomainSection
+        label="Ecer"
+        rows={ecerFiltered}
+        totalPreps={data?.ecer.preps.length ?? 0}
+        totalActive={data ? countActivePreps(data.ecer.preps) : 0}
+        totalSent={data
+          ? data.ecer.preps.length - countActivePreps(data.ecer.preps)
+          : 0}
+      />
+    </div>
+  );
+}
+
+function DomainSection({
+  label,
+  rows,
+  totalPreps,
+  totalActive,
+  totalSent,
+}: {
+  label: string;
+  rows: Row[];
+  totalPreps: number;
+  totalActive: number;
+  totalSent: number;
+}) {
+  return (
+    <section className="space-y-2">
+      <div className="flex items-baseline justify-between">
+        <h2 className="text-sm font-semibold">{label}</h2>
+        <p className="text-[11px] text-muted-foreground">
+          {totalPreps} prep · <span className="text-emerald-600 dark:text-emerald-400">{totalActive} aktif</span> ·{" "}
+          <span className="text-amber-600 dark:text-amber-400">{totalSent} terkirim</span>
+        </p>
+      </div>
+
+      {rows.length === 0 ? (
+        <div className="rounded-md border border-dashed bg-card p-3 text-center text-[11px] text-muted-foreground">
+          Tidak ada baris untuk ditampilkan.
+        </div>
+      ) : (
+        <div className="overflow-hidden rounded-md border bg-card">
+          <table className="w-full border-collapse text-xs">
+            <thead className="bg-muted/50 text-[11px] uppercase tracking-wide text-muted-foreground">
+              <tr>
+                <th className="px-2 py-1.5 text-left">Judul</th>
+                <th className="px-2 py-1.5 text-right">Aktif</th>
+                <th className="px-2 py-1.5 text-right">Terkirim</th>
+                <th className="px-2 py-1.5 text-right">Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r) => (
+                <tr key={r.title_id} className="border-t">
+                  <td className="px-2 py-1.5">
+                    <div className="truncate font-medium">{r.name}</div>
+                    <div className="truncate font-mono text-[10px] text-muted-foreground">
+                      {r.title_id}
+                    </div>
+                  </td>
+                  <td className={"px-2 py-1.5 text-right tabular-nums " + (r.active > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                    {r.active}
+                  </td>
+                  <td className={"px-2 py-1.5 text-right tabular-nums " + (r.sent > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
+                    {r.sent}
+                  </td>
+                  <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">
+                    {r.total}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </section>
+  );
+}

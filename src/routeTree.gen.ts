@@ -98,6 +98,7 @@ import { Route as AuthenticatedStatusIdRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedKontakPermintaanRouteImport } from './routes/_authenticated.kontak.permintaan'
 import { Route as AuthenticatedDevPressAuditDemoRouteImport } from './routes/_authenticated.dev.press-audit-demo'
 import { Route as AuthenticatedDevPressAuditCodesRouteImport } from './routes/_authenticated.dev.press-audit-codes'
+import { Route as AuthenticatedDebugSelectorRouteImport } from './routes/_authenticated.debug.selector'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
 import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
@@ -594,6 +595,12 @@ const AuthenticatedDevPressAuditCodesRoute =
     path: '/dev/press-audit-codes',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedDebugSelectorRoute =
+  AuthenticatedDebugSelectorRouteImport.update({
+    id: '/debug/selector',
+    path: '/debug/selector',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedChatConversationIdRoute =
   AuthenticatedChatConversationIdRouteImport.update({
     id: '/$conversationId',
@@ -719,6 +726,7 @@ export interface FileRoutesByFullPath {
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/debug/selector': typeof AuthenticatedDebugSelectorRoute
   '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
   '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
@@ -817,6 +825,7 @@ export interface FileRoutesByTo {
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/debug/selector': typeof AuthenticatedDebugSelectorRoute
   '/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
   '/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
@@ -919,6 +928,7 @@ export interface FileRoutesById {
   '/_authenticated/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
+  '/_authenticated/debug/selector': typeof AuthenticatedDebugSelectorRoute
   '/_authenticated/dev/press-audit-codes': typeof AuthenticatedDevPressAuditCodesRoute
   '/_authenticated/dev/press-audit-demo': typeof AuthenticatedDevPressAuditDemoRoute
   '/_authenticated/kontak/permintaan': typeof AuthenticatedKontakPermintaanRoute
@@ -1021,6 +1031,7 @@ export interface FileRouteTypes {
     | '/admin/signup-attempts'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
+    | '/debug/selector'
     | '/dev/press-audit-codes'
     | '/dev/press-audit-demo'
     | '/kontak/permintaan'
@@ -1119,6 +1130,7 @@ export interface FileRouteTypes {
     | '/admin/signup-attempts'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
+    | '/debug/selector'
     | '/dev/press-audit-codes'
     | '/dev/press-audit-demo'
     | '/kontak/permintaan'
@@ -1220,6 +1232,7 @@ export interface FileRouteTypes {
     | '/_authenticated/admin/signup-attempts'
     | '/_authenticated/admin/worker-portal'
     | '/_authenticated/chat/$conversationId'
+    | '/_authenticated/debug/selector'
     | '/_authenticated/dev/press-audit-codes'
     | '/_authenticated/dev/press-audit-demo'
     | '/_authenticated/kontak/permintaan'
@@ -1926,6 +1939,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDevPressAuditCodesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/debug/selector': {
+      id: '/_authenticated/debug/selector'
+      path: '/debug/selector'
+      fullPath: '/debug/selector'
+      preLoaderRoute: typeof AuthenticatedDebugSelectorRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/chat/$conversationId': {
       id: '/_authenticated/chat/$conversationId'
       path: '/$conversationId'
@@ -2097,6 +2117,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedAdminPortalErrorLogRoute: typeof AuthenticatedAdminPortalErrorLogRoute
   AuthenticatedAdminSignupAttemptsRoute: typeof AuthenticatedAdminSignupAttemptsRoute
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
+  AuthenticatedDebugSelectorRoute: typeof AuthenticatedDebugSelectorRoute
   AuthenticatedDevPressAuditCodesRoute: typeof AuthenticatedDevPressAuditCodesRoute
   AuthenticatedDevPressAuditDemoRoute: typeof AuthenticatedDevPressAuditDemoRoute
   AuthenticatedStatusIdRoute: typeof AuthenticatedStatusIdRoute
@@ -2155,6 +2176,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedAdminPortalErrorLogRoute: AuthenticatedAdminPortalErrorLogRoute,
   AuthenticatedAdminSignupAttemptsRoute: AuthenticatedAdminSignupAttemptsRoute,
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
+  AuthenticatedDebugSelectorRoute: AuthenticatedDebugSelectorRoute,
   AuthenticatedDevPressAuditCodesRoute: AuthenticatedDevPressAuditCodesRoute,
   AuthenticatedDevPressAuditDemoRoute: AuthenticatedDevPressAuditDemoRoute,
   AuthenticatedStatusIdRoute: AuthenticatedStatusIdRoute,
