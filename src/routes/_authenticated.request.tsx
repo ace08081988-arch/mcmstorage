@@ -2750,7 +2750,7 @@ function DeliveryHistoryDialog({
                         >
                           {channelLabel(e.channel)} · {formatWaktu(e.sent_at)}
                         </span>
-                        ))}
+                    ))}
                   </div>
                 </div>
               );
