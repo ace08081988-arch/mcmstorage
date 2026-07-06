@@ -821,6 +821,28 @@ function HutangPiutangPage() {
         onSaved={refresh}
       />
 
+      <ReminderDialog
+        debt={reminderFor}
+        uid={uid}
+        sisa={
+          reminderFor
+            ? Math.max(
+                0,
+                Number(reminderFor.amount) -
+                  (paidByDebt.get(reminderFor.id) ?? 0),
+              )
+            : 0
+        }
+        onClose={() => setReminderFor(null)}
+        onSend={async (extra) => {
+          const d = reminderFor;
+          if (!d) return;
+          await sendReminderWA(d, extra);
+          if (extra) await refresh();
+          setReminderFor(null);
+        }}
+      />
+
       <EditDebtDialog
         debt={editFor}
         minAmount={
