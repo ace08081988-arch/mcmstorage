@@ -612,6 +612,10 @@ function DetailHero({
     typeof window !== "undefined"
       ? `${window.location.origin}/tugas-baru?title_id=${encodeURIComponent(title.id)}`
       : `/tugas-baru?title_id=${encodeURIComponent(title.id)}`;
+  // Tooltip pratinjau URL yang akan disalin. Native `title=` bekerja di
+  // desktop (hover) dan mobile (long-press) tanpa perlu TooltipProvider,
+  // supaya admin bisa memastikan link yang benar sebelum menekan.
+  const copyLinkTooltip = `Salin permalink Penyiapan pegawai:\n${prepPermalink}`;
 
   return (
     <div className="overflow-hidden rounded-xl border bg-card shadow-sm">
