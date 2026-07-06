@@ -73,6 +73,23 @@ export function useSaveStatusToast(
   }, [status, enabled]);
 }
 
+/**
+ * Konfirmasi buang perubahan saat dialog ditutup dengan status "dirty".
+ * Return `true` kalau aman ditutup (bersih/simpan sedang jalan → jangan
+ * ganggu, atau user setuju buang perubahan). Return `false` kalau user
+ * membatalkan penutupan.
+ *
+ * Dipakai di handler `onOpenChange` Dialog: kalau `false`, jangan
+ * panggil `onClose()`.
+ */
+export function confirmDiscardIfDirty(status: SaveStatus): boolean {
+  if (status !== "dirty") return true;
+  if (typeof window === "undefined") return true;
+  return window.confirm(
+    "Perubahan belum tersimpan akan hilang. Tetap tutup dialog?",
+  );
+}
+
 const STYLES: Record<SaveStatus, { label: string; icon: React.ReactNode; wrap: string }> = {
   clean: {
     label: "Tersimpan",
