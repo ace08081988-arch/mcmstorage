@@ -537,6 +537,8 @@ function AuthPage() {
             <div className="space-y-1">
               {TURNSTILE_SITE_KEY ? (
                 <TurnstileWidget
+                  key={widgetKey}
+                  ref={turnstileRef}
                   siteKey={TURNSTILE_SITE_KEY}
                   onToken={onTurnstileToken}
                   onError={onTurnstileError}
@@ -546,11 +548,33 @@ function AuthPage() {
                   Verifikasi CAPTCHA belum dikonfigurasi. Pendaftaran dinonaktifkan sementara.
                 </p>
               )}
-              {turnstileError && (
-                <p className="text-center text-[11px] text-destructive">
-                  Verifikasi CAPTCHA bermasalah ({turnstileError}). Muat ulang halaman lalu coba lagi.
-                </p>
-              )}
+              {turnstileError && (() => {
+                const host =
+                  typeof window !== "undefined" ? window.location.hostname : "";
+                const info = explainTurnstileError(turnstileError, host);
+                return (
+                  <div className="space-y-1 rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px]">
+                    <p className="text-center font-medium text-destructive">
+                      {info.message}{" "}
+                      <span className="font-mono text-muted-foreground">
+                        ({info.code})
+                      </span>
+                    </p>
+                    <p className="text-center text-muted-foreground">{info.hint}</p>
+                    {!info.adminAction && (
+                      <div className="flex justify-center pt-1">
+                        <button
+                          type="button"
+                          onClick={retryTurnstile}
+                          className="rounded border px-2 py-0.5 text-[11px] hover:bg-muted"
+                        >
+                          Coba lagi
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               {rateLimitedUntil > Date.now() && (
                 <p className="text-center text-[11px] text-destructive">
                   Terlalu banyak percobaan. Coba lagi ~
