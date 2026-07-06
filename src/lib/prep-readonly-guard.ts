@@ -9,6 +9,7 @@
  */
 
 import { rupiah } from "@/lib/stock-format";
+import { isSentPrep } from "@/lib/prep-active-selector";
 
 export type ReadOnlyAction = "delete" | "resend" | "edit";
 
@@ -58,7 +59,10 @@ function toNum(v: number | string | null | undefined): number {
  * boleh fallback ke pesan generik.
  */
 export function describeSoldStatus(p: ReadOnlyPrepStatus): string | null {
-  if (!p.sold_at) return null;
+  // Guard: paket harus benar-benar "sent" untuk punya status Riwayat
+  // Terkirim. Pakai SSOT (`isSentPrep`) — jangan tulis `!p.sold_at` di
+  // level modul supaya definisi "sent" tetap tunggal.
+  if (!isSentPrep(p)) return null;
   const method = methodLabel(p.sold_payment_method);
   const total = toNum(p.sold_total);
   const paid = toNum(p.sold_paid_amount);
