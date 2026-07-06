@@ -2605,13 +2605,13 @@ function DeliveryHistoryDialog({
                       {status.label}
                     </span>
                   </div>
-                  <div className="mt-1.5 grid grid-cols-2 gap-1 text-[11px] text-muted-foreground">
-                    <div><span className="text-[10px] uppercase tracking-wide">Kirim pertama</span><br />{formatWaktu(firstSent)}</div>
+                  <div className="mt-1.5 grid grid-cols-1 gap-1 text-[11px] text-muted-foreground sm:grid-cols-2">
+                    <div className="min-w-0"><span className="text-[10px] uppercase tracking-wide">Kirim pertama</span><br /><span className="truncate">{formatWaktu(firstSent)}</span></div>
                     {lastSent !== firstSent && (
-                      <div><span className="text-[10px] uppercase tracking-wide">Kirim terakhir</span><br />{formatWaktu(lastSent)}</div>
+                      <div className="min-w-0"><span className="text-[10px] uppercase tracking-wide">Kirim terakhir</span><br /><span className="truncate">{formatWaktu(lastSent)}</span></div>
                     )}
                     {t?.completed_at && (
-                      <div className="col-span-2"><span className="text-[10px] uppercase tracking-wide">Selesai</span><br />{formatWaktu(t.completed_at)}</div>
+                      <div className="min-w-0 sm:col-span-2"><span className="text-[10px] uppercase tracking-wide">Selesai</span><br /><span className="truncate">{formatWaktu(t.completed_at)}</span></div>
                     )}
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-1">
