@@ -1168,15 +1168,17 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
 
   async function sendShotWA(s: WorkerShot) {
     if (waSendingId) return;
-    const paths = shotPaths(s);
-    const ok = await confirmWithPreview({
+    const allPaths = shotPaths(s);
+    const res = await confirmWithPreview({
       title: "Kirim folder via WhatsApp?",
-      description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${s.location_url ? "" : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+      description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${allPaths.length} foto${s.location_url ? "" : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
       confirmText: "Kirim WA",
-      paths,
+      paths: allPaths,
       locationUrl: s.location_url,
     });
-    if (!ok) return;
+    if (!res.ok) return;
+    const paths = allPaths.filter((p) => !res.excluded.has(p));
+    if (paths.length === 0) { toast.warning("Semua foto dikecualikan. Batal kirim."); return; }
     setWaSendingId(s.id);
     try {
       const files: File[] = [];
@@ -1189,8 +1191,8 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       if (files.length === 0) {
         toast.warning("Foto tidak bisa diunduh untuk dilampirkan.");
       }
-      const res = await shareToWhatsApp({ text: shotCaption(s), title: title.name, files });
-      notifyShareResult(res);
+      const waRes = await shareToWhatsApp({ text: shotCaption(s), title: title.name, files });
+      notifyShareResult(waRes);
     } catch (err) {
       toast.error(`Gagal kirim WA: ${(err as Error).message}`);
     } finally {
@@ -1198,12 +1200,17 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     }
   }
 
-  async function sendShotChat(s: WorkerShot, conversationId: string, convTitle: string) {
+  async function sendShotChat(
+    s: WorkerShot,
+    conversationId: string,
+    convTitle: string,
+    excluded: Set<string> = new Set(),
+  ) {
     if (chatSendingId) return;
     setChatSendingId(s.id);
     const tid = toast.loading(`Mengirim ke ${convTitle}…`);
     try {
-      const paths = shotPaths(s);
+      const paths = shotPaths(s).filter((p) => !excluded.has(p));
       const chatShots: { id: string; file: File }[] = [];
       for (let i = 0; i < paths.length; i++) {
         const url = await resolvePrepUrl(paths[i], 600);
