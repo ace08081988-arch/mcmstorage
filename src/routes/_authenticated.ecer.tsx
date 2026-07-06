@@ -1325,26 +1325,23 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
 
   async function load() {
     setError(null);
-    // Kunci "folder tujuan" untuk kiriman pegawai adalah salah satu dari:
-    //  - prep_task_items.warehouse_item_id == title.warehouse_item_id, atau
-    //  - prep_task_items.ecer_title_id == title.id (fallback saat judul belum
-    //    ditautkan ke warehouse_item — mis. judul lama sebelum kolom itu
-    //    dipakai admin).
-    // Sebelumnya hanya `warehouse_item_id` yang dicocokkan dan bail-out
-    // penuh kalau kolomnya null, sehingga kiriman pegawai bisa "hilang".
-    if (!title.warehouse_item_id && !title.id) {
+    // Routing STRICT: kiriman pegawai hanya tampil di folder ecer yang
+    // sama persis dengan `prep_task_items.ecer_title_id`. Ini menghindari
+    // "campur" antar folder untuk produk multi-judul (mis. PASIR punya
+    // KRISTAL 1G/ST/SPR + PASIR). Auto-resolve ecer_title_id dijalankan
+    // di DB (trigger prep_task_items_resolve_ecer_title). Task item yang
+    // ecer_title_id-nya NULL — mis. produk tanpa judul ecer sama sekali —
+    // muncul di halaman /request pada section "Kiriman tanpa folder".
+    if (!title.id) {
       setShots([]);
       setLoading(false);
       return;
     }
     try {
-      const orParts: string[] = [];
-      if (title.warehouse_item_id) orParts.push(`warehouse_item_id.eq.${title.warehouse_item_id}`);
-      if (title.id) orParts.push(`ecer_title_id.eq.${title.id}`);
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: tItems, error: e1 } = await (supabase.from as any)("prep_task_items")
         .select("id,qty_requested,unit_label,warehouse_item_id,ecer_title_id")
-        .or(orParts.join(","));
+        .eq("ecer_title_id", title.id);
       if (e1) throw new Error(e1.message);
       const items = (tItems ?? []) as Array<{
         id: string;
@@ -1355,19 +1352,18 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       }>;
       if (items.length === 0) { setShots([]); return; }
 
-      const matchKindByItem = new Map<string, "strict" | "fallback_grams" | "fallback_wid">();
+      // Semua task_item di sini sudah pasti terikat ke title.id via
+      // ecer_title_id. Tandai "strict" bila qty+unit persis, else
+      // "fallback_grams" (produk sama, qty berbeda — misal admin membuat
+      // task dgn qty tak persis tapi tetap link ke judul ini secara manual).
+      const matchKindByItem = new Map<string, "strict" | "fallback_grams">();
       for (const it of items) {
         const u = normUnitStr(it.unit_label);
         const g = Number(it.qty_requested) || 0;
-        // Semua task_item yang cocok warehouse_item_id/ecer_title_id disertakan
-        // — grammase task hanya menentukan "tingkat kecocokan" untuk badge,
-        // bukan gate. Keputusan produk: folder ecer memuat semua kiriman
-        // produk yang sama, apapun qty task-nya.
-        let kind: "strict" | "fallback_grams" | "fallback_wid";
-        if (u === targetUnit && g === targetGrams) kind = "strict";
-        else if (it.warehouse_item_id && it.warehouse_item_id === title.warehouse_item_id) kind = "fallback_grams";
-        else kind = "fallback_wid";
-        matchKindByItem.set(it.id, kind);
+        matchKindByItem.set(
+          it.id,
+          u === targetUnit && g === targetGrams ? "strict" : "fallback_grams",
+        );
       }
       const ids = Array.from(matchKindByItem.keys());
       if (ids.length === 0) { setShots([]); return; }
@@ -1385,7 +1381,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           photo_paths: s.photo_paths,
           location_url: s.location_url,
           submitted_at: s.submitted_at,
-          match: matchKindByItem.get(s.task_item_id) ?? "fallback_wid",
+          match: matchKindByItem.get(s.task_item_id) ?? "fallback_grams",
         }) as WorkerShot);
       // Resolve thumb URLs in parallel
       await Promise.all(rows.map(async (r) => {
