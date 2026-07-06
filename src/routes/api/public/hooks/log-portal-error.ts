@@ -47,6 +47,67 @@ export function readAlertConfig(): {
   return { count, windowSec, cooldownSec };
 }
 
+/**
+ * Keputusan dedup alert (pure function untuk memudahkan unit test).
+ *
+ * Input: alert terakhir untuk kombinasi (kind, code) dan konfigurasi.
+ * Output:
+ *   - `insert`: buat alert baru.
+ *   - `merge` : alert masih terbuka, bump `count`/`severity`.
+ *   - `suppress`: dalam cooldown atau tidak perlu perubahan.
+ */
+export type AlertDecision =
+  | { action: "insert"; count: number; severity: "warning" | "critical" }
+  | {
+      action: "merge";
+      id: string;
+      count: number;
+      severity: "warning" | "critical";
+    }
+  | { action: "suppress"; reason: "cooldown" | "no_change" };
+
+export function decideAlertAction(input: {
+  existing: {
+    id: string;
+    count: number | null;
+    severity: string;
+    created_at: string;
+    acknowledged_at: string | null;
+  } | null;
+  nowCount: number;
+  alertCount: number;
+  cooldownSec: number;
+  now?: Date;
+}): AlertDecision {
+  const { existing, nowCount, alertCount, cooldownSec } = input;
+  const now = input.now ?? new Date();
+  const nextSeverity: "warning" | "critical" =
+    nowCount >= alertCount * 3 ? "critical" : "warning";
+  const cooldownStart = new Date(now.getTime() - cooldownSec * 1000);
+
+  if (existing && existing.acknowledged_at === null) {
+    const mergedCount = Math.max(existing.count ?? 0, nowCount);
+    const mergedSeverity: "warning" | "critical" =
+      existing.severity === "critical" || nextSeverity === "critical"
+        ? "critical"
+        : "warning";
+    if (mergedCount === (existing.count ?? 0) && mergedSeverity === existing.severity) {
+      return { action: "suppress", reason: "no_change" };
+    }
+    return {
+      action: "merge",
+      id: existing.id,
+      count: mergedCount,
+      severity: mergedSeverity,
+    };
+  }
+  if (existing && new Date(existing.created_at).getTime() >= cooldownStart.getTime()) {
+    // Sudah di-ack tapi masih dalam cooldown → suppress lintas token.
+    return { action: "suppress", reason: "cooldown" };
+  }
+  return { action: "insert", count: nowCount, severity: nextSeverity };
+}
+
 const PayloadSchema = z.object({
   kind: z.string().min(1).max(40),
   code: z.string().max(80).optional().nullable(),
@@ -161,47 +222,44 @@ export const Route = createFileRoute("/api/public/hooks/log-portal-error")({
 
         if ((count ?? 0) >= ALERT_COUNT) {
           const nowCount = count ?? 0;
-          const nextSeverity = nowCount >= ALERT_COUNT * 3 ? "critical" : "warning";
-          const cooldownIso = new Date(Date.now() - ALERT_COOLDOWN_SEC * 1000).toISOString();
-
-          // Dedup key: (kind, code, token_hash). `code` sudah diredaksi PII di atas,
-          // jadi aman dipakai sebagai bagian kunci deduplikasi.
+          // Dedup key: (kind, code) — cooldown berlaku LINTAS token. Kalau alert
+          // untuk kombinasi (kind, code) yang sama sudah pernah dibuat dan masih
+          // dalam cooldown, request berikutnya (dari token manapun) di-suppress.
+          // `code` sudah diredaksi PII di atas, jadi aman dipakai sebagai bagian
+          // kunci deduplikasi. Threshold deteksi tetap per (kind, token_hash)
+          // supaya satu token nakal tidak menenggelamkan sinyal token lain.
           let openQ = supabase
             .from("portal_error_alerts")
             .select("id, count, severity, created_at, acknowledged_at")
             .eq("kind", kind)
-            .eq("token_hash", tokenHash)
             .order("created_at", { ascending: false })
             .limit(1);
           openQ = code ? openQ.eq("code", code) : openQ.is("code", null);
           const { data: existingRows } = await openQ;
           const existing = existingRows?.[0] ?? null;
 
-          if (existing && existing.acknowledged_at === null) {
-            // Alert masih terbuka → gabungkan (bump count + severity), jangan buat baru.
-            const mergedCount = Math.max(existing.count ?? 0, nowCount);
-            const mergedSeverity =
-              existing.severity === "critical" || nextSeverity === "critical"
-                ? "critical"
-                : "warning";
-            if (mergedCount !== existing.count || mergedSeverity !== existing.severity) {
-              await supabase
-                .from("portal_error_alerts")
-                .update({ count: mergedCount, severity: mergedSeverity })
-                .eq("id", existing.id);
-            }
-          } else if (existing && existing.created_at >= cooldownIso) {
-            // Sudah di-ack tapi masih dalam cooldown → suppress, jangan bikin baru.
-          } else {
+          const decision = decideAlertAction({
+            existing,
+            nowCount,
+            alertCount: ALERT_COUNT,
+            cooldownSec: ALERT_COOLDOWN_SEC,
+          });
+          if (decision.action === "merge") {
+            await supabase
+              .from("portal_error_alerts")
+              .update({ count: decision.count, severity: decision.severity })
+              .eq("id", decision.id);
+          } else if (decision.action === "insert") {
             await supabase.from("portal_error_alerts").insert({
               kind,
               code,
               token_hash: tokenHash,
-              count: nowCount,
+              count: decision.count,
               window_seconds: ALERT_WINDOW_SEC,
-              severity: nextSeverity,
+              severity: decision.severity,
             });
           }
+          // action === "suppress": biarkan, dedup/cooldown menang.
         }
 
         return Response.json({ ok: true, ref });
