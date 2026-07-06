@@ -2035,8 +2035,8 @@ function PrepEditorDialog({
                 const unit = displayUnit(w?.name, ti?.unit_label ?? w?.base_unit ?? "g");
                 return (
                   <div key={idx} className="grid grid-cols-12 gap-1.5">
-                    <div className="col-span-7 flex items-center rounded-md border bg-muted/30 px-2 text-xs">
-                      {w?.name ?? "?"}
+                    <div className="col-span-7 flex min-w-0 items-center rounded-md border bg-muted/30 px-2 text-xs">
+                      <span className="truncate">{w?.name ?? "?"}</span>
                     </div>
                     <Input
                       type="number" inputMode="decimal" step="any" min="0"
@@ -2044,8 +2044,8 @@ function PrepEditorDialog({
                       onChange={(e) => setRows((rs) => rs.map((x, i) => i === idx ? { ...x, actual_grams: e.target.value } : x))}
                       className="col-span-3 h-9 text-xs"
                     />
-                    <div className="col-span-2 flex items-center justify-center rounded-md border bg-muted/30 px-1 text-[11px] font-medium text-muted-foreground">
-                      {unit}
+                    <div className="col-span-2 flex min-w-0 items-center justify-center rounded-md border bg-muted/30 px-1 text-[11px] font-medium text-muted-foreground">
+                      <span className="truncate">{unit}</span>
                     </div>
                   </div>
                 );
