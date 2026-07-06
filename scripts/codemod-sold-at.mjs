@@ -126,7 +126,19 @@ const files = ROOTS.flatMap((r) => walk(r));
 
 for (const file of files) {
   const src = readFileSync(file, "utf8");
-  let out = src;
+  // Bekukan area komentar supaya regex tidak menulis ulang teks contoh di
+  // dalam komentar (mis. `// jangan tulis !!p.sold_at`). Kita ganti dulu
+  // isi setiap komentar dengan placeholder yang tidak match pola apapun,
+  // jalankan replace pada kode, lalu kembalikan komentar aslinya.
+  const commentSlots = [];
+  const stashed = src.replace(
+    /\/\*[\s\S]*?\*\/|\/\/[^\n]*/g,
+    (m) => {
+      const i = commentSlots.push(m) - 1;
+      return `/*__CMT_${i}__*/`;
+    },
+  );
+  let out = stashed;
   const needed = new Set();
 
   for (const { re, helper, replace } of PATTERNS) {
@@ -135,6 +147,9 @@ for (const file of files) {
       return replace(...args);
     });
   }
+
+  // Kembalikan komentar asli.
+  out = out.replace(/\/\*__CMT_(\d+)__\*\//g, (_m, i) => commentSlots[Number(i)]);
 
   if (out !== src) {
     out = ensureImport(out, needed);
