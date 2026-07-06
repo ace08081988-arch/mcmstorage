@@ -674,6 +674,13 @@ function SendPrepLinkDialog({
   const [error, setError] = useState<string | null>(null);
   const [workerName, setWorkerName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
+  // Aksi mana yang sedang diproses. Dipakai untuk menampilkan spinner
+  // in-place (tanpa mengubah lebar tombol) dan mencuri fokus double-tap
+  // — semua tombol aksi lain di-disable selama satu aksi berjalan supaya
+  // baris berikutnya tidak ikut bergeser saat state berubah.
+  type PendingAction = "copyMsg" | "copyLinkPin" | "sendWA" | "downloadPng" | "downloadPdf";
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const isPending = pending !== null;
 
   async function logDelivery(channel: "whatsapp" | "copy_message" | "copy_link_pin" | "download_png" | "download_pdf") {
     if (!title || !session) return;
@@ -708,7 +715,10 @@ function SendPrepLinkDialog({
   }
 
   useEffect(() => {
-    if (!open) { setSession(null); setError(null); setBusy(false); setWorkerName(""); setNameError(null); }
+    if (!open) {
+      setSession(null); setError(null); setBusy(false);
+      setWorkerName(""); setNameError(null); setPending(null);
+    }
   }, [open]);
 
   function validateWorkerName(name: string): string | null {
