@@ -2689,8 +2689,10 @@ function DeliveryHistoryDialog({
           <DialogTitle className="flex items-center gap-2">
             <History className="h-4 w-4 text-primary" /> Riwayat pengiriman link
           </DialogTitle>
-          <DialogDescription>
-            Daftar pengiriman link tugas ke pegawai untuk <b>{headerLabel}</b>. Status diambil dari tugas terkait.
+          <DialogDescription className="min-w-0">
+            Daftar pengiriman link tugas ke pegawai untuk{" "}
+            <b className="inline-block min-w-0 max-w-full truncate align-bottom">{headerLabel}</b>
+            . Status diambil dari tugas terkait.
           </DialogDescription>
         </DialogHeader>
 
