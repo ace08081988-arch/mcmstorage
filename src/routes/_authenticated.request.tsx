@@ -1669,9 +1669,12 @@ function SendPrepToCustomerDialog({
     <Dialog open={open} onOpenChange={(v) => { if (!v && !busy) onClose(); }}>
       <DialogContent ref={scrollRef} className="sm:max-w-md max-h-[92vh] overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
-          <DialogTitle className="flex items-center gap-2 text-base">
-            <Send className="h-4 w-4 text-primary" /> Kirim ke pelanggan
-          </DialogTitle>
+          <div className="flex items-start justify-between gap-2">
+            <DialogTitle className="flex items-center gap-2 text-base">
+              <Send className="h-4 w-4 text-primary" /> Kirim ke pelanggan
+            </DialogTitle>
+            <DialogSaveStatus status={sendStatus} className="shrink-0" />
+          </div>
           <DialogDescription>
             Foto ikut terkirim. Stok gudang & piutang otomatis diperbarui.
           </DialogDescription>
