@@ -33,6 +33,7 @@ import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/L
 import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScrollProgress";
 import { DialogSaveStatus, useSaveStatus, useSaveStatusToast, confirmDiscardIfDirty } from "@/components/DialogSaveStatus";
 import { Field } from "@/components/DialogField";
+import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -1640,14 +1641,16 @@ function PrepSections({
     const isReadOnly = inSent || !!p.sold_at;
     const guardedDelete = () => {
       if (isReadOnly) {
-        toast.error("Paket sudah di Riwayat Terkirim — tidak bisa diubah.");
+        const t = buildReadOnlyToast("delete", p);
+        toast.error(t.title, { description: t.description });
         return;
       }
       onDelete(p);
     };
     const guardedSent = () => {
       if (isReadOnly) {
-        toast.error("Paket sudah di Riwayat Terkirim — tidak bisa dikirim ulang.");
+        const t = buildReadOnlyToast("resend", p);
+        toast.error(t.title, { description: t.description });
         return;
       }
       setShowHistory(true);

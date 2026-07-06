@@ -35,6 +35,7 @@ import { shortenUrlForToast } from "@/lib/shorten-url-for-toast";
 import { copyUrlWithToast } from "@/lib/copy-url-toast";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
+import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -2369,7 +2370,8 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
 
   async function onDelete() {
     if (readOnly) {
-      toast.error("Paket sudah di Riwayat Terkirim — tidak bisa diubah.");
+      const t = buildReadOnlyToast("delete", prep);
+      toast.error(t.title, { description: t.description });
       return;
     }
     const ok = typeof window !== "undefined" && window.confirm(

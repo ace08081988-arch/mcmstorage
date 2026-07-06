@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import { buildReadOnlyToast, describeSoldStatus } from "./prep-readonly-guard";
 
 /**
  * Guardrail: paket berstatus Riwayat Terkirim (sold_at != null) harus
@@ -65,14 +66,15 @@ describe("Request renderCard — guardedDelete/guardedSent memblokir aksi saat R
   });
 
   it("guardedDelete: if (isReadOnly) → toast.error + return SEBELUM onDelete", () => {
+    // Guard: bangun pesan lewat buildReadOnlyToast("delete", p) → toast.error(t.title, { description: t.description }) → return; onDelete(p).
     expect(REQUEST).toMatch(
-      /const guardedDelete\s*=\s*\(\s*\)\s*=>\s*\{\s*if\s*\(\s*isReadOnly\s*\)\s*\{\s*toast\.error\([^)]*Riwayat Terkirim[^)]*\)\s*;\s*return\s*;\s*\}\s*onDelete\(p\)/,
+      /const guardedDelete\s*=\s*\(\s*\)\s*=>\s*\{\s*if\s*\(\s*isReadOnly\s*\)\s*\{[\s\S]*?buildReadOnlyToast\(\s*["']delete["']\s*,\s*p\s*\)[\s\S]*?toast\.error\([\s\S]*?description[\s\S]*?\)\s*;\s*return\s*;\s*\}\s*onDelete\(p\)/,
     );
   });
 
   it("guardedSent: if (isReadOnly) → toast.error + return SEBELUM setShowHistory", () => {
     expect(REQUEST).toMatch(
-      /const guardedSent\s*=\s*\(\s*\)\s*=>\s*\{\s*if\s*\(\s*isReadOnly\s*\)\s*\{\s*toast\.error\([^)]*Riwayat Terkirim[^)]*\)\s*;\s*return\s*;\s*\}\s*setShowHistory\(true\)/,
+      /const guardedSent\s*=\s*\(\s*\)\s*=>\s*\{\s*if\s*\(\s*isReadOnly\s*\)\s*\{[\s\S]*?buildReadOnlyToast\(\s*["']resend["']\s*,\s*p\s*\)[\s\S]*?toast\.error\([\s\S]*?description[\s\S]*?\)\s*;\s*return\s*;\s*\}\s*setShowHistory\(true\)/,
     );
   });
 
@@ -99,7 +101,7 @@ describe("Ecer PrepBox — Edit/Hapus tidak render & onDelete diblokir saat sold
 
   it("onDelete: guard if (readOnly) → toast.error + return SEBELUM hapus", () => {
     expect(ECER).toMatch(
-      /async function onDelete\(\)\s*\{\s*if\s*\(\s*readOnly\s*\)\s*\{\s*toast\.error\([^)]*Riwayat Terkirim[^)]*\)\s*;\s*return\s*;\s*\}/,
+      /async function onDelete\(\)\s*\{\s*if\s*\(\s*readOnly\s*\)\s*\{[\s\S]*?buildReadOnlyToast\(\s*["']delete["']\s*,\s*prep\s*\)[\s\S]*?toast\.error\([\s\S]*?description[\s\S]*?\)\s*;\s*return\s*;\s*\}/,
     );
   });
 
@@ -120,5 +122,102 @@ describe("ReadyRequestSection — badge angka hanya menghitung yang belum sold",
     );
     // Hitung prep_count hanya dari preps yang !sold_at (badge angka).
     expect(src).toMatch(/preps\.filter\([\s\S]*?!\s*p\.sold_at[\s\S]*?\)\.length/);
+  });
+});
+
+// -----------------------------------------------------------------------
+// Unit test isi pesan toast — pastikan alasan aksi + status paket
+// (metode bayar, nominal, pelanggan, tanggal) benar-benar disebutkan.
+// -----------------------------------------------------------------------
+describe("describeSoldStatus — ringkas status paket sold", () => {
+  it("kembalikan null bila paket belum sold (guard salah dipanggil)", () => {
+    expect(describeSoldStatus({ sold_at: null })).toBeNull();
+    expect(describeSoldStatus({})).toBeNull();
+  });
+
+  it("Lunas (kas) → sebut 'Lunas', nominal, pelanggan, dan waktu", () => {
+    const s = describeSoldStatus({
+      sold_at: "2026-07-06T09:15:00.000Z",
+      sold_payment_method: "kas",
+      sold_total: 125000,
+      sold_party_name: "Bu Rina",
+    });
+    expect(s).not.toBeNull();
+    expect(s).toContain("Lunas");
+    expect(s).toMatch(/125\.000|125,000/); // rupiah id-ID
+    expect(s).toContain("ke Bu Rina");
+  });
+
+  it("Piutang (hutang) → sebut 'Piutang' dan total", () => {
+    const s = describeSoldStatus({
+      sold_at: "2026-07-06T09:15:00.000Z",
+      sold_payment_method: "hutang",
+      sold_total: 90000,
+      sold_party_name: "Pak Andi",
+    });
+    expect(s).toContain("Piutang");
+    expect(s).toMatch(/90\.000|90,000/);
+    expect(s).toContain("ke Pak Andi");
+  });
+
+  it("Bayar sebagian → tampilkan dibayar, total, DAN sisa piutang", () => {
+    const s = describeSoldStatus({
+      sold_at: "2026-07-06T09:15:00.000Z",
+      sold_payment_method: "partial",
+      sold_total: 200000,
+      sold_paid_amount: 75000,
+      sold_party_name: "Toko Sinar",
+    });
+    expect(s).toContain("Bayar sebagian");
+    expect(s).toMatch(/dibayar/i);
+    expect(s).toMatch(/75\.000|75,000/);
+    expect(s).toMatch(/200\.000|200,000/);
+    // Sisa = 200k - 75k = 125k
+    expect(s).toMatch(/sisa piutang/i);
+    expect(s).toMatch(/125\.000|125,000/);
+  });
+
+  it("tanpa nominal → tetap sebut label metode (fallback 'Terkirim')", () => {
+    const s = describeSoldStatus({ sold_at: "2026-07-06T09:15:00.000Z" });
+    expect(s).toContain("Terkirim");
+  });
+});
+
+describe("buildReadOnlyToast — pesan aksi ditolak", () => {
+  const sold = {
+    sold_at: "2026-07-06T09:15:00.000Z",
+    sold_payment_method: "partial" as const,
+    sold_total: 200000,
+    sold_paid_amount: 75000,
+    sold_party_name: "Toko Sinar",
+  };
+
+  it("delete: title menyebut 'Riwayat Terkirim' + kata kerja 'menghapus'", () => {
+    const t = buildReadOnlyToast("delete", sold);
+    expect(t.title).toContain("Riwayat Terkirim");
+    expect(t.title).toContain("menghapus");
+  });
+
+  it("resend: kata kerja 'mengirim ulang'", () => {
+    const t = buildReadOnlyToast("resend", sold);
+    expect(t.title).toContain("mengirim ulang");
+  });
+
+  it("edit: kata kerja 'mengubah'", () => {
+    const t = buildReadOnlyToast("edit", sold);
+    expect(t.title).toContain("mengubah");
+  });
+
+  it("description memuat status saat ini (metode, nominal, pelanggan)", () => {
+    const t = buildReadOnlyToast("delete", sold);
+    expect(t.description).toBeTruthy();
+    expect(t.description!).toMatch(/Status saat ini/i);
+    expect(t.description!).toContain("Bayar sebagian");
+    expect(t.description!).toContain("Toko Sinar");
+  });
+
+  it("description undefined bila paket belum sold (fallback pesan judul saja)", () => {
+    const t = buildReadOnlyToast("delete", { sold_at: null });
+    expect(t.description).toBeUndefined();
   });
 });
