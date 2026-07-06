@@ -1273,7 +1273,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     if (shots.length === 0) {
       ok = await confirm({
         title: "Kirim perintah penyiapan?",
-        description: `Tidak ada kiriman pegawai. Akan dikirim perintah teks ke pegawai untuk menyiapkan ${title.name} (${title.target_grams} ${displayUnitStr}).`,
+        description: linkedTask
+          ? `Akan dikirim perintah untuk *${title.name}* (${title.target_grams} ${displayUnitStr}) beserta *link tugas unik* ke halaman pegawai.`
+          : `Belum ada tugas pegawai untuk judul *${title.name}*. Buat dulu di halaman Tugas Baru agar link penyiapan bisa dilampirkan. Kirim tetap sebagai perintah teks?`,
         confirmText: "Kirim WA",
       });
     } else {
@@ -1322,13 +1324,33 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       // supaya owner tetap bisa memicu tugas langsung dari halaman detail
       // penyiapan, tanpa harus pindah ke halaman Tugas terlebih dahulu.
       if (shots.length === 0) {
+        // Bangun pesan perintah UNIK per judul: menyertakan link publik
+        // tugas pegawai (`/t/<token>`) beserta catatan/target khusus judul
+        // ini. Bila tidak ada tugas yang terhubung, fallback ke teks
+        // generik lama supaya alur tetap berjalan.
+        const noteLine = linkedTask?.note?.trim() ? `Catatan: ${linkedTask.note.trim()}` : null;
+        const taskUrl = linkedTask ? publicTaskUrl(linkedTask.share_token) : null;
+        const qtyLine = linkedTask?.qty_requested
+          ? `Jumlah diminta: *${linkedTask.qty_requested} ${linkedTask.unit_label ?? displayUnitStr}*`
+          : null;
         const text = [
           `📦 *Perintah penyiapan* — ${title.name}`,
           `Produk: ${itemName}`,
           `Target per kotak: *${title.target_grams} ${displayUnitStr}*`,
+          ...(qtyLine ? [qtyLine] : []),
+          ...(noteLine ? [noteLine] : []),
           `ID judul: ${title.id}`,
-          "",
-          "Mohon siapkan kotak sesuai target di atas, lalu unggah foto + lokasi di aplikasi MCM (halaman Tugas).",
+          ...(taskUrl
+            ? [
+                "",
+                "🔗 Link tugas (khusus judul ini):",
+                taskUrl,
+                "Buka link, masukkan PIN yang diberikan, lalu unggah foto + lokasi untuk *judul ini saja*.",
+              ]
+            : [
+                "",
+                "Belum ada link tugas untuk judul ini. Buat lewat menu *Tugas Baru* di aplikasi MCM lalu bagikan ulang.",
+              ]),
         ].join("\n");
         const res = await shareToWhatsApp({ text, title: title.name });
         notifyShareResult(res);
