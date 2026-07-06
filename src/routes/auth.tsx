@@ -108,6 +108,8 @@ function AuthPage() {
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number>(0);
   const secureSignUpFn = useServerFn(secureSignUp);
+  const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
+  const [widgetKey, setWidgetKey] = useState(0);
 
   const onTurnstileToken = useCallback((t: string | null) => {
     setTurnstileToken(t);
@@ -115,6 +117,16 @@ function AuthPage() {
   }, []);
   const onTurnstileError = useCallback((code: string) => {
     setTurnstileError(code);
+  }, []);
+  const retryTurnstile = useCallback(() => {
+    setTurnstileError(null);
+    setTurnstileToken(null);
+    if (turnstileRef.current) {
+      turnstileRef.current.reset();
+    } else {
+      // Widget belum sempat mount (script gagal load) → remount total.
+      setWidgetKey((k) => k + 1);
+    }
   }, []);
 
   // Persist perubahan intent/mode/email — sync juga antar tab lewat StorageEvent.
