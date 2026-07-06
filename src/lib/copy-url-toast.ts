@@ -1,14 +1,16 @@
 import { toast } from "sonner";
 import { copyText } from "@/lib/share-wa";
 import { shortenUrlForToast } from "@/lib/shorten-url-for-toast";
+import { showManualCopy } from "@/lib/manual-copy";
 
 /**
  * Salin URL ke clipboard sambil menampilkan toast. Jika `navigator.clipboard`
  * memblokir tulis (izin ditolak, konteks non-HTTPS, iframe tanpa clipboard-write)
  * dan fallback execCommand juga gagal, tampilkan toast persistent dengan URL
  * penuh siap disalin manual — pakai tombol "Salin manual" yang membuka
- * `window.prompt` (native, mudah long-press-copy di HP) plus URL penuh di
- * description agar pengguna bisa memilihnya dengan tangan.
+ * modal kustom (`ManualCopyHost`) berisi field URL + tombol Salin, supaya
+ * UX konsisten di semua perangkat (Android/iOS/desktop/WebView APK) tanpa
+ * bergantung pada `window.prompt` yang tampilannya beda-beda.
  */
 export async function copyUrlWithToast(url: string, successLabel: string): Promise<boolean> {
   const res = await copyText(url);
@@ -29,13 +31,8 @@ export async function copyUrlWithToast(url: string, successLabel: string): Promi
     action: {
       label: "Salin manual",
       onClick: () => {
-        try {
-          // window.prompt menampilkan URL di kotak teks native yang bisa
-          // di-long-press → copy di Android/iOS tanpa izin Clipboard API.
-          if (typeof window !== "undefined") window.prompt("Salin URL berikut:", url);
-        } catch {
-          /* ignore */
-        }
+        // Buka modal kustom dengan field URL read-only + tombol Salin.
+        showManualCopy(url);
       },
     },
   });

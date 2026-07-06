@@ -17,6 +17,7 @@ import { applyCompactMode } from "@/components/CompactModeToggle";
 import { applyReduceMotion } from "@/components/ReduceMotionToggle";
 import { bootstrapNativePermissions } from "@/lib/permission-bootstrap";
 import { ConfirmHost } from "@/lib/confirm";
+import { ManualCopyHost } from "@/lib/manual-copy";
 import { WhatsAppTargetHost } from "@/lib/wa-target";
 import { WaPreviewHost } from "@/lib/wa-preview";
 import { useDeviceSessionGuard } from "@/lib/device-sessions";
@@ -473,6 +474,7 @@ function RootComponent() {
       <Outlet />
       <Toaster richColors position="top-center" />
       <ConfirmHost />
+      <ManualCopyHost />
       <WhatsAppTargetHost />
       <WaPreviewHost />
       <ChatModeSplash />
