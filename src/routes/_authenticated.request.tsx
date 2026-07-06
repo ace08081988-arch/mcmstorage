@@ -674,6 +674,13 @@ function SendPrepLinkDialog({
   const [error, setError] = useState<string | null>(null);
   const [workerName, setWorkerName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
+  // Aksi mana yang sedang diproses. Dipakai untuk menampilkan spinner
+  // in-place (tanpa mengubah lebar tombol) dan mencuri fokus double-tap
+  // — semua tombol aksi lain di-disable selama satu aksi berjalan supaya
+  // baris berikutnya tidak ikut bergeser saat state berubah.
+  type PendingAction = "copyMsg" | "copyLinkPin" | "sendWA" | "downloadPng" | "downloadPdf";
+  const [pending, setPending] = useState<PendingAction | null>(null);
+  const isPending = pending !== null;
 
   async function logDelivery(channel: "whatsapp" | "copy_message" | "copy_link_pin" | "download_png" | "download_pdf") {
     if (!title || !session) return;
@@ -708,7 +715,10 @@ function SendPrepLinkDialog({
   }
 
   useEffect(() => {
-    if (!open) { setSession(null); setError(null); setBusy(false); setWorkerName(""); setNameError(null); }
+    if (!open) {
+      setSession(null); setError(null); setBusy(false);
+      setWorkerName(""); setNameError(null); setPending(null);
+    }
   }, [open]);
 
   function validateWorkerName(name: string): string | null {
@@ -788,31 +798,43 @@ function SendPrepLinkDialog({
   }, [session, title, workerName]);
 
   async function copyLinkPin() {
-    if (!session) return;
+    if (!session || pending) return;
+    setPending("copyLinkPin");
     try {
       await navigator.clipboard.writeText(`Tugas: Request ${title?.name ?? ""}\nLink: ${session.url}\nPIN: ${session.pin}`);
       toast.success("Link + PIN disalin", { description: "Tempel di WhatsApp untuk kirim ulang." });
       void logDelivery("copy_link_pin");
     } catch (e) {
       toast.error("Gagal menyalin Link + PIN", { description: (e as Error)?.message ?? "Periksa izin clipboard." });
+    } finally {
+      setPending(null);
     }
   }
 
   async function copyMessage() {
-    if (!waMessage) return;
+    if (!waMessage || pending) return;
+    setPending("copyMsg");
     try {
       await navigator.clipboard.writeText(waMessage);
       toast.success("Pesan WhatsApp disalin", { description: "Tempel di WhatsApp Business untuk kirim ke pegawai." });
       void logDelivery("copy_message");
     } catch (e) {
       toast.error("Gagal menyalin pesan", { description: (e as Error)?.message ?? "Periksa izin clipboard." });
+    } finally {
+      setPending(null);
     }
   }
 
-  function sendWA() {
-    if (!session || !title || !waMessage) return;
-    void shareToWhatsApp({ text: waMessage, title: `Request ${title.name}`, url: session.url }).then(notifyShareResult);
-    void logDelivery("whatsapp");
+  async function sendWA() {
+    if (!session || !title || !waMessage || pending) return;
+    setPending("sendWA");
+    try {
+      const res = await shareToWhatsApp({ text: waMessage, title: `Request ${title.name}`, url: session.url });
+      notifyShareResult(res);
+      void logDelivery("whatsapp");
+    } finally {
+      setPending(null);
+    }
   }
 
   const qrUrl = session ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(session.url)}` : "";
@@ -897,7 +919,8 @@ function SendPrepLinkDialog({
   }
 
   async function downloadPng() {
-    if (!session) return;
+    if (!session || pending) return;
+    setPending("downloadPng");
     try {
       const dataUrl = await composePosterPng();
       const a = document.createElement("a");
@@ -910,11 +933,14 @@ function SendPrepLinkDialog({
       void logDelivery("download_png");
     } catch (e) {
       toast.error("Gagal unduh PNG: " + ((e as Error).message ?? String(e)));
+    } finally {
+      setPending(null);
     }
   }
 
   async function downloadPdf() {
-    if (!session || !title) return;
+    if (!session || !title || pending) return;
+    setPending("downloadPdf");
     try {
       const qrData = await renderQrDataUrl(560);
       const { default: jsPDF } = await import("jspdf");
@@ -978,6 +1004,8 @@ function SendPrepLinkDialog({
       void logDelivery("download_pdf");
     } catch (e) {
       toast.error("Gagal unduh PDF: " + ((e as Error).message ?? String(e)));
+    } finally {
+      setPending(null);
     }
   }
 
@@ -1055,27 +1083,43 @@ function SendPrepLinkDialog({
               />
             </div>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
-              <Button variant="outline" size="sm" onClick={copyMessage} disabled={!canPrepare}>
-                <Copy className="mr-1 h-3.5 w-3.5" /> Salin pesan
+              <Button variant="outline" size="sm" onClick={copyMessage} disabled={!canPrepare || (isPending && pending !== "copyMsg")} aria-busy={pending === "copyMsg"}>
+                {pending === "copyMsg"
+                  ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  : <Copy className="mr-1 h-3.5 w-3.5" />}
+                Salin pesan
               </Button>
               <Button
                 size="sm"
-                onClick={sendWA}
-                disabled={!canPrepare}
+                onClick={() => void sendWA()}
+                disabled={!canPrepare || (isPending && pending !== "sendWA")}
+                aria-busy={pending === "sendWA"}
                 className="bg-[#25D366] text-white hover:bg-[#20b959]"
               >
-                <Send className="mr-1 h-3.5 w-3.5" /> Kirim via WhatsApp
+                {pending === "sendWA"
+                  ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  : <Send className="mr-1 h-3.5 w-3.5" />}
+                Kirim via WhatsApp
               </Button>
             </div>
-            <Button variant="ghost" size="sm" className="min-h-11 w-full sm:min-h-9" onClick={copyLinkPin} disabled={!canPrepare}>
-              <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link + PIN saja
+            <Button variant="ghost" size="sm" className="min-h-11 w-full sm:min-h-9" onClick={copyLinkPin} disabled={!canPrepare || (isPending && pending !== "copyLinkPin")} aria-busy={pending === "copyLinkPin"}>
+              {pending === "copyLinkPin"
+                ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                : <Copy className="mr-1 h-3.5 w-3.5" />}
+              Salin Link + PIN saja
             </Button>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
-              <Button variant="outline" size="sm" onClick={() => void downloadPng()}>
-                <Download className="mr-1 h-3.5 w-3.5" /> Unduh PNG
+              <Button variant="outline" size="sm" onClick={() => void downloadPng()} disabled={isPending && pending !== "downloadPng"} aria-busy={pending === "downloadPng"}>
+                {pending === "downloadPng"
+                  ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  : <Download className="mr-1 h-3.5 w-3.5" />}
+                Unduh PNG
               </Button>
-              <Button variant="outline" size="sm" onClick={() => void downloadPdf()}>
-                <FileText className="mr-1 h-3.5 w-3.5" /> Unduh PDF
+              <Button variant="outline" size="sm" onClick={() => void downloadPdf()} disabled={isPending && pending !== "downloadPdf"} aria-busy={pending === "downloadPdf"}>
+                {pending === "downloadPdf"
+                  ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  : <FileText className="mr-1 h-3.5 w-3.5" />}
+                Unduh PDF
               </Button>
             </div>
             <Button variant="ghost" size="sm" asChild className="min-h-11 w-full sm:min-h-9">
@@ -2279,6 +2323,7 @@ function WorkerTestDialog({
 }) {
   const [busy, setBusy] = useState(false);
   const [session, setSession] = useState<{ url: string; pin: string; token: string } | null>(null);
+  const [copying, setCopying] = useState(false);
   const [pin, setPin] = useState("");
 
   useEffect(() => {
@@ -2311,12 +2356,15 @@ function WorkerTestDialog({
   }
 
   async function copyAll() {
-    if (!session) return;
+    if (!session || copying) return;
+    setCopying(true);
     try {
       await navigator.clipboard.writeText(`Link: ${session.url}\nPIN: ${session.pin}`);
       toast.success("Link + PIN disalin", { description: "Sekarang bisa kirim ulang ke pegawai." });
     } catch (e) {
       toast.error("Gagal menyalin", { description: (e as Error)?.message ?? "Periksa izin clipboard." });
+    } finally {
+      setCopying(false);
     }
   }
 
@@ -2410,8 +2458,11 @@ function WorkerTestDialog({
               Stok produk akan benar-benar berkurang. Tekan <b>"Batalkan sesi uji coba"</b> untuk mengembalikan stok &amp; menghapus paket uji.
             </div>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
-              <Button variant="outline" size="sm" onClick={copyAll}>
-                <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link+PIN
+              <Button variant="outline" size="sm" onClick={copyAll} disabled={copying} aria-busy={copying}>
+                {copying
+                  ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  : <Copy className="mr-1 h-3.5 w-3.5" />}
+                Salin Link+PIN
               </Button>
               <Button size="sm" asChild>
                 <a href={session.url} target="_blank" rel="noreferrer">
