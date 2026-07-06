@@ -1776,7 +1776,7 @@ function ShareDialog({ info, onClose }: { info: { token: string; pin: string; ti
             <button onClick={() => void copy(info.pin, "PIN")} className="inline-flex h-9 items-center gap-1 rounded-md border px-2 text-xs"><Copy className="h-4 w-4" /></button>
           </div>
         </div>
-        <div className="grid grid-cols-1 gap-2 pt-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2.5 pt-2 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11">
           <button type="button" onClick={onShare}
             className="inline-flex h-10 items-center justify-center gap-1 rounded-md bg-[#25D366] text-sm font-semibold text-white">
             <MessageCircle className="h-4 w-4" /> Bagikan
