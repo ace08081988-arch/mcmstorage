@@ -1113,9 +1113,15 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
 
   async function sendShotWA(s: WorkerShot) {
     if (waSendingId) return;
+    const paths = shotPaths(s);
+    const ok = await confirm({
+      title: "Kirim folder via WhatsApp?",
+      description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${s.location_url ? `\n📍 Lokasi: ${s.location_url}` : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+      confirmText: "Kirim WA",
+    });
+    if (!ok) return;
     setWaSendingId(s.id);
     try {
-      const paths = shotPaths(s);
       const files: File[] = [];
       for (let pi = 0; pi < paths.length; pi++) {
         const url = await resolvePrepUrl(paths[pi], 600);
