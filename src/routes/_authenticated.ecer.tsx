@@ -24,6 +24,7 @@ import {
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
