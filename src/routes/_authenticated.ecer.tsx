@@ -1162,10 +1162,12 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const lines = take.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const firstLoc = take.find((s) => s.location_url);
       const excludedCount = excludedSet.size;
-      const totalPaths = allPaths.length;
+      const totalPaths = Math.min(shots.slice(0, take).flatMap((s) => shotPaths(s)).length, 12);
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:`
+        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:`,
+        ...lines,
+        ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
       ].join("\n");
       const res = await shareToWhatsApp({ text, title: title.name, files });
       notifyShareResult(res);
