@@ -60,6 +60,7 @@ import {
   Inbox,
   AlertCircle,
   X as XIcon,
+  Trash2,
   ChevronDown,
   Layers,
   Info,
