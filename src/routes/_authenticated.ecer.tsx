@@ -629,13 +629,23 @@ function DetailHero({
       if (e.defaultPrevented) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (!e.shiftKey) return;
-      if (e.key !== "L" && e.key !== "l") return;
       const t = e.target as HTMLElement | null;
       const tag = t?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (t?.isContentEditable) return;
-      e.preventDefault();
-      void onCopyPrepLink();
+      if (e.key === "L" || e.key === "l") {
+        e.preventDefault();
+        void onCopyPrepLink();
+        return;
+      }
+      // Shift+Q: toggle dialog QR permalink Penyiapan pegawai. Toggle
+      // (bukan sekadar open) supaya bisa tutup lagi lewat keyboard tanpa
+      // pindah tangan ke mouse.
+      if (e.key === "Q" || e.key === "q") {
+        e.preventDefault();
+        setQrOpen((v) => !v);
+        return;
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
