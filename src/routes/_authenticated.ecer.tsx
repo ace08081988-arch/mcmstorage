@@ -1217,6 +1217,47 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title.id, title.warehouse_item_id, targetGrams, targetUnit]);
 
+  // Cari tugas pegawai yang terhubung ke judul ini via
+  // prep_task_items.ecer_title_id. Bila ada beberapa, ambil yang terbaru
+  // (task.created_at desc) supaya link yang dibagikan adalah yang paling
+  // aktual. Tanpa keterikatan ini, "Kirim perintah" jatuh ke pesan generik.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase.from as any)("prep_task_items")
+        .select("id,task_id,qty_requested,unit_label,note,ref_photo_path,warehouse_item_id,prep_tasks:task_id(id,share_token,title,created_at,expires_at)")
+        .eq("ecer_title_id", title.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (cancelled) return;
+      const row = (data ?? [])[0] as (
+        | {
+            task_id: string;
+            qty_requested: number | null;
+            unit_label: string | null;
+            note: string | null;
+            ref_photo_path: string | null;
+            warehouse_item_id: string | null;
+            prep_tasks: { id: string; share_token: string; title: string | null; created_at: string; expires_at: string | null } | null;
+          }
+        | undefined
+      );
+      if (!row || !row.prep_tasks?.share_token) { setLinkedTask(null); return; }
+      setLinkedTask({
+        task_id: row.task_id,
+        share_token: row.prep_tasks.share_token,
+        task_title: row.prep_tasks.title,
+        item_id: row.warehouse_item_id ?? "",
+        qty_requested: row.qty_requested,
+        unit_label: row.unit_label,
+        note: row.note,
+        ref_photo_path: row.ref_photo_path,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [title.id]);
+
   async function refresh() {
     setRefreshing(true);
     await load();
