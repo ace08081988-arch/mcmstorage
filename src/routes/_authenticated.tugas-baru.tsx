@@ -23,6 +23,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/tugas-baru")({
+  validateSearch: (search: Record<string, unknown>): { title_id?: string } => {
+    const t = typeof search.title_id === "string" ? search.title_id.trim() : "";
+    // Guard: hanya UUID v4-ish yang diteruskan supaya tidak bocor payload liar.
+    if (t && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)) {
+      return { title_id: t };
+    }
+    return {};
+  },
   head: () => ({
     meta: [
       { title: "Buat Tugas Pegawai · MCM Storage" },
