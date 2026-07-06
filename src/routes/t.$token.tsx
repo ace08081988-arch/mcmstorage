@@ -3917,7 +3917,15 @@ function RequestForm({
       const { data, error } = await (publicSupabase.rpc as any)("request_submit_via_task", args);
       if (error) throw error;
       const res = data as { ok: boolean; error?: string };
-      if (!res?.ok) throw new Error(res?.error || "submit_failed");
+      if (!res?.ok) {
+        const msg =
+          res?.error === "task_exhausted"
+            ? "Link ini sudah dipakai untuk 1 paket. Minta link + PIN baru ke admin."
+            : res?.error === "bad_pin"
+              ? "PIN salah"
+              : res?.error || "submit_failed";
+        throw new Error(msg);
+      }
       toast.success(`Paket request terkirim (${uploaded.length} foto), stok dikurangi`);
       setPhotos([]);
       setUploads([]);
