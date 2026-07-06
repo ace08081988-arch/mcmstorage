@@ -1235,13 +1235,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     s: WorkerShot,
     conversationId: string,
     convTitle: string,
-    excluded: Set<string> = new Set(),
+    orderedPaths?: string[],
   ) {
     if (chatSendingId) return;
     setChatSendingId(s.id);
     const tid = toast.loading(`Mengirim ke ${convTitle}…`);
     try {
-      const paths = shotPaths(s).filter((p) => !excluded.has(p));
+      // Prefer the exact ordered list from the preview modal so attachments
+      // follow the thumbnails the user saw (after exclusions). Fallback to
+      // shotPaths(s) if caller didn't pass one.
+      const paths = orderedPaths ?? shotPaths(s);
       const chatShots: { id: string; file: File }[] = [];
       for (let i = 0; i < paths.length; i++) {
         const url = await resolvePrepUrl(paths[i], 600);
@@ -1415,7 +1418,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               toast.warning("Semua foto dikecualikan. Batal kirim.");
               return;
             }
-            void sendShotChat(target, conversationId, displayTitle, res.excluded);
+            void sendShotChat(target, conversationId, displayTitle, remaining);
           });
         }}
       />
