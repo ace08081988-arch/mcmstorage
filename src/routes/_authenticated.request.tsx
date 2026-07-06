@@ -1381,17 +1381,27 @@ function TitleDetailView({
 
   async function load() {
     setLoading(true);
-    const { data } = await sb.from("request_preparations").select("*").eq("title_id", title.id).order("created_at", { ascending: false });
-    const list = (data ?? []) as RequestPreparation[];
-    setPreps(list);
-    if (list.length > 0) {
-      const ids = list.map((p) => p.id);
-      const { data: pi } = await sb.from("request_preparation_items").select("id,preparation_id,warehouse_item_id,actual_grams").in("preparation_id", ids);
-      setPrepItems((pi ?? []) as typeof prepItems);
-    } else {
-      setPrepItems([]);
+    try {
+      const { data, error } = await sb.from("request_preparations")
+        .select("*").eq("title_id", title.id).order("created_at", { ascending: false });
+      if (error) throw error;
+      const list = (data ?? []) as RequestPreparation[];
+      setPreps(list);
+      if (list.length > 0) {
+        const ids = list.map((p) => p.id);
+        const { data: pi, error: piErr } = await sb.from("request_preparation_items")
+          .select("id,preparation_id,warehouse_item_id,actual_grams").in("preparation_id", ids);
+        if (piErr) throw piErr;
+        setPrepItems((pi ?? []) as typeof prepItems);
+      } else {
+        setPrepItems([]);
+      }
+      return { ok: true as const };
+    } catch (e) {
+      return { ok: false as const, error: (e as Error).message ?? String(e) };
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   }
   useEffect(() => { void load(); }, [title.id]);
 
@@ -1463,7 +1473,10 @@ function TitleDetailView({
           titleName={title.name}
           customers={customers}
           onDelete={handleDelete}
-          onChanged={() => { onChanged(); void load(); }}
+          onChanged={async () => {
+            onChanged();
+            return load();
+          }}
         />
       )}
 
