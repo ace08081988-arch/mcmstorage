@@ -29,8 +29,12 @@ const REQUEST = compact(REQUEST_SRC);
 const ECER = compact(ECER_SRC);
 
 describe("Request PrepCard — Kirim & Hapus tidak render/eksekusi saat sold", () => {
-  it("mendeklarasikan `const sold = !!prep.sold_at`", () => {
-    expect(REQUEST_SRC).toMatch(/const sold\s*=\s*!!prep\.sold_at/);
+  it("mendeklarasikan `const sold = isSentPrep(prep)` (SSOT)", () => {
+    // Definisi "sent" hanya boleh diambil dari selector — bukan literal
+    // `!!prep.sold_at`. Ini mengunci audit refactor: kalau ada yang
+    // menulis balik literalnya, test gagal.
+    expect(REQUEST_SRC).toMatch(/const sold\s*=\s*isSentPrep\(prep\)/);
+    expect(REQUEST_SRC).not.toMatch(/const sold\s*=\s*!!prep\.sold_at/);
   });
 
   it("tombol Kirim hanya dirender di cabang !sold, bukan di sold", () => {
@@ -59,10 +63,11 @@ describe("Request PrepCard — Kirim & Hapus tidak render/eksekusi saat sold", (
 });
 
 describe("Request renderCard — guardedDelete/guardedSent memblokir aksi saat Riwayat Terkirim", () => {
-  it("menghitung isReadOnly = inSent || !!p.sold_at sebagai sumber kebenaran", () => {
+  it("menghitung isReadOnly = inSent || isSentPrep(p) sebagai sumber kebenaran", () => {
     expect(REQUEST_SRC).toMatch(
-      /const isReadOnly\s*=\s*inSent\s*\|\|\s*!!p\.sold_at/,
+      /const isReadOnly\s*=\s*inSent\s*\|\|\s*isSentPrep\(p\)/,
     );
+    expect(REQUEST_SRC).not.toMatch(/const isReadOnly\s*=\s*inSent\s*\|\|\s*!!p\.sold_at/);
   });
 
   it("guardedDelete: if (isReadOnly) → toast.error + return SEBELUM onDelete", () => {
@@ -84,9 +89,10 @@ describe("Request renderCard — guardedDelete/guardedSent memblokir aksi saat R
 });
 
 describe("Ecer PrepBox — Edit/Hapus tidak render & onDelete diblokir saat sold", () => {
-  it("mendeklarasikan sold = !!prep.sold_at dan readOnly = sold", () => {
-    expect(ECER_SRC).toMatch(/const sold\s*=\s*!!prep\.sold_at/);
+  it("mendeklarasikan sold = isSentPrep(prep) dan readOnly = sold", () => {
+    expect(ECER_SRC).toMatch(/const sold\s*=\s*isSentPrep\(prep\)/);
     expect(ECER_SRC).toMatch(/const readOnly\s*=\s*sold/);
+    expect(ECER_SRC).not.toMatch(/const sold\s*=\s*!!prep\.sold_at/);
   });
 
   it("tombol Edit (Edit3) dan Hapus (Trash2) dibungkus {!readOnly && (<>...</>)}", () => {

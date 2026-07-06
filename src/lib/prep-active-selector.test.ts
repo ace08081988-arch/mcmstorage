@@ -161,6 +161,36 @@ describe("Call site badge angka pakai selector tunggal", () => {
 });
 
 // -----------------------------------------------------------------------
+// Audit: tidak ada lagi literal `!!x.sold_at` / `!x.sold_at` sebagai
+// predikat sent/active di komponen atau route. Semua HARUS lewat helper.
+// -----------------------------------------------------------------------
+describe("Audit literal !!.sold_at / !.sold_at di call site", () => {
+  const AUDITED = [
+    "src/components/ReadyRequestSection.tsx",
+    "src/components/ReadyEcerSection.tsx",
+    "src/routes/_authenticated.request.tsx",
+    "src/routes/_authenticated.ecer.tsx",
+    "src/lib/prep-readonly-guard.ts",
+  ] as const;
+
+  it.each(AUDITED)("%s tidak memakai !!x.sold_at sebagai predikat", (path) => {
+    const src = readSrc(path);
+    // Cari pola `!!<ident>.sold_at` di mana pun — regex ini melarang
+    // pemakaian sebagai boolean, bukan pembacaan nilai (mis. formatWhen).
+    const bad = src.match(/!!\s*[A-Za-z_$][\w$]*\.sold_at\b/g);
+    expect(bad, `${path} masih memakai literal !!.sold_at: ${bad?.join(", ")}`).toBeNull();
+  });
+
+  it.each(AUDITED)("%s tidak memakai !x.sold_at sebagai predikat", (path) => {
+    const src = readSrc(path);
+    // Batasi: `!<ident>.sold_at` dalam konteks predikat (diikuti spasi/tanda
+    // logika / paren tutup). Hindari false positive pada `!== null`.
+    const bad = src.match(/(?<![=!])!\s*[A-Za-z_$][\w$]*\.sold_at\s*(?=[)&|?,\s])/g);
+    expect(bad, `${path} masih memakai literal !.sold_at: ${bad?.join(", ")}`).toBeNull();
+  });
+});
+
+// -----------------------------------------------------------------------
 // Memoization: hasil turunan dipakai ulang selama referensi array sama.
 // -----------------------------------------------------------------------
 import { beforeEach } from "vitest";
