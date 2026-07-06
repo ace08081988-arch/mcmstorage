@@ -571,6 +571,17 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
 }
 
 // ---- Hero: branded receipt-style header for a title ----
+// Pratinjau URL panjang untuk toast: buang skema (http/https), lalu jika
+// masih > 56 char potong tengahnya dengan ellipsis supaya host + ekor
+// query tetap terlihat — yang paling berguna untuk verifikasi cepat.
+function shortenUrlForToast(url: string, max = 56): string {
+  const stripped = url.replace(/^https?:\/\//, "");
+  if (stripped.length <= max) return stripped;
+  const head = Math.ceil((max - 1) / 2);
+  const tail = Math.floor((max - 1) / 2);
+  return `${stripped.slice(0, head)}…${stripped.slice(-tail)}`;
+}
+
 function DetailHero({
   item, title, preps, onAdd, onCreateTitle, onCreateProduct, onScrollToWorker,
 }: {
