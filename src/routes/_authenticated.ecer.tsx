@@ -1072,6 +1072,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     if (sending) return;
     const take = Math.min(shots.length, 6);
     let ok: boolean;
+    let excludedSet: Set<string> = new Set();
     if (shots.length === 0) {
       ok = await confirm({
         title: "Kirim perintah penyiapan?",
@@ -1082,13 +1083,15 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const previewShots = shots.slice(0, take);
       const allPaths = previewShots.flatMap((s) => shotPaths(s)).slice(0, 12);
       const firstLoc = previewShots.find((s) => s.location_url)?.location_url ?? null;
-      ok = await confirmWithPreview({
+      const res = await confirmWithPreview({
         title: `Kirim ${take} kiriman via WhatsApp?`,
         description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${take} folder · ${allPaths.length} foto (maks 10 terlampir)\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
         confirmText: "Kirim WA",
         paths: allPaths,
         locationUrl: firstLoc,
       });
+      ok = res.ok;
+      excludedSet = res.excluded;
     }
     if (!ok) return;
     setSending(true);
@@ -1115,7 +1118,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
           ...(s.photo_path ? [s.photo_path] : []),
-        ])).filter(Boolean);
+        ])).filter(Boolean).filter((p) => !excludedSet.has(p));
         for (let pi = 0; pi < paths.length; pi++) {
           const url = await resolvePrepUrl(paths[pi], 600);
           if (!url) continue;
