@@ -129,4 +129,74 @@ export default tseslint.config(
       ],
     },
   },
+  // ── Guardrail: badge "aktif" / "terkirim" untuk paket prep. ────────────
+  //
+  // Definisi "sent" (paket sudah masuk Riwayat Terkirim) HANYA boleh
+  // datang dari helper di `@/lib/prep-active-selector` — `isSentPrep`,
+  // `isActivePrep`, `filterActivePreps`, `filterSentPreps`,
+  // `countActivePreps`, `countActiveByTitle`, `withActivePrepsFilter`.
+  //
+  // Rule ini menolak literal umum yang pernah kami temukan menyebabkan
+  // badge miring: `!!p.sold_at`, `!p.sold_at`, perbandingan langsung ke
+  // null (`p.sold_at === null`), dan filter server-side ad-hoc
+  // `.is("sold_at", null)`. Kalau memang butuh (mis. selector-nya sendiri
+  // atau modul yang membaca timestamp untuk formatting), pakai
+  // `// eslint-disable-next-line no-restricted-syntax -- sold-at-allow: <alasan>`.
+  {
+    files: [
+      "src/components/**/*.{ts,tsx}",
+      "src/routes/**/*.{ts,tsx}",
+      "src/lib/**/*.{ts,tsx}",
+    ],
+    ignores: [
+      // Selector itu sendiri: definisi resmi predikat.
+      "src/lib/prep-active-selector.ts",
+      // Read-only guard membaca sold_at hanya untuk formatting nominal /
+      // tanggal — predikat "sent"-nya sudah pakai isSentPrep (dites di
+      // prep-readonly-guard.test.ts).
+      "src/lib/prep-readonly-guard.ts",
+      // Tes berhak menulis literal untuk membekukan kontrak / regex
+      // guardrail.
+      "src/**/*.test.{ts,tsx}",
+      "src/**/__tests__/**/*.{ts,tsx}",
+      // Route generated & tipe DB dari Supabase.
+      "src/routeTree.gen.ts",
+      "src/integrations/supabase/types.ts",
+    ],
+    rules: {
+      "no-restricted-syntax": [
+        "error",
+        {
+          // `!<ident>.sold_at` — juga men-cover `!!<ident>.sold_at` karena
+          // AST-nya adalah UnaryExpression `!` di luar UnaryExpression `!`
+          // di dalam; yang di dalam tetap tercatat.
+          selector:
+            "UnaryExpression[operator='!'] > MemberExpression[property.name='sold_at']",
+          message:
+            "[sold_at] Literal `!x.sold_at` / `!!x.sold_at` dilarang sebagai predikat aktif/terkirim.\n" +
+            "  Ganti dengan: isActivePrep(x) atau isSentPrep(x) dari '@/lib/prep-active-selector'.\n" +
+            "  Untuk memfilter array: filterActivePreps(preps) / filterSentPreps(preps).\n" +
+            "  Untuk menghitung: countActivePreps / countActiveByTitle.",
+        },
+        {
+          // Perbandingan langsung terhadap null.
+          selector:
+            "BinaryExpression[operator=/^(===|!==|==|!=)$/][left.type='MemberExpression'][left.property.name='sold_at'][right.type='Literal'][right.value=null]",
+          message:
+            "[sold_at] Perbandingan `x.sold_at === null` / `!== null` dilarang.\n" +
+            "  Ganti dengan: isActivePrep(x) / isSentPrep(x) dari '@/lib/prep-active-selector'.\n" +
+            "  Ini melindungi konsistensi definisi 'aktif vs terkirim' agar tetap tunggal.",
+        },
+        {
+          // Filter server-side ad-hoc — pakai withActivePrepsFilter().
+          selector:
+            "CallExpression[callee.property.name='is'][arguments.0.value='sold_at'][arguments.1.type='Literal'][arguments.1.value=null]",
+          message:
+            "[sold_at] `.is(\"sold_at\", null)` langsung di query dilarang.\n" +
+            "  Ganti dengan: withActivePrepsFilter(builder) dari '@/lib/prep-active-selector'.\n" +
+            "  Alasan: satu titik untuk mengubah semantik filter aktif.",
+        },
+      ],
+    },
+  },
 );

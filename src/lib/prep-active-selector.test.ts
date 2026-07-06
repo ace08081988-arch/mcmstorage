@@ -137,11 +137,14 @@ describe("Call site badge angka pakai selector tunggal", () => {
 
   it("ReadyEcerSection: query ecer_preparations difilter server-side dan hitung pakai helper", () => {
     const src = readSrc("src/components/ReadyEcerSection.tsx");
-    // Query select ecer_preparations WAJIB is("sold_at", null).
+    // Query select ecer_preparations WAJIB melewati withActivePrepsFilter,
+    // BUKAN literal .is("sold_at", null) ad-hoc (dilarang juga oleh
+    // ESLint no-restricted-syntax).
     const compact = src.replace(/\s+/g, " ");
     expect(compact).toMatch(
-      /\.from\(\s*["']ecer_preparations["']\s*\)[\s\S]*?\.is\(\s*["']sold_at["']\s*,\s*null\s*\)/,
+      /withActivePrepsFilter\(\s*sb\.from\(\s*["']ecer_preparations["']/,
     );
+    expect(src).not.toMatch(/\.is\(\s*["']sold_at["']\s*,\s*null\s*\)/);
     expect(src).toContain("countActiveByTitle(");
     // Tidak ada lagi countMap manual yang menambah setiap row tanpa cek sold.
     expect(src).not.toMatch(/countMap\.set\(p\.title_id,\s*\(countMap\.get\(p\.title_id\)/);

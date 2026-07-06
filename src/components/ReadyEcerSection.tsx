@@ -32,7 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ExternalLink, History, Undo2 } from "lucide-react";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
-import { countActiveByTitle } from "@/lib/prep-active-selector";
+import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
 import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
 import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
@@ -190,12 +190,15 @@ export function ReadyEcerSection() {
       const sinceIso = new Date(Date.now() - 1000 * 60 * 60 * 24 * 30).toISOString();
       const [{ data: items }, { data: preps }, { data: subs }, { data: selfPreps }] = await Promise.all([
         sb.from("warehouse_items").select("id,name").in("id", itemIds),
-        sb.from("ecer_preparations")
-          // `sold_at` diambil supaya klien bisa memfilter prep aktif lewat
-          // helper `countActiveByTitle` (kontrak badge "N kotak siap").
-          .select("id,title_id,sold_at,photo_path,location_url,created_at")
-          .in("title_id", titleIds)
-          .is("sold_at", null)
+        // Filter server-side "aktif" WAJIB via helper — mengunci semantik
+        // "sold_at IS NULL" ke satu tempat (@/lib/prep-active-selector).
+        // Kalau definisi "aktif" bergeser di masa depan, satu edit di
+        // helper langsung merambat ke semua badge.
+        withActivePrepsFilter(
+          sb.from("ecer_preparations")
+            .select("id,title_id,sold_at,photo_path,location_url,created_at")
+            .in("title_id", titleIds)
+        )
           .gte("created_at", sinceIso)
           .order("created_at", { ascending: false })
           .limit(200),
