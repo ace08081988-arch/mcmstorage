@@ -60,6 +60,7 @@ import {
   Inbox,
   AlertCircle,
   X as XIcon,
+  Trash2,
   ChevronDown,
   Layers,
   Info,
@@ -3275,22 +3276,24 @@ function PhotoTileGrid({
                 </div>
               )}
               {up !== "uploading" && (
-                <div className="absolute inset-x-0 bottom-0 flex justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1 text-[10px] text-white">
+                <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex items-end justify-between gap-1.5 bg-gradient-to-t from-black/70 via-black/40 to-transparent p-1.5">
                   <button
                     type="button"
                     onClick={() => onEdit(i)}
                     disabled={isUploading}
-                    className="rounded bg-black/50 px-1.5 py-0.5 disabled:opacity-50"
+                    aria-label="Edit foto"
+                    className="pointer-events-auto inline-flex h-8 min-w-[3.5rem] items-center justify-center gap-1 rounded-md bg-white/95 px-2 text-[11px] font-semibold text-slate-900 shadow ring-1 ring-black/10 active:scale-95 disabled:opacity-50"
                   >
-                    Edit
+                    <Edit3 className="h-3.5 w-3.5" /> Edit
                   </button>
                   <button
                     type="button"
                     onClick={() => onRemove(i)}
                     disabled={isUploading}
-                    className="rounded bg-destructive/80 px-1.5 py-0.5 disabled:opacity-50"
+                    aria-label="Hapus foto"
+                    className="pointer-events-auto inline-flex h-8 min-w-[3.5rem] items-center justify-center gap-1 rounded-md bg-destructive px-2 text-[11px] font-semibold text-destructive-foreground shadow ring-1 ring-black/10 active:scale-95 disabled:opacity-50"
                   >
-                    Hapus
+                    <Trash2 className="h-3.5 w-3.5" /> Hapus
                   </button>
                 </div>
               )}
