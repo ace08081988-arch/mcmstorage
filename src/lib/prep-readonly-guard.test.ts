@@ -33,8 +33,9 @@ describe("Request PrepCard — Kirim & Hapus tidak render/eksekusi saat sold", (
   });
 
   it("tombol Kirim hanya dirender di cabang !sold, bukan di sold", () => {
+    // Ternary: {!sold ? ( <button …Kirim… </button> ) : ( <span …Terkirim… </span> )}
     expect(REQUEST).toMatch(
-      /\{\s*!sold\s*\?\s*\(\s*<button[\s\S]*?Kirim[\s\S]*?\)\s*:\s*\(\s*<span[^>]*>[^<]*Terkirim/,
+      /\{\s*!sold\s*\?\s*\(\s*<button\b[\s\S]*?Kirim\s*<\/button>\s*\)\s*:\s*\(\s*<span\b[\s\S]*?Terkirim/,
     );
   });
 
@@ -113,9 +114,11 @@ describe("ReadyRequestSection — badge angka hanya menghitung yang belum sold",
       resolve(process.cwd(), "src/components/ReadyRequestSection.tsx"),
       "utf8",
     );
+    // .from("request_preparations").select("…sold_at…").is("sold_at", null)
     expect(src).toMatch(
-      /request_preparations["'][^)]*\)\s*\.select\([^)]*sold_at[^)]*\)\s*\.is\(\s*["']sold_at["']\s*,\s*null\s*\)/,
+      /\.from\(\s*["']request_preparations["']\s*\)\s*\.select\([^)]*sold_at[^)]*\)\s*\.is\(\s*["']sold_at["']\s*,\s*null\s*\)/,
     );
-    expect(src).toMatch(/preps\.filter\([^)]*!\s*p\.sold_at\s*\)\.length/);
+    // Hitung prep_count hanya dari preps yang !sold_at (badge angka).
+    expect(src).toMatch(/preps\.filter\([\s\S]*?!\s*p\.sold_at[\s\S]*?\)\.length/);
   });
 });
