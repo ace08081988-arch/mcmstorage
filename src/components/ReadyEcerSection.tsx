@@ -207,10 +207,14 @@ export function ReadyEcerSection() {
         Promise.resolve({ data: null }),
       ]);
       const itemMap = new Map<string, string>(((items ?? []) as Array<{ id: string; name: string }>).map((i) => [i.id, i.name]));
-      const countMap = new Map<string, number>();
-      for (const p of ((preps ?? []) as Array<{ title_id: string }>)) {
-        countMap.set(p.title_id, (countMap.get(p.title_id) ?? 0) + 1);
-      }
+      // Badge "N kotak siap" WAJIB memakai selector tunggal supaya konsisten
+      // dengan ReadyRequestSection dan detail ecer. Filter `sold_at IS NULL`
+      // sudah diterapkan di server, tapi helper klien tetap dipakai sebagai
+      // sabuk pengaman.
+      const { countActiveByTitle } = await import("@/lib/prep-active-selector");
+      const countMap = countActiveByTitle(
+        (preps ?? []) as Array<{ title_id: string; sold_at: string | null }>,
+      );
       void selfPreps;
 
       // Map prep_submissions → task_item attributes, then bucket by product+size.
