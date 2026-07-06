@@ -378,6 +378,12 @@ function TitleEditorDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sections: ScrollSection[] = [
+    { id: "title-sec-nama", label: "Nama judul" },
+    { id: "title-sec-catatan", label: "Catatan" },
+    { id: "title-sec-produk", label: "Produk dalam paket" },
+  ];
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }>>([]);
@@ -517,13 +523,14 @@ function TitleEditorDialog({
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-h-[90vh] max-w-lg overflow-y-auto">
+      <DialogContent ref={scrollRef} className="max-h-[90vh] max-w-lg overflow-y-auto">
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
           <DialogTitle>{existing ? "Edit Judul Request" : "Judul Request Baru"}</DialogTitle>
           <DialogDescription>Tambahkan beberapa produk dalam 1 paket. Saat penyiapan, stok semua produk akan otomatis berkurang.</DialogDescription>
+          <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
         <div className="space-y-3">
-          <div>
+          <div id="title-sec-nama">
             <Label>Nama judul</Label>
             <div className="relative">
               <Input
@@ -583,11 +590,11 @@ function TitleEditorDialog({
               )}
             </div>
           </div>
-          <div>
+          <div id="title-sec-catatan">
             <Label>Catatan (opsional)</Label>
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
           </div>
-          <div>
+          <div id="title-sec-produk">
             <div className="mb-1 flex items-center justify-between">
               <Label>Produk dalam paket</Label>
               <Button type="button" size="sm" variant="outline" onClick={addRow}>
