@@ -226,9 +226,12 @@ describe("ReadyEcerSection — struktur sumber mengunci badge ke selector", () =
     // countActiveByTitle di klien tetap benar, tapi payload jaringan
     // membengkak & badge lain bisa ikut miring. Filter WAJIB via
     // `withActivePrepsFilter` supaya semantiknya tunggal.
-    const ecerBlock = src.match(/ecer_preparations[\s\S]{0,600}/);
-    expect(ecerBlock, "blok query ecer_preparations ada").toBeTruthy();
-    expect(ecerBlock![0]).toMatch(/withActivePrepsFilter\(/);
+    // withActivePrepsFilter membungkus builder → panggilannya DI ATAS
+    // literal "ecer_preparations". Cari window 400 char sebelum & sesudah.
+    const idx = src.indexOf("ecer_preparations");
+    expect(idx, "blok query ecer_preparations ada").toBeGreaterThan(0);
+    const window = src.slice(Math.max(0, idx - 400), idx + 400);
+    expect(window).toMatch(/withActivePrepsFilter\(/);
     // Literal .is("sold_at", null) tidak boleh muncul lagi di file —
     // dijaga juga oleh ESLint no-restricted-syntax.
     expect(src).not.toMatch(/\.is\(\s*["']sold_at["']\s*,\s*null\s*\)/);
