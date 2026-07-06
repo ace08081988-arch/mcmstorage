@@ -167,6 +167,20 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
     },
     {
+      // Skenario : Badge "Aktif" & "Terkirim" di surface Request + Ecer
+      //            selalu konsisten dengan angka helper selector
+      //            (`countActiveByTitle` + `filterSentPreps`) setelah
+      //            transisi Tandai/Batalkan Terkirim.
+      // Harness  : /lovable/visual/ready-badges-selector (publik, no-auth).
+      // Tujuan   : Regresi guard supaya pipeline state → helper → badge
+      //            tidak pernah bocor (mis. copy-paste literal `!!sold_at`
+      //            di kartu baru) — bila badge tidak match, spec gagal.
+      name: "ready-badges-selector-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /ready-badges-selector\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // Skenario : Form validasi `minSupported` di Pengaturan APK.
       // Harness  : /lovable/visual/min-supported-form (publik, no-auth).
       // Tujuan   : Membuktikan pesan inline per-field, banner form-level,
