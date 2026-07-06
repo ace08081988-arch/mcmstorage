@@ -27,6 +27,7 @@ import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { fetchAddressBook, upsertManualEntry, normalizePhone, type AddressBookRow } from "@/lib/address-book";
 import { useNavigate } from "@tanstack/react-router";
 import { rupiah } from "@/lib/stock-format";
+import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
