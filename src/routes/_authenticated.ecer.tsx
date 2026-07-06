@@ -948,6 +948,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Per-folder (per-kiriman) send state
+  const [waSendingId, setWaSendingId] = useState<string | null>(null);
+  const [chatSendingId, setChatSendingId] = useState<string | null>(null);
+  const [chatPickShot, setChatPickShot] = useState<WorkerShot | null>(null);
 
   const targetUnit = normUnitStr(title.unit_label);
   const targetGrams = Number(title.target_grams) || 0;
