@@ -178,7 +178,23 @@ export default defineConfig({
       name: "ready-badges-selector-e2e",
       testDir: "./tests/e2e",
       testMatch: /ready-badges-selector\.spec\.ts/,
-      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+      // Debug artefak per-proyek: pertahankan trace + screenshot + video
+      // untuk setiap attempt yang gagal (baik run awal maupun retry).
+      // Playwright `retain-on-failure` merekam trace penuh tiap test dan
+      // menyimpannya hanya jika attempt tersebut gagal — jadi kegagalan
+      // pertama DAN tiap retry yang masih gagal terekam lengkap.
+      // Retries di-force ≥1 supaya minimal ada satu retry di lokal juga
+      // (CI sudah default 1 via env). Override manual via PWTEST_RETRIES.
+      retries: process.env.PWTEST_RETRIES
+        ? Number(process.env.PWTEST_RETRIES)
+        : 1,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        trace: "retain-on-failure",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
+      },
     },
     {
       // Skenario : Form validasi `minSupported` di Pengaturan APK.
