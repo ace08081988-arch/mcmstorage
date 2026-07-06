@@ -533,7 +533,7 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
               inputMode="text"
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div>
               <Label className="text-xs">Target berat</Label>
               <Input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} />
@@ -2777,7 +2777,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                       maxLength={120}
                     />
                   </div>
-                  <div className="grid grid-cols-2 gap-2">
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <div>
                       <Label className="text-[11px]">Latitude *</Label>
                       <Input
@@ -2966,7 +2966,7 @@ function NewProductDialog({ onClose, onCreated }: {
             <Label className="text-xs">Kategori (opsional)</Label>
             <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="mis. Bahan baku" />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             <div>
               <Label className="text-xs">Jenis kemasan</Label>
               <select
