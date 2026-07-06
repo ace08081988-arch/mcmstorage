@@ -1166,7 +1166,6 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
         `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:`
-        ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
       ].join("\n");
       const res = await shareToWhatsApp({ text, title: title.name, files });
       notifyShareResult(res);
