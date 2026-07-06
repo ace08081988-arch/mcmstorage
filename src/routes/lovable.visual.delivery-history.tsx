@@ -86,19 +86,22 @@ function Harness() {
     const prevScale = root.style.getPropertyValue("--app-font-scale");
     const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
     root.style.setProperty("--app-font-scale", String(safeScale));
-    // `html.compact { font-size: 92% }` menang atas rule `html { font-size:
-    // calc(16px * var(--app-font-scale)) }` karena specificity lebih tinggi,
-    // sehingga --app-font-scale tidak terlihat. Untuk harness ini kita
-    // sengaja lepas `.compact` supaya skala benar-benar terpakai; class
-    // dipulihkan saat unmount.
-    const hadCompact = root.classList.contains("compact");
-    if (hadCompact) root.classList.remove("compact");
+    // `html.compact { font-size: 92% }` menang atas rule
+    // `html { font-size: calc(16px * var(--app-font-scale)) }` karena
+    // specificity lebih tinggi. Untuk harness ini kita paksa
+    // font-size root ke `16px * scale` via inline style + !important
+    // supaya skala benar-benar terpakai tanpa mengubah preferensi user.
+    const prevInlineFs = root.style.getPropertyPriority("font-size")
+      ? root.style.getPropertyValue("font-size")
+      : "";
+    root.style.setProperty("font-size", `${16 * safeScale}px`, "important");
     return () => {
       if (had) root.classList.add("dark");
       else root.classList.remove("dark");
       if (prevScale) root.style.setProperty("--app-font-scale", prevScale);
       else root.style.removeProperty("--app-font-scale");
-      if (hadCompact) root.classList.add("compact");
+      if (prevInlineFs) root.style.setProperty("font-size", prevInlineFs, "important");
+      else root.style.removeProperty("font-size");
     };
   }, [theme, scale]);
   const headerLabel = "PaketRequestDenganJudulSangatPanjangTanpaSpasiUntukMengujiTruncateDiHeaderDialogMobile";
