@@ -15,13 +15,15 @@ import {
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
   Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, MessageCircle, RefreshCw,
-  Calendar, Clock, Hash, CheckCircle2, Boxes,
+  Calendar, Clock, Hash, CheckCircle2, Boxes, Send,
 } from "lucide-react";
 import {
   ECER_BUCKET, ecerSignedUrl, uploadEcerPhoto, deleteEcerPhoto,
   type EcerTitle, type EcerPreparation,
 } from "@/lib/ecer";
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFile } from "@/lib/share-wa";
+import { shareToChat } from "@/lib/share-chat";
+import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
@@ -946,6 +948,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Per-folder (per-kiriman) send state
+  const [waSendingId, setWaSendingId] = useState<string | null>(null);
+  const [chatSendingId, setChatSendingId] = useState<string | null>(null);
+  const [chatPickShot, setChatPickShot] = useState<WorkerShot | null>(null);
 
   const targetUnit = normUnitStr(title.unit_label);
   const targetGrams = Number(title.target_grams) || 0;
@@ -1074,6 +1080,83 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     }
   }
 
+  function shotPaths(s: WorkerShot): string[] {
+    return Array.from(new Set([
+      ...((s.photo_paths ?? []) as string[]),
+      ...(s.photo_path ? [s.photo_path] : []),
+    ])).filter(Boolean);
+  }
+
+  function shotCaption(s: WorkerShot): string {
+    const stamp = new Date(s.submitted_at).toLocaleString("id-ID", {
+      day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+    });
+    const paths = shotPaths(s);
+    const lines = [
+      `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
+      `Kiriman pegawai — ${stamp} · ${paths.length} foto`,
+    ];
+    if (s.location_url) lines.push(`📍 ${s.location_url}`);
+    return lines.join("\n");
+  }
+
+  async function sendShotWA(s: WorkerShot) {
+    if (waSendingId) return;
+    setWaSendingId(s.id);
+    try {
+      const paths = shotPaths(s);
+      const files: File[] = [];
+      for (let pi = 0; pi < paths.length; pi++) {
+        const url = await resolvePrepUrl(paths[pi], 600);
+        if (!url) continue;
+        const f = await urlToFile(url, `${title.name}-${s.id.slice(0, 6)}-${pi + 1}.jpg`);
+        if (f) files.push(f);
+      }
+      if (files.length === 0) {
+        toast.warning("Foto tidak bisa diunduh untuk dilampirkan.");
+      }
+      const res = await shareToWhatsApp({ text: shotCaption(s), title: title.name, files });
+      notifyShareResult(res);
+    } catch (err) {
+      toast.error(`Gagal kirim WA: ${(err as Error).message}`);
+    } finally {
+      setWaSendingId(null);
+    }
+  }
+
+  async function sendShotChat(s: WorkerShot, conversationId: string, convTitle: string) {
+    if (chatSendingId) return;
+    setChatSendingId(s.id);
+    const tid = toast.loading(`Mengirim ke ${convTitle}…`);
+    try {
+      const paths = shotPaths(s);
+      const chatShots: { id: string; file: File }[] = [];
+      for (let i = 0; i < paths.length; i++) {
+        const url = await resolvePrepUrl(paths[i], 600);
+        if (!url) continue;
+        const f = await urlToFile(url, `${title.name}-${s.id.slice(0, 6)}-${i + 1}.jpg`);
+        if (f) chatShots.push({ id: `${s.id}:${i}`, file: f });
+      }
+      const result = await shareToChat({
+        conversationId,
+        caption: shotCaption(s),
+        locationUrl: s.location_url,
+        shots: chatShots,
+      });
+      toast.dismiss(tid);
+      if (result.status === "shared") {
+        toast.success(`Terkirim ke ${convTitle} (${result.messageCount} pesan).`);
+      } else {
+        toast.error(`Gagal mengirim: ${result.error}`);
+      }
+    } catch (e) {
+      toast.dismiss(tid);
+      toast.error((e as Error)?.message || "Gagal mengirim ke MCM Chat.");
+    } finally {
+      setChatSendingId(null);
+    }
+  }
+
   return (
     <Card id={`worker-shots-${title.id}`} className="scroll-mt-20 transition-shadow">
       <CardHeader className="pb-2">
@@ -1132,23 +1215,26 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {shots.map((s) => (
-              <div key={s.id} className="group relative overflow-hidden rounded-md border bg-muted">
-                <div className="aspect-square">
+            {shots.map((s) => {
+              const paths = shotPaths(s);
+              const isWa = waSendingId === s.id;
+              const isChat = chatSendingId === s.id;
+              return (
+              <div key={s.id} className="group relative flex flex-col overflow-hidden rounded-md border bg-muted">
+                <div className="relative aspect-square">
                   {s.thumb_url ? (
                     <img src={s.thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">no img</div>
                   )}
-                </div>
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[11px] leading-snug text-white">
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[11px] leading-snug text-white">
                   <span className="truncate">{new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                   {s.location_url && (
                     <a href={s.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 rounded bg-black/50 px-1 py-0.5 backdrop-blur-sm">
                       <MapPin className="h-2.5 w-2.5" /> GPS
                     </a>
                   )}
-                </div>
+                  </div>
                 {s.match !== "strict" && (
                   <span
                     className="absolute left-1 top-1 inline-flex h-5 max-w-[80%] items-center whitespace-nowrap rounded-full bg-amber-500/90 px-1.5 text-[11px] font-semibold leading-none text-white"
@@ -1157,11 +1243,53 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                     {s.match === "fallback_grams" ? "unit≠" : "ukuran≠"}
                   </span>
                 )}
+                  <span
+                    className="absolute right-1 top-1 inline-flex h-5 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-[11px] font-semibold leading-none text-white backdrop-blur-sm"
+                    title={`${paths.length} foto dalam folder ini`}
+                  >
+                    <ImageIcon className="h-2.5 w-2.5" /> {paths.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 border-t bg-card p-1">
+                  <button
+                    type="button"
+                    onClick={() => void sendShotWA(s)}
+                    disabled={isWa || isChat}
+                    aria-label={`Kirim folder (${paths.length} foto) via WhatsApp`}
+                    title={`Kirim ${paths.length} foto + lokasi via WhatsApp`}
+                    className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-1 rounded bg-[#25D366] px-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
+                  >
+                    {isWa ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
+                    WA
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChatPickShot(s)}
+                    disabled={isWa || isChat}
+                    aria-label={`Kirim folder (${paths.length} foto) via MCM Chat`}
+                    title={`Kirim ${paths.length} foto + lokasi via MCM Chat`}
+                    className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-1 rounded bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {isChat ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                    Chat
+                  </button>
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
+      <PickChatConversationDialog
+        open={!!chatPickShot}
+        onOpenChange={(v) => { if (!v) setChatPickShot(null); }}
+        title={`Kirim folder "${title.name}" ke MCM Chat`}
+        onPick={(conversationId, displayTitle) => {
+          const target = chatPickShot;
+          setChatPickShot(null);
+          if (target) void sendShotChat(target, conversationId, displayTitle);
+        }}
+      />
     </Card>
   );
 }
