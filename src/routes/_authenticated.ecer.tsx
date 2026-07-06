@@ -1574,19 +1574,6 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
               {previewReq?.confirmText ?? "Kirim"}
             </Button>
           </DialogFooter>
-            <Button variant="outline" onClick={() => finishPreview(false)}>Batal</Button>
-            <Button
-              onClick={() => finishPreview(true)}
-              disabled={
-                !!previewReq &&
-                previewReq.paths.length > 0 &&
-                previewReq.paths.length - Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length === 0
-              }
-              className="bg-emerald-600 hover:bg-emerald-700"
-            >
-              {previewReq?.confirmText ?? "Kirim"}
-            </Button>
-          </DialogFooter>
         </DialogContent>
       </Dialog>
     </Card>
