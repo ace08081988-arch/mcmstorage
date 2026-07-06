@@ -20,9 +20,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { editorFeedback } from "@/lib/editor-feedback";
 
-type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string; opacity: number };
-type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
-type Layer =
+export type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string; opacity: number };
+export type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
+export type Layer =
   | ({ kind: "text"; text: string; size: number; bold: boolean } & LayerBase)
   | ({ kind: "emoji"; emoji: string; size: number } & LayerBase)
   | ({ kind: "arrow"; dir: ArrowDir; size: number; thickness: number } & LayerBase)
@@ -1771,27 +1771,84 @@ function ToolBtn({
   );
 }
 
-function insideLayer(l: Layer, p: { x: number; y: number }): boolean {
+// Ambang tap yang MURAH-HATI di jari mobile. Angka ini adalah radius ekstra
+// (CSS px, sama dengan koordinat kanvas di komponen ini) di sekitar geometri
+// nyata setiap layer. Tanpa ambang ini, objek tipis seperti panah 6 px atau
+// coretan hampir mustahil di-select di ponsel — pengguna melapor "tidak
+// bisa disentuh semua".
+const HIT_PAD = 14;
+
+// Jarak titik ke segmen garis A–B. Dipakai untuk uji-tap panah & coretan
+// supaya tidak perlu tap tepat di titik pusat.
+function pointSegDist(
+  p: { x: number; y: number },
+  a: { x: number; y: number },
+  b: { x: number; y: number },
+): number {
+  const abx = b.x - a.x, aby = b.y - a.y;
+  const apx = p.x - a.x, apy = p.y - a.y;
+  const len2 = abx * abx + aby * aby;
+  if (len2 === 0) return Math.hypot(apx, apy);
+  let t = (apx * abx + apy * aby) / len2;
+  t = Math.max(0, Math.min(1, t));
+  const cx = a.x + t * abx, cy = a.y + t * aby;
+  return Math.hypot(p.x - cx, p.y - cy);
+}
+
+function arrowEndpoints(l: Extract<Layer, { kind: "arrow" }>): {
+  tail: { x: number; y: number }; tip: { x: number; y: number };
+} {
+  const angles: Record<ArrowDir, number> = {
+    right: 0, downright: 45, down: 90, downleft: 135,
+    left: 180, upleft: 225, up: 270, upright: 315,
+  };
+  const a = (angles[l.dir] * Math.PI) / 180;
+  const half = l.size / 2;
+  return {
+    tail: { x: l.x - Math.cos(a) * half, y: l.y - Math.sin(a) * half },
+    tip:  { x: l.x + Math.cos(a) * half, y: l.y + Math.sin(a) * half },
+  };
+}
+
+export function insideLayer(l: Layer, p: { x: number; y: number }): boolean {
   if (l.kind === "text") {
+    // Perkiraan lebar teks: font system-ui rata-rata ~0.6em per karakter.
+    // Tinggi mengikuti baseline ke atas + sedikit descender.
     const w = (l.text.length * l.size) * 0.6, h = l.size * 1.2;
-    return p.x >= l.x - 6 && p.x <= l.x + w + 6 && p.y >= l.y - h && p.y <= l.y + 6;
+    return p.x >= l.x - HIT_PAD && p.x <= l.x + w + HIT_PAD
+        && p.y >= l.y - h - HIT_PAD && p.y <= l.y + HIT_PAD;
   }
   if (l.kind === "emoji") {
-    return p.x >= l.x - l.size / 2 && p.x <= l.x + l.size / 2 && p.y >= l.y - l.size / 2 && p.y <= l.y + l.size / 2;
+    const s = l.size / 2 + HIT_PAD;
+    return p.x >= l.x - s && p.x <= l.x + s && p.y >= l.y - s && p.y <= l.y + s;
   }
   if (l.kind === "arrow") {
-    const s = l.size; return p.x >= l.x - s / 2 && p.x <= l.x + s / 2 && p.y >= l.y - s / 2 && p.y <= l.y + s / 2;
+    // Uji jarak ke SEGMEN panah (ekor→ujung), bukan bounding-box centered.
+    // Tanpa ini, tap di tengah shaft panah tipis sering meleset karena
+    // bbox hanya `size × size` di sekitar (l.x, l.y).
+    const { tail, tip } = arrowEndpoints(l as Extract<Layer, { kind: "arrow" }>);
+    return pointSegDist(p, tail, tip) <= (l.thickness / 2) + HIT_PAD;
   }
   if (l.kind === "rect") {
-    const x1 = Math.min(l.x, l.x + l.w), x2 = Math.max(l.x, l.x + l.w);
-    const y1 = Math.min(l.y, l.y + l.h), y2 = Math.max(l.y, l.y + l.h);
+    const x1 = Math.min(l.x, l.x + l.w) - HIT_PAD;
+    const x2 = Math.max(l.x, l.x + l.w) + HIT_PAD;
+    const y1 = Math.min(l.y, l.y + l.h) - HIT_PAD;
+    const y2 = Math.max(l.y, l.y + l.h) + HIT_PAD;
     return p.x >= x1 && p.x <= x2 && p.y >= y1 && p.y <= y2;
   }
   if (l.kind === "circle") {
-    return Math.hypot(p.x - l.x, p.y - l.y) <= l.r + 6;
+    return Math.hypot(p.x - l.x, p.y - l.y) <= l.r + HIT_PAD;
   }
   if (l.kind === "stroke") {
-    for (const pt of l.points) if (Math.hypot(pt.x - p.x, pt.y - p.y) < l.thickness + 6) return true;
+    // Uji jarak ke setiap segmen coretan — bukan hanya titik-titik sampel.
+    // Ambang = setengah ketebalan + HIT_PAD supaya coretan tipis pun
+    // bisa di-tap tanpa harus tepat di atas garis.
+    const tol = l.thickness / 2 + HIT_PAD;
+    const pts = l.points;
+    if (pts.length === 1) return Math.hypot(pts[0].x - p.x, pts[0].y - p.y) <= tol;
+    for (let i = 1; i < pts.length; i++) {
+      if (pointSegDist(p, pts[i - 1], pts[i]) <= tol) return true;
+    }
   }
   return false;
 }
