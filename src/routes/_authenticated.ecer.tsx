@@ -1304,7 +1304,15 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         onPick={(conversationId, displayTitle) => {
           const target = chatPickShot;
           setChatPickShot(null);
-          if (target) void sendShotChat(target, conversationId, displayTitle);
+          if (!target) return;
+          const paths = shotPaths(target);
+          void confirm({
+            title: `Kirim folder ke ${displayTitle}?`,
+            description: `Percakapan: *${displayTitle}*\nJudul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${target.location_url ? `\n📍 Lokasi: ${target.location_url}` : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+            confirmText: "Kirim Chat",
+          }).then((ok) => {
+            if (ok) void sendShotChat(target, conversationId, displayTitle);
+          });
         }}
       />
     </Card>
