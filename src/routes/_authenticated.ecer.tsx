@@ -1165,7 +1165,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const totalPaths = allPaths.length;
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:",
+        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:`
         ...lines,
         ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
       ].join("\n");
