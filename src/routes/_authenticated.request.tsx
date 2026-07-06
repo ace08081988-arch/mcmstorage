@@ -1512,6 +1512,11 @@ function PrepSections({
   const total = preps.length;
   const [justSentId, setJustSentId] = useState<string | null>(null);
   const [awaitingSentId, setAwaitingSentId] = useState<string | null>(null);
+  // Pesan error sinkronisasi yang persisten (tidak hilang seperti toast).
+  // Dipakai untuk banner di atas Riwayat Terkirim supaya user tidak tertipu
+  // grid yang belum ter-refresh.
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [reloading, setReloading] = useState(false);
   const sentRefs = useRef<Map<string, HTMLDivElement>>(new Map());
   const historyHeaderRef = useRef<HTMLDivElement | null>(null);
 
@@ -1557,6 +1562,7 @@ function PrepSections({
     if (found) {
       setJustSentId(awaitingSentId);
       setAwaitingSentId(null);
+      setSyncError(null);
       return;
     }
     const fallback = setTimeout(() => {
@@ -1570,18 +1576,35 @@ function PrepSections({
         action: {
           label: "Muat Ulang",
           onClick: () => {
-            void Promise.resolve(onChanged()).then((res) => {
-              if (res && res.ok === false) {
-                toast.error("Muat ulang gagal: " + (res.error ?? "unknown"));
-              }
-            });
+            void reloadNow();
           },
         },
       });
+      setSyncError(
+        "Paket yang baru dikirim belum muncul di Riwayat Terkirim. Data di grid mungkin belum sinkron dengan server.",
+      );
       setAwaitingSentId(null);
     }, 8000);
     return () => clearTimeout(fallback);
-  }, [awaitingSentId, sent, onChanged]);
+  }, [awaitingSentId, sent, onChanged]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Helper reload manual dari banner/toast; menampilkan spinner + hasilnya.
+  async function reloadNow() {
+    setReloading(true);
+    try {
+      const res = await Promise.resolve(onChanged());
+      if (res && res.ok === false) {
+        const msg = res.error ?? "unknown";
+        setSyncError("Muat ulang gagal: " + msg);
+        toast.error("Muat ulang gagal", { description: msg });
+      } else {
+        setSyncError(null);
+        toast.success("Data diperbarui");
+      }
+    } finally {
+      setReloading(false);
+    }
+  }
 
   // Fase 2: gulir ke kartu dan tampilkan cincin highlight. Coba beberapa kali
   // karena section Riwayat perlu 1–2 frame untuk expand + kartu perlu mount.
@@ -1636,17 +1659,23 @@ function PrepSections({
       onSent={() => {
         setShowHistory(true);
         setAwaitingSentId(p.id);
+        setSyncError(null);
         // Refetch dan tangkap error supaya UI tidak menipu.
         void Promise.resolve(onChanged()).then((res) => {
           if (res && res.ok === false) {
+            const msg = res.error ?? "unknown";
             toast.error("Gagal muat ulang daftar", {
-              description: (res.error ?? "unknown") + " — coba tekan tombol Muat Ulang.",
+              description: msg + " — coba tekan tombol Muat Ulang.",
               duration: 10000,
               action: {
                 label: "Coba Lagi",
-                onClick: () => { void onChanged(); },
+                onClick: () => { void reloadNow(); },
               },
             });
+            setSyncError(
+              "Gagal memuat ulang daftar setelah pengiriman: " + msg +
+              ". Grid mungkin belum menampilkan status terbaru.",
+            );
             setAwaitingSentId(null);
           }
         });
@@ -1656,6 +1685,58 @@ function PrepSections({
   );
   return (
     <div className="space-y-4">
+      {(syncError || (awaitingSentId && !reloading)) && (
+        <div
+          role="alert"
+          className={
+            syncError
+              ? "flex items-start gap-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-[11px] text-destructive"
+              : "flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] text-amber-800 dark:text-amber-200"
+          }
+        >
+          {syncError ? (
+            <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          ) : (
+            <Loader2 className="mt-0.5 h-3.5 w-3.5 shrink-0 animate-spin" />
+          )}
+          <div className="flex-1">
+            <div className="font-semibold">
+              {syncError ? "Data mungkin tidak sinkron" : "Menyelaraskan dengan server…"}
+            </div>
+            <div className="opacity-90">
+              {syncError ??
+                "Menunggu paket yang baru dikirim muncul di Riwayat Terkirim. Kalau terlalu lama, tekan Muat Ulang."}
+            </div>
+          </div>
+          <div className="flex shrink-0 items-center gap-1">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="h-7 text-[11px]"
+              onClick={() => void reloadNow()}
+              disabled={reloading}
+            >
+              {reloading ? (
+                <><Loader2 className="mr-1 h-3 w-3 animate-spin" /> Memuat…</>
+              ) : (
+                <><RotateCw className="mr-1 h-3 w-3" /> Muat Ulang</>
+              )}
+            </Button>
+            {syncError && (
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                className="h-7 text-[11px]"
+                onClick={() => setSyncError(null)}
+              >
+                Tutup
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
       <div>
         <div className="mb-2 flex items-center justify-between">
           <p className="text-[11px] uppercase tracking-wide text-muted-foreground">
