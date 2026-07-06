@@ -1030,6 +1030,26 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     });
   }
 
+  // Turunan live: jumlah foto yang tersisa & caption preview — dihitung ulang
+  // setiap kali `previewReq` atau `excludedPaths` berubah, sehingga UI dialog
+  // konfirmasi langsung memperbarui saat user meng-toggle pengecualian foto
+  // tanpa harus menutup/membuka dialog lagi.
+  const previewRemaining = useMemo(() => {
+    if (!previewReq) return 0;
+    if (previewReq.paths.length === 0) return 0;
+    const excludedInPaths = Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length;
+    return previewReq.paths.length - excludedInPaths;
+  }, [previewReq, excludedPaths]);
+  const previewCaption = useMemo(() => {
+    if (!previewReq?.buildCaption) return null;
+    if (previewReq.paths.length > 0 && previewRemaining === 0) return null;
+    try {
+      return previewReq.buildCaption(previewRemaining);
+    } catch {
+      return null;
+    }
+  }, [previewReq, previewRemaining]);
+
   const targetUnit = normUnitStr(title.unit_label);
   const targetGrams = Number(title.target_grams) || 0;
   const displayUnitStr = itemName.trim().toLowerCase() === "gs" ? "botol" : (title.unit_label ?? "");
