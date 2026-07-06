@@ -728,6 +728,18 @@ function DetailHero({
               <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Perintah</span>
             </Link>
           )}
+          {isAdmin && (
+            <button
+              type="button"
+              onClick={onCopyPrepLink}
+              title="Salin permalink Penyiapan pegawai untuk judul ini"
+              aria-label="Salin link Penyiapan pegawai"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+            >
+              <Link2 className="h-5 w-5" aria-hidden />
+              <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Salin link</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={onAdd}
@@ -763,6 +775,17 @@ function DetailHero({
               <Link to="/tugas-baru" search={{ title_id: title.id }}>
                 <UserPlus className="h-4 w-4" /> Penyiapan pegawai
               </Link>
+            </Button>
+          )}
+          {isAdmin && (
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={onCopyPrepLink}
+              title="Salin permalink Penyiapan pegawai untuk judul ini"
+              className="hidden sm:inline-flex"
+            >
+              <Link2 className="h-4 w-4" /> Salin link
             </Button>
           )}
           <Button size="sm" onClick={onAdd} className="hidden bg-emerald-600 hover:bg-emerald-700 sm:inline-flex">
