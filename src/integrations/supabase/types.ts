@@ -1755,6 +1755,7 @@ export type Database = {
           employee_id: string | null
           expires_at: string
           id: string
+          max_submissions: number
           note: string | null
           owner_user_id: string
           pin_hash: string
@@ -1771,6 +1772,7 @@ export type Database = {
           employee_id?: string | null
           expires_at?: string
           id?: string
+          max_submissions?: number
           note?: string | null
           owner_user_id: string
           pin_hash: string
@@ -1787,6 +1789,7 @@ export type Database = {
           employee_id?: string | null
           expires_at?: string
           id?: string
+          max_submissions?: number
           note?: string | null
           owner_user_id?: string
           pin_hash?: string
@@ -3358,17 +3361,30 @@ export type Database = {
       }
       normalize_phone: { Args: { _p: string }; Returns: string }
       normalize_unit_label: { Args: { _u: string }; Returns: string }
-      prep_create_task: {
-        Args: {
-          _items: Json
-          _note: string
-          _pin: string
-          _scheduled_at?: string
-          _share_token: string
-          _title: string
-        }
-        Returns: string
-      }
+      prep_create_task:
+        | {
+            Args: {
+              _items: Json
+              _note: string
+              _pin: string
+              _scheduled_at?: string
+              _share_token: string
+              _title: string
+            }
+            Returns: string
+          }
+        | {
+            Args: {
+              _items: Json
+              _max_submissions?: number
+              _note: string
+              _pin: string
+              _scheduled_at?: string
+              _share_token: string
+              _title: string
+            }
+            Returns: string
+          }
       prep_get_task: { Args: { _pin: string; _token: string }; Returns: Json }
       prep_peek_task: { Args: { _token: string }; Returns: Json }
       prep_pin_locked_until: { Args: { _token: string }; Returns: string }
