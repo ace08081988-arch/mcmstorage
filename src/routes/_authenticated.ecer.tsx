@@ -1200,7 +1200,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     const sentCount = opts?.sentCount ?? totalPaths;
     const lines = [
       `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-      `Kiriman pegawai — ${stamp} · ${sentCount} foto${excludedCount > 0 ? ` (${excludedCount} dikecualikan)` : ""}`,
+      `Kiriman pegawai — ${stamp} · ${sentCount} foto terkirim${excludedCount > 0 ? ` · ${excludedCount} dikecualikan` : ""}`,
     ];
     if (s.location_url) lines.push(`📍 ${s.location_url}`);
     return lines.join("\n");
