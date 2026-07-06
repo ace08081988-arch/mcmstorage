@@ -190,8 +190,11 @@ export function ReadyEcerSection() {
       const [{ data: items }, { data: preps }, { data: subs }, { data: selfPreps }] = await Promise.all([
         sb.from("warehouse_items").select("id,name").in("id", itemIds),
         sb.from("ecer_preparations")
-          .select("id,title_id,photo_path,location_url,created_at")
+          // `sold_at` diambil supaya klien bisa memfilter prep aktif lewat
+          // helper `countActiveByTitle` (kontrak badge "N kotak siap").
+          .select("id,title_id,sold_at,photo_path,location_url,created_at")
           .in("title_id", titleIds)
+          .is("sold_at", null)
           .gte("created_at", sinceIso)
           .order("created_at", { ascending: false })
           .limit(200),
