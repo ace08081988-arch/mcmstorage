@@ -2743,14 +2743,14 @@ function DeliveryHistoryDialog({
                   </div>
                   <div className="mt-1.5 flex flex-wrap gap-1">
                     {g.entries.map((e) => (
-                    <span
-                      key={e.id}
-                      className="min-w-0 truncate rounded-full border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
-                      title={formatWaktu(e.sent_at)}
-                    >
-                      {channelLabel(e.channel)} · {formatWaktu(e.sent_at)}
-                    </span>
-                    ))}
+                        <span
+                          key={e.id}
+                          className="min-w-0 truncate rounded-full border bg-muted/40 px-2 py-0.5 text-[10px] text-muted-foreground"
+                          title={formatWaktu(e.sent_at)}
+                        >
+                          {channelLabel(e.channel)} · {formatWaktu(e.sent_at)}
+                        </span>
+                        ))}
                   </div>
                 </div>
               );
