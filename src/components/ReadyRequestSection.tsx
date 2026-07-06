@@ -139,6 +139,7 @@ export function ReadyRequestSection() {
               key={r.id}
               to="/request"
               search={{ title: undefined, highlight: r.id }}
+              data-testid={`ready-request-card-${r.id}`}
               className={
                 "flex flex-col gap-0.5 rounded-md border bg-card hover:border-primary/40 hover:bg-accent " +
                 (compact ? "px-2.5 py-1.5" : "p-2.5")
