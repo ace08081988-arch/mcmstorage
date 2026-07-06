@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { RefreshCw, ChevronLeft, Search, ExternalLink } from "lucide-react";
+import { RefreshCw, ChevronLeft, Search, ExternalLink, Check, Undo2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import {
@@ -8,7 +8,10 @@ import {
   filterActivePreps,
   filterSentPreps,
   countActivePreps,
+  isActivePrep,
+  isSentPrep,
 } from "@/lib/prep-active-selector";
+import { toast } from "sonner";
 
 /**
  * Halaman debug internal: `/debug/selector`.
@@ -112,6 +115,9 @@ function DebugSelectorPage() {
   const [lastLoadedAt, setLastLoadedAt] = useState<number | null>(null);
   const [query, setQuery] = useState("");
   const [orphanOnly, setOrphanOnly] = useState(false);
+  // Baris yang sedang menunggu re-check angka setelah aksi cepat.
+  // Bentuknya `${domain}:${title_id}` supaya key unik lintas domain.
+  const [pending, setPending] = useState<Set<string>>(new Set());
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -125,6 +131,61 @@ function DebugSelectorPage() {
   }, []);
 
   useEffect(() => { void load(); }, [load]);
+
+  // Aksi cepat: flip `sold_at` untuk SATU prep di title_id tertentu.
+  //
+  // PENTING: aksi ini menyentuh langsung kolom `sold_at` — TIDAK memicu
+  // pencatatan sales/hutang seperti alur normal `send_request_prep_to_customer`.
+  // Untuk itulah tombol ini hidup di halaman debug: hanya untuk memverifikasi
+  // pipeline selector → badge, bukan untuk operasional harian.
+  const runQuickAction = useCallback(
+    async (domain: Domain, titleId: string, action: "mark" | "cancel") => {
+      const key = `${domain}:${titleId}`;
+      const table =
+        domain === "request" ? "request_preparations" : "ecer_preparations";
+      const preps = data?.[domain].preps ?? [];
+      // Pilih 1 prep target sesuai aksi via SSOT helper — jangan menulis
+      // literal `!p.sold_at` di sini (dilarang oleh ESLint sold_at guard).
+      const inTitle = preps.filter((p) => p.title_id === titleId);
+      const target =
+        action === "mark"
+          ? inTitle.find((p) => isActivePrep(p))
+          : inTitle.find((p) => isSentPrep(p));
+      if (!target) {
+        toast.error(
+          action === "mark"
+            ? "Tidak ada prep aktif untuk ditandai"
+            : "Tidak ada prep terkirim untuk dibatalkan",
+        );
+        return;
+      }
+      setPending((s) => new Set(s).add(key));
+      try {
+        const { error } = await sb
+          .from(table)
+          .update({ sold_at: action === "mark" ? new Date().toISOString() : null })
+          .eq("id", target.id);
+        if (error) throw error;
+        // Tunggu re-check otomatis: reload penuh supaya angka Aktif/Terkirim
+        // berasal dari helper selector, bukan dari state optimistik lokal.
+        await load();
+        toast.success(
+          action === "mark"
+            ? "Ditandai terkirim — angka diperbarui"
+            : "Dibatalkan — angka diperbarui",
+        );
+      } catch (e) {
+        toast.error("Gagal: " + (e as Error).message);
+      } finally {
+        setPending((s) => {
+          const next = new Set(s);
+          next.delete(key);
+          return next;
+        });
+      }
+    },
+    [data, load],
+  );
 
   // Auto re-check saat tab debug kembali fokus (mis. setelah user selesai
   // Tandai/Batalkan Terkirim di tab request/ecer yang dibuka via shortcut).
@@ -224,6 +285,8 @@ function DebugSelectorPage() {
         totalSent={data ? filterActivePreps(data.request.preps).length !== data.request.preps.length
           ? data.request.preps.length - countActivePreps(data.request.preps)
           : 0 : 0}
+        pending={pending}
+        onQuickAction={runQuickAction}
       />
 
       <DomainSection
@@ -235,6 +298,8 @@ function DebugSelectorPage() {
         totalSent={data
           ? data.ecer.preps.length - countActivePreps(data.ecer.preps)
           : 0}
+        pending={pending}
+        onQuickAction={runQuickAction}
       />
     </div>
   );
@@ -247,6 +312,8 @@ function DomainSection({
   totalPreps,
   totalActive,
   totalSent,
+  pending,
+  onQuickAction,
 }: {
   label: string;
   domain: Domain;
@@ -254,6 +321,8 @@ function DomainSection({
   totalPreps: number;
   totalActive: number;
   totalSent: number;
+  pending: Set<string>;
+  onQuickAction: (domain: Domain, titleId: string, action: "mark" | "cancel") => Promise<void>;
 }) {
   // Shortcut: buka halaman domain terkait di tab baru dengan title terpilih
   // + highlight aktif. Setelah user Tandai/Batalkan Terkirim di sana lalu
@@ -268,6 +337,11 @@ function DomainSection({
           <span className="text-amber-600 dark:text-amber-400">{totalSent} terkirim</span>
         </p>
       </div>
+      <p className="rounded border border-amber-500/30 bg-amber-500/5 px-2 py-1 text-[10px] text-amber-700 dark:text-amber-300">
+        Debug-only: tombol Tandai/Batalkan pada tabel ini menulis <code>sold_at</code> langsung
+        pada 1 prep dari <code>title_id</code> tersebut — TIDAK mencatat penjualan/hutang.
+        Gunakan hanya untuk uji konsistensi angka selector. Untuk alur nyata pakai tombol Buka.
+      </p>
 
       {rows.length === 0 ? (
         <div className="rounded-md border border-dashed bg-card p-3 text-center text-[11px] text-muted-foreground">
@@ -286,24 +360,56 @@ function DomainSection({
               </tr>
             </thead>
             <tbody>
-              {rows.map((r) => (
-                <tr key={r.title_id} className="border-t">
+              {rows.map((r) => {
+                const key = `${domain}:${r.title_id}`;
+                const busy = pending.has(key);
+                return (
+                <tr
+                  key={r.title_id}
+                  className={"border-t " + (busy ? "bg-muted/40" : "")}
+                  data-testid={`row-${domain}-${r.title_id}`}
+                >
                   <td className="px-2 py-1.5">
                     <div className="truncate font-medium">{r.name}</div>
                     <div className="truncate font-mono text-[10px] text-muted-foreground">
                       {r.title_id}
                     </div>
                   </td>
-                  <td className={"px-2 py-1.5 text-right tabular-nums " + (r.active > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}>
+                  <td
+                    data-testid={`cell-active-${domain}-${r.title_id}`}
+                    className={"px-2 py-1.5 text-right tabular-nums " + (r.active > 0 ? "font-semibold text-emerald-600 dark:text-emerald-400" : "text-muted-foreground")}
+                  >
                     {r.active}
                   </td>
-                  <td className={"px-2 py-1.5 text-right tabular-nums " + (r.sent > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground")}>
+                  <td
+                    data-testid={`cell-sent-${domain}-${r.title_id}`}
+                    className={"px-2 py-1.5 text-right tabular-nums " + (r.sent > 0 ? "font-semibold text-amber-600 dark:text-amber-400" : "text-muted-foreground")}
+                  >
                     {r.sent}
                   </td>
                   <td className="px-2 py-1.5 text-right tabular-nums text-muted-foreground">
                     {r.total}
                   </td>
                   <td className="px-2 py-1.5 text-right">
+                    <div className="flex items-center justify-end gap-1">
+                      <button
+                        type="button"
+                        disabled={busy || r.active <= 0}
+                        onClick={() => void onQuickAction(domain, r.title_id, "mark")}
+                        className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] text-emerald-700 hover:bg-emerald-500/10 disabled:opacity-40 dark:text-emerald-300"
+                        title="Tandai 1 prep aktif → terkirim (debug: tanpa mencatat sales/hutang)"
+                      >
+                        <Check className="h-3 w-3" /> Tandai
+                      </button>
+                      <button
+                        type="button"
+                        disabled={busy || r.sent <= 0}
+                        onClick={() => void onQuickAction(domain, r.title_id, "cancel")}
+                        className="inline-flex items-center gap-0.5 rounded border px-1.5 py-0.5 text-[10px] text-amber-700 hover:bg-amber-500/10 disabled:opacity-40 dark:text-amber-300"
+                        title="Batalkan 1 prep terkirim → aktif (debug: tidak menyentuh sales/hutang)"
+                      >
+                        <Undo2 className="h-3 w-3" /> Batalkan
+                      </button>
                     <Link
                       to={domainPath}
                       search={{ title: r.title_id, highlight: r.title_id }}
@@ -314,9 +420,11 @@ function DomainSection({
                     >
                       Buka <ExternalLink className="h-3 w-3" />
                     </Link>
+                    </div>
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
