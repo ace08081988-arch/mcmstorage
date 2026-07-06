@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
@@ -8,7 +8,12 @@ import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { useOrgName } from "@/lib/org-name";
-import { TurnstileWidget, TURNSTILE_SITE_KEY } from "@/components/TurnstileWidget";
+import {
+  TurnstileWidget,
+  TURNSTILE_SITE_KEY,
+  type TurnstileWidgetHandle,
+} from "@/components/TurnstileWidget";
+import { explainTurnstileError } from "@/components/turnstile-error";
 import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
 
@@ -103,6 +108,8 @@ function AuthPage() {
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number>(0);
   const secureSignUpFn = useServerFn(secureSignUp);
+  const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
+  const [widgetKey, setWidgetKey] = useState(0);
 
   const onTurnstileToken = useCallback((t: string | null) => {
     setTurnstileToken(t);
@@ -110,6 +117,16 @@ function AuthPage() {
   }, []);
   const onTurnstileError = useCallback((code: string) => {
     setTurnstileError(code);
+  }, []);
+  const retryTurnstile = useCallback(() => {
+    setTurnstileError(null);
+    setTurnstileToken(null);
+    if (turnstileRef.current) {
+      turnstileRef.current.reset();
+    } else {
+      // Widget belum sempat mount (script gagal load) → remount total.
+      setWidgetKey((k) => k + 1);
+    }
   }, []);
 
   // Persist perubahan intent/mode/email — sync juga antar tab lewat StorageEvent.
@@ -520,6 +537,8 @@ function AuthPage() {
             <div className="space-y-1">
               {TURNSTILE_SITE_KEY ? (
                 <TurnstileWidget
+                  key={widgetKey}
+                  ref={turnstileRef}
                   siteKey={TURNSTILE_SITE_KEY}
                   onToken={onTurnstileToken}
                   onError={onTurnstileError}
@@ -529,11 +548,33 @@ function AuthPage() {
                   Verifikasi CAPTCHA belum dikonfigurasi. Pendaftaran dinonaktifkan sementara.
                 </p>
               )}
-              {turnstileError && (
-                <p className="text-center text-[11px] text-destructive">
-                  Verifikasi CAPTCHA bermasalah ({turnstileError}). Muat ulang halaman lalu coba lagi.
-                </p>
-              )}
+              {turnstileError && (() => {
+                const host =
+                  typeof window !== "undefined" ? window.location.hostname : "";
+                const info = explainTurnstileError(turnstileError, host);
+                return (
+                  <div className="space-y-1 rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px]">
+                    <p className="text-center font-medium text-destructive">
+                      {info.message}{" "}
+                      <span className="font-mono text-muted-foreground">
+                        ({info.code})
+                      </span>
+                    </p>
+                    <p className="text-center text-muted-foreground">{info.hint}</p>
+                    {!info.adminAction && (
+                      <div className="flex justify-center pt-1">
+                        <button
+                          type="button"
+                          onClick={retryTurnstile}
+                          className="rounded border px-2 py-0.5 text-[11px] hover:bg-muted"
+                        >
+                          Coba lagi
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
               {rateLimitedUntil > Date.now() && (
                 <p className="text-center text-[11px] text-destructive">
                   Terlalu banyak percobaan. Coba lagi ~
