@@ -1919,6 +1919,7 @@ function PrepEditorDialog({
     setPhoto(null); setLocUrl(""); setGps(null); setNote(""); setWaPhone("");
     setPickedLinkedUserId(null); setPickedName(""); setRecipientName("");
     setShowSuggest(false);
+    setInitialFieldsSnap({ photoKey: "", locUrl: "", note: "", waPhone: "", recipientName: "" });
   }, [open, titleItems]);
 
   // Muat buku alamat saat dialog dibuka — dipakai untuk autocomplete
