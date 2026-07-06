@@ -32,6 +32,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { ExternalLink, History, Undo2 } from "lucide-react";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
+import { countActiveByTitle } from "@/lib/prep-active-selector";
 import { markSent, unmarkSent, useSentShots, useSentDetails, type Entry as SentEntry } from "@/lib/wa-sent-history";
 import { buildSendKey, withIdempotency, getIdem, clearIdem, setIdem, payloadFingerprint, getOrCreateSendSnapshot, type IdemRecord } from "@/lib/idempotency";
 import { appendSendLog, appendPayloadDiffLog, getSendLog, resetSendLog, type SendLogEntry } from "@/lib/send-log";
@@ -211,7 +212,6 @@ export function ReadyEcerSection() {
       // dengan ReadyRequestSection dan detail ecer. Filter `sold_at IS NULL`
       // sudah diterapkan di server, tapi helper klien tetap dipakai sebagai
       // sabuk pengaman.
-      const { countActiveByTitle } = await import("@/lib/prep-active-selector");
       const countMap = countActiveByTitle(
         (preps ?? []) as Array<{ title_id: string; sold_at: string | null }>,
       );
