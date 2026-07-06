@@ -1142,9 +1142,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         notifyShareResult(res);
         return;
       }
-      const take = shots.slice(0, 6);
+      const sendShots = shots.slice(0, take);
       const files: File[] = [];
-      for (const s of take) {
+      for (const s of sendShots) {
         const paths = Array.from(new Set([
           ...((s.photo_paths ?? []) as string[]),
           ...(s.photo_path ? [s.photo_path] : []),
@@ -1159,10 +1159,10 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         if (files.length >= 10) break;
       }
       if (files.length === 0) toast.warning("Foto pegawai tidak bisa diunduh.");
-      const lines = take.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLoc = take.find((s) => s.location_url);
+      const lines = sendShots.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const firstLoc = sendShots.find((s) => s.location_url);
       const excludedCount = excludedSet.size;
-      const totalPaths = Math.min(shots.slice(0, take).flatMap((s) => shotPaths(s)).length, 12);
+      const totalPaths = Math.min(sendShots.flatMap((s) => shotPaths(s)).length, 12);
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
         `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:`,
