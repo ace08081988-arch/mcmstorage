@@ -23,6 +23,14 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export const Route = createFileRoute("/_authenticated/tugas-baru")({
+  validateSearch: (search: Record<string, unknown>): { title_id?: string } => {
+    const t = typeof search.title_id === "string" ? search.title_id.trim() : "";
+    // Guard: hanya UUID v4-ish yang diteruskan supaya tidak bocor payload liar.
+    if (t && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(t)) {
+      return { title_id: t };
+    }
+    return {};
+  },
   head: () => ({
     meta: [
       { title: "Buat Tugas Pegawai · MCM Storage" },
@@ -538,6 +546,38 @@ function TugasBaruForm() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // Prefill dari deep-link folder ecer: `/tugas-baru?title_id=<uuid>` mengisi
+  // baris pertama otomatis dengan judul ecer terpilih supaya admin tidak
+  // perlu memilih ulang. Hanya berlaku sekali: (a) tidak ada draft tersimpan
+  // dan (b) form masih dalam kondisi kosong bawaan.
+  const searchParams = Route.useSearch();
+  const prefillTitleId = searchParams.title_id ?? null;
+  const prefillConsumedRef = useRef(false);
+  useEffect(() => {
+    if (prefillConsumedRef.current) return;
+    if (!prefillTitleId) return;
+    if (initialRef.current) return; // draft menang
+    if (titles.length === 0) return; // tunggu titles siap
+    const t = titles.find((x) => x.id === prefillTitleId);
+    if (!t) { prefillConsumedRef.current = true; return; }
+    // Hanya prefill jika form masih blanko (1 baris kosong bawaan).
+    const blank = rows.length === 1 && rows[0]?.name === "" && rows[0]?.title_id === "";
+    if (!blank) { prefillConsumedRef.current = true; return; }
+    prefillConsumedRef.current = true;
+    const key = rows[0].key;
+    setRows((s) => s.map((r) => (r.key === key ? {
+      ...r,
+      title_id: t.id,
+      name: t.name,
+      qty: t.target_grams != null ? String(t.target_grams) : "1",
+      unit: t.unit_label ?? "",
+      warehouse_item_id: t.warehouse_item_id,
+    } : r)));
+    verifyWid(key, t.warehouse_item_id);
+    setTitle((cur) => cur.trim() ? cur : `Penyiapan ${t.name}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [prefillTitleId, titles]);
 
   // Debounced duplicate-token check. Menjalankan RPC setelah token stabil ~450ms
   // sehingga tidak menembak DB pada setiap keystroke; hasil terakhir yang menang
