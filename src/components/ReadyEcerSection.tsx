@@ -2219,6 +2219,7 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
         <Link
           to="/ecer"
           search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined }}
+          data-testid={`ready-ecer-card-${r.id}`}
           className="flex flex-col gap-0.5"
         >
           {shots.length === 0 && (
