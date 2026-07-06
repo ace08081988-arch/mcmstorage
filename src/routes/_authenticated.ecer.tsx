@@ -24,6 +24,7 @@ import {
 import { shareToWhatsApp, buildWhatsAppUrl, notifyShareResult, copyText, urlToFile } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
@@ -1028,6 +1029,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
 
   async function sendWA() {
     if (sending) return;
+    const take = Math.min(shots.length, 6);
+    const ok = await confirm({
+      title: shots.length === 0 ? "Kirim perintah penyiapan?" : `Kirim ${take} kiriman via WhatsApp?`,
+      description:
+        shots.length === 0
+          ? `Tidak ada kiriman pegawai. Akan dikirim perintah teks ke pegawai untuk menyiapkan ${title.name} (${title.target_grams} ${displayUnitStr}).`
+          : `Akan mengirim ${take} folder kiriman pegawai untuk *${title.name}*. Pastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+      confirmText: "Kirim WA",
+    });
+    if (!ok) return;
     setSending(true);
     try {
       // Belum ada kiriman pegawai → kirim *perintah* teks-only ke pegawai
@@ -1102,9 +1113,15 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
 
   async function sendShotWA(s: WorkerShot) {
     if (waSendingId) return;
+    const paths = shotPaths(s);
+    const ok = await confirm({
+      title: "Kirim folder via WhatsApp?",
+      description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${s.location_url ? `\n📍 Lokasi: ${s.location_url}` : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+      confirmText: "Kirim WA",
+    });
+    if (!ok) return;
     setWaSendingId(s.id);
     try {
-      const paths = shotPaths(s);
       const files: File[] = [];
       for (let pi = 0; pi < paths.length; pi++) {
         const url = await resolvePrepUrl(paths[pi], 600);
@@ -1287,7 +1304,15 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         onPick={(conversationId, displayTitle) => {
           const target = chatPickShot;
           setChatPickShot(null);
-          if (target) void sendShotChat(target, conversationId, displayTitle);
+          if (!target) return;
+          const paths = shotPaths(target);
+          void confirm({
+            title: `Kirim folder ke ${displayTitle}?`,
+            description: `Percakapan: *${displayTitle}*\nJudul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${paths.length} foto${target.location_url ? `\n📍 Lokasi: ${target.location_url}` : "\nTanpa link lokasi"}\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+            confirmText: "Kirim Chat",
+          }).then((ok) => {
+            if (ok) void sendShotChat(target, conversationId, displayTitle);
+          });
         }}
       />
     </Card>
