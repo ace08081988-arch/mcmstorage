@@ -26,6 +26,7 @@ import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
+import { publicTaskUrl } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
 import { useIsAdmin } from "@/hooks/use-is-admin";
@@ -1005,6 +1006,22 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   const [refreshing, setRefreshing] = useState(false);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  /**
+   * Tugas pegawai yang terhubung ke judul ecer ini (lewat
+   * prep_task_items.ecer_title_id). Dipakai agar tombol "Kirim perintah"
+   * membawa link tugas UNIK per judul — bukan pesan generik yang sama
+   * untuk semua judul.
+   */
+  const [linkedTask, setLinkedTask] = useState<{
+    task_id: string;
+    share_token: string;
+    task_title: string | null;
+    item_id: string;
+    qty_requested: number | null;
+    unit_label: string | null;
+    note: string | null;
+    ref_photo_path: string | null;
+  } | null>(null);
   // Per-folder (per-kiriman) send state
   const [waSendingId, setWaSendingId] = useState<string | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
@@ -1200,6 +1217,47 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [title.id, title.warehouse_item_id, targetGrams, targetUnit]);
 
+  // Cari tugas pegawai yang terhubung ke judul ini via
+  // prep_task_items.ecer_title_id. Bila ada beberapa, ambil yang terbaru
+  // (task.created_at desc) supaya link yang dibagikan adalah yang paling
+  // aktual. Tanpa keterikatan ini, "Kirim perintah" jatuh ke pesan generik.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { data } = await (supabase.from as any)("prep_task_items")
+        .select("id,task_id,qty_requested,unit_label,note,ref_photo_path,warehouse_item_id,prep_tasks:task_id(id,share_token,title,created_at,expires_at)")
+        .eq("ecer_title_id", title.id)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      if (cancelled) return;
+      const row = (data ?? [])[0] as (
+        | {
+            task_id: string;
+            qty_requested: number | null;
+            unit_label: string | null;
+            note: string | null;
+            ref_photo_path: string | null;
+            warehouse_item_id: string | null;
+            prep_tasks: { id: string; share_token: string; title: string | null; created_at: string; expires_at: string | null } | null;
+          }
+        | undefined
+      );
+      if (!row || !row.prep_tasks?.share_token) { setLinkedTask(null); return; }
+      setLinkedTask({
+        task_id: row.task_id,
+        share_token: row.prep_tasks.share_token,
+        task_title: row.prep_tasks.title,
+        item_id: row.warehouse_item_id ?? "",
+        qty_requested: row.qty_requested,
+        unit_label: row.unit_label,
+        note: row.note,
+        ref_photo_path: row.ref_photo_path,
+      });
+    })();
+    return () => { cancelled = true; };
+  }, [title.id]);
+
   async function refresh() {
     setRefreshing(true);
     await load();
@@ -1215,7 +1273,9 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     if (shots.length === 0) {
       ok = await confirm({
         title: "Kirim perintah penyiapan?",
-        description: `Tidak ada kiriman pegawai. Akan dikirim perintah teks ke pegawai untuk menyiapkan ${title.name} (${title.target_grams} ${displayUnitStr}).`,
+        description: linkedTask
+          ? `Akan dikirim perintah untuk *${title.name}* (${title.target_grams} ${displayUnitStr}) beserta *link tugas unik* ke halaman pegawai.`
+          : `Belum ada tugas pegawai untuk judul *${title.name}*. Buat dulu di halaman Tugas Baru agar link penyiapan bisa dilampirkan. Kirim tetap sebagai perintah teks?`,
         confirmText: "Kirim WA",
       });
     } else {
@@ -1264,13 +1324,33 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       // supaya owner tetap bisa memicu tugas langsung dari halaman detail
       // penyiapan, tanpa harus pindah ke halaman Tugas terlebih dahulu.
       if (shots.length === 0) {
+        // Bangun pesan perintah UNIK per judul: menyertakan link publik
+        // tugas pegawai (`/t/<token>`) beserta catatan/target khusus judul
+        // ini. Bila tidak ada tugas yang terhubung, fallback ke teks
+        // generik lama supaya alur tetap berjalan.
+        const noteLine = linkedTask?.note?.trim() ? `Catatan: ${linkedTask.note.trim()}` : null;
+        const taskUrl = linkedTask ? publicTaskUrl(linkedTask.share_token) : null;
+        const qtyLine = linkedTask?.qty_requested
+          ? `Jumlah diminta: *${linkedTask.qty_requested} ${linkedTask.unit_label ?? displayUnitStr}*`
+          : null;
         const text = [
           `📦 *Perintah penyiapan* — ${title.name}`,
           `Produk: ${itemName}`,
           `Target per kotak: *${title.target_grams} ${displayUnitStr}*`,
+          ...(qtyLine ? [qtyLine] : []),
+          ...(noteLine ? [noteLine] : []),
           `ID judul: ${title.id}`,
-          "",
-          "Mohon siapkan kotak sesuai target di atas, lalu unggah foto + lokasi di aplikasi MCM (halaman Tugas).",
+          ...(taskUrl
+            ? [
+                "",
+                "🔗 Link tugas (khusus judul ini):",
+                taskUrl,
+                "Buka link, masukkan PIN yang diberikan, lalu unggah foto + lokasi untuk *judul ini saja*.",
+              ]
+            : [
+                "",
+                "Belum ada link tugas untuk judul ini. Buat lewat menu *Tugas Baru* di aplikasi MCM lalu bagikan ulang.",
+              ]),
         ].join("\n");
         const res = await shareToWhatsApp({ text, title: title.name });
         notifyShareResult(res);
