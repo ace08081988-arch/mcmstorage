@@ -30,6 +30,7 @@ import { rupiah } from "@/lib/stock-format";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScrollProgress";
 import { DialogSaveStatus, useSaveStatus } from "@/components/DialogSaveStatus";
+import { Field } from "@/components/DialogField";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -540,8 +541,7 @@ function TitleEditorDialog({
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
         <div className="space-y-3">
-          <div id="title-sec-nama">
-            <Label>Nama judul</Label>
+          <Field id="title-sec-nama" label="Nama judul">
             <div className="relative">
               <Input
                 value={name}
@@ -599,11 +599,10 @@ function TitleEditorDialog({
                 </ul>
               )}
             </div>
-          </div>
-          <div id="title-sec-catatan">
-            <Label>Catatan (opsional)</Label>
+          </Field>
+          <Field id="title-sec-catatan" label="Catatan (opsional)">
             <Textarea value={note} onChange={(e) => setNote(e.target.value)} rows={2} />
-          </div>
+          </Field>
           <div id="title-sec-produk">
             <div className="mb-1 flex items-center justify-between">
               <Label>Produk dalam paket</Label>
@@ -1704,8 +1703,7 @@ function SendPrepToCustomerDialog({
           </div>
 
           {/* Pelanggan */}
-          <div id="send-sec-pelanggan" className="space-y-1.5">
-            <Label className="text-[11px]">Pelanggan</Label>
+          <Field id="send-sec-pelanggan" label="Pelanggan" size="compact">
             <div className="flex gap-1 text-[10px]">
               <button
                 type="button"
@@ -1749,11 +1747,15 @@ function SendPrepToCustomerDialog({
                 className="h-9 text-xs"
               />
             )}
-          </div>
+          </Field>
 
           {/* Total */}
-          <div id="send-sec-harga" className="space-y-1.5">
-            <Label className="text-[11px]">Total harga (Rp)</Label>
+          <Field
+            id="send-sec-harga"
+            label="Total harga (Rp)"
+            size="compact"
+            hint={totalAmount > 0 ? `= ${rupiah(totalAmount)}` : undefined}
+          >
             <Input
               value={totalStr}
               onChange={(e) => setTotalStr(e.target.value)}
@@ -1761,14 +1763,10 @@ function SendPrepToCustomerDialog({
               inputMode="numeric"
               className="h-9 tabular-nums text-xs"
             />
-            {totalAmount > 0 && (
-              <div className="text-[10px] text-muted-foreground">= {rupiah(totalAmount)}</div>
-            )}
-          </div>
+          </Field>
 
           {/* Metode bayar */}
-          <div id="send-sec-bayar" className="space-y-1.5">
-            <Label className="text-[11px]">Metode bayar</Label>
+          <Field id="send-sec-bayar" label="Metode bayar" size="compact">
             <div className="flex gap-1">
               <button
                 type="button"
@@ -1790,11 +1788,10 @@ function SendPrepToCustomerDialog({
                 Akan otomatis dicatat sebagai piutang di menu Hutang-Piutang atas nama <b>{resolvedParty.name || "-"}</b>.
               </div>
             )}
-          </div>
+          </Field>
 
           {/* Catatan */}
-          <div id="send-sec-catatan" className="space-y-1.5">
-            <Label className="text-[11px]">Catatan (opsional)</Label>
+          <Field id="send-sec-catatan" label="Catatan (opsional)" size="compact">
             <Textarea
               value={note}
               onChange={(e) => setNote(e.target.value)}
@@ -1802,7 +1799,7 @@ function SendPrepToCustomerDialog({
               className="text-xs"
               placeholder="Mis. antar sore, titip di warung, dsb."
             />
-          </div>
+          </Field>
         </div>
 
         <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-col">
@@ -2489,15 +2486,14 @@ function WorkerTestDialog({
 
         {!session ? (
           <div className="space-y-3">
-            <div>
-              <Label className="text-xs">PIN uji coba (opsional, min 4 digit)</Label>
+            <Field label="PIN uji coba (opsional, min 4 digit)" size="xs">
               <Input
                 inputMode="numeric" maxLength={8}
                 value={pin}
                 onChange={(e) => setPin(e.target.value.replace(/\D/g, ""))}
                 placeholder="Kosongkan untuk acak"
               />
-            </div>
+            </Field>
             <div className="rounded-md border bg-muted/30 p-2.5 text-[11px] text-muted-foreground">
               Pastikan sudah ada minimal 1 Judul Request dengan beberapa produk. Saat ini: <b>{titles.length} judul</b>.
             </div>
