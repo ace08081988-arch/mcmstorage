@@ -104,6 +104,7 @@ function HutangPiutangPage() {
     customerId?: string | null;
   } | null>(null);
   const [payFor, setPayFor] = useState<Debt | null>(null);
+  const [reminderFor, setReminderFor] = useState<Debt | null>(null);
   const [editFor, setEditFor] = useState<Debt | null>(null);
   const [period, setPeriod] = useState<"all" | "week" | "month" | "custom">("all");
   const [customFrom, setCustomFrom] = useState<string>("");
@@ -261,8 +262,13 @@ function HutangPiutangPage() {
     return digits.length >= 8 ? digits : undefined;
   };
 
-  const sendReminderWA = async (d: Debt) => {
-    const paid = paidByDebt.get(d.id) ?? 0;
+  const sendReminderWA = async (
+    d: Debt,
+    extra?: { amount: number; paidAt: string; note: string } | null,
+  ) => {
+    const paidBefore = paidByDebt.get(d.id) ?? 0;
+    const extraAmt = extra ? Math.max(0, Math.round(extra.amount)) : 0;
+    const paid = paidBefore + extraAmt;
     const sisa = Math.max(0, Number(d.amount) - paid);
     const due = d.due_date
       ? `jatuh tempo ${new Date(d.due_date).toLocaleDateString("id-ID")}`
@@ -272,7 +278,11 @@ function HutangPiutangPage() {
       ? `Ini pengingat hutang saya kepada Anda sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon konfirmasi cara & waktu pelunasannya. Terima kasih.`
       : `Ini pengingat tagihan dari saya sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon segera diselesaikan ya, terima kasih.`;
     const status = debtStatusLine(Number(d.amount), paid);
-    const text = `${greet}\n\n${status}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
+    const extraLine =
+      extra && extraAmt > 0
+        ? `\n\n🧾 *Pembayaran baru dicatat*\n• Tanggal: ${new Date(extra.paidAt).toLocaleDateString("id-ID")}\n• Jumlah: ${rupiah(extraAmt)}${extra.note.trim() ? `\n• Catatan: ${extra.note.trim()}` : ""}`
+        : "";
+    const text = `${greet}\n\n${status}\n\n${body}${extraLine}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
     const res = await shareToWhatsApp({ text, title: d.party_name, phone: partyPhone(d) });
     notifyShareResult(res);
   };
@@ -716,7 +726,7 @@ function HutangPiutangPage() {
                               size="sm"
                               variant="secondary"
                               className="bg-[#25D366]/15 text-[#1ea952] hover:bg-[#25D366]/25"
-                              onClick={() => void sendReminderWA(d)}
+                              onClick={() => setReminderFor(d)}
                               title="Kirim pengingat via MCM"
                             >
                               Tagih via MCM
@@ -809,6 +819,28 @@ function HutangPiutangPage() {
         }
         onClose={() => setPayFor(null)}
         onSaved={refresh}
+      />
+
+      <ReminderDialog
+        debt={reminderFor}
+        uid={uid}
+        sisa={
+          reminderFor
+            ? Math.max(
+                0,
+                Number(reminderFor.amount) -
+                  (paidByDebt.get(reminderFor.id) ?? 0),
+              )
+            : 0
+        }
+        onClose={() => setReminderFor(null)}
+        onSend={async (extra) => {
+          const d = reminderFor;
+          if (!d) return;
+          await sendReminderWA(d, extra);
+          if (extra) await refresh();
+          setReminderFor(null);
+        }}
       />
 
       <EditDebtDialog
@@ -1365,6 +1397,163 @@ function PaymentDialog({
           </Button>
           <Button onClick={submit} disabled={saving}>
             {saving ? "Menyimpan…" : "Simpan"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/**
+ * Dialog "Catat Pembayaran → Kirim WA". Sebelum pesan pengingat dikirim,
+ * user dapat opsional mencatat pembayaran baru (jumlah, tanggal, catatan).
+ * Jika jumlah bayar > 0, pembayaran tersimpan lebih dulu ke `debt_payments`
+ * lalu pesan WA di-generate dengan status & sisa yang sudah diperbarui.
+ * Jika jumlah dikosongkan, dialog hanya mengirim pengingat tanpa mencatat
+ * pembayaran baru — sehingga tombol ini tetap bisa dipakai untuk "tagih saja".
+ */
+function ReminderDialog({
+  debt,
+  uid,
+  sisa,
+  onClose,
+  onSend,
+}: {
+  debt: Debt | null;
+  uid: string | null;
+  sisa: number;
+  onClose: () => void;
+  onSend: (
+    extra: { amount: number; paidAt: string; note: string } | null,
+  ) => Promise<void>;
+}) {
+  const [amount, setAmount] = useState("");
+  const [paidAt, setPaidAt] = useState(() =>
+    new Date().toISOString().slice(0, 10),
+  );
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    if (debt) {
+      setAmount("");
+      setPaidAt(new Date().toISOString().slice(0, 10));
+      setNote("");
+    }
+  }, [debt]);
+
+  const parseAmt = () =>
+    Number(amount.replace(/[^\d.,]/g, "").replace(",", "."));
+
+  const doSend = async (recordPayment: boolean) => {
+    if (!debt) return;
+    let extra: { amount: number; paidAt: string; note: string } | null = null;
+    if (recordPayment) {
+      const amt = parseAmt();
+      if (!amt || amt <= 0) {
+        toast.error("Isi jumlah bayar terlebih dahulu.");
+        return;
+      }
+      if (!uid) {
+        toast.error("Sesi belum siap.");
+        return;
+      }
+      setBusy(true);
+      const { error } = await supabase.from("debt_payments").insert({
+        user_id: uid,
+        debt_id: debt.id,
+        amount: amt,
+        paid_at: paidAt,
+        note: note.trim() || null,
+      });
+      if (error) {
+        setBusy(false);
+        notifyError(error);
+        return;
+      }
+      extra = { amount: amt, paidAt, note };
+      toast.success("Pembayaran dicatat, membuka WA…");
+    } else {
+      setBusy(true);
+    }
+    try {
+      await onSend(extra);
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const amt = parseAmt();
+  const hasAmt = Number.isFinite(amt) && amt > 0;
+
+  return (
+    <Dialog open={!!debt} onOpenChange={(o) => !o && !busy && onClose()}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Catat pembayaran & kirim WA</DialogTitle>
+          <DialogDescription>
+            {debt && (
+              <>
+                {debt.party_name} · sisa {rupiah(Math.max(0, sisa))}
+              </>
+            )}
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3">
+          <div className="space-y-1">
+            <Label className="text-xs">Jumlah bayar (Rp) — opsional</Label>
+            <Input
+              inputMode="numeric"
+              placeholder="Kosongkan bila hanya menagih"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+            />
+            {hasAmt && amt > sisa && (
+              <p className="text-[11px] text-amber-600">
+                Melebihi sisa ({rupiah(sisa)}). Tetap dapat disimpan.
+              </p>
+            )}
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Tanggal</Label>
+            <Input
+              type="date"
+              value={paidAt}
+              onChange={(e) => setPaidAt(e.target.value)}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Catatan (opsional)</Label>
+            <Input
+              value={note}
+              onChange={(e) => setNote(e.target.value)}
+              placeholder="cth: transfer BCA"
+            />
+          </div>
+        </div>
+        <DialogFooter className="flex-col gap-2 sm:flex-row">
+          <Button
+            variant="outline"
+            onClick={onClose}
+            disabled={busy}
+            className="w-full sm:w-auto"
+          >
+            Batal
+          </Button>
+          <Button
+            variant="secondary"
+            onClick={() => void doSend(false)}
+            disabled={busy}
+            className="w-full sm:w-auto"
+          >
+            Kirim tanpa mencatat
+          </Button>
+          <Button
+            onClick={() => void doSend(true)}
+            disabled={busy || !hasAmt}
+            className="w-full bg-[#25D366] text-white hover:bg-[#1ea952] sm:w-auto"
+          >
+            {busy ? "Memproses…" : "Simpan & Kirim WA"}
           </Button>
         </DialogFooter>
       </DialogContent>
