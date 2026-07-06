@@ -1015,11 +1015,17 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     confirmText: string;
     paths: string[];
     locationUrl?: string | null;
+    /** Mapping foto→lokasi per kiriman. Bila diberikan, pratinjau lokasi
+     *  dihitung live: hanya kiriman yang masih punya minimal 1 foto tersisa
+     *  (tidak dikecualikan) yang lokasinya dianggap ikut terkirim. */
+    shotLocations?: Array<{ paths: string[]; locationUrl: string | null }>;
     persistKey?: string;
     /** Membangun caption/pesan persis seperti yang akan dikirim
      *  berdasar jumlah foto yang tersisa (paths.length - excluded).
+     *  `effectiveLocationUrl` sudah dihitung dari exclusion agar caption
+     *  konsisten dengan preview lokasi.
      *  Dipakai untuk menampilkan preview live di dialog konfirmasi. */
-    buildCaption?: (remaining: number) => string;
+    buildCaption?: (remaining: number, effectiveLocationUrl: string | null) => string;
     /** Label pendek untuk header preview caption ("WhatsApp" / "MCM Chat"). */
     captionLabel?: string;
     resolve: (v: { ok: boolean; excluded: Set<string> }) => void;
@@ -1096,15 +1102,32 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     const excludedInPaths = Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length;
     return previewReq.paths.length - excludedInPaths;
   }, [previewReq, excludedPaths]);
+  // Lokasi yang benar-benar akan terkirim, dihitung live dari
+  // shotLocations + excludedPaths. Bila salah satu kiriman masih memiliki
+  // paling sedikit satu foto tidak dikecualikan, lokasi kiriman pertama
+  // seperti itu dipakai sebagai `📍` di caption. Fallback ke locationUrl
+  // statis bila shotLocations tidak diberikan.
+  const effectiveLocationUrl = useMemo<string | null>(() => {
+    if (!previewReq) return null;
+    if (previewReq.shotLocations && previewReq.shotLocations.length > 0) {
+      for (const sl of previewReq.shotLocations) {
+        if (!sl.locationUrl) continue;
+        const anyLeft = sl.paths.some((p) => !excludedPaths.has(p));
+        if (anyLeft) return sl.locationUrl;
+      }
+      return null;
+    }
+    return previewReq.locationUrl ?? null;
+  }, [previewReq, excludedPaths]);
   const previewCaption = useMemo(() => {
     if (!previewReq?.buildCaption) return null;
     if (previewReq.paths.length > 0 && previewRemaining === 0) return null;
     try {
-      return previewReq.buildCaption(previewRemaining);
+      return previewReq.buildCaption(previewRemaining, effectiveLocationUrl);
     } catch {
       return null;
     }
-  }, [previewReq, previewRemaining]);
+  }, [previewReq, previewRemaining, effectiveLocationUrl]);
 
   const targetUnit = normUnitStr(title.unit_label);
   const targetGrams = Number(title.target_grams) || 0;
