@@ -82,6 +82,7 @@ import { Route as LovableVisualMessageHiddenPersistRouteImport } from './routes/
 import { Route as LovableVisualKomponenReviewRouteImport } from './routes/lovable.visual.komponen-review'
 import { Route as LovableVisualKemasanBadgeRouteImport } from './routes/lovable.visual.kemasan-badge'
 import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovable.visual.karton-konversi'
+import { Route as LovableVisualDeliveryHistoryRouteImport } from './routes/lovable.visual.delivery-history'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
 import { Route as LovableVisualCallVideoStageRouteImport } from './routes/lovable.visual.call-video-stage'
 import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from './routes/lovable.visual.attachment-duration-consistency'
@@ -500,6 +501,12 @@ const LovableVisualKartonKonversiRoute =
     path: '/lovable/visual/karton-konversi',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualDeliveryHistoryRoute =
+  LovableVisualDeliveryHistoryRouteImport.update({
+    id: '/lovable/visual/delivery-history',
+    path: '/lovable/visual/delivery-history',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualChatDeletedRoute =
   LovableVisualChatDeletedRouteImport.update({
     id: '/lovable/visual/chat-deleted',
@@ -727,6 +734,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
+  '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
@@ -824,6 +832,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
+  '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
@@ -925,6 +934,7 @@ export interface FileRoutesById {
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
+  '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
   '/lovable/visual/karton-konversi': typeof LovableVisualKartonKonversiRoute
   '/lovable/visual/kemasan-badge': typeof LovableVisualKemasanBadgeRoute
   '/lovable/visual/komponen-review': typeof LovableVisualKomponenReviewRoute
@@ -1026,6 +1036,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
+    | '/lovable/visual/delivery-history'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
@@ -1123,6 +1134,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
+    | '/lovable/visual/delivery-history'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
@@ -1223,6 +1235,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/attachment-duration-consistency'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
+    | '/lovable/visual/delivery-history'
     | '/lovable/visual/karton-konversi'
     | '/lovable/visual/kemasan-badge'
     | '/lovable/visual/komponen-review'
@@ -1269,6 +1282,7 @@ export interface RootRouteChildren {
   LovableVisualAttachmentDurationConsistencyRoute: typeof LovableVisualAttachmentDurationConsistencyRoute
   LovableVisualCallVideoStageRoute: typeof LovableVisualCallVideoStageRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
+  LovableVisualDeliveryHistoryRoute: typeof LovableVisualDeliveryHistoryRoute
   LovableVisualKartonKonversiRoute: typeof LovableVisualKartonKonversiRoute
   LovableVisualKemasanBadgeRoute: typeof LovableVisualKemasanBadgeRoute
   LovableVisualKomponenReviewRoute: typeof LovableVisualKomponenReviewRoute
@@ -1800,6 +1814,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualKartonKonversiRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/delivery-history': {
+      id: '/lovable/visual/delivery-history'
+      path: '/lovable/visual/delivery-history'
+      fullPath: '/lovable/visual/delivery-history'
+      preLoaderRoute: typeof LovableVisualDeliveryHistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/chat-deleted': {
       id: '/lovable/visual/chat-deleted'
       path: '/lovable/visual/chat-deleted'
@@ -2197,6 +2218,7 @@ const rootRouteChildren: RootRouteChildren = {
     LovableVisualAttachmentDurationConsistencyRoute,
   LovableVisualCallVideoStageRoute: LovableVisualCallVideoStageRoute,
   LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
+  LovableVisualDeliveryHistoryRoute: LovableVisualDeliveryHistoryRoute,
   LovableVisualKartonKonversiRoute: LovableVisualKartonKonversiRoute,
   LovableVisualKemasanBadgeRoute: LovableVisualKemasanBadgeRoute,
   LovableVisualKomponenReviewRoute: LovableVisualKomponenReviewRoute,
