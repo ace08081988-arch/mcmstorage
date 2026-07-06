@@ -11,6 +11,9 @@ const MODES: { mode: LayoutMode; label: string; Icon: typeof LayoutList }[] = [
 ];
 
 const STORAGE_PREFIX = "mcm.layoutMode.";
+const SAME_TAB_EVENT = "mcm:layoutMode";
+
+type LayoutModeChangeDetail = { key: string; mode: LayoutMode };
 
 function isMode(v: unknown): v is LayoutMode {
   return v === "list" || v === "grid" || v === "dense" || v === "compact";
@@ -35,6 +38,22 @@ export function useLayoutMode(key: string, initial: LayoutMode = "list"): [Layou
     }
   }, [key, mode]);
 
+  // Sinkronisasi antar-instance di tab yang sama: event `storage` tidak
+  // di-fire di tab yang menulis, jadi kalau dua komponen (mis. daftar
+  // utama + dialog detail) sama-sama pakai `useLayoutMode("readyEcer")`,
+  // toggle di satu komponen tidak akan mengubah komponen lain tanpa
+  // bantuan pub/sub ini.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const onSameTab = (e: Event) => {
+      const detail = (e as CustomEvent<LayoutModeChangeDetail>).detail;
+      if (!detail || detail.key !== key) return;
+      if (isMode(detail.mode)) setMode(detail.mode);
+    };
+    window.addEventListener(SAME_TAB_EVENT, onSameTab as EventListener);
+    return () => window.removeEventListener(SAME_TAB_EVENT, onSameTab as EventListener);
+  }, [key]);
+
   // Sinkronisasi antar-tab: dengarkan perubahan localStorage dari tab lain.
   // Event `storage` hanya di-fire di tab lain (bukan tab yang menulis), jadi
   // aman untuk langsung setMode tanpa loop.
@@ -53,7 +72,22 @@ export function useLayoutMode(key: string, initial: LayoutMode = "list"): [Layou
     return () => window.removeEventListener("storage", onStorage);
   }, [key, initial]);
 
-  return [mode, setMode];
+  const setModeBroadcast = (m: LayoutMode) => {
+    setMode(m);
+    if (typeof window !== "undefined") {
+      try {
+        window.dispatchEvent(
+          new CustomEvent<LayoutModeChangeDetail>(SAME_TAB_EVENT, {
+            detail: { key, mode: m },
+          }),
+        );
+      } catch {
+        /* ignore */
+      }
+    }
+  };
+
+  return [mode, setModeBroadcast];
 }
 
 export function layoutGridClass(mode: LayoutMode): string {
