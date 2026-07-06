@@ -671,7 +671,6 @@ function SendPrepLinkDialog({
   const open = !!title;
   const [busy, setBusy] = useState(false);
   const [session, setSession] = useState<{ url: string; pin: string; token: string } | null>(null);
-  const [copying, setCopying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [workerName, setWorkerName] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
@@ -2324,6 +2323,7 @@ function WorkerTestDialog({
 }) {
   const [busy, setBusy] = useState(false);
   const [session, setSession] = useState<{ url: string; pin: string; token: string } | null>(null);
+  const [copying, setCopying] = useState(false);
   const [pin, setPin] = useState("");
 
   useEffect(() => {
