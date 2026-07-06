@@ -2338,6 +2338,9 @@ function PrepEditorDialog({
           </div>
         </div>
         <DialogFooter className="sticky bottom-0 z-10 -mx-6 -mb-6 flex-col gap-2 border-t bg-background px-6 py-3 sm:flex-col">
+          <div className="flex w-full items-center justify-center">
+            <DialogSaveStatus status={prepStatus} compact />
+          </div>
           <Button
             size="sm"
             onClick={() => save({ sendWa: true })}
