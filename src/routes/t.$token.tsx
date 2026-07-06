@@ -2219,6 +2219,9 @@ function ItemCard({
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
   const [expanded, setExpanded] = useState(false);
+  const [manualCoordOpen, setManualCoordOpen] = useState(false);
+  const [manualLat, setManualLat] = useState("");
+  const [manualLng, setManualLng] = useState("");
   // Antrian foto galeri yang akan dibuka di PhotoEditor satu per satu.
   const editQueueRef = useRef<number[]>([]);
   const photosRef = useRef<StagedPhoto[]>([]);
@@ -2613,7 +2616,9 @@ function ItemCard({
               ? "Barang tidak ditemukan di gudang"
               : res?.error === "bad_pin"
                 ? "PIN salah"
-                : res?.error || "submit_failed";
+                : res?.error === "task_exhausted"
+                  ? "Link ini sudah dipakai untuk 1 paket. Minta link + PIN baru ke admin."
+                  : res?.error || "submit_failed";
         throw new Error(msg);
       }
       toast.success(
@@ -2967,6 +2972,54 @@ function ItemCard({
             >
               <ClipboardPaste className="h-4 w-4" /> Tempel
             </button>
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={() => setManualCoordOpen((v) => !v)}
+              className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+            >
+              <MapPin className="h-3 w-3" /> {manualCoordOpen ? "Tutup" : "Isi koordinat manual"} (bila GPS ditolak)
+            </button>
+            {manualCoordOpen && (
+              <div className="mt-2 flex flex-wrap gap-2">
+                <input
+                  inputMode="decimal"
+                  value={manualLat}
+                  onChange={(e) => setManualLat(e.target.value)}
+                  placeholder="Lat (mis. -7.257)"
+                  className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                <input
+                  inputMode="decimal"
+                  value={manualLng}
+                  onChange={(e) => setManualLng(e.target.value)}
+                  placeholder="Lng (mis. 112.752)"
+                  className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20"
+                />
+                <button
+                  type="button"
+                  onClick={() => {
+                    const lat = Number.parseFloat(manualLat.replace(",", "."));
+                    const lng = Number.parseFloat(manualLng.replace(",", "."));
+                    if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                      toast.error("Lat/Lng tidak valid");
+                      return;
+                    }
+                    if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                      toast.error("Lat harus -90..90, Lng harus -180..180");
+                      return;
+                    }
+                    setGps({ lat, lng });
+                    setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
+                    toast.success("Koordinat manual dipakai");
+                  }}
+                  className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium transition hover:bg-muted"
+                >
+                  Pakai
+                </button>
+              </div>
+            )}
           </div>
           <input
             value={note}
@@ -3537,6 +3590,9 @@ function RequestForm({
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
+  const [manualCoordOpen, setManualCoordOpen] = useState(false);
+  const [manualLat, setManualLat] = useState("");
+  const [manualLng, setManualLng] = useState("");
 
   useEffect(() => {
     if (!editorOpen) return;
@@ -3861,7 +3917,15 @@ function RequestForm({
       const { data, error } = await (publicSupabase.rpc as any)("request_submit_via_task", args);
       if (error) throw error;
       const res = data as { ok: boolean; error?: string };
-      if (!res?.ok) throw new Error(res?.error || "submit_failed");
+      if (!res?.ok) {
+        const msg =
+          res?.error === "task_exhausted"
+            ? "Link ini sudah dipakai untuk 1 paket. Minta link + PIN baru ke admin."
+            : res?.error === "bad_pin"
+              ? "PIN salah"
+              : res?.error || "submit_failed";
+        throw new Error(msg);
+      }
       toast.success(`Paket request terkirim (${uploaded.length} foto), stok dikurangi`);
       setPhotos([]);
       setUploads([]);
@@ -4081,6 +4145,54 @@ function RequestForm({
           </div>
         );
       })()}
+      <div>
+        <button
+          type="button"
+          onClick={() => setManualCoordOpen((v) => !v)}
+          className="inline-flex items-center gap-1 text-[11px] text-muted-foreground underline-offset-2 hover:text-foreground hover:underline"
+        >
+          <MapPin className="h-3 w-3" /> {manualCoordOpen ? "Tutup" : "Isi koordinat manual"} (bila GPS ditolak)
+        </button>
+        {manualCoordOpen && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            <input
+              inputMode="decimal"
+              value={manualLat}
+              onChange={(e) => setManualLat(e.target.value)}
+              placeholder="Lat (mis. -7.257)"
+              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs"
+            />
+            <input
+              inputMode="decimal"
+              value={manualLng}
+              onChange={(e) => setManualLng(e.target.value)}
+              placeholder="Lng (mis. 112.752)"
+              className="h-10 min-w-0 flex-1 rounded-lg border bg-background px-3 text-xs"
+            />
+            <button
+              type="button"
+              onClick={() => {
+                const lat = Number.parseFloat(manualLat.replace(",", "."));
+                const lng = Number.parseFloat(manualLng.replace(",", "."));
+                if (!Number.isFinite(lat) || !Number.isFinite(lng)) {
+                  toast.error("Lat/Lng tidak valid");
+                  return;
+                }
+                if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                  toast.error("Lat harus -90..90, Lng harus -180..180");
+                  return;
+                }
+                setGps({ lat, lng });
+                setLocUrl(`https://www.google.com/maps?q=${lat},${lng}`);
+                toast.success("Koordinat manual dipakai");
+              }}
+              className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium hover:bg-muted"
+            >
+              Pakai
+            </button>
+          </div>
+        )}
+      </div>
       <input
         value={note}
         onChange={(e) => setNote(e.target.value)}

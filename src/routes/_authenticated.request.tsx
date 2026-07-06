@@ -931,6 +931,7 @@ function SendPrepLinkDialog({
         _pin: pin,
         _share_token: token,
         _items: [],
+        _max_submissions: 1,
       });
       if (rpcErr) throw rpcErr;
       setSession({ url: publicTaskUrl(token, pin), pin, token });
@@ -1299,6 +1300,19 @@ function SendPrepLinkDialog({
               <a href={session.url} target="_blank" rel="noreferrer">
                 <ExternalLink className="mr-1 h-3.5 w-3.5" /> Buka di tab baru untuk cek
               </a>
+            </Button>
+            <div className="rounded-md border border-amber-500/40 bg-amber-500/5 p-2.5 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400">
+              <b>1 link + PIN = 1 paket penyiapan.</b> Setelah pegawai kirim foto & lokasi, PIN otomatis mati.
+              Untuk pesanan berikutnya, tekan tombol di bawah agar dapat link + PIN baru.
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              className="min-h-11 w-full sm:min-h-9"
+              onClick={() => { setSession(null); setError(null); setWorkerName(""); setNameError(null); }}
+              disabled={isPending}
+            >
+              <RotateCw className="mr-1 h-3.5 w-3.5" /> Buat link baru untuk pegawai lain
             </Button>
           </div>
         ) : (
