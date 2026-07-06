@@ -1161,9 +1161,11 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       if (files.length === 0) toast.warning("Foto pegawai tidak bisa diunduh.");
       const lines = take.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
       const firstLoc = take.find((s) => s.location_url);
+      const excludedCount = excludedSet.size;
+      const totalPaths = allPaths.length;
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
-        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir:`,
+        `${shots.length} kiriman pegawai${shots.length > take.length ? ` (mengirim ${take.length})` : ""} · ${files.length} foto terlampir${excludedCount > 0 ? ` (${excludedCount} dari ${totalPaths} dikecualikan)` : ""}:",
         ...lines,
         ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
       ].join("\n");
