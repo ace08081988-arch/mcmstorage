@@ -1605,14 +1605,40 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             </div>
           ) : null}
           {previewReq?.locationUrl ? (
-            <a
-              href={previewReq.locationUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block truncate rounded-md border bg-muted/30 px-2 py-1.5 text-xs text-primary underline"
-            >
-              📍 {previewReq.locationUrl}
-            </a>
+            (() => {
+              const url = previewReq.locationUrl;
+              const desc = describeLocationUrl(url);
+              return (
+                <div className="rounded-md border bg-muted/30 p-2">
+                  <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground">
+                    <span>Lokasi — akan dilampirkan sebagai baris terakhir caption</span>
+                    {desc.kind ? (
+                      <span className="rounded bg-background/70 px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+                        {desc.kind}
+                      </span>
+                    ) : null}
+                  </div>
+                  {desc.label ? (
+                    <div className="mb-1 text-xs font-semibold text-foreground">
+                      📍 {desc.label}
+                    </div>
+                  ) : null}
+                  <a
+                    href={url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="block truncate text-[11px] text-primary underline"
+                    title={url}
+                  >
+                    {url}
+                  </a>
+                  <div className="mt-1 rounded bg-background/70 p-1.5 text-[11px] leading-relaxed text-foreground">
+                    <span className="mr-1 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Format kirim:</span>
+                    <span className="break-all">📍 {url}</span>
+                  </div>
+                </div>
+              );
+            })()
           ) : null}
           {(() => {
             if (!previewReq || previewReq.paths.length === 0) return null;
