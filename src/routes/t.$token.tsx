@@ -2942,6 +2942,31 @@ function ItemCard({
             >
               <MapPin className="h-4 w-4" /> GPS
             </button>
+            <button
+              type="button"
+              title="Tempel link dari papan klip"
+              onClick={async () => {
+                try {
+                  if (!navigator.clipboard?.readText) {
+                    toast.error("Clipboard tidak tersedia — tempel manual di kolom");
+                    return;
+                  }
+                  const text = (await navigator.clipboard.readText()).trim();
+                  if (!text) { toast.error("Papan klip kosong"); return; }
+                  if (!/^https:\/\//i.test(text)) {
+                    toast.error("Isi papan klip bukan URL https://");
+                    return;
+                  }
+                  setLocUrl(text.slice(0, 2048));
+                  toast.success("Link ditempel");
+                } catch {
+                  toast.error("Gagal membaca papan klip");
+                }
+              }}
+              className="inline-flex h-10 items-center gap-1 rounded-lg border bg-background px-3 text-xs font-medium transition hover:bg-muted"
+            >
+              <ClipboardPaste className="h-4 w-4" /> Tempel
+            </button>
           </div>
           <input
             value={note}
