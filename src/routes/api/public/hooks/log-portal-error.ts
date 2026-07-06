@@ -164,13 +164,16 @@ export const Route = createFileRoute("/api/public/hooks/log-portal-error")({
           const nextSeverity = nowCount >= ALERT_COUNT * 3 ? "critical" : "warning";
           const cooldownIso = new Date(Date.now() - ALERT_COOLDOWN_SEC * 1000).toISOString();
 
-          // Dedup key: (kind, code, token_hash). `code` sudah diredaksi PII di atas,
-          // jadi aman dipakai sebagai bagian kunci deduplikasi.
+          // Dedup key: (kind, code) — cooldown berlaku LINTAS token. Kalau alert
+          // untuk kombinasi (kind, code) yang sama sudah pernah dibuat dan masih
+          // dalam cooldown, request berikutnya (dari token manapun) di-suppress.
+          // `code` sudah diredaksi PII di atas, jadi aman dipakai sebagai bagian
+          // kunci deduplikasi. Threshold deteksi tetap per (kind, token_hash)
+          // supaya satu token nakal tidak menenggelamkan sinyal token lain.
           let openQ = supabase
             .from("portal_error_alerts")
             .select("id, count, severity, created_at, acknowledged_at")
             .eq("kind", kind)
-            .eq("token_hash", tokenHash)
             .order("created_at", { ascending: false })
             .limit(1);
           openQ = code ? openQ.eq("code", code) : openQ.is("code", null);
