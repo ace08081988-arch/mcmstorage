@@ -29,6 +29,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { rupiah } from "@/lib/stock-format";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScrollProgress";
+import { DialogSaveStatus, useSaveStatus } from "@/components/DialogSaveStatus";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
