@@ -1294,14 +1294,21 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       }
       if (files.length === 0) toast.warning("Foto pegawai tidak bisa diunduh.");
       const lines = sendShots.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
-      const firstLoc = sendShots.find((s) => s.location_url);
+      // Lokasi efektif: kiriman pertama yang punya lokasi DAN masih memiliki
+      // paling sedikit satu foto tidak dikecualikan. Konsisten dengan
+      // pratinjau live di dialog konfirmasi.
+      const firstLocShot = sendShots.find((s) => {
+        if (!s.location_url) return false;
+        const ps = shotPaths(s);
+        return ps.some((p) => !excludedSet.has(p));
+      });
       const excludedCount = excludedSet.size;
       const totalPaths = previewTotal;
       const text = [
         `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
         `${shots.length} kiriman pegawai${shots.length > take ? ` (mengirim ${take})` : ""} · ${files.length} foto terkirim${excludedCount > 0 ? ` · ${excludedCount} dari ${totalPaths} dikecualikan` : ""}:`,
         ...lines,
-        ...(firstLoc ? [`📍 ${firstLoc.location_url}`] : []),
+        ...(firstLocShot ? [`📍 ${firstLocShot.location_url}`] : []),
       ].join("\n");
       const res = await shareToWhatsApp({ text, title: title.name, files });
       notifyShareResult(res);
