@@ -218,14 +218,13 @@ export const Route = createFileRoute("/api/public/hooks/log-portal-error")({
           const hourBucket = new Date();
           hourBucket.setUTCMinutes(0, 0, 0);
           const bucketIso = hourBucket.toISOString();
-          const codeKey = code ?? "";
-          const { data: existingAudit } = await supabase
+          let auditQ = supabase
             .from("portal_error_audit")
             .select("id, count")
             .eq("kind", kind)
-            .eq("hour_bucket", bucketIso)
-            .eq("code", codeKey === "" ? "" : code!)
-            .maybeSingle();
+            .eq("hour_bucket", bucketIso);
+          auditQ = code ? auditQ.eq("code", code) : auditQ.is("code", null);
+          const { data: existingAudit } = await auditQ.maybeSingle();
           if (existingAudit) {
             await supabase
               .from("portal_error_audit")
