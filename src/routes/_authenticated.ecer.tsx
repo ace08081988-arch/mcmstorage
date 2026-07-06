@@ -745,7 +745,7 @@ function DetailHero({
             <button
               type="button"
               onClick={onCopyPrepLink}
-              title="Salin permalink Penyiapan pegawai untuk judul ini"
+              title={copyLinkTooltip}
               aria-label="Salin link Penyiapan pegawai"
               className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
@@ -807,7 +807,7 @@ function DetailHero({
               size="sm"
               variant="outline"
               onClick={onCopyPrepLink}
-              title="Salin permalink Penyiapan pegawai untuk judul ini"
+              title={copyLinkTooltip}
               className="hidden sm:inline-flex"
             >
               <Link2 className="h-4 w-4" /> Salin link
