@@ -1440,7 +1440,12 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                   <button
                     type="button"
                     className="text-primary underline"
-                    onClick={() => setExcludedPaths(new Set())}
+                    onClick={() => {
+                      setExcludedPaths(new Set());
+                      if (previewReq?.persistKey) {
+                        try { localStorage.removeItem(`ecer:excluded:${previewReq.persistKey}`); } catch { /* ignore */ }
+                      }
+                    }}
                   >
                     Reset
                   </button>
