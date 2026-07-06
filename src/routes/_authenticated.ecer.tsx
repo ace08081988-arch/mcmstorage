@@ -2218,6 +2218,9 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   const [addressBusy, setAddressBusy] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
   const addressEditedRef = useRef(false);
+  // Field-pair grid ikut mode `readyEcer` — sama dengan TitleFormDialog.
+  const [layout] = useLayoutMode("readyEcer", "grid");
+  const pairClass = layoutFieldPairClass(layout);
   const addressReqIdRef = useRef(0);
   const [progress, setProgress] = useState<{ step: "upload" | "save" | "done" | "error"; message: string } | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
