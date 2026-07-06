@@ -2044,6 +2044,7 @@ function PrepEditorDialog({
         return;
       }
     }
+    setPrepError(null);
     setBusy(true);
     try {
       const { data: u } = await supabase.auth.getUser();
