@@ -953,6 +953,35 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   const [waSendingId, setWaSendingId] = useState<string | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
   const [chatPickShot, setChatPickShot] = useState<WorkerShot | null>(null);
+  type PreviewReq = {
+    title: string;
+    description: string;
+    confirmText: string;
+    paths: string[];
+    locationUrl?: string | null;
+    resolve: (v: boolean) => void;
+  };
+  const [previewReq, setPreviewReq] = useState<PreviewReq | null>(null);
+  const [previewUrls, setPreviewUrls] = useState<string[] | null>(null);
+  useEffect(() => {
+    if (!previewReq) { setPreviewUrls(null); return; }
+    let cancelled = false;
+    setPreviewUrls(null);
+    (async () => {
+      const capped = previewReq.paths.slice(0, 12);
+      const urls = await Promise.all(capped.map((p) => resolvePrepUrl(p, 600).catch(() => null)));
+      if (!cancelled) setPreviewUrls(urls.map((u) => u ?? ""));
+    })();
+    return () => { cancelled = true; };
+  }, [previewReq]);
+  function confirmWithPreview(opts: Omit<PreviewReq, "resolve">): Promise<boolean> {
+    return new Promise<boolean>((resolve) => setPreviewReq({ ...opts, resolve }));
+  }
+  function finishPreview(v: boolean) {
+    const r = previewReq;
+    setPreviewReq(null);
+    r?.resolve(v);
+  }
 
   const targetUnit = normUnitStr(title.unit_label);
   const targetGrams = Number(title.target_grams) || 0;
