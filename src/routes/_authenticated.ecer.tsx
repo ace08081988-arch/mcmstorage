@@ -629,13 +629,23 @@ function DetailHero({
       if (e.defaultPrevented) return;
       if (e.ctrlKey || e.metaKey || e.altKey) return;
       if (!e.shiftKey) return;
-      if (e.key !== "L" && e.key !== "l") return;
       const t = e.target as HTMLElement | null;
       const tag = t?.tagName;
       if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return;
       if (t?.isContentEditable) return;
-      e.preventDefault();
-      void onCopyPrepLink();
+      if (e.key === "L" || e.key === "l") {
+        e.preventDefault();
+        void onCopyPrepLink();
+        return;
+      }
+      // Shift+Q: toggle dialog QR permalink Penyiapan pegawai. Toggle
+      // (bukan sekadar open) supaya bisa tutup lagi lewat keyboard tanpa
+      // pindah tangan ke mouse.
+      if (e.key === "Q" || e.key === "q") {
+        e.preventDefault();
+        setQrOpen((v) => !v);
+        return;
+      }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -784,7 +794,7 @@ function DetailHero({
             <button
               type="button"
               onClick={() => setQrOpen(true)}
-              title="Tampilkan QR permalink Penyiapan pegawai"
+              title="Tampilkan QR permalink Penyiapan pegawai (Shift+Q)"
               aria-label="Tampilkan QR permalink Penyiapan pegawai"
               className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
@@ -845,7 +855,7 @@ function DetailHero({
               size="sm"
               variant="outline"
               onClick={() => setQrOpen(true)}
-              title="Tampilkan QR permalink Penyiapan pegawai"
+              title="Tampilkan QR permalink Penyiapan pegawai (Shift+Q)"
               className="hidden sm:inline-flex"
             >
               <QrCode className="h-4 w-4" /> QR
