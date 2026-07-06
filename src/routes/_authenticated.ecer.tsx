@@ -1213,6 +1213,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     });
     if (!res.ok) return;
     const paths = allPaths.filter((p) => !res.excluded.has(p));
+    const excludedCount = allPaths.length - paths.length;
     if (paths.length === 0) { toast.warning("Semua foto dikecualikan. Batal kirim."); return; }
     setWaSendingId(s.id);
     try {
@@ -1226,7 +1227,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       if (files.length === 0) {
         toast.warning("Foto tidak bisa diunduh untuk dilampirkan.");
       }
-      const waRes = await shareToWhatsApp({ text: shotCaption(s), title: title.name, files });
+      const waRes = await shareToWhatsApp({ text: shotCaption(s, { sentCount: files.length, excludedCount }), title: title.name, files });
       notifyShareResult(waRes);
     } catch (err) {
       toast.error(`Gagal kirim WA: ${(err as Error).message}`);
