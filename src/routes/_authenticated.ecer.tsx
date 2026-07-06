@@ -705,6 +705,7 @@ function DetailHero({
           {isAdmin && (
             <Link
               to="/tugas-baru"
+              search={{ title_id: title.id }}
               title="Buat perintah penyiapan untuk pegawai (token & PIN tugas)"
               className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl bg-primary/10 p-2 text-primary transition-all active:scale-95 hover:bg-primary/15 sm:hidden"
             >
@@ -738,7 +739,7 @@ function DetailHero({
           </Button>
           {isAdmin && (
             <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex" title="Buat perintah penyiapan untuk pegawai (token & PIN tugas)">
-              <Link to="/tugas-baru">
+              <Link to="/tugas-baru" search={{ title_id: title.id }}>
                 <Plus className="h-4 w-4" /> Penyiapan pegawai
               </Link>
             </Button>
