@@ -45,11 +45,12 @@ async function prep(
       const applied = document.documentElement.style.getPropertyValue(
         "--app-font-scale",
       );
-      const compactOff = !document.documentElement.classList.contains("compact");
       const fs = parseFloat(getComputedStyle(document.documentElement).fontSize);
-      // Skala benar-benar terpakai ketika font-size root ≈ 16 * scale.
+      // Skala benar-benar terpakai ketika font-size root ≈ 16 * scale
+      // (dipaksa lewat inline style !important supaya menang atas
+      //  `html.compact { font-size: 92% }`).
       const fsOk = Math.abs(fs - 16 * s) < 0.5;
-      return isDarkOk && Number(applied) === s && compactOff && fsOk;
+      return isDarkOk && Number(applied) === s && fsOk;
     },
     { t: theme, s: scale },
   );
