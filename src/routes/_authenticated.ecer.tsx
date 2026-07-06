@@ -1376,8 +1376,14 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             confirmText: "Kirim Chat",
             paths,
             locationUrl: target.location_url,
-          }).then((ok) => {
-            if (ok) void sendShotChat(target, conversationId, displayTitle);
+          }).then((res) => {
+            if (!res.ok) return;
+            const remaining = paths.filter((p) => !res.excluded.has(p));
+            if (remaining.length === 0) {
+              toast.warning("Semua foto dikecualikan. Batal kirim.");
+              return;
+            }
+            void sendShotChat(target, conversationId, displayTitle, res.excluded);
           });
         }}
       />
