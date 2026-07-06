@@ -30,6 +30,7 @@ import { publicTaskUrl } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { displayUnit } from "@/lib/unit-label";
 import { useIsAdmin } from "@/hooks/use-is-admin";
+import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -491,6 +492,10 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
   const [unit, setUnit] = useState<"g" | "gram">((existing?.unit_label as "g" | "gram") ?? "gram");
   const [note, setNote] = useState(existing?.note ?? "");
   const [busy, setBusy] = useState(false);
+  // Ikut mode layout tersimpan (key `readyEcer`) — di mode `compact`
+  // pasangan input menumpuk penuh, selebihnya responsif 1→2 kolom.
+  const [layout] = useLayoutMode("readyEcer", "grid");
+  const pairClass = layoutFieldPairClass(layout);
 
   async function save() {
     if (!name.trim()) { toast.error("Nama wajib diisi"); return; }
@@ -533,7 +538,7 @@ function TitleFormDialog({ item, existing, onClose, onSaved }: {
               inputMode="text"
             />
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className={pairClass}>
             <div>
               <Label className="text-xs">Target berat</Label>
               <Input inputMode="decimal" value={target} onChange={(e) => setTarget(e.target.value)} />
@@ -2213,6 +2218,9 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
   const [addressBusy, setAddressBusy] = useState(false);
   const [addressError, setAddressError] = useState<string | null>(null);
   const addressEditedRef = useRef(false);
+  // Field-pair grid ikut mode `readyEcer` — sama dengan TitleFormDialog.
+  const [layout] = useLayoutMode("readyEcer", "grid");
+  const pairClass = layoutFieldPairClass(layout);
   const addressReqIdRef = useRef(0);
   const [progress, setProgress] = useState<{ step: "upload" | "save" | "done" | "error"; message: string } | null>(null);
   const cameraRef = useRef<HTMLInputElement | null>(null);
@@ -2777,7 +2785,7 @@ function PrepFormDialog({ item, title, onClose, onSaved }: {
                       maxLength={120}
                     />
                   </div>
-                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                  <div className={pairClass}>
                     <div>
                       <Label className="text-[11px]">Latitude *</Label>
                       <Input
@@ -2923,6 +2931,8 @@ function NewProductDialog({ onClose, onCreated }: {
   // Field Isi/kemasan hanya relevan saat isi kemasan bisa berbeda-beda
   // (curah gram / sachet). Untuk botol & pcs, 1 kemasan = 1 unit.
   const showSizeField = packageType === "gram" || packageType === "sachet";
+  const [layout] = useLayoutMode("readyEcer", "grid");
+  const pairClass = layoutFieldPairClass(layout);
 
   async function save() {
     if (!name.trim()) { toast.error("Nama produk wajib diisi"); return; }
@@ -2966,7 +2976,7 @@ function NewProductDialog({ onClose, onCreated }: {
             <Label className="text-xs">Kategori (opsional)</Label>
             <Input value={category} onChange={(e) => setCategory(e.target.value)} placeholder="mis. Bahan baku" />
           </div>
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+          <div className={pairClass}>
             <div>
               <Label className="text-xs">Jenis kemasan</Label>
               <select

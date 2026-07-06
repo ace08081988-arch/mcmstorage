@@ -52,6 +52,22 @@ export function layoutGridClass(mode: LayoutMode): string {
   }
 }
 
+/**
+ * Grid class untuk pasangan input di dialog form (mis. Target/Satuan,
+ * Latitude/Longitude, Kemasan/Isi). Mengikuti mode tersimpan halaman
+ * induk supaya dialog konsisten dengan preferensi user:
+ *   - compact → 1 kolom (menumpuk penuh)
+ *   - list/grid/dense → responsif: 1 kolom di HP, 2 kolom mulai `sm:`
+ *
+ * Field pair dibatasi maksimum 2 kolom karena label + input butuh
+ * ruang minimum yang layak; mode `dense` (3-col) tetap dipetakan ke 2
+ * kolom agar tidak memaksa input jadi terlalu sempit.
+ */
+export function layoutFieldPairClass(mode: LayoutMode): string {
+  if (mode === "compact") return "grid grid-cols-1 gap-2";
+  return "grid grid-cols-1 gap-2 sm:grid-cols-2";
+}
+
 export function LayoutModeToggle({
   mode,
   onChange,
