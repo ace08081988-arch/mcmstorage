@@ -278,6 +278,93 @@ function RequestPage() {
         </Button>
       </div>
 
+      {unrouted.length > 0 && (
+        <Card className="border-amber-500/40 bg-amber-50/40 dark:bg-amber-950/20">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between gap-2 text-base">
+              <div className="flex items-center gap-2 text-amber-800 dark:text-amber-200">
+                <AlertTriangle className="h-4 w-4" />
+                Kiriman tanpa folder ecer
+                <span className="rounded-full bg-amber-500/20 px-2 py-0.5 text-[10px] font-medium">
+                  {unrouted.length}
+                </span>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs"
+                onClick={() => setUnroutedOpen((v) => !v)}
+              >
+                {unroutedOpen ? "Sembunyikan" : "Lihat"}
+              </Button>
+            </CardTitle>
+          </CardHeader>
+          {unroutedOpen && (
+            <CardContent className="space-y-2">
+              <p className="text-[11px] leading-relaxed text-muted-foreground">
+                Kiriman pegawai untuk produk yang <b>belum memiliki folder ecer yang cocok</b> (produk tidak punya judul,
+                atau jumlah/satuan task tidak persis sama dengan judul ecer manapun).
+                Buka folder ecer produk terkait dan sesuaikan judulnya, atau perbaiki jumlah/satuan di halaman Tugas Baru
+                agar kiriman berikutnya otomatis masuk folder yang benar.
+              </p>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                {unrouted.map((r) => {
+                  const label = r.warehouse_item_name || r.name_snapshot || "(tanpa nama)";
+                  const qty = r.qty_requested != null
+                    ? `${r.qty_requested}${r.unit_label ? ` ${r.unit_label}` : ""}`
+                    : "";
+                  const when = new Date(r.submitted_at).toLocaleString("id-ID", {
+                    day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit",
+                  });
+                  return (
+                    <div
+                      key={r.id}
+                      className="flex items-center gap-2 rounded-lg border bg-card p-2"
+                    >
+                      {r.thumb_url ? (
+                        <a
+                          href={r.thumb_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0"
+                        >
+                          <img
+                            src={r.thumb_url}
+                            alt={`Kiriman ${label}`}
+                            className="h-14 w-14 rounded-md object-cover"
+                            loading="lazy"
+                          />
+                        </a>
+                      ) : (
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-md border bg-muted">
+                          <ImageIcon className="h-5 w-5 text-muted-foreground" />
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1 text-xs">
+                        <div className="truncate font-medium">{label}</div>
+                        <div className="text-[11px] text-muted-foreground">
+                          {qty || "—"} · {when}
+                        </div>
+                        {r.location_url && (
+                          <a
+                            href={r.location_url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1 text-[11px] text-primary hover:underline"
+                          >
+                            <MapPin className="h-3 w-3" /> Lokasi
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          )}
+        </Card>
+      )}
+
       {titles.length === 0 ? (
         <div className="rounded-xl border border-dashed bg-card p-8 text-center text-sm text-muted-foreground">
           Belum ada judul request. Klik tombol di atas untuk membuat yang pertama.
