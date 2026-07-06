@@ -2355,12 +2355,15 @@ function WorkerTestDialog({
   }
 
   async function copyAll() {
-    if (!session) return;
+    if (!session || copying) return;
+    setCopying(true);
     try {
       await navigator.clipboard.writeText(`Link: ${session.url}\nPIN: ${session.pin}`);
       toast.success("Link + PIN disalin", { description: "Sekarang bisa kirim ulang ke pegawai." });
     } catch (e) {
       toast.error("Gagal menyalin", { description: (e as Error)?.message ?? "Periksa izin clipboard." });
+    } finally {
+      setCopying(false);
     }
   }
 
