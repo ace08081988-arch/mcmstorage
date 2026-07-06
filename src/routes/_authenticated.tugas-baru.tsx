@@ -554,6 +554,9 @@ function TugasBaruForm() {
   const searchParams = Route.useSearch();
   const prefillTitleId = searchParams.title_id ?? null;
   const prefillConsumedRef = useRef(false);
+  const [prefillInfo, setPrefillInfo] = useState<{
+    name: string; qty: string; unit: string; linkedWid: boolean;
+  } | null>(null);
   useEffect(() => {
     if (prefillConsumedRef.current) return;
     if (!prefillTitleId) return;
@@ -576,6 +579,12 @@ function TugasBaruForm() {
     } : r)));
     verifyWid(key, t.warehouse_item_id);
     setTitle((cur) => cur.trim() ? cur : `Penyiapan ${t.name}`);
+    setPrefillInfo({
+      name: t.name,
+      qty: t.target_grams != null ? String(t.target_grams) : "1",
+      unit: t.unit_label ?? "",
+      linkedWid: !!t.warehouse_item_id,
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [prefillTitleId, titles]);
 
@@ -954,6 +963,29 @@ function TugasBaruForm() {
                 className="shrink-0 rounded border border-emerald-600/40 px-2 py-0.5 text-[10px] hover:bg-emerald-600/10"
               >
                 Bersihkan draft
+              </button>
+            </div>
+          ) : null}
+          {prefillInfo ? (
+            <div
+              role="status"
+              aria-live="polite"
+              className="flex items-start justify-between gap-2 rounded-md border border-sky-500/40 bg-sky-500/10 px-3 py-2 text-[11px] text-sky-900 dark:text-sky-200"
+            >
+              <span className="min-w-0">
+                Terisi otomatis dari <b className="break-words">{prefillInfo.name}</b>
+                {" — qty "}
+                <b>{prefillInfo.qty}{prefillInfo.unit ? ` ${prefillInfo.unit}` : ""}</b>
+                {prefillInfo.linkedWid ? " · produk gudang tertaut" : " · belum tertaut produk gudang"}.
+                {" "}Periksa sebelum mengirim.
+              </span>
+              <button
+                type="button"
+                onClick={() => setPrefillInfo(null)}
+                className="shrink-0 rounded border border-sky-600/40 px-2 py-0.5 text-[10px] hover:bg-sky-600/10"
+                aria-label="Tutup ringkasan prefill"
+              >
+                Tutup
               </button>
             </div>
           ) : null}
