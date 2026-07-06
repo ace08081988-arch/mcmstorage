@@ -178,7 +178,25 @@ export default defineConfig({
       name: "ready-badges-selector-e2e",
       testDir: "./tests/e2e",
       testMatch: /ready-badges-selector\.spec\.ts/,
-      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+      // Debug artefak per-proyek: aktifkan trace penuh pada retry
+      // (`on-all-retries`) DAN pertahankan trace + screenshot + video
+      // untuk setiap kegagalan (`retain-on-failure`). Efektifnya:
+      //   - Percobaan pertama gagal → trace/screenshot/video disimpan.
+      //   - Retry berikutnya → trace direkam penuh untuk mempercepat
+      //     diagnosa flake tanpa harus reproduksi lokal.
+      // Retries di-force ≥1 supaya perilaku `on-all-retries` konsisten
+      // baik di CI maupun invocation lokal (`bunx playwright test
+      // --project=ready-badges-selector-e2e`).
+      retries: process.env.PWTEST_RETRIES
+        ? Number(process.env.PWTEST_RETRIES)
+        : 1,
+      use: {
+        ...devices["Pixel 5"],
+        viewport: { width: 411, height: 893 },
+        trace: "on-all-retries",
+        screenshot: "only-on-failure",
+        video: "retain-on-failure",
+      },
     },
     {
       // Skenario : Form validasi `minSupported` di Pengaturan APK.
