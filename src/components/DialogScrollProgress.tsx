@@ -130,9 +130,10 @@ export function DialogScrollProgress({
             disabled={!canGoBack}
             className="h-7 flex-1 gap-1 px-2 text-[10px] disabled:opacity-30"
             aria-label="Kembali ke atas form"
+            title="Kembali ke atas form"
           >
-            <ArrowUp className="h-3 w-3" />
-            <span className="hidden sm:inline">Kembali ke atas</span>
+            <ArrowUp className="h-3 w-3 shrink-0" />
+            <span className="hidden min-w-0 truncate sm:inline">Kembali ke atas</span>
             <span className="sm:hidden">Atas</span>
           </Button>
           <Button
@@ -143,8 +144,9 @@ export function DialogScrollProgress({
             disabled={!canGoNext}
             className="h-7 flex-1 gap-1 px-2 text-[10px] disabled:opacity-30"
             aria-label={nextSection ? `Lompat ke bagian ${nextSection.label}` : "Lompat ke bawah form"}
+            title={nextSection ? `Lompat ke ${nextSection.label}` : "Lompat ke bawah form"}
           >
-            <span className="truncate">
+            <span className="min-w-0 truncate">
               {nextSection ? `Lompat ke ${nextSection.label}` : "Lompat ke bawah"}
             </span>
             <ArrowDown className="h-3 w-3 shrink-0" />
