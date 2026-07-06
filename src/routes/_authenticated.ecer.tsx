@@ -1634,22 +1634,23 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           })()}
           {(() => {
             if (!previewReq?.buildCaption) return null;
-            const remaining =
-              previewReq.paths.length === 0
-                ? 0
-                : previewReq.paths.length -
-                  Array.from(excludedPaths).filter((p) => previewReq.paths.includes(p)).length;
-            if (previewReq.paths.length > 0 && remaining === 0) return null;
-            const caption = previewReq.buildCaption(remaining);
+            if (previewCaption == null) return null;
+            const caption = previewCaption;
+            const totalShown = Math.min(previewReq.paths.length, 12);
+            const excludedInShown = Array.from(excludedPaths).filter((p) => previewReq.paths.slice(0, 12).includes(p)).length;
             return (
               <div className="rounded-md border bg-muted/30 p-2.5">
                 <div className="mb-1 flex items-center justify-between gap-2 text-[11px] font-medium text-muted-foreground">
                   <span>
-                    Preview caption{previewReq.captionLabel ? ` ${previewReq.captionLabel}` : ""} — persis seperti yang akan dikirim
+                    <span className="mr-1 inline-block h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" aria-hidden />
+                    Preview caption{previewReq.captionLabel ? ` ${previewReq.captionLabel}` : ""} — live · {totalShown - excludedInShown}/{totalShown} foto
                   </span>
                   <span className="tabular-nums">{caption.length} karakter</span>
                 </div>
-                <pre className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded bg-background/70 p-2 text-[11px] leading-relaxed text-foreground">
+                <pre
+                  key={caption}
+                  className="max-h-40 overflow-y-auto whitespace-pre-wrap break-words rounded bg-background/70 p-2 text-[11px] leading-relaxed text-foreground"
+                >
                   {caption}
                 </pre>
               </div>
