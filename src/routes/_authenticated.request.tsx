@@ -1881,6 +1881,8 @@ function PrepEditorDialog({
   // photoKey = "" saat belum ada foto, dataUrl saat sudah ada — cukup untuk
   // deteksi dirty tanpa membandingkan blob besar.
   const [initialFieldsSnap, setInitialFieldsSnap] = useState<{ photoKey: string; locUrl: string; note: string; waPhone: string; recipientName: string }>({ photoKey: "", locUrl: "", note: "", waPhone: "", recipientName: "" });
+  // Dibaca `useSaveStatusToast` saat saving → dirty (gagal simpan).
+  const [prepError, setPrepError] = useState<string | null>(null);
 
   function sanitizeActual(idx: number, raw: string): string {
     if (raw === "") {
