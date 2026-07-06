@@ -1441,6 +1441,36 @@ export type Database = {
         }
         Relationships: []
       }
+      portal_error_audit: {
+        Row: {
+          code: string | null
+          count: number
+          first_seen_at: string
+          hour_bucket: string
+          id: string
+          kind: string
+          last_seen_at: string
+        }
+        Insert: {
+          code?: string | null
+          count?: number
+          first_seen_at?: string
+          hour_bucket: string
+          id?: string
+          kind: string
+          last_seen_at?: string
+        }
+        Update: {
+          code?: string | null
+          count?: number
+          first_seen_at?: string
+          hour_bucket?: string
+          id?: string
+          kind?: string
+          last_seen_at?: string
+        }
+        Relationships: []
+      }
       portal_error_events: {
         Row: {
           code: string | null
