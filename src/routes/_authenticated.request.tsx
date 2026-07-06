@@ -798,31 +798,43 @@ function SendPrepLinkDialog({
   }, [session, title, workerName]);
 
   async function copyLinkPin() {
-    if (!session) return;
+    if (!session || pending) return;
+    setPending("copyLinkPin");
     try {
       await navigator.clipboard.writeText(`Tugas: Request ${title?.name ?? ""}\nLink: ${session.url}\nPIN: ${session.pin}`);
       toast.success("Link + PIN disalin", { description: "Tempel di WhatsApp untuk kirim ulang." });
       void logDelivery("copy_link_pin");
     } catch (e) {
       toast.error("Gagal menyalin Link + PIN", { description: (e as Error)?.message ?? "Periksa izin clipboard." });
+    } finally {
+      setPending(null);
     }
   }
 
   async function copyMessage() {
-    if (!waMessage) return;
+    if (!waMessage || pending) return;
+    setPending("copyMsg");
     try {
       await navigator.clipboard.writeText(waMessage);
       toast.success("Pesan WhatsApp disalin", { description: "Tempel di WhatsApp Business untuk kirim ke pegawai." });
       void logDelivery("copy_message");
     } catch (e) {
       toast.error("Gagal menyalin pesan", { description: (e as Error)?.message ?? "Periksa izin clipboard." });
+    } finally {
+      setPending(null);
     }
   }
 
-  function sendWA() {
-    if (!session || !title || !waMessage) return;
-    void shareToWhatsApp({ text: waMessage, title: `Request ${title.name}`, url: session.url }).then(notifyShareResult);
-    void logDelivery("whatsapp");
+  async function sendWA() {
+    if (!session || !title || !waMessage || pending) return;
+    setPending("sendWA");
+    try {
+      const res = await shareToWhatsApp({ text: waMessage, title: `Request ${title.name}`, url: session.url });
+      notifyShareResult(res);
+      void logDelivery("whatsapp");
+    } finally {
+      setPending(null);
+    }
   }
 
   const qrUrl = session ? `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(session.url)}` : "";
@@ -907,7 +919,8 @@ function SendPrepLinkDialog({
   }
 
   async function downloadPng() {
-    if (!session) return;
+    if (!session || pending) return;
+    setPending("downloadPng");
     try {
       const dataUrl = await composePosterPng();
       const a = document.createElement("a");
@@ -920,11 +933,14 @@ function SendPrepLinkDialog({
       void logDelivery("download_png");
     } catch (e) {
       toast.error("Gagal unduh PNG: " + ((e as Error).message ?? String(e)));
+    } finally {
+      setPending(null);
     }
   }
 
   async function downloadPdf() {
-    if (!session || !title) return;
+    if (!session || !title || pending) return;
+    setPending("downloadPdf");
     try {
       const qrData = await renderQrDataUrl(560);
       const { default: jsPDF } = await import("jspdf");
