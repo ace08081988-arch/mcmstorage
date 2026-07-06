@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { displayUnit } from "@/lib/unit-label";
 import { useLayoutMode, layoutGridClass, LayoutModeToggle } from "@/components/LayoutModeToggle";
 import { useOnDebtTx } from "@/lib/debt-tx-event";
+import { countActiveByTitle, withActivePrepsFilter } from "@/lib/prep-active-selector";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const sb = supabase as any;
@@ -30,16 +31,22 @@ export function ReadyRequestSection() {
       sb.from("request_titles").select("id,name").order("position").order("created_at"),
       sb.from("request_title_items").select("id,title_id,warehouse_item_id,target_grams,unit_label,position").order("position"),
       supabase.from("warehouse_items").select("id,name"),
-      // Hanya hitung paket yang BELUM masuk Riwayat Terkirim, supaya angka
-      // "N paket" di kartu benar-benar mencerminkan pekerjaan yang tersisa
-      // dan tidak menyarankan aksi pada paket yang sudah selesai.
-      sb.from("request_preparations").select("id,title_id,sold_at").is("sold_at", null),
+      // Badge "N paket" hanya menghitung prep AKTIF (belum Riwayat Terkirim).
+      // Filter dilakukan server-side lewat helper `withActivePrepsFilter`
+      // supaya logikanya identik dengan permukaan badge lain.
+      withActivePrepsFilter(
+        sb.from("request_preparations").select("id,title_id,sold_at"),
+      ),
     ]);
     const titles = (tRes.data ?? []) as Array<{ id: string; name: string }>;
     const items = (tiRes.data ?? []) as Array<{ title_id: string; warehouse_item_id: string; target_grams: number; unit_label: string }>;
     const wis = (wRes.data ?? []) as Array<{ id: string; name: string }>;
     const preps = (pRes.data ?? []) as Array<{ title_id: string; sold_at: string | null }>;
     const wMap = new Map(wis.map((w) => [w.id, w.name]));
+    // Sabuk & tali pengaman: query server sudah difilter, klien pun ikut
+    // menyaring lewat helper `countActiveByTitle` supaya kalau suatu saat
+    // filter server hilang, badge tetap benar.
+    const activeCountByTitle = countActiveByTitle(preps);
     const out: Row[] = titles.map((t) => {
       const tItems = items.filter((i) => i.title_id === t.id);
       return {
@@ -50,7 +57,7 @@ export function ReadyRequestSection() {
           return `${name ?? "?"} ${i.target_grams}${displayUnit(name, i.unit_label)}`;
         }).join(" · "),
         product_count: tItems.length,
-        prep_count: preps.filter((p) => p.title_id === t.id && !p.sold_at).length,
+        prep_count: activeCountByTitle.get(t.id) ?? 0,
       };
     });
     setRows(out);

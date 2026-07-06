@@ -111,17 +111,18 @@ describe("Ecer PrepBox — Edit/Hapus tidak render & onDelete diblokir saat sold
 });
 
 describe("ReadyRequestSection — badge angka hanya menghitung yang belum sold", () => {
-  it("query request_preparations memfilter sold_at IS NULL & count !sold_at", () => {
+  it("badge memakai selector tunggal (withActivePrepsFilter + countActiveByTitle)", () => {
     const src = readFileSync(
       resolve(process.cwd(), "src/components/ReadyRequestSection.tsx"),
       "utf8",
     );
-    // .from("request_preparations").select("…sold_at…").is("sold_at", null)
+    // Filter server-side lewat helper (bukan literal .is("sold_at", null)).
     expect(src).toMatch(
-      /\.from\(\s*["']request_preparations["']\s*\)\s*\.select\([^)]*sold_at[^)]*\)\s*\.is\(\s*["']sold_at["']\s*,\s*null\s*\)/,
+      /withActivePrepsFilter\(\s*sb\.from\(\s*["']request_preparations["']\s*\)[\s\S]*?\)\s*,?\s*\n/,
     );
-    // Hitung prep_count hanya dari preps yang !sold_at (badge angka).
-    expect(src).toMatch(/preps\.filter\([\s\S]*?!\s*p\.sold_at[\s\S]*?\)\.length/);
+    // Badge dibaca dari Map yang dibangun helper, bukan filter ad-hoc.
+    expect(src).toContain("countActiveByTitle(");
+    expect(src).toMatch(/activeCountByTitle\.get\(t\.id\)\s*\?\?\s*0/);
   });
 });
 

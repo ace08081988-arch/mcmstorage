@@ -36,6 +36,7 @@ import { copyUrlWithToast } from "@/lib/copy-url-toast";
 import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
+import { filterActivePreps, filterSentPreps } from "@/lib/prep-active-selector";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -1097,8 +1098,8 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     return () => { void supabase.removeChannel(ch); };
   }, [title.id]);
 
-  const active = useMemo(() => preps.filter((p) => !p.sold_at), [preps]);
-  const sent = useMemo(() => preps.filter((p) => !!p.sold_at), [preps]);
+  const active = useMemo(() => filterActivePreps(preps), [preps]);
+  const sent = useMemo(() => filterSentPreps(preps), [preps]);
   const selectedPreps = useMemo(() => active.filter((p) => selected.has(p.id)), [active, selected]);
 
   function toggleSelect(id: string) {
