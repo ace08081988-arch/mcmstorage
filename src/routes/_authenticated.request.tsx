@@ -34,6 +34,7 @@ import { DialogScrollProgress, type ScrollSection } from "@/components/DialogScr
 import { DialogSaveStatus, useSaveStatus, useSaveStatusToast, confirmDiscardIfDirty } from "@/components/DialogSaveStatus";
 import { Field } from "@/components/DialogField";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
+import { filterActivePreps, filterSentPreps } from "@/lib/prep-active-selector";
 
 type CustomerRow = { id: string; name: string; contact: string | null };
 
@@ -1508,8 +1509,8 @@ function PrepSections({
   const [showHistory, setShowHistory] = useState(true);
   const [layout, setLayout] = useLayoutMode("requestPrep", "grid");
   const gridClass = layoutGridClass(layout);
-  const active = preps.filter((p) => !p.sold_at);
-  const sent = preps.filter((p) => !!p.sold_at);
+  const active = filterActivePreps(preps);
+  const sent = filterSentPreps(preps);
   const [justSentId, setJustSentId] = useState<string | null>(null);
   const [awaitingSentId, setAwaitingSentId] = useState<string | null>(null);
   // Pesan error sinkronisasi yang persisten (tidak hilang seperti toast).
