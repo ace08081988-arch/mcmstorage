@@ -183,6 +183,11 @@ function DebugSelectorPage() {
           <code className="rounded bg-muted px-1">filterSentPreps</code>. Angka di sini
           adalah patokan; kalau badge di layar lain berbeda, badge-nya yang salah.
         </p>
+        <p className="text-[11px] text-muted-foreground">
+          Tombol <span className="font-medium">Buka</span> pada tiap baris membuka halaman
+          domain di tab baru dengan judul terkait sudah terfilter — pakai untuk
+          Tandai/Batalkan Terkirim. Saat kembali ke tab ini, angka dimuat ulang otomatis.
+        </p>
         {lastLoadedAt && (
           <p className="text-[11px] text-muted-foreground">
             Terakhir dimuat: {new Date(lastLoadedAt).toLocaleTimeString("id-ID")}
