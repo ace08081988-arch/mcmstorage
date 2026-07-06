@@ -210,6 +210,43 @@ export const Route = createFileRoute("/api/public/hooks/log-portal-error")({
         // Referensi pendek yg bisa ditampilkan ke user tanpa membocorkan detail.
         const ref = String(inserted.id).slice(0, 8);
 
+        // Audit ringkas non-PII: agregat per (kind, code, jam). Digunakan untuk
+        // investigasi tren tanpa harus scan tabel event mentah, dan TIDAK
+        // dipakai oleh pipeline alert — jadi aman dari alert fatigue. Payload
+        // mentah tidak pernah disimpan; hanya count + timestamp bucket.
+        try {
+          const hourBucket = new Date();
+          hourBucket.setUTCMinutes(0, 0, 0);
+          const bucketIso = hourBucket.toISOString();
+          const codeKey = code ?? "";
+          const { data: existingAudit } = await supabase
+            .from("portal_error_audit")
+            .select("id, count")
+            .eq("kind", kind)
+            .eq("hour_bucket", bucketIso)
+            .eq("code", codeKey === "" ? "" : code!)
+            .maybeSingle();
+          if (existingAudit) {
+            await supabase
+              .from("portal_error_audit")
+              .update({
+                count: (existingAudit.count ?? 0) + 1,
+                last_seen_at: new Date().toISOString(),
+              })
+              .eq("id", existingAudit.id);
+          } else {
+            await supabase.from("portal_error_audit").insert({
+              kind,
+              code,
+              hour_bucket: bucketIso,
+              count: 1,
+            });
+          }
+        } catch (e) {
+          // Audit gagal tidak boleh menggagalkan request utama.
+          console.warn("[log-portal-error] audit upsert failed", e);
+        }
+
         // Deteksi error berulang -> alert
         const sinceIso = new Date(Date.now() - ALERT_WINDOW_SEC * 1000).toISOString();
         const countQ = supabase
