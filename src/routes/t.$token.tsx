@@ -2640,15 +2640,23 @@ function ItemCard({
   const isDone = (item.submissions?.length ?? 0) > 0;
   const hasDraft = photos.length > 0 || pending.length > 0;
   const cardRef = useRef<HTMLDivElement | null>(null);
-  const doneCollapseRef = useRef(false);
-  // Auto-collapse setelah item ini beralih ke status "sudah terkirim".
-  // Beri jeda singkat supaya user sempat melihat toast/success banner.
+  // Auto-collapse HANYA sekali per mount, dan hanya pada transisi asli
+  // "belum → sudah". silentRefresh berkala kadang mengembalikan blip
+  // (submissions kosong sesaat lalu terisi lagi); tanpa guard ini panel
+  // yang baru dibuka user akan tertutup sendiri setiap kali blip
+  // membalik status false→true.
+  const prevIsDoneRef = useRef<boolean | null>(null);
+  const hasAutoCollapsedRef = useRef(false);
   useEffect(() => {
-    if (!isDone) { doneCollapseRef.current = false; return; }
-    if (doneCollapseRef.current) return;
-    doneCollapseRef.current = true;
-    const t = setTimeout(() => setExpanded(false), 900);
-    return () => clearTimeout(t);
+    const prev = prevIsDoneRef.current;
+    prevIsDoneRef.current = isDone;
+    if (hasAutoCollapsedRef.current) return;
+    if (prev === false && isDone === true) {
+      hasAutoCollapsedRef.current = true;
+      const t = setTimeout(() => setExpanded(false), 900);
+      return () => clearTimeout(t);
+    }
+    return undefined;
   }, [isDone]);
   // Auto-open bila parent minta (mis. paket ini adalah "berikutnya" setelah
   // paket lain di varian sama baru saja selesai). Trigger memakai tick agar
