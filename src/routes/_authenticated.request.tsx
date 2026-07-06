@@ -2133,7 +2133,10 @@ function PrepEditorDialog({
         }}
       >
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
-          <DialogTitle>Penyiapan Baru — {title.name}</DialogTitle>
+          <div className="flex items-start justify-between gap-2">
+            <DialogTitle>Penyiapan Baru — {title.name}</DialogTitle>
+            <DialogSaveStatus status={prepStatus} className="shrink-0" />
+          </div>
           <DialogDescription>Atur jumlah aktual tiap produk, lampirkan 1 foto bukti + lokasi.</DialogDescription>
           <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
