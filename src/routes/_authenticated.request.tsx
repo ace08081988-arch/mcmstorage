@@ -1792,6 +1792,13 @@ function PrepEditorDialog({
   onClose: () => void;
   onSaved: () => void;
 }) {
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const sections: ScrollSection[] = [
+    { id: "prep-sec-produk", label: "Produk & jumlah aktual" },
+    { id: "prep-sec-foto", label: "Foto bukti" },
+    { id: "prep-sec-lokasi", label: "Lokasi & catatan" },
+    { id: "prep-sec-tujuan", label: "Tujuan pengiriman" },
+  ];
   const [rows, setRows] = useState<Array<{ warehouse_item_id: string; actual_grams: string }>>([]);
   const [initialRows, setInitialRows] = useState<Array<{ warehouse_item_id: string; actual_grams: string }>>([]);
   const [photo, setPhoto] = useState<{ blob: Blob; dataUrl: string } | null>(null);
@@ -2068,6 +2075,7 @@ function PrepEditorDialog({
     <>
     <Dialog open={open} onOpenChange={(o) => { if (!o && !editorOpen) onClose(); }}>
       <DialogContent
+        ref={scrollRef}
         className="max-h-[90vh] max-w-md overflow-y-auto"
         onInteractOutside={(event) => {
           if (editorOpen) event.preventDefault();
@@ -2076,9 +2084,10 @@ function PrepEditorDialog({
         <DialogHeader className="sticky top-0 z-10 -mx-6 -mt-6 border-b bg-background px-6 pt-6 pb-3">
           <DialogTitle>Penyiapan Baru — {title.name}</DialogTitle>
           <DialogDescription>Atur jumlah aktual tiap produk, lampirkan 1 foto bukti + lokasi.</DialogDescription>
+          <DialogScrollProgress containerRef={scrollRef} sections={sections} className="mt-2" />
         </DialogHeader>
         <div className="space-y-3">
-          <div>
+          <div id="prep-sec-produk">
             <Label>Produk &amp; jumlah aktual</Label>
             <div className="space-y-1.5">
               {rows.map((r, idx) => {
