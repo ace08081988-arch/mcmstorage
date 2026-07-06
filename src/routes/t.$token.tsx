@@ -3588,6 +3588,9 @@ function RequestForm({
   const cameraRef = useRef<HTMLInputElement | null>(null);
   const galleryRef = useRef<HTMLInputElement | null>(null);
   const [helpKind, setHelpKind] = useState<MediaKind | null>(null);
+  const [manualCoordOpen, setManualCoordOpen] = useState(false);
+  const [manualLat, setManualLat] = useState("");
+  const [manualLng, setManualLng] = useState("");
 
   useEffect(() => {
     if (!editorOpen) return;
