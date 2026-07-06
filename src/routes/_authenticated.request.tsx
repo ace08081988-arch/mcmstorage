@@ -1083,27 +1083,43 @@ function SendPrepLinkDialog({
               />
             </div>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
-              <Button variant="outline" size="sm" onClick={copyMessage} disabled={!canPrepare}>
-                <Copy className="mr-1 h-3.5 w-3.5" /> Salin pesan
+              <Button variant="outline" size="sm" onClick={copyMessage} disabled={!canPrepare || (isPending && pending !== "copyMsg")} aria-busy={pending === "copyMsg"}>
+                {pending === "copyMsg"
+                  ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  : <Copy className="mr-1 h-3.5 w-3.5" />}
+                Salin pesan
               </Button>
               <Button
                 size="sm"
-                onClick={sendWA}
-                disabled={!canPrepare}
+                onClick={() => void sendWA()}
+                disabled={!canPrepare || (isPending && pending !== "sendWA")}
+                aria-busy={pending === "sendWA"}
                 className="bg-[#25D366] text-white hover:bg-[#20b959]"
               >
-                <Send className="mr-1 h-3.5 w-3.5" /> Kirim via WhatsApp
+                {pending === "sendWA"
+                  ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  : <Send className="mr-1 h-3.5 w-3.5" />}
+                Kirim via WhatsApp
               </Button>
             </div>
-            <Button variant="ghost" size="sm" className="min-h-11 w-full sm:min-h-9" onClick={copyLinkPin} disabled={!canPrepare}>
-              <Copy className="mr-1 h-3.5 w-3.5" /> Salin Link + PIN saja
+            <Button variant="ghost" size="sm" className="min-h-11 w-full sm:min-h-9" onClick={copyLinkPin} disabled={!canPrepare || (isPending && pending !== "copyLinkPin")} aria-busy={pending === "copyLinkPin"}>
+              {pending === "copyLinkPin"
+                ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                : <Copy className="mr-1 h-3.5 w-3.5" />}
+              Salin Link + PIN saja
             </Button>
             <div className="grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-2 [&>*]:min-h-11 sm:[&>*]:min-h-9">
-              <Button variant="outline" size="sm" onClick={() => void downloadPng()}>
-                <Download className="mr-1 h-3.5 w-3.5" /> Unduh PNG
+              <Button variant="outline" size="sm" onClick={() => void downloadPng()} disabled={isPending && pending !== "downloadPng"} aria-busy={pending === "downloadPng"}>
+                {pending === "downloadPng"
+                  ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  : <Download className="mr-1 h-3.5 w-3.5" />}
+                Unduh PNG
               </Button>
-              <Button variant="outline" size="sm" onClick={() => void downloadPdf()}>
-                <FileText className="mr-1 h-3.5 w-3.5" /> Unduh PDF
+              <Button variant="outline" size="sm" onClick={() => void downloadPdf()} disabled={isPending && pending !== "downloadPdf"} aria-busy={pending === "downloadPdf"}>
+                {pending === "downloadPdf"
+                  ? <Loader2 className="mr-1 h-3.5 w-3.5 animate-spin" />
+                  : <FileText className="mr-1 h-3.5 w-3.5" />}
+                Unduh PDF
               </Button>
             </div>
             <Button variant="ghost" size="sm" asChild className="min-h-11 w-full sm:min-h-9">
