@@ -1118,6 +1118,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         confirmText: "Kirim WA",
         paths: allPaths,
         locationUrl: firstLoc,
+        persistKey: `title:${title.id}`,
       });
       ok = res.ok;
       excludedSet = res.excluded;
@@ -1204,6 +1205,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       confirmText: "Kirim WA",
       paths: allPaths,
       locationUrl: s.location_url,
+      persistKey: `shot:${s.id}`,
     });
     if (!res.ok) return;
     const paths = allPaths.filter((p) => !res.excluded.has(p));
@@ -1405,6 +1407,7 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
             confirmText: "Kirim Chat",
             paths,
             locationUrl: target.location_url,
+            persistKey: `shot:${target.id}`,
           }).then((res) => {
             if (!res.ok) return;
             const remaining = paths.filter((p) => !res.excluded.has(p));
