@@ -1865,6 +1865,10 @@ function PrepEditorDialog({
   // Nama tujuan (untuk buku alamat) — di-prefill saat memilih kontak,
   // bisa juga diisi manual sebelum submit.
   const [recipientName, setRecipientName] = useState("");
+  // Snapshot awal untuk indikator "Tersimpan / Perubahan belum tersimpan".
+  // photoKey = "" saat belum ada foto, dataUrl saat sudah ada — cukup untuk
+  // deteksi dirty tanpa membandingkan blob besar.
+  const [initialFieldsSnap, setInitialFieldsSnap] = useState<{ photoKey: string; locUrl: string; note: string; waPhone: string; recipientName: string }>({ photoKey: "", locUrl: "", note: "", waPhone: "", recipientName: "" });
 
   function sanitizeActual(idx: number, raw: string): string {
     if (raw === "") {
