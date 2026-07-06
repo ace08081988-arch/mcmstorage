@@ -170,5 +170,30 @@ export const secureSignUp = createServerFn({ method: "POST" })
       };
     }
 
+    // Tandai percobaan terakhir sebagai berhasil supaya audit log
+    // (/admin/signup-attempts) mencerminkan status sebenarnya — kalau tidak,
+    // semua baris tampak "Gagal" walau akun sebenarnya terbuat.
+    try {
+      const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+      const { data: latest } = await supabaseAdmin
+        .from("signup_attempts")
+        .select("id")
+        .eq("ip", ip)
+        .eq("email", data.email)
+        .gte("created_at", oneHourAgo)
+        .order("created_at", { ascending: false })
+        .limit(1);
+      const latestId = Array.isArray(latest) && latest[0]?.id;
+      if (latestId) {
+        await supabaseAdmin
+          .from("signup_attempts")
+          .update({ succeeded: true })
+          .eq("id", latestId);
+      }
+    } catch (markErr) {
+      // Non-fatal: audit trail saja, jangan menggagalkan signup yang sudah sukses.
+      console.warn("[secureSignUp] mark succeeded failed", markErr);
+    }
+
     return { ok: true, userId: created.user!.id };
   });
