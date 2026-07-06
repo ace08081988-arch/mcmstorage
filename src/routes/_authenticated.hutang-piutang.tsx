@@ -356,12 +356,28 @@ function HutangPiutangPage() {
         `• ${new Date(p.paid_at).toLocaleDateString("id-ID")} · ${d.party_name} · ${arah} ${rupiah(Number(p.amount))}${p.note ? ` — ${p.note}` : ""}`,
       );
     }
+    // Total & terbayar keseluruhan (bukan periode) untuk baris status ringkas
+    // — supaya pembaca tahu posisi utuh hutang/piutang saat pesan diterima.
+    let hutangTotalAll = 0;
+    let piutangTotalAll = 0;
+    for (const d of debts) {
+      if (d.kind === "hutang") hutangTotalAll += Number(d.amount);
+      else piutangTotalAll += Number(d.amount);
+    }
+    let hutangPaidAll = 0;
+    let piutangPaidAll = 0;
+    for (const p of payments) {
+      const d = debtById.get(p.debt_id);
+      if (!d) continue;
+      if (d.kind === "hutang") hutangPaidAll += Number(p.amount);
+      else piutangPaidAll += Number(p.amount);
+    }
     const text = [
       `*Laporan Hutang & Piutang*`,
       `Periode: ${periodLabel}`,
       "",
-      `Hutang: ${debtStatusLine(overall.hutangTotal ?? (overall.hutangSisa + (totalOut)), totalOut)}`,
-      `Piutang: ${debtStatusLine(overall.piutangTotal ?? (overall.piutangSisa + (totalIn)), totalIn)}`,
+      `Hutang: ${debtStatusLine(hutangTotalAll, hutangPaidAll)}`,
+      `Piutang: ${debtStatusLine(piutangTotalAll, piutangPaidAll)}`,
       "",
       `Sisa hutang: ${rupiah(overall.hutangSisa)}`,
       `Sisa piutang: ${rupiah(overall.piutangSisa)}`,
