@@ -1215,23 +1215,26 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
           </div>
         ) : (
           <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 md:grid-cols-4">
-            {shots.map((s) => (
-              <div key={s.id} className="group relative overflow-hidden rounded-md border bg-muted">
-                <div className="aspect-square">
+            {shots.map((s) => {
+              const paths = shotPaths(s);
+              const isWa = waSendingId === s.id;
+              const isChat = chatSendingId === s.id;
+              return (
+              <div key={s.id} className="group relative flex flex-col overflow-hidden rounded-md border bg-muted">
+                <div className="relative aspect-square">
                   {s.thumb_url ? (
                     <img src={s.thumb_url} alt="" className="h-full w-full object-cover transition group-hover:scale-105" loading="lazy" />
                   ) : (
                     <div className="flex h-full w-full items-center justify-center text-[11px] text-muted-foreground">no img</div>
                   )}
-                </div>
-                <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[11px] leading-snug text-white">
+                  <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-1 bg-gradient-to-t from-black/80 to-transparent p-1.5 text-[11px] leading-snug text-white">
                   <span className="truncate">{new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}</span>
                   {s.location_url && (
                     <a href={s.location_url} target="_blank" rel="noreferrer" className="inline-flex items-center gap-0.5 rounded bg-black/50 px-1 py-0.5 backdrop-blur-sm">
                       <MapPin className="h-2.5 w-2.5" /> GPS
                     </a>
                   )}
-                </div>
+                  </div>
                 {s.match !== "strict" && (
                   <span
                     className="absolute left-1 top-1 inline-flex h-5 max-w-[80%] items-center whitespace-nowrap rounded-full bg-amber-500/90 px-1.5 text-[11px] font-semibold leading-none text-white"
@@ -1240,11 +1243,53 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
                     {s.match === "fallback_grams" ? "unit≠" : "ukuran≠"}
                   </span>
                 )}
+                  <span
+                    className="absolute right-1 top-1 inline-flex h-5 items-center gap-0.5 whitespace-nowrap rounded-full bg-black/60 px-1.5 text-[11px] font-semibold leading-none text-white backdrop-blur-sm"
+                    title={`${paths.length} foto dalam folder ini`}
+                  >
+                    <ImageIcon className="h-2.5 w-2.5" /> {paths.length}
+                  </span>
+                </div>
+                <div className="flex items-center gap-1 border-t bg-card p-1">
+                  <button
+                    type="button"
+                    onClick={() => void sendShotWA(s)}
+                    disabled={isWa || isChat}
+                    aria-label={`Kirim folder (${paths.length} foto) via WhatsApp`}
+                    title={`Kirim ${paths.length} foto + lokasi via WhatsApp`}
+                    className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-1 rounded bg-[#25D366] px-1.5 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
+                  >
+                    {isWa ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
+                    WA
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setChatPickShot(s)}
+                    disabled={isWa || isChat}
+                    aria-label={`Kirim folder (${paths.length} foto) via MCM Chat`}
+                    title={`Kirim ${paths.length} foto + lokasi via MCM Chat`}
+                    className="inline-flex h-7 flex-1 shrink-0 items-center justify-center gap-1 rounded bg-primary px-1.5 text-[11px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
+                  >
+                    {isChat ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
+                    Chat
+                  </button>
+                </div>
               </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
+      <PickChatConversationDialog
+        open={!!chatPickShot}
+        onOpenChange={(v) => { if (!v) setChatPickShot(null); }}
+        title={`Kirim folder "${title.name}" ke MCM Chat`}
+        onPick={(conversationId, displayTitle) => {
+          const target = chatPickShot;
+          setChatPickShot(null);
+          if (target) void sendShotChat(target, conversationId, displayTitle);
+        }}
+      />
     </Card>
   );
 }
