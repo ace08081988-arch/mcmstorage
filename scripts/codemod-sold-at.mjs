@@ -24,7 +24,7 @@
  * File yang dilewati (sesuai `ignores` ESLint):
  *   - src/lib/prep-active-selector.ts  (definisi resmi)
  *   - src/lib/prep-readonly-guard.ts   (baca sold_at untuk formatting)
- *   - **/*.test.ts(x), __tests__/**    (berhak membekukan literal)
+ *   - test files (*.test.ts / *.test.tsx) dan folder __tests__
  *   - src/routeTree.gen.ts, src/integrations/supabase/types.ts
  */
 import { readFileSync, writeFileSync, readdirSync, statSync } from "node:fs";
