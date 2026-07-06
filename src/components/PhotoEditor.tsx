@@ -20,9 +20,9 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { editorFeedback } from "@/lib/editor-feedback";
 
-type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string; opacity: number };
-type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
-type Layer =
+export type LayerBase = { id: string; x: number; y: number; rotation: number; scale: number; color: string; opacity: number };
+export type ArrowDir = "up" | "down" | "left" | "right" | "upleft" | "upright" | "downleft" | "downright";
+export type Layer =
   | ({ kind: "text"; text: string; size: number; bold: boolean } & LayerBase)
   | ({ kind: "emoji"; emoji: string; size: number } & LayerBase)
   | ({ kind: "arrow"; dir: ArrowDir; size: number; thickness: number } & LayerBase)
@@ -1810,7 +1810,7 @@ function arrowEndpoints(l: Extract<Layer, { kind: "arrow" }>): {
   };
 }
 
-function insideLayer(l: Layer, p: { x: number; y: number }): boolean {
+export function insideLayer(l: Layer, p: { x: number; y: number }): boolean {
   if (l.kind === "text") {
     // Perkiraan lebar teks: font system-ui rata-rata ~0.6em per karakter.
     // Tinggi mengikuti baseline ke atas + sedikit descender.
