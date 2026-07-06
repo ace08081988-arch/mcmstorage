@@ -3516,10 +3516,14 @@ function RequestSection({
               <button
                 type="button"
                 onClick={() => {
-                  if (isDone) return;
+                  if (isDone) {
+                    toast.info("Paket ini sudah dikirim", {
+                      description: "Paket yang sudah ditandai Selesai tidak bisa diedit lagi.",
+                    });
+                    return;
+                  }
                   setOpenId(openId === t.id ? null : t.id);
                 }}
-                disabled={isDone}
                 aria-disabled={isDone}
                 className="flex w-full items-center justify-between px-3 py-2 text-left hover:bg-muted/40"
               >
