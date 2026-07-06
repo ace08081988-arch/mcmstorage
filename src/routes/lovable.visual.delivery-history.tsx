@@ -19,6 +19,10 @@ export const Route = createFileRoute("/lovable/visual/delivery-history")({
   }),
   validateSearch: (s: Record<string, unknown>) => ({
     theme: s.theme === "dark" ? "dark" : "light",
+    scale:
+      typeof s.scale === "string" || typeof s.scale === "number"
+        ? Number(s.scale)
+        : 1,
   }),
   component: Harness,
 });
@@ -73,17 +77,33 @@ const ROWS: Row[] = [
 ];
 
 function Harness() {
-  const { theme } = Route.useSearch();
+  const { theme, scale } = Route.useSearch();
   useEffect(() => {
     const root = document.documentElement;
     const had = root.classList.contains("dark");
     if (theme === "dark") root.classList.add("dark");
     else root.classList.remove("dark");
+    const prevScale = root.style.getPropertyValue("--app-font-scale");
+    const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
+    root.style.setProperty("--app-font-scale", String(safeScale));
+    // `html.compact { font-size: 92% }` menang atas rule
+    // `html { font-size: calc(16px * var(--app-font-scale)) }` karena
+    // specificity lebih tinggi. Untuk harness ini kita paksa
+    // font-size root ke `16px * scale` via inline style + !important
+    // supaya skala benar-benar terpakai tanpa mengubah preferensi user.
+    const prevInlineFs = root.style.getPropertyPriority("font-size")
+      ? root.style.getPropertyValue("font-size")
+      : "";
+    root.style.setProperty("font-size", `${16 * safeScale}px`, "important");
     return () => {
       if (had) root.classList.add("dark");
       else root.classList.remove("dark");
+      if (prevScale) root.style.setProperty("--app-font-scale", prevScale);
+      else root.style.removeProperty("--app-font-scale");
+      if (prevInlineFs) root.style.setProperty("font-size", prevInlineFs, "important");
+      else root.style.removeProperty("font-size");
     };
-  }, [theme]);
+  }, [theme, scale]);
   const headerLabel = "PaketRequestDenganJudulSangatPanjangTanpaSpasiUntukMengujiTruncateDiHeaderDialogMobile";
   return (
     <div className="min-h-dvh bg-background p-3" data-visual-root data-theme={theme}>

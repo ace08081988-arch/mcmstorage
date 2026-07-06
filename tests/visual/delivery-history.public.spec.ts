@@ -17,33 +17,52 @@ const VIEWPORTS = [
   { name: "411", width: 411, height: 900 },
   { name: "320", width: 320, height: 700 },
 ] as const;
+// --app-font-scale menskalakan seluruh rem lewat `html { font-size: calc(16px * var(--app-font-scale)) }`.
+// 0.9 (compact) & 1.1 (comfortable) menstres truncate + min-w-0 di kartu.
+const SCALES = [0.9, 1.0, 1.1] as const;
 
 async function prep(
   page: Page,
   theme: (typeof THEMES)[number],
   vp: (typeof VIEWPORTS)[number],
+  scale: number,
 ) {
   await page.setViewportSize({ width: vp.width, height: vp.height });
-  await page.goto(`${HARNESS}?theme=${theme}`, { waitUntil: "networkidle" });
+  await page.goto(`${HARNESS}?theme=${theme}&scale=${scale}`, {
+    waitUntil: "networkidle",
+  });
   await page.evaluate(() =>
     (document as unknown as { fonts?: { ready: Promise<void> } }).fonts?.ready,
   );
   await page.waitForSelector('[data-visual-dialog]');
-  // Pastikan class `dark` benar-benar terpasang sebelum snapshot.
+  // Pastikan class `dark` & --app-font-scale benar-benar terpasang sebelum snapshot.
   await page.waitForFunction(
-    (t) =>
-      t === "dark"
-        ? document.documentElement.classList.contains("dark")
-        : !document.documentElement.classList.contains("dark"),
-    theme,
+    ({ t, s }) => {
+      const isDarkOk =
+        t === "dark"
+          ? document.documentElement.classList.contains("dark")
+          : !document.documentElement.classList.contains("dark");
+      const applied = document.documentElement.style.getPropertyValue(
+        "--app-font-scale",
+      );
+      const fs = parseFloat(getComputedStyle(document.documentElement).fontSize);
+      // Skala benar-benar terpakai ketika font-size root ≈ 16 * scale
+      // (dipaksa lewat inline style !important supaya menang atas
+      //  `html.compact { font-size: 92% }`).
+      const fsOk = Math.abs(fs - 16 * s) < 0.5;
+      return isDarkOk && Number(applied) === s && fsOk;
+    },
+    { t: theme, s: scale },
   );
 }
 
 test.describe("DeliveryHistoryDialog — truncate/badge/chip", () => {
   for (const vp of VIEWPORTS) {
     for (const theme of THEMES) {
-      test(`layout aman (${vp.name} · ${theme})`, async ({ page }) => {
-        await prep(page, theme, vp);
+      for (const scale of SCALES) {
+        const scaleName = scale.toFixed(2).replace(".", "_");
+        test(`layout aman (${vp.name} · ${theme} · scale ${scale})`, async ({ page }) => {
+          await prep(page, theme, vp, scale);
       const dialog = page.locator("[data-visual-dialog]");
 
       // 1. Dokumen tidak boleh punya horizontal scroll.
@@ -51,10 +70,10 @@ test.describe("DeliveryHistoryDialog — truncate/badge/chip", () => {
         sw: document.documentElement.scrollWidth,
         cw: document.documentElement.clientWidth,
       }));
-        expect(
-          doc.sw,
-          `dokumen overflow horizontal (${vp.name}/${theme})`,
-        ).toBeLessThanOrEqual(doc.cw + 1);
+          expect(
+            doc.sw,
+            `dokumen overflow horizontal (${vp.name}/${theme}/${scale})`,
+          ).toBeLessThanOrEqual(doc.cw + 1);
 
       // 2. Kartu riwayat & chip tidak boleh melebihi bounding box container-nya
       //    (getBoundingClientRect — bukan scrollWidth, agar truncate tidak
@@ -77,15 +96,16 @@ test.describe("DeliveryHistoryDialog — truncate/badge/chip", () => {
         });
         return bad;
       });
-        expect(
-          overflows,
-          `kartu/chip melebihi dialog (${vp.name}/${theme}): ${JSON.stringify(overflows)}`,
-        ).toEqual([]);
+          expect(
+            overflows,
+            `kartu/chip melebihi dialog (${vp.name}/${theme}/${scale}): ${JSON.stringify(overflows)}`,
+          ).toEqual([]);
 
-        await expect(dialog).toHaveScreenshot(
-          `delivery-history-${vp.name}-${theme}.png`,
-        );
-      });
+          await expect(dialog).toHaveScreenshot(
+            `delivery-history-${vp.name}-${theme}-scale-${scaleName}.png`,
+          );
+        });
+      }
     }
   }
 });
