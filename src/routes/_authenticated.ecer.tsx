@@ -960,6 +960,12 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
     paths: string[];
     locationUrl?: string | null;
     persistKey?: string;
+    /** Membangun caption/pesan persis seperti yang akan dikirim
+     *  berdasar jumlah foto yang tersisa (paths.length - excluded).
+     *  Dipakai untuk menampilkan preview live di dialog konfirmasi. */
+    buildCaption?: (remaining: number) => string;
+    /** Label pendek untuk header preview caption ("WhatsApp" / "MCM Chat"). */
+    captionLabel?: string;
     resolve: (v: { ok: boolean; excluded: Set<string> }) => void;
   };
   const [previewReq, setPreviewReq] = useState<PreviewReq | null>(null);
