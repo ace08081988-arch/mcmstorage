@@ -392,6 +392,9 @@ function TitleEditorDialog({
   const [busy, setBusy] = useState(false);
   const [initialSnap, setInitialSnap] = useState<{ name: string; note: string; rows: Array<{ warehouse_item_id: string; target_grams: string; unit_label: string; note: string }> }>({ name: "", note: "", rows: [] });
   const [negErrors, setNegErrors] = useState<Record<number, string>>({});
+  // Pesan error terakhir dari save() — dibaca `useSaveStatusToast`
+  // saat status berubah saving → dirty (gagal simpan).
+  const [saveError, setSaveError] = useState<string | null>(null);
   const [contacts, setContacts] = useState<AddressBookRow[]>([]);
   const [nameOpen, setNameOpen] = useState(false);
   const [nameActive, setNameActive] = useState(0);
@@ -476,6 +479,7 @@ function TitleEditorDialog({
     }
     const validRows = rows.filter((r) => r.warehouse_item_id && Number(r.target_grams) > 0);
     if (validRows.length === 0) { toast.error("Tambahkan minimal 1 produk"); return; }
+    setSaveError(null);
     setBusy(true);
     try {
       const { data: u } = await supabase.auth.getUser();
@@ -509,7 +513,7 @@ function TitleEditorDialog({
       toast.success("Judul tersimpan");
       onSaved(); onClose();
     } catch (e) {
-      toast.error("Gagal: " + (e as Error).message);
+      setSaveError("Gagal: " + (e as Error).message);
     } finally { setBusy(false); }
   }
 
@@ -528,6 +532,10 @@ function TitleEditorDialog({
   }
 
   const saveStatus = useSaveStatus({ name, note, rows }, initialSnap, busy);
+  useSaveStatusToast(saveStatus, {
+    successMessage: "Judul tersimpan",
+    errorMessage: saveError,
+  });
 
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
