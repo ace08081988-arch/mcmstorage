@@ -1120,6 +1120,20 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
       const allPaths = previewShots.flatMap((s) => shotPaths(s)).slice(0, 12);
       previewTotal = allPaths.length;
       const firstLoc = previewShots.find((s) => s.location_url)?.location_url ?? null;
+      // Builder caption bulk WA — persis mirror teks yang dibangun setelah
+      // konfirmasi di bawah. `files.length` disimulasikan dengan
+      // min(remaining, 10) karena WA share dibatasi 10 lampiran.
+      const bulkLines = previewShots.map((s) => `• ${title.name} — ${new Date(s.submitted_at).toLocaleString("id-ID", { day: "2-digit", month: "short", hour: "2-digit", minute: "2-digit" })}`);
+      const buildBulkCaption = (remaining: number) => {
+        const simulatedFiles = Math.min(remaining, 10);
+        const excludedCount = previewTotal - remaining;
+        return [
+          `*${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})`,
+          `${shots.length} kiriman pegawai${shots.length > take ? ` (mengirim ${take})` : ""} · ${simulatedFiles} foto terkirim${excludedCount > 0 ? ` · ${excludedCount} dari ${previewTotal} dikecualikan` : ""}:`,
+          ...bulkLines,
+          ...(firstLoc ? [`📍 ${firstLoc}`] : []),
+        ].join("\n");
+      };
       const res = await confirmWithPreview({
         title: `Kirim ${take} kiriman via WhatsApp?`,
         description: `Judul: *${title.name}* (${itemName} · ${title.target_grams} ${displayUnitStr})\n${take} folder · ${allPaths.length} foto (maks 10 terlampir)\n\nPastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
@@ -1127,6 +1141,8 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
         paths: allPaths,
         locationUrl: firstLoc,
         persistKey: `title:${title.id}`,
+        buildCaption: buildBulkCaption,
+        captionLabel: "WhatsApp",
       });
       ok = res.ok;
       excludedSet = res.excluded;
