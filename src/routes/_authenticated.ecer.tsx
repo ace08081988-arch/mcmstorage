@@ -1029,6 +1029,16 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
 
   async function sendWA() {
     if (sending) return;
+    const take = Math.min(shots.length, 6);
+    const ok = await confirm({
+      title: shots.length === 0 ? "Kirim perintah penyiapan?" : `Kirim ${take} kiriman via WhatsApp?`,
+      description:
+        shots.length === 0
+          ? `Tidak ada kiriman pegawai. Akan dikirim perintah teks ke pegawai untuk menyiapkan ${title.name} (${title.target_grams} ${displayUnitStr}).`
+          : `Akan mengirim ${take} folder kiriman pegawai untuk *${title.name}*. Pastikan semua foto dan link lokasi sudah benar sebelum dikirim.`,
+      confirmText: "Kirim WA",
+    });
+    if (!ok) return;
     setSending(true);
     try {
       // Belum ada kiriman pegawai → kirim *perintah* teks-only ke pegawai
