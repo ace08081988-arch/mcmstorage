@@ -262,8 +262,13 @@ function HutangPiutangPage() {
     return digits.length >= 8 ? digits : undefined;
   };
 
-  const sendReminderWA = async (d: Debt) => {
-    const paid = paidByDebt.get(d.id) ?? 0;
+  const sendReminderWA = async (
+    d: Debt,
+    extra?: { amount: number; paidAt: string; note: string } | null,
+  ) => {
+    const paidBefore = paidByDebt.get(d.id) ?? 0;
+    const extraAmt = extra ? Math.max(0, Math.round(extra.amount)) : 0;
+    const paid = paidBefore + extraAmt;
     const sisa = Math.max(0, Number(d.amount) - paid);
     const due = d.due_date
       ? `jatuh tempo ${new Date(d.due_date).toLocaleDateString("id-ID")}`
@@ -273,7 +278,11 @@ function HutangPiutangPage() {
       ? `Ini pengingat hutang saya kepada Anda sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon konfirmasi cara & waktu pelunasannya. Terima kasih.`
       : `Ini pengingat tagihan dari saya sebesar *${rupiah(Number(d.amount))}* (${due}). Sudah terbayar ${rupiah(paid)}, sisa *${rupiah(sisa)}*. Mohon segera diselesaikan ya, terima kasih.`;
     const status = debtStatusLine(Number(d.amount), paid);
-    const text = `${greet}\n\n${status}\n\n${body}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
+    const extraLine =
+      extra && extraAmt > 0
+        ? `\n\n🧾 *Pembayaran baru dicatat*\n• Tanggal: ${new Date(extra.paidAt).toLocaleDateString("id-ID")}\n• Jumlah: ${rupiah(extraAmt)}${extra.note.trim() ? `\n• Catatan: ${extra.note.trim()}` : ""}`
+        : "";
+    const text = `${greet}\n\n${status}\n\n${body}${extraLine}${d.note ? `\n\nCatatan: ${d.note}` : ""}`;
     const res = await shareToWhatsApp({ text, title: d.party_name, phone: partyPhone(d) });
     notifyShareResult(res);
   };
