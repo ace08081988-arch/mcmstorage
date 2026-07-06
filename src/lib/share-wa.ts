@@ -367,6 +367,76 @@ function legacyCopy(text: string): boolean {
   }
 }
 
+/**
+ * Fallback terakhir kalau `navigator.clipboard` diblokir DAN
+ * `document.execCommand("copy")` tidak didukung (mis. Safari iOS baru yang
+ * sudah drop execCommand, atau WebView APK dengan clipboard mati):
+ * pasang textarea tersembunyi berisi `text`, lalu paksa Selection + Range
+ * agar teks tampil ter-select di viewport. User tinggal menekan Ctrl/⌘+C
+ * atau tap "Copy" pada bubble sistem — jauh lebih andal daripada
+ * mengandalkan `.select()` pada input read-only yang di beberapa WebView
+ * tidak menghasilkan selection sesungguhnya.
+ *
+ * Return `() => void` untuk membersihkan textarea + selection setelah user
+ * selesai. Caller wajib memanggil cleanup saat modal ditutup.
+ */
+export function selectTextForManualCopy(text: string): (() => void) | null {
+  try {
+    if (typeof document === "undefined") return null;
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.setAttribute("aria-hidden", "true");
+    // Tetap perlu di layout supaya bisa di-focus & select di iOS Safari.
+    ta.style.position = "fixed";
+    ta.style.top = "50%";
+    ta.style.left = "50%";
+    ta.style.width = "1px";
+    ta.style.height = "1px";
+    ta.style.padding = "0";
+    ta.style.border = "0";
+    ta.style.opacity = "0";
+    ta.style.pointerEvents = "none";
+    // iOS: kontenteditable-like agar `.select()` benar-benar men-select.
+    ta.contentEditable = "true";
+    document.body.appendChild(ta);
+
+    // 1) Coba jalur textarea klasik.
+    ta.focus({ preventScroll: true });
+    ta.setSelectionRange(0, text.length);
+
+    // 2) Perkuat dengan Selection + Range — di beberapa WebView jalur (1)
+    //    tidak menghasilkan `window.getSelection()` yang non-kosong.
+    try {
+      const range = document.createRange();
+      range.selectNodeContents(ta);
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(range);
+      }
+    } catch {
+      /* ignore — jalur (1) mungkin sudah cukup */
+    }
+
+    return () => {
+      try {
+        const sel = window.getSelection();
+        sel?.removeAllRanges();
+      } catch {
+        /* ignore */
+      }
+      try {
+        ta.remove();
+      } catch {
+        /* ignore */
+      }
+    };
+  } catch {
+    return null;
+  }
+}
+
 export function downloadFile(blob: Blob, filename: string) {
   try {
     const href = URL.createObjectURL(blob);

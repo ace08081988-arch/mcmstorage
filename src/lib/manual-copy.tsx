@@ -11,7 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { copyText } from "@/lib/share-wa";
+import { copyText, selectTextForManualCopy } from "@/lib/share-wa";
 
 type Request = { url: string; title?: string; description?: string };
 
@@ -35,6 +35,9 @@ export function ManualCopyHost() {
   const [current, setCurrent] = useState<Request | null>(null);
   const [open, setOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement | null>(null);
+  // Cleanup untuk textarea tersembunyi + Selection Range yang dipasang
+  // oleh `selectTextForManualCopy` saat copyText gagal total.
+  const selectionCleanupRef = useRef<(() => void) | null>(null);
 
   useEffect(() => {
     openRequest = (req) => {
@@ -68,6 +71,11 @@ export function ManualCopyHost() {
   }, [open, current?.url]);
 
   const close = () => {
+    // Bereskan textarea tersembunyi + selection kalau sempat dipasang.
+    if (selectionCleanupRef.current) {
+      selectionCleanupRef.current();
+      selectionCleanupRef.current = null;
+    }
     setOpen(false);
     setTimeout(() => setCurrent(null), 150);
   };
@@ -79,14 +87,25 @@ export function ManualCopyHost() {
       toast.success("URL disalin");
       close();
     } else {
-      // Tetap biarkan modal terbuka — user bisa select manual di field.
-      toast.error("Masih gagal — pilih teks lalu salin manual");
+      // Modal tetap terbuka. Coba dua jalur seleksi supaya user tinggal
+      // tekan Ctrl/⌘+C atau tap "Copy" di bubble sistem:
+      //  1) Fokus + select field URL yang terlihat.
+      //  2) Fallback textarea tersembunyi + Selection Range untuk
+      //     browser/WebView yang tidak menghormati `.select()` pada input
+      //     read-only maupun `document.execCommand("copy")`.
       try {
         inputRef.current?.focus();
         inputRef.current?.select();
       } catch {
         /* ignore */
       }
+      // Reset cleanup sebelumnya sebelum pasang selection baru.
+      if (selectionCleanupRef.current) {
+        selectionCleanupRef.current();
+        selectionCleanupRef.current = null;
+      }
+      selectionCleanupRef.current = selectTextForManualCopy(current.url);
+      toast.error("Masih gagal — teks sudah dipilih, tekan Ctrl/⌘+C");
     }
   };
 
