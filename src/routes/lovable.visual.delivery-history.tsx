@@ -86,11 +86,19 @@ function Harness() {
     const prevScale = root.style.getPropertyValue("--app-font-scale");
     const safeScale = Number.isFinite(scale) && scale > 0 ? scale : 1;
     root.style.setProperty("--app-font-scale", String(safeScale));
+    // `html.compact { font-size: 92% }` menang atas rule `html { font-size:
+    // calc(16px * var(--app-font-scale)) }` karena specificity lebih tinggi,
+    // sehingga --app-font-scale tidak terlihat. Untuk harness ini kita
+    // sengaja lepas `.compact` supaya skala benar-benar terpakai; class
+    // dipulihkan saat unmount.
+    const hadCompact = root.classList.contains("compact");
+    if (hadCompact) root.classList.remove("compact");
     return () => {
       if (had) root.classList.add("dark");
       else root.classList.remove("dark");
       if (prevScale) root.style.setProperty("--app-font-scale", prevScale);
       else root.style.removeProperty("--app-font-scale");
+      if (hadCompact) root.classList.add("compact");
     };
   }, [theme, scale]);
   const headerLabel = "PaketRequestDenganJudulSangatPanjangTanpaSpasiUntukMengujiTruncateDiHeaderDialogMobile";
