@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/dialog";
 import {
   Camera, Image as ImageIcon, Edit3, MapPin, Plus, Scale, Trash2,
-  Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, MessageCircle, RefreshCw,
+  Share2, ExternalLink, Loader2, ChevronLeft, Package, AlertTriangle, RotateCw, Users, UserPlus, MessageCircle, RefreshCw,
   Calendar, Clock, Hash, CheckCircle2, Boxes, Send,
 } from "lucide-react";
 import {
@@ -670,16 +670,18 @@ function DetailHero({
         <div className="hidden text-[11px] uppercase tracking-wider text-muted-foreground sm:mb-2 sm:block">
           Simpan halaman ini sebagai referensi penyiapan.
         </div>
-        <div className="grid grid-cols-5 gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-1.5">
+        {/* Mobile: bar bawah dengan kolom auto-fit — tetap rapi walau jumlah
+            tombol bervariasi (Judul & Produk kondisional). Desktop: flex wrap. */}
+        <div className="grid auto-cols-fr grid-flow-col gap-1 sm:flex sm:flex-wrap sm:items-center sm:justify-end sm:gap-1.5">
           {onCreateTitle && (
             <button
               type="button"
               onClick={onCreateTitle}
               title="Judul ecer baru untuk produk yang sama"
-              className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
               <Plus className="h-5 w-5" aria-hidden />
-              <span className="text-[11px] font-semibold leading-none tracking-tight">Judul</span>
+              <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Judul</span>
             </button>
           )}
           {onCreateProduct && (
@@ -687,40 +689,41 @@ function DetailHero({
               type="button"
               onClick={onCreateProduct}
               title="Buat produk gudang baru lalu langsung dibuatkan judulnya"
-              className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
             >
               <Package className="h-5 w-5" aria-hidden />
-              <span className="text-[11px] font-semibold leading-none tracking-tight">Produk</span>
+              <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Produk</span>
             </button>
           )}
           <button
             type="button"
             onClick={onScrollToWorker}
             title="Lihat kiriman pegawai untuk judul ini"
-            className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl p-2 text-muted-foreground transition-all active:scale-95 hover:bg-muted/60 sm:hidden"
           >
             <Users className="h-5 w-5" aria-hidden />
-            <span className="text-[11px] font-semibold leading-none tracking-tight">Pegawai</span>
+            <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Pegawai</span>
           </button>
           {isAdmin && (
             <Link
               to="/tugas-baru"
               search={{ title_id: title.id }}
               title="Buat perintah penyiapan untuk pegawai (token & PIN tugas)"
-              className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl bg-primary/10 p-2 text-primary transition-all active:scale-95 hover:bg-primary/15 sm:hidden"
+              aria-label="Buat perintah penyiapan untuk pegawai"
+              className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-primary/10 p-2 text-primary transition-all active:scale-95 hover:bg-primary/15 sm:hidden"
             >
-              <Users className="h-5 w-5" aria-hidden />
-              <span className="text-[11px] font-semibold leading-none tracking-tight">+ Pegawai</span>
+              <UserPlus className="h-5 w-5" aria-hidden />
+              <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Perintah</span>
             </Link>
           )}
           <button
             type="button"
             onClick={onAdd}
             title="Tambah penyiapan untuk judul ini"
-            className="group flex min-h-[56px] flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50 p-2 text-emerald-700 transition-all active:scale-95 dark:bg-emerald-500/15 dark:text-emerald-300 sm:hidden"
+            className="group flex min-h-[56px] min-w-0 flex-col items-center justify-center gap-1 rounded-2xl bg-emerald-50 p-2 text-emerald-700 transition-all active:scale-95 dark:bg-emerald-500/15 dark:text-emerald-300 sm:hidden"
           >
             <Plus className="h-5 w-5" aria-hidden />
-            <span className="text-[11px] font-semibold leading-none tracking-tight">Penyiapan</span>
+            <span className="max-w-full truncate text-[11px] font-semibold leading-none tracking-tight">Penyiapan</span>
           </button>
 
           {/* Desktop / tablet — keep richer labels */}
@@ -738,9 +741,15 @@ function DetailHero({
             <Users className="h-4 w-4" /> Pegawai
           </Button>
           {isAdmin && (
-            <Button asChild size="sm" variant="outline" className="hidden sm:inline-flex" title="Buat perintah penyiapan untuk pegawai (token & PIN tugas)">
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="hidden border-primary/40 bg-primary/10 text-primary hover:bg-primary/15 hover:text-primary sm:inline-flex"
+              title="Buat perintah penyiapan untuk pegawai (token & PIN tugas)"
+            >
               <Link to="/tugas-baru" search={{ title_id: title.id }}>
-                <Plus className="h-4 w-4" /> Penyiapan pegawai
+                <UserPlus className="h-4 w-4" /> Penyiapan pegawai
               </Link>
             </Button>
           )}
