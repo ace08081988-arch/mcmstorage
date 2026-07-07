@@ -258,6 +258,11 @@ function AuthPage() {
     setLoading(true);
     const { error } = await supabase.auth.signInWithPassword({ email, password });
     setLoading(false);
+    logAuthDebug("signin", "signInWithPassword", {
+      email,
+      ok: !error,
+      error: error?.message ?? null,
+    }, error ? "error" : "info");
     if (error) {
       const notConfirmed = /email not confirmed|not.*confirmed/i.test(error.message);
       if (notConfirmed) setVerifyStatus("unverified");
@@ -280,6 +285,7 @@ function AuthPage() {
     }
     toast.success("Berhasil masuk");
     clearPrefs();
+    logAuthDebug("signin", "navigating to /", { target: "/" });
     navigate({ to: "/", replace: true });
   };
 
@@ -313,6 +319,12 @@ function AuthPage() {
       options: { emailRedirectTo: `${window.location.origin}/auth-callback` },
     });
     setLoading(false);
+    logAuthDebug("resend", "resend signup verification", {
+      email,
+      redirectTo: `${window.location.origin}/auth-callback`,
+      ok: !error,
+      error: error?.message ?? null,
+    }, error ? "error" : "info");
     if (error) {
       notifyError(error);
       return;
