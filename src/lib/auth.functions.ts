@@ -38,6 +38,40 @@ function clientIpFromRequest(req: Request): string {
   return "0.0.0.0";
 }
 
+function safeAuthCallbackUrl(req: Request): string {
+  const fallback = "https://mcmstorage.biz";
+  const candidates = [
+    req.headers.get("origin"),
+    req.headers.get("referer"),
+    (() => {
+      const host = req.headers.get("x-forwarded-host") ?? req.headers.get("host");
+      if (!host) return null;
+      const proto = req.headers.get("x-forwarded-proto") ?? "https";
+      return `${proto}://${host}`;
+    })(),
+  ];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      const url = new URL(candidate);
+      const host = url.hostname.toLowerCase();
+      const allowed =
+        host === "mcmstorage.biz" ||
+        host === "www.mcmstorage.biz" ||
+        host === "localhost" ||
+        host === "127.0.0.1" ||
+        host.endsWith(".lovable.app");
+      if ((url.protocol === "https:" || url.protocol === "http:") && allowed) {
+        return `${url.origin}/auth-callback`;
+      }
+    } catch {
+      /* ignore malformed header */
+    }
+  }
+  return `${fallback}/auth-callback`;
+}
+
 /**
  * Implementasi murni handler `secureSignUp` — diekspor terpisah agar bisa
  * di-unit/integration-test tanpa runtime `createServerFn`/Start context.
@@ -98,6 +132,7 @@ export async function secureSignUpImpl(
       password: data.password,
       options: {
         data: { chat_only: data.chatOnly },
+        emailRedirectTo: safeAuthCallbackUrl(req),
       },
     });
     if (error) {

@@ -149,6 +149,16 @@ function AuthPage() {
   }, [resendCooldown]);
 
   useEffect(() => {
+    if (typeof window !== "undefined") {
+      const hasAuthCallback =
+        window.location.hash.includes("access_token=") ||
+        window.location.hash.includes("error=") ||
+        window.location.search.includes("code=");
+      if (hasAuthCallback) {
+        window.location.replace(`/auth-callback${window.location.search}${window.location.hash}`);
+        return;
+      }
+    }
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/", replace: true });
     });
@@ -299,7 +309,7 @@ function AuthPage() {
     const { error } = await supabase.auth.resend({
       type: "signup",
       email,
-      options: { emailRedirectTo: window.location.origin },
+      options: { emailRedirectTo: `${window.location.origin}/auth-callback` },
     });
     setLoading(false);
     if (error) {

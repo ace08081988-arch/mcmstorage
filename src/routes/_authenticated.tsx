@@ -135,6 +135,16 @@ function AuthLock() {
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async ({ location }) => {
+    if (typeof window !== "undefined") {
+      const hasAuthCallback =
+        window.location.hash.includes("access_token=") ||
+        window.location.hash.includes("error=") ||
+        window.location.search.includes("code=");
+      if (hasAuthCallback) {
+        window.location.replace(`/auth-callback${window.location.search}${window.location.hash}`);
+        return;
+      }
+    }
     const { data } = await supabase.auth.getSession();
     if (!data.session) {
       throw redirect({
