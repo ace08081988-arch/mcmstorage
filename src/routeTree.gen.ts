@@ -24,6 +24,7 @@ import { Route as AuthenticatedIndexRouteImport } from './routes/_authenticated.
 import { Route as TTokenRouteImport } from './routes/t.$token'
 import { Route as PosKasirRingkasanRouteImport } from './routes/pos-kasir.ringkasan'
 import { Route as ICodeRouteImport } from './routes/i.$code'
+import { Route as EmailUnsubscribeRouteImport } from './routes/email/unsubscribe'
 import { Route as DownloadVariantRouteImport } from './routes/download.$variant'
 import { Route as DiagnostikPaketRouteImport } from './routes/diagnostik.paket'
 import { Route as ApiVersionRouteImport } from './routes/api/version'
@@ -91,6 +92,7 @@ import { Route as LovableVisualAppearanceImportRouteImport } from './routes/lova
 import { Route as LovableVisualApkAvailabilityShortcutsRouteImport } from './routes/lovable.visual.apk-availability-shortcuts'
 import { Route as LovableVisualAdminVisibilityRouteImport } from './routes/lovable.visual.admin-visibility'
 import { Route as LovableVisualAccessDeniedToastRouteImport } from './routes/lovable.visual.access-denied-toast'
+import { Route as LovableEmailSuppressionRouteImport } from './routes/lovable/email/suppression'
 import { Route as ApiPublicPrepRealtimeTokenRouteImport } from './routes/api/public/prep-realtime-token'
 import { Route as ApiPublicApkDownloadTrackRouteImport } from './routes/api/public/apk-download-track'
 import { Route as ApiPublicAiPingRouteImport } from './routes/api/public/ai-ping'
@@ -106,6 +108,8 @@ import { Route as AuthenticatedAdminTurnstileAuditRouteImport } from './routes/_
 import { Route as AuthenticatedAdminTurnstileRouteImport } from './routes/_authenticated.admin.turnstile'
 import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
 import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
+import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
+import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
 import { Route as ApiPublicHooksLogPortalErrorRouteImport } from './routes/api/public/hooks/log-portal-error'
@@ -185,6 +189,11 @@ const PosKasirRingkasanRoute = PosKasirRingkasanRouteImport.update({
 const ICodeRoute = ICodeRouteImport.update({
   id: '/i/$code',
   path: '/i/$code',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmailUnsubscribeRoute = EmailUnsubscribeRouteImport.update({
+  id: '/email/unsubscribe',
+  path: '/email/unsubscribe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DownloadVariantRoute = DownloadVariantRouteImport.update({
@@ -559,6 +568,11 @@ const LovableVisualAccessDeniedToastRoute =
     path: '/lovable/visual/access-denied-toast',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailSuppressionRoute = LovableEmailSuppressionRouteImport.update({
+  id: '/lovable/email/suppression',
+  path: '/lovable/email/suppression',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicPrepRealtimeTokenRoute =
   ApiPublicPrepRealtimeTokenRouteImport.update({
     id: '/api/public/prep-realtime-token',
@@ -645,6 +659,18 @@ const AuthenticatedAdminPortalErrorLogRoute =
     id: '/admin/portal-error-log',
     path: '/admin/portal-error-log',
     getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const LovableEmailTransactionalSendRoute =
+  LovableEmailTransactionalSendRouteImport.update({
+    id: '/lovable/email/transactional/send',
+    path: '/lovable/email/transactional/send',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const LovableEmailTransactionalPreviewRoute =
+  LovableEmailTransactionalPreviewRouteImport.update({
+    id: '/lovable/email/transactional/preview',
+    path: '/lovable/email/transactional/preview',
+    getParentRoute: () => rootRouteImport,
   } as any)
 const LovableEmailQueueProcessRoute =
   LovableEmailQueueProcessRouteImport.update({
@@ -739,6 +765,7 @@ export interface FileRoutesByFullPath {
   '/api/version': typeof ApiVersionRoute
   '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
@@ -758,6 +785,7 @@ export interface FileRoutesByFullPath {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
@@ -785,6 +813,8 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
 export interface FileRoutesByTo {
@@ -840,6 +870,7 @@ export interface FileRoutesByTo {
   '/api/version': typeof ApiVersionRoute
   '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
@@ -860,6 +891,7 @@ export interface FileRoutesByTo {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
@@ -887,6 +919,8 @@ export interface FileRoutesByTo {
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
 export interface FileRoutesById {
@@ -946,6 +980,7 @@ export interface FileRoutesById {
   '/api/version': typeof ApiVersionRoute
   '/diagnostik/paket': typeof DiagnostikPaketRoute
   '/download/$variant': typeof DownloadVariantRoute
+  '/email/unsubscribe': typeof EmailUnsubscribeRoute
   '/i/$code': typeof ICodeRoute
   '/pos-kasir/ringkasan': typeof PosKasirRingkasanRoute
   '/t/$token': typeof TTokenRoute
@@ -966,6 +1001,7 @@ export interface FileRoutesById {
   '/api/public/ai-ping': typeof ApiPublicAiPingRoute
   '/api/public/apk-download-track': typeof ApiPublicApkDownloadTrackRoute
   '/api/public/prep-realtime-token': typeof ApiPublicPrepRealtimeTokenRoute
+  '/lovable/email/suppression': typeof LovableEmailSuppressionRoute
   '/lovable/visual/access-denied-toast': typeof LovableVisualAccessDeniedToastRoute
   '/lovable/visual/admin-visibility': typeof LovableVisualAdminVisibilityRoute
   '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
@@ -993,6 +1029,8 @@ export interface FileRoutesById {
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
+  '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
+  '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
   '/_authenticated/gudang/pesanan/$id/edit': typeof AuthenticatedGudangPesananIdEditRoute
 }
 export interface FileRouteTypes {
@@ -1053,6 +1091,7 @@ export interface FileRouteTypes {
     | '/api/version'
     | '/diagnostik/paket'
     | '/download/$variant'
+    | '/email/unsubscribe'
     | '/i/$code'
     | '/pos-kasir/ringkasan'
     | '/t/$token'
@@ -1072,6 +1111,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
     | '/lovable/visual/apk-availability-shortcuts'
@@ -1099,6 +1139,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/security-scan-daily'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/gudang/pesanan/$id/edit'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -1154,6 +1196,7 @@ export interface FileRouteTypes {
     | '/api/version'
     | '/diagnostik/paket'
     | '/download/$variant'
+    | '/email/unsubscribe'
     | '/i/$code'
     | '/pos-kasir/ringkasan'
     | '/t/$token'
@@ -1174,6 +1217,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
     | '/lovable/visual/apk-availability-shortcuts'
@@ -1201,6 +1245,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/security-scan-daily'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/gudang/pesanan/$id/edit'
   id:
     | '__root__'
@@ -1259,6 +1305,7 @@ export interface FileRouteTypes {
     | '/api/version'
     | '/diagnostik/paket'
     | '/download/$variant'
+    | '/email/unsubscribe'
     | '/i/$code'
     | '/pos-kasir/ringkasan'
     | '/t/$token'
@@ -1279,6 +1326,7 @@ export interface FileRouteTypes {
     | '/api/public/ai-ping'
     | '/api/public/apk-download-track'
     | '/api/public/prep-realtime-token'
+    | '/lovable/email/suppression'
     | '/lovable/visual/access-denied-toast'
     | '/lovable/visual/admin-visibility'
     | '/lovable/visual/apk-availability-shortcuts'
@@ -1306,6 +1354,8 @@ export interface FileRouteTypes {
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/security-scan-daily'
     | '/lovable/email/queue/process'
+    | '/lovable/email/transactional/preview'
+    | '/lovable/email/transactional/send'
     | '/_authenticated/gudang/pesanan/$id/edit'
   fileRoutesById: FileRoutesById
 }
@@ -1322,11 +1372,13 @@ export interface RootRouteChildren {
   TrustRoute: typeof TrustRoute
   ApiVersionRoute: typeof ApiVersionRoute
   DiagnostikPaketRoute: typeof DiagnostikPaketRoute
+  EmailUnsubscribeRoute: typeof EmailUnsubscribeRoute
   ICodeRoute: typeof ICodeRoute
   TTokenRoute: typeof TTokenRoute
   ApiPublicAiPingRoute: typeof ApiPublicAiPingRoute
   ApiPublicApkDownloadTrackRoute: typeof ApiPublicApkDownloadTrackRoute
   ApiPublicPrepRealtimeTokenRoute: typeof ApiPublicPrepRealtimeTokenRoute
+  LovableEmailSuppressionRoute: typeof LovableEmailSuppressionRoute
   LovableVisualAccessDeniedToastRoute: typeof LovableVisualAccessDeniedToastRoute
   LovableVisualAdminVisibilityRoute: typeof LovableVisualAdminVisibilityRoute
   LovableVisualApkAvailabilityShortcutsRoute: typeof LovableVisualApkAvailabilityShortcutsRoute
@@ -1352,6 +1404,8 @@ export interface RootRouteChildren {
   ApiPublicHooksLogPortalErrorRoute: typeof ApiPublicHooksLogPortalErrorRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
+  LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
+  LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -1459,6 +1513,13 @@ declare module '@tanstack/react-router' {
       path: '/i/$code'
       fullPath: '/i/$code'
       preLoaderRoute: typeof ICodeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/email/unsubscribe': {
+      id: '/email/unsubscribe'
+      path: '/email/unsubscribe'
+      fullPath: '/email/unsubscribe'
+      preLoaderRoute: typeof EmailUnsubscribeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/download/$variant': {
@@ -1930,6 +1991,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualAccessDeniedToastRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/suppression': {
+      id: '/lovable/email/suppression'
+      path: '/lovable/email/suppression'
+      fullPath: '/lovable/email/suppression'
+      preLoaderRoute: typeof LovableEmailSuppressionRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/prep-realtime-token': {
       id: '/api/public/prep-realtime-token'
       path: '/api/public/prep-realtime-token'
@@ -2034,6 +2102,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/admin/portal-error-log'
       preLoaderRoute: typeof AuthenticatedAdminPortalErrorLogRouteImport
       parentRoute: typeof AuthenticatedRoute
+    }
+    '/lovable/email/transactional/send': {
+      id: '/lovable/email/transactional/send'
+      path: '/lovable/email/transactional/send'
+      fullPath: '/lovable/email/transactional/send'
+      preLoaderRoute: typeof LovableEmailTransactionalSendRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/transactional/preview': {
+      id: '/lovable/email/transactional/preview'
+      path: '/lovable/email/transactional/preview'
+      fullPath: '/lovable/email/transactional/preview'
+      preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/lovable/email/queue/process': {
       id: '/lovable/email/queue/process'
@@ -2291,11 +2373,13 @@ const rootRouteChildren: RootRouteChildren = {
   TrustRoute: TrustRoute,
   ApiVersionRoute: ApiVersionRoute,
   DiagnostikPaketRoute: DiagnostikPaketRoute,
+  EmailUnsubscribeRoute: EmailUnsubscribeRoute,
   ICodeRoute: ICodeRoute,
   TTokenRoute: TTokenRoute,
   ApiPublicAiPingRoute: ApiPublicAiPingRoute,
   ApiPublicApkDownloadTrackRoute: ApiPublicApkDownloadTrackRoute,
   ApiPublicPrepRealtimeTokenRoute: ApiPublicPrepRealtimeTokenRoute,
+  LovableEmailSuppressionRoute: LovableEmailSuppressionRoute,
   LovableVisualAccessDeniedToastRoute: LovableVisualAccessDeniedToastRoute,
   LovableVisualAdminVisibilityRoute: LovableVisualAdminVisibilityRoute,
   LovableVisualApkAvailabilityShortcutsRoute:
@@ -2324,6 +2408,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksLogPortalErrorRoute: ApiPublicHooksLogPortalErrorRoute,
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
+  LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
+  LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
