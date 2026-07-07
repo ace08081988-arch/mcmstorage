@@ -485,6 +485,7 @@ function Surface({
                   total: TOTAL_PER_PREP,
                   method,
                   partialAmount: method === "partial" ? paid : null,
+                  note: payment.note,
                 });
                 setLastWa(message);
                 setPreps((prev) =>
