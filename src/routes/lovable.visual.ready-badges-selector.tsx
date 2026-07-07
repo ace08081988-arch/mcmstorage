@@ -51,6 +51,7 @@ type Prep = {
   title_id: string;
   sold_at: string | null;
   paid_amount?: number | null;
+  customer?: string;
 };
 
 // Total tagihan tetap per prep di harness (Rp). Dipakai untuk validasi
@@ -70,21 +71,53 @@ const ECER_TITLES: Title[] = [
 // Seed: campuran aktif & terkirim supaya angka awal ≠ 0 di semua badge yang
 // diuji. Spec akan menoggle status lalu memverifikasi konsistensi ulang.
 const SEED_REQUEST: Prep[] = [
-  { id: "rp1", title_id: "r-A", sold_at: null },
-  { id: "rp2", title_id: "r-A", sold_at: null },
-  { id: "rp3", title_id: "r-A", sold_at: "2026-07-01T00:00:00Z" },
-  { id: "rp4", title_id: "r-B", sold_at: null },
-  { id: "rp5", title_id: "r-B", sold_at: "2026-07-02T00:00:00Z" },
-  { id: "rp6", title_id: "r-B", sold_at: "2026-07-03T00:00:00Z" },
+  { id: "rp1", title_id: "r-A", sold_at: null, customer: "Budi Santoso" },
+  { id: "rp2", title_id: "r-A", sold_at: null, customer: "Citra Dewi" },
+  { id: "rp3", title_id: "r-A", sold_at: "2026-07-01T00:00:00Z", customer: "Andi" },
+  { id: "rp4", title_id: "r-B", sold_at: null, customer: "Dewi" },
+  { id: "rp5", title_id: "r-B", sold_at: "2026-07-02T00:00:00Z", customer: "Eka" },
+  { id: "rp6", title_id: "r-B", sold_at: "2026-07-03T00:00:00Z", customer: "Fajar" },
   // r-C sengaja tanpa prep — badge harus 0/0.
 ];
 const SEED_ECER: Prep[] = [
-  { id: "ep1", title_id: "e-X", sold_at: null },
-  { id: "ep2", title_id: "e-X", sold_at: null },
-  { id: "ep3", title_id: "e-X", sold_at: "2026-07-01T00:00:00Z" },
-  { id: "ep4", title_id: "e-Y", sold_at: null },
-  { id: "ep5", title_id: "e-Y", sold_at: "2026-07-02T00:00:00Z" },
+  { id: "ep1", title_id: "e-X", sold_at: null, customer: "Ibu Sari" },
+  { id: "ep2", title_id: "e-X", sold_at: null, customer: "Pak Joko" },
+  { id: "ep3", title_id: "e-X", sold_at: "2026-07-01T00:00:00Z", customer: "Rina" },
+  { id: "ep4", title_id: "e-Y", sold_at: null, customer: "Tuti" },
+  { id: "ep5", title_id: "e-Y", sold_at: "2026-07-02T00:00:00Z", customer: "Wati" },
 ];
+
+// Formatter WA message — SSOT untuk isi pesan yang "dikirim" ke pelanggan.
+// Spec E2E membaca hasilnya dari DOM (`data-testid="last-wa-message-<scope>"`)
+// dan memverifikasi bahwa ringkasan pelanggan, total, dan jenis pembayaran
+// yang tampil di dialog konfirmasi tercermin di pesan yang dikirim.
+function formatWaMessage(input: {
+  customer: string;
+  titleName: string;
+  total: number;
+  method: "kas" | "hutang" | "partial";
+  partialAmount: number | null;
+}): string {
+  const rp = (n: number) => `Rp${n.toLocaleString("id-ID")}`;
+  const methodLabel =
+    input.method === "kas"
+      ? "Lunas"
+      : input.method === "hutang"
+        ? "Hutang"
+        : "Bayar sebagian";
+  const lines = [
+    `Halo ${input.customer},`,
+    `Paket: ${input.titleName}`,
+    `Total: ${rp(input.total)}`,
+    `Pembayaran: ${methodLabel}`,
+  ];
+  if (input.method === "partial" && input.partialAmount !== null) {
+    lines.push(`Dibayar: ${rp(input.partialAmount)}`);
+    lines.push(`Sisa: ${rp(input.total - input.partialAmount)}`);
+  }
+  lines.push("Terima kasih.");
+  return lines.join("\n");
+}
 
 function useSurface(seed: Prep[]) {
   const [preps, setPreps] = useState<Prep[]>(seed);
