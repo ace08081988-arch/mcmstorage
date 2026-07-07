@@ -16,6 +16,7 @@ import {
 import { explainTurnstileError } from "@/components/turnstile-error";
 import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
+import { DEV_TURNSTILE_TOKEN, isTurnstileDevBypass } from "@/lib/turnstile-dev";
 
 function AuthBrand() {
   const { full, logo } = useOrgName();
@@ -110,6 +111,12 @@ function AuthPage() {
   const secureSignUpFn = useServerFn(secureSignUp);
   const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
   const [widgetKey, setWidgetKey] = useState(0);
+  const devBypass = isTurnstileDevBypass();
+  // Auto-isi token bypass ketika berjalan di localhost dev supaya alur
+  // pendaftaran tidak menunggu widget Turnstile.
+  useEffect(() => {
+    if (devBypass && !turnstileToken) setTurnstileToken(DEV_TURNSTILE_TOKEN);
+  }, [devBypass, turnstileToken]);
 
   const onTurnstileToken = useCallback((t: string | null) => {
     setTurnstileToken(t);
@@ -190,13 +197,13 @@ function AuthPage() {
         toast.error("Konfirmasi kata sandi tidak cocok");
         return;
       }
-      if (!TURNSTILE_SITE_KEY) {
+      if (!TURNSTILE_SITE_KEY && !devBypass) {
         toast.error(
           "Verifikasi manusia (CAPTCHA) belum dikonfigurasi. Hubungi admin.",
         );
         return;
       }
-      if (!turnstileToken) {
+      if (!turnstileToken && !devBypass) {
         toast.error(
           "Selesaikan verifikasi CAPTCHA di bawah sebelum menekan Daftar.",
         );
@@ -214,7 +221,7 @@ function AuthPage() {
           data: {
             email,
             password,
-            turnstileToken,
+            turnstileToken: turnstileToken ?? DEV_TURNSTILE_TOKEN,
             chatOnly: intent === "chat",
           },
         });
@@ -535,7 +542,11 @@ function AuthPage() {
           )}
           {mode === "signup" && (
             <div className="space-y-1">
-              {TURNSTILE_SITE_KEY ? (
+              {devBypass ? (
+                <p className="rounded-md border border-dashed border-amber-400/50 bg-amber-50/40 p-2 text-center text-[11px] text-amber-700 dark:bg-amber-950/20 dark:text-amber-300">
+                  Mode dev: verifikasi CAPTCHA dilewati untuk localhost.
+                </p>
+              ) : TURNSTILE_SITE_KEY ? (
                 <TurnstileWidget
                   key={widgetKey}
                   ref={turnstileRef}
@@ -588,6 +599,7 @@ function AuthPage() {
             disabled={
               loading ||
               (mode === "signup" &&
+                !devBypass &&
                 (!TURNSTILE_SITE_KEY || !turnstileToken || rateLimitedUntil > Date.now()))
             }
             className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
@@ -595,7 +607,7 @@ function AuthPage() {
             {loading
               ? "Memproses…"
               : mode === "signup"
-              ? turnstileToken || !TURNSTILE_SITE_KEY
+              ? devBypass || turnstileToken || !TURNSTILE_SITE_KEY
                 ? "Daftar"
                 : "Selesaikan verifikasi CAPTCHA…"
               : "Masuk"}
