@@ -13,6 +13,17 @@ import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 import { SellSelfPrepDialog, type SellSelfPrepCustomer, type SellSelfPrepWarehouseItem } from "@/components/SellSelfPrepDialog";
 import { formatSoldPaymentSummary } from "@/lib/payment-summary";
 import { Wallet, HandCoins } from "lucide-react";
+import { generateSaleReceipt } from "@/lib/sale-receipt";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const BUCKET = "self-prep-photos";
 
@@ -92,8 +103,39 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   const [chatPickTarget, setChatPickTarget] = useState<Row | null>(null);
   const [chatSendingId, setChatSendingId] = useState<string | null>(null);
   const [sellTarget, setSellTarget] = useState<Row | null>(null);
+  // Row yang baru saja tercatat penjualan — memicu dialog "Kirim bukti"
+  // supaya owner tidak perlu tap tombol WA/Chat lagi secara manual.
+  const [postSalePromptRow, setPostSalePromptRow] = useState<Row | null>(null);
   const [customers, setCustomers] = useState<SellSelfPrepCustomer[]>([]);
   const [warehouseItems, setWarehouseItems] = useState<SellSelfPrepWarehouseItem[]>([]);
+
+  /**
+   * Ubah Row penjualan menjadi File PNG bukti. Kembali `null` bila row
+   * belum tercatat sebagai terjual (defensif — pemanggil sudah cek).
+   */
+  const buildReceiptFile = useCallback(
+    async (r: Row): Promise<File | null> => {
+      if (!r.sold_at || !r.sold_summary) return null;
+      const cust = r.sold_customer_id
+        ? customers.find((c) => c.id === r.sold_customer_id)?.name ?? null
+        : null;
+      try {
+        return await generateSaleReceipt({
+          id: r.id,
+          title: r.title,
+          sold_at: r.sold_at,
+          sold_summary: r.sold_summary,
+          sold_total: Number(r.sold_total ?? 0),
+          sold_paid_amount: Number(r.sold_paid_amount ?? 0),
+          sold_payment_method: r.sold_payment_method ?? null,
+          customer_name: cust,
+        });
+      } catch {
+        return null;
+      }
+    },
+    [customers],
+  );
   const [lightboxIdx, setLightboxIdx] = useState<number | null>(null);
   const [zoom, setZoom] = useState(1);
   const [pan, setPan] = useState({ x: 0, y: 0 });
@@ -308,6 +350,10 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
         }
       } catch { /* ignore — lanjut foto berikutnya */ }
     }
+    // Lampirkan bukti pembayaran (PNG) sebagai foto terakhir supaya
+    // pembeli menerima ringkasan yang tercetak rapih, bukan cuma teks.
+    const receipt = await buildReceiptFile(r);
+    if (receipt) collected.push(receipt);
     const files = collected.length ? collected : undefined;
 
     const result = await shareToWhatsApp({ text, files });
@@ -365,6 +411,10 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           shots.push({ id: `${r.id}:${i}`, file: new File([blob], name, { type: blob.type || "image/jpeg" }) });
         } catch { /* skip */ }
       }
+      // Lampirkan bukti pembayaran (PNG) sebagai lampiran terakhir agar
+      // muncul di riwayat percakapan Chat setelah foto paket.
+      const receipt = await buildReceiptFile(r);
+      if (receipt) shots.push({ id: `${r.id}:receipt`, file: receipt });
 
       const result = await shareToChat({
         conversationId,
@@ -894,12 +944,61 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           selfPrepTitle={sellTarget.title}
           customers={customers}
           warehouseItems={warehouseItems}
-          onSold={() => {
+          onSold={async () => {
+            const soldId = sellTarget.id;
             setSellTarget(null);
-            void load();
+            await load();
+            // Auto-buka picker WA/Chat. Kita re-query row langsung
+            // dari DB (bukan dari state React) supaya tidak race dengan
+            // batching setRows() di dalam load().
+            const { data } = await table().select("*").eq("id", soldId).maybeSingle();
+            if (data && (data as Row).sold_at) setPostSalePromptRow(data as Row);
           }}
         />
       )}
+
+      <AlertDialog
+        open={!!postSalePromptRow}
+        onOpenChange={(o) => { if (!o) setPostSalePromptRow(null); }}
+      >
+        <AlertDialogContent className="max-w-sm" data-testid="post-sale-share-prompt">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Kirim bukti ke pembeli?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="space-y-1 text-sm">
+                <div>
+                  Penjualan <span className="font-semibold text-foreground">{postSalePromptRow?.title}</span> tercatat.
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  Bukti pembayaran (gambar) + ringkasan penjualan akan
+                  otomatis dilampirkan.
+                </div>
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="flex-col gap-2 sm:flex-row sm:justify-end">
+            <AlertDialogCancel className="sm:mr-auto">Nanti saja</AlertDialogCancel>
+            <WaShareButton
+              size="md"
+              variant="solid"
+              onClick={() => {
+                const r = postSalePromptRow;
+                setPostSalePromptRow(null);
+                if (r) void onSendWA(r);
+              }}
+            />
+            <ChatShareButton
+              size="md"
+              variant="solid"
+              onClick={() => {
+                const r = postSalePromptRow;
+                setPostSalePromptRow(null);
+                if (r) setChatPickTarget(r);
+              }}
+            />
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
