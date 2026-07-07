@@ -97,6 +97,7 @@ function formatWaMessage(input: {
   total: number;
   method: "kas" | "hutang" | "partial";
   partialAmount: number | null;
+  note: string;
 }): string {
   const rp = (n: number) => `Rp${n.toLocaleString("id-ID")}`;
   const methodLabel =
@@ -114,6 +115,10 @@ function formatWaMessage(input: {
   if (input.method === "partial" && input.partialAmount !== null) {
     lines.push(`Dibayar: ${rp(input.partialAmount)}`);
     lines.push(`Sisa: ${rp(input.total - input.partialAmount)}`);
+  }
+  const trimmedNote = input.note.trim();
+  if (trimmedNote) {
+    lines.push(`Catatan: ${trimmedNote}`);
   }
   lines.push("Terima kasih.");
   return lines.join("\n");
@@ -171,6 +176,7 @@ function Surface({
     prepId: string;
     method: "kas" | "hutang" | "partial";
     partialAmount: string;
+    note: string;
   }>(null);
 
   // Pesan WA terakhir yang "dikirim" dari surface ini. Spec E2E membaca
@@ -276,7 +282,12 @@ function Surface({
                 data-testid={`send-wa-${p.id}`}
                 disabled={isSentPrep(p)}
                 onClick={() =>
-                  setPayment({ prepId: p.id, method: "kas", partialAmount: "" })
+                  setPayment({
+                    prepId: p.id,
+                    method: "kas",
+                    partialAmount: "",
+                    note: "",
+                  })
                 }
               >
                 Kirim WA
@@ -441,6 +452,29 @@ function Surface({
               )}
             </div>
           )}
+          {/* Catatan pelanggan — teks opsional yang, kalau diisi, harus
+              muncul apa adanya di pesan WA yang dikirim. */}
+          <div className="flex flex-col gap-1">
+            <label
+              className="text-[10px] text-muted-foreground"
+              htmlFor={`payment-note-${scope}`}
+            >
+              Catatan pelanggan
+            </label>
+            <textarea
+              id={`payment-note-${scope}`}
+              data-testid={`payment-note-${scope}`}
+              value={payment.note}
+              onChange={(e) =>
+                setPayment((prev) =>
+                  prev ? { ...prev, note: e.target.value } : prev,
+                )
+              }
+              rows={2}
+              className="w-full rounded border px-1.5 py-0.5 text-[11px]"
+              placeholder="mis. Tolong antar sore ini"
+            />
+          </div>
           <div className="flex justify-end gap-1 pt-1">
             <button
               type="button"
@@ -474,6 +508,7 @@ function Surface({
                   total: TOTAL_PER_PREP,
                   method,
                   partialAmount: method === "partial" ? paid : null,
+                  note: payment.note,
                 });
                 setLastWa(message);
                 setPreps((prev) =>
