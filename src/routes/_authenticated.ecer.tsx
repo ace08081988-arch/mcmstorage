@@ -42,6 +42,11 @@ import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
+import {
+  logAutoSendProposed,
+  logAutoSendTerminal,
+  finalizeAutoSend,
+} from "@/lib/auto-send-audit";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { rupiah } from "@/lib/stock-format";
