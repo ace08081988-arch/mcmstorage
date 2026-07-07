@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { shouldAllowTurnstileDevBypass } from "./turnstile-dev";
 
 // Kode error yang dipakai UI untuk menampilkan pesan yang jelas ke pengguna.
 export type SecureSignUpErrorCode =
@@ -26,7 +25,8 @@ export type SecureSignUpResult =
 const inputSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(255),
   password: z.string().min(8).max(200),
-  turnstileToken: z.string().min(1).max(4096),
+  // Turnstile dihapus — field diterima tapi diabaikan (kompat pemanggil lama).
+  turnstileToken: z.string().max(4096).optional(),
   chatOnly: z.boolean().optional().default(false),
 });
 
