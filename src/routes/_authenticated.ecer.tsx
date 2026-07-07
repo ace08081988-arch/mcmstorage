@@ -42,6 +42,11 @@ import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { confirm } from "@/lib/confirm";
 import { signedUrl as prepSignedUrl } from "@/lib/prep";
+import {
+  logAutoSendProposed,
+  logAutoSendTerminal,
+  finalizeAutoSend,
+} from "@/lib/auto-send-audit";
 import { publicTaskUrl, genPin, genShareToken } from "@/lib/prep";
 import { fmtItemQty } from "@/lib/stock-format";
 import { rupiah } from "@/lib/stock-format";
@@ -1190,6 +1195,18 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const [autoSendConfirm, setAutoSendConfirm] = useState<{
     preps: EcerPreparation[];
   } | null>(null);
+  // ID baris audit `auto_send_audit` untuk flag `send=1` yang sedang berjalan.
+  // Dipakai untuk memindahkan outcome ke `confirmed`/`cancelled` setelah
+  // dialog pembayaran ditutup, dan menjadi kunci ringkasan Riwayat.
+  const autoSendAuditIdRef = useRef<string | null>(null);
+  // Ringkasan auto-send terakhir yang berhasil dikonfirmasi — ditampilkan
+  // sebagai banner di atas Riwayat Terkirim setelah RPC penjualan sukses.
+  const [autoSendSummary, setAutoSendSummary] = useState<{
+    count: number;
+    grams: number;
+    unit: string;
+    at: string;
+  } | null>(null);
   const [customers, setCustomers] = useState<Array<{ id: string; name: string; contact: string | null }>>([]);
 
   useEffect(() => {
@@ -1265,6 +1282,16 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         `Batal auto-Kirim: ${mismatched.length} kotak tidak valid. Pilih manual.`,
         { description: `Kotak: ${details.join(", ")}${extra}` },
       );
+      void logAutoSendTerminal({
+        titleId: title.id,
+        warehouseItemId: item.id,
+        prepIds: mismatched.map((p) => p.id),
+        prepCount: mismatched.length,
+        totalGrams: mismatched.reduce((a, p) => a + (Number(p.actual_grams) || 0), 0),
+        unitLabel: title.unit_label || null,
+        outcome: "mismatched",
+        note: `mismatched: ${details.join(", ")}${extra}`,
+      });
       onAutoSendConsumed?.();
       return;
     }
@@ -1272,6 +1299,15 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
       // Tidak ada kotak aktif; batalkan flag agar user tidak "terjebak".
       autoSendFiredRef.current = true;
       toast.info("Tidak ada kotak aktif untuk dikirim pada judul ini.");
+      void logAutoSendTerminal({
+        titleId: title.id,
+        warehouseItemId: item.id,
+        prepIds: [],
+        prepCount: 0,
+        totalGrams: 0,
+        unitLabel: title.unit_label || null,
+        outcome: "empty",
+      });
       onAutoSendConsumed?.();
       return;
     }
@@ -1283,6 +1319,18 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     // diperluas. Owner harus menekan Lanjut agar dialog pembayaran
     // benar-benar terbuka.
     setAutoSendConfirm({ preps: activeNow });
+    // Catat baris `proposed` — id disimpan supaya nanti bisa di-finalize
+    // menjadi `confirmed` (setelah RPC sukses) atau `cancelled`.
+    void logAutoSendProposed({
+      titleId: title.id,
+      warehouseItemId: item.id,
+      prepIds: activeNow.map((p) => p.id),
+      prepCount: activeNow.length,
+      totalGrams: activeNow.reduce((a, p) => a + (Number(p.actual_grams) || 0), 0),
+      unitLabel: title.unit_label || null,
+    }).then((id) => {
+      autoSendAuditIdRef.current = id;
+    });
     onAutoSendConsumed?.();
   }, [autoSend, loading, preps, title.id, item.id, onAutoSendConsumed]);
 
@@ -1447,6 +1495,32 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                       {sent.length}
                     </span>
                   </div>
+                  {autoSendSummary && (
+                    <div
+                      data-testid="auto-send-summary"
+                      className="mb-3 flex items-start justify-between gap-2 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-xs text-emerald-900"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-semibold">Auto-Kirim tercatat</div>
+                        <div className="text-emerald-800/90">
+                          {autoSendSummary.count} kotak · Total {autoSendSummary.grams} {autoSendSummary.unit} ·
+                          {" "}
+                          {new Date(autoSendSummary.at).toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Tutup ringkasan"
+                        onClick={() => setAutoSendSummary(null)}
+                        className="rounded p-1 text-emerald-800/70 hover:bg-emerald-100"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {sent.map((p, idx) => (
                       <PrepBox
@@ -1483,12 +1557,35 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           title={title}
           itemName={item.name}
           customers={customers}
-          onClose={() => setSendOpen(false)}
+          onClose={() => {
+            setSendOpen(false);
+            // Owner menutup dialog pembayaran tanpa mengirim — kalau ini
+            // datang dari auto-send, finalisasi baris audit sebagai
+            // `cancelled` agar jejak tidak menggantung di `proposed`.
+            const auditId = autoSendAuditIdRef.current;
+            if (auditId) {
+              autoSendAuditIdRef.current = null;
+              void finalizeAutoSend(auditId, "cancelled", "closed_send_dialog");
+            }
+          }}
           onSent={() => {
             setSendOpen(false);
             exitSelection();
             void load();
             onTitleUpdated();
+            const auditId = autoSendAuditIdRef.current;
+            if (auditId) {
+              autoSendAuditIdRef.current = null;
+              void finalizeAutoSend(auditId, "confirmed").then((row) => {
+                if (!row) return;
+                setAutoSendSummary({
+                  count: row.prep_count,
+                  grams: Number(row.total_grams) || 0,
+                  unit: row.unit_label || title.unit_label || "g",
+                  at: row.finalized_at || new Date().toISOString(),
+                });
+              });
+            }
           }}
         />
       )}
@@ -1517,6 +1614,11 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           setAutoSendConfirm(null);
           setSelectionMode(false);
           setSelected(new Set());
+          const auditId = autoSendAuditIdRef.current;
+          if (auditId) {
+            autoSendAuditIdRef.current = null;
+            void finalizeAutoSend(auditId, "cancelled", "confirm_modal");
+          }
         }}
         onConfirm={() => {
           setAutoSendConfirm(null);

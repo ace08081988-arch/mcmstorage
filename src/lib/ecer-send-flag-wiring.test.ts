@@ -24,6 +24,27 @@ function extractKirimLinkBlock(src: string): string | null {
 }
 
 describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
+  it("/ecer autoSend: mencatat audit log & menampilkan ringkasan Riwayat", () => {
+    const src = readSrc("src/routes/_authenticated.ecer.tsx");
+    // Import helper audit.
+    expect(src).toMatch(
+      /from\s+["']@\/lib\/auto-send-audit["']/,
+    );
+    expect(src).toMatch(/logAutoSendProposed/);
+    expect(src).toMatch(/logAutoSendTerminal/);
+    expect(src).toMatch(/finalizeAutoSend/);
+    // Terminal outcomes tanpa modal juga dicatat (mismatched + empty).
+    expect(src).toMatch(/outcome:\s*["']mismatched["']/);
+    expect(src).toMatch(/outcome:\s*["']empty["']/);
+    // Modal cancel → cancelled.
+    expect(src).toMatch(/finalizeAutoSend\(\s*auditId\s*,\s*["']cancelled["']/);
+    // onSent → confirmed + summary state di-set.
+    expect(src).toMatch(/finalizeAutoSend\(\s*auditId\s*,\s*["']confirmed["']/);
+    expect(src).toMatch(/setAutoSendSummary\(/);
+    // Banner ringkasan tersedia di JSX Riwayat Terkirim.
+    expect(src).toMatch(/data-testid=["']auto-send-summary["']/);
+  });
+
   it("ReadyEcerSection: tombol 'Kirim ke pembeli' → <Link to=/ecer …> dengan send:\"1\"", () => {
     const src = readSrc("src/components/ReadyEcerSection.tsx");
     const block = extractKirimLinkBlock(src);

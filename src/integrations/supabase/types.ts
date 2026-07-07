@@ -227,6 +227,51 @@ export type Database = {
         }
         Relationships: []
       }
+      auto_send_audit: {
+        Row: {
+          created_at: string
+          finalized_at: string | null
+          id: string
+          note: string | null
+          outcome: string
+          prep_count: number
+          prep_ids: string[]
+          title_id: string
+          total_grams: number
+          unit_label: string | null
+          user_id: string
+          warehouse_item_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          finalized_at?: string | null
+          id?: string
+          note?: string | null
+          outcome: string
+          prep_count?: number
+          prep_ids?: string[]
+          title_id: string
+          total_grams?: number
+          unit_label?: string | null
+          user_id: string
+          warehouse_item_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          finalized_at?: string | null
+          id?: string
+          note?: string | null
+          outcome?: string
+          prep_count?: number
+          prep_ids?: string[]
+          title_id?: string
+          total_grams?: number
+          unit_label?: string | null
+          user_id?: string
+          warehouse_item_id?: string | null
+        }
+        Relationships: []
+      }
       chat_calls: {
         Row: {
           accepted_at: string | null
