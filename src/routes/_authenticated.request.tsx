@@ -2134,6 +2134,17 @@ function SendPrepToCustomerDialog({
       });
       if (rpcErr) throw rpcErr;
 
+      // Sabuk pengaman: broadcast agar ReadyRequestSection / ReadyEcerSection /
+      // panel Piutang di /index refetch tanpa nunggu realtime. Amount = sisa
+      // (0 kalau Lunas) — listener memakainya sebagai sinyal refresh.
+      emitDebtTx({
+        kind: "piutang",
+        wasCash: payment.method === "kas",
+        amount: payment.remaining,
+        partyId: resolvedParty.id ?? null,
+        at: Date.now(),
+      });
+
       // 2) Kirim WA dengan foto asli terlampir (bukan cuma link/teks).
       const files = await fetchPhotoFiles();
       const text = buildCaption();
