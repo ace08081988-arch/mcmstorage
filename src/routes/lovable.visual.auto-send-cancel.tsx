@@ -208,6 +208,25 @@ function Harness() {
         state={confirmState}
         title={title}
         itemName="Bawang Merah"
+        onRemove={(prepId) =>
+          setConfirmState((prev) =>
+            prev ? { preps: prev.preps.filter((p) => p.id !== prepId) } : prev,
+          )
+        }
+        onUpdateGrams={async (prepId, grams) => {
+          setConfirmState((prev) =>
+            prev
+              ? {
+                  preps: prev.preps.map((p) =>
+                    p.id === prepId
+                      ? ({ ...p, actual_grams: grams } as EcerPreparation)
+                      : p,
+                  ),
+                }
+              : prev,
+          );
+          return true;
+        }}
         onCancel={() => {
           // Jalur cancel: buka dialog alasan, TIDAK menyentuh paymentOpen.
           const st = confirmState;

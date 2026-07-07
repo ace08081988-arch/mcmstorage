@@ -1607,6 +1607,52 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
           setAutoSendConfirm(null);
           setSendOpen(true);
         }}
+        onRemove={(prepId) => {
+          // Buang dari seleksi auto-send. Bila kotak tinggal 1, tombol
+          // di UI sudah disabled — jadi handler ini aman men-set daftar
+          // baru tanpa cek "kosong". Sinkronkan pula Set seleksi induk
+          // supaya jumlah + total di header langsung sinkron.
+          setAutoSendConfirm((prev) => {
+            if (!prev) return prev;
+            const next = prev.preps.filter((p) => p.id !== prepId);
+            autoSendPrepsRef.current = next;
+            return next.length > 0 ? { preps: next } : prev;
+          });
+          setSelected((prev) => {
+            const next = new Set(prev);
+            next.delete(prepId);
+            return next;
+          });
+          toast.success("Kotak dihapus dari seleksi");
+        }}
+        onUpdateGrams={async (prepId, grams) => {
+          try {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const { error } = await (supabase.from as any)("ecer_preparations")
+              .update({ actual_grams: grams })
+              .eq("id", prepId);
+            if (error) throw error;
+            // Optimistic local update: prep list + confirm modal state.
+            setPreps((prev) =>
+              prev.map((p) =>
+                p.id === prepId ? { ...p, actual_grams: grams } : p,
+              ),
+            );
+            setAutoSendConfirm((prev) => {
+              if (!prev) return prev;
+              const next = prev.preps.map((p) =>
+                p.id === prepId ? { ...p, actual_grams: grams } : p,
+              );
+              autoSendPrepsRef.current = next;
+              return { preps: next };
+            });
+            toast.success("Berat kotak diperbarui");
+            return true;
+          } catch (e) {
+            toast.error("Gagal ubah berat: " + (e as Error).message);
+            return false;
+          }
+        }}
       />
 
       <AutoSendCancelReasonDialog
