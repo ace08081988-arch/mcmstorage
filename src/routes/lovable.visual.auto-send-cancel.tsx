@@ -99,16 +99,15 @@ function Harness() {
     }) as typeof window.fetch;
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (window.XMLHttpRequest.prototype as any).open = function (
+      this: XMLHttpRequest,
       method: string,
       url: string,
-      ...rest: unknown[]
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      ...rest: any[]
     ) {
       record(url);
-      // eslint-disable-next-line prefer-spread
-      return origOpen.apply(this, [method, url, ...rest] as unknown as [
-        string,
-        string,
-      ]);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      return (origOpen as any).apply(this, [method, url, ...rest]);
     };
     return () => {
       window.fetch = origFetch;
