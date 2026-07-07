@@ -179,10 +179,26 @@ function DiagnosticsPage() {
   const allOk = checks.every((c) => c.ok);
 
   const [browserChecks, setBrowserChecks] = useState<Check[]>([]);
+  const [authEvents, setAuthEvents] = useState<AuthDebugEvent[]>([]);
+  const refreshAuthDebug = useCallback(() => setAuthEvents(readAuthDebug()), []);
+  useEffect(() => { refreshAuthDebug(); }, [refreshAuthDebug]);
   const refreshBrowser = useCallback(() => {
     void runBrowserChecks().then(setBrowserChecks);
   }, []);
   useEffect(() => { refreshBrowser(); }, [refreshBrowser]);
+
+  async function copyAuthDebug() {
+    const text = formatAuthDebug(readAuthDebug());
+    if (!text) { toast.message("Log auth kosong"); return; }
+    const res = await copyText(text);
+    if (res.ok) toast.success("Log auth disalin");
+    else toast.error("Gagal menyalin log");
+  }
+  function wipeAuthDebug() {
+    clearAuthDebug();
+    refreshAuthDebug();
+    toast.message("Log auth dibersihkan");
+  }
 
   async function testCopy() {
     const res = await copyText("MCM Storage clipboard test " + new Date().toISOString());
