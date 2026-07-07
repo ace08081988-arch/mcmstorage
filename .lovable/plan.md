@@ -1,100 +1,89 @@
-## Ringkasan
+## Masalah
 
-Di halaman `/tugas` → "Siapkan Sendiri", tambah tombol **Jual** di setiap kartu tugas (yang belum terjual). Tap Jual → dialog pilih pelanggan + pilih produk gudang & gram + metode bayar (Lunas / Hutang / Sebagian) → catat penjualan (potong stok, catat piutang bila perlu) → tandai tugas "sudah dijual". Tombol WA & Chat dikunci sampai Jual sukses. Setelah sukses, WA/Chat aktif dan kaption pengiriman otomatis menyertakan:
+Tombol WA/Chat di alur penjualan tidak konsisten:
 
-- Foto-foto yang sudah ada di tugas
-- Link lokasi yang sudah ada
-- Ringkasan penjualan (produk + gram + total)
-- Catatan hutang bila metode = Hutang / Sebagian (sisa piutang)
+| Surface | Ukuran | Style | Label WA | Label Chat | Disabled |
+|---|---|---|---|---|---|
+| `/tugas` Siapkan Sendiri (per kartu) | `h-8` | Soft outline (hijau/primary tint) | "Kirim WA" | (icon only) | `!sold_at` |
+| `/ecer` Ready per kartu | `h-8` | Solid `#25D366` + `bg-primary` | "WA" | "Chat" | `busy` |
+| `/ecer` bulk toolbar | `h-7` | Solid | "WA" | "Chat" | `count===0` |
+| `ReadyPackagesPanel` | `h-9` | Solid + emoji 💬 | "💬 Kirim WA" | — | `sharing` |
 
-## Perubahan database
+Akibatnya: label & tinggi tombol beda-beda, semantik disabled beda (hanya `/tugas` yang mensyaratkan sudah terjual), dan caption dibangun ad-hoc di tiap file — mudah drift.
 
-Tambah kolom di `self_prep_items` untuk merekam status penjualan (paralel dengan pola di `ecer_preparations` / `request_preparations`):
+## Solusi (SSOT)
 
-- `sold_at timestamptz` — kapan dijual
-- `sold_customer_id uuid` → `customers(id)`
-- `sold_total numeric` — total penjualan
-- `sold_paid_amount numeric` — jumlah dibayar (untuk Sebagian)
-- `sold_payment_method text` — "kas" | "hutang" | "sebagian"
-- `sold_debt_id uuid` → `debts(id)` (nullable; untuk kasus Hutang/Sebagian)
+Satu primitive tombol + satu builder caption, dipakai semua surface penjualan.
 
-Tidak menambah tabel baru. Item penjualan (produk × gram) tidak dipersistensi di kartu tugas — sudah tercatat penuh di tabel `sales` (rujukan silang via note "Tugas: <title>").
+### 1. Primitive `src/components/share/SaleShareButtons.tsx` (baru)
 
-## Alur UI
+```tsx
+<WaShareButton size="sm|md" variant="soft|solid" disabled reason={...} onClick />
+<ChatShareButton size="sm|md" variant="soft|solid" disabled reason={...} onClick />
+```
 
-### Kartu tugas (`SiapkanSendiriSection.tsx`)
+Kontrak:
+- **Warna WA**: selalu `#25D366` (solid) atau `#25D366/10 + #1ea952 text` (soft). Chat: `primary` / `primary/10 + primary text`.
+- **Ukuran**: `sm` = `h-7 text-[11px]`, `md` = `h-9 text-xs`. Tidak ada `h-8` lagi.
+- **Label**: "Kirim WA" (varian `md`) / "WA" (varian `sm`). "Kirim Chat" / "Chat".
+- **Disabled + reason**: kalau `disabled` dan `reason` diisi, `title` tooltip = reason, cursor `not-allowed`, opacity 50. Tidak ada emoji di label; ikon Lucide `Send` / `MessageCircle`.
+- **aria-label** otomatis: "Kirim ke WhatsApp" / "Kirim ke MCM Chat".
 
-Header kartu bertambah baris status:
+### 2. Helper `saleShareGate(row)` di `src/lib/sale-share-gate.ts` (baru)
 
-- `status === "ready" && !sold_at` → tombol **Jual** hijau primer + tombol WA & Chat dalam keadaan **disabled** dengan tooltip "Catat penjualan dulu".
-- `sold_at != null` → tampilkan chip "Terjual • Lunas/Hutang/Sebagian • Rp x.xxx" + tombol WA & Chat **aktif**.
-- `status === "sent"` → tampilan riwayat seperti sekarang, tetap terkunci.
+Satu tempat untuk aturan "boleh kirim atau belum":
 
-### Dialog Jual (`SellSelfPrepDialog.tsx`, baru)
+```ts
+type SaleShareState =
+  | { enabled: true }
+  | { enabled: false; reason: string };
 
-Isi form:
+saleShareGate({ sold_at, hasPhoto, hasLocation })
+// → { enabled: false, reason: "Catat penjualan dulu (tombol Jual)" }
+// → { enabled: false, reason: "Foto paket belum ada" } (ecer)
+// → { enabled: true }
+```
 
-1. Pilih pelanggan (combobox dari `customers`).
-2. Daftar baris penjualan (minimal 1 baris):
-   - Pilih produk (dari `warehouse_items` milik user)
-   - Input gram (mode base) — tampilkan sisa stok, warning kalau kurang
-   - Input harga per base (auto-fill dari `default_sale_price_per_base` bila ada)
-   - Subtotal otomatis
-3. Total keseluruhan.
-4. Metode bayar: Lunas / Hutang / Sebagian. Sebagian → input nominal dibayar.
-5. Tombol simpan: nonaktif bila stok kurang atau data tidak lengkap.
+Semua surface memanggil helper ini; tidak ada lagi ternary `!sold_at ? … : …` inline.
 
-Submit:
+### 3. Caption builder `buildSaleShareCaption(row, kind)` di `src/lib/sale-share-caption.ts` (baru)
 
-- Untuk setiap baris → `INSERT INTO sales(user_id, item_id, qty_base, price_per_base, total_revenue, cost_at_sale, note='Tugas Siapkan Sendiri: <title>', customer_id, payment_method)`. Trigger existing memotong stok.
-- Metode Hutang / Sebagian → `INSERT INTO debts(user_id, customer_id, amount=total, paid_amount=paid_amount, note=...)` sekali untuk total tugas, lalu simpan `debt_id` di `self_prep_items.sold_debt_id`.
-- Update `self_prep_items` set `sold_at`, `sold_customer_id`, `sold_total`, `sold_paid_amount`, `sold_payment_method`, `sold_debt_id`.
-- Toast sukses, tutup dialog, `load()` refresh.
+Konsolidasi blok `💰 Penjualan` + `📍 Lokasi` + catatan hutang yang sekarang tersebar di 3 tempat. Format identik untuk WA & Chat (Chat hanya menambah metadata attachment).
 
-Kalau salah satu insert `sales` gagal (mis. stok kurang di baris ke-N), rollback baris-baris sebelumnya lewat delete sederhana lalu tampilkan error. (RPC transaksional bisa ditambah nanti; untuk MVP: cek stok semua baris di awal supaya rollback jarang perlu.)
+### 4. Retrofit callsites (audit)
 
-### WA / Chat (setelah Jual)
+- `src/components/SiapkanSendiriSection.tsx`: ganti `<button>` WA/Chat per kartu → `<WaShareButton size="sm" variant="soft" …>` + `saleShareGate({ sold_at })`. Hilangkan class hex hard-coded.
+- `src/components/ReadyPackagesPanel.tsx`: ganti tombol "💬 Kirim WA" → `<WaShareButton size="md" variant="solid" …>`. Emoji hilang, label "Kirim WA".
+- `src/components/ReadyEcerSection.tsx`:
+  - Bulk toolbar → `<WaShareButton size="sm" variant="solid">` + `<ChatShareButton size="sm" variant="solid">`.
+  - Kartu individu (per prep) → primitive yang sama, `variant="soft"`.
+- Caption di `sendWA` (ecer) dan `onSendWA` (tugas) pakai `buildSaleShareCaption`.
 
-Fungsi `onSendWA` dan `onSendChat` yang sudah ada tetap dipakai, hanya ditambah:
+Tidak menyentuh: halaman `/chat` composer (bukan alur penjualan), `/pos-kasir` (sudah punya UX sendiri), tombol WA di kontak/buku alamat (bukan share penjualan).
 
-- Guard: `if (!r.sold_at) return toast.error("Catat penjualan dulu");` (defensive; UI sudah men-disable).
-- Kaption ditambahkan blok ringkasan penjualan setelah judul + note:
-  ```
-  <title>
-  <note>
+### 5. Verifikasi
 
-  💰 Penjualan
-  • <produk> <gram>g × Rp<price> = Rp<subtotal>
-  ...
-  Total: Rp<sold_total>
-  Pembayaran: Lunas | Hutang Rp<sisa> | Dibayar Rp<paid>, sisa Rp<sisa>
-  Pelanggan: <nama>
+1. `bun run typecheck` hijau.
+2. Buka `/tugas` → tombol WA & Chat pada kartu Siapkan Sendiri: `h-7`, warna hijau/primary soft, disabled dengan tooltip "Catat penjualan dulu" saat `sold_at` null. Setelah Jual sukses → keduanya nyala, label "WA" / "Chat".
+3. Buka `/ecer` (detail judul) → bulk toolbar & kartu Ready pakai tombol yang sama; caption WA berisi blok `💰 Penjualan` + `📍 Lokasi` konsisten dengan `/tugas`.
+4. `ReadyPackagesPanel` (context lain yang pakai) → tombol WA jadi label "Kirim WA" tanpa emoji, ukuran seragam.
+5. ESLint guardrail (opsional lanjutan, tidak di plan ini): larang `wa\.me` / `#25D366` di luar `src/components/share/`.
 
-  📍 <location_url>
-  ```
-- Untuk ambil rincian baris, dialog Jual menyimpan snapshot ke `self_prep_items.sold_summary` (kolom teks yang sudah ada tapi belum dipakai untuk ini) — atau ambil ulang dari `sales` via `note ILIKE 'Tugas Siapkan Sendiri: <title>%'` + `sold_at`. Pakai `sold_summary` untuk kesederhanaan.
+## Detail teknis
 
-## File yang disentuh
+- Tidak ada perubahan DB / RLS — murni UI + helper.
+- Tidak mengubah kontrak `shareToWhatsApp` / `shareToChat` / `PickChatConversationDialog`.
+- Tidak mengubah semantik `sold_at IS NULL` (SSOT aktif tetap di `prep-active-selector`).
+- Tidak menyentuh `AutoSendConfirmDialog` (dialog konfirmasi ecer) — itu bukan tombol WA/Chat, hanya gerbang.
 
-- `supabase/migrations/xxxx_self_prep_sale_columns.sql` (baru) — tambah kolom & FK.
-- `src/components/SiapkanSendiriSection.tsx` — tombol Jual + gating WA/Chat + tampilan chip penjualan + kaption tambahan.
-- `src/components/SellSelfPrepDialog.tsx` (baru) — form dialog.
-- `src/integrations/supabase/types.ts` — regen otomatis pasca migrasi.
+## File terdampak
 
-Tidak menyentuh: /ecer, /request, dashboard, chat, kontak.
+Baru:
+- `src/components/share/SaleShareButtons.tsx`
+- `src/lib/sale-share-gate.ts`
+- `src/lib/sale-share-caption.ts`
 
-## Verifikasi
-
-1. `/tugas` → kartu tugas siap → tombol WA/Chat disabled, tombol **Jual** hijau aktif.
-2. Tap Jual → dialog muncul → pilih pelanggan, tambah 1 baris (produk + 500g @ Rp 10.000/g) → total Rp 5.000.000 → pilih Lunas → Simpan → toast sukses → dialog tutup → kartu menampilkan chip "Terjual Lunas Rp 5.000.000" dan WA/Chat menyala.
-3. Tap WA → WhatsApp terbuka dengan foto + link lokasi + ringkasan penjualan + Total + Lunas.
-4. Tap Chat → picker percakapan → kirim → pesan terkirim dengan konten yang sama.
-5. Ulangi dengan Hutang → dialog piutang tercatat di `/kontak` (piutang), kaption WA menyertakan "Hutang Rp 5.000.000".
-6. Ulangi dengan Sebagian (dibayar Rp 2.000.000) → piutang tercatat Rp 3.000.000 sisa, kaption WA menyertakan "Dibayar Rp 2.000.000, sisa Rp 3.000.000".
-7. Stok gudang berkurang sesuai gram di setiap baris.
-8. `bun run typecheck` hijau.
-
-## Yang tidak dilakukan di plan ini
-
-- Refactor /ecer dan /request (sudah benar; dialog bayar sudah ada di sana).
-- Masalah "Terima permintaan teman diarahkan ke gak jelas" — plan terpisah, butuh Anda beritahu titik masuk yang bermasalah (notifikasi push? banner? deep-link `/i/<kode>`?).
+Diedit:
+- `src/components/SiapkanSendiriSection.tsx`
+- `src/components/ReadyPackagesPanel.tsx`
+- `src/components/ReadyEcerSection.tsx`
