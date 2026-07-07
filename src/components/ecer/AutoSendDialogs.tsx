@@ -156,6 +156,30 @@ export function AutoSendConfirmDialog({
   }
   const invalidCount = invalidByPrep.size;
   const hasInvalid = invalidCount > 0;
+  // Ringkasan per produk (warehouse_item_id). Auto-send seharusnya
+  // mengunci satu produk, tapi kalau ada regressi / anomali lintas
+  // produk, breakdown ini bikin owner langsung sadar: produk utama
+  // pakai `itemName`, produk lain ditandai dengan ID pendek + label
+  // "Produk lain".
+  const expectedItem = expectedItemId ?? null;
+  const productGroups = new Map<
+    string,
+    { key: string; label: string; count: number; grams: number; isOther: boolean }
+  >();
+  for (const p of preps) {
+    const key = p.warehouse_item_id ?? "__unknown__";
+    const isOther = expectedItem != null && key !== "__unknown__" && key !== expectedItem;
+    const label = key === "__unknown__"
+      ? "Tanpa produk"
+      : isOther
+        ? `Produk lain · ${key.slice(0, 8)}`
+        : itemName;
+    const g = productGroups.get(key) ?? { key, label, count: 0, grams: 0, isOther };
+    g.count += 1;
+    g.grams += Number(p.actual_grams) || 0;
+    productGroups.set(key, g);
+  }
+  const productBreakdown = Array.from(productGroups.values());
   const searchTrim = search.trim().toLowerCase();
   const filteredPreps = searchTrim
     ? preps.filter((p) => String(p.id).toLowerCase().includes(searchTrim))
