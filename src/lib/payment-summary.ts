@@ -37,11 +37,15 @@ export function getPaymentBreakdown(
   };
 }
 
+export function formatPaymentRupiah(amount: number): string {
+  return rupiah(amount).replace(/\s+/g, "");
+}
+
 export function buildPaymentMessageLines(payment: PaymentBreakdown): string[] {
   const lines = [`Pembayaran: ${payment.label}`];
   if (payment.method === "partial") {
-    lines.push(`Dibayar: ${rupiah(payment.paid)}`);
-    lines.push(`Sisa: ${rupiah(payment.remaining)}`);
+    lines.push(`Dibayar: ${formatPaymentRupiah(payment.paid)}`);
+    lines.push(`Sisa: ${formatPaymentRupiah(payment.remaining)}`);
   }
   return lines;
 }
@@ -49,9 +53,9 @@ export function buildPaymentMessageLines(payment: PaymentBreakdown): string[] {
 export function formatSoldPaymentSummary(method: string | null | undefined, total: number, paid: number | null | undefined): string {
   const safeMethod: PaymentMethod = method === "hutang" || method === "partial" ? method : "kas";
   const breakdown = getPaymentBreakdown(safeMethod, total, Number(paid ?? 0));
-  if (breakdown.method === "hutang") return `Piutang · Sisa ${rupiah(breakdown.remaining)}`;
+  if (breakdown.method === "hutang") return `Piutang · Sisa ${formatPaymentRupiah(breakdown.remaining)}`;
   if (breakdown.method === "partial") {
-    return `Bayar sebagian · Dibayar ${rupiah(breakdown.paid)} · Sisa ${rupiah(breakdown.remaining)}`;
+    return `Bayar sebagian · Dibayar ${formatPaymentRupiah(breakdown.paid)} · Sisa ${formatPaymentRupiah(breakdown.remaining)}`;
   }
-  return `Lunas · ${rupiah(breakdown.total)}`;
+  return `Lunas · ${formatPaymentRupiah(breakdown.total)}`;
 }
