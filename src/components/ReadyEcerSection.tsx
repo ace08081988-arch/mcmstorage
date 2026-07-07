@@ -902,8 +902,8 @@ function BulkToolbar({
       </div>
       <p className="basis-full text-[11px] text-muted-foreground">
         {view === "sent"
-          ? "Tap kartu untuk centang. Aksi MCM/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
-          : "Tap kartu untuk centang. MCM/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
+          ? "Tap kartu untuk centang. Aksi WA/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
+          : "Tap kartu untuk centang. WA/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
       </p>
     </div>
   );
