@@ -292,6 +292,50 @@ function DiagnosticsPage() {
       <Card>
         <CardHeader className="pb-3">
           <CardTitle className="flex items-center gap-2 text-base">
+            <Bug className="h-4 w-4" />
+            <span>Log debug auth</span>
+            <Button size="sm" variant="ghost" className="ml-auto h-7 px-2" onClick={refreshAuthDebug} title="Muat ulang">
+              <RefreshCw className="h-3.5 w-3.5" />
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          <p className="text-[11px] text-muted-foreground">
+            Event alur login/verifikasi yang tersimpan di perangkat ini (maks 50 event). Token disamarkan otomatis.
+          </p>
+          <div className="flex gap-2">
+            <Button size="sm" variant="outline" onClick={() => void copyAuthDebug()}>
+              <Copy className="h-3.5 w-3.5" /> Salin log
+            </Button>
+            <Button size="sm" variant="outline" onClick={wipeAuthDebug}>
+              <Trash2 className="h-3.5 w-3.5" /> Bersihkan
+            </Button>
+          </div>
+          {authEvents.length === 0 ? (
+            <div className="text-xs text-muted-foreground">Belum ada event tercatat.</div>
+          ) : (
+            <div className="max-h-72 overflow-auto rounded-md border bg-muted/30 p-2">
+              <ul className="space-y-1 font-mono text-[10.5px] leading-snug">
+                {authEvents.slice().reverse().map((e, i) => (
+                  <li key={i} className={
+                    e.level === "error" ? "text-destructive"
+                    : e.level === "warn" ? "text-amber-600 dark:text-amber-400"
+                    : "text-foreground/80"
+                  }>
+                    <span className="opacity-60">{new Date(e.ts).toLocaleTimeString()} </span>
+                    <span className="font-semibold">{e.scope}:</span> {e.msg}
+                    {e.data && <span className="opacity-70"> {JSON.stringify(e.data)}</span>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
             {allOk ? (
               <><CheckCircle2 className="h-5 w-5 text-emerald-600" /> Versi paket router kompatibel</>
             ) : (
