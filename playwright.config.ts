@@ -181,7 +181,7 @@ export default defineConfig({
       // (`/lovable/visual/ready-badges-selector`), mis.
       // `ecer-send-wa-riwayat.spec.ts` — regresi UI refresh badge +
       // pindah Riwayat Terkirim setelah "Kirim WA" pada dialog pembayaran.
-      testMatch: /(ready-badges-selector|ecer-send-wa-riwayat|ecer-send-wa-partial|ecer-send-wa-message-content|ecer-send-wa-location)\.spec\.ts/,
+      testMatch: /(ready-badges-selector|ecer-send-wa-riwayat|ecer-send-wa-partial|ecer-send-wa-message-content|ecer-send-wa-location|ecer-send-wa-note-encoding)\.spec\.ts/,
       // Debug artefak per-proyek: pertahankan trace + screenshot + video
       // untuk setiap attempt yang gagal (baik run awal maupun retry).
       // Playwright `retain-on-failure` merekam trace penuh tiap test dan
