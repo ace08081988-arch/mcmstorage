@@ -167,6 +167,23 @@ export default defineConfig({
       use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
     },
     {
+      // Skenario : Batal auto-Kirim (AutoSendConfirmDialog) TIDAK PERNAH
+      //            membuka dialog verifikasi pembayaran dan tidak memicu
+      //            request pembayaran/penjualan (sales, customer_payment,
+      //            record_sale, wa.me, dsb).
+      // Harness  : /lovable/visual/auto-send-cancel (publik, no-auth) —
+      //            memakai AutoSendConfirmDialog + AutoSendCancelReasonDialog
+      //            yang sama dengan halaman /ecer, jadi non-tautological.
+      // Tujuan   : Regresi guard supaya jalur Batal tidak pernah bocor
+      //            ke pembayaran (mis. someone wiring setSendOpen(true)
+      //            ke onCancel) dan tidak ada RPC penjualan / share WA
+      //            yang menyelinap sebelum owner memberi konfirmasi.
+      name: "auto-send-cancel-no-payment-e2e",
+      testDir: "./tests/e2e",
+      testMatch: /ecer-auto-send-cancel-no-payment\.spec\.ts/,
+      use: { ...devices["Pixel 5"], viewport: { width: 411, height: 893 } },
+    },
+    {
       // Skenario : Badge "Aktif" & "Terkirim" di surface Request + Ecer
       //            selalu konsisten dengan angka helper selector
       //            (`countActiveByTitle` + `filterSentPreps`) setelah
