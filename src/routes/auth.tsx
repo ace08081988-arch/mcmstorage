@@ -168,18 +168,6 @@ function AuthPage() {
         toast.error("Konfirmasi kata sandi tidak cocok");
         return;
       }
-      if (!TURNSTILE_SITE_KEY && !devBypass) {
-        toast.error(
-          "Verifikasi manusia (CAPTCHA) belum dikonfigurasi. Hubungi admin.",
-        );
-        return;
-      }
-      if (!turnstileToken && !devBypass) {
-        toast.error(
-          "Selesaikan verifikasi CAPTCHA di bawah sebelum menekan Daftar.",
-        );
-        return;
-      }
       if (rateLimitedUntil > Date.now()) {
         const mins = Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000));
         toast.error(`Masih dalam periode limit. Coba lagi ~${mins} menit.`);
@@ -192,7 +180,6 @@ function AuthPage() {
           data: {
             email,
             password,
-            turnstileToken: turnstileToken ?? DEV_TURNSTILE_TOKEN,
             chatOnly: intent === "chat",
           },
         });
@@ -205,9 +192,6 @@ function AuthPage() {
         return;
       }
       setLoading(false);
-      // Reset token — Turnstile token hanya boleh dipakai sekali.
-      setTurnstileToken(null);
-      try { window.turnstile?.reset(); } catch { /* ignore */ }
 
       if (!result.ok) {
         switch (result.code) {
