@@ -106,33 +106,6 @@ function AuthPage() {
   const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number>(0);
   const secureSignUpFn = useServerFn(secureSignUp);
-  const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
-  const [widgetKey, setWidgetKey] = useState(0);
-  const devBypass = isTurnstileDevBypass();
-  const { siteKey: TURNSTILE_SITE_KEY } = useTurnstileSiteKey();
-  // Auto-isi token bypass ketika berjalan di localhost dev supaya alur
-  // pendaftaran tidak menunggu widget Turnstile.
-  useEffect(() => {
-    if (devBypass && !turnstileToken) setTurnstileToken(DEV_TURNSTILE_TOKEN);
-  }, [devBypass, turnstileToken]);
-
-  const onTurnstileToken = useCallback((t: string | null) => {
-    setTurnstileToken(t);
-    if (t) setTurnstileError(null);
-  }, []);
-  const onTurnstileError = useCallback((code: string) => {
-    setTurnstileError(code);
-  }, []);
-  const retryTurnstile = useCallback(() => {
-    setTurnstileError(null);
-    setTurnstileToken(null);
-    if (turnstileRef.current) {
-      turnstileRef.current.reset();
-    } else {
-      // Widget belum sempat mount (script gagal load) → remount total.
-      setWidgetKey((k) => k + 1);
-    }
-  }, []);
 
   // Persist perubahan intent/mode/email — sync juga antar tab lewat StorageEvent.
   useEffect(() => {
