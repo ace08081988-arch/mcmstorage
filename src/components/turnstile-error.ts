@@ -53,6 +53,15 @@ export function explainTurnstileError(
       hint: "Tekan tombol Coba lagi untuk memuat ulang widget CAPTCHA.",
     };
   }
+  if (code === "400020") {
+    return {
+      code,
+      message: `Konfigurasi Turnstile tidak cocok dengan domain ${host || "saat ini"}.`,
+      adminAction: true,
+      hint:
+        "Admin: pastikan Site Key di /admin/turnstile sesuai widget Cloudflare, dan hostname ini sudah ada di Hostname Management widget tersebut. Ini bukan gangguan jaringan.",
+    };
+  }
   if (code.startsWith("400")) {
     return {
       code,
