@@ -1136,8 +1136,22 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
       // supaya owner memeriksa manual. Ini seharusnya tidak pernah terjadi
       // (query sudah di-scope), tapi kita gagal aman.
       autoSendFiredRef.current = true;
+      // Sebutkan kotak mana yang tidak valid: tampilkan alasan
+      // (judul lain / produk lain) + ID pendek supaya owner bisa
+      // menelusuri langsung. Batasi 5 kotak agar toast tetap terbaca.
+      const details = mismatched.slice(0, 5).map((p) => {
+        const shortId = String(p.id).slice(0, 8);
+        const reasons: string[] = [];
+        if (p.title_id !== title.id) reasons.push("judul lain");
+        if (p.warehouse_item_id != null && p.warehouse_item_id !== item.id)
+          reasons.push("produk lain");
+        return `#${shortId} (${reasons.join(" & ") || "tidak cocok"})`;
+      });
+      const extra =
+        mismatched.length > 5 ? ` +${mismatched.length - 5} lainnya` : "";
       toast.error(
-        `Batal auto-Kirim: terdeteksi ${mismatched.length} kotak lintas judul/produk. Pilih manual.`,
+        `Batal auto-Kirim: ${mismatched.length} kotak tidak valid. Pilih manual.`,
+        { description: `Kotak: ${details.join(", ")}${extra}` },
       );
       onAutoSendConsumed?.();
       return;
