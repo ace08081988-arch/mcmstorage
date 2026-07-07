@@ -153,6 +153,11 @@ function DeviceVerifyPage() {
       markDeviceTrustedLocal(userIdRef.current, deviceHashRef.current);
       toast.success("Device terverifikasi");
       navigate({ to: safeTarget, replace: true });
+      window.setTimeout(() => {
+        if (window.location.pathname === "/device-verify") {
+          window.location.assign(safeTarget);
+        }
+      }, 600);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Verifikasi gagal");
     } finally {

@@ -223,18 +223,59 @@ export const verifyDeviceOtp = createServerFn({ method: "POST" })
       .update({ consumed_at: new Date().toISOString() })
       .eq("id", ch.id);
 
-    // Upsert device trusted
-    await supabaseAdmin.from("user_devices").upsert(
+    // Upsert device trusted. Jangan abaikan error di sini: sebelumnya OTP bisa
+    // dianggap sukses walau penyimpanan device gagal (mis. batas 1 device pada
+    // paket gratis), lalu user dipantulkan lagi ke /device-verify tanpa akhir.
+    const trustedAt = new Date().toISOString();
+    const trustedPayload = {
+      user_id: userId,
+      device_hash: fullHash,
+      last_ip: ip,
+      last_user_agent: ua,
+      trusted_at: trustedAt,
+      last_seen_at: trustedAt,
+    };
+    const { error: upsertErr } = await supabaseAdmin.from("user_devices").upsert(
       {
-        user_id: userId,
-        device_hash: fullHash,
-        last_ip: ip,
-        last_user_agent: ua,
-        trusted_at: new Date().toISOString(),
-        last_seen_at: new Date().toISOString(),
+        ...trustedPayload,
       },
       { onConflict: "user_id,device_hash" },
     );
+
+    if (upsertErr) {
+      const isDeviceCap = /pro_required:user_devices/i.test(upsertErr.message ?? "");
+      if (!isDeviceCap) {
+        throw new Error("Kode benar, tapi device gagal disimpan. Coba lagi.");
+      }
+
+      // Paket gratis hanya boleh punya 1 device terpercaya. Setelah OTP benar,
+      // ganti device lama dengan device ini supaya login tidak terkunci oleh
+      // fingerprint yang berubah / install APK baru.
+      const { data: existingDevices, error: existingErr } = await supabaseAdmin
+        .from("user_devices")
+        .select("id")
+        .eq("user_id", userId)
+        .order("last_seen_at", { ascending: true })
+        .limit(1);
+      const replaceId = existingDevices?.[0]?.id;
+      if (existingErr || !replaceId) {
+        throw new Error("Kode benar, tapi device gagal diganti. Coba lagi.");
+      }
+      const { error: replaceErr } = await supabaseAdmin
+        .from("user_devices")
+        .update({
+          device_hash: fullHash,
+          last_ip: ip,
+          last_user_agent: ua,
+          trusted_at: trustedAt,
+          last_seen_at: trustedAt,
+        })
+        .eq("id", replaceId)
+        .eq("user_id", userId);
+      if (replaceErr) {
+        throw new Error("Kode benar, tapi device gagal diganti. Coba lagi.");
+      }
+    }
 
     return { ok: true as const };
   });
