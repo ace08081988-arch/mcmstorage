@@ -73,7 +73,23 @@ export const secureSignUp = createServerFn({ method: "POST" })
     const ip = clientIpFromRequest(req);
     const userAgent = (req.headers.get("user-agent") ?? "").slice(0, 512) || null;
 
-    const turnstileSecret = process.env.TURNSTILE_SECRET_KEY;
+    // Baca secret dari DB dulu (agar admin bisa mengganti runtime lewat halaman
+    // /admin/turnstile), fallback ke env TURNSTILE_SECRET_KEY.
+    let turnstileSecret = "";
+    try {
+      const { supabaseAdmin: adminForSecret } = await import(
+        "@/integrations/supabase/client.server"
+      );
+      const { data: cfg } = await adminForSecret
+        .from("turnstile_config")
+        .select("secret_key")
+        .eq("id", 1)
+        .maybeSingle();
+      turnstileSecret = ((cfg?.secret_key as string | undefined) ?? "").trim();
+    } catch {
+      /* fall through to env */
+    }
+    if (!turnstileSecret) turnstileSecret = process.env.TURNSTILE_SECRET_KEY ?? "";
     if (!turnstileSecret) {
       // Kunci belum dipasang di lingkungan server — jangan izinkan pendaftaran
       // sampai admin mengatur TURNSTILE_SECRET_KEY.
