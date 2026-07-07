@@ -42,27 +42,140 @@ function clientIpFromRequest(req: Request): string {
   return "0.0.0.0";
 }
 
-async function verifyTurnstile(token: string, ip: string, secret: string): Promise<
-  { ok: true } | { ok: false; codes: string[] }
-> {
+/**
+ * Mask email untuk log: "ada@contoh.com" → "a**@contoh.com". Cukup untuk
+ * mengorelasikan baris log tanpa membocorkan PII di stdout Worker.
+ */
+function maskEmail(email: string): string {
+  const at = email.indexOf("@");
+  if (at <= 0) return "***";
+  const local = email.slice(0, at);
+  const domain = email.slice(at);
+  const head = local.slice(0, 1);
+  return head + "*".repeat(Math.max(1, local.length - 1)) + domain;
+}
+
+/** Pesan diagnostik ringkas untuk error-code Turnstile — dipakai admin
+ * saat baca log agar tidak harus buka dokumentasi Cloudflare. */
+const TURNSTILE_HINTS: Record<string, string> = {
+  "missing-input-secret": "Server tidak mengirim secret.",
+  "invalid-input-secret":
+    "Secret key salah/tidak dikenal — periksa /admin/turnstile.",
+  "missing-input-response": "Token dari client kosong.",
+  "invalid-input-response":
+    "Token dari client tidak valid atau kedaluwarsa.",
+  "bad-request": "Request malformed ke Cloudflare.",
+  "timeout-or-duplicate":
+    "Token sudah dipakai/kedaluwarsa (>5 menit sejak diterbitkan).",
+  "internal-error": "Sisi Cloudflare bermasalah — coba lagi.",
+  "invalid-hostname":
+    "Hostname request belum di-allowlist di widget Turnstile.",
+};
+
+export type TurnstileVerifyResult =
+  | { ok: true; hostname?: string; action?: string; challengeTs?: string }
+  | {
+      ok: false;
+      codes: string[];
+      httpStatus?: number;
+      hostname?: string;
+      action?: string;
+      challengeTs?: string;
+      durationMs: number;
+    };
+
+async function verifyTurnstile(
+  token: string,
+  ip: string,
+  secret: string,
+  ctx: { email: string; userAgent: string | null; secretSource: string },
+): Promise<TurnstileVerifyResult> {
   const body = new URLSearchParams();
   body.set("secret", secret);
   body.set("response", token);
   if (ip) body.set("remoteip", ip);
 
+  const startedAt = Date.now();
   try {
     const res = await fetch(
       "https://challenges.cloudflare.com/turnstile/v0/siteverify",
       { method: "POST", body },
     );
-    const json = (await res.json()) as {
-      success: boolean;
+    const durationMs = Date.now() - startedAt;
+    const json = (await res.json().catch(() => ({}))) as {
+      success?: boolean;
       "error-codes"?: string[];
+      hostname?: string;
+      action?: string;
+      challenge_ts?: string;
+      messages?: string[];
     };
-    if (json.success) return { ok: true };
-    return { ok: false, codes: json["error-codes"] ?? ["unknown"] };
-  } catch {
-    return { ok: false, codes: ["network_error"] };
+    const codes = json["error-codes"] ?? [];
+    if (json.success) {
+      // Log ringkas untuk keperluan telemetri — level info supaya bisa
+      // difilter dari kegagalan.
+      console.info(
+        "[turnstile.verify] ok",
+        JSON.stringify({
+          ip,
+          email: maskEmail(ctx.email),
+          hostname: json.hostname ?? null,
+          action: json.action ?? null,
+          challenge_ts: json.challenge_ts ?? null,
+          secret_source: ctx.secretSource,
+          duration_ms: durationMs,
+          http_status: res.status,
+        }),
+      );
+      return {
+        ok: true,
+        hostname: json.hostname,
+        action: json.action,
+        challengeTs: json.challenge_ts,
+      };
+    }
+    const hints = codes
+      .map((c) => TURNSTILE_HINTS[c])
+      .filter((v): v is string => Boolean(v));
+    console.error(
+      "[turnstile.verify] failed",
+      JSON.stringify({
+        ip,
+        email: maskEmail(ctx.email),
+        error_codes: codes.length ? codes : ["unknown"],
+        hint: hints.join(" ") || null,
+        hostname: json.hostname ?? null,
+        action: json.action ?? null,
+        challenge_ts: json.challenge_ts ?? null,
+        messages: json.messages ?? null,
+        secret_source: ctx.secretSource,
+        duration_ms: durationMs,
+        http_status: res.status,
+        user_agent: ctx.userAgent,
+      }),
+    );
+    return {
+      ok: false,
+      codes: codes.length ? codes : ["unknown"],
+      httpStatus: res.status,
+      hostname: json.hostname,
+      action: json.action,
+      challengeTs: json.challenge_ts,
+      durationMs,
+    };
+  } catch (err) {
+    const durationMs = Date.now() - startedAt;
+    console.error(
+      "[turnstile.verify] network_error",
+      JSON.stringify({
+        ip,
+        email: maskEmail(ctx.email),
+        error: err instanceof Error ? err.message : String(err),
+        secret_source: ctx.secretSource,
+        duration_ms: durationMs,
+      }),
+    );
+    return { ok: false, codes: ["network_error"], durationMs };
   }
 }
 
