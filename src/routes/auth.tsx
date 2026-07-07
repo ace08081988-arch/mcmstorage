@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,15 +9,8 @@ import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { useOrgName } from "@/lib/org-name";
-import {
-  TurnstileWidget,
-  type TurnstileWidgetHandle,
-} from "@/components/TurnstileWidget";
-import { explainTurnstileError } from "@/components/turnstile-error";
 import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
-import { DEV_TURNSTILE_TOKEN, isTurnstileDevBypass } from "@/lib/turnstile-dev";
-import { useTurnstileSiteKey } from "@/hooks/use-turnstile-site-key";
 
 function AuthBrand() {
   const { full, logo } = useOrgName();
