@@ -1152,6 +1152,16 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     autoSendFiredRef.current = true;
     setSelectionMode(true);
     setSelected(new Set(activeNow.map((p) => p.id)));
+    // Ringkasan pra-dialog: perlihatkan item + judul + jumlah kotak + total
+    // gram yang akan dikirim, supaya owner tahu persis apa yang tercakup
+    // sebelum dialog verifikasi pembayaran terbuka.
+    const totalGrams = activeNow.reduce(
+      (acc, p) => acc + (Number(p.actual_grams) || 0),
+      0,
+    );
+    toast.message(`Kirim ${activeNow.length} kotak · ${item.name}`, {
+      description: `Judul: ${title.name} · Total ${totalGrams} ${title.unit_label || "g"}`,
+    });
     setSendOpen(true);
     onAutoSendConsumed?.();
   }, [autoSend, loading, preps, title.id, item.id, onAutoSendConsumed]);
