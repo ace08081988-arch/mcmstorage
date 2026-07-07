@@ -25,8 +25,6 @@ export type SecureSignUpResult =
 const inputSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(255),
   password: z.string().min(8).max(200),
-  // Turnstile dihapus — field diterima tapi diabaikan (kompat pemanggil lama).
-  turnstileToken: z.string().max(4096).optional(),
   chatOnly: z.boolean().optional().default(false),
 });
 
