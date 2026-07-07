@@ -43,6 +43,27 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     expect(src).toMatch(/setAutoSendSummary\(/);
     // Banner ringkasan tersedia di JSX Riwayat Terkirim.
     expect(src).toMatch(/data-testid=["']auto-send-summary["']/);
+    // Alasan pembatalan direkam: dialog reason + banner cancel + finalize
+    // menyertakan note JSON berisi reason & summary supaya audit bisa
+    // ditelusuri (bukan hanya token "confirm_modal"/"closed_send_dialog").
+    expect(src).toMatch(/<AutoSendCancelReasonDialog/);
+    expect(src).toMatch(/data-testid=["']auto-send-cancel-reason["']/);
+    expect(src).toMatch(/data-testid=["']auto-send-cancel-reason-group["']/);
+    expect(src).toMatch(/data-testid=["']auto-send-cancel-detail["']/);
+    expect(src).toMatch(/data-testid=["']auto-send-cancel-submit["']/);
+    expect(src).toMatch(/data-testid=["']auto-send-cancel-summary["']/);
+    expect(src).toMatch(/setAutoSendCancel\(/);
+    expect(src).toMatch(/setAutoSendCancelSummary\(/);
+    // Note yang dikirim ke finalizeAutoSend WAJIB JSON berisi reason,
+    // source, dan ringkasan seleksi — bukan sekadar string bebas.
+    expect(src).toMatch(/JSON\.stringify\(\{[\s\S]{0,200}?reason[\s\S]{0,200}?source[\s\S]{0,200}?summary/);
+    // Kedua path cancel (confirm modal & closed_send_dialog) harus lewat
+    // dialog alasan, bukan finalize langsung.
+    expect(src).toMatch(/source:\s*["']confirm_modal["']/);
+    expect(src).toMatch(/source:\s*["']closed_send_dialog["']/);
+    // Fallback: kalau owner menutup dialog reason tanpa memilih, tetap
+    // finalize dengan alasan "tidak_dijelaskan".
+    expect(src).toMatch(/tidak_dijelaskan/);
   });
 
   it("ReadyEcerSection: tombol 'Kirim ke pembeli' → <Link to=/ecer …> dengan send:\"1\"", () => {
