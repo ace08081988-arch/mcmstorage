@@ -623,16 +623,17 @@ function AuthPage() {
               Lupa kata sandi?
             </button>
           )}
-          <button
-            type="button"
-            onClick={resendVerification}
-            disabled={loading || resendCooldown > 0}
-            className="w-full text-center text-[11px] text-muted-foreground hover:underline disabled:opacity-50"
-          >
-            {resendCooldown > 0
-              ? `Kirim ulang email verifikasi (${resendCooldown}s)`
-              : "Kirim ulang email verifikasi"}
-          </button>
+          <div className="flex items-center justify-center gap-1 text-[12px]">
+            <span className="text-muted-foreground">Belum terima email verifikasi?</span>
+            <button
+              type="button"
+              onClick={resendVerification}
+              disabled={loading || resendCooldown > 0}
+              className="font-medium text-primary hover:underline disabled:opacity-50"
+            >
+              {resendCooldown > 0 ? `Kirim ulang (${resendCooldown}s)` : "Kirim ulang"}
+            </button>
+          </div>
           <p className="text-center text-[11px] text-muted-foreground">
             {mode === "login"
               ? "Belum punya akun? Pilih tab Daftar di atas."
