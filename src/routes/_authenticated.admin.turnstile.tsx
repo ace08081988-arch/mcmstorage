@@ -3,7 +3,16 @@ import { useEffect, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { ArrowLeft, ShieldAlert, Save, Loader2, KeyRound } from "lucide-react";
+import {
+  ArrowLeft,
+  ShieldAlert,
+  Save,
+  Loader2,
+  KeyRound,
+  CheckCircle2,
+  XCircle,
+  AlertTriangle,
+} from "lucide-react";
 import { useAdminStatus } from "@/hooks/use-is-admin";
 import {
   getTurnstileConfig,
@@ -25,6 +34,34 @@ export const Route = createFileRoute("/_authenticated/admin/turnstile")({
   }),
   component: TurnstileSettingsPage,
 });
+
+function StatusRow({
+  ok,
+  warn,
+  label,
+  detail,
+}: {
+  ok: boolean;
+  warn?: boolean;
+  label: string;
+  detail: string;
+}) {
+  const Icon = ok ? CheckCircle2 : warn ? AlertTriangle : XCircle;
+  const color = ok
+    ? "text-emerald-600 dark:text-emerald-400"
+    : warn
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-destructive";
+  return (
+    <div className="flex items-start gap-2 text-sm">
+      <Icon className={"h-4 w-4 mt-0.5 shrink-0 " + color} />
+      <div className="min-w-0">
+        <div className="font-medium">{label}</div>
+        <div className="text-muted-foreground break-all">{detail}</div>
+      </div>
+    </div>
+  );
+}
 
 function TurnstileSettingsPage() {
   const { isAdmin, isCheckingAdmin } = useAdminStatus();
@@ -141,6 +178,20 @@ function TurnstileSettingsPage() {
 
   const cfg = cfgQuery.data;
 
+  // Hostname yang WAJIB ada di allowlist widget Turnstile Cloudflare.
+  // Kalau hostname aktif tidak ada di daftar ini, widget akan gagal
+  // memuat / verifikasi ditolak dengan `invalid-hostname`.
+  const EXPECTED_HOSTNAMES = [
+    "mcmstorage.biz",
+    "www.mcmstorage.biz",
+    "mcmstorage.lovable.app",
+  ];
+  const currentHost =
+    typeof window !== "undefined" ? window.location.hostname : "";
+  const isLovablePreview = /\.lovable\.app$/.test(currentHost);
+  const hostInAllowlist =
+    EXPECTED_HOSTNAMES.includes(currentHost) || isLovablePreview;
+
   return (
     <div className="p-4 md:p-6 max-w-2xl mx-auto space-y-4">
       <div className="flex items-center gap-2">
@@ -171,6 +222,82 @@ function TurnstileSettingsPage() {
         <div className="text-sm text-destructive">
           Gagal memuat: {(cfgQuery.error as Error).message}
         </div>
+      ) : cfg ? (
+        <section
+          aria-label="Status konfigurasi Turnstile"
+          className="rounded-lg border bg-card p-4 space-y-3"
+        >
+          <div className="text-sm font-medium">Status konfigurasi</div>
+
+          <StatusRow
+            ok={Boolean(cfg.site_key)}
+            label="Site Key"
+            detail={
+              cfg.site_key
+                ? cfg.site_key.slice(0, 8) + "…" + cfg.site_key.slice(-4)
+                : "Belum diatur — isi field di bawah lalu Simpan."
+            }
+          />
+
+          <StatusRow
+            ok={cfg.has_secret}
+            label="Secret Key"
+            detail={
+              cfg.has_secret
+                ? "Tersimpan di database (" + cfg.secret_key_masked + ")."
+                : "Belum tersimpan. Verifikasi Turnstile TIDAK akan jalan sampai secret diisi."
+            }
+          />
+
+          <StatusRow
+            ok={hostInAllowlist}
+            warn={!hostInAllowlist}
+            label="Hostname aktif"
+            detail={
+              currentHost
+                ? hostInAllowlist
+                  ? currentHost +
+                    " — cocok dengan daftar yang seharusnya di-allowlist."
+                  : currentHost +
+                    " — TIDAK termasuk daftar yang seharusnya di-allowlist. Tambahkan di dashboard Cloudflare."
+                : "(tidak tersedia)"
+            }
+          />
+
+          <div className="rounded-md bg-muted/40 p-3 text-xs space-y-1">
+            <div className="font-medium text-foreground">
+              Hostname yang harus ada di allowlist widget Cloudflare:
+            </div>
+            <ul className="list-disc pl-5 text-muted-foreground space-y-0.5">
+              {EXPECTED_HOSTNAMES.map((h) => (
+                <li key={h}>
+                  <code>{h}</code>
+                  {h === currentHost && (
+                    <span className="ml-2 text-emerald-600 dark:text-emerald-400">
+                      ← aktif
+                    </span>
+                  )}
+                </li>
+              ))}
+              <li>
+                <code>*.lovable.app</code> (preview editor)
+              </li>
+            </ul>
+            <div className="text-muted-foreground pt-1">
+              Catatan: daftar ini <b>tidak</b> bisa dibaca via API — verifikasi
+              manual di Cloudflare Dashboard → Turnstile → widget → Hostname
+              Management. Gunakan tombol <b>Uji secret</b> di bawah untuk
+              memastikan secret key valid.
+            </div>
+          </div>
+
+          {cfg.updated_at && (
+            <div className="text-xs text-muted-foreground">
+              Terakhir diperbarui:{" "}
+              {new Date(cfg.updated_at).toLocaleString("id-ID")}
+            </div>
+          )}
+        </section>
       ) : null}
 
       <form onSubmit={onSave} className="space-y-4 rounded-lg border p-4 bg-card">
