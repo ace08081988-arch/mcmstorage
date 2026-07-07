@@ -190,6 +190,24 @@ export function AutoSendConfirmDialog({
     productGroups.set(key, g);
   }
   const productBreakdown = Array.from(productGroups.values());
+  // Ringkasan per lokasi/link pengambilan. Owner sering mengirim satu
+  // batch yang tersebar di beberapa laci/folder — grouping ini membantu
+  // memastikan distribusi kotak & gram per lokasi sudah benar sebelum
+  // lanjut ke pembayaran. Kotak tanpa `location_url` dikumpulkan
+  // sebagai "Tanpa lokasi" agar tetap terlihat.
+  const locationGroups = new Map<
+    string,
+    { key: string; url: string | null; count: number; grams: number }
+  >();
+  for (const p of preps) {
+    const url = (p.location_url ?? "").trim() || null;
+    const key = url ?? "__no_location__";
+    const g = locationGroups.get(key) ?? { key, url, count: 0, grams: 0 };
+    g.count += 1;
+    g.grams += Number(p.actual_grams) || 0;
+    locationGroups.set(key, g);
+  }
+  const locationBreakdown = Array.from(locationGroups.values());
   const searchTrim = search.trim().toLowerCase();
   const filteredPreps = searchTrim
     ? preps.filter((p) => String(p.id).toLowerCase().includes(searchTrim))
