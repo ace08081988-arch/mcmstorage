@@ -542,6 +542,31 @@ export function AutoSendConfirmDialog({
             )}
           </CollapsibleContent>
         </Collapsible>
+        <div
+          data-testid="auto-send-grand-total"
+          className="mt-2 flex items-center justify-between gap-2 rounded-md border border-primary/30 bg-primary/5 px-3 py-2 text-sm"
+        >
+          <div className="flex flex-col text-[11px] text-muted-foreground">
+            <span className="font-medium uppercase tracking-wide">
+              Total keseluruhan
+            </span>
+            <span className="tabular-nums text-foreground/80">
+              {preps.length} kotak · {totalGrams} {unit}
+            </span>
+          </div>
+          <div
+            className="text-right font-bold tabular-nums text-primary"
+            data-testid="auto-send-grand-total-price"
+          >
+            {unitPrice > 0 ? (
+              rupiah(totalPrice)
+            ) : (
+              <span className="text-xs font-normal text-muted-foreground">
+                Harga diisi di langkah pembayaran
+              </span>
+            )}
+          </div>
+        </div>
         <AlertDialogFooter>
           <AlertDialogCancel
             onClick={onCancel}
