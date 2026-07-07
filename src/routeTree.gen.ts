@@ -111,6 +111,7 @@ import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_
 import { Route as LovableEmailTransactionalSendRouteImport } from './routes/lovable/email/transactional/send'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
+import { Route as ApiPublicHooksShipmentStatusChangeRouteImport } from './routes/api/public/hooks/shipment-status-change'
 import { Route as ApiPublicHooksSecurityScanDailyRouteImport } from './routes/api/public/hooks/security-scan-daily'
 import { Route as ApiPublicHooksLogPortalErrorRouteImport } from './routes/api/public/hooks/log-portal-error'
 import { Route as ApiPublicHooksEmailQueueMonitorRouteImport } from './routes/api/public/hooks/email-queue-monitor'
@@ -678,6 +679,12 @@ const LovableEmailQueueProcessRoute =
     path: '/lovable/email/queue/process',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ApiPublicHooksShipmentStatusChangeRoute =
+  ApiPublicHooksShipmentStatusChangeRouteImport.update({
+    id: '/api/public/hooks/shipment-status-change',
+    path: '/api/public/hooks/shipment-status-change',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksSecurityScanDailyRoute =
   ApiPublicHooksSecurityScanDailyRouteImport.update({
     id: '/api/public/hooks/security-scan-daily',
@@ -812,6 +819,7 @@ export interface FileRoutesByFullPath {
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
+  '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -918,6 +926,7 @@ export interface FileRoutesByTo {
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
+  '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -1028,6 +1037,7 @@ export interface FileRoutesById {
   '/api/public/hooks/email-queue-monitor': typeof ApiPublicHooksEmailQueueMonitorRoute
   '/api/public/hooks/log-portal-error': typeof ApiPublicHooksLogPortalErrorRoute
   '/api/public/hooks/security-scan-daily': typeof ApiPublicHooksSecurityScanDailyRoute
+  '/api/public/hooks/shipment-status-change': typeof ApiPublicHooksShipmentStatusChangeRoute
   '/lovable/email/queue/process': typeof LovableEmailQueueProcessRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
   '/lovable/email/transactional/send': typeof LovableEmailTransactionalSendRoute
@@ -1138,6 +1148,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/security-scan-daily'
+    | '/api/public/hooks/shipment-status-change'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1244,6 +1255,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/security-scan-daily'
+    | '/api/public/hooks/shipment-status-change'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1353,6 +1365,7 @@ export interface FileRouteTypes {
     | '/api/public/hooks/email-queue-monitor'
     | '/api/public/hooks/log-portal-error'
     | '/api/public/hooks/security-scan-daily'
+    | '/api/public/hooks/shipment-status-change'
     | '/lovable/email/queue/process'
     | '/lovable/email/transactional/preview'
     | '/lovable/email/transactional/send'
@@ -1403,6 +1416,7 @@ export interface RootRouteChildren {
   ApiPublicHooksEmailQueueMonitorRoute: typeof ApiPublicHooksEmailQueueMonitorRoute
   ApiPublicHooksLogPortalErrorRoute: typeof ApiPublicHooksLogPortalErrorRoute
   ApiPublicHooksSecurityScanDailyRoute: typeof ApiPublicHooksSecurityScanDailyRoute
+  ApiPublicHooksShipmentStatusChangeRoute: typeof ApiPublicHooksShipmentStatusChangeRoute
   LovableEmailQueueProcessRoute: typeof LovableEmailQueueProcessRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
   LovableEmailTransactionalSendRoute: typeof LovableEmailTransactionalSendRoute
@@ -2124,6 +2138,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailQueueProcessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/shipment-status-change': {
+      id: '/api/public/hooks/shipment-status-change'
+      path: '/api/public/hooks/shipment-status-change'
+      fullPath: '/api/public/hooks/shipment-status-change'
+      preLoaderRoute: typeof ApiPublicHooksShipmentStatusChangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/security-scan-daily': {
       id: '/api/public/hooks/security-scan-daily'
       path: '/api/public/hooks/security-scan-daily'
@@ -2407,6 +2428,8 @@ const rootRouteChildren: RootRouteChildren = {
   ApiPublicHooksEmailQueueMonitorRoute: ApiPublicHooksEmailQueueMonitorRoute,
   ApiPublicHooksLogPortalErrorRoute: ApiPublicHooksLogPortalErrorRoute,
   ApiPublicHooksSecurityScanDailyRoute: ApiPublicHooksSecurityScanDailyRoute,
+  ApiPublicHooksShipmentStatusChangeRoute:
+    ApiPublicHooksShipmentStatusChangeRoute,
   LovableEmailQueueProcessRoute: LovableEmailQueueProcessRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
   LovableEmailTransactionalSendRoute: LovableEmailTransactionalSendRoute,
@@ -2414,13 +2437,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
