@@ -85,7 +85,11 @@ export const updateTurnstileConfig = createServerFn({ method: "POST" })
     if (!isAdmin.data) throw new Error("Forbidden");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const patch: Record<string, unknown> = {
+    const patch: {
+      site_key: string;
+      updated_by: string;
+      secret_key?: string;
+    } = {
       site_key: data.site_key,
       updated_by: context.userId,
     };
