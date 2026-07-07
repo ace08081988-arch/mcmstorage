@@ -34,9 +34,38 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { ChevronDown, Trash2, Pencil, Check, X, Loader2 } from "lucide-react";
+import { ChevronDown, Trash2, Pencil, Check, X, Loader2, AlertTriangle } from "lucide-react";
 import type { EcerTitle, EcerPreparation } from "@/lib/ecer";
 import { rupiah } from "@/lib/stock-format";
+
+/**
+ * Menghitung daftar alasan mengapa satu kotak tidak valid untuk dikirim.
+ * Kembali array kosong = kotak valid.
+ *
+ * Kontrak (jangan diubah tanpa update guardrail):
+ *   • Berat tidak boleh <= 0 (baik akibat data lama maupun sabotase edit).
+ *   • Kotak yang sudah `sold_at` tidak boleh masuk auto-send.
+ *   • Judul harus cocok — kalau tidak, ini kotak dari judul lain.
+ *   • Produk harus cocok — kalau tidak, ini kotak dari produk lain.
+ */
+export function autoSendPrepInvalidReasons(
+  p: EcerPreparation,
+  opts: { expectedTitleId?: string | null; expectedItemId?: string | null },
+): string[] {
+  const reasons: string[] = [];
+  const grams = Number(p.actual_grams);
+  if (!Number.isFinite(grams) || grams <= 0) reasons.push("Berat 0 / tidak valid");
+  if (p.sold_at) reasons.push("Sudah terjual");
+  if (opts.expectedTitleId && p.title_id !== opts.expectedTitleId)
+    reasons.push("Judul lain");
+  if (
+    opts.expectedItemId &&
+    p.warehouse_item_id != null &&
+    p.warehouse_item_id !== opts.expectedItemId
+  )
+    reasons.push("Produk lain");
+  return reasons;
+}
 
 export function AutoSendConfirmDialog({
   state,
@@ -47,6 +76,8 @@ export function AutoSendConfirmDialog({
   onRemove,
   onUpdateGrams,
   pricePerBase,
+  expectedItemId,
+  expectedTitleId,
 }: {
   state: { preps: EcerPreparation[] } | null;
   title: EcerTitle;
@@ -72,6 +103,14 @@ export function AutoSendConfirmDialog({
    * Bernilai `null`/`undefined`/`0` → baris estimasi disembunyikan.
    */
   pricePerBase?: number | null;
+  /**
+   * Konteks validasi. Kalau diberikan, setiap kotak diperiksa terhadap
+   * `title_id`/`warehouse_item_id` ini; kotak yang tidak cocok disorot
+   * merah dengan alasan, dan tombol "Lanjut ke pembayaran" di-disable
+   * sampai semua kotak valid.
+   */
+  expectedItemId?: string | null;
+  expectedTitleId?: string | null;
 }) {
   // Default terbuka: owner harus bisa memverifikasi kotak (produk,
   // judul, jumlah, berat per kotak) TANPA klik tambahan.
@@ -101,6 +140,17 @@ export function AutoSendConfirmDialog({
   );
   const unitPrice = Number(pricePerBase) || 0;
   const totalPrice = unitPrice > 0 ? totalGrams * unitPrice : 0;
+  const validationOpts = {
+    expectedTitleId: expectedTitleId ?? title.id,
+    expectedItemId: expectedItemId ?? null,
+  };
+  const invalidByPrep = new Map<string, string[]>();
+  for (const p of preps) {
+    const reasons = autoSendPrepInvalidReasons(p, validationOpts);
+    if (reasons.length > 0) invalidByPrep.set(p.id, reasons);
+  }
+  const invalidCount = invalidByPrep.size;
+  const hasInvalid = invalidCount > 0;
   const canMutate = !!onRemove || !!onUpdateGrams;
   const startEdit = (p: EcerPreparation) => {
     setEditingId(p.id);
@@ -165,6 +215,44 @@ export function AutoSendConfirmDialog({
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
+        {hasInvalid && (
+          <div
+            role="alert"
+            data-testid="auto-send-invalid-banner"
+            data-invalid-count={invalidCount}
+            className="rounded-md border border-destructive/40 bg-destructive/5 px-3 py-2 text-xs text-destructive"
+          >
+            <div className="flex items-center gap-1.5 font-medium">
+              <AlertTriangle className="h-3.5 w-3.5" aria-hidden />
+              <span>
+                {invalidCount} kotak tidak valid — perbaiki atau hapus sebelum
+                lanjut.
+              </span>
+            </div>
+            <ul className="mt-1 space-y-0.5 pl-5 list-disc">
+              {Array.from(invalidByPrep.entries()).slice(0, 5).map(([id, reasons]) => {
+                const p = preps.find((x) => x.id === id);
+                const grams = Number(p?.actual_grams) || 0;
+                return (
+                  <li
+                    key={id}
+                    data-testid="auto-send-invalid-item"
+                    data-prep-id={id}
+                    className="tabular-nums"
+                  >
+                    <span className="font-mono">{id.slice(0, 8)}</span> ·{" "}
+                    {grams} {unit} — {reasons.join(", ")}
+                  </li>
+                );
+              })}
+              {invalidCount > 5 && (
+                <li className="text-destructive/80">
+                  +{invalidCount - 5} kotak lainnya
+                </li>
+              )}
+            </ul>
+          </div>
+        )}
         <Collapsible open={expanded} onOpenChange={setExpanded}>
           <CollapsibleTrigger asChild>
             <button
@@ -187,19 +275,33 @@ export function AutoSendConfirmDialog({
               {preps.map((p, i) => {
                 const isEditing = editingId === p.id;
                 const isSaving = savingId === p.id;
+                const rowReasons = invalidByPrep.get(p.id) ?? [];
+                const isInvalid = rowReasons.length > 0;
                 return (
                   <li
                     key={p.id}
                     data-testid="auto-send-list-item"
                     data-prep-id={p.id}
-                    className="flex items-center justify-between gap-2 px-3 py-1.5 text-xs"
+                    data-invalid={isInvalid ? "true" : undefined}
+                    className={`flex flex-col gap-1 px-3 py-1.5 text-xs ${
+                      isInvalid
+                        ? "bg-destructive/5 ring-1 ring-inset ring-destructive/30"
+                        : ""
+                    }`}
                   >
-                    <span className="min-w-0 truncate text-muted-foreground">
-                      #{i + 1} ·{" "}
-                      <span className="font-mono">
-                        {String(p.id).slice(0, 8)}
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="min-w-0 truncate text-muted-foreground">
+                        #{i + 1} ·{" "}
+                        <span className="font-mono">
+                          {String(p.id).slice(0, 8)}
+                        </span>
+                        {isInvalid && (
+                          <AlertTriangle
+                            className="ml-1 inline h-3 w-3 text-destructive"
+                            aria-hidden
+                          />
+                        )}
                       </span>
-                    </span>
                     {isEditing ? (
                       <div className="flex items-center gap-1">
                         <Input
@@ -243,7 +345,9 @@ export function AutoSendConfirmDialog({
                     ) : (
                       <div className="flex items-center gap-1">
                         <span
-                          className="font-medium tabular-nums"
+                          className={`font-medium tabular-nums ${
+                            isInvalid ? "text-destructive" : ""
+                          }`}
                           data-testid="auto-send-item-grams"
                         >
                           {Number(p.actual_grams) || 0} {unit}
@@ -278,6 +382,15 @@ export function AutoSendConfirmDialog({
                         )}
                       </div>
                     )}
+                    </div>
+                    {isInvalid && (
+                      <div
+                        data-testid="auto-send-item-invalid-reason"
+                        className="text-[10px] font-medium text-destructive"
+                      >
+                        {rowReasons.join(" · ")}
+                      </div>
+                    )}
                   </li>
                 );
               })}
@@ -300,7 +413,12 @@ export function AutoSendConfirmDialog({
           <AlertDialogAction
             onClick={onConfirm}
             data-testid="auto-send-confirm-continue"
-            disabled={!!editingId}
+            disabled={!!editingId || hasInvalid}
+            title={
+              hasInvalid
+                ? "Ada kotak tidak valid — perbaiki atau hapus dulu."
+                : undefined
+            }
           >
             Lanjut ke pembayaran
           </AlertDialogAction>
