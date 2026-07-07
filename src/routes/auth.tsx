@@ -506,13 +506,47 @@ function AuthPage() {
         </div>
 
         <form onSubmit={submit} className="space-y-3">
+          {mode === "login" && verifyStatus !== "unknown" && email.trim() ? (
+            verifyStatus === "unverified" ? (
+              <div className="flex items-start gap-2 rounded-md border border-amber-500/40 bg-amber-500/10 p-2.5 text-[12px] text-amber-800 dark:text-amber-100">
+                <MailX className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <div className="flex-1 space-y-1.5">
+                  <div>
+                    <b>Belum terverifikasi.</b> Cek inbox <b>{email}</b> untuk
+                    tautan verifikasi.
+                  </div>
+                  <button
+                    type="button"
+                    onClick={resendVerification}
+                    disabled={loading || resendCooldown > 0}
+                    className="rounded-md border border-amber-500/40 bg-background/60 px-2 py-1 text-[11px] font-medium hover:bg-background disabled:opacity-50"
+                  >
+                    {resendCooldown > 0
+                      ? `Kirim ulang (${resendCooldown}s)`
+                      : "Kirim ulang email verifikasi"}
+                  </button>
+                </div>
+              </div>
+            ) : verifyStatus === "awaiting-signup-verification" ? (
+              <div className="flex items-start gap-2 rounded-md border border-sky-500/40 bg-sky-500/10 p-2.5 text-[12px] text-sky-800 dark:text-sky-100">
+                <MailCheck className="mt-0.5 h-4 w-4 flex-shrink-0" />
+                <div>
+                  Pendaftaran berhasil. <b>Verifikasi email dulu</b> lewat
+                  tautan yang dikirim ke <b>{email}</b>, lalu masuk di sini.
+                </div>
+              </div>
+            ) : null
+          ) : null}
           <input
             type="email"
             required
             autoFocus
             autoComplete="email"
             value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            onChange={(e) => {
+              setEmail(e.target.value);
+              setVerifyStatus("unknown");
+            }}
             placeholder="alamat@email.com"
             className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
           />
