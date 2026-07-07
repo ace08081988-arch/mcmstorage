@@ -1,7 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { getRequest } from "@tanstack/react-start/server";
 import { z } from "zod";
-import { shouldAllowTurnstileDevBypass } from "./turnstile-dev";
 
 // Kode error yang dipakai UI untuk menampilkan pesan yang jelas ke pengguna.
 export type SecureSignUpErrorCode =
@@ -26,7 +25,8 @@ export type SecureSignUpResult =
 const inputSchema = z.object({
   email: z.string().trim().toLowerCase().email().max(255),
   password: z.string().min(8).max(200),
-  turnstileToken: z.string().min(1).max(4096),
+  // Turnstile dihapus — field diterima tapi diabaikan (kompat pemanggil lama).
+  turnstileToken: z.string().max(4096).optional(),
   chatOnly: z.boolean().optional().default(false),
 });
 
@@ -43,170 +43,6 @@ function clientIpFromRequest(req: Request): string {
 }
 
 /**
- * Mask email untuk log: "ada@contoh.com" → "a**@contoh.com". Cukup untuk
- * mengorelasikan baris log tanpa membocorkan PII di stdout Worker.
- */
-function maskEmail(email: string): string {
-  const at = email.indexOf("@");
-  if (at <= 0) return "***";
-  const local = email.slice(0, at);
-  const domain = email.slice(at);
-  const head = local.slice(0, 1);
-  return head + "*".repeat(Math.max(1, local.length - 1)) + domain;
-}
-
-/** Pesan diagnostik ringkas untuk error-code Turnstile — dipakai admin
- * saat baca log agar tidak harus buka dokumentasi Cloudflare. */
-const TURNSTILE_HINTS: Record<string, string> = {
-  "missing-input-secret": "Server tidak mengirim secret.",
-  "invalid-input-secret":
-    "Secret key salah/tidak dikenal — periksa /admin/turnstile.",
-  "missing-input-response": "Token dari client kosong.",
-  "invalid-input-response":
-    "Token dari client tidak valid atau kedaluwarsa.",
-  "bad-request": "Request malformed ke Cloudflare.",
-  "timeout-or-duplicate":
-    "Token sudah dipakai/kedaluwarsa (>5 menit sejak diterbitkan).",
-  "internal-error": "Sisi Cloudflare bermasalah — coba lagi.",
-  "invalid-hostname":
-    "Hostname request belum di-allowlist di widget Turnstile.",
-};
-
-export type TurnstileVerifyResult =
-  | { ok: true; hostname?: string; action?: string; challengeTs?: string }
-  | {
-      ok: false;
-      codes: string[];
-      httpStatus?: number;
-      hostname?: string;
-      action?: string;
-      challengeTs?: string;
-      durationMs: number;
-    };
-
-async function verifyTurnstile(
-  token: string,
-  ip: string,
-  secret: string,
-  ctx: { email: string; userAgent: string | null; secretSource: string },
-): Promise<TurnstileVerifyResult> {
-  const body = new URLSearchParams();
-  body.set("secret", secret);
-  body.set("response", token);
-  if (ip) body.set("remoteip", ip);
-
-  const startedAt = Date.now();
-  try {
-    const res = await fetch(
-      "https://challenges.cloudflare.com/turnstile/v0/siteverify",
-      { method: "POST", body },
-    );
-    const durationMs = Date.now() - startedAt;
-    const json = (await res.json().catch(() => ({}))) as {
-      success?: boolean;
-      "error-codes"?: string[];
-      hostname?: string;
-      action?: string;
-      challenge_ts?: string;
-      messages?: string[];
-    };
-    const codes = json["error-codes"] ?? [];
-    if (json.success) {
-      // Log ringkas untuk keperluan telemetri — level info supaya bisa
-      // difilter dari kegagalan.
-      console.info(
-        "[turnstile.verify] ok",
-        JSON.stringify({
-          ip,
-          email: maskEmail(ctx.email),
-          hostname: json.hostname ?? null,
-          action: json.action ?? null,
-          challenge_ts: json.challenge_ts ?? null,
-          secret_source: ctx.secretSource,
-          duration_ms: durationMs,
-          http_status: res.status,
-        }),
-      );
-      return {
-        ok: true,
-        hostname: json.hostname,
-        action: json.action,
-        challengeTs: json.challenge_ts,
-      };
-    }
-    const hints = codes
-      .map((c) => TURNSTILE_HINTS[c])
-      .filter((v): v is string => Boolean(v));
-    console.error(
-      "[turnstile.verify] failed",
-      JSON.stringify({
-        ip,
-        email: maskEmail(ctx.email),
-        error_codes: codes.length ? codes : ["unknown"],
-        hint: hints.join(" ") || null,
-        hostname: json.hostname ?? null,
-        action: json.action ?? null,
-        challenge_ts: json.challenge_ts ?? null,
-        messages: json.messages ?? null,
-        secret_source: ctx.secretSource,
-        duration_ms: durationMs,
-        http_status: res.status,
-        user_agent: ctx.userAgent,
-      }),
-    );
-    return {
-      ok: false,
-      codes: codes.length ? codes : ["unknown"],
-      httpStatus: res.status,
-      hostname: json.hostname,
-      action: json.action,
-      challengeTs: json.challenge_ts,
-      durationMs,
-    };
-  } catch (err) {
-    const durationMs = Date.now() - startedAt;
-    console.error(
-      "[turnstile.verify] network_error",
-      JSON.stringify({
-        ip,
-        email: maskEmail(ctx.email),
-        error: err instanceof Error ? err.message : String(err),
-        secret_source: ctx.secretSource,
-        duration_ms: durationMs,
-      }),
-    );
-    return { ok: false, codes: ["network_error"], durationMs };
-  }
-}
-
-/**
- * Catat percobaan pendaftaran yang gagal SEBELUM mencapai rate-limit RPC
- * (mis. captcha_missing / captcha_failed). Non-fatal: kegagalan logging tidak
- * boleh mengganggu jalur error yang dilihat pengguna.
- */
-async function logCaptchaFailureAttempt(
-  ip: string,
-  email: string,
-  userAgent: string | null,
-  code: "captcha_missing" | "captcha_failed",
-  details: string | null,
-): Promise<void> {
-  try {
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    await supabaseAdmin.from("signup_attempts").insert({
-      ip,
-      email,
-      user_agent: userAgent,
-      succeeded: false,
-      // Kolom baru — cast agar type-check lulus sebelum types.ts diregenerasi.
-      ...({ failure_code: code, failure_details: details } as Record<string, unknown>),
-    } as never);
-  } catch (err) {
-    console.warn("[secureSignUp] gagal mencatat kegagalan captcha", err);
-  }
-}
-
-/**
  * Implementasi murni handler `secureSignUp` — diekspor terpisah agar bisa
  * di-unit/integration-test tanpa runtime `createServerFn`/Start context.
  * `secureSignUp` di bawah hanya membungkusnya dengan validator + RPC layer.
@@ -218,112 +54,7 @@ export async function secureSignUpImpl(
     const ip = clientIpFromRequest(req);
     const userAgent = (req.headers.get("user-agent") ?? "").slice(0, 512) || null;
 
-    // Baca secret dari DB dulu (agar admin bisa mengganti runtime lewat halaman
-    // /admin/turnstile), fallback ke env TURNSTILE_SECRET_KEY.
-    let turnstileSecret = "";
-    let turnstileSecretSource: "database" | "env" | "none" = "none";
-    try {
-      const { supabaseAdmin: adminForSecret } = await import(
-        "@/integrations/supabase/client.server"
-      );
-      const { data: cfg } = await adminForSecret
-        .from("turnstile_config")
-        .select("secret_key")
-        .eq("id", 1)
-        .maybeSingle();
-      const stored = ((cfg?.secret_key as string | undefined) ?? "").trim();
-      if (stored) {
-        const {
-          decryptTurnstileSecret,
-          isEncryptedTurnstileSecret,
-          encryptTurnstileSecret,
-        } = await import("./turnstile-crypto.server");
-        try {
-          turnstileSecret = decryptTurnstileSecret(stored);
-          if (turnstileSecret) turnstileSecretSource = "database";
-        } catch (err) {
-          console.error("[secureSignUp] gagal dekripsi secret Turnstile", err);
-          turnstileSecret = "";
-        }
-        // Upgrade lazy: kalau nilai lama masih plaintext, tuliskan ulang
-        // dalam bentuk terenkripsi. Non-fatal jika update gagal.
-        if (turnstileSecret && !isEncryptedTurnstileSecret(stored)) {
-          try {
-            await adminForSecret
-              .from("turnstile_config")
-              .update({ secret_key: encryptTurnstileSecret(turnstileSecret) })
-              .eq("id", 1);
-          } catch (upgradeErr) {
-            console.warn(
-              "[secureSignUp] gagal upgrade enkripsi Turnstile",
-              upgradeErr,
-            );
-          }
-        }
-      }
-    } catch {
-      /* fall through to env */
-    }
-    if (!turnstileSecret) {
-      turnstileSecret = process.env.TURNSTILE_SECRET_KEY ?? "";
-      if (turnstileSecret) turnstileSecretSource = "env";
-    }
-    if (!turnstileSecret) {
-      // Kunci belum dipasang di lingkungan server — jangan izinkan pendaftaran
-      // sampai admin mengatur TURNSTILE_SECRET_KEY.
-      return {
-        ok: false,
-        code: "server_misconfigured",
-        message:
-          "Verifikasi manusia (Turnstile) belum diaktifkan di server. Hubungi admin.",
-      };
-    }
-
-    // 1) Verifikasi Turnstile lebih dulu — biar bot tidak menghabiskan slot rate limit.
-    if (!data.turnstileToken) {
-      await logCaptchaFailureAttempt(ip, data.email, userAgent, "captcha_missing", null);
-      return {
-        ok: false,
-        code: "captcha_missing",
-        message: "Verifikasi CAPTCHA belum selesai. Ulangi verifikasi lalu coba lagi.",
-      };
-    }
-    // Dev bypass: hanya jika request datang dari IP loopback DAN server
-    // tidak berjalan di mode production. Ini melindungi preview/publish dari
-    // menerima token "dev-bypass" secara tidak sengaja.
-    const isDevBypass = shouldAllowTurnstileDevBypass(
-      ip,
-      process.env.NODE_ENV,
-      data.turnstileToken,
-    );
-    if (isDevBypass) {
-      console.warn("[secureSignUp] Turnstile dev bypass aktif (localhost/dev only)");
-    }
-    const captcha = isDevBypass
-      ? ({ ok: true } as const)
-      : await verifyTurnstile(data.turnstileToken, ip, turnstileSecret, {
-          email: data.email,
-          userAgent,
-          secretSource: turnstileSecretSource,
-        });
-    if (!captcha.ok) {
-      const codes = captcha.codes.join(", ");
-      await logCaptchaFailureAttempt(
-        ip,
-        data.email,
-        userAgent,
-        "captcha_failed",
-        codes || null,
-      );
-      return {
-        ok: false,
-        code: "captcha_failed",
-        message:
-          "Verifikasi CAPTCHA gagal. Muat ulang halaman lalu selesaikan verifikasi manusia (Turnstile) sebelum mendaftar. (" +
-          codes +
-          ")",
-      };
-    }
+    // Turnstile dihapus — langsung ke rate-limit + createUser.
 
     // 2) Rate limit per IP (12 per jam) via RPC berhak akses service_role.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { friendlyError, notifyError } from "@/lib/friendly-error";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,15 +9,8 @@ import { ApkDownloadBanner } from "@/components/ApkDownloadBanner";
 import { PublicFooter } from "@/components/PublicFooter";
 import { PublicHeader } from "@/components/PublicHeader";
 import { useOrgName } from "@/lib/org-name";
-import {
-  TurnstileWidget,
-  type TurnstileWidgetHandle,
-} from "@/components/TurnstileWidget";
-import { explainTurnstileError } from "@/components/turnstile-error";
 import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
-import { DEV_TURNSTILE_TOKEN, isTurnstileDevBypass } from "@/lib/turnstile-dev";
-import { useTurnstileSiteKey } from "@/hooks/use-turnstile-site-key";
 
 function AuthBrand() {
   const { full, logo } = useOrgName();
@@ -109,37 +102,8 @@ function AuthPage() {
   const [verifyStatus, setVerifyStatus] = useState<
     "unknown" | "unverified" | "awaiting-signup-verification"
   >("unknown");
-  const [turnstileToken, setTurnstileToken] = useState<string | null>(null);
-  const [turnstileError, setTurnstileError] = useState<string | null>(null);
   const [rateLimitedUntil, setRateLimitedUntil] = useState<number>(0);
   const secureSignUpFn = useServerFn(secureSignUp);
-  const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
-  const [widgetKey, setWidgetKey] = useState(0);
-  const devBypass = isTurnstileDevBypass();
-  const { siteKey: TURNSTILE_SITE_KEY } = useTurnstileSiteKey();
-  // Auto-isi token bypass ketika berjalan di localhost dev supaya alur
-  // pendaftaran tidak menunggu widget Turnstile.
-  useEffect(() => {
-    if (devBypass && !turnstileToken) setTurnstileToken(DEV_TURNSTILE_TOKEN);
-  }, [devBypass, turnstileToken]);
-
-  const onTurnstileToken = useCallback((t: string | null) => {
-    setTurnstileToken(t);
-    if (t) setTurnstileError(null);
-  }, []);
-  const onTurnstileError = useCallback((code: string) => {
-    setTurnstileError(code);
-  }, []);
-  const retryTurnstile = useCallback(() => {
-    setTurnstileError(null);
-    setTurnstileToken(null);
-    if (turnstileRef.current) {
-      turnstileRef.current.reset();
-    } else {
-      // Widget belum sempat mount (script gagal load) → remount total.
-      setWidgetKey((k) => k + 1);
-    }
-  }, []);
 
   // Persist perubahan intent/mode/email — sync juga antar tab lewat StorageEvent.
   useEffect(() => {
@@ -202,18 +166,6 @@ function AuthPage() {
         toast.error("Konfirmasi kata sandi tidak cocok");
         return;
       }
-      if (!TURNSTILE_SITE_KEY && !devBypass) {
-        toast.error(
-          "Verifikasi manusia (CAPTCHA) belum dikonfigurasi. Hubungi admin.",
-        );
-        return;
-      }
-      if (!turnstileToken && !devBypass) {
-        toast.error(
-          "Selesaikan verifikasi CAPTCHA di bawah sebelum menekan Daftar.",
-        );
-        return;
-      }
       if (rateLimitedUntil > Date.now()) {
         const mins = Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000));
         toast.error(`Masih dalam periode limit. Coba lagi ~${mins} menit.`);
@@ -226,7 +178,6 @@ function AuthPage() {
           data: {
             email,
             password,
-            turnstileToken: turnstileToken ?? DEV_TURNSTILE_TOKEN,
             chatOnly: intent === "chat",
           },
         });
@@ -239,9 +190,6 @@ function AuthPage() {
         return;
       }
       setLoading(false);
-      // Reset token — Turnstile token hanya boleh dipakai sekali.
-      setTurnstileToken(null);
-      try { window.turnstile?.reset(); } catch { /* ignore */ }
 
       if (!result.ok) {
         switch (result.code) {
@@ -582,77 +530,21 @@ function AuthPage() {
               className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           )}
-          {mode === "signup" && (
-            <div className="space-y-1">
-              {devBypass ? (
-                <p className="rounded-md border border-dashed border-amber-400/50 bg-amber-50/40 p-2 text-center text-[11px] text-amber-700 dark:bg-amber-950/20 dark:text-amber-300">
-                  Mode dev: verifikasi CAPTCHA dilewati untuk localhost.
-                </p>
-              ) : TURNSTILE_SITE_KEY ? (
-                <TurnstileWidget
-                  key={widgetKey}
-                  ref={turnstileRef}
-                  siteKey={TURNSTILE_SITE_KEY}
-                  onToken={onTurnstileToken}
-                  onError={onTurnstileError}
-                />
-              ) : (
-                <p className="rounded-md border border-dashed bg-muted/40 p-2 text-center text-[11px] text-muted-foreground">
-                  Verifikasi CAPTCHA belum dikonfigurasi. Pendaftaran dinonaktifkan sementara.
-                </p>
-              )}
-              {turnstileError && (() => {
-                const host =
-                  typeof window !== "undefined" ? window.location.hostname : "";
-                const info = explainTurnstileError(turnstileError, host);
-                return (
-                  <div className="space-y-1 rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px]">
-                    <p className="text-center font-medium text-destructive">
-                      {info.message}{" "}
-                      <span className="font-mono text-muted-foreground">
-                        ({info.code})
-                      </span>
-                    </p>
-                    <p className="text-center text-muted-foreground">{info.hint}</p>
-                    {!info.adminAction && (
-                      <div className="flex justify-center pt-1">
-                        <button
-                          type="button"
-                          onClick={retryTurnstile}
-                          className="rounded border px-2 py-0.5 text-[11px] hover:bg-muted"
-                        >
-                          Coba lagi
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-              {rateLimitedUntil > Date.now() && (
-                <p className="text-center text-[11px] text-destructive">
-                  Terlalu banyak percobaan. Coba lagi ~
-                  {Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000))} menit.
-                </p>
-              )}
-            </div>
+          {mode === "signup" && rateLimitedUntil > Date.now() && (
+            <p className="text-center text-[11px] text-destructive">
+              Terlalu banyak percobaan. Coba lagi ~
+              {Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000))} menit.
+            </p>
           )}
           <button
             type="submit"
             disabled={
               loading ||
-              (mode === "signup" &&
-                !devBypass &&
-                (!TURNSTILE_SITE_KEY || !turnstileToken || rateLimitedUntil > Date.now()))
+              (mode === "signup" && rateLimitedUntil > Date.now())
             }
             className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
-            {loading
-              ? "Memproses…"
-              : mode === "signup"
-              ? devBypass || turnstileToken || !TURNSTILE_SITE_KEY
-                ? "Daftar"
-                : "Selesaikan verifikasi CAPTCHA…"
-              : "Masuk"}
+            {loading ? "Memproses…" : mode === "signup" ? "Daftar" : "Masuk"}
           </button>
           {mode === "login" && (
             <button
