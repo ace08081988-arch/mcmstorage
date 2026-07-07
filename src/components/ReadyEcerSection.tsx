@@ -27,6 +27,7 @@ import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
 import { ChatSharePreviewDialog, type ChatSharePreviewData, type ChatShareLiveStatus, type ChatShareDuplicateInfo } from "@/components/ChatSharePreviewDialog";
+import { WaShareButton, ChatShareButton } from "@/components/share/SaleShareButtons";
 import { toast } from "sonner";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ExternalLink, History, Undo2 } from "lucide-react";
@@ -865,24 +866,22 @@ function BulkToolbar({
       </button>
       <span className="text-[11px] font-semibold text-primary">{count} terpilih</span>
       <div className="ml-auto flex flex-wrap items-center gap-1">
-        <button
-          type="button"
+        <WaShareButton
+          size="sm"
+          variant="solid"
+          disabled={count === 0 || busy !== null}
+          busy={busy === "wa"}
+          reason={count === 0 ? "Pilih minimal 1 kartu dulu" : undefined}
           onClick={onBulkWA}
+        />
+        <ChatShareButton
+          size="sm"
+          variant="solid"
           disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm hover:bg-[#1ebe57] disabled:opacity-50"
-        >
-          {busy === "wa" ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
-          MCM
-        </button>
-        <button
-          type="button"
+          busy={busy === "chat"}
+          reason={count === 0 ? "Pilih minimal 1 kartu dulu" : undefined}
           onClick={onBulkChatPick}
-          disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
-        >
-          {busy === "chat" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-          Chat
-        </button>
+        />
         <button
           type="button"
           onClick={onBulkDelete}
@@ -903,8 +902,8 @@ function BulkToolbar({
       </div>
       <p className="basis-full text-[11px] text-muted-foreground">
         {view === "sent"
-          ? "Tap kartu untuk centang. Aksi MCM/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
-          : "Tap kartu untuk centang. MCM/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
+          ? "Tap kartu untuk centang. Aksi WA/Chat akan mengirim ulang; Hapus akan mengembalikan ke Aktif."
+          : "Tap kartu untuk centang. WA/Chat memproses tiap kartu berurutan; Hapus menandai sebagai dilewati."}
       </p>
     </div>
   );

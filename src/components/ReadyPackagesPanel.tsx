@@ -5,6 +5,7 @@ import { logStorageError } from "@/lib/storage-log";
 import { notifyError } from "@/lib/friendly-error";
 import { confirm } from "@/lib/confirm";
 import { shareToWhatsApp, urlToFile, notifyShareResult } from "@/lib/share-wa";
+import { WaShareButton } from "@/components/share/SaleShareButtons";
 import { fmtBase, fmtItemQty } from "@/lib/stock-format";
 import { StatusBadge, type StatusVariant } from "@/components/StatusBadge";
 
@@ -465,13 +466,13 @@ function PackageCard({
       <div className="mt-2 flex flex-wrap gap-2">
         {isReady ? (
           <>
-            <button
-              disabled={sharing}
+            <WaShareButton
+              size="md"
+              variant="solid"
+              busy={sharing}
               onClick={() => setPickWA(true)}
-              className="inline-flex h-9 flex-1 items-center justify-center gap-1 rounded-md bg-[#25D366] px-3 text-xs font-semibold text-white hover:opacity-90 disabled:opacity-50"
-            >
-              💬 Kirim WA
-            </button>
+              className="flex-1"
+            />
             <button
               onClick={copyCaption}
               className="inline-flex h-9 items-center justify-center rounded-md border px-3 text-xs font-semibold hover:bg-accent"

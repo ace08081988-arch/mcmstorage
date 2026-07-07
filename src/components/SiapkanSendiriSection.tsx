@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { shareToWhatsApp, notifyShareResult } from "@/lib/share-wa";
 import { shareToChat } from "@/lib/share-chat";
 import { PickChatConversationDialog } from "@/components/PickChatConversationDialog";
+import { WaShareButton, ChatShareButton } from "@/components/share/SaleShareButtons";
+import { saleShareGate } from "@/lib/sale-share-gate";
 import { MessageCircle } from "lucide-react";
 import { confirm as confirmDialog } from "@/lib/confirm";
 import { getCurrentLocation, toGeoError } from "@/lib/get-location";
@@ -759,24 +761,29 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
                         <Send className="h-3.5 w-3.5" /> Jual (catat penjualan)
                       </button>
                     ) : null}
-                    <button
-                      onClick={() => onSendWA(r)}
-                      disabled={!r.sold_at}
-                      title={r.sold_at ? "Kirim foto + rincian penjualan ke pembeli via WhatsApp" : "Catat penjualan dulu"}
-                      className="inline-flex h-8 items-center gap-1 rounded-md border border-[#25D366]/40 bg-[#25D366]/10 px-2 text-[11px] font-semibold text-[#1ea952] disabled:cursor-not-allowed disabled:opacity-50"
-                    >
-                      <Send className="h-3.5 w-3.5" /> Kirim WA
-                    </button>
-                    <button
-                      onClick={() => setChatPickTarget(r)}
-                      disabled={chatSendingId === r.id || !r.sold_at}
-                      title={r.sold_at ? "Kirim ke MCM Chat" : "Catat penjualan dulu"}
-                      className="inline-flex h-8 items-center gap-1 rounded-md border border-primary/40 bg-primary/10 px-2 text-[11px] font-semibold text-primary disabled:cursor-not-allowed disabled:opacity-50"
-                      aria-label="Kirim ke MCM Chat"
-                    >
-                      {chatSendingId === r.id ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <MessageCircle className="h-3.5 w-3.5" />}
-                      Kirim MCM
-                    </button>
+                    {(() => {
+                      const gate = saleShareGate({ sold_at: r.sold_at ?? null });
+                      const chatBusy = chatSendingId === r.id;
+                      return (
+                        <>
+                          <WaShareButton
+                            size="sm"
+                            variant="soft"
+                            disabled={!gate.enabled}
+                            reason={gate.enabled ? null : gate.reason}
+                            onClick={() => onSendWA(r)}
+                          />
+                          <ChatShareButton
+                            size="sm"
+                            variant="soft"
+                            disabled={!gate.enabled}
+                            busy={chatBusy}
+                            reason={gate.enabled ? null : gate.reason}
+                            onClick={() => setChatPickTarget(r)}
+                          />
+                        </>
+                      );
+                    })()}
                     <button
                       onClick={() => onRemove(r)}
                       className="inline-flex h-8 items-center gap-1 rounded-md border px-2 text-[11px] text-destructive"
