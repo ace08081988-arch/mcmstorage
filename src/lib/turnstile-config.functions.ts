@@ -105,3 +105,124 @@ export const updateTurnstileConfig = createServerFn({ method: "POST" })
     if (error) throw new Error(error.message);
     return { ok: true };
   });
+
+/**
+ * Admin only: validasi secret key Turnstile ke endpoint siteverify Cloudflare.
+ *
+ * Strategi: kirim token dummy. Cloudflare akan membalas dengan `error-codes`:
+ *  - `invalid-input-secret`  → secret salah/tidak dikenal.
+ *  - `missing-input-secret`  → secret kosong.
+ *  - `invalid-input-response` / `missing-input-response` → secret DITERIMA,
+ *    tapi token yang dites tidak valid. Ini yang kita anggap "secret valid".
+ *
+ * Jika `secret_key` diisi (belum tersimpan), pakai itu. Kalau kosong, pakai
+ * secret yang tersimpan di DB (fallback env).
+ */
+const testSchema = z.object({
+  secret_key: z.string().max(200).optional().default(""),
+});
+
+export type TurnstileSecretTestResult = {
+  ok: boolean;
+  source: "input" | "database" | "env" | "none";
+  codes: string[];
+  message: string;
+};
+
+export const testTurnstileSecret = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((data: unknown) => testSchema.parse(data))
+  .handler(async ({ data, context }): Promise<TurnstileSecretTestResult> => {
+    const isAdmin = await context.supabase.rpc("has_role", {
+      _user_id: context.userId,
+      _role: "admin",
+    });
+    if (!isAdmin.data) throw new Error("Forbidden");
+
+    let secret = data.secret_key.trim();
+    let source: TurnstileSecretTestResult["source"] = "input";
+    if (!secret) {
+      try {
+        const { supabaseAdmin } = await import(
+          "@/integrations/supabase/client.server"
+        );
+        const { data: cfg } = await supabaseAdmin
+          .from("turnstile_config")
+          .select("secret_key")
+          .eq("id", 1)
+          .maybeSingle();
+        const fromDb = ((cfg?.secret_key as string | undefined) ?? "").trim();
+        if (fromDb) {
+          secret = fromDb;
+          source = "database";
+        }
+      } catch {
+        /* fall through */
+      }
+    }
+    if (!secret) {
+      const fromEnv = (process.env.TURNSTILE_SECRET_KEY ?? "").trim();
+      if (fromEnv) {
+        secret = fromEnv;
+        source = "env";
+      }
+    }
+    if (!secret) {
+      return {
+        ok: false,
+        source: "none",
+        codes: ["missing-input-secret"],
+        message:
+          "Belum ada secret untuk diuji. Isi field Secret Key dulu lalu klik Uji.",
+      };
+    }
+
+    const body = new URLSearchParams();
+    body.set("secret", secret);
+    // Token dummy — pasti gagal, tapi Cloudflare akan tetap memvalidasi secret.
+    body.set("response", "test-token-xxxxxxxxxxxxxxxxxxxx");
+    try {
+      const res = await fetch(
+        "https://challenges.cloudflare.com/turnstile/v0/siteverify",
+        { method: "POST", body },
+      );
+      const json = (await res.json()) as {
+        success: boolean;
+        "error-codes"?: string[];
+      };
+      const codes = json["error-codes"] ?? [];
+      // Secret dianggap valid selama Cloudflare TIDAK mengeluh soal secret.
+      const secretRejected = codes.some((c) =>
+        c === "invalid-input-secret" || c === "missing-input-secret",
+      );
+      if (secretRejected) {
+        return {
+          ok: false,
+          source,
+          codes,
+          message:
+            "Secret key ditolak Cloudflare (" +
+            codes.join(", ") +
+            "). Periksa kembali secret dari dashboard Turnstile.",
+        };
+      }
+      return {
+        ok: true,
+        source,
+        codes,
+        message:
+          "Secret key valid. Cloudflare menerima secret (token dummy ditolak seperti yang diharapkan: " +
+          (codes.join(", ") || "no-codes") +
+          ").",
+      };
+    } catch (err) {
+      return {
+        ok: false,
+        source,
+        codes: ["network_error"],
+        message:
+          "Gagal menghubungi Cloudflare: " +
+          (err instanceof Error ? err.message : String(err)),
+      };
+    }
+  });
