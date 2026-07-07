@@ -2292,10 +2292,11 @@ function WorkerSubmissionsCard({ title, itemName }: { title: EcerTitle; itemName
   );
 }
 
-function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, selectionMode, selected, onToggleSelect }: {
+function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, selectionMode, selected, onToggleSelect, onQuickSend }: {
   prep: EcerPreparation; index: number; title: EcerTitle; itemName?: string;
   onChanged: () => void; onTitleUpdated: () => void;
   selectionMode?: boolean; selected?: boolean; onToggleSelect?: () => void;
+  onQuickSend?: () => void;
 }) {
   const sold = isSentPrep(prep);
   const readOnly = sold;
@@ -2451,9 +2452,9 @@ function PrepBox({ prep, index, title, itemName, onChanged, onTitleUpdated, sele
             </a>
           ) : <span />}
           <div className="flex gap-0.5">
-            <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); void onShare(); }}><Share2 className="h-3 w-3" /></Button>
             {!readOnly && (
               <>
+                <Button size="icon" variant="ghost" className="h-7 w-7" title="Kirim ke pembeli via WA" onClick={(e) => { e.stopPropagation(); if (onQuickSend) onQuickSend(); else void onShare(); }}><Share2 className="h-3 w-3" /></Button>
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); setEditOpen(true); }} title="Edit penyiapan"><Edit3 className="h-3 w-3" /></Button>
                 <Button size="icon" variant="ghost" className="h-7 w-7" onClick={(e) => { e.stopPropagation(); void onDelete(); }}><Trash2 className="h-3 w-3 text-destructive" /></Button>
               </>
