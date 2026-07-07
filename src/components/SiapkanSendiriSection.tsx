@@ -13,6 +13,17 @@ import { getCurrentLocation, toGeoError } from "@/lib/get-location";
 import { SellSelfPrepDialog, type SellSelfPrepCustomer, type SellSelfPrepWarehouseItem } from "@/components/SellSelfPrepDialog";
 import { formatSoldPaymentSummary } from "@/lib/payment-summary";
 import { Wallet, HandCoins } from "lucide-react";
+import { generateSaleReceipt } from "@/lib/sale-receipt";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const BUCKET = "self-prep-photos";
 
