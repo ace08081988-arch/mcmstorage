@@ -88,6 +88,7 @@ import { Route as LovableVisualKartonKonversiRouteImport } from './routes/lovabl
 import { Route as LovableVisualDeliveryHistoryRouteImport } from './routes/lovable.visual.delivery-history'
 import { Route as LovableVisualChatDeletedRouteImport } from './routes/lovable.visual.chat-deleted'
 import { Route as LovableVisualCallVideoStageRouteImport } from './routes/lovable.visual.call-video-stage'
+import { Route as LovableVisualAutoSendCancelRouteImport } from './routes/lovable.visual.auto-send-cancel'
 import { Route as LovableVisualAttachmentDurationConsistencyRouteImport } from './routes/lovable.visual.attachment-duration-consistency'
 import { Route as LovableVisualAppearanceImportRouteImport } from './routes/lovable.visual.appearance-import'
 import { Route as LovableVisualApkAvailabilityShortcutsRouteImport } from './routes/lovable.visual.apk-availability-shortcuts'
@@ -546,6 +547,12 @@ const LovableVisualCallVideoStageRoute =
     path: '/lovable/visual/call-video-stage',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableVisualAutoSendCancelRoute =
+  LovableVisualAutoSendCancelRouteImport.update({
+    id: '/lovable/visual/auto-send-cancel',
+    path: '/lovable/visual/auto-send-cancel',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const LovableVisualAttachmentDurationConsistencyRoute =
   LovableVisualAttachmentDurationConsistencyRouteImport.update({
     id: '/lovable/visual/attachment-duration-consistency',
@@ -809,6 +816,7 @@ export interface FileRoutesByFullPath {
   '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
+  '/lovable/visual/auto-send-cancel': typeof LovableVisualAutoSendCancelRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
@@ -918,6 +926,7 @@ export interface FileRoutesByTo {
   '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
+  '/lovable/visual/auto-send-cancel': typeof LovableVisualAutoSendCancelRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
@@ -1031,6 +1040,7 @@ export interface FileRoutesById {
   '/lovable/visual/apk-availability-shortcuts': typeof LovableVisualApkAvailabilityShortcutsRoute
   '/lovable/visual/appearance-import': typeof LovableVisualAppearanceImportRoute
   '/lovable/visual/attachment-duration-consistency': typeof LovableVisualAttachmentDurationConsistencyRoute
+  '/lovable/visual/auto-send-cancel': typeof LovableVisualAutoSendCancelRoute
   '/lovable/visual/call-video-stage': typeof LovableVisualCallVideoStageRoute
   '/lovable/visual/chat-deleted': typeof LovableVisualChatDeletedRoute
   '/lovable/visual/delivery-history': typeof LovableVisualDeliveryHistoryRoute
@@ -1144,6 +1154,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/apk-availability-shortcuts'
     | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
+    | '/lovable/visual/auto-send-cancel'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/delivery-history'
@@ -1253,6 +1264,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/apk-availability-shortcuts'
     | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
+    | '/lovable/visual/auto-send-cancel'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/delivery-history'
@@ -1365,6 +1377,7 @@ export interface FileRouteTypes {
     | '/lovable/visual/apk-availability-shortcuts'
     | '/lovable/visual/appearance-import'
     | '/lovable/visual/attachment-duration-consistency'
+    | '/lovable/visual/auto-send-cancel'
     | '/lovable/visual/call-video-stage'
     | '/lovable/visual/chat-deleted'
     | '/lovable/visual/delivery-history'
@@ -1421,6 +1434,7 @@ export interface RootRouteChildren {
   LovableVisualApkAvailabilityShortcutsRoute: typeof LovableVisualApkAvailabilityShortcutsRoute
   LovableVisualAppearanceImportRoute: typeof LovableVisualAppearanceImportRoute
   LovableVisualAttachmentDurationConsistencyRoute: typeof LovableVisualAttachmentDurationConsistencyRoute
+  LovableVisualAutoSendCancelRoute: typeof LovableVisualAutoSendCancelRoute
   LovableVisualCallVideoStageRoute: typeof LovableVisualCallVideoStageRoute
   LovableVisualChatDeletedRoute: typeof LovableVisualChatDeletedRoute
   LovableVisualDeliveryHistoryRoute: typeof LovableVisualDeliveryHistoryRoute
@@ -2003,6 +2017,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableVisualCallVideoStageRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/visual/auto-send-cancel': {
+      id: '/lovable/visual/auto-send-cancel'
+      path: '/lovable/visual/auto-send-cancel'
+      fullPath: '/lovable/visual/auto-send-cancel'
+      preLoaderRoute: typeof LovableVisualAutoSendCancelRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/lovable/visual/attachment-duration-consistency': {
       id: '/lovable/visual/attachment-duration-consistency'
       path: '/lovable/visual/attachment-duration-consistency'
@@ -2447,6 +2468,7 @@ const rootRouteChildren: RootRouteChildren = {
   LovableVisualAppearanceImportRoute: LovableVisualAppearanceImportRoute,
   LovableVisualAttachmentDurationConsistencyRoute:
     LovableVisualAttachmentDurationConsistencyRoute,
+  LovableVisualAutoSendCancelRoute: LovableVisualAutoSendCancelRoute,
   LovableVisualCallVideoStageRoute: LovableVisualCallVideoStageRoute,
   LovableVisualChatDeletedRoute: LovableVisualChatDeletedRoute,
   LovableVisualDeliveryHistoryRoute: LovableVisualDeliveryHistoryRoute,
