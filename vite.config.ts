@@ -10,6 +10,8 @@ import path from "node:path";
 import { loadEnv } from "vite";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const serverEnv = loadEnv("development", process.cwd(), "");
+Object.assign(process.env, serverEnv);
 
 const BUILD_ID = (() => {
   const t = Date.now().toString(36);
@@ -18,11 +20,7 @@ const BUILD_ID = (() => {
 })();
 const BUILD_TIME = new Date().toISOString();
 
-export default defineConfig(({ mode }) => {
-  const serverEnv = loadEnv(mode, process.cwd(), "");
-  Object.assign(process.env, serverEnv);
-
-  return {
+export default defineConfig({
   tanstackStart: {
     // Redirect TanStack Start's bundled server entry to src/server.ts (our SSR error wrapper).
     // nitro/vite builds from this
@@ -48,5 +46,4 @@ export default defineConfig(({ mode }) => {
       __BUILD_TIME__: JSON.stringify(BUILD_TIME),
     },
   },
-  };
 });
