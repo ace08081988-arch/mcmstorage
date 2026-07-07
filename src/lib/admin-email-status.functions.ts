@@ -129,29 +129,3 @@ export const adminGetUserEmailStatus = createServerFn({ method: "POST" })
       logs: dedup,
     };
   });
-
-/**
- * Admin-only: kirim ulang email verifikasi untuk user tertentu.
- */
-export const adminResendVerification = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
-  .inputValidator((input) =>
-    z.object({ email: z.string().trim().toLowerCase().email() }).parse(input),
-  )
-  .handler(async ({ data, context }): Promise<{ ok: true }> => {
-    const isAdmin = await context.supabase.rpc("has_role", {
-      _user_id: context.userId,
-      _role: "admin",
-    });
-    if (!isAdmin.data) throw new Error("Forbidden");
-
-    const { supabaseAdmin } = await import(
-      "@/integrations/supabase/client.server"
-    );
-    const { error } = await supabaseAdmin.auth.admin.generateLink({
-      type: "signup",
-      email: data.email,
-    });
-    if (error) throw new Error(error.message);
-    return { ok: true };
-  });
