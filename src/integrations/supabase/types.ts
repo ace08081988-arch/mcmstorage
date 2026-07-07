@@ -2912,6 +2912,30 @@ export type Database = {
         }
         Relationships: []
       }
+      turnstile_config: {
+        Row: {
+          id: number
+          secret_key: string
+          site_key: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: number
+          secret_key?: string
+          site_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: number
+          secret_key?: string
+          site_key?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
       user_devices: {
         Row: {
           created_at: string
@@ -3325,6 +3349,7 @@ export type Database = {
         }[]
       }
       get_email_cron_secret: { Args: never; Returns: string }
+      get_turnstile_site_key: { Args: never; Returns: string }
       get_worker_portal_public_config: { Args: never; Returns: Json }
       has_active_pro: { Args: { _uid: string }; Returns: boolean }
       has_role: {

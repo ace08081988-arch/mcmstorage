@@ -10,13 +10,13 @@ import { PublicHeader } from "@/components/PublicHeader";
 import { useOrgName } from "@/lib/org-name";
 import {
   TurnstileWidget,
-  TURNSTILE_SITE_KEY,
   type TurnstileWidgetHandle,
 } from "@/components/TurnstileWidget";
 import { explainTurnstileError } from "@/components/turnstile-error";
 import { secureSignUp } from "@/lib/auth.functions";
 import { useServerFn } from "@tanstack/react-start";
 import { DEV_TURNSTILE_TOKEN, isTurnstileDevBypass } from "@/lib/turnstile-dev";
+import { useTurnstileSiteKey } from "@/hooks/use-turnstile-site-key";
 
 function AuthBrand() {
   const { full, logo } = useOrgName();
@@ -112,6 +112,7 @@ function AuthPage() {
   const turnstileRef = useRef<TurnstileWidgetHandle | null>(null);
   const [widgetKey, setWidgetKey] = useState(0);
   const devBypass = isTurnstileDevBypass();
+  const { siteKey: TURNSTILE_SITE_KEY } = useTurnstileSiteKey();
   // Auto-isi token bypass ketika berjalan di localhost dev supaya alur
   // pendaftaran tidak menunggu widget Turnstile.
   useEffect(() => {

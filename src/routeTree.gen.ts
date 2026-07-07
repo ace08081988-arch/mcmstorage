@@ -102,6 +102,7 @@ import { Route as AuthenticatedDevPressAuditCodesRouteImport } from './routes/_a
 import { Route as AuthenticatedDebugSelectorRouteImport } from './routes/_authenticated.debug.selector'
 import { Route as AuthenticatedChatConversationIdRouteImport } from './routes/_authenticated.chat.$conversationId'
 import { Route as AuthenticatedAdminWorkerPortalRouteImport } from './routes/_authenticated.admin.worker-portal'
+import { Route as AuthenticatedAdminTurnstileRouteImport } from './routes/_authenticated.admin.turnstile'
 import { Route as AuthenticatedAdminSignupAttemptsRouteImport } from './routes/_authenticated.admin.signup-attempts'
 import { Route as AuthenticatedAdminPortalErrorLogRouteImport } from './routes/_authenticated.admin.portal-error-log'
 import { Route as LovableEmailQueueProcessRouteImport } from './routes/lovable/email/queue/process'
@@ -620,6 +621,12 @@ const AuthenticatedAdminWorkerPortalRoute =
     path: '/admin/worker-portal',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedAdminTurnstileRoute =
+  AuthenticatedAdminTurnstileRouteImport.update({
+    id: '/admin/turnstile',
+    path: '/admin/turnstile',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedAdminSignupAttemptsRoute =
   AuthenticatedAdminSignupAttemptsRouteImport.update({
     id: '/admin/signup-attempts',
@@ -731,6 +738,7 @@ export interface FileRoutesByFullPath {
   '/pos-kasir/': typeof PosKasirIndexRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
+  '/admin/turnstile': typeof AuthenticatedAdminTurnstileRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/debug/selector': typeof AuthenticatedDebugSelectorRoute
@@ -831,6 +839,7 @@ export interface FileRoutesByTo {
   '/pos-kasir': typeof PosKasirIndexRoute
   '/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
+  '/admin/turnstile': typeof AuthenticatedAdminTurnstileRoute
   '/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/debug/selector': typeof AuthenticatedDebugSelectorRoute
@@ -935,6 +944,7 @@ export interface FileRoutesById {
   '/pos-kasir/': typeof PosKasirIndexRoute
   '/_authenticated/admin/portal-error-log': typeof AuthenticatedAdminPortalErrorLogRoute
   '/_authenticated/admin/signup-attempts': typeof AuthenticatedAdminSignupAttemptsRoute
+  '/_authenticated/admin/turnstile': typeof AuthenticatedAdminTurnstileRoute
   '/_authenticated/admin/worker-portal': typeof AuthenticatedAdminWorkerPortalRoute
   '/_authenticated/chat/$conversationId': typeof AuthenticatedChatConversationIdRoute
   '/_authenticated/debug/selector': typeof AuthenticatedDebugSelectorRoute
@@ -1039,6 +1049,7 @@ export interface FileRouteTypes {
     | '/pos-kasir/'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
+    | '/admin/turnstile'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/debug/selector'
@@ -1139,6 +1150,7 @@ export interface FileRouteTypes {
     | '/pos-kasir'
     | '/admin/portal-error-log'
     | '/admin/signup-attempts'
+    | '/admin/turnstile'
     | '/admin/worker-portal'
     | '/chat/$conversationId'
     | '/debug/selector'
@@ -1242,6 +1254,7 @@ export interface FileRouteTypes {
     | '/pos-kasir/'
     | '/_authenticated/admin/portal-error-log'
     | '/_authenticated/admin/signup-attempts'
+    | '/_authenticated/admin/turnstile'
     | '/_authenticated/admin/worker-portal'
     | '/_authenticated/chat/$conversationId'
     | '/_authenticated/debug/selector'
@@ -1981,6 +1994,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminWorkerPortalRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/admin/turnstile': {
+      id: '/_authenticated/admin/turnstile'
+      path: '/admin/turnstile'
+      fullPath: '/admin/turnstile'
+      preLoaderRoute: typeof AuthenticatedAdminTurnstileRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/admin/signup-attempts': {
       id: '/_authenticated/admin/signup-attempts'
       path: '/admin/signup-attempts'
@@ -2137,6 +2157,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedIndexRoute: typeof AuthenticatedIndexRoute
   AuthenticatedAdminPortalErrorLogRoute: typeof AuthenticatedAdminPortalErrorLogRoute
   AuthenticatedAdminSignupAttemptsRoute: typeof AuthenticatedAdminSignupAttemptsRoute
+  AuthenticatedAdminTurnstileRoute: typeof AuthenticatedAdminTurnstileRoute
   AuthenticatedAdminWorkerPortalRoute: typeof AuthenticatedAdminWorkerPortalRoute
   AuthenticatedDebugSelectorRoute: typeof AuthenticatedDebugSelectorRoute
   AuthenticatedDevPressAuditCodesRoute: typeof AuthenticatedDevPressAuditCodesRoute
@@ -2196,6 +2217,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedIndexRoute: AuthenticatedIndexRoute,
   AuthenticatedAdminPortalErrorLogRoute: AuthenticatedAdminPortalErrorLogRoute,
   AuthenticatedAdminSignupAttemptsRoute: AuthenticatedAdminSignupAttemptsRoute,
+  AuthenticatedAdminTurnstileRoute: AuthenticatedAdminTurnstileRoute,
   AuthenticatedAdminWorkerPortalRoute: AuthenticatedAdminWorkerPortalRoute,
   AuthenticatedDebugSelectorRoute: AuthenticatedDebugSelectorRoute,
   AuthenticatedDevPressAuditCodesRoute: AuthenticatedDevPressAuditCodesRoute,
