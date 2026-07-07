@@ -190,6 +190,24 @@ export function AutoSendConfirmDialog({
     productGroups.set(key, g);
   }
   const productBreakdown = Array.from(productGroups.values());
+  // Ringkasan per lokasi/link pengambilan. Owner sering mengirim satu
+  // batch yang tersebar di beberapa laci/folder — grouping ini membantu
+  // memastikan distribusi kotak & gram per lokasi sudah benar sebelum
+  // lanjut ke pembayaran. Kotak tanpa `location_url` dikumpulkan
+  // sebagai "Tanpa lokasi" agar tetap terlihat.
+  const locationGroups = new Map<
+    string,
+    { key: string; url: string | null; count: number; grams: number }
+  >();
+  for (const p of preps) {
+    const url = (p.location_url ?? "").trim() || null;
+    const key = url ?? "__no_location__";
+    const g = locationGroups.get(key) ?? { key, url, count: 0, grams: 0 };
+    g.count += 1;
+    g.grams += Number(p.actual_grams) || 0;
+    locationGroups.set(key, g);
+  }
+  const locationBreakdown = Array.from(locationGroups.values());
   const searchTrim = search.trim().toLowerCase();
   const filteredPreps = searchTrim
     ? preps.filter((p) => String(p.id).toLowerCase().includes(searchTrim))
@@ -393,6 +411,62 @@ export function AutoSendConfirmDialog({
             <div className="mt-1 text-[10px] text-destructive/80">
               * Harga produk lain dihitung memakai tarif produk utama —
               perbaiki seleksi sebelum lanjut.
+            </div>
+          )}
+        </div>
+        <div
+          data-testid="auto-send-location-breakdown"
+          data-group-count={locationBreakdown.length}
+          className="rounded-md border bg-muted/20 px-3 py-2 text-xs"
+        >
+          <div className="mb-1 flex items-center justify-between text-[11px] font-medium text-muted-foreground">
+            <span>Ringkasan per lokasi / link</span>
+            <span className="tabular-nums">
+              {locationBreakdown.length} lokasi · {preps.length} kotak
+            </span>
+          </div>
+          <ul className="space-y-0.5">
+            {locationBreakdown.map((g, idx) => {
+              const hasUrl = !!g.url;
+              const shortUrl = g.url
+                ? g.url.replace(/^https?:\/\//i, "").slice(0, 40)
+                : "Tanpa lokasi";
+              return (
+                <li
+                  key={g.key}
+                  data-testid="auto-send-location-breakdown-row"
+                  data-location-url={g.url ?? ""}
+                  className={`flex items-center justify-between gap-2 tabular-nums ${
+                    hasUrl ? "text-foreground" : "text-amber-600 dark:text-amber-400"
+                  }`}
+                >
+                  <span className="flex min-w-0 items-center gap-1">
+                    <MapPin className="h-3 w-3 shrink-0" aria-hidden />
+                    {hasUrl ? (
+                      <a
+                        href={g.url as string}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="min-w-0 truncate underline decoration-dotted underline-offset-2 hover:decoration-solid"
+                        title={g.url as string}
+                      >
+                        Lokasi {idx + 1} · {shortUrl}
+                        <ExternalLink className="ml-0.5 inline h-2.5 w-2.5" aria-hidden />
+                      </a>
+                    ) : (
+                      <span className="truncate">Tanpa lokasi</span>
+                    )}
+                  </span>
+                  <span className="shrink-0 text-right font-medium">
+                    {g.count} kotak · {g.grams} {unit}
+                  </span>
+                </li>
+              );
+            })}
+          </ul>
+          {locationBreakdown.some((g) => !g.url) && (
+            <div className="mt-1 text-[10px] text-amber-600 dark:text-amber-400">
+              Ada kotak tanpa link lokasi — pembeli tidak akan menerima titik pengambilan untuk kotak tersebut.
             </div>
           )}
         </div>
