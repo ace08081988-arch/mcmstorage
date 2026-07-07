@@ -2561,6 +2561,8 @@ export type Database = {
         Row: {
           created_at: string
           email: string | null
+          failure_code: string | null
+          failure_details: string | null
           id: number
           ip: string
           succeeded: boolean
@@ -2569,6 +2571,8 @@ export type Database = {
         Insert: {
           created_at?: string
           email?: string | null
+          failure_code?: string | null
+          failure_details?: string | null
           id?: number
           ip: string
           succeeded?: boolean
@@ -2577,6 +2581,8 @@ export type Database = {
         Update: {
           created_at?: string
           email?: string | null
+          failure_code?: string | null
+          failure_details?: string | null
           id?: number
           ip?: string
           succeeded?: boolean

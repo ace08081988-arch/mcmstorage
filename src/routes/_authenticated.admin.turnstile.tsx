@@ -201,6 +201,12 @@ function TurnstileSettingsPage() {
         >
           <ArrowLeft className="h-4 w-4" /> Kembali
         </Link>
+        <Link
+          to="/admin/turnstile-audit"
+          className="ml-auto inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-accent"
+        >
+          Audit kegagalan →
+        </Link>
       </div>
 
       <header className="flex items-start gap-3">
