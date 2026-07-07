@@ -107,12 +107,12 @@ function TurnstileAuditPage() {
   async function load() {
     setBusy(true);
     setErr(null);
-    let query = supabase
+    // Kolom failure_code/failure_details baru — types.ts belum tentu sudah
+    // regenerate saat build pertama, jadi cast seluruh chain ke `any`.
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    let query: any = supabase
       .from("signup_attempts")
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      .select(
-        "id,ip,email,created_at,user_agent,failure_code,failure_details" as any,
-      )
+      .select("id,ip,email,created_at,user_agent,failure_code,failure_details")
       .in("failure_code", ["captcha_failed", "captcha_missing"])
       .order("created_at", { ascending: false })
       .limit(limit);
@@ -121,8 +121,7 @@ function TurnstileAuditPage() {
     if (iso1) query = query.gte("created_at", iso1);
     if (iso2) query = query.lte("created_at", iso2);
     if (codeFilter !== "all") query = query.eq("failure_code", codeFilter);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const { data, error } = await (query as any);
+    const { data, error } = await query;
     setBusy(false);
     if (error) {
       setErr(error.message);
