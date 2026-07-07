@@ -84,4 +84,103 @@ test.describe("Pesan WA memuat ringkasan dialog konfirmasi", () => {
     // Batal juga tidak menulis pesan.
     await expect(page.getByTestId("last-wa-message-ecer")).toHaveText("");
   });
+
+  // Regex Rupiah id-ID: prefix "Rp", angka 1–3 digit, lalu grup 3 digit
+  // yang dipisah TITIK. Tidak boleh ada spasi setelah Rp, tidak boleh
+  // koma sebagai pemisah ribuan. Contoh valid: "Rp10.000", "Rp1.234.567".
+  // Contoh invalid: "Rp 10.000", "Rp10,000", "Rp10000".
+  const RUPIAH_RE = /^Rp\d{1,3}(?:\.\d{3})*$/;
+
+  test("Format Rupiah: total & rincian partial di pesan sama persis dengan dialog", async ({ page }) => {
+    await page.getByTestId("send-wa-ep4").click();
+
+    // Total pada dialog harus mengikuti format id-ID yang benar.
+    const totalDialog = (
+      await page.getByTestId("payment-summary-total-ecer").textContent()
+    )?.trim() ?? "";
+    expect(totalDialog).toMatch(RUPIAH_RE);
+    expect(totalDialog).toBe("Rp10.000");
+
+    await page.getByTestId("payment-method-partial").click();
+
+    // Uji beberapa nominal partial: memastikan pemisah ribuan konsisten,
+    // termasuk nominal < 1.000 (tanpa titik) dan nominal ribuan.
+    const cases: Array<{ input: string; dibayar: string; sisa: string }> = [
+      { input: "750", dibayar: "Rp750", sisa: "Rp9.250" },
+      { input: "1500", dibayar: "Rp1.500", sisa: "Rp8.500" },
+      { input: "9999", dibayar: "Rp9.999", sisa: "Rp1" },
+    ];
+
+    for (const c of cases) {
+      // Re-open dialog kalau perlu (kasus pertama dialog sudah terbuka).
+      if (!(await page.getByTestId("payment-dialog-ecer").isVisible())) {
+        // Cari prep aktif berikutnya di seed ecer; ep4 sudah terkirim di
+        // iterasi sebelumnya, sehingga kita pakai ep2 lalu ep1.
+        for (const id of ["ep2", "ep1"]) {
+          const btn = page.getByTestId(`send-wa-${id}`);
+          if (await btn.isEnabled()) {
+            await btn.click();
+            break;
+          }
+        }
+        await page.getByTestId("payment-method-partial").click();
+      }
+
+      const amountInput = page.getByTestId("payment-partial-amount-ecer");
+      await amountInput.fill(c.input);
+
+      // Sisa di dialog harus cocok format & nilai.
+      const sisaDialog = (
+        await page.getByTestId("payment-partial-sisa-ecer").textContent()
+      )?.trim() ?? "";
+      expect(sisaDialog, `sisa dialog untuk input ${c.input}`).toMatch(RUPIAH_RE);
+      expect(sisaDialog).toBe(c.sisa);
+
+      await page.getByTestId("payment-send-wa").click();
+
+      const msg = (await page.getByTestId("last-wa-message-ecer").textContent()) ?? "";
+
+      // Ekstrak baris relevan dari pesan.
+      const totalLine = /Total: (\S+)/.exec(msg)?.[1] ?? "";
+      const dibayarLine = /Dibayar: (\S+)/.exec(msg)?.[1] ?? "";
+      const sisaLine = /Sisa: (\S+)/.exec(msg)?.[1] ?? "";
+
+      // Semua nilai di pesan harus mengikuti regex Rupiah id-ID.
+      expect(totalLine, `Total format untuk ${c.input}`).toMatch(RUPIAH_RE);
+      expect(dibayarLine, `Dibayar format untuk ${c.input}`).toMatch(RUPIAH_RE);
+      expect(sisaLine, `Sisa format untuk ${c.input}`).toMatch(RUPIAH_RE);
+
+      // Nilai spesifik: total tetap; dibayar/sisa sesuai input.
+      expect(totalLine).toBe("Rp10.000");
+      expect(dibayarLine).toBe(c.dibayar);
+      expect(sisaLine).toBe(c.sisa);
+
+      // Konsistensi dialog↔pesan: nilai sisa yang tampil di dialog
+      // sebelum kirim harus sama persis dengan yang muncul di pesan.
+      expect(sisaLine).toBe(sisaDialog);
+      // Total dari dialog sebelumnya juga cocok.
+      expect(totalLine).toBe(totalDialog);
+
+      // Anti-regresi format: pastikan tidak ada varian yang salah.
+      expect(msg).not.toMatch(/Rp\s+\d/); // spasi setelah Rp
+      expect(msg).not.toMatch(/Rp\d+,\d{3}/); // koma sebagai ribuan
+      expect(msg).not.toMatch(/Total: Rp10000\b/); // tanpa pemisah
+    }
+  });
+
+  test("Format Rupiah: metode Lunas menampilkan Total dengan pemisah ribuan", async ({ page }) => {
+    await page.getByTestId("send-wa-rp2").click();
+    const totalDialog = (
+      await page.getByTestId("payment-summary-total-request").textContent()
+    )?.trim() ?? "";
+    expect(totalDialog).toMatch(RUPIAH_RE);
+
+    await page.getByTestId("payment-method-kas").click();
+    await page.getByTestId("payment-send-wa").click();
+
+    const msg = (await page.getByTestId("last-wa-message-request").textContent()) ?? "";
+    const totalLine = /Total: (\S+)/.exec(msg)?.[1] ?? "";
+    expect(totalLine).toMatch(RUPIAH_RE);
+    expect(totalLine).toBe(totalDialog);
+  });
 });
