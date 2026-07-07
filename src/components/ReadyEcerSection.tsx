@@ -866,24 +866,22 @@ function BulkToolbar({
       </button>
       <span className="text-[11px] font-semibold text-primary">{count} terpilih</span>
       <div className="ml-auto flex flex-wrap items-center gap-1">
-        <button
-          type="button"
+        <WaShareButton
+          size="sm"
+          variant="solid"
+          disabled={count === 0 || busy !== null}
+          busy={busy === "wa"}
+          reason={count === 0 ? "Pilih minimal 1 kartu dulu" : undefined}
           onClick={onBulkWA}
+        />
+        <ChatShareButton
+          size="sm"
+          variant="solid"
           disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm hover:bg-[#1ebe57] disabled:opacity-50"
-        >
-          {busy === "wa" ? <Loader2 className="h-3 w-3 animate-spin" /> : <MessageCircle className="h-3 w-3" />}
-          MCM
-        </button>
-        <button
-          type="button"
+          busy={busy === "chat"}
+          reason={count === 0 ? "Pilih minimal 1 kartu dulu" : undefined}
           onClick={onBulkChatPick}
-          disabled={count === 0 || busy !== null}
-          className="inline-flex h-7 items-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground shadow-sm hover:bg-primary/90 disabled:opacity-50"
-        >
-          {busy === "chat" ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-          Chat
-        </button>
+        />
         <button
           type="button"
           onClick={onBulkDelete}
