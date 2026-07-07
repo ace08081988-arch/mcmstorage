@@ -193,14 +193,6 @@ function AuthPage() {
 
       if (!result.ok) {
         switch (result.code) {
-          case "captcha_missing":
-          case "captcha_failed":
-            toast.error(result.message, {
-              description:
-                "Selesaikan kotak verifikasi Turnstile lagi, lalu tekan Daftar.",
-              duration: 8000,
-            });
-            break;
           case "rate_limited": {
             const until = Date.now() + (result.retryAfterSeconds ?? 0) * 1000;
             setRateLimitedUntil(until);
