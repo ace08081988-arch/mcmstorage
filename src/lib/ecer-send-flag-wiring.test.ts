@@ -96,6 +96,12 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     // Anomali lintas judul/produk WAJIB membatalkan auto-send, bukan diam.
     expect(block).toMatch(/mismatched/);
     expect(block).toMatch(/toast\.error\(/);
+    // Toast error WAJIB menyebut kotak spesifik (ID pendek) + alasan
+    // (judul lain / produk lain) supaya owner bisa menelusuri.
+    expect(block).toMatch(/p\.id/);
+    expect(block).toMatch(/judul lain/);
+    expect(block).toMatch(/produk lain/);
+    expect(block).toMatch(/description:/);
     // Ringkasan pra-dialog: sebelum setSendOpen(true), owner harus
     // melihat toast berisi item + judul + jumlah kotak + total gram.
     expect(block).toMatch(/toast\.message\(/);
