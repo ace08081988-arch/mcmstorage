@@ -1,74 +1,74 @@
-## Masalah
+## Konteks masalah (dari video + jawaban Anda)
 
-Di dashboard, kartu Ecer & Request punya tombol **WA** dan **Chat** yang hanya membagikan foto pegawai — tidak melewati dialog verifikasi pembayaran dan tidak menandai paket sebagai terkirim (`sold_at`). Akibatnya "kirim WA sukses tapi paket tetap di daftar aktif". Alur pembayaran yang benar hanya ada di halaman detail `/ecer` dan `/request` (via `SendEcerPrepsDialog` / `SendPrepToCustomerDialog`).
+1. **Logika penjualan belum berubah di detail** — di halaman `/ecer` dan `/request` tombol WA & Chat per-kotak masih share foto pegawai langsung ke pembeli tanpa lewat dialog Lunas/Hutang/Sebagian. Akibat: paket tetap "aktif", stok/piutang tidak dicatat. Rencana Juli 6 hanya mencabut tombol dari kartu dashboard — halaman detail terlewat. Ini akar keluhan #1.
 
-Tujuan: satu jalur "Kirim ke pembeli" yang selalu meminta metode bayar (Lunas / Hutang / Bayar sebagian), mencatat penjualan + piutang lewat RPC, memindahkan paket ke **Riwayat Terkirim**, baru kemudian membagikan foto ke WA.
+2. **Layar tidak konsisten** — dashboard sudah pakai flow "Kirim ke pembeli" (wajib bayar), tapi detail masih flow lama (WA/Chat langsung). Dua alur berbeda untuk aksi yang sama → yang Anda maksud "tampilan gak konsisten sama sekali".
 
-## Perubahan
+3. **Terima permintaan teman "diarahkan ke gak jelas"** — perlu reproduksi untuk memastikan; halaman `/kontak/permintaan` sendiri tidak melakukan navigasi setelah Terima, jadi kemungkinan besar entry-point-nya (notifikasi/banner chat/deep-link `/i/<code>`) yang meloncat aneh. Ditangani terpisah di plan berikutnya setelah Anda konfirmasi bagaimana Anda membuka layar Terima itu (dari mana → tap apa → mendarat di mana).
 
-### 1. Angkat dialog jadi komponen bersama
+## Perubahan untuk plan ini (fokus #1 & #2)
 
-Pindahkan dua dialog dari route file ke `src/components/`:
+Konsolidasi satu jalur "Kirim ke pembeli" — di detail juga WAJIB lewat dialog bayar dulu, baru buka WA/Chat.
 
-- `src/components/SendEcerPrepsDialog.tsx` — dipindah dari `_authenticated.ecer.tsx` beserta helper `resolvePhotoUrl` (yang dipakai untuk ambil foto ecer/prep bucket). Ekspor default + named.
-- `src/components/SendPrepToCustomerDialog.tsx` — dipindah dari `_authenticated.request.tsx` beserta helper resolusi fotonya.
+### A. Angkat kanal (WA / Chat) menjadi parameter dialog
 
-Kedua route lama tetap memakai dialog-nya lewat impor dari lokasi baru (tanpa perubahan perilaku pada halaman detail).
+Perluas `SendEcerPrepsDialog` dan `SendPrepToCustomerDialog` (yang sekarang ada di `_authenticated.ecer.tsx` / `_authenticated.request.tsx`):
 
-### 2. Dashboard Ecer (`src/components/ReadyEcerSection.tsx`)
+- Tambah prop `channel: "wa" | "chat"` (default `"wa"` untuk backward-compat).
+- Setelah RPC sukses (paket tercatat sebagai terkirim + piutang/pembayaran tercatat), lakukan share sesuai `channel`:
+  - `"wa"` → `shareToWA(...)` (perilaku existing).
+  - `"chat"` → buka picker percakapan singkat (Sheet), lalu `shareToChat(...)`.
+- Label CTA di footer dialog ikut kanal: "Kirim WA" / "Kirim Chat". Warna hijau tetap.
+- Toast, `markSent`, dan refresh badge tetap dipanggil sama seperti sekarang.
 
-- Hapus tombol **WA** dan **Chat** per-kartu (share kiriman pegawai) — semua alur kirim ke pembeli sekarang lewat verifikasi bayar. Tombol **Segarkan** & pratinjau foto pegawai tetap.
-- Tambah satu tombol utama **"Kirim ke pembeli"** (hijau `#25D366`) per kartu, hanya aktif bila `prep_count > 0` untuk judul tersebut.
-- Klik → fetch preps aktif untuk `r.id`:
-  ```ts
-  supabase.from("ecer_preparations")
-    .select("*")
-    .eq("title_id", r.id)
-    .is("sold_at", null)
-    .order("created_at");
-  ```
-  lalu fetch daftar `customers` (mirror `_authenticated.ecer.tsx`) → buka `SendEcerPrepsDialog` dengan semua preps aktif tersebut (owner masih bisa batal / adjust di dialog).
-- Setelah `onSent`: panggil `onRefresh()` yang sudah ada + emit event badge supaya `prep_count` turun tanpa reload.
-- Kartu yang `prep_count === 0`: tombol disabled, tooltip "Belum ada kotak siap".
+### B. Pindahkan dialog jadi komponen bersama
 
-### 3. Dashboard Request (`src/components/ReadyRequestSection.tsx`)
+Sesuai plan lama yang belum dieksekusi:
 
-Perlakuan identik dengan Ecer:
+- `src/components/SendEcerPrepsDialog.tsx` (baru) — extract dari `_authenticated.ecer.tsx` beserta helper `resolvePhotoUrl`.
+- `src/components/SendPrepToCustomerDialog.tsx` (baru) — extract dari `_authenticated.request.tsx`.
+- Route lama impor dari lokasi baru; tidak ada perubahan perilaku pada halaman detail selain tombolnya (poin C).
 
-- Hapus tombol WA/Chat share foto pegawai.
-- Tambah tombol **"Kirim ke pembeli"** yang fetch preps aktif untuk request tersebut + customers, buka `SendPrepToCustomerDialog`.
-- Refresh badge setelah `onSent`.
+### C. Kunci semua tombol WA & Chat per-kotak agar wajib lewat dialog
 
-### 4. `wa-sent-history` (localStorage)
+Di `_authenticated.ecer.tsx` dan `_authenticated.request.tsx`, tempat tombol WA / Chat per-kotak (yang sekarang share langsung):
 
-Karena tombol WA share foto pegawai dihapus dari dashboard, `markSent` di titik-titik itu ikut dihapus. Riwayat WA (localStorage-only) yang dulu diisi otomatis tidak lagi terisi dari dashboard. `useSentDetails` / `SentDetailList` di kartu tidak lagi ditampilkan.
+- Klik WA per-kotak → **buka `SendEcerPrepsDialog` / `SendPrepToCustomerDialog`** dengan `preps = [kotak itu]` + `channel="wa"`. Dialog akan minta metode bayar, panggil RPC, baru buka WA.
+- Klik Chat per-kotak → sama, `channel="chat"`.
+- Tombol bulk WA / bulk Chat (kalau ada) juga dirouting ke dialog dengan preps terpilih.
+- Kartu yang preps `sold_at !== null` (sudah di riwayat) tetap punya tombol share "kirim ulang" — di kanal ini tidak minta bayar lagi (langsung share) karena penjualan sudah tercatat. Bedakan lewat prop `alreadySold`.
 
-Tidak ada migrasi data localStorage — entri lama tetap ada, tapi UI tidak lagi merujuknya di kartu dashboard.
+### D. Dashboard `ReadyEcerSection` / `ReadyRequestSection`
 
-### 5. Dokumen alur (opsional, ringkas)
+Tombol "Kirim ke pembeli" (hijau) di kartu dashboard sekarang menawarkan pilihan kanal:
 
-Update baris tunggal di `docs/responsive-layout-rules.md` jika ada referensi tombol WA/Chat kartu dashboard. (Cek dulu; skip bila tidak ada.)
+- Tap → dropdown kecil dua opsi: **WA** dan **Chat**. Pilih → dialog bayar dengan `channel` sesuai pilihan.
+- Ini menyamakan dashboard dengan detail: keduanya lewat dialog yang sama, konsisten.
+
+### E. Halaman detail: teks bantuan singkat
+
+Di header daftar kotak siap kirim, tambah baris kecil: "Kirim ke pembeli otomatis mencatat penjualan/piutang lalu membuka WA/Chat." Menghilangkan kesan tombol WA lama "cuma buka WA".
 
 ## File yang disentuh
 
-- `src/components/SendEcerPrepsDialog.tsx` (baru)
-- `src/components/SendPrepToCustomerDialog.tsx` (baru)
-- `src/routes/_authenticated.ecer.tsx` (hapus definisi lokal + impor)
-- `src/routes/_authenticated.request.tsx` (hapus definisi lokal + impor)
-- `src/components/ReadyEcerSection.tsx` (ganti tombol WA/Chat → tombol "Kirim ke pembeli" + fetch preps + dialog)
-- `src/components/ReadyRequestSection.tsx` (perlakuan identik)
+- `src/components/SendEcerPrepsDialog.tsx` (baru; extract + prop `channel`, `alreadySold`)
+- `src/components/SendPrepToCustomerDialog.tsx` (baru; identik pola)
+- `src/routes/_authenticated.ecer.tsx` (hapus definisi dialog lokal; rerute klik WA/Chat per-kotak lewat dialog; untuk preps `sold_at !== null` lewat dialog dengan `alreadySold` = true / atau langsung share)
+- `src/routes/_authenticated.request.tsx` (idem)
+- `src/components/ReadyEcerSection.tsx` (tombol "Kirim ke pembeli" → pilih kanal WA/Chat, pakai dialog)
+- `src/components/ReadyRequestSection.tsx` (idem)
 
-## Detail teknis
-
-- **Tipe preps**: `SendEcerPrepsDialog` menerima `EcerPreparation[]` dari `@/lib/ecer`. Import path sama.
-- **Fetch customers**: gunakan pola yang sudah dipakai di `_authenticated.ecer.tsx` (`customers` table, `user_id = auth.uid()`).
-- **Idempotency & realtime**: state `sending` di dialog sudah menangani double-click. Setelah RPC sukses dialog menutup + panggil `onSent` yang menyegarkan grid + emit `debtTx`. Realtime badge produk & piutang sudah subscribe ke event ini.
-- **Backward compatibility**: halaman detail `/ecer` dan `/request` tetap berperilaku sama karena dialog hanya berpindah lokasi, bukan berubah kontrak.
+Tidak menyentuh: RPC penjualan/piutang, tabel database, alur `markSent`, realtime badge.
 
 ## Verifikasi
 
-1. Buka `/` → kartu Ecer dengan preps aktif → klik "Kirim ke pembeli" → dialog muncul → pilih Lunas → Kirim WA → toast sukses → kartu langsung reload → `prep_count` turun → paket masuk Riwayat Terkirim di `/ecer`.
-2. Sama untuk Bayar sebagian: dialog terima nominal dibayar → RPC → piutang tercatat sebesar sisa → paket di Riwayat.
-3. Kartu tanpa preps aktif: tombol disabled.
-4. Halaman detail `/ecer` dan `/request` tetap berfungsi seperti sebelumnya (regression test manual: buka detail judul, klik share icon per kotak → dialog sama muncul).
-5. `bun run typecheck` dan build tetap hijau.
+1. `/ecer` → tap ikon WA di satu kotak aktif → dialog bayar muncul (Lunas/Hutang/Sebagian) → pilih Lunas → tap "Kirim WA" → toast sukses → WA terbuka dengan foto → paket pindah ke "Riwayat Terkirim" → refresh dashboard: `prep_count` turun.
+2. Ulangi dengan Chat → picker percakapan → foto terkirim di chat in-app → paket ke Riwayat.
+3. `/request` → sama seperti #1 dan #2.
+4. Dashboard → "Kirim ke pembeli" → pilih WA → dialog → sukses.
+5. Kotak yang sudah di Riwayat → tombol share "kirim ulang" tidak minta bayar (langsung share), tidak double-catat penjualan.
+6. `bun run typecheck` hijau; guardrail test yang relevan (`ecer-send-wa-*`) tetap lulus.
+
+## Setelah plan ini disetujui & dieksekusi
+
+Saya tangani keluhan #3 (Terima permintaan teman "diarahkan ke gak jelas") sebagai plan terpisah — perlu Anda beritahu: **dari mana Anda menekan "Terima"** (notifikasi push? banner di halaman /chat? dari `/i/<kode>`? dari `/kontak/permintaan`?) dan **halaman apa yang muncul setelahnya**. Tanpa reproduksi itu saya berisiko menebak lagi.
