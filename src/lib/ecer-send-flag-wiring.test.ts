@@ -124,9 +124,11 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     // membuka dialog pembayaran — bukan efek.
     expect(src).toMatch(/<AutoSendConfirmDialog/);
     expect(src).toMatch(/onConfirm=\{\(\)\s*=>\s*\{[\s\S]*?setSendOpen\(true\)/);
-    // Daftar kotak dapat diperluas (Collapsible) dengan trigger yang dites.
-    expect(src).toMatch(/data-testid=["']auto-send-toggle-list["']/);
-    expect(src).toMatch(/data-testid=["']auto-send-list-item["']/);
+    // Daftar kotak dapat diperluas (Collapsible) — implementasi dipindah
+    // ke modul komponen `AutoSendDialogs` supaya bisa dipakai harness e2e.
+    const dialogSrc = readSrc("src/components/ecer/AutoSendDialogs.tsx");
+    expect(dialogSrc).toMatch(/data-testid=["']auto-send-toggle-list["']/);
+    expect(dialogSrc).toMatch(/data-testid=["']auto-send-list-item["']/);
   });
 
   it("/ecer autoSend: pilih HANYA kotak untuk title_id + warehouse_item_id yg cocok", () => {
