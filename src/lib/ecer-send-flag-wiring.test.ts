@@ -62,10 +62,11 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     );
   });
 
-  it("/ecer TitleDetailView: autoSend memilih semua kotak aktif dan membuka dialog", () => {
+  it("/ecer TitleDetailView: autoSend memilih kotak aktif & menyerahkan ke modal konfirmasi", () => {
     const src = readSrc("src/routes/_authenticated.ecer.tsx");
     // Cari blok useEffect autoSend. Non-tautological: cek helper resmi
-    // filterActivePreps (bukan literal !p.sold_at) dan setSendOpen(true).
+    // filterActivePreps (bukan literal !p.sold_at) dan bahwa efek
+    // menyerahkan daftar aktif ke modal konfirmasi (setAutoSendConfirm).
     const m = src.match(
       /if\s*\(\s*!\s*autoSend[\s\S]{0,4000}?onAutoSendConsumed\?\.\(\)\s*;?\s*\}/,
     );
@@ -74,9 +75,16 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
     expect(block).toMatch(/filterActivePreps\(preps\)/);
     expect(block).toMatch(/setSelectionMode\(true\)/);
     expect(block).toMatch(/setSelected\(\s*new Set\(/);
-    expect(block).toMatch(/setSendOpen\(true\)/);
+    expect(block).toMatch(/setAutoSendConfirm\(/);
     expect(src).toMatch(/const\s+autoSendFiredRef\s*=\s*useRef\(false\)/);
     expect(block).toMatch(/autoSendFiredRef\.current\s*=\s*true/);
+    // Modal konfirmasi harus terpasang di JSX dan onConfirm-nya yang
+    // membuka dialog pembayaran — bukan efek.
+    expect(src).toMatch(/<AutoSendConfirmDialog/);
+    expect(src).toMatch(/onConfirm=\{\(\)\s*=>\s*\{[\s\S]*?setSendOpen\(true\)/);
+    // Daftar kotak dapat diperluas (Collapsible) dengan trigger yang dites.
+    expect(src).toMatch(/data-testid=["']auto-send-toggle-list["']/);
+    expect(src).toMatch(/data-testid=["']auto-send-list-item["']/);
   });
 
   it("/ecer autoSend: pilih HANYA kotak untuk title_id + warehouse_item_id yg cocok", () => {
