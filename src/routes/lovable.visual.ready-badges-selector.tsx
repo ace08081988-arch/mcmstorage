@@ -204,6 +204,11 @@ function Surface({
   // string mentahnya dari `data-testid="last-wa-message-<scope>"` untuk
   // memverifikasi ringkasan pelanggan, total, dan jenis pembayaran.
   const [lastWa, setLastWa] = useState<string>("");
+  // URL wa.me yang siap dibuka — body pesan di-encode via
+  // encodeURIComponent. Spec E2E membandingkan href ini dengan versi
+  // encode manual dari `lastWa` untuk memastikan karakter spesial
+  // (tanda baca, emoji, newline) tidak rusak sebelum dikirim.
+  const [lastWaUrl, setLastWaUrl] = useState<string>("");
 
   const paymentPrep = payment
     ? preps.find((p) => p.id === payment.prepId) ?? null
@@ -547,6 +552,9 @@ function Surface({
                   locationUrl: paymentTitle?.locationUrl ?? null,
                 });
                 setLastWa(message);
+                setLastWaUrl(
+                  `https://wa.me/?text=${encodeURIComponent(message)}`,
+                );
                 setPreps((prev) =>
                   prev.map((p) =>
                     p.id === id && isActivePrep(p)
@@ -585,6 +593,21 @@ function Surface({
       >
         {lastWa}
       </pre>
+      {/* Tautan wa.me: href harus berisi body pesan yang sudah
+          di-URL-encode. Kalau kosong, tautan tidak dirender. */}
+      {lastWaUrl ? (
+        <a
+          data-testid={`last-wa-url-${scope}`}
+          href={lastWaUrl}
+          target="_blank"
+          rel="noreferrer"
+          className="mt-1 block truncate text-[10px] text-primary underline"
+        >
+          {lastWaUrl}
+        </a>
+      ) : (
+        <span data-testid={`last-wa-url-${scope}`} hidden />
+      )}
     </section>
   );
 }
