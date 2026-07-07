@@ -4,7 +4,9 @@
  */
 export async function getClientDeviceFingerprint(): Promise<string> {
   if (typeof window === "undefined") return "ssr";
+  const installId = getOrCreateDeviceInstallId();
   const parts = [
+    installId,
     navigator.userAgent || "",
     navigator.language || "",
     (navigator.languages || []).join(","),
@@ -20,6 +22,23 @@ export async function getClientDeviceFingerprint(): Promise<string> {
   return [...new Uint8Array(digest)]
     .map((b) => b.toString(16).padStart(2, "0"))
     .join("");
+}
+
+const DEVICE_INSTALL_ID_KEY = "mcm_device_install_id_v1";
+
+function getOrCreateDeviceInstallId(): string {
+  try {
+    const existing = window.localStorage.getItem(DEVICE_INSTALL_ID_KEY);
+    if (existing) return existing;
+    const id =
+      typeof crypto !== "undefined" && "randomUUID" in crypto
+        ? crypto.randomUUID()
+        : `mcm-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+    window.localStorage.setItem(DEVICE_INSTALL_ID_KEY, id);
+    return id;
+  } catch {
+    return "storage-unavailable";
+  }
 }
 
 export function trustedKey(userId: string, deviceHash: string) {
