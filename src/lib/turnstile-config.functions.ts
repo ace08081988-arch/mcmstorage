@@ -52,17 +52,24 @@ export const getTurnstileConfig = createServerFn({ method: "GET" })
       .maybeSingle();
     if (error) throw new Error(error.message);
 
-    const secret = (data?.secret_key ?? "") as string;
-    const masked =
-      secret.length > 8
-        ? secret.slice(0, 4) + "…" + secret.slice(-4)
-        : secret
-          ? "••••••"
-          : "";
+    const stored = (data?.secret_key ?? "") as string;
+    // Mask harus dihitung dari PLAINTEXT, bukan ciphertext — mask ciphertext
+    // hanya membocorkan panjang blob acak.
+    let plaintext = "";
+    if (stored) {
+      try {
+        const { decryptTurnstileSecret } = await import("./turnstile-crypto.server");
+        plaintext = decryptTurnstileSecret(stored);
+      } catch (err) {
+        console.error("[getTurnstileConfig] dekripsi gagal", err);
+      }
+    }
+    const { maskTurnstileSecret } = await import("./turnstile-crypto.server");
+    const masked = maskTurnstileSecret(plaintext);
     return {
       site_key: (data?.site_key ?? "") as string,
       secret_key_masked: masked,
-      has_secret: Boolean(secret),
+      has_secret: Boolean(stored),
       updated_at: (data?.updated_at ?? null) as string | null,
     };
   });
@@ -96,7 +103,8 @@ export const updateTurnstileConfig = createServerFn({ method: "POST" })
     if (data.clear_secret) {
       patch.secret_key = "";
     } else if (data.secret_key.trim().length > 0) {
-      patch.secret_key = data.secret_key.trim();
+      const { encryptTurnstileSecret } = await import("./turnstile-crypto.server");
+      patch.secret_key = encryptTurnstileSecret(data.secret_key.trim());
     }
     const { error } = await supabaseAdmin
       .from("turnstile_config")
@@ -151,10 +159,20 @@ export const testTurnstileSecret = createServerFn({ method: "POST" })
           .select("secret_key")
           .eq("id", 1)
           .maybeSingle();
-        const fromDb = ((cfg?.secret_key as string | undefined) ?? "").trim();
-        if (fromDb) {
-          secret = fromDb;
-          source = "database";
+        const stored = ((cfg?.secret_key as string | undefined) ?? "").trim();
+        if (stored) {
+          try {
+            const { decryptTurnstileSecret } = await import(
+              "./turnstile-crypto.server"
+            );
+            const fromDb = decryptTurnstileSecret(stored);
+            if (fromDb) {
+              secret = fromDb;
+              source = "database";
+            }
+          } catch (err) {
+            console.error("[testTurnstileSecret] dekripsi gagal", err);
+          }
         }
       } catch {
         /* fall through */
