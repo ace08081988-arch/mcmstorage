@@ -197,6 +197,15 @@ function DeviceVerifyPage() {
   };
 
   const signOut = async () => {
+    const ok = await confirm({
+      title: "Batal & keluar?",
+      description:
+        "Sesi login akan diakhiri dan verifikasi device dibatalkan. Anda perlu masuk kembali.",
+      confirmText: "Ya, keluar",
+      cancelText: "Kembali",
+      destructive: true,
+    });
+    if (!ok) return;
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
