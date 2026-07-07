@@ -37,7 +37,7 @@ import { useIsAdmin } from "@/hooks/use-is-admin";
 import { useLayoutMode, layoutFieldPairClass } from "@/components/LayoutModeToggle";
 import { buildReadOnlyToast } from "@/lib/prep-readonly-guard";
 import { filterActivePreps, filterSentPreps, isSentPrep } from "@/lib/prep-active-selector";
-import { buildPaymentMessageLines, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
+import { buildPaymentMessageLines, formatPaymentRupiah, formatSoldPaymentSummary, getPaymentBreakdown, parsePaymentAmountInput } from "@/lib/payment-summary";
 
 export const Route = createFileRoute("/_authenticated/ecer")({
   head: () => ({ meta: [{ title: "Penyiapan Ecer · MCM Storage" }] }),
@@ -3534,7 +3534,7 @@ function SendEcerPrepsDialog({
       lines.push(`• #${i + 1} — ${p.actual_grams} ${displayUnit(itemName, title.unit_label)}`);
     });
     lines.push("");
-    lines.push(`Total: *${rupiah(totalAmount)}*`);
+    lines.push(`Total: *${formatPaymentRupiah(totalAmount)}*`);
     lines.push(...buildPaymentMessageLines(payment));
     if (party.name) lines.push(`Untuk: ${party.name}`);
     if (note.trim()) { lines.push(""); lines.push(`Catatan: ${note.trim()}`); }
@@ -3549,8 +3549,8 @@ function SendEcerPrepsDialog({
     if (payMethod === "partial" && !partialValid) { toast.error("Jumlah dibayar harus > 0 dan < total"); return; }
 
     const methodLabel =
-      payment.method === "hutang" ? `Hutang — sisa ${rupiah(payment.remaining)} piutang`
-      : payment.method === "partial" ? `Bayar sebagian — dibayar ${rupiah(payment.paid)}, sisa ${rupiah(payment.remaining)} piutang`
+      payment.method === "hutang" ? `Hutang — sisa ${formatPaymentRupiah(payment.remaining)} piutang`
+      : payment.method === "partial" ? `Bayar sebagian — dibayar ${formatPaymentRupiah(payment.paid)}, sisa ${formatPaymentRupiah(payment.remaining)} piutang`
       : "Lunas";
     const summary = [
       `Pelanggan: ${party.name}${party.contact ? ` (${party.contact})` : ""}`,
