@@ -411,6 +411,10 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
           shots.push({ id: `${r.id}:${i}`, file: new File([blob], name, { type: blob.type || "image/jpeg" }) });
         } catch { /* skip */ }
       }
+      // Lampirkan bukti pembayaran (PNG) sebagai lampiran terakhir agar
+      // muncul di riwayat percakapan Chat setelah foto paket.
+      const receipt = await buildReceiptFile(r);
+      if (receipt) shots.push({ id: `${r.id}:receipt`, file: receipt });
 
       const result = await shareToChat({
         conversationId,
