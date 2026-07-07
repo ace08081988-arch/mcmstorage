@@ -221,6 +221,7 @@ export async function secureSignUpImpl(
     // Baca secret dari DB dulu (agar admin bisa mengganti runtime lewat halaman
     // /admin/turnstile), fallback ke env TURNSTILE_SECRET_KEY.
     let turnstileSecret = "";
+    let turnstileSecretSource: "database" | "env" | "none" = "none";
     try {
       const { supabaseAdmin: adminForSecret } = await import(
         "@/integrations/supabase/client.server"
@@ -239,6 +240,7 @@ export async function secureSignUpImpl(
         } = await import("./turnstile-crypto.server");
         try {
           turnstileSecret = decryptTurnstileSecret(stored);
+          if (turnstileSecret) turnstileSecretSource = "database";
         } catch (err) {
           console.error("[secureSignUp] gagal dekripsi secret Turnstile", err);
           turnstileSecret = "";
@@ -262,7 +264,10 @@ export async function secureSignUpImpl(
     } catch {
       /* fall through to env */
     }
-    if (!turnstileSecret) turnstileSecret = process.env.TURNSTILE_SECRET_KEY ?? "";
+    if (!turnstileSecret) {
+      turnstileSecret = process.env.TURNSTILE_SECRET_KEY ?? "";
+      if (turnstileSecret) turnstileSecretSource = "env";
+    }
     if (!turnstileSecret) {
       // Kunci belum dipasang di lingkungan server — jangan izinkan pendaftaran
       // sampai admin mengatur TURNSTILE_SECRET_KEY.
@@ -296,7 +301,11 @@ export async function secureSignUpImpl(
     }
     const captcha = isDevBypass
       ? ({ ok: true } as const)
-      : await verifyTurnstile(data.turnstileToken, ip, turnstileSecret);
+      : await verifyTurnstile(data.turnstileToken, ip, turnstileSecret, {
+          email: data.email,
+          userAgent,
+          secretSource: turnstileSecretSource,
+        });
     if (!captcha.ok) {
       const codes = captcha.codes.join(", ");
       await logCaptchaFailureAttempt(
