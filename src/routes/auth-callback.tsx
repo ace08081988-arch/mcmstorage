@@ -5,6 +5,16 @@ import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { logAuthDebug, readAuthDebug, clearAuthDebug, formatAuthDebug, type AuthDebugEvent } from "@/lib/auth-debug";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 const SAFE_PATH = /^\/(?!\/)[^\s\\]*$/;
 const FORBIDDEN_TARGETS = new Set(["/auth", "/auth-callback"]);
@@ -40,6 +50,7 @@ function AuthCallbackPage() {
   const [showDebug, setShowDebug] = useState(false);
   const [debugEvents, setDebugEvents] = useState<AuthDebugEvent[]>([]);
   const [resetting, setResetting] = useState(false);
+  const [confirmReset, setConfirmReset] = useState(false);
   const originalUrlRef = useRef<string>(
     typeof window !== "undefined" ? window.location.href : "",
   );
@@ -351,7 +362,7 @@ function AuthCallbackPage() {
             )}
             {(status === "error" || status === "manual") && (
               <button
-                onClick={() => void resetAndRetry()}
+                onClick={() => setConfirmReset(true)}
                 disabled={resetting}
                 className="inline-flex w-full items-center justify-center gap-2 rounded-md border bg-background px-3 py-2 text-sm font-medium hover:bg-muted disabled:opacity-60"
                 title="Bersihkan sesi lokal lalu jalankan ulang verifikasi"
@@ -365,6 +376,31 @@ function AuthCallbackPage() {
               </button>
             )}
           </div>
+
+          <AlertDialog open={confirmReset} onOpenChange={setConfirmReset}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset sesi & coba lagi?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Sesi login di perangkat ini akan dibersihkan (token Supabase di localStorage &amp; sessionStorage dihapus),
+                  lalu proses verifikasi dijalankan ulang dengan tautan yang sama.
+                  Anda mungkin perlu masuk kembali setelahnya.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel disabled={resetting}>Batal</AlertDialogCancel>
+                <AlertDialogAction
+                  disabled={resetting}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    void resetAndRetry();
+                  }}
+                >
+                  {resetting ? "Memproses…" : "Ya, reset"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
 
         {/* Panel debug ringkas */}
