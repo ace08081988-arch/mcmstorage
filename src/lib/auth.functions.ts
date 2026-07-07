@@ -50,8 +50,6 @@ export async function secureSignUpImpl(
     const ip = clientIpFromRequest(req);
     const userAgent = (req.headers.get("user-agent") ?? "").slice(0, 512) || null;
 
-    // Turnstile dihapus — langsung ke rate-limit + createUser.
-
     // 2) Rate limit per IP (12 per jam) via RPC berhak akses service_role.
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const rate = await supabaseAdmin.rpc(
