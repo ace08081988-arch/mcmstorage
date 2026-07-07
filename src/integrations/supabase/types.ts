@@ -2557,6 +2557,27 @@ export type Database = {
         }
         Relationships: []
       }
+      shipment_hook_config: {
+        Row: {
+          endpoint_url: string
+          id: number
+          secret: string
+          updated_at: string
+        }
+        Insert: {
+          endpoint_url: string
+          id?: number
+          secret: string
+          updated_at?: string
+        }
+        Update: {
+          endpoint_url?: string
+          id?: number
+          secret?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       signup_attempts: {
         Row: {
           created_at: string
