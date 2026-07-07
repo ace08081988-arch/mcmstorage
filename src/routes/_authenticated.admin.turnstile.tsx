@@ -8,6 +8,8 @@ import { useAdminStatus } from "@/hooks/use-is-admin";
 import {
   getTurnstileConfig,
   updateTurnstileConfig,
+  testTurnstileSecret,
+  type TurnstileSecretTestResult,
 } from "@/lib/turnstile-config.functions";
 
 export const Route = createFileRoute("/_authenticated/admin/turnstile")({
@@ -28,6 +30,7 @@ function TurnstileSettingsPage() {
   const { isAdmin, isCheckingAdmin } = useAdminStatus();
   const getCfg = useServerFn(getTurnstileConfig);
   const updateCfg = useServerFn(updateTurnstileConfig);
+  const testSecret = useServerFn(testTurnstileSecret);
   const qc = useQueryClient();
 
   const cfgQuery = useQuery({
@@ -41,6 +44,10 @@ function TurnstileSettingsPage() {
   const [siteKey, setSiteKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
+  const [testResult, setTestResult] = useState<TurnstileSecretTestResult | null>(
+    null,
+  );
 
   useEffect(() => {
     if (cfgQuery.data) setSiteKey(cfgQuery.data.site_key);
@@ -104,6 +111,31 @@ function TurnstileSettingsPage() {
       });
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function onTestSecret() {
+    setTesting(true);
+    setTestResult(null);
+    try {
+      const result = await testSecret({ data: { secret_key: secretKey } });
+      setTestResult(result);
+      if (result.ok) {
+        toast.success("Secret key valid");
+      } else {
+        toast.error("Secret key tidak valid", { description: result.message });
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      setTestResult({
+        ok: false,
+        source: "none",
+        codes: ["client_error"],
+        message: msg,
+      });
+      toast.error("Gagal menguji", { description: msg });
+    } finally {
+      setTesting(false);
     }
   }
 
@@ -199,6 +231,20 @@ function TurnstileSettingsPage() {
             {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             Simpan
           </button>
+          <button
+            type="button"
+            onClick={onTestSecret}
+            disabled={testing || saving}
+            className="inline-flex items-center gap-2 rounded-md border px-3 py-2 text-sm disabled:opacity-50"
+            title="Menguji secret ke Cloudflare tanpa menyimpan"
+          >
+            {testing ? (
+              <Loader2 className="h-4 w-4 animate-spin" />
+            ) : (
+              <KeyRound className="h-4 w-4" />
+            )}
+            Uji secret
+          </button>
           {cfg?.has_secret && (
             <button
               type="button"
@@ -210,6 +256,27 @@ function TurnstileSettingsPage() {
             </button>
           )}
         </div>
+
+        {testResult && (
+          <div
+            className={
+              "rounded-md border p-3 text-sm " +
+              (testResult.ok
+                ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300"
+                : "border-destructive/40 bg-destructive/10 text-destructive")
+            }
+            role="status"
+            aria-live="polite"
+          >
+            <div className="font-medium">
+              {testResult.ok ? "✓ Valid" : "✗ Tidak valid"}
+              <span className="ml-2 font-normal text-xs opacity-80">
+                sumber: {testResult.source}
+              </span>
+            </div>
+            <div className="mt-1">{testResult.message}</div>
+          </div>
+        )}
       </form>
 
       <div className="rounded-lg border p-4 bg-muted/40 text-sm space-y-2">
