@@ -12,6 +12,7 @@ Disallow: /lovable/
 # Disallow berikut mencerminkan sengaja tidak dimasukkan ke sitemap.
 Disallow: /error
 Disallow: /reset-password
+Disallow: /auth-callback
 Disallow: /t/
 Disallow: /admin-denial-log
 Disallow: /audit
