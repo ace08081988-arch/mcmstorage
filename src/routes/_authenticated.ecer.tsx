@@ -1679,6 +1679,43 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
                       </button>
                     </div>
                   )}
+                  {autoSendCancelSummary && (
+                    <div
+                      data-testid="auto-send-cancel-summary"
+                      className="mb-3 flex items-start justify-between gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                    >
+                      <div className="min-w-0">
+                        <div className="font-semibold">Auto-Kirim dibatalkan</div>
+                        <div className="text-amber-800/90">
+                          {autoSendCancelSummary.count} kotak · {autoSendCancelSummary.grams} {autoSendCancelSummary.unit} ·
+                          {" "}
+                          {(
+                            AUTO_SEND_CANCEL_REASONS.find(
+                              (r) => r.value === autoSendCancelSummary.reason,
+                            )?.label
+                          ) || autoSendCancelSummary.reason}
+                          {" · "}
+                          {new Date(autoSendCancelSummary.at).toLocaleTimeString("id-ID", {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </div>
+                        {autoSendCancelSummary.detail ? (
+                          <div className="mt-0.5 line-clamp-2 text-amber-800/80">
+                            “{autoSendCancelSummary.detail}”
+                          </div>
+                        ) : null}
+                      </div>
+                      <button
+                        type="button"
+                        aria-label="Tutup ringkasan pembatalan"
+                        onClick={() => setAutoSendCancelSummary(null)}
+                        className="rounded p-1 text-amber-800/70 hover:bg-amber-100"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
                     {sent.map((p, idx) => (
                       <PrepBox
