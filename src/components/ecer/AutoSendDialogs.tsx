@@ -33,7 +33,8 @@ import {
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { ChevronDown } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { ChevronDown, Trash2, Pencil, Check, X, Loader2 } from "lucide-react";
 import type { EcerTitle, EcerPreparation } from "@/lib/ecer";
 
 export function AutoSendConfirmDialog({
@@ -42,18 +43,45 @@ export function AutoSendConfirmDialog({
   itemName,
   onCancel,
   onConfirm,
+  onRemove,
+  onUpdateGrams,
 }: {
   state: { preps: EcerPreparation[] } | null;
   title: EcerTitle;
   itemName: string;
   onCancel: () => void;
   onConfirm: () => void;
+  /**
+   * Callback untuk membuang satu kotak dari seleksi auto-send SEBELUM
+   * pembayaran dibuka. Pemanggil bertanggung jawab memutakhirkan
+   * `state.preps` dan Set seleksi induk. Kalau seleksi menjadi kosong,
+   * pemanggil sebaiknya menutup modal + finalize audit sebagai cancelled.
+   */
+  onRemove?: (prepId: string) => void;
+  /**
+   * Callback untuk memperbarui `actual_grams` satu kotak di DB.
+   * Mengembalikan `true` jika sukses supaya inline-edit menutup dirinya.
+   */
+  onUpdateGrams?: (prepId: string, grams: number) => Promise<boolean>;
 }) {
   // Default terbuka: owner harus bisa memverifikasi kotak (produk,
   // judul, jumlah, berat per kotak) TANPA klik tambahan.
   const [expanded, setExpanded] = useState(true);
+  // State inline-edit per baris: hanya satu kotak yang bisa diedit
+  // sekaligus supaya total di header konsisten dengan yang terlihat.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editingValue, setEditingValue] = useState<string>("");
+  const [savingId, setSavingId] = useState<string | null>(null);
   useEffect(() => {
     if (state) setExpanded(true);
+  }, [state]);
+  useEffect(() => {
+    // Tutup inline-edit setiap kali dialog dibuka ulang.
+    if (state) {
+      setEditingId(null);
+      setEditingValue("");
+      setSavingId(null);
+    }
   }, [state]);
   if (!state) return null;
   const preps = state.preps;
@@ -62,6 +90,24 @@ export function AutoSendConfirmDialog({
     (acc, p) => acc + (Number(p.actual_grams) || 0),
     0,
   );
+  const canMutate = !!onRemove || !!onUpdateGrams;
+  const startEdit = (p: EcerPreparation) => {
+    setEditingId(p.id);
+    setEditingValue(String(Number(p.actual_grams) || 0));
+  };
+  const cancelEdit = () => {
+    setEditingId(null);
+    setEditingValue("");
+  };
+  const commitEdit = async (p: EcerPreparation) => {
+    if (!onUpdateGrams) return;
+    const grams = Number(String(editingValue).replace(",", "."));
+    if (!Number.isFinite(grams) || grams <= 0) return;
+    setSavingId(p.id);
+    const ok = await onUpdateGrams(p.id, grams);
+    setSavingId(null);
+    if (ok) cancelEdit();
+  };
   return (
     <AlertDialog open onOpenChange={(o) => { if (!o) onCancel(); }}>
       <AlertDialogContent className="max-w-md" data-testid="auto-send-confirm">
@@ -71,8 +117,24 @@ export function AutoSendConfirmDialog({
             <div className="space-y-1 text-sm">
               <div><span className="text-muted-foreground">Produk:</span> <span className="font-medium text-foreground">{itemName}</span></div>
               <div><span className="text-muted-foreground">Judul:</span> <span className="font-medium text-foreground">{title.name}</span></div>
-              <div><span className="text-muted-foreground">Jumlah:</span> <span className="font-medium text-foreground">{preps.length} kotak</span></div>
-              <div><span className="text-muted-foreground">Total:</span> <span className="font-medium text-foreground">{totalGrams} {unit}</span></div>
+              <div>
+                <span className="text-muted-foreground">Jumlah:</span>{" "}
+                <span
+                  className="font-medium text-foreground"
+                  data-testid="auto-send-count"
+                >
+                  {preps.length} kotak
+                </span>
+              </div>
+              <div>
+                <span className="text-muted-foreground">Total:</span>{" "}
+                <span
+                  className="font-medium text-foreground"
+                  data-testid="auto-send-total"
+                >
+                  {totalGrams} {unit}
+                </span>
+              </div>
             </div>
           </AlertDialogDescription>
         </AlertDialogHeader>
@@ -95,21 +157,110 @@ export function AutoSendConfirmDialog({
             className="mt-2 max-h-56 overflow-y-auto rounded-md border"
           >
             <ul className="divide-y">
-              {preps.map((p, i) => (
-                <li
-                  key={p.id}
-                  data-testid="auto-send-list-item"
-                  className="flex items-center justify-between gap-2 px-3 py-1.5 text-xs"
-                >
-                  <span className="text-muted-foreground">
-                    #{i + 1} · <span className="font-mono">{String(p.id).slice(0, 8)}</span>
-                  </span>
-                  <span className="font-medium tabular-nums">
-                    {Number(p.actual_grams) || 0} {unit}
-                  </span>
-                </li>
-              ))}
+              {preps.map((p, i) => {
+                const isEditing = editingId === p.id;
+                const isSaving = savingId === p.id;
+                return (
+                  <li
+                    key={p.id}
+                    data-testid="auto-send-list-item"
+                    data-prep-id={p.id}
+                    className="flex items-center justify-between gap-2 px-3 py-1.5 text-xs"
+                  >
+                    <span className="min-w-0 truncate text-muted-foreground">
+                      #{i + 1} ·{" "}
+                      <span className="font-mono">
+                        {String(p.id).slice(0, 8)}
+                      </span>
+                    </span>
+                    {isEditing ? (
+                      <div className="flex items-center gap-1">
+                        <Input
+                          data-testid="auto-send-item-grams-input"
+                          type="number"
+                          inputMode="decimal"
+                          value={editingValue}
+                          onChange={(e) => setEditingValue(e.target.value)}
+                          className="h-7 w-20 text-xs"
+                          min={1}
+                          step="0.01"
+                          disabled={isSaving}
+                          autoFocus
+                        />
+                        <span className="text-muted-foreground">{unit}</span>
+                        <button
+                          type="button"
+                          aria-label="Simpan berat"
+                          data-testid="auto-send-item-save"
+                          className="rounded p-1 text-emerald-700 hover:bg-emerald-50 disabled:opacity-50"
+                          onClick={() => void commitEdit(p)}
+                          disabled={isSaving}
+                        >
+                          {isSaving ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : (
+                            <Check className="h-3.5 w-3.5" />
+                          )}
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Batal ubah"
+                          data-testid="auto-send-item-edit-cancel"
+                          className="rounded p-1 text-muted-foreground hover:bg-muted disabled:opacity-50"
+                          onClick={cancelEdit}
+                          disabled={isSaving}
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1">
+                        <span
+                          className="font-medium tabular-nums"
+                          data-testid="auto-send-item-grams"
+                        >
+                          {Number(p.actual_grams) || 0} {unit}
+                        </span>
+                        {onUpdateGrams && (
+                          <button
+                            type="button"
+                            aria-label={`Ubah berat kotak #${i + 1}`}
+                            data-testid="auto-send-item-edit"
+                            className="rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+                            onClick={() => startEdit(p)}
+                          >
+                            <Pencil className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                        {onRemove && (
+                          <button
+                            type="button"
+                            aria-label={`Hapus kotak #${i + 1} dari seleksi`}
+                            data-testid="auto-send-item-remove"
+                            className="rounded p-1 text-destructive/80 hover:bg-destructive/10 hover:text-destructive disabled:opacity-40"
+                            onClick={() => onRemove(p.id)}
+                            disabled={preps.length <= 1}
+                            title={
+                              preps.length <= 1
+                                ? "Minimal satu kotak harus tersisa — pakai Batal untuk membatalkan seluruh auto-Kirim."
+                                : undefined
+                            }
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </li>
+                );
+              })}
             </ul>
+            {canMutate && (
+              <div className="border-t bg-muted/30 px-3 py-1.5 text-[10px] text-muted-foreground">
+                Ubah berat atau hapus kotak dari seleksi sebelum lanjut.
+                Minimal satu kotak harus tersisa.
+              </div>
+            )}
           </CollapsibleContent>
         </Collapsible>
         <AlertDialogFooter>
@@ -122,6 +273,7 @@ export function AutoSendConfirmDialog({
           <AlertDialogAction
             onClick={onConfirm}
             data-testid="auto-send-confirm-continue"
+            disabled={!!editingId}
           >
             Lanjut ke pembayaran
           </AlertDialogAction>
