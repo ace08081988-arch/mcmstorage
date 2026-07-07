@@ -106,7 +106,7 @@ function useSurface(seed: Prep[]) {
     );
   }
 
-  return { preps, activeByTitle, sentByTitle, markSent, cancelSent };
+  return { preps, activeByTitle, sentByTitle, markSent, cancelSent, setPreps };
 }
 
 function Surface({
@@ -118,8 +118,20 @@ function Surface({
   titles: Title[];
   seed: Prep[];
 }) {
-  const { preps, activeByTitle, sentByTitle, markSent, cancelSent } =
+  const { preps, activeByTitle, sentByTitle, markSent, cancelSent, setPreps } =
     useSurface(seed);
+
+  // Simulasi dialog konfirmasi pembayaran (Lunas/Hutang/Partial) + tombol
+  // "Kirim WA". Setelah "Kirim WA" ditekan → sold_at diisi via setPreps
+  // seketika (tanpa reload) supaya spec dapat memverifikasi badge menyegar
+  // & item pindah ke section "Riwayat Terkirim" pada render yang sama.
+  const [payment, setPayment] = useState<null | {
+    prepId: string;
+    method: "kas" | "hutang" | "partial";
+  }>(null);
+
+  const active = preps.filter((p) => isActivePrep(p));
+  const sent = preps.filter((p) => isSentPrep(p));
 
   return (
     <section
@@ -189,10 +201,108 @@ function Surface({
               >
                 Batalkan
               </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-6 px-1.5 text-[10px]"
+                data-testid={`send-wa-${p.id}`}
+                disabled={isSentPrep(p)}
+                onClick={() => setPayment({ prepId: p.id, method: "kas" })}
+              >
+                Kirim WA
+              </Button>
             </span>
           </div>
         ))}
       </div>
+
+      {/* Section "Riwayat Terkirim" — daftar prep yang sold_at !== null.
+          Spec memverifikasi item pindah kesini seketika setelah dialog
+          pembayaran dikonfirmasi (tanpa reload). */}
+      <div
+        className="mt-2 rounded border border-emerald-500/40 bg-emerald-500/5 p-1.5"
+        data-testid={`riwayat-${scope}`}
+      >
+        <div className="mb-1 text-[10px] font-semibold uppercase text-emerald-700 dark:text-emerald-300">
+          Riwayat Terkirim ({sent.length})
+        </div>
+        <div className="space-y-1">
+          {sent.map((p) => (
+            <div
+              key={p.id}
+              className="flex items-center justify-between rounded border bg-card px-1.5 py-0.5 text-[10px]"
+              data-testid={`riwayat-item-${scope}-${p.id}`}
+            >
+              <span className="font-mono text-muted-foreground">
+                {p.id} · {p.title_id}
+              </span>
+              <span className="text-emerald-700 dark:text-emerald-300">Terkirim</span>
+            </div>
+          ))}
+          {sent.length === 0 && (
+            <div className="text-[10px] text-muted-foreground">Belum ada.</div>
+          )}
+        </div>
+      </div>
+
+      {/* Dialog konfirmasi pembayaran. Bukan komponen ui/dialog agar spec
+          dapat menyeleksi elemen tanpa portal/animation glitch. */}
+      {payment && payment.prepId && active.some((p) => p.id === payment.prepId) && (
+        <div
+          role="dialog"
+          aria-label="Konfirmasi pembayaran"
+          data-testid={`payment-dialog-${scope}`}
+          className="mt-2 space-y-1 rounded-md border bg-background p-2 text-[11px]"
+        >
+          <div className="font-semibold">Konfirmasi pembayaran — {payment.prepId}</div>
+          <div className="flex gap-1">
+            {(["kas", "hutang", "partial"] as const).map((m) => (
+              <button
+                key={m}
+                type="button"
+                data-testid={`payment-method-${m}`}
+                onClick={() => setPayment((prev) => (prev ? { ...prev, method: m } : prev))}
+                className={`rounded border px-1.5 py-0.5 ${
+                  payment.method === m ? "border-primary bg-primary/10 font-semibold" : ""
+                }`}
+              >
+                {m === "kas" ? "Lunas" : m === "hutang" ? "Hutang" : "Sebagian"}
+              </button>
+            ))}
+          </div>
+          <div className="flex justify-end gap-1 pt-1">
+            <button
+              type="button"
+              data-testid="payment-cancel"
+              onClick={() => setPayment(null)}
+              className="rounded border px-1.5 py-0.5"
+            >
+              Batal
+            </button>
+            <button
+              type="button"
+              data-testid="payment-send-wa"
+              onClick={() => {
+                // Update sinkron: ubah sold_at seketika, tutup dialog.
+                // Tanpa reload, tanpa await — badge & Riwayat menyegar di
+                // render berikutnya.
+                const id = payment.prepId;
+                setPreps((prev) =>
+                  prev.map((p) =>
+                    p.id === id && isActivePrep(p)
+                      ? { ...p, sold_at: new Date().toISOString() }
+                      : p,
+                  ),
+                );
+                setPayment(null);
+              }}
+              className="rounded border border-primary bg-primary px-1.5 py-0.5 font-semibold text-primary-foreground"
+            >
+              Kirim WA
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Oracle: sumber kebenaran untuk spec — spec akan menghitung ulang
           expected numbers dari sini pakai helper yang sama, lalu

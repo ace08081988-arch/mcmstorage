@@ -177,7 +177,11 @@ export default defineConfig({
       //            di kartu baru) — bila badge tidak match, spec gagal.
       name: "ready-badges-selector-e2e",
       testDir: "./tests/e2e",
-      testMatch: /ready-badges-selector\.spec\.ts/,
+      // Cakup spec sibling yang memakai harness yang sama
+      // (`/lovable/visual/ready-badges-selector`), mis.
+      // `ecer-send-wa-riwayat.spec.ts` — regresi UI refresh badge +
+      // pindah Riwayat Terkirim setelah "Kirim WA" pada dialog pembayaran.
+      testMatch: /(ready-badges-selector|ecer-send-wa-riwayat)\.spec\.ts/,
       // Debug artefak per-proyek: pertahankan trace + screenshot + video
       // untuk setiap attempt yang gagal (baik run awal maupun retry).
       // Playwright `retain-on-failure` merekam trace penuh tiap test dan
