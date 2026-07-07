@@ -35,6 +35,34 @@ export const Route = createFileRoute("/_authenticated/admin/turnstile")({
   component: TurnstileSettingsPage,
 });
 
+function StatusRow({
+  ok,
+  warn,
+  label,
+  detail,
+}: {
+  ok: boolean;
+  warn?: boolean;
+  label: string;
+  detail: string;
+}) {
+  const Icon = ok ? CheckCircle2 : warn ? AlertTriangle : XCircle;
+  const color = ok
+    ? "text-emerald-600 dark:text-emerald-400"
+    : warn
+      ? "text-amber-600 dark:text-amber-400"
+      : "text-destructive";
+  return (
+    <div className="flex items-start gap-2 text-sm">
+      <Icon className={"h-4 w-4 mt-0.5 shrink-0 " + color} />
+      <div className="min-w-0">
+        <div className="font-medium">{label}</div>
+        <div className="text-muted-foreground break-all">{detail}</div>
+      </div>
+    </div>
+  );
+}
+
 function TurnstileSettingsPage() {
   const { isAdmin, isCheckingAdmin } = useAdminStatus();
   const getCfg = useServerFn(getTurnstileConfig);
