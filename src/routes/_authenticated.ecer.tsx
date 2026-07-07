@@ -1109,6 +1109,14 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   const [autoSendConfirm, setAutoSendConfirm] = useState<{
     preps: EcerPreparation[];
   } | null>(null);
+  // Estimasi harga per satuan dasar untuk item ini — diambil dari harga
+  // penjualan terakhir (`sales.price_per_base`) saat modal konfirmasi
+  // auto-send terbuka. Owner bisa melihat perkiraan total biaya SEBELUM
+  // dialog verifikasi pembayaran terbuka; kalau belum ada riwayat
+  // penjualan, baris estimasi disembunyikan.
+  const [autoSendUnitPrice, setAutoSendUnitPrice] = useState<number | null>(
+    null,
+  );
   // Dialog "kenapa Batal?" — dibuka setelah cancel dari confirm modal
   // atau dari SendEcerPrepsDialog. Selama state ini terisi, baris audit
   // masih di outcome `proposed`: finalize hanya terjadi saat owner
@@ -1255,6 +1263,23 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     // benar-benar terbuka.
     setAutoSendConfirm({ preps: activeNow });
     autoSendPrepsRef.current = activeNow;
+    // Ambil harga jual terakhir sebagai estimasi. Query di-scope ke item
+    // ini; kalau gagal atau kosong, estimasi cukup disembunyikan.
+    void (async () => {
+      try {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const { data } = await (supabase.from as any)("sales")
+          .select("price_per_base")
+          .eq("item_id", item.id)
+          .order("created_at", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        const p = Number(data?.price_per_base);
+        setAutoSendUnitPrice(Number.isFinite(p) && p > 0 ? p : null);
+      } catch {
+        setAutoSendUnitPrice(null);
+      }
+    })();
     // Catat baris `proposed` — id disimpan supaya nanti bisa di-finalize
     // menjadi `confirmed` (setelah RPC sukses) atau `cancelled`.
     void logAutoSendProposed({
