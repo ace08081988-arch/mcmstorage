@@ -301,6 +301,8 @@ function EcerPage() {
           onTitleUpdated={refetchTitles}
           onCreateTitle={() => setCreatingTitleForItem(selectedItem)}
           onCreateProduct={() => setCreatingProduct(true)}
+          autoSend={pendingAutoSend}
+          onAutoSendConsumed={() => setPendingAutoSend(false)}
         />
         {creatingTitleForItem && (
           <TitleFormDialog
