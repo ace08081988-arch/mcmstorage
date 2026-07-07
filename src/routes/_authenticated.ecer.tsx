@@ -790,9 +790,14 @@ function DetailHero({
           value={<span className="font-semibold">{title.target_grams} {unit}</span>}
           sub={preps.length > 0 ? `Total target ${targetTotal} ${unit} · aktual ${totalActual} ${unit}` : undefined}
         />
+        {/* `preps` di header ini sudah difilter aktif (lihat pemanggilan
+            `<Header preps={active} />` di komponen induk). Label
+            "kotak siap" wajib konsisten dengan badge di ReadyEcerSection
+            (juga bersumber `countActiveByTitle`) supaya angka 0 tidak
+            bermakna berbeda di list vs detail. */}
         <DetailRow icon={<Boxes className="h-3.5 w-3.5" />} label="Jumlah penyiapan"
-          value={<span className="font-semibold">{preps.length} kotak</span>}
-          sub={preps.length > 0 ? `${progress}% dari target` : "Belum ada kotak"}
+          value={<span className="font-semibold">{preps.length} kotak siap</span>}
+          sub={preps.length > 0 ? `${progress}% dari target` : "Belum ada kotak siap"}
         />
         {lastDate && (
           <>
