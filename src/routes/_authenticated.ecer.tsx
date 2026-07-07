@@ -1282,6 +1282,16 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
         `Batal auto-Kirim: ${mismatched.length} kotak tidak valid. Pilih manual.`,
         { description: `Kotak: ${details.join(", ")}${extra}` },
       );
+      void logAutoSendTerminal({
+        titleId: title.id,
+        warehouseItemId: item.id,
+        prepIds: mismatched.map((p) => p.id),
+        prepCount: mismatched.length,
+        totalGrams: mismatched.reduce((a, p) => a + (Number(p.actual_grams) || 0), 0),
+        unitLabel: title.unit_label || null,
+        outcome: "mismatched",
+        note: `mismatched: ${details.join(", ")}${extra}`,
+      });
       onAutoSendConsumed?.();
       return;
     }
@@ -1289,6 +1299,15 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
       // Tidak ada kotak aktif; batalkan flag agar user tidak "terjebak".
       autoSendFiredRef.current = true;
       toast.info("Tidak ada kotak aktif untuk dikirim pada judul ini.");
+      void logAutoSendTerminal({
+        titleId: title.id,
+        warehouseItemId: item.id,
+        prepIds: [],
+        prepCount: 0,
+        totalGrams: 0,
+        unitLabel: title.unit_label || null,
+        outcome: "empty",
+      });
       onAutoSendConsumed?.();
       return;
     }
@@ -1300,6 +1319,18 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
     // diperluas. Owner harus menekan Lanjut agar dialog pembayaran
     // benar-benar terbuka.
     setAutoSendConfirm({ preps: activeNow });
+    // Catat baris `proposed` — id disimpan supaya nanti bisa di-finalize
+    // menjadi `confirmed` (setelah RPC sukses) atau `cancelled`.
+    void logAutoSendProposed({
+      titleId: title.id,
+      warehouseItemId: item.id,
+      prepIds: activeNow.map((p) => p.id),
+      prepCount: activeNow.length,
+      totalGrams: activeNow.reduce((a, p) => a + (Number(p.actual_grams) || 0), 0),
+      unitLabel: title.unit_label || null,
+    }).then((id) => {
+      autoSendAuditIdRef.current = id;
+    });
     onAutoSendConsumed?.();
   }, [autoSend, loading, preps, title.id, item.id, onAutoSendConsumed]);
 
