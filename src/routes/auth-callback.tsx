@@ -6,12 +6,17 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
 const SAFE_PATH = /^\/(?!\/)[^\s\\]*$/;
+const FORBIDDEN_TARGETS = new Set(["/auth", "/auth-callback"]);
 
 function safeTarget(value: unknown): string {
   if (typeof value !== "string") return "/";
-  return value.length <= 512 && SAFE_PATH.test(value) && !/[\r\n]/.test(value)
-    ? value
-    : "/";
+  if (value.length > 512 || !SAFE_PATH.test(value) || /[\r\n]/.test(value)) {
+    return "/";
+  }
+  // Cegah loop balik ke halaman verifikasi / login.
+  const pathOnly = value.split("?")[0].split("#")[0].replace(/\/+$/, "") || "/";
+  if (FORBIDDEN_TARGETS.has(pathOnly)) return "/";
+  return value;
 }
 
 export const Route = createFileRoute("/auth-callback")({
@@ -83,6 +88,14 @@ function AuthCallbackPage() {
         toast.success("Verifikasi berhasil");
         window.history.replaceState({}, document.title, "/auth-callback");
         navigate({ to: target, replace: true });
+        // Fallback keras: jika router tertahan (misal saat menghitung
+        // beforeLoad gate), paksa navigasi via location setelah 800ms.
+        window.setTimeout(() => {
+          if (cancelled) return;
+          if (window.location.pathname === "/auth-callback") {
+            window.location.assign(target);
+          }
+        }, 800);
       } catch (err) {
         if (cancelled) return;
         setStatus("error");
