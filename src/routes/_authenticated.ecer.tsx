@@ -46,6 +46,10 @@ export const Route = createFileRoute("/_authenticated/ecer")({
     item: typeof s.item === "string" ? s.item : undefined,
     title: typeof s.title === "string" ? s.title : undefined,
     highlight: typeof s.highlight === "string" ? s.highlight : undefined,
+    // "send=1" → auto-buka mode pilih + dialog "Kirim ke pembeli" untuk semua
+    // kotak aktif pada judul yang dituju. Dipakai oleh shortcut di dashboard
+    // supaya seluruh jalur "Kirim WA" wajib melewati verifikasi pembayaran.
+    send: typeof s.send === "string" ? s.send : undefined,
   }),
   component: EcerPage,
 });
@@ -75,6 +79,10 @@ function EcerPage() {
   const [selectedItemId, setSelectedItemId] = useState<string | undefined>(search.item);
   const [selectedTitleId, setSelectedTitleId] = useState<string | undefined>(search.title);
   const [highlightTitleId, setHighlightTitleId] = useState<string | undefined>(search.highlight);
+  // Ambil `send=1` sekali saat mount. URL sync effect di bawah akan
+  // menghapus flag dari URL setelah render pertama, jadi kita simpan di
+  // state agar TitleDetailView bisa mengonsumsinya walau URL sudah bersih.
+  const [pendingAutoSend, setPendingAutoSend] = useState(search.send === "1");
   const [editingTitle, setEditingTitle] = useState<EcerTitle | null>(null);
   const [creatingTitle, setCreatingTitle] = useState(false);
   // Membuat judul lain untuk item tertentu langsung dari halaman detail.
@@ -293,6 +301,8 @@ function EcerPage() {
           onTitleUpdated={refetchTitles}
           onCreateTitle={() => setCreatingTitleForItem(selectedItem)}
           onCreateProduct={() => setCreatingProduct(true)}
+          autoSend={pendingAutoSend}
+          onAutoSendConsumed={() => setPendingAutoSend(false)}
         />
         {creatingTitleForItem && (
           <TitleFormDialog
@@ -1054,9 +1064,10 @@ function DetailRow({ icon, label, value, sub }: { icon: React.ReactNode; label: 
 }
 
 // ---- Detail view: preparations grid ----
-function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct }: {
+function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, onCreateProduct, autoSend, onAutoSendConsumed }: {
   item: WarehouseItem; title: EcerTitle; onBack: () => void; onTitleUpdated: () => void;
   onCreateTitle?: () => void; onCreateProduct?: () => void;
+  autoSend?: boolean; onAutoSendConsumed?: () => void;
 }) {
   void onBack;
   const [preps, setPreps] = useState<EcerPreparation[]>([]);
@@ -1096,6 +1107,26 @@ function TitleDetailView({ item, title, onBack, onTitleUpdated, onCreateTitle, o
   }
 
   useEffect(() => { void load(); }, [title.id]);
+
+  // Auto-open dialog "Kirim ke pembeli" saat datang dari dashboard dengan
+  // flag `send=1`. Pilih semua kotak aktif untuk judul ini agar owner cukup
+  // konfirmasi metode bayar. Sekali dijalankan, konsumsi flag.
+  const autoSendFiredRef = useRef(false);
+  useEffect(() => {
+    if (!autoSend || autoSendFiredRef.current || loading) return;
+    const activeNow = filterActivePreps(preps);
+    if (activeNow.length === 0) {
+      // Tidak ada kotak aktif; batalkan flag agar user tidak "terjebak".
+      autoSendFiredRef.current = true;
+      onAutoSendConsumed?.();
+      return;
+    }
+    autoSendFiredRef.current = true;
+    setSelectionMode(true);
+    setSelected(new Set(activeNow.map((p) => p.id)));
+    setSendOpen(true);
+    onAutoSendConsumed?.();
+  }, [autoSend, loading, preps, onAutoSendConsumed]);
 
   // realtime
   useEffect(() => {

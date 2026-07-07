@@ -2366,27 +2366,34 @@ function EcerCardImpl({ row: r, onRefresh, refreshing, syncing, realtimeStatus, 
               </div>
             )}
             <div className="ml-auto flex w-full items-center justify-end gap-1.5 sm:w-auto">
-            <button
-              type="button"
-              onClick={openWAPreview}
-              disabled={sending}
-              aria-label="Kirim via MCM"
-              className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57] disabled:opacity-50"
-            >
-              <MessageCircle className="h-3 w-3" />
-              {sending ? "…" : view === "sent" ? "Kirim ulang" : "WA"}
-            </button>
-            <button
-              type="button"
-              onClick={(e) => { e.preventDefault(); e.stopPropagation(); setPickChatOpen(true); }}
-              disabled={chatSending || chatPreparing}
-              aria-label="Kirim via Chat aplikasi"
-              title="Kirim ke percakapan dalam aplikasi"
-              className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-primary px-2 text-[11px] font-semibold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:opacity-50"
-            >
-              {(chatSending || chatPreparing) ? <Loader2 className="h-3 w-3 animate-spin" /> : <Send className="h-3 w-3" />}
-              {chatPreparing ? "Siap…" : "Chat"}
-            </button>
+            {/*
+              Semua alur "Kirim ke pembeli" wajib lewat verifikasi
+              pembayaran (Lunas / Hutang / Bayar sebagian) di halaman detail
+              /ecer. Tombol WA/Chat share cepat lama dihapus dari dashboard
+              agar tidak ada jalur tembus yang melewati sistem pembayaran.
+              Owner tetap bisa memakai fitur share foto pegawai langsung
+              dari detail judul kalau memang perlu koordinasi internal.
+            */}
+            {r.prep_count > 0 ? (
+              <Link
+                to="/ecer"
+                search={{ item: r.warehouse_item_id, title: r.id, highlight: undefined, send: "1" }}
+                onClick={(e) => e.stopPropagation()}
+                aria-label={`Kirim ${r.prep_count} kotak ke pembeli (verifikasi bayar dulu)`}
+                title="Verifikasi pembayaran dulu, lalu kirim ke WhatsApp"
+                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md bg-[#25D366] px-2 text-[11px] font-semibold text-white shadow-sm transition hover:bg-[#1ebe57]"
+              >
+                <Send className="h-3 w-3" /> Kirim ke pembeli
+              </Link>
+            ) : (
+              <span
+                aria-disabled="true"
+                title="Belum ada kotak siap untuk dikirim"
+                className="inline-flex h-7 shrink-0 items-center justify-center gap-1 rounded-md border bg-muted/60 px-2 text-[11px] font-medium text-muted-foreground"
+              >
+                <Send className="h-3 w-3" /> Kirim
+              </span>
+            )}
             {view === "sent" && (
               <button
                 type="button"
