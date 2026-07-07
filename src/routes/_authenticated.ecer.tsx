@@ -3558,17 +3558,6 @@ function SendEcerPrepsDialog({
       });
       if (rpcErr) throw rpcErr;
 
-      // WA: kirim caption + semua foto
-      const files: File[] = [];
-      for (const p of preps) {
-        const signed = await resolvePhotoUrl(p);
-        if (!signed) continue;
-        const f = await urlToFile(signed, `${(title.name || "ecer").replace(/\W+/g, "-")}-${p.id.slice(0, 6)}.jpg`);
-        if (f) files.push(f);
-      }
-      const res = await shareToWhatsApp({ text: buildCaption(), title: title.name, files });
-      notifyShareResult(res);
-
       toast.success(
         payMethod === "hutang"
           ? "Terkirim — penjualan & piutang tercatat"
@@ -3576,7 +3565,26 @@ function SendEcerPrepsDialog({
             ? `Terkirim — dibayar ${rupiah(paidAmount)}, sisa ${rupiah(remaining)} jadi piutang`
             : "Terkirim — penjualan tercatat",
       );
+      // Segarkan UI (badge + pindah ke Riwayat Terkirim) segera setelah RPC sukses,
+      // tanpa menunggu proses share WA yang bisa lama pada Web Share API.
       onSent();
+
+      // Kirim WA di latar; hasil dilaporkan lewat toast dari notifyShareResult.
+      void (async () => {
+        try {
+          const files: File[] = [];
+          for (const p of preps) {
+            const signed = await resolvePhotoUrl(p);
+            if (!signed) continue;
+            const f = await urlToFile(signed, `${(title.name || "ecer").replace(/\W+/g, "-")}-${p.id.slice(0, 6)}.jpg`);
+            if (f) files.push(f);
+          }
+          const res = await shareToWhatsApp({ text: buildCaption(), title: title.name, files });
+          notifyShareResult(res);
+        } catch (e) {
+          toast.error("Gagal kirim WA: " + ((e as { message?: string })?.message ?? String(e)));
+        }
+      })();
     } catch (e) {
       toast.error("Gagal kirim: " + ((e as { message?: string })?.message ?? String(e)));
     } finally {
