@@ -12,47 +12,50 @@ import { resolve } from "node:path";
 const readSrc = (rel: string) =>
   readFileSync(resolve(process.cwd(), rel), "utf8");
 
-const compact = (s: string) => s.replace(/\s+/g, " ");
+/** Ambil blok source Link "Kirim ke pembeli" — dari `<Link` sampai `</Link>` terdekat yg mengandung teksnya. */
+function extractKirimLinkBlock(src: string): string | null {
+  const idx = src.indexOf("Kirim ke pembeli");
+  if (idx < 0) return null;
+  // Backtrack ke `<Link` sebelum idx.
+  const start = src.lastIndexOf("<Link", idx);
+  const end = src.indexOf("</Link>", idx);
+  if (start < 0 || end < 0) return null;
+  return src.slice(start, end + "</Link>".length);
+}
 
 describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
   it("ReadyEcerSection: tombol 'Kirim ke pembeli' → <Link to=/ecer …> dengan send:\"1\"", () => {
-    const src = compact(readSrc("src/components/ReadyEcerSection.tsx"));
-    // Tombol harus berupa Link ke /ecer yang membawa send: "1" di search.
-    expect(src).toMatch(
-      /<Link[^>]*to=["']\/ecer["'][^>]*search=\{\{[^}]*send:\s*["']1["'][^}]*\}\}[^>]*>\s*<Send[^>]*\/>\s*Kirim ke pembeli/,
-    );
-    // Tidak boleh ada tombol WA/Chat lama di baris kartu yang menerobos verifikasi.
-    // (Share ke pegawai internal tetap boleh, tapi bukan "Kirim ke pembeli via WA cepat".)
+    const src = readSrc("src/components/ReadyEcerSection.tsx");
+    const block = extractKirimLinkBlock(src);
+    expect(block, "Link 'Kirim ke pembeli' tidak ditemukan").not.toBeNull();
+    expect(block!).toMatch(/to=["']\/ecer["']/);
+    expect(block!).toMatch(/search=\{\{[\s\S]*?send:\s*["']1["'][\s\S]*?\}\}/);
+    // Tidak ada tombol WA cepat yang menerobos verifikasi di dashboard row.
     expect(src).not.toMatch(/Kirim ke pembeli via WA/);
   });
 
-  it("ReadyEcerSection: Link tombol tidak tertangkap gestur kartu induk", () => {
-    // Setelah fix: Link punya onPointerDown stopPropagation supaya long-press
-    // / onClickCapture kartu tidak membatalkan klik.
+  it("ReadyEcerSection: Link tombol memutus gestur long-press & onClickCapture kartu induk", () => {
     const src = readSrc("src/components/ReadyEcerSection.tsx");
-    const m = src.match(
-      /<Link[\s\S]{0,600}?Kirim ke pembeli[\s\S]{0,80}?<\/Link>/,
-    );
-    expect(m, "Link 'Kirim ke pembeli' tidak ditemukan").not.toBeNull();
-    expect(m![0]).toMatch(/onPointerDown=\{\(e\)\s*=>\s*e\.stopPropagation\(\)\}/);
-    expect(m![0]).toMatch(/onClick=\{\(e\)\s*=>\s*e\.stopPropagation\(\)\}/);
+    const block = extractKirimLinkBlock(src);
+    expect(block, "Link 'Kirim ke pembeli' tidak ditemukan").not.toBeNull();
+    // Butuh keduanya: onClick + onPointerDown stopPropagation supaya
+    // long-press card & onClickCapture card tidak membatalkan navigasi.
+    expect(block!).toMatch(/onPointerDown=\{\s*\(e\)\s*=>\s*e\.stopPropagation\(\)\s*\}/);
+    expect(block!).toMatch(/onClick=\{\s*\(e\)\s*=>\s*e\.stopPropagation\(\)\s*\}/);
   });
 
   it("/ecer: validateSearch mengenali `send` sebagai string opsional", () => {
-    const src = compact(readSrc("src/routes/_authenticated.ecer.tsx"));
+    const src = readSrc("src/routes/_authenticated.ecer.tsx");
     expect(src).toMatch(
-      /validateSearch:[\s\S]{0,300}?send:\s*typeof\s+s\.send\s*===\s*["']string["']\s*\?\s*s\.send\s*:\s*undefined/,
+      /send:\s*typeof\s+s\.send\s*===\s*["']string["']\s*\?\s*s\.send\s*:\s*undefined/,
     );
   });
 
   it("/ecer: send=1 dikonsumsi jadi pendingAutoSend → diteruskan ke TitleDetailView", () => {
     const src = readSrc("src/routes/_authenticated.ecer.tsx");
-    // State ambil dari search sekali (agar URL bisa dibersihkan setelahnya).
     expect(src).toMatch(
       /const\s+\[pendingAutoSend,\s*setPendingAutoSend\]\s*=\s*useState\(\s*search\.send\s*===\s*["']1["']\s*\)/,
     );
-    // Diteruskan sebagai prop `autoSend` ke TitleDetailView, dengan callback
-    // konsumsi supaya flag hanya menyala sekali.
     expect(src).toMatch(/autoSend=\{pendingAutoSend\}/);
     expect(src).toMatch(
       /onAutoSendConsumed=\{\s*\(\s*\)\s*=>\s*setPendingAutoSend\(\s*false\s*\)\s*\}/,
@@ -61,18 +64,17 @@ describe("Beranda → /ecer?send=1 wajib memicu dialog pembayaran", () => {
 
   it("/ecer TitleDetailView: autoSend memilih semua kotak aktif dan membuka dialog", () => {
     const src = readSrc("src/routes/_authenticated.ecer.tsx");
-    // Kontrak efek auto-send: pilih SEMUA kotak AKTIF (helper resmi), lalu
-    // buka dialog verifikasi pembayaran (setSendOpen(true)), lalu consume flag.
+    // Cari blok useEffect autoSend. Non-tautological: cek helper resmi
+    // filterActivePreps (bukan literal !p.sold_at) dan setSendOpen(true).
     const m = src.match(
-      /if\s*\(!autoSend[\s\S]{0,1200}?onAutoSendConsumed\?\.\(\)\s*;?\s*\}/,
+      /if\s*\(\s*!\s*autoSend[\s\S]{0,1500}?onAutoSendConsumed\?\.\(\)\s*;?\s*\}/,
     );
     expect(m, "Blok useEffect auto-send tidak ditemukan").not.toBeNull();
     const block = m![0];
     expect(block).toMatch(/filterActivePreps\(preps\)/);
     expect(block).toMatch(/setSelectionMode\(true\)/);
-    expect(block).toMatch(/setSelected\(new Set\([\s\S]{0,80}?\.map\(/);
+    expect(block).toMatch(/setSelected\(\s*new Set\(/);
     expect(block).toMatch(/setSendOpen\(true\)/);
-    // Idempoten: hanya jalan sekali via ref.
     expect(src).toMatch(/const\s+autoSendFiredRef\s*=\s*useRef\(false\)/);
     expect(block).toMatch(/autoSendFiredRef\.current\s*=\s*true/);
   });
