@@ -11,6 +11,7 @@ import {
 } from "@/lib/app-lock";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "@tanstack/react-router";
+import { confirm } from "@/lib/confirm";
 
 type Props = {
   uid: string;
@@ -75,6 +76,15 @@ export function AppLockScreen({ uid, cfg }: Props) {
   };
 
   const signOut = async () => {
+    const ok = await confirm({
+      title: "Keluar & masuk ulang?",
+      description:
+        "Sesi login di perangkat ini akan diakhiri. Anda perlu memasukkan email & password lagi untuk masuk.",
+      confirmText: "Ya, keluar",
+      cancelText: "Batal",
+      destructive: true,
+    });
+    if (!ok) return;
     setLocked(uid, false);
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });

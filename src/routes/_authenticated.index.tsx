@@ -187,6 +187,15 @@ async function compressImage(file: File, maxSize = 1280, quality = 0.75): Promis
 function Index() {
   const navigate = useNavigate();
   const signOut = async () => {
+    const ok = await confirm({
+      title: "Keluar dari akun?",
+      description:
+        "Sesi login di perangkat ini akan diakhiri dan Anda perlu masuk kembali.",
+      confirmText: "Ya, keluar",
+      cancelText: "Batal",
+      destructive: true,
+    });
+    if (!ok) return;
     await supabase.auth.signOut();
     navigate({ to: "/auth", replace: true });
   };
