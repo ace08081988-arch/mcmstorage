@@ -295,8 +295,6 @@ export function SiapkanSendiriSection({ uid }: { uid: string | null }) {
   }
 
   async function onSendWA(r: Row) {
-    async function _noop() {} // placeholder line kept only to preserve local diff readability
-    void _noop;
     if (!r.sold_at) {
       toast.error("Catat penjualan dulu (tombol Jual) sebelum mengirim ke pembeli.");
       return;
