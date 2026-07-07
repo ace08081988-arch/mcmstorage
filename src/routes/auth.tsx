@@ -532,77 +532,21 @@ function AuthPage() {
               className="w-full rounded-md border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
             />
           )}
-          {mode === "signup" && (
-            <div className="space-y-1">
-              {devBypass ? (
-                <p className="rounded-md border border-dashed border-amber-400/50 bg-amber-50/40 p-2 text-center text-[11px] text-amber-700 dark:bg-amber-950/20 dark:text-amber-300">
-                  Mode dev: verifikasi CAPTCHA dilewati untuk localhost.
-                </p>
-              ) : TURNSTILE_SITE_KEY ? (
-                <TurnstileWidget
-                  key={widgetKey}
-                  ref={turnstileRef}
-                  siteKey={TURNSTILE_SITE_KEY}
-                  onToken={onTurnstileToken}
-                  onError={onTurnstileError}
-                />
-              ) : (
-                <p className="rounded-md border border-dashed bg-muted/40 p-2 text-center text-[11px] text-muted-foreground">
-                  Verifikasi CAPTCHA belum dikonfigurasi. Pendaftaran dinonaktifkan sementara.
-                </p>
-              )}
-              {turnstileError && (() => {
-                const host =
-                  typeof window !== "undefined" ? window.location.hostname : "";
-                const info = explainTurnstileError(turnstileError, host);
-                return (
-                  <div className="space-y-1 rounded-md border border-destructive/40 bg-destructive/5 p-2 text-[11px]">
-                    <p className="text-center font-medium text-destructive">
-                      {info.message}{" "}
-                      <span className="font-mono text-muted-foreground">
-                        ({info.code})
-                      </span>
-                    </p>
-                    <p className="text-center text-muted-foreground">{info.hint}</p>
-                    {!info.adminAction && (
-                      <div className="flex justify-center pt-1">
-                        <button
-                          type="button"
-                          onClick={retryTurnstile}
-                          className="rounded border px-2 py-0.5 text-[11px] hover:bg-muted"
-                        >
-                          Coba lagi
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-              {rateLimitedUntil > Date.now() && (
-                <p className="text-center text-[11px] text-destructive">
-                  Terlalu banyak percobaan. Coba lagi ~
-                  {Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000))} menit.
-                </p>
-              )}
-            </div>
+          {mode === "signup" && rateLimitedUntil > Date.now() && (
+            <p className="text-center text-[11px] text-destructive">
+              Terlalu banyak percobaan. Coba lagi ~
+              {Math.max(1, Math.ceil((rateLimitedUntil - Date.now()) / 60000))} menit.
+            </p>
           )}
           <button
             type="submit"
             disabled={
               loading ||
-              (mode === "signup" &&
-                !devBypass &&
-                (!TURNSTILE_SITE_KEY || !turnstileToken || rateLimitedUntil > Date.now()))
+              (mode === "signup" && rateLimitedUntil > Date.now())
             }
             className="w-full rounded-md bg-primary px-3 py-2 text-sm font-semibold text-primary-foreground hover:opacity-90 disabled:opacity-50"
           >
-            {loading
-              ? "Memproses…"
-              : mode === "signup"
-              ? devBypass || turnstileToken || !TURNSTILE_SITE_KEY
-                ? "Daftar"
-                : "Selesaikan verifikasi CAPTCHA…"
-              : "Masuk"}
+            {loading ? "Memproses…" : mode === "signup" ? "Daftar" : "Masuk"}
           </button>
           {mode === "login" && (
             <button
